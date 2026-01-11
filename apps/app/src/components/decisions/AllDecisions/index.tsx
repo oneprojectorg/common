@@ -53,21 +53,21 @@ const DecisionsListSuspense = ({
 
   if (paginatedItems.length === 0) {
     return (
-      <div className="py-8 text-center text-neutral-gray4">
+      <div className="text-neutral-gray4 py-8 text-center">
         No processes found
       </div>
     );
   }
 
   return (
-    <div className="gap-4 sm:gap-0 flex flex-col">
+    <div className="flex flex-col gap-4 sm:gap-0">
       {paginatedItems.map((item) => (
         <DecisionListItem key={item.id} item={item} />
       ))}
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
-          className="py-4 flex justify-center"
+          className="flex justify-center py-4"
         >
           {isFetchingNextPage ? <SkeletonLine lines={3} /> : null}
         </div>

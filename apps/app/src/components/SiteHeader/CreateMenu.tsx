@@ -30,11 +30,11 @@ export const CreateMenu = () => {
     <>
       <MenuTrigger>
         <Button
-          className="h-8 px-2 sm:px-3 rounded-sm"
+          className="h-8 rounded-sm px-2 sm:px-3"
           color={isMobile ? 'secondary' : 'primary'}
         >
           <LuPlus className="size-4" />
-          <span className="sm:block hidden">{t('Create')}</span>
+          <span className="hidden sm:block">{t('Create')}</span>
         </Button>
         <Popover>
           <Menu>

@@ -8,8 +8,8 @@ import { OrganizationCardListSkeleton } from '@/components/OrganizationList';
  */
 export const RelationshipTabSkeleton = () => {
   return (
-    <div className="gap-4 sm:gap-8 flex flex-col text-base">
-      <div className="gap-4 flex flex-col">
+    <div className="flex flex-col gap-4 text-base sm:gap-8">
+      <div className="flex flex-col gap-4">
         <Skeleton className="h-8 w-96" />
       </div>
       <OrganizationCardListSkeleton />

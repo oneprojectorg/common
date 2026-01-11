@@ -14,9 +14,9 @@ export function DecisionHero({
   children?: ReactNode;
 }) {
   return (
-    <div className="gap-2 flex flex-col text-center">
+    <div className="flex flex-col gap-2 text-center">
       {variant === 'results' ? (
-        <Header2 className="font-light font-serif text-title-xxl uppercase">
+        <Header2 className="text-title-xxl font-serif font-light uppercase">
           {title}
         </Header2>
       ) : (
@@ -28,7 +28,7 @@ export function DecisionHero({
       {description && (
         <div
           className={cn(
-            'gap-2 flex flex-col text-base',
+            'flex flex-col gap-2 text-base',
             variant !== 'results' && 'text-neutral-charcoal',
           )}
         >

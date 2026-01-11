@@ -22,7 +22,7 @@ export const Welcome = ({
   const name = orgName ? `, ${orgName}` : t(' to Common');
 
   return (
-    <Header1 className="sm:text-title-xl text-center text-title-md">
+    <Header1 className="sm:text-title-xl text-title-md text-center">
       {isNew ? `${t('Welcome')}${name}!` : `${t('Welcome back')}${name}!`}
     </Header1>
   );

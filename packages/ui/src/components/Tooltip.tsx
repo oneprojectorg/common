@@ -37,13 +37,13 @@ const TooltipTrigger = ({
 };
 
 const styles = tv({
-  base: 'group px-3 py-2 relative z-0 rounded-md bg-charcoal font-sans text-sm text-offWhite will-change-transform',
+  base: 'bg-charcoal text-offWhite group relative z-0 rounded-md px-3 py-2 font-sans text-sm will-change-transform',
   variants: {
     isEntering: {
-      true: 'duration-animate-200 placement-left:slide-in-from-right-0.5 placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5 animate-in ease-out fade-in',
+      true: 'duration-animate-200 placement-left:slide-in-from-right-0.5 placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5 animate-in fade-in ease-out',
     },
     isExiting: {
-      true: 'duration-animate-150 placement-left:slide-out-to-right-0.5 placement-right:slide-out-to-left-0.5 placement-top:slide-out-to-bottom-0.5 placement-bottom:slide-out-to-top-0.5 animate-out ease-in fade-out',
+      true: 'duration-animate-150 placement-left:slide-out-to-right-0.5 placement-right:slide-out-to-left-0.5 placement-top:slide-out-to-bottom-0.5 placement-bottom:slide-out-to-top-0.5 animate-out fade-out ease-in',
     },
   },
 });
@@ -76,7 +76,7 @@ const Tooltip = ({ children, ...props }: TooltipProps) => {
       </OverlayArrow>
       <div
         className={cn(
-          'op-ui-Tooltip max-w-sm grid items-center text-sm',
+          'op-ui-Tooltip grid max-w-sm items-center text-sm',
           Array.isArray(children) && children.length > 0 && 'gap-x-2',
         )}
       >

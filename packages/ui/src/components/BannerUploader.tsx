@@ -38,9 +38,9 @@ export const BannerUploader = ({
   };
 
   return (
-    <div className="relative flex aspect-[128/55] w-full flex-col items-center justify-center bg-offWhite">
+    <div className="bg-offWhite relative flex aspect-[128/55] w-full flex-col items-center justify-center">
       <div className="size-full">
-        <div className="relative flex size-full items-center justify-center bg-yellowOrange bg-center">
+        <div className="bg-yellowOrange relative flex size-full items-center justify-center bg-center">
           {value ? (
             <img
               src={value}
@@ -54,7 +54,7 @@ export const BannerUploader = ({
           <button
             {...buttonProps}
             ref={buttonRef}
-            className="p-2 hover:bg-neutral-800 z-10 rounded-full bg-black/50 text-white"
+            className="z-10 rounded-full bg-black/50 p-2 text-white hover:bg-neutral-800"
             disabled={uploading}
           >
             {uploading ? (

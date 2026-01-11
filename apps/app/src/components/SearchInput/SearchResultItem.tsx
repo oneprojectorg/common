@@ -16,7 +16,7 @@ export const SearchResultItem = ({
       role="option"
       aria-selected={selected}
       className={cn(
-        'group gap-2 p-4 flex cursor-pointer items-center select-none',
+        'group flex cursor-pointer select-none items-center gap-2 p-4',
         selected ? 'bg-neutral-offWhite' : 'hover:bg-neutral-offWhite',
         className,
       )}

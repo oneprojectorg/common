@@ -246,7 +246,7 @@ export function ProposalCardMenu({
             <MenuItem
               key="delete"
               onAction={() => setIsDeleteModalOpen(true)}
-              className="py-2 text-functional-red"
+              className="text-functional-red py-2"
               isDisabled={isLoading}
             >
               <Trash2 className="size-4" />
@@ -276,7 +276,7 @@ export function ProposalCardMenu({
             <ModalFooter>
               <Button
                 color="secondary"
-                className="sm:w-fit w-full"
+                className="w-full sm:w-fit"
                 onPress={() => setIsDeleteModalOpen(false)}
               >
                 {t('Cancel')}
@@ -284,7 +284,7 @@ export function ProposalCardMenu({
               <Button
                 color="destructive"
                 onPress={handleDeleteConfirm}
-                className="sm:w-fit w-full"
+                className="w-full sm:w-fit"
                 isDisabled={deleteProposalMutation.isPending}
               >
                 {deleteProposalMutation.isPending

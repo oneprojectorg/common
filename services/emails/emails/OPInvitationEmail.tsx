@@ -20,7 +20,7 @@ export const OPInvitationEmail = ({
     <EmailTemplate
       previewText={`${inviterName} invited you to join ${organizationName ? `${organizationName} on ` : ''} Common! 🎉`}
     >
-      <Header className="!my-0 mx-0 mt-2 p-0 font-light text-left font-serif text-[28px] tracking-[-0.02625rem] text-[#222D38]">
+      <Header className="!my-0 mx-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Join {organizationName ?? 'Common'}!
       </Header>
       <Text className="my-8 text-lg">
@@ -30,7 +30,7 @@ export const OPInvitationEmail = ({
       <Section className="pb-0">
         <Button
           href={inviteUrl}
-          className="px-4 py-3 rounded-lg bg-primary-teal text-white no-underline hover:bg-primary-teal/90"
+          className="bg-primary-teal hover:bg-primary-teal/90 rounded-lg px-4 py-3 text-white no-underline"
           style={{
             fontSize: '0.875rem',
             textAlign: 'center',
@@ -42,7 +42,7 @@ export const OPInvitationEmail = ({
         {message ? <Text>{message}</Text> : null}
       </Section>
 
-      <Text className="mb-0 text-xs text-neutral-gray4">
+      <Text className="text-neutral-gray4 mb-0 text-xs">
         This invite will expire after 1 week
       </Text>
     </EmailTemplate>

@@ -38,7 +38,7 @@ const PlatformStatsWithData = () => {
   ];
 
   return (
-    <div className="gap-12 md:grid-cols-2 lg:grid-cols-4 grid grid-cols-1">
+    <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
       {statItems.map((stat) => (
         <StatCard key={stat.label} label={stat.label} value={stat.value} />
       ))}
@@ -50,9 +50,9 @@ const PlatformStatsWithData = () => {
 const StatCard = ({ label, value }: { label: string; value: number }) => {
   return (
     <Surface className="p-8">
-      <div className="gap-2 flex flex-col">
+      <div className="flex flex-col gap-2">
         <div className="text-neutral-charcoal">{label}</div>
-        <div className="font-serif text-title-xxl text-neutral-black">
+        <div className="text-title-xxl text-neutral-black font-serif">
           {value}
         </div>
       </div>
@@ -63,7 +63,7 @@ const StatCard = ({ label, value }: { label: string; value: number }) => {
 /** Loading skeleton for platform stats */
 const PlatformStatsSkeleton = () => {
   return (
-    <div className="gap-12 md:grid-cols-2 lg:grid-cols-4 grid grid-cols-1">
+    <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
       {[...Array(4)].map((_, i) => (
         <Surface key={i} className="p-8">
           <Skeleton className="h-24 w-40" />

@@ -31,7 +31,7 @@ export const CheckboxGroup = (props: CheckboxGroupProps) => {
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'gap-2 flex flex-col',
+        'flex flex-col gap-2',
       )}
     >
       <span className="flex flex-col">
@@ -48,7 +48,7 @@ export const CheckboxGroup = (props: CheckboxGroupProps) => {
 };
 
 const checkboxStyles = tv({
-  base: 'group gap-2 flex items-center text-sm transition',
+  base: 'group flex items-center gap-2 text-sm transition',
   variants: {
     isDisabled: {
       false: 'text-neutral-800',
@@ -59,11 +59,11 @@ const checkboxStyles = tv({
 
 const boxStyles = tv({
   extend: focusRing,
-  base: 'size-6 flex shrink-0 items-center justify-center rounded-sm border border-neutral-gray2 transition',
+  base: 'border-neutral-gray2 flex size-6 shrink-0 items-center justify-center rounded-sm border transition',
   variants: {
     isSelected: {
       false: '',
-      true: 'bg-teal border-none text-neutral-offWhite',
+      true: 'bg-teal text-neutral-offWhite border-none',
     },
     isInvalid: {
       true: 'group-pressed:[--color:theme(colors.red.700)] [--color:theme(colors.red.600)]',

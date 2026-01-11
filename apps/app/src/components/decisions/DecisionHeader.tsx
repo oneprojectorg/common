@@ -60,7 +60,7 @@ export async function DecisionHeader({
       className={cn(
         isResultsPhase
           ? 'bg-redPurple text-neutral-offWhite'
-          : 'text-gray-700 bg-neutral-offWhite',
+          : 'bg-neutral-offWhite text-gray-700',
       )}
     >
       <DecisionInstanceHeader
@@ -71,8 +71,8 @@ export async function DecisionHeader({
         title={instance.process?.name || instance.name}
       />
 
-      <div className="sm:items-center flex flex-col overflow-x-auto">
-        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 border-neutral-gray1 bg-white">
+      <div className="flex flex-col overflow-x-auto sm:items-center">
+        <div className="border-neutral-gray1 w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
           <DecisionProcessStepper
             phases={phases}
             currentStateId={instance.currentStateId || ''}

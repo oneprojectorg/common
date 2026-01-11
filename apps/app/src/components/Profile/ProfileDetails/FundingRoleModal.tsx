@@ -52,7 +52,7 @@ export const FundingRoleModal = ({
                 <Radio value="funder">
                   <div className="flex flex-col">
                     <div>Your organization funds {organizationName}</div>
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="text-neutral-gray4 text-sm">
                       Your organization provides financial support to{' '}
                       {organizationName}.
                     </div>
@@ -61,7 +61,7 @@ export const FundingRoleModal = ({
                 <Radio value="fundee">
                   <div className="flex flex-col">
                     <div>{organizationName} funds your organization</div>
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="text-neutral-gray4 text-sm">
                       {organizationName} provides financial support to your
                       organization.
                     </div>
@@ -70,7 +70,7 @@ export const FundingRoleModal = ({
                 <Radio value="funderAndFundee">
                   <div className="flex flex-col">
                     <div>Mutual funding</div>
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="text-neutral-gray4 text-sm">
                       Both organizations provide financial support to each
                       other.
                     </div>
@@ -87,7 +87,7 @@ export const FundingRoleModal = ({
               }}
               color="secondary"
               type="button"
-              className="sm:w-fit w-full"
+              className="w-full sm:w-fit"
             >
               Cancel
             </Button>
@@ -97,7 +97,7 @@ export const FundingRoleModal = ({
               isPending={isSubmitting}
               isDisabled={!selectedRole}
               onPress={handleSave}
-              className="sm:w-fit w-full"
+              className="w-full sm:w-fit"
             >
               {isSubmitting ? <LoadingSpinner /> : 'Save'}
             </Button>

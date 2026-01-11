@@ -24,25 +24,25 @@ export const VoteReviewStep = ({ proposals }: VoteReviewStepProps) => {
 
   return (
     <div className="space-y-4">
-      <p className="text-base text-neutral-charcoal">
+      <p className="text-neutral-charcoal text-base">
         {t('Please confirm your selections before submitting')}
       </p>
 
       <div className="space-y-2">
-        <div className="tracking-wider text-sm text-neutral-gray4 uppercase">
+        <div className="text-neutral-gray4 text-sm uppercase tracking-wider">
           {t('YOUR SELECTED PROPOSALS')}
         </div>
 
         {proposals.map((proposal) => {
           return (
-            <ProposalCard className="p-3 bg-neutral-offWhite" key={proposal.id}>
+            <ProposalCard className="bg-neutral-offWhite p-3" key={proposal.id}>
               <ProposalCardContent>
                 <ProposalCardHeader
                   className="flex-row flex-wrap justify-between"
                   proposal={proposal}
                 />
-                <div className="gap-2 flex items-center">
-                  <span className="text-sm text-neutral-charcoal">
+                <div className="flex items-center gap-2">
+                  <span className="text-neutral-charcoal text-sm">
                     {proposal.submittedBy?.name}
                   </span>
 

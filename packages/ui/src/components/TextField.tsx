@@ -57,7 +57,7 @@ export const TextField = ({
       isInvalid={!!errorMessage && errorMessage.length > 0}
       className={composeTailwindRenderProps(
         props.className,
-        'group gap-1 flex flex-col',
+        'group flex flex-col gap-1',
       )}
     >
       {label && (
@@ -77,7 +77,7 @@ export const TextField = ({
             {...textareaProps}
             className={cn(
               textareaProps?.className,
-              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',
+              'group-data-[invalid=true]:outline-functional-red group-data-[invalid=true]:outline-1',
             )}
             ref={ref as React.RefObject<HTMLTextAreaElement>}
           />
@@ -86,7 +86,7 @@ export const TextField = ({
             {...inputProps}
             className={cn(
               inputProps?.className,
-              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',
+              'group-data-[invalid=true]:outline-functional-red group-data-[invalid=true]:outline-1',
             )}
             ref={ref as React.RefObject<HTMLInputElement>}
           />

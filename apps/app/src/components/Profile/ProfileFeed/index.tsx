@@ -122,7 +122,7 @@ export const ProfileFeedCards = ({
     <>
       <HorizontalList
         className={cn(
-          'scroll-px-4 w-full items-start',
+          'w-full scroll-px-4 items-start',
           posts.length === 0 && 'overflow-x-hidden',
           className,
         )}
@@ -131,7 +131,7 @@ export const ProfileFeedCards = ({
           posts.map((postToOrg) => (
             <HorizontalListItem
               key={postToOrg.postId}
-              className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border border-neutral-gray1"
+              className="border-neutral-gray1 w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4"
             >
               <PostItem
                 post={postToOrg.post}
@@ -144,7 +144,7 @@ export const ProfileFeedCards = ({
             </HorizontalListItem>
           ))
         ) : (
-          <HorizontalListItem className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border border-neutral-gray1">
+          <HorizontalListItem className="border-neutral-gray1 w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4">
             <EmptyPostsState />
           </HorizontalListItem>
         )}
@@ -152,7 +152,7 @@ export const ProfileFeedCards = ({
           <HorizontalListItem>
             <div ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}>
               {isFetchingNextPage ? (
-                <div className="text-sm text-neutral-gray4">
+                <div className="text-neutral-gray4 text-sm">
                   <SkeletonLine lines={2} />
                 </div>
               ) : null}
@@ -209,10 +209,10 @@ export const ProfileFeedList = ({
       {shouldShowTrigger && (
         <div
           ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}
-          className="py-4 flex justify-center"
+          className="flex justify-center py-4"
         >
           {isFetchingNextPage ? (
-            <div className="text-sm text-neutral-gray4">
+            <div className="text-neutral-gray4 text-sm">
               <SkeletonLine lines={2} />
             </div>
           ) : null}

@@ -5,7 +5,7 @@ import { FullScreenSplitMain } from '@/components/layout/split/FullScreenSplitMa
 const StartLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <FullScreenSplitLayout>
-      <div id="top-slot" className="top-0 lg:w-2/3 absolute w-full" />
+      <div id="top-slot" className="absolute top-0 w-full lg:w-2/3" />
       <FullScreenSplitMain>{children}</FullScreenSplitMain>
       <FullScreenSplitAside />
     </FullScreenSplitLayout>

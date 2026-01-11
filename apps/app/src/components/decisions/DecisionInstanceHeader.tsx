@@ -21,26 +21,26 @@ export const DecisionInstanceHeader = ({
 }) => {
   const t = useTranslations();
   return (
-    <header className="p-2 px-6 sm:grid-cols-3 md:py-3 grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white">
-      <div className="gap-3 flex items-center">
+    <header className="border-neutral-gray1 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
+      <div className="flex items-center gap-3">
         <Link
           href={backTo.href}
-          className="gap-2 md:text-primary-teal flex items-center text-base text-neutral-black hover:text-primary-tealBlack"
+          className="md:text-primary-teal text-neutral-black hover:text-primary-tealBlack flex items-center gap-2 text-base"
         >
           <LuArrowLeft className="size-6 md:size-4" />
-          <span className="md:flex hidden">
+          <span className="hidden md:flex">
             {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
           </span>
         </Link>
       </div>
 
       <div className="flex justify-center text-center">
-        <Header1 className="sm:text-title-sm font-serif text-title-sm text-neutral-charcoal">
+        <Header1 className="sm:text-title-sm text-title-sm text-neutral-charcoal font-serif">
           {title}
         </Header1>
       </div>
 
-      <div className="gap-2 flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
         <LocaleChooser />
         <UserAvatarMenu />
       </div>

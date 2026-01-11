@@ -64,7 +64,7 @@ export function ResultsPage({
     <>
       {/* Hero section - will be inside gradient from DecisionHeader */}
       <div className="px-4 py-8">
-        <div className="max-w-3xl gap-4 mx-auto flex flex-col justify-center">
+        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">
           <DecisionHero
             title={heroContent.title}
             description={heroContent.description}
@@ -90,18 +90,18 @@ export function ResultsPage({
         </div>
       </div>
 
-      <div className="flex w-full justify-center border-t border-neutral-gray1 bg-white">
-        <div className="gap-8 p-4 sm:max-w-6xl w-full">
+      <div className="border-neutral-gray1 flex w-full justify-center border-t bg-white">
+        <div className="w-full gap-8 p-4 sm:max-w-6xl">
           <DecisionResultsTabs>
             <DecisionResultsTabPanel id="funded">
               <APIErrorBoundary
                 fallbacks={{
                   404: (
                     <EmptyProposalsState>
-                      <Header3 className="font-light font-serif !text-title-base text-neutral-black">
+                      <Header3 className="!text-title-base text-neutral-black font-serif font-light">
                         {t('Results are still being processed.')}
                       </Header3>
-                      <p className="text-base text-neutral-charcoal">
+                      <p className="text-neutral-charcoal text-base">
                         {t('Check back again shortly for the results.')}
                       </p>
                     </EmptyProposalsState>

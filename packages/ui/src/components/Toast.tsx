@@ -17,11 +17,11 @@ export const Toast = () => {
       duration={3000}
       icons={{
         success: (
-          <LuCircleCheck className="size-6 shrink-0 text-functional-green" />
+          <LuCircleCheck className="text-functional-green size-6 shrink-0" />
         ),
-        close: <LuX className="size-6 shrink-0 text-neutral-black" />,
+        close: <LuX className="text-neutral-black size-6 shrink-0" />,
         error: (
-          <LuCircleAlert className="size-6 shrink-0 text-functional-red" />
+          <LuCircleAlert className="text-functional-red size-6 shrink-0" />
         ),
       }}
       toastOptions={{
@@ -54,7 +54,7 @@ const ToastWrapper = ({
   return (
     <div
       className={cn(
-        'gap-2 flex w-full items-start',
+        'flex w-full items-start gap-2',
         isSingleLine && 'items-center',
       )}
     >
@@ -81,14 +81,14 @@ const ToastBody = ({
 }) => {
   if (isSingleLine) {
     return (
-      <div className="min-w-0 gap-2 flex w-full items-center text-base text-neutral-charcoal">
+      <div className="text-neutral-charcoal flex w-full min-w-0 items-center gap-2 text-base">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="gap-2 px-1 pt-1 flex w-full flex-col text-base text-neutral-charcoal">
+    <div className="text-neutral-charcoal flex w-full flex-col gap-2 px-1 pt-1 text-base">
       {children}
     </div>
   );
@@ -112,13 +112,13 @@ const ToastActions = ({
 
   if (isSingleLine) {
     return (
-      <div className="gap-2 ml-auto flex shrink-0 items-center">
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         {renderActions()}
       </div>
     );
   }
 
-  return <div className="mt-2 gap-4 flex">{renderActions()}</div>;
+  return <div className="mt-2 flex gap-4">{renderActions()}</div>;
 };
 
 const ToastTitle = ({
@@ -128,7 +128,7 @@ const ToastTitle = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="font-serif text-title-base text-neutral-black">
+    <div className="text-title-base text-neutral-black font-serif">
       {children}
     </div>
   );
@@ -168,7 +168,7 @@ export const toast = {
         dismissable={dismissable}
         isSingleLine={isSingleLine}
       >
-        <LuCircleCheck className="size-6 shrink-0 text-functional-green" />
+        <LuCircleCheck className="text-functional-green size-6 shrink-0" />
         <ToastBody isSingleLine={isSingleLine}>
           {title && <ToastTitle>{title}</ToastTitle>}
           {message &&

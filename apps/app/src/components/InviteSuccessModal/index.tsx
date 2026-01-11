@@ -24,8 +24,8 @@ export const InviteSuccessModal = ({
 }: InviteSuccessModalProps) => {
   return (
     <Modal isOpen={isOpen} className="shadow-green inset-shadow-none">
-      <ModalBody className="gap-6 p-12 flex flex-col items-center justify-center text-center">
-        <div className="gap-4 flex flex-col items-center justify-center">
+      <ModalBody className="flex flex-col items-center justify-center gap-6 p-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-4">
           <CheckIcon />
           <Header1 className="sm:text-title-lg">Sent</Header1>
         </div>
@@ -44,7 +44,7 @@ export const InviteSuccessModal = ({
             </>
           )}
         </p>
-        <div className="gap-2 flex w-full flex-col">
+        <div className="flex w-full flex-col gap-2">
           <Button color="primary" onPress={onClose} className="w-full">
             Done
           </Button>

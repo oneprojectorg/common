@@ -320,21 +320,21 @@ export const EditDecisionProcessModal = ({
     if (!stepConfig) return null;
 
     return (
-      <div className="gap-6 flex flex-col">
+      <div className="flex flex-col gap-6">
         {stepConfig.schema.description && (
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-neutral-charcoal text-base">
             {stepConfig.schema.description}
           </p>
         )}
 
         <ErrorBoundary
           fallback={
-            <div className="border-functional-orange/20 bg-functional-orange/5 gap-4 p-6 flex flex-col items-center rounded-lg border border-functional-orange/20 text-center">
-              <div className="gap-2 flex flex-col">
-                <h3 className="text-functional-orange font-medium text-lg">
+            <div className="border-functional-orange/20 bg-functional-orange/5 border-functional-orange/20 flex flex-col items-center gap-4 rounded-lg border p-6 text-center">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-functional-orange text-lg font-medium">
                   Step {currentStep} Error
                 </h3>
-                <p className="text-sm text-neutral-charcoal">
+                <p className="text-neutral-charcoal text-sm">
                   Unable to render this form step. Please try going back and
                   forward again, or restart the form.
                 </p>
@@ -377,7 +377,7 @@ export const EditDecisionProcessModal = ({
 
   return (
     <Modal isDismissable>
-      <div className="max-w-lg flex h-full max-h-[90vh] w-full flex-col">
+      <div className="flex h-full max-h-[90vh] w-full max-w-lg flex-col">
         <ModalHeader>{getCurrentStepTitle()}</ModalHeader>
 
         <ModalBody className="flex-1 overflow-y-auto">

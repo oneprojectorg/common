@@ -84,9 +84,9 @@ export const ProfileRelationshipsSuspense = ({
 
   return (
     <>
-      <div className="gap-4 sm:px-0 flex flex-col">
+      <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
-          <Breadcrumbs className="sm:flex hidden">
+          <Breadcrumbs className="hidden sm:flex">
             <Breadcrumb href={`/org/${slug}`}>
               {organization.profile.name}
             </Breadcrumb>
@@ -94,7 +94,7 @@ export const ProfileRelationshipsSuspense = ({
           </Breadcrumbs>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="sm:text-title-lg w-full font-serif text-title-sm">
+          <div className="sm:text-title-lg text-title-sm w-full font-serif">
             {count} {pluralize(t('relationship'), count)}
           </div>
           <div className="w-72"></div>
@@ -143,11 +143,11 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
   return (
     <>
       {/* nav arrow */}
-      <header className="left-0 top-0 px-4 py-3 sm:hidden absolute z-50 w-full bg-white">
+      <header className="absolute left-0 top-0 z-50 w-full bg-white px-4 py-3 sm:hidden">
         <ErrorBoundary
           errorComponent={() => (
-            <Link href="/" className="gap-2 flex items-center">
-              <LuArrowLeft className="size-6 text-neutral-black" />
+            <Link href="/" className="flex items-center gap-2">
+              <LuArrowLeft className="text-neutral-black size-6" />
             </Link>
           )}
         >

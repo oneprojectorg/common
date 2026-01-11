@@ -169,7 +169,7 @@ export const BaseUpdateProfileForm = forwardRef<
       >
         <FormContainer className={className}>
           {/* Header Images */}
-          <div className="pb-12 sm:pb-20 relative w-full">
+          <div className="relative w-full pb-12 sm:pb-20">
             <BannerUploader
               value={bannerImageUrl ?? undefined}
               onChange={(file: File) =>
@@ -180,7 +180,7 @@ export const BaseUpdateProfileForm = forwardRef<
             />
             <AvatarUploader
               label={t('Profile Picture')}
-              className="bottom-0 left-4 size-20 sm:size-28 absolute aspect-square"
+              className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
               value={profileImageUrl ?? undefined}
               onChange={(file: File) =>
                 handleImageUpload(file, setProfileImageUrl, uploadImage)

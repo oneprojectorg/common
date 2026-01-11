@@ -19,7 +19,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="gap-8 p-8 flex w-full flex-col">
+    <div className="flex w-full flex-col gap-8 p-8">
       <PlatformAdminHeader />
       <PlatformStats />
       <UsersTable />

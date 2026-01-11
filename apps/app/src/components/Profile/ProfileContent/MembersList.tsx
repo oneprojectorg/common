@@ -175,7 +175,7 @@ const MemberMenu = ({
           <MenuItem
             key="remove-from-org"
             onAction={handleRemoveFromOrganization}
-            className="px-3 py-1 text-functional-red"
+            className="text-functional-red px-3 py-1"
           >
             {t('Remove from organization')}
           </MenuItem>
@@ -197,7 +197,7 @@ const MembersListContent = ({
   const t = useTranslations();
 
   return (
-    <div className="gap-8 pb-6 md:grid-cols-2 grid grid-cols-1">
+    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {members.map((member) => {
         // Use profile data if available, fallback to organization user data
         const profile = member.profile;
@@ -226,9 +226,9 @@ const MembersListContent = ({
         return (
           <div
             key={member.id}
-            className="gap-4 p-6 relative flex w-full rounded border border-neutral-gray1"
+            className="border-neutral-gray1 relative flex w-full gap-4 rounded border p-6"
           >
-            <div className="right-4 top-4 absolute">
+            <div className="absolute right-4 top-4">
               <MemberMenu
                 member={member}
                 organizationId={organizationId}
@@ -239,12 +239,12 @@ const MembersListContent = ({
               <ProfileAvatar profile={profileForAvatar} className="size-20" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="gap-2 flex flex-col">
-                <div className="gap-2 flex flex-col">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2">
                   {/* Show name as link if profile exists, otherwise plain text */}
                   {profile ? (
                     <Link
-                      className="font-semibold truncate text-neutral-black"
+                      className="text-neutral-black truncate font-semibold"
                       href={
                         profile.type === 'org'
                           ? `/org/${profile.slug}`
@@ -254,14 +254,14 @@ const MembersListContent = ({
                       {displayName}
                     </Link>
                   ) : (
-                    <div className="font-semibold truncate text-neutral-black">
+                    <div className="text-neutral-black truncate font-semibold">
                       {displayName}
                     </div>
                   )}
 
                   {/* Show role information */}
                   {member.roles.length > 0 ? (
-                    <div className="gap-1 flex flex-wrap">
+                    <div className="flex flex-wrap gap-1">
                       <TagGroup>
                         {member.roles.map((role) => (
                           <Tag key={role.id} className="text-xs">
@@ -271,14 +271,14 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm text-neutral-charcoal">
+                    <div className="text-neutral-charcoal text-sm">
                       {t('Member')}
                     </div>
                   )}
 
                   {/* Show email if different from display name */}
                   {(member.name || profile?.name) && (
-                    <div className="text-sm text-neutral-charcoal">
+                    <div className="text-neutral-charcoal text-sm">
                       {member.profile?.email || member.email}
                     </div>
                   )}
@@ -286,7 +286,7 @@ const MembersListContent = ({
 
                 {/* Show about/bio information if available */}
                 {bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div className="text-neutral-charcoal line-clamp-3">
                     {bio.length > 200 ? `${bio.slice(0, 200)}...` : bio}
                   </div>
                 )}
@@ -336,14 +336,14 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
 
   if (!members || members.length === 0) {
     return (
-      <div className="py-12 flex flex-col items-center justify-center text-center">
-        <div className="mb-4 size-12 flex items-center justify-center rounded-full bg-neutral-gray1">
-          <LuUsers className="h-6 w-6 text-neutral-gray4" />
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="bg-neutral-gray1 mb-4 flex size-12 items-center justify-center rounded-full">
+          <LuUsers className="text-neutral-gray4 h-6 w-6" />
         </div>
-        <div className="mb-2 font-serif text-title-base text-neutral-black">
+        <div className="text-title-base text-neutral-black mb-2 font-serif">
           {t('No members found')}
         </div>
-        <p className="max-w-md text-sm text-neutral-charcoal">
+        <p className="text-neutral-charcoal max-w-md text-sm">
           {t("This organization doesn't have any members yet.")}
         </p>
       </div>
@@ -352,9 +352,9 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
 
   return (
     <>
-      <div className="gap-4 px-4 sm:px-0 flex flex-col">
+      <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
-          <div className="sm:text-title-lg w-full font-serif text-title-sm">
+          <div className="sm:text-title-lg text-title-sm w-full font-serif">
             {members.length} {pluralize(t('member'), members.length)}
           </div>
           <div className="w-72"></div>

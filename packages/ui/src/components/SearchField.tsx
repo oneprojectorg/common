@@ -30,14 +30,14 @@ export const SearchField = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'group gap-1 flex min-w-[40px] flex-col',
+        'group flex min-w-[40px] flex-col gap-1',
       )}
     >
       {label && <Label>{label}</Label>}
       <FieldGroup className="relative">
         <SearchIcon
           aria-hidden
-          className="left-3 size-4 pointer-events-none absolute top-1/2 -translate-y-1/2 text-darkGray"
+          className="text-darkGray pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
         />
         <Input
           placeholder={placeholder}
@@ -46,7 +46,7 @@ export const SearchField = ({
         <Button
           variant="icon"
           color="ghost"
-          className="right-1 w-6 p-0 absolute top-1/2 aspect-square -translate-y-1/2 group-empty:invisible"
+          className="absolute right-1 top-1/2 aspect-square w-6 -translate-y-1/2 p-0 group-empty:invisible"
         >
           <XIcon aria-hidden className="size-4" />
         </Button>

@@ -88,11 +88,11 @@ const SlashCommandsList = forwardRef<
   }));
 
   return (
-    <div className="w-72 p-1 z-[9999999] h-auto max-h-[330px] overflow-auto rounded-md border border-neutral-gray1 bg-white shadow-md">
+    <div className="border-neutral-gray1 z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-md border bg-white p-1 shadow-md">
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
-            className={`space-x-2 px-2 py-1 flex w-full items-center rounded-sm text-left hover:bg-neutral-gray1 ${
+            className={`hover:bg-neutral-gray1 flex w-full items-center space-x-2 rounded-sm px-2 py-1 text-left ${
               index === selectedIndex
                 ? 'bg-neutral-gray1 text-neutral-black'
                 : 'text-neutral-charcoal'
@@ -100,12 +100,12 @@ const SlashCommandsList = forwardRef<
             key={index}
             onClick={() => selectItem(index)}
           >
-            <div className="size-10 flex shrink-0 items-center justify-center rounded-sm border border-neutral-gray1 bg-white">
+            <div className="border-neutral-gray1 flex size-10 shrink-0 items-center justify-center rounded-sm border bg-white">
               <item.icon className="size-4" />
             </div>
             <div>
               <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-gray2">{item.description}</p>
+              <p className="text-neutral-gray2 text-xs">{item.description}</p>
             </div>
           </button>
         ))

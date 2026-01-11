@@ -5,7 +5,7 @@ import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
 const iconButtonStyle = tv({
-  base: 'flex items-center justify-center outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-teal-600',
+  base: 'outline-hidden flex items-center justify-center duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-teal-600',
   variants: {
     size: {
       small: 'h-6 w-6 rounded-full',
@@ -13,10 +13,10 @@ const iconButtonStyle = tv({
       large: 'h-10 w-10 rounded-lg',
     },
     variant: {
-      ghost: 'pressed:bg-neutral-gray2 bg-white/80 hover:bg-neutral-gray1',
+      ghost: 'pressed:bg-neutral-gray2 hover:bg-neutral-gray1 bg-white/80',
       solid: 'pressed:bg-neutral-gray3 bg-neutral-gray1 hover:bg-neutral-gray2',
       outline:
-        'pressed:bg-neutral-gray2 border border-neutral-gray1 bg-transparent hover:bg-neutral-gray1',
+        'pressed:bg-neutral-gray2 border-neutral-gray1 hover:bg-neutral-gray1 border bg-transparent',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',

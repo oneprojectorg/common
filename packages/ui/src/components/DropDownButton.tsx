@@ -9,13 +9,13 @@ import { Menu, MenuItem, MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
 const dropdownButtonStyle = tv({
-  base: 'h-10 gap-1 p-4 font-normal leading-6 flex w-fit items-center justify-center rounded-lg border border-solid border-neutral-gray1 text-center text-sm shadow-md outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
+  base: 'border-neutral-gray1 outline-hidden focus-visible:outline-lightGray flex h-10 w-fit items-center justify-center gap-1 rounded-lg border border-solid p-4 text-center text-sm font-normal leading-6 shadow-md duration-200 focus-visible:outline-2 focus-visible:outline-offset-2',
   variants: {
     color: {
       primary:
         'pressed:bg-primary-tealBlack pressed:text-neutral-gray2 bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack',
       secondary:
-        'hover:bg-neutral-50 pressed:bg-white border-primary-teal bg-white text-primary-teal',
+        'pressed:bg-white border-primary-teal text-primary-teal bg-white hover:bg-neutral-50',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',
@@ -73,12 +73,12 @@ export const DropDownButton = (props: DropdownButtonProps) => {
         <Menu>
           {items.map((item) => (
             <MenuItem key={item.id} onAction={item.onAction} className="pr-3">
-              <div className="gap-2 flex items-center">
+              <div className="flex items-center gap-2">
                 {item.icon && <span className="shrink-0">{item.icon}</span>}
                 <div className="flex flex-col">
                   <span>{item.label}</span>
                   {item.description && (
-                    <span className="text-sm text-neutral-charcoal">
+                    <span className="text-neutral-charcoal text-sm">
                       {item.description}
                     </span>
                   )}

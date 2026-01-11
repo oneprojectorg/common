@@ -31,7 +31,7 @@ export const DecisionActionBar = ({
 
   return (
     <div className="flex w-full justify-center">
-      <div className="gap-4 sm:flex-row flex w-full max-w-[12rem] flex-col items-center justify-center">
+      <div className="flex w-full max-w-[12rem] flex-col items-center justify-center gap-4 sm:flex-row">
         {description ? (
           <DialogTrigger>
             <Button color="secondary" className="w-full">

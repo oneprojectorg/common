@@ -59,21 +59,21 @@ const RelationshipListContent = ({
 }) => {
   const t = useTranslations();
   return (
-    <div className="gap-8 pb-6 md:grid-cols-2 grid grid-cols-1">
+    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {children ||
         profiles.map((profile) => (
           <div
             key={profile.id}
-            className="gap-4 p-6 flex w-full rounded border border-neutral-gray1"
+            className="border-neutral-gray1 flex w-full gap-4 rounded border p-6"
           >
             <div className="shrink-0">
               <ProfileAvatar profile={profile} className="size-20" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="gap-2 flex flex-col">
-                <div className="gap-2 flex flex-col">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2">
                   <Link
-                    className="font-semibold truncate text-neutral-black"
+                    className="text-neutral-black truncate font-semibold"
                     href={
                       profile.type === 'org'
                         ? `/org/${profile.slug}`
@@ -92,7 +92,7 @@ const RelationshipListContent = ({
                             ?.label ?? t('Relationship')}
                           {relationship.pending && (
                             <TagGroup className="ml-1 inline-flex">
-                              <Tag className="px-1 py-0.5 rounded-sm text-xs">
+                              <Tag className="rounded-sm px-1 py-0.5 text-xs">
                                 {t('Pending')}
                               </Tag>
                             </TagGroup>
@@ -105,7 +105,7 @@ const RelationshipListContent = ({
                     </div>
                   ) : (
                     /* Show profile type if no relationships */
-                    <div className="text-sm text-neutral-charcoal capitalize">
+                    <div className="text-neutral-charcoal text-sm capitalize">
                       {profile.type === 'org'
                         ? t('Organization')
                         : t('Individual')}
@@ -114,7 +114,7 @@ const RelationshipListContent = ({
                 </div>
 
                 {profile.bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div className="text-neutral-charcoal line-clamp-3">
                     {profile.bio.length > 200
                       ? `${profile.bio.slice(0, 200)}...`
                       : profile.bio}
@@ -164,9 +164,9 @@ export const RelationshipList = ({
   return (
     <>
       {title && (
-        <div className="gap-4 px-0 flex flex-col">
+        <div className="flex flex-col gap-4 px-0">
           <div className="flex items-center justify-between">
-            <div className="sm:text-title-lg w-full font-serif text-title-sm">
+            <div className="sm:text-title-lg text-title-sm w-full font-serif">
               {title}
             </div>
           </div>

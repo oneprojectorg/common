@@ -11,10 +11,10 @@ import { focusRing } from '../utils';
 
 const styles = tv({
   extend: focusRing,
-  base: 'p-1 flex cursor-pointer items-center rounded-full outline-offset-0 outline-transparent transition-colors duration-300 focus-visible:ring-transparent',
+  base: 'flex cursor-pointer items-center rounded-full p-1 outline-offset-0 outline-transparent transition-colors duration-300 focus-visible:ring-transparent',
   variants: {
     size: {
-      default: 'h-10 min-w-18',
+      default: 'min-w-18 h-10',
       small: 'h-5 min-w-8',
     },
     isSelected: {
@@ -22,7 +22,7 @@ const styles = tv({
       true: 'bg-green',
     },
     isDisabled: {
-      true: 'bg-neutral-200 text-neutral-400 border-white/5',
+      true: 'border-white/5 bg-neutral-200 text-neutral-400',
     },
   },
   defaultVariants: {

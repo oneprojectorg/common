@@ -74,7 +74,7 @@ export const CreateOrganizationModalTrigger = () => {
   return (
     <>
       <DialogTrigger>
-        <Button color="primary" className="sm:min-w-fit min-w-full">
+        <Button color="primary" className="min-w-full sm:min-w-fit">
           <LuPlus className="size-4" />
           {t('Create Organization')}
         </Button>

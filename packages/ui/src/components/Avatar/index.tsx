@@ -22,14 +22,14 @@ export const Avatar = ({
   return (
     <div
       className={cn(
-        'size-8 relative flex items-center justify-center overflow-hidden rounded-full bg-white text-clip shadow',
+        'relative flex size-8 items-center justify-center overflow-hidden text-clip rounded-full bg-white shadow',
         className,
       )}
     >
       {showLetterAvatar ? (
         <div
           className={cn(
-            'flex size-full items-center justify-center bg-yellowOrange text-white',
+            'bg-yellowOrange flex size-full items-center justify-center text-white',
             gradientBg,
           )}
         >
@@ -46,7 +46,7 @@ export const AvatarSkeleton = ({ className }: { className?: string }) => {
   return (
     <Skeleton
       className={cn(
-        'size-8 relative flex items-center justify-center overflow-hidden rounded-full text-clip',
+        'relative flex size-8 items-center justify-center overflow-hidden text-clip rounded-full',
         className,
       )}
     />

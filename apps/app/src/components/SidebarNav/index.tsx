@@ -13,8 +13,8 @@ export const SidebarNav = () => {
   const pathname = usePathname();
 
   return (
-    <Sidebar className="border-r border-neutral-gray1" label="Navigation">
-      <nav className="gap-1 p-4 flex flex-col">
+    <Sidebar className="border-neutral-gray1 border-r" label="Navigation">
+      <nav className="flex flex-col gap-1 p-4">
         <NavLink href="/" active={pathname === '/'}>
           <LuHouse className="size-4" /> {t('Home')}
         </NavLink>
@@ -43,7 +43,7 @@ const NavLink = ({
     <Link
       href={href}
       className={cn(
-        'gap-2 p-3 flex items-center rounded-sm hover:bg-neutral-offWhite hover:no-underline',
+        'hover:bg-neutral-offWhite flex items-center gap-2 rounded-sm p-3 hover:no-underline',
         active && 'bg-neutral-offWhite/50',
       )}
       {...pressProps}

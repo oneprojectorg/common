@@ -120,7 +120,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
                 <Button
                   size="small"
                   color="secondary"
-                  className="sm:w-auto w-full"
+                  className="w-full sm:w-auto"
                   onPress={() =>
                     handleUpdateRequest(
                       request.id,
@@ -133,7 +133,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
                 </Button>
                 <Button
                   size="small"
-                  className="sm:w-auto w-full"
+                  className="w-full sm:w-auto"
                   onPress={() =>
                     handleUpdateRequest(
                       request.id,

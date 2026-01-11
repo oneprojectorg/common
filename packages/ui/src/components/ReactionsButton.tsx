@@ -10,7 +10,7 @@ import { Popover } from './Popover';
 import { ReactionTooltip } from './ReactionTooltip';
 
 const reactionButtonStyle = tv({
-  base: 'gap-1 p-1 font-normal leading-6 pressed:bg-neutral-gray2 flex items-center justify-center rounded-full border-0 bg-neutral-offWhite text-xs outline-hidden transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue',
+  base: 'pressed:bg-neutral-gray2 bg-neutral-offWhite outline-hidden hover:bg-neutral-gray1 focus-visible:outline-data-blue flex items-center justify-center gap-1 rounded-full border-0 p-1 text-xs font-normal leading-6 transition-colors duration-200 focus-visible:outline-1 focus-visible:-outline-offset-1',
   variants: {
     size: {
       small: 'h-8 min-w-8 px-2',
@@ -28,7 +28,7 @@ const reactionButtonStyle = tv({
 });
 
 const reactionGroupStyle = tv({
-  base: 'gap-1 flex items-center',
+  base: 'flex items-center gap-1',
 });
 
 type ReactionButtonVariants = VariantProps<typeof reactionButtonStyle>;

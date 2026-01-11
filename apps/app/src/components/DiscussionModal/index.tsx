@@ -81,9 +81,9 @@ export function DiscussionModal({
     >
       <ModalHeader>{authorName}'s Post</ModalHeader>
 
-      <div className="gap-4 flex flex-col">
+      <div className="flex flex-col gap-4">
         <div
-          className="px-4 pt-6 flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto px-4 pt-6"
           ref={commentsContainerRef}
         >
           {/* Original Post Display */}
@@ -129,7 +129,7 @@ export function DiscussionModal({
             </div>
           ) : (
             <div
-              className="py-8 text-gray-500 text-center"
+              className="py-8 text-center text-gray-500"
               role="status"
               aria-label="No comments"
             >
@@ -140,7 +140,7 @@ export function DiscussionModal({
 
         {/* Comment Input using PostUpdate */}
         <ModalFooter className="sticky">
-          <Surface className="p-0 pt-5 sm:border sm:border-neutral-gray1 sm:p-4 w-full border-0">
+          <Surface className="sm:border-neutral-gray1 w-full border-0 p-0 pt-5 sm:border sm:p-4">
             <PostUpdate
               parentPostId={post.id}
               placeholder={`Comment${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}

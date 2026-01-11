@@ -178,12 +178,12 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           color: 'muted',
           size: 'small',
           icon: isSearching ? (
-            <LoadingSpinner className="size-4 text-neutral-gray4" />
+            <LoadingSpinner className="text-neutral-gray4 size-4" />
           ) : (
-            <LuSearch className="size-4 text-neutral-gray4" />
+            <LuSearch className="text-neutral-gray4 size-4" />
           ),
           className: cn(
-            'bg-transparent placeholder:text-neutral-gray4 focus:bg-white active:bg-white active:text-neutral-gray3',
+            'placeholder:text-neutral-gray4 active:text-neutral-gray3 bg-transparent focus:bg-white active:bg-white',
             'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'sm:rounded-b-none',
           ),
@@ -212,7 +212,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       >
         {dropdownShowing ? (
           <div
-            className="top-10 !max-h-80 min-w-96 sm:block absolute z-10 hidden w-[--trigger-width] overflow-y-auto rounded-b border border-t-0 border-neutral-gray1 bg-white group-hover:border-neutral-gray2"
+            className="border-neutral-gray1 group-hover:border-neutral-gray2 absolute top-10 z-10 hidden !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white sm:block"
             role="listbox"
             aria-label={t('Search results')}
           >
@@ -223,15 +223,15 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   className={cn(
                     'py-2',
                     mergedProfileResults?.length &&
-                      'border-b border-neutral-gray1',
+                      'border-neutral-gray1 border-b',
                   )}
                 >
                   <Link
-                    className="gap-2 flex w-full items-center"
+                    className="flex w-full items-center gap-2"
                     href={`/search/?q=${query}`}
                     onClick={() => recordSearch(query)}
                   >
-                    <LuSearch className="size-4 text-neutral-charcoal" />{' '}
+                    <LuSearch className="text-neutral-charcoal size-4" />{' '}
                     {query}
                   </Link>
                 </SearchResultItem>
@@ -259,7 +259,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       {/* Mobile full-screen search results */}
       {dropdownShowing && (
         <div
-          className="inset-x-0 bottom-0 sm:hidden fixed top-[60px] z-10 block overflow-y-auto bg-white"
+          className="fixed inset-x-0 bottom-0 top-[60px] z-10 block overflow-y-auto bg-white sm:hidden"
           role="listbox"
           aria-label={t('Search results')}
         >
@@ -270,15 +270,15 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 className={cn(
                   'py-2',
                   mergedProfileResults?.length &&
-                    'border-b border-neutral-gray1',
+                    'border-neutral-gray1 border-b',
                 )}
               >
                 <Link
-                  className="gap-2 flex w-full items-center"
+                  className="flex w-full items-center gap-2"
                   href={`/search/?q=${query}`}
                   onClick={() => recordSearch(query)}
                 >
-                  <LuSearch className="size-4 text-neutral-charcoal" /> {query}
+                  <LuSearch className="text-neutral-charcoal size-4" /> {query}
                 </Link>
               </SearchResultItem>
             )}

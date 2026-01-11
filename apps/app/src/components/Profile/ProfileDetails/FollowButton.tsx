@@ -84,7 +84,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
       onPress={handleFollowToggle}
       isPending={isPending}
       color={isFollowing ? 'verified' : 'primary'}
-      className="sm:min-w-fit min-w-full"
+      className="min-w-full sm:min-w-fit"
     >
       {isPending ? (
         <LoadingSpinner />

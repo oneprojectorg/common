@@ -92,13 +92,13 @@ export const InviteNewOrganization = ({
   };
 
   return (
-    <div className="gap-6 flex flex-col">
+    <div className="flex flex-col gap-6">
       <p>{t('Invite new organizations onto Common.')}</p>
 
-      <div className="gap-4 flex flex-col">
-        <div className="gap-2 flex flex-col">
-          <label className="font-medium text-sm">{t('Send to')}</label>
-          <div className="gap-2 p-2 flex min-h-[80px] flex-wrap rounded-md border border-neutral-gray2">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">{t('Send to')}</label>
+          <div className="border-neutral-gray2 flex min-h-[80px] flex-wrap gap-2 rounded-md border p-2">
             <TagGroup>
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-sm" key={index}>
@@ -118,22 +118,22 @@ export const InviteNewOrganization = ({
                   ? `name1@${user.currentOrganization?.domain || 'solidarityseeds.org'}, name2@${user.currentOrganization?.domain || 'solidarityseeds.org'}, ...`
                   : t('Type emails followed by a comma or line break...')
               }
-              className="pt-1 min-w-[200px] flex-1 resize-none border-none outline-hidden"
+              className="outline-hidden min-w-[200px] flex-1 resize-none border-none pt-1"
               rows={1}
             />
           </div>
-          <p className="text-gray-500 text-sm">
+          <p className="text-sm text-gray-500">
             {t('Separate multiple emails with commas or line breaks')}
           </p>
         </div>
 
-        <div className="gap-2 flex flex-col">
-          <label className="font-medium text-sm">{t('Personal Message')}</label>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">{t('Personal Message')}</label>
           <textarea
             value={personalMessage}
             onChange={(e) => setPersonalMessage(e.target.value)}
             placeholder={t('Add a personal note to your invitation')}
-            className="p-2 min-h-[80px] rounded-md border border-neutral-gray2 outline-hidden focus:border-primary-teal focus:ring-1 focus:ring-primary-teal"
+            className="border-neutral-gray2 outline-hidden focus:border-primary-teal focus:ring-primary-teal min-h-[80px] rounded-md border p-2 focus:ring-1"
             rows={3}
           />
         </div>

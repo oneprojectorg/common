@@ -183,7 +183,7 @@ export const CreateOrganizationForm = forwardRef<
     >
       <FormContainer className={className}>
         {/* Header Images */}
-        <div className="pb-12 sm:pb-20 relative w-full">
+        <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
             value={bannerImage?.url ?? undefined}
             onChange={(file: File) =>
@@ -193,7 +193,7 @@ export const CreateOrganizationForm = forwardRef<
             error={uploadBannerImage.error?.message || undefined}
           />
           <AvatarUploader
-            className="bottom-0 left-4 size-20 sm:size-28 absolute aspect-square"
+            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
             value={profileImage?.url ?? undefined}
             onChange={(file: File) =>
               handleImageUpload(file, setProfileImage, uploadAvatarImage)
@@ -228,7 +228,7 @@ export const CreateOrganizationForm = forwardRef<
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               inputProps={{
-                icon: <LuLink className="size-4 text-neutral-black" />,
+                icon: <LuLink className="text-neutral-black size-4" />,
                 placeholder: "Enter your organization's website here",
               }}
               errorMessage={getFieldErrorMessage(field)}
@@ -400,7 +400,7 @@ export const CreateOrganizationForm = forwardRef<
 
         {/* Funding Information Section */}
         <hr />
-        <div className="gap-4 flex flex-col">
+        <div className="flex flex-col gap-4">
           <form.AppField
             name="isReceivingFunds"
             children={(field) => (
@@ -415,7 +415,7 @@ export const CreateOrganizationForm = forwardRef<
                   />
                 </ToggleRow>
                 {field.state.value ? (
-                  <div className="gap-4 flex flex-col">
+                  <div className="flex flex-col gap-4">
                     <form.AppField
                       name="receivingFundsTerms"
                       children={(field) => (
@@ -432,7 +432,7 @@ export const CreateOrganizationForm = forwardRef<
                     <form.AppField
                       name="receivingFundsLink"
                       children={(field) => (
-                        <div className="gap-2 flex flex-col">
+                        <div className="flex flex-col gap-2">
                           <field.TextField
                             label="Where can people contribute to your organization?"
                             value={field.state.value as string}
@@ -441,12 +441,12 @@ export const CreateOrganizationForm = forwardRef<
                             errorMessage={getFieldErrorMessage(field)}
                             inputProps={{
                               icon: (
-                                <LuLink className="size-4 text-neutral-black" />
+                                <LuLink className="text-neutral-black size-4" />
                               ),
                               placeholder: 'Add your contribution page here',
                             }}
                           />
-                          <span className="text-left text-sm text-neutral-gray4">
+                          <span className="text-neutral-gray4 text-left text-sm">
                             Add a link to your donation page, Open Collective,
                             GoFundMe or any platform where supporters can
                             contribute or learn more about how.
@@ -490,7 +490,7 @@ export const CreateOrganizationForm = forwardRef<
                             onChange={acceptingApplicationsField.handleChange}
                           />
                         </ToggleRow>
-                        <div className="gap-4 flex flex-col">
+                        <div className="flex flex-col gap-4">
                           {!acceptingApplicationsField.state.value ? (
                             <form.AppField
                               name="offeringFundsDescription"
@@ -515,7 +515,7 @@ export const CreateOrganizationForm = forwardRef<
                           <form.AppField
                             name="offeringFundsLink"
                             children={(field) => (
-                              <div className="gap-2 flex flex-col">
+                              <div className="flex flex-col gap-2">
                                 <field.TextField
                                   label={
                                     acceptingApplicationsField.state.value
@@ -532,11 +532,11 @@ export const CreateOrganizationForm = forwardRef<
                                       ? 'Add a link where organizations can apply for funding'
                                       : 'Add a link to learn more about your funding process',
                                     icon: (
-                                      <LuLink className="size-4 text-neutral-black" />
+                                      <LuLink className="text-neutral-black size-4" />
                                     ),
                                   }}
                                 />
-                                <span className="text-sm text-neutral-gray4">
+                                <span className="text-neutral-gray4 text-sm">
                                   {acceptingApplicationsField.state.value
                                     ? null
                                     : `Add a link where others can learn more about how
@@ -558,9 +558,9 @@ export const CreateOrganizationForm = forwardRef<
       </FormContainer>
 
       <ModalFooter className="sticky">
-        <div className="gap-4 sm:flex-row sm:gap-2 flex flex-col-reverse justify-end">
+        <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row sm:gap-2">
           <form.SubmitButton
-            className="sm:max-w-fit w-full"
+            className="w-full sm:max-w-fit"
             isDisabled={form.state.isSubmitting || createOrganization.isPending}
           >
             {form.state.isSubmitting || createOrganization.isPending ? (

@@ -131,7 +131,7 @@ export const OrganizationFormFields = ({
 
   const formFields = (
     <>
-      <div className="pb-12 sm:pb-20 relative w-full">
+      <div className="relative w-full pb-12 sm:pb-20">
         <BannerUploader
           value={bannerImage?.url ?? undefined}
           onChange={(file: File) =>
@@ -141,7 +141,7 @@ export const OrganizationFormFields = ({
           error={uploadImage.error?.message || undefined}
         />
         <AvatarUploader
-          className="bottom-0 left-4 size-20 sm:size-28 absolute aspect-square"
+          className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
           value={profileImage?.url ?? undefined}
           onChange={(file: File) =>
             handleImageUpload(file, setProfileImage, uploadAvatarImage)
@@ -175,7 +175,7 @@ export const OrganizationFormFields = ({
             onBlur={field.handleBlur}
             onChange={field.handleChange}
             inputProps={{
-              icon: <LuLink className="size-4 text-neutral-black" />,
+              icon: <LuLink className="text-neutral-black size-4" />,
               placeholder: t("Enter your organization's website here"),
             }}
             errorMessage={getFieldErrorMessage(field)}
