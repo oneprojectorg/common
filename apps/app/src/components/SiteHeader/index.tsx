@@ -444,7 +444,7 @@ export const SiteHeader = () => {
 
   return (
     <>
-      <header className="gridCentered px-4 py-3 sm:grid relative z-40 hidden h-auto w-full items-center justify-between border-b border-offWhite">
+      <header className="gridCentered px-4 py-3 sm:grid hidden h-auto w-full items-center justify-between border-b border-offWhite">
         <div className="gap-3 flex items-center">
           <SidebarTrigger />
           <Link href="/" className="gap-1 flex">
@@ -478,7 +478,7 @@ export const SiteHeader = () => {
       </header>
 
       {/* Mobile */}
-      <header className="px-4 py-2 sm:hidden relative z-40 flex h-auto w-full items-center justify-between">
+      <header className="px-4 py-2 sm:hidden flex h-auto w-full items-center justify-between">
         {!isMobileSearchExpanded && (
           <div className="gap-3 flex items-center">
             <SidebarTrigger className="p-1" size="small" />
