@@ -3,6 +3,17 @@
  * Maps Intent UI CSS variables to @op/styles tokens
  */
 
+/* Set default border color for all elements */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, currentColor);
+  }
+}
+
 :root {
   /* ============================================
    * Core Colors
