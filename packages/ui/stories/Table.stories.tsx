@@ -104,7 +104,10 @@ export const Selectable = () => (
 );
 
 export const Sortable = () => (
-  <Table aria-label="Users table" sortDescriptor={{ column: 'name', direction: 'ascending' }}>
+  <Table
+    aria-label="Users table"
+    sortDescriptor={{ column: 'name', direction: 'ascending' }}
+  >
     <TableHeader>
       <TableColumn id="name" isRowHeader allowsSorting>
         Name
