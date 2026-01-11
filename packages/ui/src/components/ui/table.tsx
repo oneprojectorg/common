@@ -27,8 +27,9 @@ import {
 } from 'react-aria-components';
 import { twJoin, twMerge } from 'tailwind-merge';
 
-import { cx } from '../../lib/primitive';
-import { Checkbox } from '../Checkbox';
+import { cx } from '@/lib/primitive';
+
+import { Checkbox } from '@/components/Checkbox';
 
 interface TableProps extends Omit<TablePrimitiveProps, 'className'> {
   allowResize?: boolean;
