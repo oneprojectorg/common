@@ -1,12 +1,13 @@
-import { db } from '@op/db/client';
+import { db, getTableColumns } from '@op/db/client';
 import {
   EntityType,
   organizationUsers,
   organizations,
   profiles,
+  users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
 import { JoinProfileRequestContext } from './types';
@@ -28,19 +29,34 @@ export const validateJoinProfileRequestContext = async ({
     throw new ValidationError('Cannot request to join your own profile');
   }
 
-  const [
-    requestProfile,
-    targetProfile,
-    existingRequest,
-    requestingUser,
-    existingMembership,
-  ] = await Promise.all([
-    db.query.profiles.findFirst({
-      where: eq(profiles.id, requestProfileId),
-    }),
-    db.query.profiles.findFirst({
-      where: eq(profiles.id, targetProfileId),
-    }),
+  const [profilesWithJoins, existingRequest] = await Promise.all([
+    // Fetch both profiles with authorization/membership checks via JOINs
+    // - requestingUserId: non-null if user owns the request profile
+    // - membershipId: non-null if user is already a member of the target org
+    db
+      .select({
+        ...getTableColumns(profiles),
+        requestingUserId: users.id,
+        membershipId: organizationUsers.id,
+      })
+      .from(profiles)
+      .leftJoin(
+        users,
+        and(eq(users.profileId, profiles.id), eq(users.authUserId, user.id)),
+      )
+      // NOTE: We're using organizationUsers instead of profileUsers because we're in between
+      // memberships - the profile user membership (new) and the organization user membership (old).
+      // After we migrate to profile users, this code should be changed to use profileUsers.
+      .leftJoin(organizations, eq(organizations.profileId, profiles.id))
+      .leftJoin(
+        organizationUsers,
+        and(
+          eq(organizationUsers.organizationId, organizations.id),
+          eq(organizationUsers.authUserId, user.id),
+        ),
+      )
+      .where(inArray(profiles.id, [requestProfileId, targetProfileId])),
+
     db.query.joinProfileRequests.findFirst({
       where: (table, { and, eq }) =>
         and(
@@ -48,39 +64,33 @@ export const validateJoinProfileRequestContext = async ({
           eq(table.targetProfileId, targetProfileId),
         ),
     }),
-    // Check if user owns this profile (their individual profile)
-    // NOTE: In the future we might want to allow members of profiles to create requests
-    db.query.users.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.authUserId, user.id),
-          eq(table.profileId, requestProfileId),
-        ),
-    }),
-    // Check if user is already a member of the target organization.
-    // NOTE: We're using organizationUsers instead of profileUsers because we're in between
-    // memberships - the profile user membership (new) and the organization user membership (old).
-    // After we migrate to profile users, this code should be changed to use profileUsers.
-    db
-      .select({ id: organizationUsers.id })
-      .from(organizationUsers)
-      .innerJoin(
-        organizations,
-        eq(organizations.id, organizationUsers.organizationId),
-      )
-      .where(
-        and(
-          eq(organizationUsers.authUserId, user.id),
-          eq(organizations.profileId, targetProfileId),
-        ),
-      )
-      .limit(1)
-      .then((rows) => rows[0]),
   ]);
 
-  if (!requestProfile || !targetProfile) {
+  const requestProfileRow = profilesWithJoins.find(
+    (profile) => profile.id === requestProfileId,
+  );
+  const targetProfileRow = profilesWithJoins.find(
+    (profile) => profile.id === targetProfileId,
+  );
+
+  if (!requestProfileRow || !targetProfileRow) {
     throw new ValidationError('Request or target profile not found');
   }
+
+  const isRequestingUser = !!requestProfileRow.requestingUserId;
+  const existingMembership = !!targetProfileRow.membershipId;
+
+  // Extract profile data (excluding join columns)
+  const {
+    requestingUserId: _requestProfileRequestingUserId,
+    membershipId: _requestProfileMembershipId,
+    ...requestProfile
+  } = requestProfileRow;
+  const {
+    requestingUserId: _targetProfileRequestingUserId,
+    membershipId: _targetProfileMembershipId,
+    ...targetProfile
+  } = targetProfileRow;
 
   // Currently, only individual/user profiles can request to join organization profiles.
   // This may change in the future to support other profile type combinations.
@@ -102,7 +112,7 @@ export const validateJoinProfileRequestContext = async ({
   }
 
   // Authorization: User must own the requesting profile
-  if (!requestingUser) {
+  if (!isRequestingUser) {
     throw new UnauthorizedError(
       'You can only manage join requests from your own profile',
     );
@@ -112,6 +122,6 @@ export const validateJoinProfileRequestContext = async ({
     requestProfile,
     targetProfile,
     existingRequest,
-    existingMembership: !!existingMembership,
+    existingMembership,
   };
 };
