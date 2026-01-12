@@ -33,6 +33,12 @@ const isInVercelPreview =
   process.env.VERCEL_ENV === 'preview' ||
   process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
 
+// Check if running on a preview URL (vs custom domain)
+const DEPLOYMENT_URL =
+  process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
+export const isOnPreviewAppDomain =
+  DEPLOYMENT_URL?.endsWith('.vercel.app') ?? false;
+
 const isInProductionOrStaging =
   process.env.NODE_ENV === 'production' &&
   (process.env.VERCEL_ENV === 'production' ||
@@ -123,7 +129,7 @@ export const OPURLConfig: TOPURLConfig = (type) => {
   };
 };
 
-export const urlMatcher = /oneproject\.(tech|org)$/;
+export const urlMatcher = /oneproject\.(tech|org)$|-oneproject\.vercel\.app$/;
 export const cookieOptionsDomain =
   VERCEL_GIT_BRANCH === 'main' ? '.oneproject.org' : '.oneproject.tech';
 export const cookieDomains = [
