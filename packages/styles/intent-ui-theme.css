@@ -1,17 +1,19 @@
 /*
  * Intent UI Theme
  * Maps Intent UI CSS variables to @op/styles tokens
+ *
+ * Note: Border color defaults and radius values are defined in shared-styles.css
  */
 
-/* Set default border color for all elements */
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--border, currentColor);
-  }
+/* Tailwind theme colors that map to Intent UI variables */
+@theme {
+  --color-secondary: var(--secondary);
+  --color-secondary-fg: var(--secondary-fg);
+  --color-muted: var(--muted);
+  --color-muted-fg: var(--muted-fg);
+  --color-fg: var(--fg);
+  --color-bg: var(--bg);
+  --color-ring: var(--ring);
 }
 
 :root {
@@ -43,7 +45,7 @@
 
   /* Muted */
   --muted: hsl(var(--op-neutral-50));
-  --muted-fg: hsl(var(--op-neutral-500));
+  --muted-fg: hsl(var(--op-neutral-700));
 
   /* ============================================
    * Semantic Colors
@@ -102,20 +104,6 @@
   --chart-3: hsl(var(--op-yellow-500));
   --chart-4: hsl(var(--op-purple-500));
   --chart-5: hsl(var(--op-blue-500));
-
-  /* ============================================
-   * Border Radius (calc-based from --radius-lg)
-   * Set --radius-lg to your brand's default (0.375rem = rounded-md)
-   * All other radii are calculated relative to it
-   * ============================================ */
-  --radius-lg: 0.375rem;
-  --radius-xs: calc(var(--radius-lg) * 0.25);
-  --radius-sm: calc(var(--radius-lg) * 0.5);
-  --radius-md: calc(var(--radius-lg) * 0.75);
-  --radius-xl: calc(var(--radius-lg) * 1.5);
-  --radius-2xl: calc(var(--radius-lg) * 2);
-  --radius-3xl: calc(var(--radius-lg) * 3);
-  --radius-4xl: calc(var(--radius-lg) * 4);
 }
 
 /* Dark mode (for future use) */
