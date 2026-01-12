@@ -46,6 +46,11 @@ function getPostHogDistinctId(): string | null {
 
 const envURL = OPURLConfig('API');
 
+// DEBUG: Log the computed URL to diagnose preview URL issues
+console.log('[tRPC] API URL:', envURL.TRPC_URL);
+console.log('[tRPC] NEXT_PUBLIC_VERCEL_ENV:', process.env.NEXT_PUBLIC_VERCEL_ENV);
+console.log('[tRPC] NEXT_PUBLIC_VERCEL_URL:', process.env.NEXT_PUBLIC_VERCEL_URL);
+
 /**
  * Create a fetch function that handles SSR cookies
  *
