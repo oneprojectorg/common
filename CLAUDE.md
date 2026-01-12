@@ -48,6 +48,30 @@ This is a **Turborepo monorepo** using **pnpm workspaces** with a clear separati
 - Components use React Aria Components with Tailwind variants
 - Import components like: `import { Button } from "@op/ui/Button"`
 
+### Intent UI Components
+
+Intent UI is a shadcn-compatible component library built on React Aria. Components can be added via CLI:
+
+```bash
+# From apps/app (for app-specific components)
+cd apps/app
+pnpm dlx shadcn@latest add @intentui/button
+
+# From packages/ui (for shared components)
+cd packages/ui
+pnpm dlx shadcn@latest add @intentui/table
+```
+
+**Key files:**
+- `packages/ui/components.json` - CLI configuration for @op/ui
+- `apps/app/components.json` - CLI configuration for the app
+- `packages/styles/intent-ui-theme.css` - Theme mapping to OP brand tokens
+
+**After adding a component to @op/ui:**
+1. Add an export to `packages/ui/package.json` exports field
+2. Create a Storybook story in `packages/ui/stories/`
+3. Run `pnpm w:ui typecheck` to verify
+
 ### Database & tRPC
 
 - Database schema managed with Drizzle ORM in `services/db/schema/`
@@ -118,8 +142,8 @@ Use `pnpm w:<workspace>` shortcuts:
 - Node.js 18+ required, use `corepack enable` for pnpm version management
 - UI components use React Aria for accessibility
 - tRPC provides end-to-end type safety between frontend and backend
-- Tailwind configuration is centralized in `@op/ui` package
-- Only use colors that are present in the tailwind.shared config
+- Tailwind configuration is centralized in `@op/styles` package (`packages/styles/shared-styles.css`)
+- Only use colors defined in `packages/styles/tokens.css` (prefixed with `--op-*`)
 
 ## Workflow Warnings
 
