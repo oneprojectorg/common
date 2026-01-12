@@ -1,4 +1,4 @@
-import type { Meta } from '@storybook/react';
+import type { Meta } from '@storybook/react-vite';
 import { PrinterIcon, SaveIcon } from 'lucide-react';
 import { TooltipTrigger } from 'react-aria-components';
 

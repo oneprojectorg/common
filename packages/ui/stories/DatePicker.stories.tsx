@@ -1,5 +1,5 @@
 import { parseDate } from '@internationalized/date';
-import type { Meta } from '@storybook/react';
+import type { Meta } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { DateValue } from 'react-aria-components';
 

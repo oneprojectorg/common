@@ -2,7 +2,7 @@
 // import { Form } from '../src/components/Form';
 // import { TextField } from '../src/components/TextField';
 // import type { StepperItem } from '../src/components/Stepper';
-import type { Meta } from '@storybook/react';
+import type { Meta } from '@storybook/react-vite';
 
 import {
   StepItem,
