@@ -120,8 +120,7 @@ export const Sortable = () => {
       let comparison = 0;
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         comparison = aValue.localeCompare(bValue);
-      }
-      else if (typeof aValue === 'number' && typeof bValue === 'number') {
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
         comparison = aValue - bValue;
       }
 
@@ -227,7 +226,11 @@ export const EmptyWithMessage = () => (
       <TableColumn>Email</TableColumn>
       <TableColumn>Role</TableColumn>
     </TableHeader>
-    <TableBody renderEmptyState={() => <div className="p-4 text-center text-muted-fg">No users found</div>}>
+    <TableBody
+      renderEmptyState={() => (
+        <div className="p-4 text-center text-muted-fg">No users found</div>
+      )}
+    >
       {[]}
     </TableBody>
   </Table>
@@ -248,8 +251,7 @@ export const CombinedFeatures = () => {
       let comparison = 0;
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         comparison = aValue.localeCompare(bValue);
-      }
-      else if (typeof aValue === 'number' && typeof bValue === 'number') {
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
         comparison = aValue - bValue;
       }
 

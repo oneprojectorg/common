@@ -49,7 +49,7 @@ const useTableContext = () => use(TableContext);
 const Root = (props: TableProps) => {
   return (
     <TablePrimitive
-      className="text-sm/6 w-full min-w-full caption-bottom outline-hidden [--table-selected-bg:var(--color-secondary)]/50"
+      className="w-full min-w-full caption-bottom text-sm/6 outline-hidden [--table-selected-bg:var(--color-secondary)]/50"
       {...props}
     />
   );
@@ -69,7 +69,7 @@ const Table = ({
       <div className="flow-root">
         <div
           className={twMerge(
-            '[--gutter-y:--spacing(2)] relative -mx-(--gutter) overflow-x-auto whitespace-nowrap has-data-[slot=table-resizable-container]:overflow-auto',
+            'relative -mx-(--gutter) overflow-x-auto whitespace-nowrap [--gutter-y:--spacing(2)] has-data-[slot=table-resizable-container]:overflow-auto',
             className,
           )}
         >
@@ -97,7 +97,7 @@ const ColumnResizer = ({ className, ...props }: ColumnResizerProps) => (
   <ColumnResizerPrimitive
     {...props}
     className={cx(
-      'top-0 right-0 bottom-0 &[data-resizable-direction=left]:cursor-e-resize &[data-resizable-direction=right]:cursor-w-resize px-1 absolute grid w-px touch-none place-content-center resizable-both:cursor-ew-resize [&[data-resizing]>div]:bg-primary',
+      '&[data-resizable-direction=left]:cursor-e-resize &[data-resizable-direction=right]:cursor-w-resize absolute top-0 right-0 bottom-0 grid w-px touch-none place-content-center px-1 resizable-both:cursor-ew-resize [&[data-resizing]>div]:bg-primary',
       className,
     )}
   >
@@ -125,11 +125,11 @@ const TableColumn = ({
       {...props}
       className={cx(
         [
-          'font-medium text-muted-fg text-left',
+          'text-left font-medium text-muted-fg',
           'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
           'px-4 py-(--gutter-y)',
           'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
-          !bleed && 'sm:last:pr-1 sm:first:pl-1',
+          !bleed && 'sm:first:pl-1 sm:last:pr-1',
           grid && 'border-l first:border-l-0',
           isResizable && 'truncate overflow-hidden',
         ],
@@ -139,7 +139,7 @@ const TableColumn = ({
       {(values) => (
         <div
           className={twJoin([
-            'gap-2 inline-flex items-center **:data-[slot=icon]:shrink-0',
+            'inline-flex items-center gap-2 **:data-[slot=icon]:shrink-0',
           ])}
         >
           {typeof props.children === 'function'
@@ -148,7 +148,7 @@ const TableColumn = ({
           {values.allowsSorting && (
             <span
               className={twJoin(
-                'bg-secondary text-fg *:data-[slot=icon]:size-3.5 grid size-[1.15rem] flex-none shrink-0 place-content-center rounded *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:transition-transform *:data-[slot=icon]:duration-200',
+                'grid size-[1.15rem] flex-none shrink-0 place-content-center rounded bg-secondary text-fg *:data-[slot=icon]:size-3.5 *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:transition-transform *:data-[slot=icon]:duration-200',
                 values.isHovered ? 'bg-secondary-fg/10' : '',
               )}
             >
@@ -198,7 +198,7 @@ const TableHeader = <T extends object>({
           data-slot="table-column"
           className={twMerge(
             'first:pl-(--gutter,--spacing(2))',
-            !bleed && 'sm:last:pr-1 sm:first:pl-1',
+            !bleed && 'sm:first:pl-1 sm:last:pr-1',
           )}
         />
       )}
@@ -207,7 +207,7 @@ const TableHeader = <T extends object>({
           data-slot="table-column"
           className={twMerge(
             'first:pl-(--gutter,--spacing(2))',
-            !bleed && 'sm:last:pr-1 sm:first:pl-1',
+            !bleed && 'sm:first:pl-1 sm:last:pr-1',
           )}
         >
           {selectionMode === 'multiple' && (
@@ -254,19 +254,19 @@ const TableRow = <T extends object>({
           },
         ) =>
           twMerge(
-            'group text-muted-fg relative cursor-default outline outline-transparent',
+            'group relative cursor-default text-muted-fg outline outline-transparent',
             isFocusVisible &&
-              'ring-ring/20 bg-primary/5 ring-3 outline-primary hover:bg-primary/10',
+              'bg-primary/5 ring-3 ring-ring/20 outline-primary hover:bg-primary/10',
             isDragging &&
-              'text-fg cursor-grabbing bg-primary/10 outline-primary',
+              'cursor-grabbing bg-primary/10 text-fg outline-primary',
             isSelected &&
-              'text-fg bg-(--table-selected-bg) hover:bg-(--table-selected-bg)/50',
+              'bg-(--table-selected-bg) text-fg hover:bg-(--table-selected-bg)/50',
             striped && 'even:bg-muted',
             (props.href || props.onAction || selectionMode === 'multiple') &&
-              'hover:text-fg hover:bg-(--table-selected-bg)',
+              'hover:bg-(--table-selected-bg) hover:text-fg',
             (props.href || props.onAction || selectionMode === 'multiple') &&
               isFocusVisibleWithin &&
-              'text-fg bg-(--table-selected-bg)/50 selected:bg-(--table-selected-bg)/50',
+              'bg-(--table-selected-bg)/50 text-fg selected:bg-(--table-selected-bg)/50',
             isDisabled && 'opacity-50',
             className,
           ),
@@ -276,7 +276,7 @@ const TableRow = <T extends object>({
         <TableCell className="px-0">
           <Button
             slot="drag"
-            className="focus-visible:ring-ring grid place-content-center rounded-xs px-[calc(var(--gutter)/2)] outline-hidden focus-visible:ring"
+            className="grid place-content-center rounded-xs px-[calc(var(--gutter)/2)] outline-hidden focus-visible:ring focus-visible:ring-ring"
           >
             <svg
               aria-hidden
@@ -324,10 +324,10 @@ const TableCell = ({ className, ref, ...props }: TableCellProps) => {
       {...props}
       className={cx(
         twJoin(
-          'group px-4 first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2)) group-has-data-focus-visible-within:text-fg py-(--gutter-y) align-middle outline-hidden',
+          'group px-4 py-(--gutter-y) align-middle outline-hidden group-has-data-focus-visible-within:text-fg first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
           !striped && 'border-b',
           grid && 'border-l first:border-l-0',
-          !bleed && 'sm:last:pr-1 sm:first:pl-1',
+          !bleed && 'sm:first:pl-1 sm:last:pr-1',
           allowResize && 'truncate overflow-hidden',
         ),
         className,
