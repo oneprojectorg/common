@@ -5,7 +5,10 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { db } from '.';
 import config from './drizzle.config';
 
-if (process.env.VERCEL_ENV === 'preview') {
+if (
+  process.env.VERCEL_ENV === 'preview' &&
+  process.env.VERCEL_GIT_COMMIT_REF !== 'dev'
+) {
   console.log('Skipping migrations on Vercel preview branch');
   process.exit(0);
 }
