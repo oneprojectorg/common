@@ -26,9 +26,11 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
-  // Expose VERCEL_URL to client-side for preview URL detection
+  // Expose Vercel env vars to client-side for preview URL detection
   env: {
-    NEXT_PUBLIC_VERCEL_URL: process.env.VERCEL_URL,
+    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV,
+    NEXT_PUBLIC_VERCEL_URL:
+      process.env.VERCEL_ENV === 'preview' ? process.env.VERCEL_URL : undefined,
   },
   experimental: {
     serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],

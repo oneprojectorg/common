@@ -29,7 +29,7 @@ const VERCEL_GIT_BRANCH =
 
 const isInStaging = VERCEL_GIT_BRANCH === 'staging';
 
-const isInVercelPreview =
+const isInPreviewDeployment =
   process.env.VERCEL_ENV === 'preview' ||
   process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
 
@@ -118,7 +118,7 @@ export const OPURLConfig: TOPURLConfig = (type) => {
     ? isInStaging
       ? urls.STAGING // Staging
       : urls.PRODUCTION // Production
-    : VERCEL_GIT_BRANCH
+    : isInPreviewDeployment
       ? urls.PREVIEW // Preview
       : urls.DEVELOPMENT; // Local
 
@@ -133,8 +133,8 @@ export const OPURLConfig: TOPURLConfig = (type) => {
     ENV_URL: currentEnvUrl,
     IS_PRODUCTION: isInProductionOrStaging && !isInStaging,
     IS_STAGING: isInStaging,
-    IS_PREVIEW: isInVercelPreview,
-    IS_DEVELOPMENT: !isInProductionOrStaging && !isInVercelPreview,
+    IS_PREVIEW: isInPreviewDeployment,
+    IS_DEVELOPMENT: !isInProductionOrStaging && !isInPreviewDeployment,
     GIT_BRANCH: VERCEL_GIT_BRANCH,
     URLS: urls,
     OPENAPI_URL: `${apiURL}/${API_OPENAPI_PATH}`,
