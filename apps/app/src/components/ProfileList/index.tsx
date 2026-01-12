@@ -22,7 +22,7 @@ export const ProfileSummaryList = ({
   profiles: Profiles | ProfileItem[];
 }) => {
   return (
-    <div className="gap-6 flex flex-col">
+    <div className="flex flex-col gap-6">
       {profiles.map((profile) => {
         const whereWeWork =
           profile.organization?.whereWeWork
@@ -36,7 +36,7 @@ export const ProfileSummaryList = ({
 
         return (
           <div key={profile.id}>
-            <div className="gap-2 py-2 sm:gap-6 flex items-start">
+            <div className="flex items-start gap-2 py-2 sm:gap-6">
               <Link
                 href={
                   profile.type === EntityType.INDIVIDUAL
@@ -47,7 +47,7 @@ export const ProfileSummaryList = ({
               >
                 <Avatar
                   placeholder={profile.name}
-                  className="size-8 sm:size-12 hover:opacity-80"
+                  className="size-8 hover:opacity-80 sm:size-12"
                 >
                   {profile.avatarImage?.name ? (
                     <Image
@@ -60,16 +60,16 @@ export const ProfileSummaryList = ({
                 </Avatar>
               </Link>
 
-              <div className="gap-3 flex flex-col text-neutral-black">
-                <div className="gap-2 flex flex-col">
+              <div className="flex flex-col gap-3 text-neutral-black">
+                <div className="flex flex-col gap-2">
                   <Link
                     href={`/profile/${profile.slug}`}
-                    className="font-semibold leading-base"
+                    className="leading-base font-semibold"
                   >
                     {profile.name}
                   </Link>
                   {whereWeWork?.length > 0 ? (
-                    <span className="sm:text-base text-sm text-neutral-gray4">
+                    <span className="text-sm text-neutral-gray4 sm:text-base">
                       {whereWeWork}
                     </span>
                   ) : null}
@@ -86,16 +86,16 @@ export const ProfileSummaryList = ({
 
 export const ProfileListSkeleton = () => {
   return (
-    <div className="gap-4 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="shadow-xs p-4 rounded-lg border bg-white">
-          <div className="gap-4 flex items-start">
-            <div className="size-12 bg-gray-200 animate-pulse shrink-0 rounded-full" />
+        <div key={index} className="rounded-lg border bg-white p-4 shadow-xs">
+          <div className="flex items-start gap-4">
+            <div className="size-12 shrink-0 animate-pulse rounded-full bg-gray-200" />
             <div className="min-w-0 flex-1">
-              <div className="mb-2 h-4 bg-gray-200 animate-pulse rounded" />
-              <div className="mb-2 h-3 bg-gray-200 animate-pulse w-2/3 rounded" />
-              <div className="mb-1 h-3 bg-gray-200 animate-pulse w-full rounded" />
-              <div className="h-3 bg-gray-200 animate-pulse w-3/4 rounded" />
+              <div className="mb-2 h-4 animate-pulse rounded bg-gray-200" />
+              <div className="mb-2 h-3 w-2/3 animate-pulse rounded bg-gray-200" />
+              <div className="mb-1 h-3 w-full animate-pulse rounded bg-gray-200" />
+              <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" />
             </div>
           </div>
         </div>

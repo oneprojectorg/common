@@ -18,7 +18,7 @@ const meta: Meta<typeof TextField> = {
 export default meta;
 
 export const Example = () => (
-  <div className="w-96 gap-8 flex flex-col">
+  <div className="flex w-96 flex-col gap-8">
     <TextField
       inputProps={{ placeholder: 'Placeholder' }}
       description="Helper text"
@@ -50,7 +50,7 @@ export const Example = () => (
 );
 
 export const Validation = (args: any) => (
-  <Form className="gap-2 flex flex-col items-start">
+  <Form className="flex flex-col items-start gap-2">
     <TextField {...args} />
 
     <Button type="submit">Submit</Button>

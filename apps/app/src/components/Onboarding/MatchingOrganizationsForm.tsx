@@ -127,10 +127,10 @@ export const MatchingOrganizationsForm = ({
         <FormHeader text={t("We've found your organization")}>
           {t('join_subheader')}
         </FormHeader>
-        <div className="space-y-4 flex flex-col items-center">
+        <div className="flex flex-col items-center space-y-4">
           {matchingOrgs.map((org) => (
-            <Surface className="p-4 w-full" key={org.id}>
-              <label className="gap-4 flex cursor-default">
+            <Surface className="w-full p-4" key={org.id}>
+              <label className="flex cursor-default gap-4">
                 <input
                   type="radio"
                   name="selectedOrganization"
@@ -146,11 +146,11 @@ export const MatchingOrganizationsForm = ({
                   withLink={false}
                   className="size-12"
                 />
-                <div className="gap-2 flex flex-col">
+                <div className="flex flex-col gap-2">
                   <Header3 className="text-base text-neutral-charcoal">
                     {org.profile?.name}
                   </Header3>
-                  <div className="gap-1 flex flex-col text-teal">
+                  <div className="flex flex-col gap-1 text-teal">
                     {org.profile?.website ? (
                       <ContactLink className="h-auto">
                         <LuGlobe className="size-4" />
@@ -169,7 +169,7 @@ export const MatchingOrganizationsForm = ({
             </Surface>
           ))}
         </div>
-        <div className="gap-2 flex flex-col">
+        <div className="flex flex-col gap-2">
           <div>{t('Confirm Administrator Access')}</div>
           <div>
             {t(
@@ -177,8 +177,8 @@ export const MatchingOrganizationsForm = ({
             )}
           </div>
 
-          <div className="gap-2 pt-4 flex flex-col">
-            <div className="gap-1 flex items-center">
+          <div className="flex flex-col gap-2 pt-4">
+            <div className="flex items-center gap-1">
               <Checkbox
                 size="small"
                 value={'' + termsAccepted}
@@ -194,7 +194,7 @@ export const MatchingOrganizationsForm = ({
                 {t('Terms of Use')}
               </a>
             </div>
-            <div className="gap-1 flex items-center">
+            <div className="flex items-center gap-1">
               <Checkbox
                 size="small"
                 value={'' + privacyAccepted}
@@ -213,8 +213,8 @@ export const MatchingOrganizationsForm = ({
             </div>
           </div>
         </div>
-        <div className="gap-4 flex flex-col">
-          <div className="gap-4 sm:flex-row sm:gap-2 flex flex-col-reverse justify-between">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
             <Button
               className="w-full"
               onPress={() => handleContinue()}
@@ -232,7 +232,7 @@ export const MatchingOrganizationsForm = ({
               )}
             </Button>
           </div>
-          <div className="gap-2 flex flex-col items-center">
+          <div className="flex flex-col items-center gap-2">
             <Button
               className="w-full"
               onPress={() => handleContinue({ shouldContinue: true })}
@@ -275,7 +275,7 @@ export const MatchingOrganizationsFormSuspense = (
         fallback={
           <div className={props.className}>
             <FormContainer>
-              <div className="py-8 flex items-center justify-center">
+              <div className="flex items-center justify-center py-8">
                 <LoadingSpinner />
               </div>
             </FormContainer>

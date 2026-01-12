@@ -55,12 +55,12 @@ export const AllOrganizationsSuspense = ({
   const allProfiles = paginatedData?.pages.flatMap((page) => page.items) || [];
 
   return (
-    <div className="gap-4 flex flex-col">
+    <div className="flex flex-col gap-4">
       <ProfileSummaryList profiles={allProfiles} />
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
-          className="py-4 flex justify-center"
+          className="flex justify-center py-4"
         >
           {isFetchingNextPage ? (
             <div className="text-sm text-neutral-gray4">

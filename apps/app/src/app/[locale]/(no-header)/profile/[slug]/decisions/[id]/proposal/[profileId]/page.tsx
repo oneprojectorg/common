@@ -36,41 +36,41 @@ function ProposalViewPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header loading */}
-      <div className="px-6 py-4 flex items-center justify-between border-b bg-white">
-        <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
-        <div className="h-6 w-48 bg-gray-200 animate-pulse rounded" />
-        <div className="gap-3 flex items-center">
-          <div className="h-10 w-20 bg-gray-200 animate-pulse rounded" />
-          <div className="h-10 w-24 bg-gray-200 animate-pulse rounded" />
-          <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full" />
+      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
+        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
+        <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-20 animate-pulse rounded bg-gray-200" />
+          <div className="h-10 w-24 animate-pulse rounded bg-gray-200" />
+          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
         </div>
       </div>
 
       {/* Content loading */}
-      <div className="px-6 py-8 flex-1 bg-white">
-        <div className="max-w-4xl space-y-6 mx-auto">
-          <div className="h-12 w-96 bg-gray-200 animate-pulse rounded" />
-          <div className="gap-4 flex">
-            <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
-            <div className="h-8 w-28 bg-gray-200 animate-pulse rounded" />
+      <div className="flex-1 bg-white px-6 py-8">
+        <div className="mx-auto max-w-4xl space-y-6">
+          <div className="h-12 w-96 animate-pulse rounded bg-gray-200" />
+          <div className="flex gap-4">
+            <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
+            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
           </div>
-          <div className="gap-3 flex items-center">
-            <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full" />
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
             <div className="space-y-1">
-              <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
-              <div className="h-3 w-24 bg-gray-200 animate-pulse rounded" />
+              <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
+              <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
             </div>
           </div>
-          <div className="gap-6 pb-4 flex border-b">
-            <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
-            <div className="h-4 w-20 bg-gray-200 animate-pulse rounded" />
-            <div className="h-4 bg-gray-200 animate-pulse w-18 rounded" />
+          <div className="flex gap-6 border-b pb-4">
+            <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-18 animate-pulse rounded bg-gray-200" />
           </div>
           <div className="mt-6 space-y-4">
-            <div className="h-4 bg-gray-200 animate-pulse w-full rounded" />
-            <div className="h-4 bg-gray-200 animate-pulse w-3/4 rounded" />
-            <div className="h-4 bg-gray-200 animate-pulse w-5/6 rounded" />
-            <div className="h-4 bg-gray-200 animate-pulse w-1/2 rounded" />
+            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-1/2 animate-pulse rounded bg-gray-200" />
           </div>
         </div>
       </div>

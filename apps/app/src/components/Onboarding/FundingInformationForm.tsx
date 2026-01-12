@@ -93,7 +93,7 @@ export const FundingInformationForm = ({
                 />
               </ToggleRow>
               {field.state.value ? (
-                <div className="gap-4 flex flex-col">
+                <div className="flex flex-col gap-4">
                   <form.AppField
                     name="receivingFundsTerms"
                     children={(field) => (
@@ -110,7 +110,7 @@ export const FundingInformationForm = ({
                   <form.AppField
                     name="receivingFundsLink"
                     children={(field) => (
-                      <div className="gap-2 flex flex-col">
+                      <div className="flex flex-col gap-2">
                         <field.TextField
                           label={t(
                             'Where can people contribute to your organization?',
@@ -159,7 +159,7 @@ export const FundingInformationForm = ({
                   name="acceptingApplications"
                   children={(acceptingApplicationsField) => (
                     <>
-                      <div className="gap-4 flex flex-col">
+                      <div className="flex flex-col gap-4">
                         <form.AppField
                           name="offeringFundsTerms"
                           children={(field) => (
@@ -178,7 +178,7 @@ export const FundingInformationForm = ({
                         <form.AppField
                           name="offeringFundsLink"
                           children={(field) => (
-                            <div className="gap-2 flex flex-col">
+                            <div className="flex flex-col gap-2">
                               <field.TextField
                                 label={
                                   acceptingApplicationsField.state.value
@@ -222,7 +222,7 @@ export const FundingInformationForm = ({
           )}
         />
 
-        <div className="gap-4 sm:flex-row sm:gap-2 flex flex-col-reverse justify-between">
+        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
           <form.Button color="secondary" onPress={onBack}>
             {t('Back')}
           </form.Button>

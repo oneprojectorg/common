@@ -17,9 +17,9 @@ export default function PageError({ error }: ErrorProps) {
 
   return (
     <ClientOnly>
-      <div className="gap-8 flex size-full flex-col items-center justify-center">
-        <div className="gap-4 flex flex-col items-center">
-          <Header2 className="font-light font-serif text-[4rem] leading-[110%]">
+      <div className="flex size-full flex-col items-center justify-center gap-8">
+        <div className="flex flex-col items-center gap-4">
+          <Header2 className="font-serif text-[4rem] leading-[110%] font-light">
             500
           </Header2>
           <p className="text-center">

@@ -60,14 +60,14 @@ const DecisionsListSuspense = ({
   }
 
   return (
-    <div className="gap-4 sm:gap-0 flex flex-col">
+    <div className="flex flex-col gap-4 sm:gap-0">
       {paginatedItems.map((item) => (
         <DecisionListItem key={item.id} item={item} />
       ))}
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
-          className="py-4 flex justify-center"
+          className="flex justify-center py-4"
         >
           {isFetchingNextPage ? <SkeletonLine lines={3} /> : null}
         </div>

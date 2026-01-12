@@ -56,7 +56,7 @@ export const ProfileSearchResultsSuspense = ({
     </>
   ) : (
     <>
-      <ListPageLayoutHeader className="gap-2 flex justify-center">
+      <ListPageLayoutHeader className="flex justify-center gap-2">
         <span className="text-neutral-gray4">No results for </span>
         <span className="text-neutral-black">{query}</span>
       </ListPageLayoutHeader>
@@ -108,7 +108,7 @@ export const TabbedProfileSearchResults = ({
             {results.length > 0 ? (
               <ProfileSummaryList profiles={results} />
             ) : (
-              <div className="mt-2 p-8 w-full rounded text-center text-neutral-gray4">
+              <div className="mt-2 w-full rounded p-8 text-center text-neutral-gray4">
                 No {t(typeName).toLocaleLowerCase()}s found.
               </div>
             )}

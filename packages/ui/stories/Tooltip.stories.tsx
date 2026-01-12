@@ -16,7 +16,7 @@ const meta: Meta<typeof Tooltip> = {
 export default meta;
 
 export const Example = (args: any) => (
-  <div className="gap-2 flex">
+  <div className="flex gap-2">
     <TooltipTrigger>
       <Button className="px-2">
         <SaveIcon className="size-5" />

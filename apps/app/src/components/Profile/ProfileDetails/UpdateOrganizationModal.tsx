@@ -53,7 +53,7 @@ export const UpdateOrganizationModal = ({
       <Button
         onPress={() => setIsOpen(true)}
         color="primary"
-        className="sm:min-w-fit min-w-full"
+        className="min-w-full sm:min-w-fit"
       >
         <LuPencil className="size-4" />
         {t('Edit Profile')}

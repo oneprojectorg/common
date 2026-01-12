@@ -22,7 +22,7 @@ export const Avatar = ({
   return (
     <div
       className={cn(
-        'size-8 relative flex items-center justify-center overflow-hidden rounded-full bg-white text-clip shadow',
+        'relative flex size-8 items-center justify-center overflow-hidden rounded-full bg-white text-clip shadow',
         className,
       )}
     >
@@ -46,7 +46,7 @@ export const AvatarSkeleton = ({ className }: { className?: string }) => {
   return (
     <Skeleton
       className={cn(
-        'size-8 relative flex items-center justify-center overflow-hidden rounded-full text-clip',
+        'relative flex size-8 items-center justify-center overflow-hidden rounded-full text-clip',
         className,
       )}
     />

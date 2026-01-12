@@ -212,7 +212,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       >
         {dropdownShowing ? (
           <div
-            className="top-10 !max-h-80 min-w-96 sm:block absolute z-10 hidden w-(--trigger-width) overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2"
+            className="absolute top-10 z-10 hidden !max-h-80 w-(--trigger-width) min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2 sm:block"
             role="listbox"
             aria-label={t('Search results')}
           >
@@ -226,7 +226,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   )}
                 >
                   <Link
-                    className="gap-2 flex w-full items-center"
+                    className="flex w-full items-center gap-2"
                     href={`/search/?q=${query}`}
                     onClick={() => recordSearch(query)}
                   >
@@ -258,7 +258,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       {/* Mobile full-screen search results */}
       {dropdownShowing && (
         <div
-          className="inset-x-0 bottom-0 sm:hidden fixed top-[60px] z-10 block overflow-y-auto bg-white"
+          className="fixed inset-x-0 top-[60px] bottom-0 z-10 block overflow-y-auto bg-white sm:hidden"
           role="listbox"
           aria-label={t('Search results')}
         >
@@ -272,7 +272,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 )}
               >
                 <Link
-                  className="gap-2 flex w-full items-center"
+                  className="flex w-full items-center gap-2"
                   href={`/search/?q=${query}`}
                   onClick={() => recordSearch(query)}
                 >

@@ -139,7 +139,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.region}
         orientation="vertical"
       >
-        <span className="gap-3 flex flex-col">
+        <span className="flex flex-col gap-3">
           <Radio value="africa" className="p-0">
             {t('Africa')}
           </Radio>
@@ -198,7 +198,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.gender}
         orientation="vertical"
       >
-        <span className="gap-3 flex flex-col">
+        <span className="flex flex-col gap-3">
           <Radio value="female" className="p-0">
             {t('Female')}
           </Radio>
@@ -350,7 +350,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.increasedUnderstanding}
         orientation="vertical"
       >
-        <span className="gap-3 flex flex-col">
+        <span className="flex flex-col gap-3">
           <Radio value="yes" className="p-0">
             {t('Yes')}
           </Radio>
@@ -382,7 +382,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.appliedNewPractices}
         orientation="vertical"
       >
-        <span className="gap-3 flex flex-col">
+        <span className="flex flex-col gap-3">
           <Radio value="yes" className="p-0">
             {t('Yes')}
           </Radio>

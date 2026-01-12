@@ -98,27 +98,27 @@ export const Disabled: Story = {
 
 export const AllVariants: Story = {
   render: () => (
-    <div className="gap-4 flex items-center">
-      <div className="gap-2 flex flex-col items-center">
-        <span className="font-medium text-sm">Ghost</span>
+    <div className="flex items-center gap-4">
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-sm font-medium">Ghost</span>
         <IconButton variant="ghost">
           <DummyIcon />
         </IconButton>
       </div>
-      <div className="gap-2 flex flex-col items-center">
-        <span className="font-medium text-sm">Solid</span>
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-sm font-medium">Solid</span>
         <IconButton variant="solid">
           <DummyIcon />
         </IconButton>
       </div>
-      <div className="gap-2 flex flex-col items-center">
-        <span className="font-medium text-sm">Outline</span>
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-sm font-medium">Outline</span>
         <IconButton variant="outline">
           <DummyIcon />
         </IconButton>
       </div>
-      <div className="gap-2 flex flex-col items-center">
-        <span className="font-medium text-sm">Disabled</span>
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-sm font-medium">Disabled</span>
         <IconButton isDisabled>
           <DummyIcon />
         </IconButton>
@@ -129,21 +129,21 @@ export const AllVariants: Story = {
 
 export const AllSizes: Story = {
   render: () => (
-    <div className="gap-4 flex items-center">
-      <div className="gap-2 flex flex-col items-center">
-        <span className="font-medium text-sm">Small</span>
+    <div className="flex items-center gap-4">
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-sm font-medium">Small</span>
         <IconButton size="small">
           <DummyIcon />
         </IconButton>
       </div>
-      <div className="gap-2 flex flex-col items-center">
-        <span className="font-medium text-sm">Medium</span>
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-sm font-medium">Medium</span>
         <IconButton size="medium">
           <DummyIcon />
         </IconButton>
       </div>
-      <div className="gap-2 flex flex-col items-center">
-        <span className="font-medium text-sm">Large</span>
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-sm font-medium">Large</span>
         <IconButton size="large">
           <DummyIcon />
         </IconButton>

@@ -38,7 +38,7 @@ export const SocialLinks = ({
   iconClassName?: string;
 }) => {
   return (
-    <div className={cn('gap-4 flex', containerClassName)}>
+    <div className={cn('flex gap-4', containerClassName)}>
       {socialLinks.map((link) => {
         const IconComponent = iconMap[link.name];
 
@@ -62,7 +62,7 @@ export const SocialLinks = ({
 
 export const SocialLinksFooter = ({ className }: { className?: string }) => {
   return (
-    <ul className={cn('gap-4 flex', className)}>
+    <ul className={cn('flex gap-4', className)}>
       {socialLinks.map((link) => {
         const IconComponent = iconMap[link.name];
 
@@ -73,7 +73,7 @@ export const SocialLinksFooter = ({ className }: { className?: string }) => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={link.alt}
-              className="hover:text-neutral-900 duration-300"
+              className="duration-300 hover:text-neutral-900"
             >
               <IconComponent />
             </a>

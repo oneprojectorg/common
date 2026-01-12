@@ -8,16 +8,16 @@ function DecisionHeaderSkeleton() {
   return (
     <div className="border-b bg-neutral-offWhite">
       {/* Header skeleton */}
-      <div className="px-6 py-4 flex items-center justify-between border-b bg-white">
+      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-8 w-8 rounded-full" />
       </div>
 
       {/* Stepper skeleton */}
-      <div className="sm:items-center flex flex-col overflow-x-auto">
-        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 bg-white">
-          <div className="space-x-8 mx-auto flex items-center justify-center">
+      <div className="flex flex-col overflow-x-auto sm:items-center">
+        <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
+          <div className="mx-auto flex items-center justify-center space-x-8">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex flex-col items-center">
                 <Skeleton className="h-10 w-10 rounded-full" />

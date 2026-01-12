@@ -23,10 +23,10 @@ export function DecisionStats({
     <div className="space-y-6">
       {/* Current Phase */}
       <div>
-        <h3 className="font-semibold tracking-wider text-xs text-neutral-gray2 uppercase">
+        <h3 className="text-xs font-semibold tracking-wider text-neutral-gray2 uppercase">
           CURRENT PHASE
         </h3>
-        <p className="mt-1 font-medium text-lg text-neutral-charcoal">
+        <p className="mt-1 text-lg font-medium text-neutral-charcoal">
           {currentPhase?.name || 'Proposal Submissions'}
         </p>
         {currentPhase?.phase && (
@@ -46,7 +46,7 @@ export function DecisionStats({
         {budget && (
           <div className="flex justify-between">
             <span className="text-sm text-neutral-gray3">Total Budget</span>
-            <span className="font-medium text-sm text-neutral-charcoal">
+            <span className="text-sm font-medium text-neutral-charcoal">
               {formatCurrency(budget)}
             </span>
           </div>
@@ -55,13 +55,13 @@ export function DecisionStats({
           <span className="text-sm text-neutral-gray3">
             Proposals Submitted
           </span>
-          <span className="font-medium text-sm text-neutral-charcoal">
+          <span className="text-sm font-medium text-neutral-charcoal">
             {proposalCount}
           </span>
         </div>
         <div className="flex justify-between">
           <span className="text-sm text-neutral-gray3">Days Remaining</span>
-          <span className="font-medium text-sm text-neutral-charcoal">
+          <span className="text-sm font-medium text-neutral-charcoal">
             {daysRemaining !== null ? daysRemaining : '14'}
           </span>
         </div>

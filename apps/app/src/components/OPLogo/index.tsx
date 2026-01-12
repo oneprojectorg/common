@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 export const OPLogo = () => {
   return (
-    <span className="gap-1 flex items-center">
+    <span className="flex items-center gap-1">
       <Image src="/op.png" alt="OP" width={48} height={48} className="size-4" />
       <svg
         width="69"
@@ -10,7 +10,7 @@ export const OPLogo = () => {
         viewBox="0 0 69 13"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="h-3 relative top-[0.075rem] w-auto"
+        className="relative top-[0.075rem] h-3 w-auto"
       >
         <g clipPath="url(#clip0_1130_4476)">
           <path

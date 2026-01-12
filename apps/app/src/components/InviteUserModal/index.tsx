@@ -206,9 +206,9 @@ export const InviteUserModal = ({
   const triggerButton = isOrg
     ? children || (
         <>
-          <Button color="secondary" variant="icon" className="sm:flex hidden">
+          <Button color="secondary" variant="icon" className="hidden sm:flex">
             <LuUserPlus className="min-h-4 min-w-4" />
-            <div className="md:block hidden text-nowrap">
+            <div className="hidden text-nowrap md:block">
               {t('Invite users')}
             </div>
           </Button>
@@ -216,7 +216,7 @@ export const InviteUserModal = ({
             color="neutral"
             unstyled
             variant="icon"
-            className="size-8 sm:hidden flex items-center justify-center rounded-full bg-neutral-offWhite"
+            className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
           >
             <LuUserPlus className="min-h-4 min-w-4 text-neutral-gray4" />
           </Button>
@@ -231,7 +231,7 @@ export const InviteUserModal = ({
         <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
           <ModalHeader>{t('Invite others to Common')}</ModalHeader>
           <ErrorBoundary>
-            <ModalBody className="gap-6 p-6 h-auto">
+            <ModalBody className="h-auto gap-6 p-6">
               <Tabs
                 selectedKey={activeTab}
                 onSelectionChange={(key) => setActiveTab(key as string)}
@@ -282,7 +282,7 @@ export const InviteUserModal = ({
             <ModalFooter>
               <Button
                 color="primary"
-                className="sm:w-fit w-full"
+                className="w-full sm:w-fit"
                 onPress={handleSendInvite}
                 isDisabled={
                   (!emails.trim() && emailBadges.length === 0) ||

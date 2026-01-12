@@ -43,7 +43,7 @@ export const ListBox = <T extends object>({
         {...props}
         className={composeTailwindRenderProps(
           props.className,
-          'p-1 rounded border outline-0',
+          'rounded border p-1 outline-0',
         )}
       >
         {children}
@@ -54,10 +54,10 @@ export const ListBox = <T extends object>({
 
 export const itemStyles = tv({
   extend: focusRing,
-  base: 'group gap-8 px-2.5 py-1.5 relative flex cursor-default items-center rounded text-sm will-change-transform forced-color-adjust-none select-none',
+  base: 'group relative flex cursor-default items-center gap-8 rounded px-2.5 py-1.5 text-sm will-change-transform forced-color-adjust-none select-none',
   variants: {
     isSelected: {
-      false: 'text-neutral-700 hover:bg-neutral-300 -outline-offset-2',
+      false: 'text-neutral-700 -outline-offset-2 hover:bg-neutral-300',
       true: 'bg-neutral-gray1 text-neutral-black -outline-offset-4 [&+[data-selected]]:rounded-t-none [&:has(+[data-selected])]:rounded-b-none',
     },
     isDisabled: {
@@ -88,7 +88,7 @@ export const ListBoxItem = (props: ListBoxItemProps) => {
       {composeRenderProps(props.children, (children) => (
         <>
           {children}
-          <div className="inset-x-4 bottom-0 absolute hidden h-px bg-white/20 [.group[data-selected]:has(+[data-selected])_&]:block" />
+          <div className="absolute inset-x-4 bottom-0 hidden h-px bg-white/20 [.group[data-selected]:has(+[data-selected])_&]:block" />
         </>
       ))}
     </AriaListBoxItem>
@@ -96,7 +96,7 @@ export const ListBoxItem = (props: ListBoxItemProps) => {
 };
 
 export const dropdownItemStyles = tv({
-  base: 'group gap-4 py-2 pl-3 pr-1.5 flex cursor-pointer items-center rounded outline outline-0 forced-color-adjust-none select-none',
+  base: 'group flex cursor-pointer items-center gap-4 rounded py-2 pr-1.5 pl-3 outline outline-0 forced-color-adjust-none select-none',
   variants: {
     isDisabled: {
       false: 'text-neutral-black',
@@ -135,10 +135,10 @@ export const DropdownItem = (
     >
       {composeRenderProps(props.children, (children, { isSelected }) => (
         <>
-          <span className="group-hover:bgt-neutral-gray1 gap-2 font-normal flex h-full flex-1 items-center truncate text-neutral-black">
+          <span className="group-hover:bgt-neutral-gray1 flex h-full flex-1 items-center gap-2 truncate font-normal text-neutral-black">
             {children}
           </span>
-          <span className="w-5 flex items-center">
+          <span className="flex w-5 items-center">
             {isSelected && <Check className="size-4" />}
           </span>
         </>
@@ -157,7 +157,7 @@ export const DropdownSection = <T extends object>(
 ) => {
   return (
     <ListBoxSection className="after:block after:h-[5px] after:content-[''] first:mt-[-5px]">
-      <Header className="-mx-1 border-neutral-300 bg-neutral-300/60 px-4 py-1 font-semibold text-neutral-700 backdrop-blur-md [&+*]:mt-1 sticky top-[-5px] z-10 -mt-px truncate border-y text-sm">
+      <Header className="sticky top-[-5px] z-10 -mx-1 -mt-px truncate border-y border-neutral-300 bg-neutral-300/60 px-4 py-1 text-sm font-semibold text-neutral-700 backdrop-blur-md [&+*]:mt-1">
         {props.title}
       </Header>
       <Collection items={props.items}>{props.children}</Collection>

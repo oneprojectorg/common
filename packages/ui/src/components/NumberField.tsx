@@ -127,7 +127,7 @@ export const NumberField = ({
       isInvalid={!!errorMessage && errorMessage.length > 0}
       className={composeTailwindRenderProps(
         props.className,
-        'group gap-1 flex flex-col',
+        'group flex flex-col gap-1',
       )}
     >
       {label && (
@@ -145,7 +145,7 @@ export const NumberField = ({
         {prefixText && (
           <span
             ref={prefixRef}
-            className="bottom-0 left-0 top-0 pl-3 pr-2 pointer-events-none absolute flex items-center justify-center text-neutral-gray4 select-none"
+            className="pointer-events-none absolute top-0 bottom-0 left-0 flex items-center justify-center pr-2 pl-3 text-neutral-gray4 select-none"
           >
             {prefixText}
           </span>

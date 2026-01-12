@@ -12,7 +12,7 @@ export const Chip = ({
   return (
     <span
       className={cn(
-        'p-1 items-center rounded-sm bg-neutral-gray1 text-xs text-neutral-charcoal',
+        'items-center rounded-sm bg-neutral-gray1 p-1 text-xs text-neutral-charcoal',
         className,
       )}
     >

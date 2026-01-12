@@ -37,18 +37,18 @@ export const OPRelationshipRequestEmail = ({
       </Text>
 
       {requesterMessage && (
-        <Section className="my-6 bg-gray-50 p-4 rounded-lg">
-          <Text className="mb-2 font-medium text-gray-700 text-sm">
+        <Section className="my-6 rounded-lg bg-gray-50 p-4">
+          <Text className="mb-2 text-sm font-medium text-gray-700">
             Message from {requesterOrgName}:
           </Text>
-          <Text className="text-gray-600 text-sm">{requesterMessage}</Text>
+          <Text className="text-sm text-gray-600">{requesterMessage}</Text>
         </Section>
       )}
 
       <Section className="pb-0">
         <Button
           href={approvalUrl}
-          className="px-4 py-3 rounded-lg bg-primary-teal text-white no-underline hover:bg-primary-teal/90"
+          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
           style={{
             fontSize: '0.875rem',
             textAlign: 'center',

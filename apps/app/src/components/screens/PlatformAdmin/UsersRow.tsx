@@ -50,19 +50,19 @@ export const UsersRow = ({ user }: { user: User }) => {
           USERS_TABLE_GRID,
         )}
       >
-        <div className="font-normal flex items-center text-sm text-neutral-black">
+        <div className="flex items-center text-sm font-normal text-neutral-black">
           {user.profile?.name ?? user.name ?? '—'}
         </div>
-        <div className="font-normal flex items-center text-sm text-neutral-black">
+        <div className="flex items-center text-sm font-normal text-neutral-black">
           {user.email}
         </div>
         <UserRolesAndOrganizations
           organizationUsers={user.organizationUsers ?? []}
         />
-        <div className="font-normal flex items-center text-sm text-neutral-charcoal">
+        <div className="flex items-center text-sm font-normal text-neutral-charcoal">
           {updatedAt ? (
             <TooltipTrigger>
-              <Button className="font-normal cursor-default text-sm underline decoration-dotted underline-offset-2 outline-hidden">
+              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
                 {relativeUpdatedAt}
               </Button>
               <Tooltip>
@@ -73,10 +73,10 @@ export const UsersRow = ({ user }: { user: User }) => {
             '—'
           )}
         </div>
-        <div className="font-normal flex items-center text-sm text-neutral-charcoal">
+        <div className="flex items-center text-sm font-normal text-neutral-charcoal">
           {lastSignInAt ? (
             <TooltipTrigger>
-              <Button className="font-normal cursor-default text-sm underline decoration-dotted underline-offset-2 outline-hidden">
+              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
                 {relativeLastSignIn}
               </Button>
               <Tooltip>
@@ -87,7 +87,7 @@ export const UsersRow = ({ user }: { user: User }) => {
             '—'
           )}
         </div>
-        <div className="pr-1 flex items-center justify-end text-sm text-neutral-charcoal">
+        <div className="flex items-center justify-end pr-1 text-sm text-neutral-charcoal">
           <OptionMenu variant="outline" size="medium">
             <Menu className="min-w-48 p-2">
               <MenuItem
@@ -201,10 +201,10 @@ const UserRolesAndOrganizations = ({
 
   return (
     <>
-      <div className="font-normal flex items-center text-sm text-neutral-black">
+      <div className="flex items-center text-sm font-normal text-neutral-black">
         {roleNames}
       </div>
-      <div className="font-normal flex items-center text-sm text-neutral-black">
+      <div className="flex items-center text-sm font-normal text-neutral-black">
         <Select
           className="w-full"
           defaultSelectedKey={selectedOrgUserId}

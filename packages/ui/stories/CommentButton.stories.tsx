@@ -29,14 +29,14 @@ const meta: Meta<typeof CommentButton> = {
 export default meta;
 
 export const Example = () => (
-  <div className="gap-4 flex flex-col">
-    <div className="gap-4 flex items-center">
+  <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-4">
       <CommentButton count={0} />
       <CommentButton count={5} />
       <CommentButton count={42} />
       <CommentButton count={999} />
     </div>
-    <div className="gap-4 flex items-center">
+    <div className="flex items-center gap-4">
       <CommentButton count={0} isDisabled />
       <CommentButton count={5} isDisabled />
     </div>

@@ -17,11 +17,11 @@ import { Button } from './Button';
 import { Confetti } from './Confetti';
 
 const overlayStyles = tv({
-  base: 'inset-0! entering:ease-out exiting:ease-in p-4 fixed! z-[99999] flex items-center justify-center bg-neutral-black/15 text-center backdrop-blur-sm entering:animate-in entering:duration-300 entering:fade-in exiting:animate-out exiting:duration-300 exiting:fade-out',
+  base: 'fixed! inset-0! z-[99999] flex items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm entering:animate-in entering:duration-300 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-300 exiting:ease-in exiting:fade-out',
 });
 
 const modalStyles = tv({
-  base: 'entering:ease-out exiting:ease-in max-w-md backdrop-blur-lg sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md isolate z-[999999] h-svh max-h-svh w-screen overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden entering:animate-in entering:duration-500 entering:fade-in exiting:animate-out exiting:duration-500 exiting:fade-out',
+  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out',
 });
 
 type ModalContextType = {
@@ -50,7 +50,7 @@ export const ModalHeader = ({
   };
 
   return (
-    <div className="top-0 min-h-16 sticky z-30 flex w-full items-center border-b bg-white">
+    <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b bg-white">
       <div className="relative flex w-full items-center justify-center">
         {isDismissable && (
           <button
@@ -58,7 +58,7 @@ export const ModalHeader = ({
             aria-label="Close modal"
             onClick={handleClose}
             className={cn(
-              'left-6 h-6 w-6 absolute flex',
+              'absolute left-6 flex h-6 w-6',
               'items-center justify-center',
               'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 focus:outline-hidden',
               'text-neutral-charcoal',
@@ -70,7 +70,7 @@ export const ModalHeader = ({
         <Heading
           slot="title"
           className={cn(
-            'sm:text-title-sm w-full text-center font-serif',
+            'w-full text-center font-serif sm:text-title-sm',
             className,
           )}
         >
@@ -91,7 +91,7 @@ export const ModalBody = ({
   return (
     <div
       className={cn(
-        'gap-2 p-6 flex w-full flex-col text-left focus-visible:outline-0',
+        'flex w-full flex-col gap-2 p-6 text-left focus-visible:outline-0',
         className,
       )}
     >
@@ -110,7 +110,7 @@ export const ModalFooter = ({
   return (
     <div
       className={cn(
-        'bottom-0 gap-4 px-6 py-3 sm:sticky sm:flex-row absolute flex w-full flex-col-reverse justify-end border-t bg-white',
+        'absolute bottom-0 flex w-full flex-col-reverse justify-end gap-4 border-t bg-white px-6 py-3 sm:sticky sm:flex-row',
         className,
       )}
     >
@@ -154,7 +154,7 @@ export const ModalStepper = memo(
     return (
       <footer
         className={cn(
-          'bottom-0 sticky',
+          'sticky bottom-0',
           'flex w-full items-center justify-between',
           'px-6 py-3',
           'border-t bg-white',

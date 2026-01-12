@@ -17,7 +17,7 @@ const styles = tv({
     variant: {
       primary: 'text-teal no-underline hover:underline',
       secondary:
-        'text-neutral-700 decoration-neutral-700/70 hover:decoration-neutral-700 underline',
+        'text-neutral-700 underline decoration-neutral-700/70 hover:decoration-neutral-700',
       neutral: 'text-neutral-gray4',
     },
   },

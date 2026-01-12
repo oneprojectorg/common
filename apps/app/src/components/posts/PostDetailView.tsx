@@ -38,10 +38,10 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
   return (
     <PostViewLayout>
       <PostDetailHeader />
-      <div className="p-4 flex-1">
-        <div className="max-w-xl gap-2 mx-auto flex flex-col">
+      <div className="flex-1 p-4">
+        <div className="mx-auto flex max-w-xl flex-col gap-2">
           {/* Original Post Display */}
-          <PostFeed className="pb-2 border-none">
+          <PostFeed className="border-none pb-2">
             <PostItemOnDetailPage
               post={post}
               organization={organization}
@@ -54,7 +54,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
 
           {/* Comment Input */}
           <div className="border-y">
-            <Surface className="px-0 py-4 border-0">
+            <Surface className="border-0 px-0 py-4">
               <PostUpdate
                 parentPostId={post.id}
                 placeholder={`${t('Comment')}${user.currentProfile?.name ? ` ${t('as')} ${user.currentProfile?.name}` : ''}...`}

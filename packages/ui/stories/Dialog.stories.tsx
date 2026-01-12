@@ -24,7 +24,7 @@ export default {
 };
 
 export const Example = () => (
-  <div className="gap-4 flex flex-col">
+  <div className="flex flex-col gap-4">
     <DialogTrigger>
       <Button>Open Simple Dialog</Button>
       <Modal>
@@ -55,13 +55,13 @@ export const Example = () => (
             <div className="mt-4 space-y-4">
               <div>
                 <h4 className="font-medium">Section 1</h4>
-                <p className="text-neutral-600 text-sm">
+                <p className="text-sm text-neutral-600">
                   Some detailed information about the first section.
                 </p>
               </div>
               <div>
                 <h4 className="font-medium">Section 2</h4>
-                <p className="text-neutral-600 text-sm">
+                <p className="text-sm text-neutral-600">
                   More information about the second section with additional
                   details.
                 </p>
@@ -109,17 +109,17 @@ export const WithForm = () => (
           </DialogDescription>
           <form className="mt-4 space-y-4">
             <div>
-              <label className="font-medium block text-sm">Name</label>
+              <label className="block text-sm font-medium">Name</label>
               <input
                 type="text"
-                className="mt-1 px-3 py-2 block w-full rounded-md border border-neutral-gray3"
+                className="mt-1 block w-full rounded-md border border-neutral-gray3 px-3 py-2"
                 placeholder="Enter name"
               />
             </div>
             <div>
-              <label className="font-medium block text-sm">Description</label>
+              <label className="block text-sm font-medium">Description</label>
               <textarea
-                className="mt-1 px-3 py-2 block w-full rounded-md border border-neutral-gray3"
+                className="mt-1 block w-full rounded-md border border-neutral-gray3 px-3 py-2"
                 rows={3}
                 placeholder="Enter description"
               />

@@ -45,15 +45,15 @@ const VoteSuccessModalSuspense = ({
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Modal isDismissable>
-        <div className="p-12 z-10 text-center">
-          <div className="gap-6 flex flex-col">
-            <div className="gap-4 flex flex-col items-center">
-              <div className="size-16 gap-4 flex flex-col items-center justify-center">
+        <div className="z-10 p-12 text-center">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-16 flex-col items-center justify-center gap-4">
                 <CheckIcon />
               </div>
 
-              <div className="gap-2 flex flex-col">
-                <Header1 className="text-2xl font-light font-serif">
+              <div className="flex flex-col gap-2">
+                <Header1 className="font-serif text-2xl font-light">
                   {t('Your ballot is in!')}
                 </Header1>
 
@@ -72,11 +72,11 @@ const VoteSuccessModalSuspense = ({
               </div>
 
               {nextSteps.length > 0 && (
-                <div className="gap-6 flex w-full flex-col text-left text-base text-neutral-charcoal">
+                <div className="flex w-full flex-col gap-6 text-left text-base text-neutral-charcoal">
                   <Header3>{t("Here's what will happen next:")}</Header3>
-                  <ul className="gap-4 pl-4 flex flex-col">
+                  <ul className="flex flex-col gap-4 pl-4">
                     {nextSteps.map((step) => (
-                      <li key={step.id} className="gap-2 flex items-start">
+                      <li key={step.id} className="flex items-start gap-2">
                         <span>•</span>
                         <span>{formatStepForDisplay(step)}</span>
                       </li>

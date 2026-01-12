@@ -33,8 +33,8 @@ export const ProfileSwitchingModal = ({
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false}>
-      <div className="gap-6 p-12 flex flex-col items-center justify-center">
-        <div className="size-28 relative flex">
+      <div className="flex flex-col items-center justify-center gap-6 p-12">
+        <div className="relative flex size-28">
           <Avatar placeholder={profileName} className="size-full">
             {avatarContent}
           </Avatar>

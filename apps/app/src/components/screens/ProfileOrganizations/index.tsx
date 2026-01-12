@@ -33,15 +33,15 @@ export const ProfileOrganizationsSuspense = ({
 
   return (
     <>
-      <div className="gap-4 sm:px-0 flex flex-col">
+      <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
-          <Breadcrumbs className="sm:flex hidden">
+          <Breadcrumbs className="hidden sm:flex">
             <Breadcrumb href={`/org/${slug}`}>{profile.name}</Breadcrumb>
             <Breadcrumb>Organizations</Breadcrumb>
           </Breadcrumbs>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="sm:text-title-lg font-serif text-title-sm">
+          <div className="font-serif text-title-sm sm:text-title-lg">
             Member of {organizations.length}{' '}
             {pluralize('Organization', organizations.length)}
           </div>
@@ -60,10 +60,10 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
   return (
     <Link
       href={`/org/${organization.profile.slug}`}
-      className="gap-2 flex items-center"
+      className="flex items-center gap-2"
     >
       <LuArrowLeft className="size-6 text-neutral-black" />
-      <div className="gap-1 font-semibold flex items-center text-sm text-neutral-black">
+      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-black">
         <OrganizationAvatar profile={organization.profile} className="size-6" />
         {organization.profile.name}
       </div>
@@ -72,7 +72,7 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
 };
 
 export const ProfileOrganizations = ({ children }: { children: ReactNode }) => (
-  <div className="gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8 flex w-full flex-col">
+  <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8">
     <ErrorBoundary errorComponent={() => <ErrorMessage />}>
       <Suspense fallback={<RelationshipTabSkeleton />}>{children}</Suspense>
     </ErrorBoundary>

@@ -4,7 +4,7 @@ import { FormalSection } from '../FormalSection';
 
 export const CoCContent = () => {
   return (
-    <div className="gap-8 sm:pb-20 relative flex w-full flex-col">
+    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
         <Header3 className="font-serif">Who We Are</Header3>
         <p>

@@ -17,7 +17,7 @@ export const DecisionResultsTabs = ({
 
   return (
     <Tabs className={cn('gap-6', className)} defaultSelectedKey="funded">
-      <TabList className="gap-6 flex">
+      <TabList className="flex gap-6">
         <Tab id="funded">{t('Funded Proposals')}</Tab>
         <Tab id="ballot">{t('My Ballot')}</Tab>
       </TabList>
@@ -34,7 +34,7 @@ export const DecisionResultsTabPanel = ({
   children: ReactNode;
 }) => {
   return (
-    <TabPanel id={id} className="sm:p-0 grow">
+    <TabPanel id={id} className="grow sm:p-0">
       {children}
     </TabPanel>
   );

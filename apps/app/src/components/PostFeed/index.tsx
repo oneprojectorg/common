@@ -202,7 +202,7 @@ const PostMenu = ({
   }
 
   return (
-    <OptionMenu className="right-0 top-0 absolute">
+    <OptionMenu className="absolute top-0 right-0">
       <PostMenuContent
         post={post}
         profileId={user?.currentProfileId || ''}
@@ -233,9 +233,9 @@ export const EmptyPostsState = () => {
 
   return (
     <FeedItem>
-      <FeedMain className="py-6 flex w-full flex-col items-center justify-center">
+      <FeedMain className="flex w-full flex-col items-center justify-center py-6">
         <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
-          <div className="size-10 gap-4 flex items-center justify-center rounded-full bg-neutral-gray1">
+          <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
             <LuLeaf />
           </div>
           <span>{t('No posts yet')}</span>
@@ -371,8 +371,8 @@ export const PostItem = ({
       />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
-          <div className="gap-2 flex items-baseline">
-            <Header3 className="font-semibold leading-3">
+          <div className="flex items-baseline gap-2">
+            <Header3 className="leading-3 font-semibold">
               <PostDisplayName
                 displayName={displayName}
                 displaySlug={displaySlug}
@@ -389,7 +389,7 @@ export const PostItem = ({
           <PostContent content={post?.content} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
-          <div className="gap-2 flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <PostReactions
               post={displayPost}
               onReactionClick={handleReactionClick}
@@ -447,8 +447,8 @@ export const PostItemOnDetailPage = ({
       />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
-          <div className="gap-2 flex items-baseline">
-            <Header3 className="font-semibold leading-3">
+          <div className="flex items-baseline gap-2">
+            <Header3 className="leading-3 font-semibold">
               <PostDisplayName
                 displayName={displayName}
                 displaySlug={displaySlug}
@@ -465,7 +465,7 @@ export const PostItemOnDetailPage = ({
           <PostContent content={post?.content} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
-          <div className="gap-2 flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <PostReactions
               post={displayPost}
               onReactionClick={handleReactionClick}
@@ -568,7 +568,7 @@ export const PostFeed = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('gap-4 pb-8 flex flex-col', className)}>{children}</div>
+    <div className={cn('flex flex-col gap-4 pb-8', className)}>{children}</div>
   );
 };
 
@@ -580,13 +580,13 @@ export const PostFeedSkeleton = ({
   numPosts?: number;
 }) => {
   return (
-    <div className={cn('gap-8 pb-8 flex flex-col', className)}>
+    <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {new Array(numPosts).fill(0).map((_, i) => (
         <FeedItem key={i}>
           <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
           <FeedMain>
             <FeedHeader className="w-1/2">
-              <Header3 className="pb-1 font-medium leading-5 w-full">
+              <Header3 className="w-full pb-1 leading-5 font-medium">
                 <Skeleton />
               </Header3>
               <Skeleton />

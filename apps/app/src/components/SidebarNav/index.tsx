@@ -14,7 +14,7 @@ export const SidebarNav = () => {
 
   return (
     <Sidebar className="border-r" label="Navigation">
-      <nav className="gap-1 p-4 flex flex-col">
+      <nav className="flex flex-col gap-1 p-4">
         <NavLink href="/" active={pathname === '/'}>
           <LuHouse className="size-4" /> {t('Home')}
         </NavLink>
@@ -43,7 +43,7 @@ const NavLink = ({
     <Link
       href={href}
       className={cn(
-        'gap-2 p-3 flex items-center rounded-sm hover:bg-neutral-offWhite hover:no-underline',
+        'flex items-center gap-2 rounded-sm p-3 hover:bg-neutral-offWhite hover:no-underline',
         active && 'bg-neutral-offWhite/50',
       )}
       {...pressProps}

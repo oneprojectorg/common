@@ -32,7 +32,7 @@ import { Welcome } from './Welcome';
  */
 export const LandingScreen = () => {
   return (
-    <div className="min-h-0 gap-4 pt-8 sm:gap-10 sm:pt-14 container flex grow flex-col">
+    <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <Suspense fallback={<WelcomeSkeleton />}>
         <WelcomeSection />
       </Suspense>
@@ -55,10 +55,10 @@ export const LandingScreen = () => {
 
 export const LandingScreenSkeleton: React.FC = async () => {
   return (
-    <div className="min-h-0 gap-4 pt-8 sm:gap-10 sm:pt-14 container flex grow flex-col">
-      <div className="gap-2 flex flex-col">
+    <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
+      <div className="flex flex-col gap-2">
         <Skeleton>
-          <Header1 className="sm:text-title-xl text-center text-title-md text-transparent">
+          <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
             <TranslatedText text="Welcome back, to Common!" />
           </Header1>
         </Skeleton>
@@ -73,13 +73,13 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
       <hr />
 
-      <div className="sm:grid hidden grid-cols-15">
-        <div className="gap-4 col-span-9 flex flex-col">
+      <div className="hidden grid-cols-15 sm:grid">
+        <div className="col-span-9 flex flex-col gap-4">
           <Skeleton className="h-full w-full" />
         </div>
         <span />
         <div className="col-span-5">
-          <Surface className="gap-6 sm:border sm:p-6 flex flex-col border-0">
+          <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
@@ -99,7 +99,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
         </TabList>
 
         <TabPanel id="discover" className="p-0">
-          <Surface className="gap-6 sm:border sm:p-6 flex flex-col border-0">
+          <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
@@ -113,8 +113,8 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
 const NewOrganizationsList = () => {
   return (
-    <Surface className="-mx-8 gap-6 sm:mx-0 sm:border sm:p-6 flex flex-col border-0">
-      <Header3 className="px-8 sm:px-0 font-serif text-title-sm">
+    <Surface className="-mx-8 flex flex-col gap-6 border-0 sm:mx-0 sm:border sm:p-6">
+      <Header3 className="px-8 font-serif text-title-sm sm:px-0">
         <TranslatedText text="New Organizations" />
       </Header3>
       <NewOrganizations />
@@ -141,7 +141,7 @@ const PostFeedSection = async ({
       {showPostUpdate ? (
         <>
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Surface className="mb-8 p-0 pt-5 sm:mb-4 sm:border sm:p-4 border-0">
+            <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
               <PostUpdate label="Post" />
             </Surface>
           </Suspense>
@@ -151,7 +151,7 @@ const PostFeedSection = async ({
       <div className="mt-4 sm:mt-0">
         <ErrorBoundary
           fallback={
-            <div className="py-8 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center py-8">
               <span className="text-neutral-charcoal">
                 <TranslatedText text="Unable to load posts. Please try refreshing." />
               </span>
@@ -174,8 +174,8 @@ const LandingScreenFeeds = ({
 }) => {
   return (
     <>
-      <div className="sm:grid hidden grid-cols-15">
-        <div className="gap-4 col-span-9 flex flex-col">
+      <div className="hidden grid-cols-15 sm:grid">
+        <div className="col-span-9 flex flex-col gap-4">
           <PostFeedSection showPostUpdate={showPostUpdate} />
         </div>
         <span />
@@ -210,7 +210,7 @@ const WelcomeSection = async () => {
   const user = await getUser();
 
   return (
-    <div className="gap-2 flex flex-col">
+    <div className="flex flex-col gap-2">
       <Welcome user={user} />
       <span className="text-center text-neutral-charcoal">
         <TranslatedText text="Explore new connections and strengthen existing relationships." />
@@ -221,9 +221,9 @@ const WelcomeSection = async () => {
 
 const WelcomeSkeleton = () => {
   return (
-    <div className="gap-2 flex flex-col">
+    <div className="flex flex-col gap-2">
       <Skeleton>
-        <Header1 className="sm:text-title-xl text-center text-title-md text-transparent">
+        <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
           <TranslatedText text="Welcome back, to Common!" />
         </Header1>
       </Skeleton>
@@ -272,13 +272,13 @@ const UserContentSkeleton = () => {
   return (
     <>
       <hr />
-      <div className="sm:grid hidden grid-cols-15">
-        <div className="gap-4 col-span-9 flex flex-col">
+      <div className="hidden grid-cols-15 sm:grid">
+        <div className="col-span-9 flex flex-col gap-4">
           <PostFeedSkeleton numPosts={3} />
         </div>
         <span />
         <div className="col-span-5">
-          <Surface className="gap-6 sm:border sm:p-6 flex flex-col border-0">
+          <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>

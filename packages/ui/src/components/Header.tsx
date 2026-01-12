@@ -8,7 +8,7 @@ export const Header1 = ({
   className?: string;
 }) => {
   return (
-    <h1 className={cn('sm:text-title-lg font-serif text-title-sm', className)}>
+    <h1 className={cn('font-serif text-title-sm sm:text-title-lg', className)}>
       {children}
     </h1>
   );

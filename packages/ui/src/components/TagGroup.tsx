@@ -34,7 +34,7 @@ const ColorContext = createContext<Color>('transparent');
 
 const tagStyles = tv({
   extend: focusRing,
-  base: 'gap-1 p-2 sm:rounded flex max-w-fit cursor-default items-center rounded-sm bg-neutral-gray1 leading-none',
+  base: 'flex max-w-fit cursor-default items-center gap-1 rounded-sm bg-neutral-gray1 p-2 leading-none sm:rounded',
   variants: {
     color: {
       transparent: '',
@@ -91,7 +91,7 @@ export const TagGroup = <T extends object>({
   return (
     <AriaTagGroup
       {...props}
-      className={twMerge('gap-1 flex flex-col', props.className)}
+      className={twMerge('flex flex-col gap-1', props.className)}
     >
       {label ? <Label>{label}</Label> : null}
       <ColorContext value={props.color || 'transparent'}>
@@ -99,7 +99,7 @@ export const TagGroup = <T extends object>({
           items={items}
           renderEmptyState={renderEmptyState}
           {...tagListProps}
-          className={twMerge('gap-2 flex flex-wrap', tagListProps?.className)}
+          className={twMerge('flex flex-wrap gap-2', tagListProps?.className)}
         >
           {children}
         </TagList>
@@ -116,7 +116,7 @@ export const TagGroup = <T extends object>({
 
 const removeButtonStyles = tv({
   extend: focusRing,
-  base: 'p-0.5 flex cursor-default items-center justify-center rounded-full transition-[background-color] hover:bg-white/10 pressed:bg-white/20',
+  base: 'flex cursor-default items-center justify-center rounded-full p-0.5 transition-[background-color] hover:bg-white/10 pressed:bg-white/20',
 });
 
 export const Tag = ({ children, color, ...props }: TagProps) => {

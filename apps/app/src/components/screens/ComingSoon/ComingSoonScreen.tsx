@@ -10,10 +10,10 @@ export const ComingSoonScreen = () => {
     delay: 1,
   };
   return (
-    <div className="inset-0 fixed overflow-x-hidden bg-[black] motion-reduce:bg-orangePurple">
-      <div className="inset-0 pointer-events-none absolute z-0">
+    <div className="fixed inset-0 overflow-x-hidden bg-[black] motion-reduce:bg-orangePurple">
+      <div className="pointer-events-none absolute inset-0 z-0">
         <motion.div
-          className="inset-0 fixed z-10 size-full motion-reduce:hidden"
+          className="fixed inset-0 z-10 size-full motion-reduce:hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={backgroundTransition}
@@ -22,13 +22,13 @@ export const ComingSoonScreen = () => {
         </motion.div>
         {/* Fade top and bottom edges on mobile */}
         {/* uses -[black] because -black is renamed in our color system */}
-        <div className="top-0 h-20 sm:hidden absolute z-20 w-full bg-gradient-to-b from-[black] via-[rgba(0,0,0,0.35)] via-40%" />
-        <div className="bottom-0 h-20 sm:hidden absolute z-20 w-full bg-gradient-to-t from-[black] via-[rgba(0,0,0,0.35)] via-40%" />
+        <div className="absolute top-0 z-20 h-20 w-full bg-gradient-to-b from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
+        <div className="absolute bottom-0 z-20 h-20 w-full bg-gradient-to-t from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
       </div>
-      <div className="inset-0 gap-6 p-4 py-16 sm:p-8 md:p-12 xl:p-20 absolute z-20 flex flex-col text-white">
+      <div className="absolute inset-0 z-20 flex flex-col gap-6 p-4 py-16 text-white sm:p-8 md:p-12 xl:p-20">
         {/* Render the sign in link first for screenreaders */}
         <motion.p
-          className="sm:text-lg order-3"
+          className="order-3 sm:text-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.5 }}
@@ -45,7 +45,7 @@ export const ComingSoonScreen = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="text-3xl font-light sm:text-6xl sm:leading-[1.25] order-1 h-full font-serif leading-[1.1]"
+          className="order-1 h-full font-serif text-3xl leading-[1.1] font-light sm:text-6xl sm:leading-[1.25]"
         >
           <em>Common.</em>{' '}
           <motion.span
@@ -57,7 +57,7 @@ export const ComingSoonScreen = () => {
             grow economic democracy to global scale.
           </motion.span>
         </motion.h1>
-        <div className="gap-6 order-2 flex flex-col">
+        <div className="order-2 flex flex-col gap-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

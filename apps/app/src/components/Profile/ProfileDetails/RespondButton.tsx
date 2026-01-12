@@ -118,7 +118,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
         )
       }
       items={dropdownItems}
-      className="sm:min-w-fit min-w-full bg-primary-teal text-neutral-offWhite"
+      className="min-w-full bg-primary-teal text-neutral-offWhite sm:min-w-fit"
       isDisabled={isPending}
     />
   );

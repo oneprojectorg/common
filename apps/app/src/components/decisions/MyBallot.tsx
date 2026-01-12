@@ -21,7 +21,7 @@ export const NoVoteFound = () => {
   const t = useTranslations();
   return (
     <EmptyProposalsState>
-      <Header3 className="font-light font-serif !text-title-base text-neutral-black">
+      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('You did not vote in this process.')}
       </Header3>
     </EmptyProposalsState>
@@ -63,12 +63,12 @@ export const MyBallot = ({
   );
 
   return (
-    <div className="gap-4 pb-12 flex flex-col">
+    <div className="flex flex-col gap-4 pb-12">
       <Header3 className="font-serif !text-title-base">
         {t('My Ballot')}
       </Header3>
 
-      <div className="gap-6 md:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => (
           <VotingProposalCard
             isSelected={true}
@@ -97,7 +97,7 @@ export const MyBallot = ({
               <div className="border-neutral-silver h-0 w-full border-b" />
 
               <ProposalCardFooter>
-                <div className="gap-1 flex items-start text-base text-neutral-charcoal">
+                <div className="flex items-start gap-1 text-base text-neutral-charcoal">
                   <span className="font-bold">{proposal.voteCount ?? 0}</span>
                   <span>{t('Total Votes')}</span>
                 </div>

@@ -126,11 +126,11 @@ export const CategoryList = <C extends CategoryItem>({
         className,
       )}
     >
-      <ul className="gap-2 flex w-full flex-col">
+      <ul className="flex w-full flex-col gap-2">
         {categories.map((category, index) => (
           <li
             key={category.id || index}
-            className="gap-2 relative flex items-center"
+            className="relative flex items-center gap-2"
           >
             <div className="flex-1">
               <TextField
@@ -159,7 +159,7 @@ export const CategoryList = <C extends CategoryItem>({
       <Button
         color="secondary"
         onPress={addCategory}
-        className="gap-1 flex w-full items-center justify-center border-primary-teal shadow-none"
+        className="flex w-full items-center justify-center gap-1 border-primary-teal shadow-none"
       >
         <LuPlus className="h-4 w-4" />
         Add Category

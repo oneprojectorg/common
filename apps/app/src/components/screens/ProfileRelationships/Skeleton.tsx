@@ -5,7 +5,7 @@ import React from 'react';
 import { OrganizationCardListSkeleton } from '@/components/OrganizationList';
 
 const BreadcrumbsSkeleton = () => (
-  <div className="gap-4 flex flex-col">
+  <div className="flex flex-col gap-4">
     <Breadcrumbs>
       <Breadcrumb>
         <Skeleton className="w-20" />
@@ -26,14 +26,14 @@ const TabListSkeleton = () => (
 );
 
 const RelationshipItemSkeleton = () => (
-  <li className="gap-6 flex w-full">
+  <li className="flex w-full gap-6">
     <div className="shrink-0">
       <Skeleton className="size-12 rounded-full" />
     </div>
-    <div className="gap-3 flex w-full flex-col">
-      <div className="gap-2 flex flex-col">
+    <div className="flex w-full flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <Skeleton className="h-5 w-40" />
-        <div className="gap-1 flex items-center">
+        <div className="flex items-center gap-1">
           <Skeleton className="h-4 w-32" />
         </div>
       </div>
@@ -43,7 +43,7 @@ const RelationshipItemSkeleton = () => (
 );
 
 const RelationshipListSkeleton = () => (
-  <ul className="gap-12 flex flex-col">
+  <ul className="flex flex-col gap-12">
     {Array.from({ length: 3 }).map((_, index) => (
       <RelationshipItemSkeleton key={index} />
     ))}
@@ -53,7 +53,7 @@ const RelationshipListSkeleton = () => (
 export const ProfileRelationshipsSkeleton = () => {
   return (
     <>
-      <div className="gap-4 flex flex-col">
+      <div className="flex flex-col gap-4">
         <BreadcrumbsSkeleton />
         <TitleSkeleton />
       </div>
@@ -70,23 +70,23 @@ export const ProfileRelationshipsSkeleton = () => {
 export const ProfileRelationshipsSkeletonWithLines = () => {
   return (
     <>
-      <div className="gap-4 flex flex-col">
+      <div className="flex flex-col gap-4">
         <BreadcrumbsSkeleton />
         <TitleSkeleton />
       </div>
       <div className="rounded-md border">
         <TabListSkeleton />
         <div className="px-6 py-4">
-          <ul className="gap-12 flex flex-col">
+          <ul className="flex flex-col gap-12">
             {Array.from({ length: 3 }).map((_, index) => (
-              <li key={index} className="gap-6 flex w-full">
+              <li key={index} className="flex w-full gap-6">
                 <div className="shrink-0">
                   <Skeleton className="size-12 rounded-full" />
                 </div>
-                <div className="gap-3 flex w-full flex-col">
-                  <div className="gap-2 flex flex-col">
+                <div className="flex w-full flex-col gap-3">
+                  <div className="flex flex-col gap-2">
                     <Skeleton className="h-5 w-40" />
-                    <div className="gap-1 flex items-center">
+                    <div className="flex items-center gap-1">
                       <Skeleton className="h-4 w-32" />
                     </div>
                   </div>
@@ -94,7 +94,7 @@ export const ProfileRelationshipsSkeletonWithLines = () => {
                   <SkeletonLine
                     lines={2}
                     randomWidth={true}
-                    className="max-w-md w-full"
+                    className="w-full max-w-md"
                   />
                 </div>
               </li>
@@ -109,7 +109,7 @@ export const ProfileRelationshipsSkeletonWithLines = () => {
 export const ProfileOrganizationsSkeleton = () => {
   return (
     <>
-      <div className="gap-4 flex flex-col">
+      <div className="flex flex-col gap-4">
         <BreadcrumbsSkeleton />
         <TitleSkeleton />
       </div>

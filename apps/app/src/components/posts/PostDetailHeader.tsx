@@ -17,14 +17,14 @@ import { CreateMenu } from '../SiteHeader/CreateMenu';
 export const PostDetailHeader = () => {
   const t = useTranslations();
   return (
-    <header className="p-2 px-6 sm:grid-cols-3 md:py-3 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white">
-      <div className="gap-3 flex items-center">
+    <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
+      <div className="flex items-center gap-3">
         <Link
           href="/"
-          className="md:text-primary-teal gap-2 flex items-center text-base text-neutral-black hover:text-primary-tealBlack"
+          className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
         >
           <LuArrowLeft className="size-6 md:size-4" />
-          <span className="md:flex hidden">{t('Home')}</span>
+          <span className="hidden md:flex">{t('Home')}</span>
         </Link>
       </div>
 
@@ -36,7 +36,7 @@ export const PostDetailHeader = () => {
         </ErrorBoundary>
       </div>
 
-      <div className="gap-2 flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
         <ClientOnly>
           <CreateMenu />
           <LocaleChooser />

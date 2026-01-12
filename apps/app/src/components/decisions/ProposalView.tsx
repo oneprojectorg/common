@@ -118,8 +118,8 @@ export function ProposalView({
       canEdit={canEdit}
     >
       {/* Content */}
-      <div className="px-6 py-8 flex-1">
-        <div className="max-w-xl gap-8 mx-auto flex flex-col">
+      <div className="flex-1 px-6 py-8">
+        <div className="mx-auto flex max-w-xl flex-col gap-8">
           <div className="space-y-4">
             {/* Title */}
             <Header1 className="font-serif text-title-lg">
@@ -127,10 +127,10 @@ export function ProposalView({
             </Header1>
             <div className="space-y-6">
               {/* Metadata Row */}
-              <div className="gap-4 sm:flex-row sm:items-center flex flex-wrap">
+              <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
                 {category && (
                   <TagGroup className="max-w-full">
-                    <Tag className="sm:max-w-96 sm:rounded-sm max-w-full">
+                    <Tag className="max-w-full sm:max-w-96 sm:rounded-sm">
                       <span className="truncate">{category}</span>
                     </Tag>
                   </TagGroup>
@@ -143,7 +143,7 @@ export function ProposalView({
               </div>
 
               {/* Author and submission info */}
-              <div className="gap-2 flex items-center">
+              <div className="flex items-center gap-2">
                 {currentProposal.submittedBy && (
                   <>
                     <Avatar
@@ -186,14 +186,14 @@ export function ProposalView({
               </div>
 
               {/* Engagement Stats */}
-              <div className="gap-4 py-4 flex items-center border-t border-b text-sm text-neutral-gray4">
-                <div className="gap-1 flex items-center">
+              <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-neutral-gray4">
+                <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
                   <span>
                     {currentProposal.likesCount || 0} {t('Likes')}
                   </span>
                 </div>
-                <div className="gap-1 flex items-center">
+                <div className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
                   <span>
                     {currentProposal.commentsCount || 0}{' '}
@@ -202,7 +202,7 @@ export function ProposalView({
                       : t('Comment')}
                   </span>
                 </div>
-                <div className="gap-1 flex items-center">
+                <div className="flex items-center gap-1">
                   <LuBookmark className="size-4" />
                   <span>
                     {currentProposal.followersCount || 0}{' '}
@@ -224,14 +224,14 @@ export function ProposalView({
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>
-            <div className="pt-8 border-t">
-              <h3 className="mb-6 font-semibold text-lg text-neutral-charcoal">
+            <div className="border-t pt-8">
+              <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
                 {t('Comments')} ({comments.length})
               </h3>
 
               {/* Comment Input */}
               <div className="mb-8">
-                <Surface className="p-0 sm:border sm:p-4 border-0">
+                <Surface className="border-0 p-0 sm:border sm:p-4">
                   <PostUpdate
                     profileId={currentProposal.profileId || undefined}
                     placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
@@ -246,7 +246,7 @@ export function ProposalView({
               {/* Comments Display */}
               {commentsLoading ? (
                 <div
-                  className="py-8 text-gray-500 text-center"
+                  className="py-8 text-center text-gray-500"
                   role="status"
                   aria-label={t('Loading comments')}
                 >
@@ -272,7 +272,7 @@ export function ProposalView({
                 </div>
               ) : (
                 <div
-                  className="py-8 text-gray-500 text-center"
+                  className="py-8 text-center text-gray-500"
                   role="status"
                   aria-label={t('No comments')}
                 >

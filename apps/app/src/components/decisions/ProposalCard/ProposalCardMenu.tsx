@@ -276,7 +276,7 @@ export function ProposalCardMenu({
             <ModalFooter>
               <Button
                 color="secondary"
-                className="sm:w-fit w-full"
+                className="w-full sm:w-fit"
                 onPress={() => setIsDeleteModalOpen(false)}
               >
                 {t('Cancel')}
@@ -284,7 +284,7 @@ export function ProposalCardMenu({
               <Button
                 color="destructive"
                 onPress={handleDeleteConfirm}
-                className="sm:w-fit w-full"
+                className="w-full sm:w-fit"
                 isDisabled={deleteProposalMutation.isPending}
               >
                 {deleteProposalMutation.isPending

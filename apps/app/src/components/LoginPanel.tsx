@@ -132,10 +132,10 @@ export const LoginPanel = () => {
 
   // TODO: using a tailwind v4 class here "min-w-xs"
   return (
-    <div className="sm:block flex items-center justify-center">
-      <div className="min-w-xs xs:w-96 px-4 py-8 text-neutral-700 sm:border-0 z-[999999] max-h-full w-auto rounded-md border-offWhite bg-white bg-clip-padding font-sans">
-        <div className="gap-12 sm:gap-8 flex flex-col">
-          <section className="gap-2 sm:gap-4 flex flex-col items-center justify-center">
+    <div className="flex items-center justify-center sm:block">
+      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-md border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-700 xs:w-96 sm:border-0">
+        <div className="flex flex-col gap-12 sm:gap-8">
+          <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
             <Header1 className="text-center">
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? 'Connection Issue'
@@ -157,7 +157,7 @@ export const LoginPanel = () => {
                       }
 
                       return (
-                        <div className="gap-2 flex flex-col">
+                        <div className="flex flex-col gap-2">
                           <span className="sm:text-base">Welcome to</span>
                           <span>
                             <CommonLogo className="h-8 w-auto" />
@@ -167,9 +167,9 @@ export const LoginPanel = () => {
                     }
 
                     return (
-                      <div className="gap-4 flex flex-col items-center justify-center">
+                      <div className="flex flex-col items-center justify-center gap-4">
                         <CheckIcon />
-                        <span className="sm:text-title-lg text-title-base">
+                        <span className="text-title-base sm:text-title-lg">
                           Email sent!
                         </span>
                       </div>
@@ -177,7 +177,7 @@ export const LoginPanel = () => {
                   })()}
             </Header1>
 
-            <div className="px-4 sm:text-base text-center text-sm leading-[130%] text-neutral-gray4">
+            <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
                 : (() => {
@@ -205,10 +205,10 @@ export const LoginPanel = () => {
             </div>
           </section>
 
-          <section className="gap-8 flex flex-col">
+          <section className="flex flex-col gap-8">
             {user?.error?.name !== 'AuthRetryableFetchError' &&
               !(login.isError || !!combinedError) && (
-                <div className="gap-8 flex flex-col">
+                <div className="flex flex-col gap-8">
                   {!loginSuccess && (
                     <>
                       <Button
@@ -223,7 +223,7 @@ export const LoginPanel = () => {
                         Continue with Google
                       </Button>
 
-                      <div className="gap-4 flex w-full items-center justify-center text-midGray">
+                      <div className="flex w-full items-center justify-center gap-4 text-midGray">
                         <div className="h-px grow bg-current" />
                         <span>or</span>
                         <div className="h-px grow bg-current" />
@@ -307,7 +307,7 @@ export const LoginPanel = () => {
                 </div>
               )}
 
-            <section className="gap-6 flex flex-col">
+            <section className="flex flex-col gap-6">
               {!(login.isError || !!combinedError) ? (
                 <>
                   {user?.error?.name === 'AuthRetryableFetchError' ? (
@@ -321,7 +321,7 @@ export const LoginPanel = () => {
                       }}
                     >
                       {isRefetchingUser ? (
-                        <div className="m-0.5 w-5 border-neutral-500 animate-spin aspect-square rounded-full border-2 border-b-0" />
+                        <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-500" />
                       ) : (
                         'Try again'
                       )}
@@ -362,7 +362,7 @@ export const LoginPanel = () => {
                   )}
                 </>
               ) : (
-                <div className="gap-4 flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center justify-center gap-4">
                   <ButtonLink
                     href={`${OPURLConfig('APP').ENV_URL}`}
                     color="gradient"
@@ -378,7 +378,7 @@ export const LoginPanel = () => {
               {user?.error?.name === 'AuthRetryableFetchError' ||
               login.isError ||
               !!combinedError ? null : (
-                <div className="sm:text-sm flex flex-col items-center justify-center text-center text-xs text-midGray">
+                <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
                   {isSignup ? (
                     <span>
                       You'll receive a code to confirm your account. Can't find

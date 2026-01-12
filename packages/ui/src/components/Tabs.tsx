@@ -16,7 +16,7 @@ import type {
 import { VariantProps, tv } from 'tailwind-variants';
 
 const tabsStyles = tv({
-  base: 'gap-4 flex',
+  base: 'flex gap-4',
   variants: {
     orientation: {
       horizontal: 'flex-col',
@@ -37,7 +37,7 @@ export const Tabs = (props: TabsProps) => {
 };
 
 const tabListStyles = tv({
-  base: 'gap-4 flex overflow-x-auto',
+  base: 'flex gap-4 overflow-x-auto',
   variants: {
     variant: {
       default: '',
@@ -69,11 +69,11 @@ export const TabList = <T extends object>(
 };
 
 const tabProps = tv({
-  base: 'h-8 px-2 py-3 font-normal sm:h-auto sm:bg-transparent flex cursor-default items-center text-base text-nowrap text-neutral-gray4 outline-hidden transition forced-color-adjust-none focus-visible:bg-neutral-offWhite',
+  base: 'flex h-8 cursor-default items-center px-2 py-3 text-base font-normal text-nowrap text-neutral-gray4 outline-hidden transition forced-color-adjust-none focus-visible:bg-neutral-offWhite sm:h-auto sm:bg-transparent',
   variants: {
     variant: {
       default: '',
-      pill: 'border-b-none p-3 sm:py-2 rounded-sm bg-neutral-offWhite',
+      pill: 'border-b-none rounded-sm bg-neutral-offWhite p-3 sm:py-2',
     },
     isSelected: {
       false: '',
@@ -88,7 +88,7 @@ const tabProps = tv({
       variant: 'pill',
       isSelected: true,
       class:
-        'sm:bg-neutral-gray1 border-none bg-neutral-gray1 text-neutral-charcoal',
+        'border-none bg-neutral-gray1 text-neutral-charcoal sm:bg-neutral-gray1',
     },
   ],
   defaultVariants: {
@@ -115,7 +115,7 @@ export const Tab = (
 };
 
 const tabPanelStyles = tv({
-  base: 'sm:p-4 flex-1 text-base',
+  base: 'flex-1 text-base sm:p-4',
 });
 
 export const TabPanel = (props: TabPanelProps) => {

@@ -18,7 +18,7 @@ export const Example = (args: any) => (
   <Form {...args}>
     <TextField label="Email" name="email" type="email" isRequired />
     <TextField label="Name" name="name" isRequired />
-    <div className="gap-2 flex">
+    <div className="flex gap-2">
       <Button type="submit">Submit</Button>
       <Button type="reset">Reset</Button>
     </div>

@@ -20,7 +20,7 @@ export function CommentSkeleton() {
       <AvatarSkeleton className="!size-8 max-h-8 max-w-8" />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
-          <div className="gap-2 flex items-baseline">
+          <div className="flex items-baseline gap-2">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-3 w-16" />
           </div>

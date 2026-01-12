@@ -4,7 +4,7 @@ import { FormalSection } from '../FormalSection';
 
 export const ToSContentShort = () => {
   return (
-    <div className="gap-8 sm:pb-20 relative flex w-full flex-col">
+    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
         <p className="italic">
           This is a summarized version of our Terms of Use. Please read the full
@@ -69,7 +69,7 @@ export const ToSContentShort = () => {
           All users of the Platform must comply with our Code of Conduct,
           including these core community principles:
         </p>
-        <ul className="mb-4 pl-6 list-disc">
+        <ul className="mb-4 list-disc pl-6">
           <li className="mb-2">
             <strong>Treat Everyone with Respect and Consideration</strong>{' '}
             (adopted from DisCO Caring Community Guidelines): Be kind,

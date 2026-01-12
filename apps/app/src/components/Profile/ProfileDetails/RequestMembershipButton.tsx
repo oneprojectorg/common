@@ -28,7 +28,7 @@ export const RequestMembershipButton = ({
     <ErrorBoundary fallback={null}>
       <Suspense
         fallback={
-          <Skeleton className="h-9 sm:min-w-fit w-[106px] min-w-full rounded-lg" />
+          <Skeleton className="h-9 w-[106px] min-w-full rounded-lg sm:min-w-fit" />
         }
       >
         <RequestMembershipButtonSuspense profile={profile} />
@@ -117,7 +117,7 @@ const RequestMembershipButtonSuspense = ({
       <DialogTrigger>
         <ButtonTooltip
           color="secondary"
-          className="sm:min-w-fit min-w-full"
+          className="min-w-full sm:min-w-fit"
           tooltipProps={{
             children: t('Your membership request is pending approval'),
           }}
@@ -142,7 +142,7 @@ const RequestMembershipButtonSuspense = ({
                   <Button
                     onPress={close}
                     color="neutral"
-                    className="sm:w-fit w-full"
+                    className="w-full sm:w-fit"
                   >
                     {t('Keep request')}
                   </Button>
@@ -150,7 +150,7 @@ const RequestMembershipButtonSuspense = ({
                     color="destructive"
                     onPress={() => handleCancelRequest(close)}
                     isPending={isPending}
-                    className="sm:w-fit w-full"
+                    className="w-full sm:w-fit"
                   >
                     {isPending ? <LoadingSpinner /> : t('Cancel request')}
                   </Button>
@@ -168,7 +168,7 @@ const RequestMembershipButtonSuspense = ({
       color="secondary"
       onPress={handleRequestMembership}
       isPending={isPending}
-      className="sm:min-w-fit min-w-full"
+      className="min-w-full sm:min-w-fit"
       tooltipProps={{
         children: t('Request to join this organization as a member'),
       }}

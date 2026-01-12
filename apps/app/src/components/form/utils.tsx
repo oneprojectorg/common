@@ -24,12 +24,12 @@ export const { useAppForm } = createFormHook({
   },
   formComponents: {
     Button: ({ className, ...props }: ButtonProps) => (
-      <Button {...props} className={cn('sm:w-48 w-full', className)} />
+      <Button {...props} className={cn('w-full sm:w-48', className)} />
     ),
     SubmitButton: ({ className, ...props }: ButtonProps) => (
       <Button
         {...props}
-        className={cn('sm:w-48 w-full', className)}
+        className={cn('w-full sm:w-48', className)}
         type="submit"
       />
     ),

@@ -33,7 +33,7 @@ export const OrganizationCarousel = ({
     <Carousel
       ref={carouselRef}
       aria-label={label}
-      className="grid-areas-[.'scroller'.][.'tabs'.] gap-y-3 relative grid grow grid-cols-[min-content_1fr_min-content] grid-rows-[1fr_min-content] items-center"
+      className="grid-areas-[.'scroller'.][.'tabs'.] relative grid grow grid-cols-[min-content_1fr_min-content] grid-rows-[1fr_min-content] items-center gap-y-3"
       mouseDragging
       itemsPerPage={itemsPerPage}
     >

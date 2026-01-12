@@ -7,7 +7,7 @@ import EmailTemplate from '../components/EmailTemplate';
 const OPSignupEmail = () => {
   return (
     <EmailTemplate previewText="Confirm your email! 👋">
-      <Heading className="!my-0 mx-0 p-0 text-4xl font-normal text-left leading-[48px]">
+      <Heading className="mx-0 !my-0 p-0 text-left text-4xl leading-[48px] font-normal">
         Confirm your email
       </Heading>
       <Text className="mt-4 text-lg">
@@ -15,9 +15,9 @@ const OPSignupEmail = () => {
         and we'll get you signed in.
       </Text>
 
-      <Section className="mb-6 mt-10 text-center">
+      <Section className="mt-10 mb-6 text-center">
         <code
-          className="rounded-xl border-neutral-800 bg-neutral-600 p-4 px-12 text-2xl font-medium text-neutral-50 md:text-3xl font-mono"
+          className="rounded-xl border-neutral-800 bg-neutral-600 p-4 px-12 font-mono text-2xl font-medium text-neutral-50 md:text-3xl"
           style={{
             borderWidth: '1px',
             borderStyle: 'solid',
@@ -36,7 +36,7 @@ const OPSignupEmail = () => {
         </code>
       </Section>
 
-      <Text className="mt-8 text-neutral-500 text-center text-sm">
+      <Text className="mt-8 text-center text-sm text-neutral-500">
         This code will only be valid for the next 10 minutes. <br /> If you’re
         having problems, send us an{' '}
         <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-primary-teal/60">

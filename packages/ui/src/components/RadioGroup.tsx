@@ -28,14 +28,14 @@ export const RadioGroup = (props: RadioGroupProps) => {
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'group gap-2 flex flex-col',
+        'group flex flex-col gap-2',
       )}
     >
       <Label className="text-neutral-charcoal">
         {props.label}
         {props.isRequired && <span className="text-functional-red"> *</span>}
       </Label>
-      <div className="group-orientation-horizontal:gap-4 gap-2 flex group-orientation-vertical:flex-col">
+      <div className="flex gap-2 group-orientation-horizontal:gap-4 group-orientation-vertical:flex-col">
         {props.children}
       </div>
       {props.description && <Description>{props.description}</Description>}
@@ -46,7 +46,7 @@ export const RadioGroup = (props: RadioGroupProps) => {
 
 const styles = tv({
   // extend: focusRing,
-  base: 'bg-neutral-white size-4 aspect-square shrink-0 rounded-full border border-neutral-gray3 transition-all',
+  base: 'bg-neutral-white aspect-square size-4 shrink-0 rounded-full border border-neutral-gray3 transition-all',
   variants: {
     isSelected: {
       false:
@@ -78,8 +78,8 @@ export const Radio = ({
       className={composeTailwindRenderProps(
         props.className,
         isBottomLabel
-          ? 'group gap-1 py-2 flex flex-col items-center text-base text-neutral-charcoal transition'
-          : 'group gap-2 py-2 flex items-start text-base text-neutral-charcoal transition',
+          ? 'group flex flex-col items-center gap-1 py-2 text-base text-neutral-charcoal transition'
+          : 'group flex items-start gap-2 py-2 text-base text-neutral-charcoal transition',
       )}
     >
       {(renderProps) => {

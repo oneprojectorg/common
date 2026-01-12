@@ -25,7 +25,7 @@ export const ProfileItem = ({
   return (
     <div
       className={cn(
-        'gap-3 flex',
+        'flex gap-3',
         hasAdditionalContent ? 'items-start' : 'items-center',
         className,
       )}
@@ -33,7 +33,7 @@ export const ProfileItem = ({
       {avatar}
 
       <div className="min-w-0 flex-1">
-        <div className="font-semibold leading-base text-neutral-black">
+        <div className="leading-base font-semibold text-neutral-black">
           {title}
         </div>
 

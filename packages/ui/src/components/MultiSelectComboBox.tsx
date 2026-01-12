@@ -305,7 +305,7 @@ export const MultiSelectComboBox = ({
   };
 
   return (
-    <div className="gap-2 flex w-full flex-col">
+    <div className="flex w-full flex-col gap-2">
       <Label>
         {label}
         {isRequired && <span className="text-red"> *</span>}
@@ -314,7 +314,7 @@ export const MultiSelectComboBox = ({
       <div className="relative" ref={dropdownRef}>
         {/* Dropdown button / Selected options display */}
         <div
-          className="min-h-10 px-3 py-2 flex w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white text-base hover:border-neutral-gray2"
+          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-3 py-2 text-base hover:border-neutral-gray2"
           onClick={() => {
             // Only toggle if input is NOT focused
             if (document.activeElement !== inputRef.current) {
@@ -322,11 +322,11 @@ export const MultiSelectComboBox = ({
             }
           }}
         >
-          <div className="gap-1 relative flex w-full flex-wrap items-center">
+          <div className="relative flex w-full flex-wrap items-center gap-1">
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 pr-7 min-w-[40px] flex-1 border-none bg-transparent text-base outline-hidden group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-hidden group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -351,7 +351,7 @@ export const MultiSelectComboBox = ({
               placeholder={placeholder}
               style={{ minWidth: 40 }}
             />
-            <span className="right-2 pointer-events-none absolute top-1/2 -translate-y-1/2 text-neutral-charcoal">
+            <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-charcoal">
               {isLoading ? (
                 <LoadingSpinner className="size-4" color="gray" />
               ) : (
@@ -364,11 +364,11 @@ export const MultiSelectComboBox = ({
 
         {/* Selected options below input box, not inside */}
         {selectedOptions.length > 0 && (
-          <div className="mt-1 gap-2 flex flex-wrap">
+          <div className="mt-1 flex flex-wrap gap-2">
             {selectedOptions.map((option) => (
               <div
                 key={option.isNewValue ? 'other' : option.id}
-                className="p-2 flex items-center rounded bg-black/5 text-charcoal"
+                className="flex items-center rounded bg-black/5 p-2 text-charcoal"
               >
                 <span>{option.label}</span>
                 <button
@@ -386,8 +386,8 @@ export const MultiSelectComboBox = ({
 
         {/* Dropdown menu - always below input and selected options */}
         {isOpen && filteredItems.length > 0 && (
-          <div className="mt-1 shadow-lg absolute z-10 w-full rounded-md border bg-white">
-            <ul ref={listRef} className="max-h-60 py-1 overflow-auto">
+          <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
+            <ul ref={listRef} className="max-h-60 overflow-auto py-1">
               {filteredItems.map((option, idx) => {
                 const isParent = disableParentSelection && option.hasChildren;
                 const isSelected = selectedOptions.some(
@@ -398,9 +398,9 @@ export const MultiSelectComboBox = ({
                 return (
                   <li
                     key={option.id}
-                    className={`px-3 py-2 flex flex-col items-start text-base ${
+                    className={`flex flex-col items-start px-3 py-2 text-base ${
                       isParent
-                        ? 'py-2 pt-2 cursor-default text-sm text-neutral-gray4' // parent styling
+                        ? 'cursor-default py-2 pt-2 text-sm text-neutral-gray4' // parent styling
                         : `cursor-pointer hover:bg-neutral-gray1 ${
                             isSelected ? 'bg-neutral-gray1' : ''
                           } ${isHighlighted ? 'bg-neutral-gray1' : ''}`

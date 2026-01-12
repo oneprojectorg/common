@@ -257,7 +257,7 @@ export const UpdateOrganizationForm = forwardRef<
     >
       <FormContainer className={className}>
         {/* Header Images */}
-        <div className="pb-12 sm:pb-20 relative w-full">
+        <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
             value={bannerImage?.url ?? undefined}
             onChange={(file: File) =>
@@ -267,7 +267,7 @@ export const UpdateOrganizationForm = forwardRef<
             error={uploadImage.error?.message || undefined}
           />
           <AvatarUploader
-            className="bottom-0 left-4 size-20 sm:size-28 absolute aspect-square"
+            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
             value={profileImage?.url ?? undefined}
             onChange={(file: File) =>
               handleImageUpload(file, setProfileImage, uploadAvatarImage)
@@ -474,7 +474,7 @@ export const UpdateOrganizationForm = forwardRef<
 
         {/* Funding Information Section */}
         <hr />
-        <div className="gap-4 flex flex-col">
+        <div className="flex flex-col gap-4">
           <form.AppField
             name="isReceivingFunds"
             children={(field) => (
@@ -489,7 +489,7 @@ export const UpdateOrganizationForm = forwardRef<
                   />
                 </ToggleRow>
                 {field.state.value ? (
-                  <div className="gap-4 flex flex-col">
+                  <div className="flex flex-col gap-4">
                     <form.AppField
                       name="receivingFundsTerms"
                       children={(field) => (
@@ -506,7 +506,7 @@ export const UpdateOrganizationForm = forwardRef<
                     <form.AppField
                       name="receivingFundsLink"
                       children={(field) => (
-                        <div className="gap-2 flex flex-col">
+                        <div className="flex flex-col gap-2">
                           <field.TextField
                             label="Where can people contribute to your organization?"
                             value={field.state.value as string}
@@ -564,7 +564,7 @@ export const UpdateOrganizationForm = forwardRef<
                             onChange={acceptingApplicationsField.handleChange}
                           />
                         </ToggleRow>
-                        <div className="gap-4 flex flex-col">
+                        <div className="flex flex-col gap-4">
                           {!acceptingApplicationsField.state.value ? (
                             <form.AppField
                               name="offeringFundsDescription"
@@ -589,7 +589,7 @@ export const UpdateOrganizationForm = forwardRef<
                           <form.AppField
                             name="offeringFundsLink"
                             children={(field) => (
-                              <div className="gap-2 flex flex-col">
+                              <div className="flex flex-col gap-2">
                                 <field.TextField
                                   label={
                                     acceptingApplicationsField.state.value
@@ -632,9 +632,9 @@ export const UpdateOrganizationForm = forwardRef<
       </FormContainer>
 
       <ModalFooter className="sticky">
-        <div className="gap-4 sm:flex-row sm:gap-2 flex flex-col-reverse justify-end">
+        <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row sm:gap-2">
           <form.SubmitButton
-            className="sm:max-w-fit w-full"
+            className="w-full sm:max-w-fit"
             isDisabled={form.state.isSubmitting || updateOrganization.isPending}
           >
             {form.state.isSubmitting || updateOrganization.isPending ? (

@@ -7,16 +7,16 @@ import EmailTemplate from '../components/EmailTemplate';
 const OPLoginCodeEmail = () => {
   return (
     <EmailTemplate previewText="Action Required: Your login code for Common">
-      <Heading className="!my-0 mx-0 p-0 font-light text-left font-serif text-[28px] tracking-[-0.02625rem] text-[#222D38]">
+      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Login
       </Heading>
       <Section className="pb-0 font-sans">
-        <Text className="pb-6 pt-8 text-sm">
+        <Text className="pt-8 pb-6 text-sm">
           Your login code is ready below. Enter it in your open browser window,
           and we’ll get you signed in.
         </Text>
 
-        <code className="mt-6 px-4 py-2 text-2xl rounded-lg bg-[#F27405] font-mono text-white">
+        <code className="mt-6 rounded-lg bg-[#F27405] px-4 py-2 font-mono text-2xl text-white">
           <span
             style={{
               letterSpacing: '0.25em',

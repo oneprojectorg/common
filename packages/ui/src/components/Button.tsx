@@ -8,25 +8,25 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'gap-1 font-normal leading-3 sm:text-base flex w-fit cursor-pointer items-center justify-center rounded-md text-center text-base text-nowrap shadow-md',
+  base: 'flex w-fit cursor-pointer items-center justify-center gap-1 rounded-md text-center text-base leading-3 font-normal text-nowrap shadow-md sm:text-base',
   variants: {
     variant: {
       primary: '',
-      icon: 'gap-2 sm:text-base flex text-sm',
-      pill: 'p-2 h-auto border-0 bg-primary-tealWhite text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
+      icon: 'flex gap-2 text-sm sm:text-base',
+      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     color: {
       primary:
         'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
       secondary:
-        'hover:bg-neutral-50 border border-offWhite bg-white text-teal pressed:bg-white',
+        'border border-offWhite bg-white text-teal hover:bg-neutral-50 pressed:bg-white',
       gradient: '',
       unverified:
-        'hover:bg-neutral-50 border border-primary-teal bg-primary-tealWhite text-teal pressed:bg-white',
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
       verified:
-        'hover:bg-neutral-50 border border-primary-teal bg-primary-tealWhite text-teal pressed:bg-white',
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
       neutral:
-        'hover:bg-neutral-50 border bg-white text-neutral-charcoal shadow-light pressed:bg-white',
+        'border bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
       ghost:
@@ -34,7 +34,7 @@ const buttonStyle = tv({
       pill: '',
     },
     size: {
-      small: 'h-8 p-3 rounded-sm',
+      small: 'h-8 rounded-sm p-3',
       medium: 'h-10 p-4',
     },
     surface: {
@@ -61,7 +61,7 @@ const buttonStyle = tv({
       false: '',
     },
     backglow: {
-      true: 'before:inset-0 before:from-neutral-200 before:to-neutral-500 before:blur-md hover:text-neutral-950 hover:before:blur-lg relative *:z-0 before:absolute before:z-[-1] before:bg-gradient-to-r before:opacity-60 before:transition-all before:duration-300 before:content-[""] hover:before:opacity-100',
+      true: 'relative *:z-0 before:absolute before:inset-0 before:z-[-1] before:bg-gradient-to-r before:from-neutral-200 before:to-neutral-500 before:opacity-60 before:blur-md before:transition-all before:duration-300 before:content-[""] hover:text-neutral-950 hover:before:opacity-100 hover:before:blur-lg',
       false: '',
     },
   },

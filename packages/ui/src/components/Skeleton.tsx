@@ -34,12 +34,12 @@ export const SkeletonLine: React.FC<SkeletonProps> = memo(
 
     return (
       <div
-        className={cn('animate-pulse flex flex-col gap-[0.75em]', className)}
+        className={cn('flex animate-pulse flex-col gap-[0.75em]', className)}
       >
         {Array.from({ length: lines }).map((_, index) => (
           <div
             key={`${index + 1}`}
-            className="from-neutral-300 to-neutral-200 animate-pulse h-[1em] rounded-[0.25em] bg-gradient-to-br"
+            className="h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br from-neutral-300 to-neutral-200"
             style={{
               backgroundSize: '200% 200%',
               width: randomWidth

@@ -65,7 +65,7 @@ Sections.args = {
 };
 
 export const Validation = (args: any) => (
-  <Form className="gap-2 flex flex-col items-start">
+  <Form className="flex flex-col items-start gap-2">
     <Example {...args} />
     <Button type="submit">Submit</Button>
   </Form>
