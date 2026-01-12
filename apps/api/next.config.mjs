@@ -29,8 +29,10 @@ const config = {
   // Expose Vercel env vars to client-side for preview URL detection
   env: {
     NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV,
-    NEXT_PUBLIC_VERCEL_URL:
-      process.env.VERCEL_ENV === 'preview' ? process.env.VERCEL_URL : undefined,
+    NEXT_PUBLIC_VERCEL_BRANCH_URL:
+      process.env.VERCEL_ENV === 'preview'
+        ? process.env.VERCEL_BRANCH_URL
+        : undefined,
   },
   experimental: {
     serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],

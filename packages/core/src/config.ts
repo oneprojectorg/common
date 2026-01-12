@@ -34,16 +34,22 @@ const isInPreviewDeployment =
   process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
 
 // Check if running on a preview URL (vs custom domain)
+// Prefer BRANCH_URL (branch-based) over URL (hash-based) for consistent preview URLs
 const DEPLOYMENT_URL =
-  process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
+  process.env.VERCEL_BRANCH_URL ||
+  process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
+  process.env.VERCEL_URL ||
+  process.env.NEXT_PUBLIC_VERCEL_URL;
 export const isOnPreviewAppDomain =
   DEPLOYMENT_URL?.endsWith('.vercel.app') ?? false;
 
 // Extract the suffix after the project name for constructing other preview URLs
-// e.g., "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
+// Handles both formats:
+// - "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
+// - "app-b9bcxaizg-oneproject.vercel.app" -> "-b9bcxaizg-oneproject.vercel.app"
 const getPreviewUrlSuffix = (): string | null => {
   if (!DEPLOYMENT_URL || !isOnPreviewAppDomain) return null;
-  const match = DEPLOYMENT_URL.match(/^[^-]+(-git-.+)$/);
+  const match = DEPLOYMENT_URL.match(/^[^-]+(-.+\.vercel\.app)$/);
   return match?.[1] ?? null;
 };
 const PREVIEW_URL_SUFFIX = getPreviewUrlSuffix();
