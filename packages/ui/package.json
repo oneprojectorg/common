@@ -73,7 +73,6 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@heroicons/react": "^2.2.0",
     "@internationalized/date": "^3.8.2",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDownIcon, MinusIcon } from '@heroicons/react/20/solid';
+import { ChevronDown, Minus } from 'lucide-react';
 import { createContext, use } from 'react';
 import type {
   CellProps,
@@ -153,9 +153,9 @@ const TableColumn = ({
               )}
             >
               {values.sortDirection === undefined ? (
-                <MinusIcon data-slot="icon" aria-hidden />
+                <Minus data-slot="icon" aria-hidden />
               ) : (
-                <ChevronDownIcon
+                <ChevronDown
                   data-slot="icon"
                   aria-hidden
                   className={

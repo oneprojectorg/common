@@ -151,3 +151,84 @@ export const Resizable = () => (
     </TableBody>
   </Table>
 );
+
+export const SingleSelection = () => (
+  <Table aria-label="Users table" selectionMode="single">
+    <TableHeader>
+      <TableColumn isRowHeader>Name</TableColumn>
+      <TableColumn>Email</TableColumn>
+      <TableColumn>Role</TableColumn>
+    </TableHeader>
+    <TableBody>
+      {sampleData.map((user) => (
+        <TableRow key={user.id}>
+          <TableCell>{user.name}</TableCell>
+          <TableCell>{user.email}</TableCell>
+          <TableCell>{user.role}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
+
+export const Empty = () => (
+  <Table aria-label="Empty users table">
+    <TableHeader>
+      <TableColumn isRowHeader>Name</TableColumn>
+      <TableColumn>Email</TableColumn>
+      <TableColumn>Role</TableColumn>
+    </TableHeader>
+    <TableBody>
+      {[].map(() => (
+        <TableRow key="empty">
+          <TableCell>-</TableCell>
+          <TableCell>-</TableCell>
+          <TableCell>-</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
+
+export const EmptyWithMessage = () => (
+  <Table aria-label="Empty users table">
+    <TableHeader>
+      <TableColumn isRowHeader>Name</TableColumn>
+      <TableColumn>Email</TableColumn>
+      <TableColumn>Role</TableColumn>
+    </TableHeader>
+    <TableBody renderEmptyState={() => <div className="p-4 text-center text-muted-fg">No users found</div>}>
+      {[]}
+    </TableBody>
+  </Table>
+);
+
+export const CombinedFeatures = () => (
+  <Table
+    aria-label="Users table"
+    selectionMode="multiple"
+    striped
+    sortDescriptor={{ column: 'name', direction: 'ascending' }}
+  >
+    <TableHeader>
+      <TableColumn id="name" isRowHeader allowsSorting>
+        Name
+      </TableColumn>
+      <TableColumn id="email" allowsSorting>
+        Email
+      </TableColumn>
+      <TableColumn id="role" allowsSorting>
+        Role
+      </TableColumn>
+    </TableHeader>
+    <TableBody>
+      {sampleData.map((user) => (
+        <TableRow key={user.id}>
+          <TableCell>{user.name}</TableCell>
+          <TableCell>{user.email}</TableCell>
+          <TableCell>{user.role}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);

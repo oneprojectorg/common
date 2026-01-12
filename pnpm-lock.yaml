@@ -837,9 +837,6 @@ importers:
 
   packages/ui:
     dependencies:
-      '@heroicons/react':
-        specifier: ^2.2.0
-        version: 2.2.0(react@19.2.1)
       '@internationalized/date':
         specifier: ^3.8.2
         version: 3.8.2
@@ -2060,11 +2057,6 @@ packages:
 
   '@hapi/bourne@3.0.0':
     resolution: {integrity: sha512-Waj1cwPXJDucOib4a3bAISsKJVb15MKi9IvmTI/7ssVEm6sywXGjVJDhl6/umt1pK1ZS7PacXU3A1PmFKHEZ2w==}
-
-  '@heroicons/react@2.2.0':
-    resolution: {integrity: sha512-LMcepvRaS9LYHJGsF0zzmgKCUim/X3N/DQKc4jepAXJ7l8QxJ1PmxJzqplF2Z3FE4PqBAIGyJAQ/w4B5dsqbtQ==}
-    peerDependencies:
-      react: ^19.0.1
 
   '@iconify/json@2.2.311':
     resolution: {integrity: sha512-Qt9Q9MuyEfKpd+3027fzbCMhEkhNpUTc9mnUQImbVYr5BiyFxgAxwGcTl+oD6WEblzdnGU3KIXqH/Laekud35w==}
@@ -10273,10 +10265,6 @@ snapshots:
       yargs: 17.7.2
 
   '@hapi/bourne@3.0.0': {}
-
-  '@heroicons/react@2.2.0(react@19.2.1)':
-    dependencies:
-      react: 19.2.1
 
   '@iconify/json@2.2.311':
     dependencies:
