@@ -39,6 +39,15 @@ const DEPLOYMENT_URL =
 export const isOnPreviewAppDomain =
   DEPLOYMENT_URL?.endsWith('.vercel.app') ?? false;
 
+// Extract the suffix after the project name for constructing other preview URLs
+// e.g., "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
+const getPreviewUrlSuffix = (): string | null => {
+  if (!DEPLOYMENT_URL || !isOnPreviewAppDomain) return null;
+  const match = DEPLOYMENT_URL.match(/^[^-]+(-git-.+)$/);
+  return match?.[1] ?? null;
+};
+const PREVIEW_URL_SUFFIX = getPreviewUrlSuffix();
+
 const isInProductionOrStaging =
   process.env.NODE_ENV === 'production' &&
   (process.env.VERCEL_ENV === 'production' ||
@@ -92,12 +101,16 @@ export const OPURLConfig: TOPURLConfig = (type) => {
       break;
   }
 
+  // Construct preview URL: <target>-git-<branch>-<team>.vercel.app
+  // Falls back to staging if not on a preview domain
+  const previewUrl = PREVIEW_URL_SUFFIX
+    ? `https://${target}${PREVIEW_URL_SUFFIX}`
+    : `https://${target}-dev.oneproject.tech`;
+
   const urls = {
     STAGING: `https://${target}-dev.oneproject.tech`,
     PRODUCTION: `https://${prodTarget}common.oneproject.org`,
-    // TODO: gotta figure preview out properly
-    // <project-name>-git-<branch-name>-<scope-slug>.vercel.app
-    PREVIEW: `https://${target}-dev.oneproject.tech`,
+    PREVIEW: previewUrl,
     DEVELOPMENT: `http://localhost:${port}`,
   };
 
