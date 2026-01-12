@@ -5,7 +5,10 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
-import type { DecisionInstanceData, PhaseOverride } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseOverride,
+} from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -41,7 +44,9 @@ export const updateDecisionInstance = async ({
   }
 
   if (!existingInstance.profileId) {
-    throw new CommonError('Decision instance does not have an associated profile');
+    throw new CommonError(
+      'Decision instance does not have an associated profile',
+    );
   }
 
   // Check if user has admin access on the decision instance's profile
