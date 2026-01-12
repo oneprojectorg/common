@@ -1,4 +1,6 @@
 import type { Meta } from '@storybook/react-vite';
+import { useMemo, useState } from 'react';
+import type { SortDescriptor } from 'react-aria-components';
 
 import {
   Table,
@@ -103,33 +105,61 @@ export const Selectable = () => (
   </Table>
 );
 
-export const Sortable = () => (
-  <Table
-    aria-label="Users table"
-    sortDescriptor={{ column: 'name', direction: 'ascending' }}
-  >
-    <TableHeader>
-      <TableColumn id="name" isRowHeader allowsSorting>
-        Name
-      </TableColumn>
-      <TableColumn id="email" allowsSorting>
-        Email
-      </TableColumn>
-      <TableColumn id="role" allowsSorting>
-        Role
-      </TableColumn>
-    </TableHeader>
-    <TableBody>
-      {sampleData.map((user) => (
-        <TableRow key={user.id}>
-          <TableCell>{user.name}</TableCell>
-          <TableCell>{user.email}</TableCell>
-          <TableCell>{user.role}</TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-);
+export const Sortable = () => {
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+    column: 'name',
+    direction: 'ascending',
+  });
+
+  const sortedData = useMemo(() => {
+    return [...sampleData].sort((a, b) => {
+      const column = sortDescriptor.column as keyof (typeof sampleData)[0];
+      const aValue = a[column];
+      const bValue = b[column];
+
+      let comparison = 0;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      }
+      else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      }
+
+      return sortDescriptor.direction === 'descending'
+        ? -comparison
+        : comparison;
+    });
+  }, [sortDescriptor]);
+
+  return (
+    <Table
+      aria-label="Users table"
+      sortDescriptor={sortDescriptor}
+      onSortChange={setSortDescriptor}
+    >
+      <TableHeader>
+        <TableColumn id="name" isRowHeader allowsSorting>
+          Name
+        </TableColumn>
+        <TableColumn id="email" allowsSorting>
+          Email
+        </TableColumn>
+        <TableColumn id="role" allowsSorting>
+          Role
+        </TableColumn>
+      </TableHeader>
+      <TableBody>
+        {sortedData.map((user) => (
+          <TableRow key={user.id}>
+            <TableCell>{user.name}</TableCell>
+            <TableCell>{user.email}</TableCell>
+            <TableCell>{user.role}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
 
 export const Resizable = () => (
   <Table aria-label="Users table" allowResize>
@@ -203,32 +233,60 @@ export const EmptyWithMessage = () => (
   </Table>
 );
 
-export const CombinedFeatures = () => (
-  <Table
-    aria-label="Users table"
-    selectionMode="multiple"
-    striped
-    sortDescriptor={{ column: 'name', direction: 'ascending' }}
-  >
-    <TableHeader>
-      <TableColumn id="name" isRowHeader allowsSorting>
-        Name
-      </TableColumn>
-      <TableColumn id="email" allowsSorting>
-        Email
-      </TableColumn>
-      <TableColumn id="role" allowsSorting>
-        Role
-      </TableColumn>
-    </TableHeader>
-    <TableBody>
-      {sampleData.map((user) => (
-        <TableRow key={user.id}>
-          <TableCell>{user.name}</TableCell>
-          <TableCell>{user.email}</TableCell>
-          <TableCell>{user.role}</TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-);
+export const CombinedFeatures = () => {
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+    column: 'name',
+    direction: 'ascending',
+  });
+
+  const sortedData = useMemo(() => {
+    return [...sampleData].sort((a, b) => {
+      const column = sortDescriptor.column as keyof (typeof sampleData)[0];
+      const aValue = a[column];
+      const bValue = b[column];
+
+      let comparison = 0;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      }
+      else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      }
+
+      return sortDescriptor.direction === 'descending'
+        ? -comparison
+        : comparison;
+    });
+  }, [sortDescriptor]);
+
+  return (
+    <Table
+      aria-label="Users table"
+      selectionMode="multiple"
+      striped
+      sortDescriptor={sortDescriptor}
+      onSortChange={setSortDescriptor}
+    >
+      <TableHeader>
+        <TableColumn id="name" isRowHeader allowsSorting>
+          Name
+        </TableColumn>
+        <TableColumn id="email" allowsSorting>
+          Email
+        </TableColumn>
+        <TableColumn id="role" allowsSorting>
+          Role
+        </TableColumn>
+      </TableHeader>
+      <TableBody>
+        {sortedData.map((user) => (
+          <TableRow key={user.id}>
+            <TableCell>{user.name}</TableCell>
+            <TableCell>{user.email}</TableCell>
+            <TableCell>{user.role}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
