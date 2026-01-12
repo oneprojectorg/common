@@ -87,7 +87,6 @@
     "@iconify/json": "2.2.311",
     "@op/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "4.1.18",
-    "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query-devtools": "5.66.11",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -97,7 +96,6 @@
     "@types/testing-library__user-event": "^4.2.0",
     "postcss": "^8.5.3",
     "tailwindcss": "4.1.18",
-    "tailwindcss-react-aria-components": "^2.0.1",
     "typescript": "5.7.3",
     "unplugin-icons": "22.1.0",
     "vitest": "^3.2.4"

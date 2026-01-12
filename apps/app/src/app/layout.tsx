@@ -8,10 +8,11 @@ import { getLocale } from 'next-intl/server';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 
+import '@op/styles';
+
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
-import './globals.css';
 
 const roboto = Roboto({
   subsets: ['latin'],

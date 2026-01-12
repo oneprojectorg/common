@@ -58,7 +58,6 @@
     "./ToggleButton": "./src/components/ToggleButton.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
-    "./tailwind-styles": "./styles.css",
     "./useGesture": "./src/useGesture.ts",
     "./utils": "./src/lib/utils.ts",
     "./utils/formatting": "./src/utils/formatting.ts"
@@ -115,13 +114,11 @@
     "@storybook/react": "^10.1.11",
     "@storybook/react-vite": "^10.1.11",
     "@tailwindcss/postcss": "4.1.18",
-    "@tailwindcss/typography": "^0.5.19",
     "@types/react": "19.0.10",
     "postcss": "^8.5.3",
     "react": "^19.0.1",
     "storybook": "^10.1.11",
     "tailwindcss": "4.1.18",
-    "tailwindcss-react-aria-components": "^2.0.1",
     "typescript": "5.7.3",
     "unplugin-icons": "22.1.0",
     "vite": "^6.2.0"

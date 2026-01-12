@@ -583,9 +583,6 @@ importers:
       '@tailwindcss/postcss':
         specifier: 4.1.18
         version: 4.1.18
-      '@tailwindcss/typography':
-        specifier: ^0.5.19
-        version: 0.5.19(tailwindcss@4.1.18)
       '@tanstack/react-query-devtools':
         specifier: 5.66.11
         version: 5.66.11(@tanstack/react-query@5.66.11(react@19.2.1))(react@19.2.1)
@@ -613,9 +610,6 @@ importers:
       tailwindcss:
         specifier: 4.1.18
         version: 4.1.18
-      tailwindcss-react-aria-components:
-        specifier: ^2.0.1
-        version: 2.0.1(tailwindcss@4.1.18)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -970,9 +964,6 @@ importers:
       '@tailwindcss/postcss':
         specifier: 4.1.18
         version: 4.1.18
-      '@tailwindcss/typography':
-        specifier: ^0.5.19
-        version: 0.5.19(tailwindcss@4.1.18)
       '@types/react':
         specifier: 19.0.10
         version: 19.0.10
@@ -985,9 +976,6 @@ importers:
       tailwindcss:
         specifier: 4.1.18
         version: 4.1.18
-      tailwindcss-react-aria-components:
-        specifier: ^2.0.1
-        version: 2.0.1(tailwindcss@4.1.18)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
