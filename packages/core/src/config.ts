@@ -41,7 +41,6 @@ const isInPreviewDeployment =
 //
 // Environment variables:
 // - VERCEL_BRANCH_URL: The deployment URL (e.g., "app-git-branch-oneproject.vercel.app")
-// - PREVIEW_DOMAIN_SUFFIX: Domain suffix identifying preview deployments (default: "-oneproject.vercel.app")
 // - PREVIEW_API_URL: Direct override for the preview API URL used in proxy rewrites
 // =============================================================================
 
@@ -54,8 +53,7 @@ const PREVIEW_DEPLOYMENT_URL =
 
 // Domain suffix that identifies preview deployments requiring special handling (e.g., proxy for cookies)
 // Includes team slug for security - only matches our own preview deployments
-const PREVIEW_DOMAIN_SUFFIX =
-  process.env.PREVIEW_DOMAIN_SUFFIX || '-oneproject.vercel.app';
+const PREVIEW_DOMAIN_SUFFIX = '-oneproject.vercel.app';
 
 // Check if running on a preview URL (vs custom domain)
 export const isOnPreviewAppDomain =
@@ -82,14 +80,16 @@ export const getPreviewApiUrl = (): string | null => {
     return process.env.PREVIEW_API_URL;
   }
 
+  // Must be on a preview domain and URL must start with "app-"
+  // isOnPreviewAppDomain already validates it ends with PREVIEW_DOMAIN_SUFFIX
   if (!PREVIEW_DEPLOYMENT_URL || !isOnPreviewAppDomain) {
     return null;
   }
 
-  // Validate format: must start with "app" and end with our team slug for security
-  const match = PREVIEW_DEPLOYMENT_URL.match(/^app(-.*-oneproject\.vercel\.app)$/);
-  if (match) {
-    return `https://api${match[1]}`;
+  if (PREVIEW_DEPLOYMENT_URL.startsWith('app-')) {
+    // Replace "app" prefix with "api" to get the API URL
+    const suffix = PREVIEW_DEPLOYMENT_URL.slice(3); // "-git-branch-oneproject.vercel.app"
+    return `https://api${suffix}`;
   }
 
   return null;
@@ -189,7 +189,10 @@ export const OPURLConfig: TOPURLConfig = (type) => {
   };
 };
 
-export const urlMatcher = /oneproject\.(tech|org)$|-oneproject\.vercel\.app$/;
+// CORS origin matcher - matches production, staging, and preview domains
+export const urlMatcher = new RegExp(
+  `oneproject\\.(tech|org)$|${PREVIEW_DOMAIN_SUFFIX.replaceAll('.', '\\.')}$`,
+);
 export const cookieOptionsDomain =
   VERCEL_GIT_BRANCH === 'main' ? '.oneproject.org' : '.oneproject.tech';
 export const cookieDomains = [
