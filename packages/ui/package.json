@@ -60,7 +60,10 @@
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
     "./useGesture": "./src/useGesture.ts",
     "./utils": "./src/lib/utils.ts",
-    "./utils/formatting": "./src/utils/formatting.ts"
+    "./utils/formatting": "./src/utils/formatting.ts",
+    "./lib/primitive": "./src/lib/primitive.ts",
+    "./hooks/use-media-query": "./src/hooks/use-media-query.ts",
+    "./ui/table": "./src/components/ui/table.tsx"
   },
   "module": "./src/index.ts",
   "scripts": {
