@@ -1,6 +1,5 @@
 import analyzer from '@next/bundle-analyzer';
 import { getPreviewApiUrl } from '@op/core/previews';
-import { withTranspiledWorkspacesForNext } from '@op/ui/tailwind-utils';
 import { withPostHogConfig } from '@posthog/nextjs-config';
 import dotenv from 'dotenv';
 import createNextIntlPlugin from 'next-intl/plugin';
@@ -154,15 +153,12 @@ const currentBranch = getCurrentBranch();
 const allowedBranches = ['dev', 'main'];
 const shouldUploadSourcemaps = allowedBranches.includes(currentBranch);
 
-export default withPostHogConfig(
-  withBundleAnalyzer(withNextIntl(withTranspiledWorkspacesForNext(config))),
-  {
-    personalApiKey: process.env.POSTHOG_API_KEY,
-    envId: process.env.POSTHOG_ENV_ID,
-    project: 'common',
-    host: 'https://eu.i.posthog.com',
-    sourcemaps: {
-      enabled: shouldUploadSourcemaps,
-    },
+export default withPostHogConfig(withBundleAnalyzer(withNextIntl(config)), {
+  personalApiKey: process.env.POSTHOG_API_KEY,
+  envId: process.env.POSTHOG_ENV_ID,
+  project: 'common',
+  host: 'https://eu.i.posthog.com',
+  sourcemaps: {
+    enabled: shouldUploadSourcemaps,
   },
-);
+});
