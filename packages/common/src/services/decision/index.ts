@@ -10,6 +10,7 @@ export * from './createInstance';
 export * from './createInstanceFromTemplate';
 export * from './updateInstance';
 export * from './updateDecisionInstance';
+export * from './deleteInstance';
 export * from './listInstances';
 export * from './getInstance';
 export * from './listDecisionProfiles';
