@@ -8,7 +8,7 @@ import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 // import { processResults } from './processResults';
-import type { ProcessSchema, StateDefinition } from './types';
+import type { DecisionSchemaDefinition } from './schemas/types';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -136,12 +136,12 @@ async function processTransition(transitionId: string): Promise<void> {
     throw new CommonError(`Process not found: ${processInstance.processId}`);
   }
 
-  const processSchema = process.processSchema as ProcessSchema;
-  const toState = processSchema.states.find(
-    (state: StateDefinition) => state.id === transition.toStateId,
-  );
+  const processSchema = process.processSchema as DecisionSchemaDefinition;
+  const phases = processSchema.phases;
 
-  const isTransitioningToFinalState = toState?.type === 'final';
+  // Final state is the last phase in the array (per DecisionSchemaDefinition convention)
+  const lastPhase = phases[phases.length - 1];
+  const isTransitioningToFinalState = lastPhase?.id === transition.toStateId;
 
   // Update both the process instance and transition in a single transaction
   // to ensure atomicity and prevent partial state updates

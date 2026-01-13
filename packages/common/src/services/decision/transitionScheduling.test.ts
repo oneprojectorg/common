@@ -168,7 +168,7 @@ describe('Transition Scheduling', () => {
       expect(db.insert).not.toHaveBeenCalled();
     });
 
-    it('should throw error when phase is missing end date', async () => {
+    it('should throw error when a date phase is missing end date', async () => {
       const instanceData = createMockInstanceData();
       // Remove the end date from the submission phase (which triggers the transition)
       instanceData.phases[0]!.endDate = undefined;
@@ -503,7 +503,11 @@ describe('Transition Scheduling', () => {
       vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce({
         id: 'process-456',
         processSchema: {
-          phases: [{ id: 'review' }, { id: 'voting' }, { id: 'results' }],
+          phases: [
+            { id: 'review' },
+            { id: 'voting' },
+            { id: 'results' },
+          ],
         },
       } as never);
 
@@ -557,7 +561,7 @@ describe('Transition Scheduling', () => {
         processId: 'process-123',
       } as never);
 
-      // Process schema with results as last phase
+      // Process schema with results as last phase (final state)
       vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce({
         id: 'process-123',
         processSchema: {
