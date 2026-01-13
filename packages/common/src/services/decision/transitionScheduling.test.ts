@@ -503,11 +503,7 @@ describe('Transition Scheduling', () => {
       vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce({
         id: 'process-456',
         processSchema: {
-          phases: [
-            { id: 'review' },
-            { id: 'voting' },
-            { id: 'results' },
-          ],
+          phases: [{ id: 'review' }, { id: 'voting' }, { id: 'results' }],
         },
       } as never);
 

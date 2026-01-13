@@ -1,8 +1,8 @@
 import { processDecisionsTransitions } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
-  decisionProcesses,
   decisionProcessTransitions,
+  decisionProcesses,
   processInstances,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -12,8 +12,8 @@ import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
-import { appRouter } from '../../index';
 import { createCallerFactory } from '../../../trpcFactory';
+import { appRouter } from '../../index';
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -54,9 +54,21 @@ const createPhasesProcessSchema = () => ({
   proposalTemplate: {},
   // Include phases array for transitionMonitor final state detection
   phases: [
-    { id: 'submission', name: 'Submission', rules: { advancement: { method: 'date' } } },
-    { id: 'review', name: 'Review', rules: { advancement: { method: 'date' } } },
-    { id: 'voting', name: 'Voting', rules: { advancement: { method: 'date' } } },
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: { advancement: { method: 'date' } },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: { advancement: { method: 'date' } },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: { advancement: { method: 'date' } },
+    },
     { id: 'results', name: 'Results', rules: {} },
   ],
 });
@@ -139,7 +151,10 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       // Verify a transition was created and is due
       const transitions = await db.query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instance.instance.id),
+        where: eq(
+          decisionProcessTransitions.processInstanceId,
+          instance.instance.id,
+        ),
       });
 
       expect(transitions.length).toBeGreaterThan(0);
@@ -163,7 +178,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe('review');
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'review',
+      );
     });
 
     it('should update both currentStateId and currentPhaseId', async ({
@@ -207,7 +224,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       expect(updatedInstance).toBeDefined();
       expect(updatedInstance!.currentStateId).toBe('review');
-      const instanceData = updatedInstance!.instanceData as { currentPhaseId: string };
+      const instanceData = updatedInstance!.instanceData as {
+        currentPhaseId: string;
+      };
       expect(instanceData.currentPhaseId).toBe('review');
     });
 
@@ -246,7 +265,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       const [transitionBefore] = await db
         .select()
         .from(decisionProcessTransitions)
-        .where(eq(decisionProcessTransitions.processInstanceId, instance.instance.id));
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
 
       expect(transitionBefore).toBeDefined();
       expect(transitionBefore!.completedAt).toBeNull();
@@ -350,7 +374,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe('results');
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'results',
+      );
     });
 
     it('should not create transitions for final phase', async ({
@@ -375,9 +401,21 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       const instanceData = {
         currentPhaseId: 'results',
         phases: [
-          { phaseId: 'submission', startDate: createPastDate(21), endDate: createPastDate(14) },
-          { phaseId: 'review', startDate: createPastDate(14), endDate: createPastDate(7) },
-          { phaseId: 'voting', startDate: createPastDate(7), endDate: createPastDate(1) },
+          {
+            phaseId: 'submission',
+            startDate: createPastDate(21),
+            endDate: createPastDate(14),
+          },
+          {
+            phaseId: 'review',
+            startDate: createPastDate(14),
+            endDate: createPastDate(7),
+          },
+          {
+            phaseId: 'voting',
+            startDate: createPastDate(7),
+            endDate: createPastDate(1),
+          },
           { phaseId: 'results', startDate: createPastDate(1) },
         ],
       };
@@ -397,11 +435,16 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       // Verify no transitions were created for this instance
       const transitions = await db.query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instance.instance.id),
+        where: eq(
+          decisionProcessTransitions.processInstanceId,
+          instance.instance.id,
+        ),
       });
 
       // Results phase has no outgoing transitions (no endDate, no advancement rule)
-      const outgoingFromResults = transitions.filter((t) => t.fromStateId === 'results');
+      const outgoingFromResults = transitions.filter(
+        (t) => t.fromStateId === 'results',
+      );
       expect(outgoingFromResults).toHaveLength(0);
     });
   });
@@ -476,7 +519,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe('submission');
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'submission',
+      );
     });
 
     it('should skip already completed transitions', async ({
@@ -514,7 +559,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       await db
         .update(decisionProcessTransitions)
         .set({ completedAt: new Date().toISOString() })
-        .where(eq(decisionProcessTransitions.processInstanceId, instance.instance.id));
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
 
       // Process transitions - none should be processed
       const result = await processDecisionsTransitions();
@@ -584,8 +634,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance2.slug,
       });
 
-      expect(updated1.processInstance.instanceData.currentPhaseId).toBe('review');
-      expect(updated2.processInstance.instanceData.currentPhaseId).toBe('review');
+      expect(updated1.processInstance.instanceData.currentPhaseId).toBe(
+        'review',
+      );
+      expect(updated2.processInstance.instanceData.currentPhaseId).toBe(
+        'review',
+      );
     });
 
     it('should process multiple sequential transitions within same instance', async ({
@@ -660,7 +714,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updated.processInstance.instanceData.currentPhaseId).toBe('voting');
+      expect(updated.processInstance.instanceData.currentPhaseId).toBe(
+        'voting',
+      );
     });
   });
 
