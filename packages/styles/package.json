@@ -7,7 +7,7 @@
   "exports": {
     ".": "./shared-styles.css",
     "./tokens": "./tokens.css",
-    "./postcss": "./postcss.config.ts",
+    "./postcss": "./postcss.config.mjs",
     "./constants": "./constants.ts"
   },
   "devDependencies": {
