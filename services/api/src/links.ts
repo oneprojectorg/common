@@ -46,8 +46,8 @@ function getPostHogDistinctId(): string | null {
 
 const envURL = OPURLConfig('API');
 
-// On preview .vercel.app deployments, use relative URL (proxied through Next.js rewrites)
-// to avoid cross-origin cookie issues between app-*.vercel.app and api-*.vercel.app
+// On preview deployments, use relative URL (proxied through Next.js rewrites)
+// to avoid cross-origin cookie issues between app and api preview subdomains
 const trpcUrl =
   envURL.IS_PREVIEW && isOnPreviewAppDomain
     ? '/api/v1/trpc'

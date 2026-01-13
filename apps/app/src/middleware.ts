@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
         localeResponse = NextResponse.next({ request });
 
         // Set the locale cookie with proper domain options
-        // Skip domain on .vercel.app URLs (use host-only cookies)
+        // Skip domain on preview URLs (use host-only cookies)
         const shouldSetCookieDomain =
           (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
           !isOnPreviewAppDomain;
@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     NextResponse.next({
       request,
     });
-  // Skip domain on .vercel.app URLs (use host-only cookies)
+  // Skip domain on preview URLs (use host-only cookies)
   const shouldSetCookieDomain =
     (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
     !isOnPreviewAppDomain;

@@ -93,7 +93,7 @@ const config = {
   },
   async rewrites() {
     // Compute preview API URL for proxy rewrite
-    // On preview .vercel.app deployments, proxy tRPC to avoid cross-origin cookie issues
+    // On preview deployments, proxy tRPC to avoid cross-origin cookie issues
     const isPreview = process.env.VERCEL_ENV === 'preview';
     const branchUrl = process.env.VERCEL_BRANCH_URL;
     const isOnVercelApp = branchUrl?.endsWith('.vercel.app');

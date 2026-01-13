@@ -13,7 +13,7 @@ import type { Database } from './types';
 
 const useUrl = OPURLConfig('APP');
 
-// Skip cookie domain on .vercel.app preview URLs (use host-only cookies)
+// Skip cookie domain on preview URLs (use host-only cookies)
 const shouldSetCookieDomain =
   (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
   !isOnPreviewAppDomain;
