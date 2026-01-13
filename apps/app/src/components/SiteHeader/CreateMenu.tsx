@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
@@ -15,7 +16,7 @@ import { InviteUserModal } from '../InviteUserModal';
 import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
 
 // Tailwind v4 default sm breakpoint (640px)
-const SM_BREAKPOINT = '640px';
+const SM_BREAKPOINT = screens.sm;
 
 export const CreateMenu = () => {
   const t = useTranslations();
