@@ -190,7 +190,7 @@ export const OPURLConfig: TOPURLConfig = (type) => {
 };
 
 // CORS origin matcher - matches production, staging, and preview domains
-export const urlMatcher = new RegExp(
+export const originUrlMatcher = new RegExp(
   `oneproject\\.(tech|org)$|${PREVIEW_DOMAIN_SUFFIX.replaceAll('.', '\\.')}$`,
 );
 export const cookieOptionsDomain =

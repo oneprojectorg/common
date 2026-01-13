@@ -1,5 +1,5 @@
 import { appRouter, createContext } from '@op/api';
-import { API_TRPC_PTH, urlMatcher } from '@op/core';
+import { API_TRPC_PTH, originUrlMatcher } from '@op/core';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
@@ -12,7 +12,7 @@ const isAllowedOrigin = (origin: string | null): boolean => {
     return false;
   }
 
-  return urlMatcher.test(origin);
+  return originUrlMatcher.test(origin);
 };
 
 const handler = async (req: NextRequest) => {
