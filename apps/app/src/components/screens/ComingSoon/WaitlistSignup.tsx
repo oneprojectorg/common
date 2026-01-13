@@ -85,7 +85,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
             inputProps={{
               placeholder: 'Email address',
               className:
-                'w-[420px] max-w-full md:px-6 md:text-xl md:h-16 md:rounded-xl group-data-[invalid=true]:outline-4 group-data-[invalid=true]:bg-red-50',
+                'w-[420px] max-w-full md:px-6 md:text-xl md:h-16 md:rounded-xl group-data-[invalid=true]:outline-4 group-data-[invalid=true]:bg-red-50 bg-white',
             }}
             fieldClassName="bg-transparent"
             errorClassName="text-base text-red-50"
