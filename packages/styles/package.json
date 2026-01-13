@@ -7,7 +7,8 @@
   "exports": {
     ".": "./shared-styles.css",
     "./tokens": "./tokens.css",
-    "./postcss": "./postcss.config.js"
+    "./postcss": "./postcss.config.ts",
+    "./constants": "./constants.ts"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.18",
