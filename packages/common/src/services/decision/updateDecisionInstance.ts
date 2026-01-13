@@ -43,7 +43,8 @@ export const updateDecisionInstance = async ({
     throw new NotFoundError('Process instance not found');
   }
 
-  if (!existingInstance.profileId) {
+  const { profileId } = existingInstance;
+  if (!profileId) {
     throw new CommonError(
       'Decision instance does not have an associated profile',
     );
@@ -52,7 +53,7 @@ export const updateDecisionInstance = async ({
   // Check if user has admin access on the decision instance's profile
   const profileUser = await getProfileAccessUser({
     user,
-    profileId: existingInstance.profileId,
+    profileId,
   });
 
   assertAccess({ profile: permission.ADMIN }, profileUser?.roles ?? []);
@@ -127,7 +128,7 @@ export const updateDecisionInstance = async ({
   if (Object.keys(updateData).length === 0) {
     // Nothing to update, just return the existing profile
     const profile = await db.query.profiles.findFirst({
-      where: eq(profiles.id, existingInstance.profileId!),
+      where: eq(profiles.id, profileId),
       with: {
         processInstance: true,
       },
@@ -166,7 +167,7 @@ export const updateDecisionInstance = async ({
 
   // Fetch the profile with processInstance joined for the response
   const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, updatedInstance.profileId!),
+    where: eq(profiles.id, profileId),
     with: {
       processInstance: true,
     },

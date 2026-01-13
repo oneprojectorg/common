@@ -347,8 +347,8 @@ export const updateDecisionInstanceInputSchema = z.object({
     .array(
       z.object({
         phaseId: z.string(),
-        startDate: z.string().optional(),
-        endDate: z.string().optional(),
+        startDate: z.string().datetime({ offset: true }).optional(),
+        endDate: z.string().datetime({ offset: true }).optional(),
         /** Phase-specific settings (e.g., budget, maxProposalsPerMember, maxVotesPerMember) */
         settings: z.record(z.string(), z.unknown()).optional(),
       }),
