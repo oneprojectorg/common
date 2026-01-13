@@ -1,5 +1,5 @@
 // Tailwind CSS v4 PostCSS configuration
-module.exports = {
+export default {
   plugins: {
     '@tailwindcss/postcss': {},
   },
