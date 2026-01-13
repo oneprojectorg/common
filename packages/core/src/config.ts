@@ -33,26 +33,67 @@ const isInPreviewDeployment =
   process.env.VERCEL_ENV === 'preview' ||
   process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
 
-// Check if running on a preview URL (vs custom domain)
-// Prefer BRANCH_URL (branch-based) over URL (hash-based) for consistent preview URLs
-const DEPLOYMENT_URL =
+// =============================================================================
+// Preview URL Configuration
+// =============================================================================
+// These settings support Vercel by default. For other providers, you may need to
+// set equivalent environment variables or adjust the VERCEL_* vars to match.
+//
+// Environment variables:
+// - VERCEL_BRANCH_URL: The deployment URL (e.g., "app-git-branch-oneproject.vercel.app")
+// - PREVIEW_DOMAIN_SUFFIX: Domain suffix identifying preview deployments (default: "-oneproject.vercel.app")
+// - PREVIEW_API_URL: Direct override for the preview API URL used in proxy rewrites
+// =============================================================================
+
+// Current deployment URL - auto-detected from Vercel environment
+const PREVIEW_DEPLOYMENT_URL =
   process.env.VERCEL_BRANCH_URL ||
   process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
   process.env.VERCEL_URL ||
   process.env.NEXT_PUBLIC_VERCEL_URL;
+
+// Domain suffix that identifies preview deployments requiring special handling (e.g., proxy for cookies)
+// Includes team slug for security - only matches our own preview deployments
+const PREVIEW_DOMAIN_SUFFIX =
+  process.env.PREVIEW_DOMAIN_SUFFIX || '-oneproject.vercel.app';
+
+// Check if running on a preview URL (vs custom domain)
 export const isOnPreviewAppDomain =
-  DEPLOYMENT_URL?.endsWith('.vercel.app') ?? false;
+  PREVIEW_DEPLOYMENT_URL?.endsWith(PREVIEW_DOMAIN_SUFFIX) ?? false;
 
 // Extract the suffix after the project name for constructing other preview URLs
-// Handles both formats:
-// - "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
-// - "app-b9bcxaizg-oneproject.vercel.app" -> "-b9bcxaizg-oneproject.vercel.app"
+// Handles formats like: "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
 const getPreviewUrlSuffix = (): string | null => {
-  if (!DEPLOYMENT_URL || !isOnPreviewAppDomain) return null;
-  const match = DEPLOYMENT_URL.match(/^[^-]+(-.+\.vercel\.app)$/);
+  if (!PREVIEW_DEPLOYMENT_URL || !isOnPreviewAppDomain) return null;
+  const match = PREVIEW_DEPLOYMENT_URL.match(/^[^-]+(-.+)$/);
   return match?.[1] ?? null;
 };
 const PREVIEW_URL_SUFFIX = getPreviewUrlSuffix();
+
+/**
+ * Get the preview API URL for proxy configuration.
+ * Can be set directly via PREVIEW_API_URL, or computed from deployment URL.
+ *
+ * @returns The preview API URL, or null if not in a preview environment
+ */
+export const getPreviewApiUrl = (): string | null => {
+  // Direct override takes precedence
+  if (process.env.PREVIEW_API_URL) {
+    return process.env.PREVIEW_API_URL;
+  }
+
+  if (!PREVIEW_DEPLOYMENT_URL || !isOnPreviewAppDomain) {
+    return null;
+  }
+
+  // Validate format: must start with "app" and end with our team slug for security
+  const match = PREVIEW_DEPLOYMENT_URL.match(/^app(-.*-oneproject\.vercel\.app)$/);
+  if (match) {
+    return `https://api${match[1]}`;
+  }
+
+  return null;
+};
 
 const isInProductionOrStaging =
   process.env.NODE_ENV === 'production' &&

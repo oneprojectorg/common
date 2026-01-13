@@ -1,4 +1,6 @@
 import analyzer from '@next/bundle-analyzer';
+import { getPreviewApiUrl } from '@op/core/previews';
+import { withTranspiledWorkspacesForNext } from '@op/ui/tailwind-utils';
 import { withPostHogConfig } from '@posthog/nextjs-config';
 import dotenv from 'dotenv';
 import createNextIntlPlugin from 'next-intl/plugin';
@@ -34,15 +36,17 @@ dotenv.config({
   path: '../../../.env.local',
 });
 
+// Deployment environment variables (sourced from Vercel's injected env vars)
+const DEPLOY_ENV = process.env.VERCEL_ENV;
+const PREVIEW_BRANCH_URL = process.env.VERCEL_BRANCH_URL;
+
 /** @type {import('next').NextConfig} */
 const config = {
-  // Expose Vercel env vars to client-side for preview URL detection
+  // Expose deployment info to client-side for preview URL detection
   env: {
-    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV,
-    NEXT_PUBLIC_VERCEL_BRANCH_URL:
-      process.env.VERCEL_ENV === 'preview'
-        ? process.env.VERCEL_BRANCH_URL
-        : undefined,
+    NEXT_PUBLIC_DEPLOY_ENV: DEPLOY_ENV,
+    NEXT_PUBLIC_PREVIEW_BRANCH_URL:
+      DEPLOY_ENV === 'preview' ? PREVIEW_BRANCH_URL : undefined,
   },
   experimental: {
     // reactCompiler: true,
@@ -92,27 +96,17 @@ const config = {
     return cfg;
   },
   async rewrites() {
-    // Compute preview API URL for proxy rewrite
     // On preview deployments, proxy tRPC to avoid cross-origin cookie issues
-    const isPreview = process.env.VERCEL_ENV === 'preview';
-    const branchUrl = process.env.VERCEL_BRANCH_URL;
-    const isOnVercelApp = branchUrl?.endsWith('.vercel.app');
-
-    let previewApiRewrites = [];
-    if (isPreview && isOnVercelApp && branchUrl) {
-      // Extract suffix: "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
-      // Validate it starts with "app" and ends with our team slug for security
-      const match = branchUrl.match(/^app(-.*-oneproject\.vercel\.app)$/);
-      if (match) {
-        const apiUrl = `https://api${match[1]}`;
-        previewApiRewrites = [
+    // See packages/core/previews.mjs for the shared preview URL logic
+    const previewApiUrl = getPreviewApiUrl(PREVIEW_BRANCH_URL);
+    const previewApiRewrites = previewApiUrl
+      ? [
           {
             source: '/api/v1/trpc/:path*',
-            destination: `${apiUrl}/api/v1/trpc/:path*`,
+            destination: `${previewApiUrl}/api/v1/trpc/:path*`,
           },
-        ];
-      }
-    }
+        ]
+      : [];
 
     return [
       ...previewApiRewrites,
@@ -160,12 +154,15 @@ const currentBranch = getCurrentBranch();
 const allowedBranches = ['dev', 'main'];
 const shouldUploadSourcemaps = allowedBranches.includes(currentBranch);
 
-export default withPostHogConfig(withBundleAnalyzer(withNextIntl(config)), {
-  personalApiKey: process.env.POSTHOG_API_KEY,
-  envId: process.env.POSTHOG_ENV_ID,
-  project: 'common',
-  host: 'https://eu.i.posthog.com',
-  sourcemaps: {
-    enabled: shouldUploadSourcemaps,
+export default withPostHogConfig(
+  withBundleAnalyzer(withNextIntl(withTranspiledWorkspacesForNext(config))),
+  {
+    personalApiKey: process.env.POSTHOG_API_KEY,
+    envId: process.env.POSTHOG_ENV_ID,
+    project: 'common',
+    host: 'https://eu.i.posthog.com',
+    sourcemaps: {
+      enabled: shouldUploadSourcemaps,
+    },
   },
-});
+);
