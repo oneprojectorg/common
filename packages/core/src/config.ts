@@ -1,9 +1,7 @@
 import ImplPQueue from 'p-queue';
 import colors from 'tailwindcss/colors';
-import {
-  PREVIEW_DOMAIN_SUFFIX,
-  isPreviewDomain,
-} from '../previews.mjs';
+
+import { PREVIEW_DOMAIN_SUFFIX, isPreviewDomain } from '../previews.mjs';
 
 export const APP_PORT = 3100;
 export const API_PORT = 3300;

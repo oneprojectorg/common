@@ -49,9 +49,7 @@ const envURL = OPURLConfig('API');
 // On preview deployments, use relative URL (proxied through Next.js rewrites)
 // to avoid cross-origin cookie issues between app and api preview subdomains
 const trpcUrl =
-  envURL.IS_PREVIEW && isOnPreviewAppDomain
-    ? '/api/v1/trpc'
-    : envURL.TRPC_URL;
+  envURL.IS_PREVIEW && isOnPreviewAppDomain ? '/api/v1/trpc' : envURL.TRPC_URL;
 
 /**
  * Create a fetch function that handles SSR cookies
