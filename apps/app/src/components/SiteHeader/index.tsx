@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
@@ -173,6 +174,8 @@ const AvatarMenuContent = ({
 
   const avatarUrl = user.profile?.avatarImage?.name || user.avatarImage?.name;
 
+  const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+
   return (
     <>
       <MenuItemSimple
@@ -287,18 +290,19 @@ const AvatarMenuContent = ({
         <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
         {t('Log out')}
       </MenuItem>
-      <MenuItem
-        id="delete-account"
-        className="px-0 py-2 text-functional-red hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
-        onAction={() => {
-          setIsOrgDeletionOpen(true);
-          onClose?.();
-        }}
-      >
-        <LuTrash2 className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
-        {t('Delete account')}
-      </MenuItem>
-
+      {deleteOrganizationEnabled && (
+        <MenuItem
+          id="delete-account"
+          className="px-0 py-2 text-functional-red hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+          onAction={() => {
+            setIsOrgDeletionOpen(true);
+            onClose?.();
+          }}
+        >
+          <LuTrash2 className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+          {t('Delete account')}
+        </MenuItem>
+      )}
       <MenuItemSimple
         isDisabled
         className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
@@ -357,6 +361,8 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     setSwitchingToProfile(profile);
     setIsSwitchingProfile(true);
   };
+
+  const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
 
   // Hide modal when profile actually changes
   useEffect(() => {
@@ -427,10 +433,12 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           profileName={switchingToProfile?.name}
           onOpenChange={setIsSwitchingProfile}
         />
-        <DeleteOrganizationModal
-          isOpen={isOrgDeletionOpen}
-          onOpenChange={setIsOrgDeletionOpen}
-        />
+        {deleteOrganizationEnabled && (
+          <DeleteOrganizationModal
+            isOpen={isOrgDeletionOpen}
+            onOpenChange={setIsOrgDeletionOpen}
+          />
+        )}
       </>
     );
   }
@@ -457,10 +465,12 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         profileName={switchingToProfile?.name}
         onOpenChange={setIsSwitchingProfile}
       />
-      <DeleteOrganizationModal
-        isOpen={isOrgDeletionOpen}
-        onOpenChange={setIsOrgDeletionOpen}
-      />
+      {deleteOrganizationEnabled && (
+        <DeleteOrganizationModal
+          isOpen={isOrgDeletionOpen}
+          onOpenChange={setIsOrgDeletionOpen}
+        />
+      )}
     </>
   );
 };
