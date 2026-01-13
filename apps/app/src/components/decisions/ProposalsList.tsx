@@ -26,12 +26,12 @@ import {
   ProposalCardActions,
   ProposalCardContent,
   ProposalCardDescription,
-  ProposalCardDraftActions,
   ProposalCardFooter,
   ProposalCardHeader,
   ProposalCardMenu,
   ProposalCardMeta,
   ProposalCardMetrics,
+  ProposalCardOwnerActions,
 } from './ProposalCard';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
@@ -359,8 +359,9 @@ const ViewProposalsList = ({
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => {
         const isDraft = proposal.status === ProposalStatus.DRAFT;
-        const isOwnProposal = proposal.isEditable;
-        const showMenu = canManageProposals && !isDraft;
+        const isOwner = proposal.isEditable;
+        const showMenu = canManageProposals || isOwner;
+        const editHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
 
         return (
           <ProposalCard key={proposal.id} proposal={proposal}>
@@ -385,24 +386,19 @@ const ViewProposalsList = ({
             <ProposalCardContent>
               <ProposalCardFooter>
                 {isDraft ? (
-                  // Draft: Edit/Delete only, no metrics
-                  <ProposalCardDraftActions
+                  <ProposalCardOwnerActions
                     proposal={proposal}
-                    instanceId={instanceId}
-                    slug={slug}
+                    editHref={editHref}
                   />
-                ) : isOwnProposal ? (
-                  // Own non-draft proposal: Metrics + Edit/Delete
+                ) : isOwner ? (
                   <>
                     <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardDraftActions
+                    <ProposalCardOwnerActions
                       proposal={proposal}
-                      instanceId={instanceId}
-                      slug={slug}
+                      editHref={editHref}
                     />
                   </>
                 ) : (
-                  // Others' proposals: Metrics + Like/Follow
                   <>
                     <ProposalCardMetrics proposal={proposal} />
                     <ProposalCardActions proposal={proposal} />
