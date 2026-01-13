@@ -23,7 +23,7 @@ export function DecisionStats({
     <div className="space-y-6">
       {/* Current Phase */}
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-gray2">
+        <h3 className="text-xs font-semibold tracking-wider text-neutral-gray2 uppercase">
           CURRENT PHASE
         </h3>
         <p className="mt-1 text-lg font-medium text-neutral-charcoal">

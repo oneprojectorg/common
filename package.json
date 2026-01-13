@@ -60,7 +60,6 @@
     "@typescript/native-preview": "7.0.0-dev.20251214.1",
     "@xyflow/react": "^12.5.2",
     "ai": "^4.2.2",
-    "autoprefixer": "^10.4.20",
     "concurrently": "^9.1.2",
     "cookie": "^1.0.2",
     "cross-env": "^7.0.3",
@@ -82,7 +81,7 @@
     "postgres": "^3.4.5",
     "prettier": "^3.5.2",
     "prettier-plugin-packagejson": "^2.5.9",
-    "prettier-plugin-tailwindcss": "^0.6.11",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "react": "^19.0.1",
     "react-aria": "^3.37.0",
     "react-aria-components": "^1.6.0",
@@ -95,10 +94,8 @@
     "spacetime": "^7.7.0",
     "supabase": "^2.15.8",
     "superjson": "^2.2.2",
-    "tailwind-scrollbar": "^3.1.0",
-    "tailwind-variants": "^0.3.0",
-    "tailwindcss": "3.4.17",
-    "tailwindcss-animate": "1.0.7",
+    "tailwind-variants": "3.2.2",
+    "tailwindcss": "4.1.18",
     "three": "^0.174.0",
     "trpc-to-openapi": "^3.1.0",
     "tsx": "^4.19.3",
@@ -137,7 +134,6 @@
       "@types/three": "$@types/three",
       "@xyflow/react": "$@xyflow/react",
       "ai": "$ai",
-      "autoprefixer": "$autoprefixer",
       "concurrently": "$concurrently",
       "cookie": "$cookie",
       "cross-env": "$cross-env",
@@ -166,10 +162,7 @@
       "spacetime": "$spacetime",
       "supabase": "$supabase",
       "superjson": "$superjson",
-      "tailwind-scrollbar": "$tailwind-scrollbar",
       "tailwind-variants": "$tailwind-variants",
-      "tailwindcss": "$tailwindcss",
-      "tailwindcss-animate": "$tailwindcss-animate",
       "three": "$three",
       "trpc-to-openapi": "$trpc-to-openapi",
       "tsx": "$tsx",
@@ -180,9 +173,6 @@
       "use-error-boundary": "$use-error-boundary",
       "zod": "$zod",
       "zustand": "$zustand"
-    },
-    "patchedDependencies": {
-      "tailwindcss-animate@1.0.7": "patches/tailwindcss-animate@1.0.7.patch"
     }
   }
 }

@@ -27,7 +27,7 @@ const TabListSkeleton = () => (
 
 const RelationshipItemSkeleton = () => (
   <li className="flex w-full gap-6">
-    <div className="flex-shrink-0">
+    <div className="shrink-0">
       <Skeleton className="size-12 rounded-full" />
     </div>
     <div className="flex w-full flex-col gap-3">
@@ -74,13 +74,13 @@ export const ProfileRelationshipsSkeletonWithLines = () => {
         <BreadcrumbsSkeleton />
         <TitleSkeleton />
       </div>
-      <div className="border-neutral-gray7 rounded-md border">
+      <div className="rounded-md border">
         <TabListSkeleton />
         <div className="px-6 py-4">
           <ul className="flex flex-col gap-12">
             {Array.from({ length: 3 }).map((_, index) => (
               <li key={index} className="flex w-full gap-6">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <Skeleton className="size-12 rounded-full" />
                 </div>
                 <div className="flex w-full flex-col gap-3">

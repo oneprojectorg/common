@@ -56,7 +56,7 @@ export const ComboBox = <T extends object>({
           color="ghost"
           {...props.buttonProps}
           className={cn(
-            'absolute right-1 top-1/2 aspect-square w-6 -translate-y-1/2 p-0',
+            'absolute top-1/2 right-1 aspect-square w-6 -translate-y-1/2 p-0',
             props.buttonProps?.className,
           )}
         >
@@ -68,7 +68,7 @@ export const ComboBox = <T extends object>({
       <Popover
         {...props.popoverProps}
         className={cn(
-          'min-w-[--trigger-width] bg-white',
+          'min-w-(--trigger-width) bg-white',
           props.popoverProps?.className,
         )}
       >

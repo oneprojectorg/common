@@ -121,9 +121,9 @@ export const OrganizationCardList = ({
       {organizations.map((relationshipOrg) => (
         <div
           key={relationshipOrg.id}
-          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+          className="flex w-full gap-4 rounded border p-6"
         >
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <OrganizationAvatar
               profile={relationshipOrg.profile}
               className="size-20"
@@ -202,7 +202,7 @@ export const OrganizationSummaryList = ({
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/org/${org.profile.slug}`}
-                    className="font-semibold leading-base"
+                    className="leading-base font-semibold"
                   >
                     {org.profile.name}
                   </Link>
@@ -244,11 +244,8 @@ export const OrganizationCardListSkeleton = () => {
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div
-          key={index}
-          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
-        >
-          <div className="flex-shrink-0">
+        <div key={index} className="flex w-full gap-4 rounded border p-6">
+          <div className="shrink-0">
             <OrganizationAvatarSkeleton className="size-20" />
           </div>
           <div className="min-w-0 flex-1">

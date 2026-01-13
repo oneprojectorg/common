@@ -64,7 +64,7 @@ export const ProfileSummaryList = ({
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/profile/${profile.slug}`}
-                    className="font-semibold leading-base"
+                    className="leading-base font-semibold"
                   >
                     {profile.name}
                   </Link>
@@ -88,7 +88,7 @@ export const ProfileListSkeleton = () => {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="rounded-lg border bg-white p-4 shadow-sm">
+        <div key={index} className="rounded-lg border bg-white p-4 shadow-xs">
           <div className="flex items-start gap-4">
             <div className="size-12 shrink-0 animate-pulse rounded-full bg-gray-200" />
             <div className="min-w-0 flex-1">

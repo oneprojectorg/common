@@ -222,12 +222,12 @@ const AvatarMenuContent = ({
         >
           <div className="flex max-w-52 flex-col">
             <div className="flex items-center gap-1">
-              <span className="overflow-hidden truncate">{profile.name} </span>
+              <span className="truncate overflow-hidden">{profile.name} </span>
               {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
+            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4">
               {profile.bio}
             </div>
           </div>
@@ -244,12 +244,12 @@ const AvatarMenuContent = ({
         >
           <div className="flex max-w-52 flex-col">
             <div className="relative flex items-center gap-1">
-              <span className="overflow-hidden truncate">{profile.name} </span>
+              <span className="truncate overflow-hidden">{profile.name} </span>
               {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="relative overflow-hidden truncate text-sm capitalize text-neutral-gray4">
+            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4 capitalize">
               {t('Organization')}
             </div>
           </div>
@@ -372,7 +372,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           />
         ) : null}
       </Avatar>
-      <div className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
+      <div className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
         <LuChevronDown className="size-3" />{' '}
       </div>
     </Button>
@@ -388,7 +388,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           isDismissable={true}
           isKeyboardDismissDisabled={false}
           overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-          className="m-0 h-auto w-screen max-w-none rounded-b-none rounded-t border-0 outline-0 duration-300 ease-out animate-in slide-in-from-bottom-full"
+          className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
             <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">

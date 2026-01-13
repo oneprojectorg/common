@@ -12,7 +12,7 @@ import StarterKit from '@tiptap/starter-kit';
  * Styles applied to the editor element
  */
 export const baseEditorStyles =
-  'overflow-wrap-anywhere max-w-none break-words focus:outline-none [&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline prose prose-lg !text-base text-neutral-black placeholder:text-neutral-gray2 [&_li_p]:my-0 [&_blockquote]:font-normal';
+  'overflow-wrap-anywhere max-w-none break-words focus:outline-hidden [&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline prose prose-lg !text-base text-neutral-black placeholder:text-neutral-gray2 [&_li_p]:my-0 [&_blockquote]:font-normal';
 
 /**
  * Base extensions shared by both editor and viewer

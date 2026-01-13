@@ -23,7 +23,7 @@ export const InviteSuccessModal = ({
   organizationName,
 }: InviteSuccessModalProps) => {
   return (
-    <Modal isOpen={isOpen} className="inset-shadow-none shadow-green">
+    <Modal isOpen={isOpen} className="shadow-green inset-shadow-none">
       <ModalBody className="flex flex-col items-center justify-center gap-6 p-12 text-center">
         <div className="flex flex-col items-center justify-center gap-4">
           <CheckIcon />

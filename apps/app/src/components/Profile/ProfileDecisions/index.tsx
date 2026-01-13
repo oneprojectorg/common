@@ -97,7 +97,7 @@ const DecisionProcessList = ({
           return (
             <div
               key={instance.id}
-              className="flex flex-col items-center justify-between gap-4 border-b border-neutral-gray1 px-0 py-6 sm:flex-row"
+              className="flex flex-col items-center justify-between gap-4 border-b px-0 py-6 sm:flex-row"
             >
               <div className="flex w-full flex-col gap-2">
                 <div className="flex flex-col gap-1">
@@ -125,7 +125,7 @@ const DecisionProcessList = ({
                   </div>
                 </div>
                 {description && (
-                  <p className="max-w-2xl overflow-hidden text-ellipsis text-base text-neutral-charcoal sm:text-nowrap">
+                  <p className="max-w-2xl overflow-hidden text-base text-ellipsis text-neutral-charcoal sm:text-nowrap">
                     {getTextPreview({ content: description })}
                   </p>
                 )}

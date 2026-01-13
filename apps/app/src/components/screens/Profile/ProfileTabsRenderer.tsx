@@ -78,10 +78,10 @@ export const ProfileTabsRenderer = ({
         {decisionsEnabled && <DecisionsTab profileId={profile.id} />}
       </ProfileTabList>
 
-      <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
+      <TabPanel id="home" className="flex grow flex-col sm:p-0">
         <OrganizationProfileGrid profile={organization} />
       </TabPanel>
-      <TabPanel id="relationships" className="flex-grow px-4 sm:px-6 sm:py-0">
+      <TabPanel id="relationships" className="grow px-4 sm:px-6 sm:py-0">
         <ProfileOrganizations>
           <ProfileRelationshipsSuspense
             slug={profile.slug}

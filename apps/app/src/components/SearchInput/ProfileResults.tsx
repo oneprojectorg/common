@@ -101,7 +101,7 @@ export const ProfileResults = ({
 
               <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
                 {styledName}
-                <span className="text-sm capitalize text-neutral-gray4">
+                <span className="text-sm text-neutral-gray4 capitalize">
                   {subtitle}
                 </span>
               </div>

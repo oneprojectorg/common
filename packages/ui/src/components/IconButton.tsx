@@ -5,7 +5,7 @@ import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
 const iconButtonStyle = tv({
-  base: 'flex items-center justify-center outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-teal-600',
+  base: 'flex cursor-pointer items-center justify-center outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-teal-600',
   variants: {
     size: {
       small: 'h-6 w-6 rounded-full',
@@ -16,7 +16,7 @@ const iconButtonStyle = tv({
       ghost: 'bg-white/80 hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
       solid: 'bg-neutral-gray1 hover:bg-neutral-gray2 pressed:bg-neutral-gray3',
       outline:
-        'border border-neutral-gray1 bg-transparent hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
+        'border bg-transparent hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',

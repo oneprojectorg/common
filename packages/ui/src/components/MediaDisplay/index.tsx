@@ -62,7 +62,7 @@ export const MediaDisplay = ({
   if (!mimeType && url) {
     detailComponents.push(
       <>
-        <hr key="link-hr" className="my-2 bg-neutral-gray1 text-sm" />
+        <hr key="link-hr" className="my-2" />
         <div
           key="link"
           className="flex items-center gap-2 text-xs text-neutral-gray4"
@@ -75,7 +75,7 @@ export const MediaDisplay = ({
 
   if (mimeType?.match(/application\/pdf/)) {
     detailComponents.push(
-      <hr key="format-hr" className="my-2 bg-neutral-gray1 text-sm" />,
+      <hr key="format-hr" className="my-2" />,
       <div key="format" className="flex gap-1 text-sm text-neutral-gray4">
         <LuFileText className="size-4 text-neutral-gray4" />
         <span>{size ? `${formatFileSize(size)} • PDF` : 'PDF'}</span>

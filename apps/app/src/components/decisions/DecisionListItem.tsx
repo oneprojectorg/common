@@ -50,7 +50,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
+      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
     >
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
@@ -63,10 +63,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
           {owner && (
             <div className="flex items-center gap-1">
-              <Avatar
-                placeholder={owner.name}
-                className="size-4 border border-neutral-gray1"
-              >
+              <Avatar placeholder={owner.name} className="size-4 border">
                 {owner.avatarImage?.name ? (
                   <Image
                     src={getPublicUrl(owner.avatarImage.name) ?? ''}

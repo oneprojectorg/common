@@ -11,7 +11,7 @@ export const ListPageLayout = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-5 px-4 pb-12 pt-5 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8',
+        'flex w-full flex-col gap-5 px-4 pt-5 pb-12 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8',
         className,
       )}
     >

@@ -8,7 +8,7 @@ export const DecisionHeaderSkeleton = () => {
   return (
     <div className="bg-neutral-offWhite">
       {/* Header skeleton */}
-      <div className="flex items-center justify-between border-b border-neutral-gray1 bg-white px-6 py-4">
+      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-8 w-8 rounded-full" />

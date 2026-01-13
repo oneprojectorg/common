@@ -1,4 +1,3 @@
-import { withTranspiledWorkspacesForNext } from '@op/ui/tailwind-utils';
 import dotenv from 'dotenv';
 
 try {
@@ -60,4 +59,4 @@ const config = {
   },
 };
 
-export default withTranspiledWorkspacesForNext(config);
+export default config;

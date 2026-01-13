@@ -397,7 +397,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
           onUpdate={handleChange}
           className="flex flex-1 flex-col"
           editorClassName={cn(
-            'min-h-52 max-w-none flex-1 p-4 focus:outline-none',
+            'min-h-52 max-w-none flex-1 p-4 focus:outline-hidden',
             customClassName,
           )}
           showToolbar={showToolbar}

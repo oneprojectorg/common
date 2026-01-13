@@ -33,7 +33,7 @@ export const ProfileItem = ({
       {avatar}
 
       <div className="min-w-0 flex-1">
-        <div className="font-semibold leading-base text-neutral-black">
+        <div className="leading-base font-semibold text-neutral-black">
           {title}
         </div>
 

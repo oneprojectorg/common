@@ -40,10 +40,10 @@ const styles = tv({
   base: 'group relative z-0 rounded-md bg-charcoal px-3 py-2 font-sans text-sm text-offWhite will-change-transform',
   variants: {
     isEntering: {
-      true: 'ease-out animate-in fade-in duration-animate-200 placement-left:slide-in-from-right-0.5 placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5',
+      true: 'animate-in ease-out animation-duration-200 fade-in placement-left:slide-in-from-right-1 placement-right:slide-in-from-left-1 placement-top:slide-in-from-bottom-1 placement-bottom:slide-in-from-top-1',
     },
     isExiting: {
-      true: 'ease-in animate-out fade-out duration-animate-150 placement-left:slide-out-to-right-0.5 placement-right:slide-out-to-left-0.5 placement-top:slide-out-to-bottom-0.5 placement-bottom:slide-out-to-top-0.5',
+      true: 'animate-out ease-in animation-duration-150 fade-out placement-left:slide-out-to-right-1 placement-right:slide-out-to-left-1 placement-top:slide-out-to-bottom-1 placement-bottom:slide-out-to-top-1',
     },
   },
 });

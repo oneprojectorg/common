@@ -26,7 +26,7 @@ export const PlatformHighlights = () => {
           </HighlightNumber>
           <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
         <Highlight>
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}
@@ -35,14 +35,14 @@ export const PlatformHighlights = () => {
             {t('active')} {pluralize('relationship', stats.totalRelationships)}
           </HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
           <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
@@ -149,7 +149,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
               />
             ) : null}
           </Avatar>
-          <div className="absolute left-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out active:bg-black hover:opacity-15" />
+          <div className="absolute top-0 left-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
         </Link>
       );
     })

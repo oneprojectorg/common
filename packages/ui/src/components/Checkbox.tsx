@@ -59,17 +59,17 @@ const checkboxStyles = tv({
 
 const boxStyles = tv({
   extend: focusRing,
-  base: 'flex size-6 flex-shrink-0 items-center justify-center rounded-sm border transition',
+  base: 'flex size-6 shrink-0 items-center justify-center rounded-sm border border-neutral-gray2 transition',
   variants: {
     isSelected: {
       false: '',
       true: 'border-none bg-teal text-neutral-offWhite',
     },
     isInvalid: {
-      true: '[--color:theme(colors.red.600)] group-pressed:[--color:theme(colors.red.700)]',
+      true: '[--color:var(--color-red-600)] group-pressed:[--color:var(--color-red-700)]',
     },
     isDisabled: {
-      true: '[--color:theme(colors.neutral.700)]',
+      true: '[--color:var(--color-neutral-700)]',
     },
     size: {
       small: 'size-4',

@@ -33,7 +33,7 @@ const DialogHeader = ({
     <Heading
       slot="title"
       className={cn(
-        'my-0 text-lg font-medium leading-6 text-neutral-800',
+        'my-0 text-lg leading-6 font-medium text-neutral-800',
         className,
       )}
     >

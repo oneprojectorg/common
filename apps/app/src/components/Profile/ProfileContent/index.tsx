@@ -137,7 +137,7 @@ const ProfileAbout = ({
                   <Link
                     href={formatToUrl(website)}
                     target="_blank"
-                    className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                    className="max-w-full overflow-hidden text-nowrap overflow-ellipsis"
                   >
                     {website}
                   </Link>
@@ -166,7 +166,7 @@ const ProfileAbout = ({
                   <LuMail className="min-w-4" />
                   <Link
                     href={`mailto:${email}`}
-                    className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                    className="max-w-full overflow-hidden text-nowrap overflow-ellipsis"
                   >
                     {email}
                   </Link>
@@ -264,7 +264,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-2 px-4 pb-2 pt-0 sm:gap-0 sm:border-b sm:p-0 sm:pt-4">
+    <div className="flex flex-col gap-2 px-4 pt-0 pb-2 sm:gap-0 sm:border-b sm:p-0 sm:pt-4">
       <Header2 className="px-6 font-serif text-title-sm leading-normal">
         {t('Decisions')}
       </Header2>
@@ -272,7 +272,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
-            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 sm:hover:bg-primary-tealWhite"
+            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 hover:sm:bg-primary-tealWhite"
           />
           {index < data.items.length - 1 && <hr />}
         </Fragment>
@@ -283,9 +283,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
 
 export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="hidden h-full flex-grow grid-cols-15 sm:grid">
-      {children}
-    </div>
+    <div className="hidden h-full grow grid-cols-15 sm:grid">{children}</div>
   );
 };
 
@@ -316,7 +314,7 @@ export const OrganizationProfileGrid = ({
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="border-b px-4 pb-8 pt-6"
+              className="border-b px-4 pt-6 pb-8"
             />
           </Suspense>
         ) : (
@@ -341,7 +339,7 @@ export const OrganizationProfileGrid = ({
 };
 
 export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
-  <TabList className="flex-shrink-0 px-4 sm:px-6">{children}</TabList>
+  <TabList className="shrink-0 px-4 sm:px-6">{children}</TabList>
 );
 
 export const ProfileTabs = ({
@@ -368,7 +366,7 @@ export const ProfileTabs = ({
 
   return (
     <ProfileTabsWithQuery
-      className="hidden flex-grow gap-0 px-0 sm:flex sm:h-full sm:flex-col"
+      className="hidden grow gap-0 px-0 sm:flex sm:h-full sm:flex-col"
       initialTab={initialTab}
       defaultTab={defaultTab}
       validTabs={validTabs}
@@ -462,7 +460,7 @@ export const ProfileTabsMobile = ({
               <PostUpdate
                 organization={profile}
                 label={t('Post')}
-                className="border-b px-4 pb-6 pt-2"
+                className="border-b px-4 pt-2 pb-6"
               />
             </Suspense>
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>

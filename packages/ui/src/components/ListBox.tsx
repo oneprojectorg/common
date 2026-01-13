@@ -54,7 +54,7 @@ export const ListBox = <T extends object>({
 
 export const itemStyles = tv({
   extend: focusRing,
-  base: 'group relative flex cursor-default select-none items-center gap-8 rounded px-2.5 py-1.5 text-sm will-change-transform forced-color-adjust-none',
+  base: 'group relative flex cursor-default items-center gap-8 rounded px-2.5 py-1.5 text-sm will-change-transform forced-color-adjust-none select-none',
   variants: {
     isSelected: {
       false: 'text-neutral-700 -outline-offset-2 hover:bg-neutral-300',
@@ -96,7 +96,7 @@ export const ListBoxItem = (props: ListBoxItemProps) => {
 };
 
 export const dropdownItemStyles = tv({
-  base: 'group flex cursor-pointer select-none items-center gap-4 rounded py-2 pl-3 pr-1.5 outline outline-0 forced-color-adjust-none',
+  base: 'group flex cursor-pointer items-center gap-4 rounded py-2 pr-1.5 pl-3 outline outline-0 forced-color-adjust-none select-none',
   variants: {
     isDisabled: {
       false: 'text-neutral-black',

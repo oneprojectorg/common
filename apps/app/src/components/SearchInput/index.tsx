@@ -183,7 +183,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             <LuSearch className="size-4 text-neutral-gray4" />
           ),
           className: cn(
-            'bg-transparent placeholder:text-neutral-gray4 active:bg-white active:text-neutral-gray3 focus:bg-white',
+            'bg-transparent placeholder:text-neutral-gray4 focus:bg-white active:bg-white active:text-neutral-gray3',
             'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'sm:rounded-b-none',
           ),
@@ -212,7 +212,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       >
         {dropdownShowing ? (
           <div
-            className="absolute top-10 z-10 hidden !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2 sm:block"
+            className="absolute top-10 z-10 hidden !max-h-80 w-(--trigger-width) min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2 sm:block"
             role="listbox"
             aria-label={t('Search results')}
           >
@@ -258,7 +258,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       {/* Mobile full-screen search results */}
       {dropdownShowing && (
         <div
-          className="fixed inset-x-0 bottom-0 top-[60px] z-10 block overflow-y-auto bg-white sm:hidden"
+          className="fixed inset-x-0 top-[60px] bottom-0 z-10 block overflow-y-auto bg-white sm:hidden"
           role="listbox"
           aria-label={t('Search results')}
         >

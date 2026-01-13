@@ -186,7 +186,7 @@ export function ProposalView({
               </div>
 
               {/* Engagement Stats */}
-              <div className="flex items-center gap-4 border-b border-t border-neutral-gray1 py-4 text-sm text-neutral-gray4">
+              <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-neutral-gray4">
                 <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
                   <span>
@@ -224,7 +224,7 @@ export function ProposalView({
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>
-            <div className="border-t border-neutral-gray1 pt-8">
+            <div className="border-t pt-8">
               <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
                 {t('Comments')} ({comments.length})
               </h3>
@@ -265,9 +265,7 @@ export function ProposalView({
                           onReactionClick={handleReactionClick}
                           className="sm:px-0"
                         />
-                        {comments.length !== i + 1 && (
-                          <hr className="my-4 bg-neutral-gray1" />
-                        )}
+                        {comments.length !== i + 1 && <hr className="my-4" />}
                       </div>
                     ))}
                   </PostFeed>

@@ -38,7 +38,7 @@ export const ProfileSwitchingModal = ({
           <Avatar placeholder={profileName} className="size-full">
             {avatarContent}
           </Avatar>
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <LoadingSpinner color="teal" size="md" />
           </div>
         </div>

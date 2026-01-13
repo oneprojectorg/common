@@ -78,7 +78,7 @@ export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
                 : previewData.meta.description}
             </p>
           )}
-          <hr className="my-2 bg-neutral-gray1 text-sm" />
+          <hr className="my-2" />
           <div className="flex items-center gap-2 text-xs text-neutral-gray4">
             <LuGlobe className="size-4" /> <span>{url}</span>
           </div>

@@ -45,7 +45,7 @@ export const ComingSoonScreen = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="order-1 h-full font-serif text-3xl font-light leading-[1.1] sm:text-6xl sm:leading-[1.25]"
+          className="order-1 h-full font-serif text-3xl leading-[1.1] font-light sm:text-6xl sm:leading-[1.25]"
         >
           <em>Common.</em>{' '}
           <motion.span

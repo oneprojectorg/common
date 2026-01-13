@@ -22,7 +22,7 @@
     "@op/typescript-config": "workspace:*",
     "@types/he": "^1.2.3",
     "@types/node": "^22.13.5",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "4.1.18",
     "typescript": "5.7.3"
   }
 }

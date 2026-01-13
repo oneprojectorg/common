@@ -23,7 +23,7 @@ import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 const selectStyles = tv({
-  base: 'flex min-w-0 flex-row justify-between rounded-md border border-neutral-gray1 text-base leading-3 text-neutral-black outline outline-0 placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:border-neutral-gray2',
+  base: 'flex min-w-0 flex-row justify-between rounded-md border text-base leading-3 text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
       true: 'bg-neutral-gray1 text-neutral-gray4',
@@ -31,7 +31,7 @@ const selectStyles = tv({
     },
     variant: {
       default: '',
-      pill: 'h-auto border-0 bg-primary-tealWhite text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
+      pill: 'h-auto border-0 bg-primary-tealWhite text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     size: {
       small: 'h-8 rounded-sm p-2 px-3',
@@ -134,7 +134,7 @@ export const Select = <T extends object>({
       <FieldError>{errorMessage}</FieldError>
       <Popover
         className={cn(
-          'absolute z-10 !max-h-60 min-w-[--trigger-width] max-w-56 overflow-hidden rounded border border-neutral-gray1 bg-white p-2 shadow',
+          'absolute z-10 !max-h-60 max-w-56 min-w-(--trigger-width) overflow-hidden rounded border bg-white p-2 shadow',
           popoverClassName,
         )}
         {...popoverProps}
@@ -142,7 +142,7 @@ export const Select = <T extends object>({
         <ListBox
           items={items}
           className={cn(
-            'max-h-60 overflow-auto py-1 outline-none',
+            'max-h-60 overflow-auto py-1 outline-hidden',
             props.listBoxClassName,
           )}
           selectionMode={selectionMode}

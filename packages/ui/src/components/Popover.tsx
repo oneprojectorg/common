@@ -19,10 +19,10 @@ const styles = tv({
   base: 'rounded bg-neutral-gray1 text-neutral-black',
   variants: {
     isEntering: {
-      true: 'transition-opacity duration-200 ease-out animate-in fade-in',
+      true: 'animate-in transition-opacity duration-200 ease-out fade-in',
     },
     isExiting: {
-      true: 'duration-150 ease-in animate-out fade-out placement-left:slide-out-to-right-1 placement-right:slide-out-to-left-1 placement-top:slide-out-to-bottom-1 placement-bottom:slide-out-to-top-1',
+      true: 'animate-out duration-150 ease-in fade-out placement-left:slide-out-to-right-1 placement-right:slide-out-to-left-1 placement-top:slide-out-to-bottom-1 placement-bottom:slide-out-to-top-1',
     },
   },
 });

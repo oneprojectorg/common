@@ -8,26 +8,26 @@ export const FullScreenSplitAside = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <aside className="relative right-0 top-0 -z-10 hidden size-full h-screen flex-col items-center justify-center bg-gradient text-offWhite lg:sticky lg:z-10 lg:col-span-1 lg:flex lg:min-w-96 lg:bg-teal">
+    <aside className="relative top-0 right-0 -z-10 hidden size-full h-screen flex-col items-center justify-center bg-gradient text-offWhite lg:sticky lg:z-10 lg:col-span-1 lg:flex lg:min-w-96 lg:bg-teal">
       <div className="absolute h-full w-full bg-gradient">
         <img
           src="/topLeft.png"
           alt="Top Left Decoration"
-          className="absolute left-0 top-0 z-0"
+          className="absolute top-0 left-0 z-0"
         />
         <img
           src="/bottomRight.png"
           alt="Bottom Right Decoration"
-          className="absolute bottom-0 right-0 z-0"
+          className="absolute right-0 bottom-0 z-0"
         />
         <div
           className="h-full w-full bg-repeat opacity-25 mix-blend-screen"
           style={{ backgroundImage: 'url(/noise.png)' }}
         />
       </div>
-      <div className="absolute right-0 top-0 -z-10 hidden size-full justify-center p-4 text-offWhite lg:z-10 lg:flex lg:flex-col lg:items-center">
+      <div className="absolute top-0 right-0 -z-10 hidden size-full justify-center p-4 text-offWhite lg:z-10 lg:flex lg:flex-col lg:items-center">
         <div className="flex flex-col items-center justify-center gap-4 px-12">
-          <h1 className="min-w-96 text-center font-serif text-title-xxl font-light leading-[3.3rem] tracking-[-0.075rem]">
+          <h1 className="min-w-96 text-center font-serif text-title-xxl leading-[3.3rem] font-light tracking-[-0.075rem]">
             A bridge to the
             <br />
             <i>new economy.</i>

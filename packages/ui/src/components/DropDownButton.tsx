@@ -9,7 +9,7 @@ import { Menu, MenuItem, MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
 const dropdownButtonStyle = tv({
-  base: 'flex h-10 w-fit items-center justify-center gap-1 rounded-lg border border-solid p-4 text-center text-sm font-normal leading-6 shadow-md outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
+  base: 'flex h-10 w-fit items-center justify-center gap-1 rounded-lg border border-solid p-4 text-center text-sm leading-6 font-normal shadow-md outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
   variants: {
     color: {
       primary:
@@ -68,7 +68,7 @@ export const DropDownButton = (props: DropdownButtonProps) => {
       </Button>
       <Popover
         placement="bottom start"
-        className={matchTriggerWidth ? 'min-w-[--trigger-width]' : undefined}
+        className={matchTriggerWidth ? 'min-w-(--trigger-width)' : undefined}
       >
         <Menu>
           {items.map((item) => (

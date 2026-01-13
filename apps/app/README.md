@@ -20,7 +20,7 @@ As a Next.js application using the App Router, it follows standard conventions:
 - **`public/`**: Static assets like images and fonts.
 - **`styles/`**: Global styles or SCSS files.
 - **`next.config.js`**: Next.js configuration.
-- **`postcss.config.js`, `tailwind.config.js`**: Configuration for PostCSS and Tailwind CSS.
+- **`postcss.config.ts`**: Configuration for PostCSS and Tailwind CSS.
 
 ## Key Technologies
 
@@ -49,6 +49,7 @@ As a Next.js application using the App Router, it follows standard conventions:
 - **`@op/trpc`**: Imports the tRPC provider/client.
 - **`@op/typescript-config` (Dev)**: For TypeScript configuration.
 - **`@op/ui`**: Renders UI components provided by this package.
+- **`@op/styles`**: For tailwindcss config and base styles.
 
 **Depended On By:**
 
