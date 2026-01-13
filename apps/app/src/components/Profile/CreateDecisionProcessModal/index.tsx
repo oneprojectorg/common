@@ -508,7 +508,7 @@ export const CreateDecisionProcessModal = ({
 
         <ErrorBoundary
           fallback={
-            <div className="border-functional-orange/20 bg-functional-orange/5 border-functional-orange/20 flex flex-col items-center gap-4 rounded-lg border p-6 text-center">
+            <div className="border-functional-orange/20 bg-functional-orange/5 flex flex-col items-center gap-4 rounded-lg border p-6 text-center">
               <div className="flex flex-col gap-2">
                 <h3 className="text-functional-orange text-lg font-medium">
                   Step {currentStep} Error
