@@ -241,6 +241,7 @@
   "Deleting...": "Eliminando...",
   "Failed to delete proposal": "Error al eliminar la propuesta",
   "Proposal deleted successfully": "Propuesta eliminada exitosamente",
+  "Draft": "Borrador",
   "Not shortlisted": "No preseleccionada",
   "Shortlisted": "Preseleccionada",
   "Funded": "Financiada",

@@ -136,7 +136,7 @@ export const submitVote = async ({
 
     // Extract voting configuration from current state
     const currentStateId = (processInstance.instanceData as any)
-      ?.currentStateId;
+      ?.currentPhaseId;
     const currentState = (
       processInstance.process as any
     )?.processSchema?.states?.find((s: any) => s.id === currentStateId);
@@ -334,7 +334,7 @@ export const getVotingStatus = async ({
 
     // Extract voting configuration from current state
     const currentStateId = (processInstance.instanceData as any)
-      ?.currentStateId;
+      ?.currentPhaseId;
     const currentState = (
       processInstance.process as any
     )?.processSchema?.states?.find((s: any) => s.id === currentStateId);
@@ -466,7 +466,7 @@ export const validateVoteSelectionService = async ({
 
     // Extract voting configuration from current state
     const currentStateId = (processInstance.instanceData as any)
-      ?.currentStateId;
+      ?.currentPhaseId;
     const currentState = (
       processInstance.process as any
     )?.processSchema?.states?.find((s: any) => s.id === currentStateId);

@@ -202,7 +202,8 @@ export function ProposalCardMenu({
     <>
       <OptionMenu>
         <Menu className="p-2">
-          {canManage && (
+          {/* Admin actions only for non-draft proposals */}
+          {canManage && proposal.status !== ProposalStatus.DRAFT && (
             <>
               <MenuItem
                 key="approve"
@@ -242,7 +243,8 @@ export function ProposalCardMenu({
               </MenuItem>
             </>
           )}
-          {proposal.isEditable && (
+          {/* Delete action only for non-draft proposals (drafts use ProposalCardDraftActions) */}
+          {proposal.isEditable && proposal.status !== ProposalStatus.DRAFT && (
             <MenuItem
               key="delete"
               onAction={() => setIsDeleteModalOpen(true)}
