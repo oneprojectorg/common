@@ -405,6 +405,112 @@ export class TestDecisionsDataManager {
   }
 
   /**
+   * Creates a process instance with custom instanceData.
+   * Use this when you need to control phase dates, advancement methods, or other
+   * instance configuration for testing specific scenarios like transition processing.
+   *
+   * @example
+   * ```ts
+   * const instance = await testData.createInstanceWithCustomData({
+   *   caller,
+   *   processId: process.id,
+   *   name: 'Test Instance',
+   *   instanceData: {
+   *     currentPhaseId: 'submission',
+   *     phases: [
+   *       {
+   *         phaseId: 'submission',
+   *         startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+   *         endDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // Past date
+   *         rules: { advancement: { method: 'date' } },
+   *       },
+   *       // ... more phases
+   *     ],
+   *   },
+   * });
+   * ```
+   */
+  async createInstanceWithCustomData({
+    caller,
+    processId,
+    process,
+    user,
+    name,
+    instanceData,
+    status,
+  }: {
+    caller?: Awaited<
+      ReturnType<TestDecisionsDataManager['createAuthenticatedCaller']>
+    >;
+    processId?: string;
+    process?: EncodedDecisionProcess;
+    user?: User;
+    name: string;
+    instanceData: Record<string, unknown>;
+    status?: ProcessStatus;
+  }): Promise<CreatedInstance> {
+    this.ensureCleanupRegistered();
+
+    // Resolve caller - either use provided caller or create one from user
+    let resolvedCaller = caller;
+    if (!resolvedCaller && user?.email) {
+      resolvedCaller = await this.createAuthenticatedCaller(user.email);
+    }
+    if (!resolvedCaller) {
+      throw new Error('Either caller or user with email must be provided');
+    }
+
+    // Resolve processId - either use provided processId or get from process object
+    const resolvedProcessId = processId ?? process?.id;
+    if (!resolvedProcessId) {
+      throw new Error('Either processId or process must be provided');
+    }
+
+    const instance = await resolvedCaller.decision.createInstance({
+      processId: resolvedProcessId,
+      name: this.generateUniqueName(name),
+      description: `Test instance ${name}`,
+      instanceData,
+    });
+
+    // Query the database for the profileId (not exposed in the API response)
+    const [instanceRecord] = await db
+      .select({ profileId: processInstances.profileId })
+      .from(processInstances)
+      .where(eq(processInstances.id, instance.id));
+
+    const profileId = instanceRecord?.profileId;
+    if (!profileId) {
+      throw new Error(`Could not find profileId for instance ${instance.id}`);
+    }
+
+    this.createdProfileIds.push(profileId);
+
+    // Update status if provided (direct DB update since there's no router for this)
+    if (status) {
+      await db
+        .update(processInstances)
+        .set({ status })
+        .where(eq(processInstances.id, instance.id));
+    }
+
+    // Fetch the profile to get the slug
+    const profile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, profileId),
+    });
+
+    if (!profile) {
+      throw new Error(`Profile not found for instance: ${instance.id}`);
+    }
+
+    return {
+      instance,
+      profileId,
+      slug: profile.slug,
+    };
+  }
+
+  /**
    * Grants profile access to a user
    * @param profileId - The profile to grant access to
    * @param authUserId - The auth user ID
