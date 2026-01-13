@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronDown, Minus } from 'lucide-react';
 import { createContext, use } from 'react';
 import type {
   CellProps,
@@ -25,6 +24,7 @@ import {
   composeRenderProps,
   useTableOptions,
 } from 'react-aria-components';
+import { LuChevronDown, LuMinus } from 'react-icons/lu';
 import { twJoin, twMerge } from 'tailwind-merge';
 
 import { cx } from '@/lib/primitive';
@@ -153,9 +153,9 @@ const TableColumn = ({
               )}
             >
               {values.sortDirection === undefined ? (
-                <Minus data-slot="icon" aria-hidden />
+                <LuMinus data-slot="icon" aria-hidden />
               ) : (
-                <ChevronDown
+                <LuChevronDown
                   data-slot="icon"
                   aria-hidden
                   className={

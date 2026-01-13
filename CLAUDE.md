@@ -58,7 +58,7 @@ Intent UI is a shadcn-compatible component library built on React Aria. To add a
 4. **Update imports** to use local paths:
    - `@/lib/primitive` → `@/lib/primitive` (already exists)
    - `@/hooks/use-media-query` → `@/hooks/use-media-query` (already exists)
-   - Replace any heroicons with lucide-react equivalents
+   - Replace any icon imports with `react-icons/lu` (e.g., `import { LuChevronDown } from 'react-icons/lu'`)
 5. **Add export** to `packages/ui/package.json` exports field
 6. **Create Storybook story** in `packages/ui/stories/`
 7. **Run `pnpm w:ui typecheck`** to verify
