@@ -1,5 +1,9 @@
 import ImplPQueue from 'p-queue';
 import colors from 'tailwindcss/colors';
+import {
+  PREVIEW_DOMAIN_SUFFIX,
+  isPreviewDomain,
+} from '../previews.mjs';
 
 export const APP_PORT = 3100;
 export const API_PORT = 3300;
@@ -51,13 +55,9 @@ const PREVIEW_DEPLOYMENT_URL =
   process.env.VERCEL_URL ||
   process.env.NEXT_PUBLIC_VERCEL_URL;
 
-// Domain suffix that identifies preview deployments requiring special handling (e.g., proxy for cookies)
-// Includes team slug for security - only matches our own preview deployments
-const PREVIEW_DOMAIN_SUFFIX = '-oneproject.vercel.app';
-
 // Check if running on a preview URL (vs custom domain)
-export const isOnPreviewAppDomain =
-  PREVIEW_DEPLOYMENT_URL?.endsWith(PREVIEW_DOMAIN_SUFFIX) ?? false;
+// Uses shared isPreviewDomain from previews.mjs
+export const isOnPreviewAppDomain = isPreviewDomain(PREVIEW_DEPLOYMENT_URL);
 
 // Extract the suffix after the project name for constructing other preview URLs
 // Handles formats like: "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
