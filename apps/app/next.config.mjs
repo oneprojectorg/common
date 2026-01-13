@@ -92,7 +92,30 @@ const config = {
     return cfg;
   },
   async rewrites() {
+    // Compute preview API URL for proxy rewrite
+    // On preview .vercel.app deployments, proxy tRPC to avoid cross-origin cookie issues
+    const isPreview = process.env.VERCEL_ENV === 'preview';
+    const branchUrl = process.env.VERCEL_BRANCH_URL;
+    const isOnVercelApp = branchUrl?.endsWith('.vercel.app');
+
+    let previewApiRewrites = [];
+    if (isPreview && isOnVercelApp && branchUrl) {
+      // Extract suffix: "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
+      // Validate it starts with "app" and ends with our team slug for security
+      const match = branchUrl.match(/^app(-.*-oneproject\.vercel\.app)$/);
+      if (match) {
+        const apiUrl = `https://api${match[1]}`;
+        previewApiRewrites = [
+          {
+            source: '/api/v1/trpc/:path*',
+            destination: `${apiUrl}/api/v1/trpc/:path*`,
+          },
+        ];
+      }
+    }
+
     return [
+      ...previewApiRewrites,
       {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
