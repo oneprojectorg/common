@@ -35,7 +35,7 @@ const isInStaging = VERCEL_GIT_BRANCH === 'staging';
 
 const isInPreviewDeployment =
   process.env.VERCEL_ENV === 'preview' ||
-  process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
+  process.env.NEXT_PUBLIC_DEPLOY_ENV === 'preview';
 
 // =============================================================================
 // Preview URL Configuration
@@ -51,7 +51,7 @@ const isInPreviewDeployment =
 // Current deployment URL - auto-detected from Vercel environment
 const PREVIEW_DEPLOYMENT_URL =
   process.env.VERCEL_BRANCH_URL ||
-  process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
+  process.env.NEXT_PUBLIC_PREVIEW_BRANCH_URL ||
   process.env.VERCEL_URL ||
   process.env.NEXT_PUBLIC_VERCEL_URL;
 
@@ -98,7 +98,7 @@ export const getPreviewApiUrl = (): string | null => {
 const isInProductionOrStaging =
   process.env.NODE_ENV === 'production' &&
   (process.env.VERCEL_ENV === 'production' ||
-    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_DEPLOY_ENV === 'production' ||
     isInStaging);
 
 type TTarget = 'APP' | 'API' | 'WORKSHOP' | 'EMAILS';
