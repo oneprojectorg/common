@@ -1,4 +1,4 @@
-export const breakpoints = {
+export const screens = {
   xxs: '320px', // 20rem
   xs: '480px', // 30rem
   sm: '640px', // 40rem
