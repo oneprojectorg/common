@@ -181,17 +181,7 @@ export const AddRelationshipModalSuspense = ({
                   Pending confirmation from {profile.profile.name}
                 </Tooltip>
               )}
-              <RemoveRelationshipModal
-                relationship={relationship}
-                onChange={() => {
-                  utils.organization.listRelationships.invalidate({
-                    organizationId: profile.id,
-                  });
-                  utils.organization.listDirectedRelationships.invalidate({
-                    from: profile.id,
-                  });
-                }}
-              />
+              <RemoveRelationshipModal relationship={relationship} />
             </DialogTrigger>
           </TooltipTrigger>
         ))

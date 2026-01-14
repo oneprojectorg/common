@@ -1,10 +1,13 @@
 import {
+  ChannelName,
+  Channels,
   UnauthorizedError,
   getDirectedRelationships,
   getPendingRelationships,
   getRelatedOrganizations,
 } from '@op/common';
 import { getCurrentOrgId } from '@op/common/src/services/access';
+import { Organization } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -94,7 +97,6 @@ export const listRelationshipsRouter = router({
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withAnalytics)
-    // .meta(directedMeta)
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
@@ -109,6 +111,26 @@ export const listRelationshipsRouter = router({
             to: to ?? defaultOrgId,
             pending,
           });
+
+        const targetOrgChannel: ChannelName =
+          Channels.profileRelationshipRequest({
+            type: 'target',
+            orgId: from,
+          });
+
+        const sourceOrgIds = relationships.map(
+          (relationship) =>
+            (relationship.targetOrganization as Organization).id,
+        );
+
+        const sourceOrgChannels: ChannelName[] = sourceOrgIds.map((orgId) => {
+          return Channels.profileRelationshipRequest({
+            type: 'source',
+            orgId,
+          });
+        });
+
+        ctx.registerQueryChannels([...sourceOrgChannels, targetOrgChannel]);
 
         return { relationships, count };
       } catch (error: unknown) {
