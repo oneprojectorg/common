@@ -1,7 +1,6 @@
 import { cache } from '@op/cache';
 import { NotFoundError, UnauthorizedError, getResultsStats } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   getResultsStatsInputSchema,
@@ -9,22 +8,10 @@ import {
 } from '../../../encoders/results';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/instance/{instanceId}/results/stats',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Get statistics for decision results',
-  },
-};
-
 export const getResultsStatsRouter = router({
   getResultsStats: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
-    .meta(meta)
     .input(getResultsStatsInputSchema)
     .output(resultsStatsEncoder.nullable())
     .query(async ({ ctx, input }) => {

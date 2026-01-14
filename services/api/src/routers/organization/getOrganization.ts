@@ -5,7 +5,6 @@ import {
   getOrganizationTerms,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import {
@@ -18,20 +17,8 @@ const inputSchema = z.object({
   slug: z.string(),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/{slug}',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Get organization',
-  },
-};
-
 export const getOrganizationRouter = router({
   getBySlug: commonAuthedProcedure()
-    .meta(meta)
     .input(inputSchema)
     .output(organizationsWithProfileEncoder)
     .query(async ({ input }) => {

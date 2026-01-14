@@ -88,17 +88,6 @@ const getGeonames = async ({ q }: { q: string }) => {
   }
 };
 
-// const meta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'POST',
-// path: '/organization',
-// protect: true,
-// tags: ['organization'],
-// summary: 'Create organization',
-// },
-// };
-
 export const getGeoNames = router({
   getGeoNames: commonAuthedProcedure()
     .input(

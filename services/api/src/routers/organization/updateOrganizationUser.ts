@@ -1,7 +1,6 @@
 import { updateOrganizationUser } from '@op/common';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -35,22 +34,10 @@ const outputSchema = z.object({
   ),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'PATCH',
-    path: '/organization/{organizationId}/user/{organizationUserId}',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Update organization user',
-  },
-};
-
 export const updateOrganizationUserRouter = router({
   updateOrganizationUser: commonAuthedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 10 },
   })
-    .meta(meta)
     .input(inputSchema)
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {

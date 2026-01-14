@@ -1,7 +1,6 @@
 import { NotFoundError, getProfile, listProfiles } from '@op/common';
 import { EntityType } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { profileEncoder } from '../../encoders/profiles';
@@ -12,34 +11,11 @@ const inputSchema = z.object({
   slug: z.string(),
 });
 
-const getBySlugMeta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/profile/{slug}',
-    protect: true,
-    tags: ['profile'],
-    summary: 'Get profile by slug',
-  },
-};
-
-const listMeta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/profile',
-    protect: true,
-    tags: ['profile'],
-    summary: 'List profiles',
-  },
-};
-
 // Use the profile encoder directly
 const universalProfileSchema = profileEncoder;
 
 export const getProfileRouter = router({
   list: commonAuthedProcedure()
-    .meta(listMeta)
     .input(
       dbFilter
         .extend({
@@ -92,7 +68,6 @@ export const getProfileRouter = router({
       }
     }),
   getBySlug: commonAuthedProcedure()
-    .meta(getBySlugMeta)
     .input(inputSchema)
     .output(universalProfileSchema)
     .query(async ({ ctx, input }) => {

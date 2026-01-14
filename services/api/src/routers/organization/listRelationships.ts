@@ -10,7 +10,6 @@ import { getCurrentOrgId } from '@op/common/src/services/access';
 import { Organization } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -34,28 +33,6 @@ const nonDirectedInputSchema = z.object({
   // to: z.string().uuid({ message: 'Invalid target organization ID' }),
   pending: z.boolean().optional(),
 });
-
-// const directedMeta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'GET',
-// path: '/organization/{from}/relationships/{to}',
-// protect: true,
-// tags: ['organization', 'relationships'],
-// summary: 'List organization relationships to another organization',
-// },
-// };
-
-// const nonDirectedMeta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'GET',
-// path: '/organization/{from}/relationships',
-// protect: true,
-// tags: ['organization', 'relationships'],
-// summary: 'List organization relationships',
-// },
-// };
 
 export const listRelationshipsRouter = router({
   listPendingRelationships: commonAuthedProcedure()

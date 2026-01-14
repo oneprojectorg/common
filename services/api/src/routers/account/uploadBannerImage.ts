@@ -5,7 +5,6 @@ import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
@@ -20,23 +19,9 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
 ];
 
-const endpoint = 'uploadBannerImage';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: `/account/${endpoint}`,
-    protect: true,
-    tags: ['account'],
-    summary: 'Upload and update your banner image',
-  },
-};
-
 export const uploadBannerImage = router({
   uploadBannerImage: commonAuthedProcedure()
     .use(withDB)
-    .meta(meta)
     .input(
       z.object({
         file: z.string(), // base64 encoded

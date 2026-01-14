@@ -1,22 +1,10 @@
 import { createPostInOrganization } from '@op/common';
 import { waitUntil } from '@vercel/functions';
-// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { trackUserPost } from '../../utils/analytics';
-
-// const meta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'POST',
-// path: '/organization/{id}/posts',
-// protect: true,
-// tags: ['organization', 'post'],
-// summary: 'Add a post to an organization',
-// },
-// };
 
 const outputSchema = postsEncoder;
 

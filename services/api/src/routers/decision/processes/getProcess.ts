@@ -1,26 +1,13 @@
 import { NotFoundError, getProcess } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { legacyDecisionProcessEncoder } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/process/{id}',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Get decision process by ID',
-  },
-};
-
 /** @deprecated Use the new decision system instead */
 export const getProcessRouter = router({
   getProcess: commonAuthedProcedure()
-    .meta(meta)
     .input(z.object({ id: z.uuid() }))
     .output(legacyDecisionProcessEncoder)
     .query(async ({ input }) => {

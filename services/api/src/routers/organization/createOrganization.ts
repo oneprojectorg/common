@@ -1,26 +1,13 @@
 import { invalidate } from '@op/cache';
 import { UnauthorizedError, createOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { createOrganizationInputSchema } from './validators';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/organization',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Create organization',
-  },
-};
-
 export const createOrganizationRouter = router({
   create: commonAuthedProcedure()
-    .meta(meta)
     .input(createOrganizationInputSchema)
     .output(organizationsEncoder)
     .mutation(async ({ ctx, input }) => {

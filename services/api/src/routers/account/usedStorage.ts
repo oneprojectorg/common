@@ -1,25 +1,10 @@
 import { getUserStorageUsage } from '@op/common';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const endpoint = 'usedStorage';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: `/account/${endpoint}`,
-    protect: true,
-    tags: ['account'],
-    summary: 'Get total used storage for the user',
-  },
-};
-
 const usedStorage = router({
   usedStorage: commonAuthedProcedure()
-    .meta(meta)
     .input(z.undefined())
     .output(
       z.object({

@@ -8,27 +8,14 @@ import {
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/proposal/{profileId}',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Get proposal details',
-  },
-};
-
 export const getProposalRouter = router({
   getProposal: commonAuthedProcedure()
-    .meta(meta)
     .input(
       z.object({
         profileId: z.uuid(),

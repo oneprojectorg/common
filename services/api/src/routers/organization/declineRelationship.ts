@@ -1,6 +1,5 @@
 import { UnauthorizedError, declineRelationship } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -12,20 +11,8 @@ const inputSchema = z.object({
   ids: z.array(z.string()),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/organization/{targetOrganizationId}/relationships/decline',
-    protect: true,
-    tags: ['organization', 'relationships'],
-    summary: 'Decline an organizations relationships',
-  },
-};
-
 export const declineRelationshipRouter = router({
   declineRelationship: commonAuthedProcedure()
-    .meta(meta)
     .input(inputSchema)
     .output(z.boolean())
     .mutation(async ({ ctx, input }) => {

@@ -6,7 +6,6 @@ import {
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   legacyCreateProposalInputSchema,
@@ -15,20 +14,8 @@ import {
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/decision/proposal',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Create proposal for decision process',
-  },
-};
-
 export const createProposalRouter = router({
   createProposal: commonAuthedProcedure()
-    .meta(meta)
     .input(legacyCreateProposalInputSchema)
     .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {

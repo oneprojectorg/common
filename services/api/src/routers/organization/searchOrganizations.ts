@@ -1,27 +1,14 @@
 import { cache } from '@op/cache';
 import { searchOrganizations } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/search',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Search organizations',
-  },
-};
-
 export const searchOrganizationsRouter = router({
   search: commonAuthedProcedure()
-    .meta(meta)
     .input(
       dbFilter.extend({
         q: z.string(),

@@ -6,28 +6,14 @@ import {
 import { db, eq } from '@op/db/client';
 import { organizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'DELETE',
-    path: '/profile/{profileId}/posts/{id}',
-    protect: true,
-    tags: ['profile', 'post'],
-    summary: 'Delete a post from an organization',
-    description: 'Delete a post from an organization',
-  },
-};
 
 export const deletePost = router({
   deletePost: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
-    .meta(meta)
     .input(
       z.object({
         id: z.string().describe('The ID of the post to delete'),

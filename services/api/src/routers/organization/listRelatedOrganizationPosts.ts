@@ -2,7 +2,6 @@ import {
   listAllRelatedOrganizationPosts,
   listRelatedOrganizationPosts,
 } from '@op/common';
-// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders';
@@ -18,28 +17,6 @@ const inputSchema = z.object({
     error: 'Invalid organization ID',
   }),
 });
-
-// const meta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'GET',
-// path: '/organization/{organizationId}/feed',
-// protect: true,
-// tags: ['organization', 'posts', 'relationships'],
-// summary: 'List posts for organizations related to a given organization',
-// },
-// };
-
-// const metaAllPosts: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'GET',
-// path: '/organization/feed',
-// protect: true,
-// tags: ['organization', 'posts', 'relationships'],
-// summary: 'List posts for organizations related to a given organization',
-// },
-// };
 
 export const listRelatedOrganizationPostsRouter = router({
   listAllPosts: commonAuthedProcedure()

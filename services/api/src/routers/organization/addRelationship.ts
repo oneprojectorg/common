@@ -7,7 +7,6 @@ import {
 import { getCurrentOrgId } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -21,20 +20,8 @@ const inputSchema = z.object({
   relationships: z.array(z.string()),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/organization/relationship',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Add organization relationship',
-  },
-};
-
 export const addRelationshipRouter = router({
   addRelationship: commonAuthedProcedure()
-    .meta(meta)
     .input(inputSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {

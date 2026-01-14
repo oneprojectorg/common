@@ -3,7 +3,6 @@ import { db } from '@op/db/client';
 import { attachments } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'buffer';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
@@ -18,23 +17,11 @@ const ALLOWED_MIME_TYPES = [
   'application/pdf',
 ];
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/decision/attachment',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Upload an attachment for proposals',
-  },
-};
-
 export const uploadProposalAttachment = router({
   uploadProposalAttachment: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .use(withDB)
-    .meta(meta)
     .input(
       z.object({
         file: z.string(), // base64 encoded
