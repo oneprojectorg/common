@@ -9,7 +9,6 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const updateInstanceRouter = router({
   updateInstance: commonAuthedProcedure()
-    .meta(meta)
     .input(legacyUpdateInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)
     .mutation(async ({ ctx, input }) => {
