@@ -5,18 +5,15 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
-    ".": "./dist/styles.css",
+    ".": "./shared-styles.css",
     "./tokens": "./tokens.css",
     "./postcss": "./postcss.config.mjs",
     "./constants": "./constants.ts"
   },
   "scripts": {
-    "build": "tailwindcss -i ./shared-styles.css -o ./dist/styles.css",
-    "dev": "tailwindcss -i ./shared-styles.css -o ./dist/styles.css --watch",
     "type-check": "tsgo --noEmit"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.1.18",
     "@tailwindcss/postcss": "4.1.18",
     "@tailwindcss/typography": "^0.5.19",
     "postcss": "^8.5.3",
