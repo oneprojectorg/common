@@ -13,12 +13,12 @@ import { z } from 'zod';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const reactionTypeEnum = z.enum(VALID_REACTION_TYPES as [string, ...string[]]);
 
 export const reactionsRouter = router({
-  addReaction: loggedProcedure
+  addReaction: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)
@@ -44,7 +44,7 @@ export const reactionsRouter = router({
       }
     }),
 
-  removeReaction: loggedProcedure
+  removeReaction: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)
@@ -63,7 +63,7 @@ export const reactionsRouter = router({
       return { success: true };
     }),
 
-  toggleReaction: loggedProcedure
+  toggleReaction: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)

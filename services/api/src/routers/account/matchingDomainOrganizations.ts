@@ -6,7 +6,7 @@ import { organizationsWithProfileEncoder } from '../../encoders';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -20,7 +20,7 @@ const meta: OpenApiMeta = {
 };
 
 export const matchingDomainOrganizations = router({
-  listMatchingDomainOrganizations: loggedProcedure
+  listMatchingDomainOrganizations: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 100 }))
     .use(withAuthenticated)

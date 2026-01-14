@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.object({
   roles: z.array(
@@ -16,7 +16,7 @@ const outputSchema = z.object({
 });
 
 export const getRolesRouter = router({
-  getRoles: loggedProcedure
+  getRoles: commonProcedure
     .use(withAuthenticated)
     .use(withAnalytics)
     .output(outputSchema)

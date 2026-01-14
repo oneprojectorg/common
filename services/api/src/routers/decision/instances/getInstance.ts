@@ -10,7 +10,7 @@ import {
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 import { trackProcessViewed } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
@@ -25,7 +25,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getInstanceRouter = router({
-  getInstance: loggedProcedure
+  getInstance: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 30 }))
     .use(withAuthenticated)
     .use(withAnalytics)

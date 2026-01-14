@@ -15,7 +15,7 @@ import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -34,7 +34,7 @@ const updateProposalStatusInput = z.object({
 });
 
 export const updateProposalStatusRouter = router({
-  updateProposalStatus: loggedProcedure
+  updateProposalStatus: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)

@@ -8,7 +8,7 @@ import { z } from 'zod';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   emails: z
@@ -34,7 +34,7 @@ const outputSchema = z.object({
 });
 
 export const inviteProfileUserRouter = router({
-  invite: loggedProcedure
+  invite: commonProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withAnalytics)

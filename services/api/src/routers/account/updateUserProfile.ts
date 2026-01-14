@@ -5,7 +5,7 @@ import { userEncoder } from '../../encoders';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 import {
   handleUpdateUserProfileError,
   updateUserProfileDataSchema,
@@ -25,7 +25,7 @@ const meta: OpenApiMeta = {
 };
 
 const updateUserProfile = router({
-  updateUserProfile: loggedProcedure
+  updateUserProfile: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)

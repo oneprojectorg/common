@@ -11,7 +11,7 @@ import { getInstanceResultsInputSchema } from '../../../encoders/results';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -25,7 +25,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getInstanceResultsRouter = router({
-  getInstanceResults: loggedProcedure
+  getInstanceResults: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 30 }))
     .use(withAuthenticated)
     .use(withAnalytics)

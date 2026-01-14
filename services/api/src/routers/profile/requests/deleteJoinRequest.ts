@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The ID of the join profile request to delete */
@@ -12,7 +12,7 @@ const inputSchema = z.object({
 });
 
 export const deleteJoinRequestRouter = router({
-  deleteJoinRequest: loggedProcedure
+  deleteJoinRequest: commonProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)
     .input(inputSchema)

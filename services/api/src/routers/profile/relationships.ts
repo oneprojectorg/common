@@ -15,7 +15,7 @@ import { z } from 'zod';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 import {
   trackProposalFollowed,
   trackProposalLiked,
@@ -107,7 +107,7 @@ const getRelationshipsMeta: OpenApiMeta = {
 };
 
 export const profileRelationshipRouter = router({
-  addRelationship: loggedProcedure
+  addRelationship: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)
@@ -170,7 +170,7 @@ export const profileRelationshipRouter = router({
       }
     }),
 
-  removeRelationship: loggedProcedure
+  removeRelationship: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)
@@ -196,7 +196,7 @@ export const profileRelationshipRouter = router({
       }
     }),
 
-  getRelationships: loggedProcedure
+  getRelationships: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 100 }))
     .use(withAuthenticated)
     .use(withAnalytics)

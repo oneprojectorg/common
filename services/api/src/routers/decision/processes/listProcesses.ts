@@ -5,7 +5,7 @@ import {
   legacyDecisionProcessListEncoder,
   legacyProcessFilterSchema,
 } from '../../../encoders/legacyDecision';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listProcessesRouter = router({
-  listProcesses: loggedProcedure
+  listProcesses: commonProcedure
     .meta(meta)
     .input(legacyProcessFilterSchema)
     .output(legacyDecisionProcessListEncoder)

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
 
 const inputSchema = dbFilter.extend({
@@ -16,7 +16,7 @@ const inputSchema = dbFilter.extend({
 });
 
 export const listJoinRequestsRouter = router({
-  listJoinRequests: loggedProcedure
+  listJoinRequests: commonProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 60 }))
     .use(withAuthenticated)
     .input(inputSchema)

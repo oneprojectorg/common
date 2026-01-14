@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 /**
  * Supports:
@@ -33,7 +33,7 @@ const outputSchema = z.array(
 );
 
 export const addUsersToOrganizationRouter = router({
-  addUsersToOrganization: loggedProcedure
+  addUsersToOrganization: commonProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 20 }))
     .use(withAuthenticatedPlatformAdmin)
     .input(inputSchema)

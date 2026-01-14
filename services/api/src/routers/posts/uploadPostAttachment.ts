@@ -8,7 +8,7 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = [
@@ -31,7 +31,7 @@ const meta: OpenApiMeta = {
 };
 
 export const uploadPostAttachment = router({
-  uploadPostAttachment: loggedProcedure
+  uploadPostAttachment: commonProcedure
     // middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)

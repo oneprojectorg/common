@@ -5,7 +5,7 @@ import { legacyDecisionProfileEncoder } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   slug: z.string().min(1, 'Slug cannot be empty'),
@@ -13,7 +13,7 @@ const inputSchema = z.object({
 
 /** @deprecated Use the new decision system instead */
 export const getDecisionBySlugRouter = router({
-  getDecisionBySlug: loggedProcedure
+  getDecisionBySlug: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)

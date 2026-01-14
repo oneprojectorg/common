@@ -64,16 +64,16 @@ export const { router } = t;
 export const { middleware } = t;
 export const { mergeRouters } = t;
 export const createCallerFactory = t.createCallerFactory;
-export const loggedProcedure = t.procedure.use(withChannelMeta).use(withLogger);
+export const commonProcedure = t.procedure.use(withChannelMeta).use(withLogger);
 
 /**
  * Common authenticated procedure with standard rate limiting (10 requests per 10 seconds).
  * Includes: channelMeta -> logger -> rateLimited -> authenticated -> analytics
  *
  * Use this for most authenticated endpoints. For custom rate limits or unauthenticated
- * endpoints, use `loggedProcedure` with explicit middleware.
+ * endpoints, use `commonProcedure` with explicit middleware.
  */
-export const commonAuthedProcedure = loggedProcedure
+export const commonAuthedProcedure = commonProcedure
   .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
   .use(withAuthenticated)
   .use(withAnalytics);

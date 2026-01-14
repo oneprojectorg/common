@@ -8,7 +8,7 @@ import { organizationsEncoder } from '../../encoders/organizations';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 import { trackFundingToggle } from '../../utils/analytics';
 import { updateOrganizationInputSchema } from './validators';
 
@@ -24,7 +24,7 @@ const meta: OpenApiMeta = {
 };
 
 export const updateOrganizationRouter = router({
-  update: loggedProcedure
+  update: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)

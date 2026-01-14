@@ -7,7 +7,7 @@ import { z } from 'zod';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   email: z.email(),
@@ -19,7 +19,7 @@ const outputSchema = z.object({
 });
 
 export const checkMembershipRouter = router({
-  checkMembership: loggedProcedure
+  checkMembership: commonProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)

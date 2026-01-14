@@ -7,7 +7,7 @@ import { postsEncoder } from '../../encoders';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 import { trackUserPost } from '../../utils/analytics';
 
 // const meta: OpenApiMeta = {
@@ -24,7 +24,7 @@ import { trackUserPost } from '../../utils/analytics';
 const outputSchema = postsEncoder;
 
 export const createPostInOrganizationRouter = router({
-  createPost: loggedProcedure
+  createPost: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)

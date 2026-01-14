@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -33,7 +33,7 @@ const getCategoriesOutputSchema = z.object({
 });
 
 export const getCategoriesRouter = router({
-  getCategories: loggedProcedure
+  getCategories: commonProcedure
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)

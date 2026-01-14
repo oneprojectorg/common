@@ -7,7 +7,7 @@ import { z } from 'zod';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   organizationId: z.uuid(),
@@ -37,7 +37,7 @@ const meta: OpenApiMeta = {
 };
 
 export const deleteOrganizationUserRouter = router({
-  deleteOrganizationUser: loggedProcedure
+  deleteOrganizationUser: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 60, maxRequests: 5 }))
     .use(withAuthenticated)

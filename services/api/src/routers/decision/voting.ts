@@ -8,7 +8,7 @@ import { z } from 'zod';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 // Input Schemas based on our contracts
 const customDataSchema = z.record(z.string(), z.unknown()).optional();
@@ -27,7 +27,7 @@ const validateVoteSelectionInput = z.object({
 
 export const votingRouter = router({
   // Submit user's vote (validates against current schema)
-  submitVote: loggedProcedure
+  submitVote: commonProcedure
     .input(submitVoteInput)
     .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
@@ -46,7 +46,7 @@ export const votingRouter = router({
     }),
 
   // Get user's vote status with schema context
-  getVotingStatus: loggedProcedure
+  getVotingStatus: commonProcedure
     .input(
       z.object({
         processInstanceId: z.uuid(),
@@ -66,7 +66,7 @@ export const votingRouter = router({
     }),
 
   // Validate vote selection against current schema
-  validateVoteSelection: loggedProcedure
+  validateVoteSelection: commonProcedure
     .input(validateVoteSelectionInput)
     .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)

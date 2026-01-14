@@ -13,7 +13,7 @@ import { z } from 'zod';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 // const meta: OpenApiMeta = {
 // openapi: {
@@ -74,7 +74,7 @@ const outputSchema = z.object({
 });
 
 export const inviteUserRouter = router({
-  invite: loggedProcedure
+  invite: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)

@@ -6,12 +6,12 @@ import { postsEncoder } from '../../encoders';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const outputSchema = postsEncoder;
 
 export const getPost = router({
-  getPost: loggedProcedure
+  getPost: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)

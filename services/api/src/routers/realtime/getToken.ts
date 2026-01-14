@@ -3,10 +3,10 @@ import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 export const getToken = router({
-  getToken: loggedProcedure
+  getToken: commonProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 100 }))
     .use(withAuthenticated)
     .input(z.undefined())

@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const exportInputSchema = z.object({
   processInstanceId: z.string().uuid(),
@@ -22,7 +22,7 @@ const exportOutputSchema = z.object({
 });
 
 export const exportProposalsRouter = router({
-  export: loggedProcedure
+  export: commonProcedure
     .use(withAuthenticated)
     .use(withAnalytics)
     .input(exportInputSchema)

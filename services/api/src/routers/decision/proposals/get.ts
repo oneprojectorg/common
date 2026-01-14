@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
@@ -29,7 +29,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getProposalRouter = router({
-  getProposal: loggedProcedure
+  getProposal: commonProcedure
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)

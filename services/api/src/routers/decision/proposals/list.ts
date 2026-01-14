@@ -8,7 +8,7 @@ import {
 } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -22,7 +22,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listProposalsRouter = router({
-  listProposals: loggedProcedure
+  listProposals: commonProcedure
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)

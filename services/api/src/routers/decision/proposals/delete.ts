@@ -11,7 +11,7 @@ import { z } from 'zod';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -25,7 +25,7 @@ const meta: OpenApiMeta = {
 };
 
 export const deleteProposalRouter = router({
-  deleteProposal: loggedProcedure
+  deleteProposal: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
     .use(withAnalytics)
