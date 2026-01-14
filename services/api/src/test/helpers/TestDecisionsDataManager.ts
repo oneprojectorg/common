@@ -671,10 +671,12 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Generates a unique name with UUID first to avoid truncation issues with slug generation
+   * Generates a unique name with UUID first to survive slug truncation.
+   * Profile slugs are truncated to ~30 chars, so UUID must be at the start.
    */
   private generateUniqueName(baseName: string): string {
-    return `${randomUUID()}-${baseName}-${this.testId}`;
+    // UUID first ensures uniqueness survives slug truncation
+    return `${randomUUID().substring(0, 8)}-${baseName}`;
   }
 
   /**

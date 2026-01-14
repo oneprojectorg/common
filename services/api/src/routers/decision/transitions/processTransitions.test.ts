@@ -546,10 +546,10 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       // Process all due transitions
       const result = await processDecisionsTransitions();
 
-      expect(result.processed).toBeGreaterThanOrEqual(2);
+      // Result includes transitions from all concurrent tests, so just verify no failures
       expect(result.failed).toBe(0);
 
-      // Verify both instances advanced
+      // Verify BOTH of our specific instances advanced (this is the important check)
       const updated1 = await caller.decision.getDecisionBySlug({
         slug: instance1.slug,
       });
@@ -559,6 +559,17 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       expect(updated1.processInstance.instanceData.currentPhaseId).toBe('review');
       expect(updated2.processInstance.instanceData.currentPhaseId).toBe('review');
+
+      // Verify both transitions were marked completed
+      const transition1 = await db.query.decisionProcessTransitions.findFirst({
+        where: eq(decisionProcessTransitions.processInstanceId, instance1.instance.id),
+      });
+      const transition2 = await db.query.decisionProcessTransitions.findFirst({
+        where: eq(decisionProcessTransitions.processInstanceId, instance2.instance.id),
+      });
+
+      expect(transition1?.completedAt).toBeTruthy();
+      expect(transition2?.completedAt).toBeTruthy();
     });
 
     it('should process multiple sequential transitions within same instance', async ({
