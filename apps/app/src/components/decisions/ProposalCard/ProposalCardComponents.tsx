@@ -16,7 +16,7 @@ import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { LuBookmark } from 'react-icons/lu';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -34,13 +34,17 @@ export interface BaseProposalCardProps {
 export function ProposalCard({
   children,
   className,
+  proposal,
   ...props
 }: {
   proposal?: Proposal;
   children: ReactNode;
 } & HTMLAttributes<HTMLDivElement>) {
+  const isDraft = proposal?.status === ProposalStatus.DRAFT;
+
   return (
     <Surface
+      variant={isDraft ? 'filled' : 'empty'}
       className={cn(
         'relative flex w-full min-w-80 flex-col justify-between gap-4 p-6',
         className,
@@ -282,6 +286,16 @@ export function ProposalCardStatus({
   }
 
   return match(status, {
+    [ProposalStatus.DRAFT]: (
+      <>
+        <Bullet />
+        <span
+          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
+        >
+          {t('Draft')}
+        </span>
+      </>
+    ),
     [ProposalStatus.APPROVED]: (
       <>
         <Bullet />
