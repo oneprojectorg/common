@@ -9,10 +9,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -26,12 +23,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getMyAccount = router({
-  getMyAccount: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  getMyAccount: commonAuthedProcedure()
     .meta(meta)
     .input(z.undefined())
     .output(userEncoder)

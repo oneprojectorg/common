@@ -6,10 +6,7 @@ import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { postsEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { trackProposalCommented } from '../../utils/analytics';
 
 // const meta: OpenApiMeta = {
@@ -26,11 +23,7 @@ import { trackProposalCommented } from '../../utils/analytics';
 const outputSchema = postsEncoder;
 
 export const createPost = router({
-  createPost: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(meta)
+  createPost: commonAuthedProcedure()
     .input(createPostSchema)
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {

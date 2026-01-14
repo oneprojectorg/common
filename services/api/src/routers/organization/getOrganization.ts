@@ -12,10 +12,7 @@ import {
   organizationsTermsEncoder,
   organizationsWithProfileEncoder,
 } from '../../encoders/organizations';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   slug: z.string(),
@@ -33,12 +30,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getOrganizationRouter = router({
-  getBySlug: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  getBySlug: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(organizationsWithProfileEncoder)
@@ -85,13 +77,7 @@ export const getOrganizationRouter = router({
         });
       }
     }),
-  getTerms: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
-    // .meta(meta)
+  getTerms: commonAuthedProcedure()
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(organizationsTermsEncoder)
     .query(async ({ input }) => {

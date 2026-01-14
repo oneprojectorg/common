@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 import withRateLimited from '../../middlewares/withRateLimited';
 import { createSBAdminClient } from '../../supabase/server';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonProcedure, router } from '../../trpcFactory';
 
 const endpoint = 'login';
 
@@ -28,7 +28,7 @@ const meta: OpenApiMeta = {
 };
 
 const login = router({
-  login: loggedProcedure
+  login: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     // Router

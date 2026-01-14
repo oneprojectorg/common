@@ -5,10 +5,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { postsToOrganizationsEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 // const meta: OpenApiMeta = {
 // openapi: {
@@ -24,11 +21,7 @@ import { loggedProcedure, router } from '../../trpcFactory';
 const outputSchema = z.array(postsToOrganizationsEncoder);
 
 export const getOrganizationPosts = router({
-  getOrganizationPosts: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(meta)
+  getOrganizationPosts: commonAuthedProcedure()
     .input(getOrganizationPostsSchema)
     .output(outputSchema)
     .query(async ({ input, ctx }) => {

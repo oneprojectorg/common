@@ -6,9 +6,7 @@ import {
   legacyProposalFilterSchema,
   legacyProposalListEncoder,
 } from '../../../encoders/legacyDecision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -22,9 +20,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listProposalsRouter = router({
-  listProposals: loggedProcedure
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  listProposals: commonAuthedProcedure()
     .meta(meta)
     .input(legacyProposalFilterSchema)
     .output(legacyProposalListEncoder)

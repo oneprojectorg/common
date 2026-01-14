@@ -7,10 +7,7 @@ import {
   legacyGetInstanceInputSchema,
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProcessViewed } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
@@ -25,10 +22,9 @@ const meta: OpenApiMeta = {
 };
 
 export const getInstanceRouter = router({
-  getInstance: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 30 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getInstance: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 30 },
+  })
     .meta(meta)
     .input(legacyGetInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)

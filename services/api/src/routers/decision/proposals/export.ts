@@ -3,9 +3,7 @@ import { ProposalStatus } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const exportInputSchema = z.object({
   processInstanceId: z.string().uuid(),
@@ -22,9 +20,7 @@ const exportOutputSchema = z.object({
 });
 
 export const exportProposalsRouter = router({
-  export: loggedProcedure
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  export: commonAuthedProcedure()
     .input(exportInputSchema)
     .output(exportOutputSchema)
     .mutation(async ({ ctx, input }) => {

@@ -12,10 +12,7 @@ import {
   legacyCreateProposalInputSchema,
   legacyProposalEncoder,
 } from '../../../encoders/legacyDecision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
@@ -30,10 +27,7 @@ const meta: OpenApiMeta = {
 };
 
 export const createProposalRouter = router({
-  createProposal: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  createProposal: commonAuthedProcedure()
     .meta(meta)
     .input(legacyCreateProposalInputSchema)
     .output(legacyProposalEncoder)

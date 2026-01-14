@@ -4,10 +4,7 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { trackUserPost } from '../../utils/analytics';
 
 // const meta: OpenApiMeta = {
@@ -24,13 +21,9 @@ import { trackUserPost } from '../../utils/analytics';
 const outputSchema = postsEncoder;
 
 export const createPostInOrganizationRouter = router({
-  createPost: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
-    // .meta(meta)
+  createPost: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 3 },
+  })
     .input(
       z.object({
         id: z.string(), // the organization id

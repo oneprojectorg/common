@@ -12,10 +12,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const endpoint = 'switchProfile';
 
@@ -31,10 +28,7 @@ const meta: OpenApiMeta = {
 };
 
 export const switchProfile = router({
-  switchProfile: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  switchProfile: commonAuthedProcedure()
     .meta(meta)
     .input(z.object({ profileId: z.uuid() }))
     .output(userEncoder)

@@ -4,10 +4,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.object({
   success: z.boolean(),
@@ -30,12 +27,9 @@ const meta: OpenApiMeta = {
 };
 
 export const deleteOrganizationRouter = router({
-  deleteOrganization: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 60, maxRequests: 5 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  deleteOrganization: commonAuthedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 5 },
+  })
     .meta(meta)
     .input(inputSchema)
     .output(outputSchema)

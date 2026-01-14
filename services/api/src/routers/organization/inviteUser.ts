@@ -10,10 +10,7 @@ import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 // const meta: OpenApiMeta = {
 // openapi: {
@@ -74,13 +71,9 @@ const outputSchema = z.object({
 });
 
 export const inviteUserRouter = router({
-  invite: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
-    // .meta(meta)
+  invite: commonAuthedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 10 },
+  })
     .input(inputSchema)
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
