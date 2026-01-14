@@ -54,9 +54,21 @@ const createPhasesProcessSchema = () => ({
   proposalTemplate: {},
   // Include phases array for transitionMonitor final state detection
   phases: [
-    { id: 'submission', name: 'Submission', rules: { advancement: { method: 'date' } } },
-    { id: 'review', name: 'Review', rules: { advancement: { method: 'date' } } },
-    { id: 'voting', name: 'Voting', rules: { advancement: { method: 'date' } } },
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: { advancement: { method: 'date' } },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: { advancement: { method: 'date' } },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: { advancement: { method: 'date' } },
+    },
     { id: 'results', name: 'Results', rules: {} },
   ],
 });
@@ -65,9 +77,21 @@ const createPhasesProcessSchema = () => ({
 const createSimpleInstanceData = (currentPhaseId: string) => ({
   currentPhaseId,
   phases: [
-    { phaseId: 'submission', startDate: createPastDate(14), endDate: createPastDate(7) },
-    { phaseId: 'review', startDate: createPastDate(7), endDate: createPastDate(1) },
-    { phaseId: 'voting', startDate: createPastDate(1), endDate: createFutureDate(7) },
+    {
+      phaseId: 'submission',
+      startDate: createPastDate(14),
+      endDate: createPastDate(7),
+    },
+    {
+      phaseId: 'review',
+      startDate: createPastDate(7),
+      endDate: createPastDate(1),
+    },
+    {
+      phaseId: 'voting',
+      startDate: createPastDate(1),
+      endDate: createFutureDate(7),
+    },
     { phaseId: 'results', startDate: createFutureDate(7) },
   ],
 });
@@ -155,7 +179,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       const [transition] = await db
         .select()
         .from(decisionProcessTransitions)
-        .where(eq(decisionProcessTransitions.processInstanceId, instance.instance.id));
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
 
       expect(transition).toBeDefined();
       expect(transition!.completedAt).toBeNull();
@@ -171,7 +200,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe('review');
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'review',
+      );
     });
 
     it('should update both currentStateId and currentPhaseId', async ({
@@ -215,7 +246,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       expect(updatedInstance).toBeDefined();
       expect(updatedInstance!.currentStateId).toBe('review');
-      const instanceData = updatedInstance!.instanceData as { currentPhaseId: string };
+      const instanceData = updatedInstance!.instanceData as {
+        currentPhaseId: string;
+      };
       expect(instanceData.currentPhaseId).toBe('review');
     });
 
@@ -254,7 +287,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       const [transitionBefore] = await db
         .select()
         .from(decisionProcessTransitions)
-        .where(eq(decisionProcessTransitions.processInstanceId, instance.instance.id));
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
 
       expect(transitionBefore).toBeDefined();
       expect(transitionBefore!.completedAt).toBeNull();
@@ -314,7 +352,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe('results');
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'results',
+      );
     });
 
     it('should not process transitions when instance is already in final phase', async ({
@@ -343,9 +383,21 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         instanceData: {
           currentPhaseId: 'results',
           phases: [
-            { phaseId: 'submission', startDate: createPastDate(21), endDate: createPastDate(14) },
-            { phaseId: 'review', startDate: createPastDate(14), endDate: createPastDate(7) },
-            { phaseId: 'voting', startDate: createPastDate(7), endDate: createPastDate(1) },
+            {
+              phaseId: 'submission',
+              startDate: createPastDate(21),
+              endDate: createPastDate(14),
+            },
+            {
+              phaseId: 'review',
+              startDate: createPastDate(14),
+              endDate: createPastDate(7),
+            },
+            {
+              phaseId: 'voting',
+              startDate: createPastDate(7),
+              endDate: createPastDate(1),
+            },
             { phaseId: 'results', startDate: createPastDate(1) },
           ],
         },
@@ -364,7 +416,10 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       // Verify no transitions exist for this instance
       const transitions = await db.query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instance.instance.id),
+        where: eq(
+          decisionProcessTransitions.processInstanceId,
+          instance.instance.id,
+        ),
       });
 
       expect(transitions).toHaveLength(0);
@@ -374,7 +429,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe('results');
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'results',
+      );
     });
   });
 
@@ -432,13 +489,20 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe('submission');
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'submission',
+      );
 
       // Verify transition is still pending
       const [transition] = await db
         .select()
         .from(decisionProcessTransitions)
-        .where(eq(decisionProcessTransitions.processInstanceId, instance.instance.id));
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
 
       expect(transition).toBeDefined();
       expect(transition!.completedAt).toBeNull();
@@ -557,15 +621,25 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance2.slug,
       });
 
-      expect(updated1.processInstance.instanceData.currentPhaseId).toBe('review');
-      expect(updated2.processInstance.instanceData.currentPhaseId).toBe('review');
+      expect(updated1.processInstance.instanceData.currentPhaseId).toBe(
+        'review',
+      );
+      expect(updated2.processInstance.instanceData.currentPhaseId).toBe(
+        'review',
+      );
 
       // Verify both transitions were marked completed
       const transition1 = await db.query.decisionProcessTransitions.findFirst({
-        where: eq(decisionProcessTransitions.processInstanceId, instance1.instance.id),
+        where: eq(
+          decisionProcessTransitions.processInstanceId,
+          instance1.instance.id,
+        ),
       });
       const transition2 = await db.query.decisionProcessTransitions.findFirst({
-        where: eq(decisionProcessTransitions.processInstanceId, instance2.instance.id),
+        where: eq(
+          decisionProcessTransitions.processInstanceId,
+          instance2.instance.id,
+        ),
       });
 
       expect(transition1?.completedAt).toBeTruthy();
@@ -636,7 +710,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         slug: instance.slug,
       });
 
-      expect(updated.processInstance.instanceData.currentPhaseId).toBe('voting');
+      expect(updated.processInstance.instanceData.currentPhaseId).toBe(
+        'voting',
+      );
     });
   });
 
