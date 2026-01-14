@@ -1,5 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { ProcessStatus, processInstances, profiles } from '@op/db/schema';
+import {
+  decisionProcessTransitions,
+  ProcessStatus,
+  processInstances,
+  profiles,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -141,29 +146,35 @@ export const updateDecisionInstance = async ({
     return profile;
   }
 
-  // Update the instance
-  const [updatedInstance] = await db
-    .update(processInstances)
-    .set(updateData)
-    .where(eq(processInstances.id, instanceId))
-    .returning();
+  // Use a transaction for updating the instance and transitions together
+  await db.transaction(async (tx) => {
+    // Update the instance
+    const [updatedInstance] = await tx
+      .update(processInstances)
+      .set(updateData)
+      .where(eq(processInstances.id, instanceId))
+      .returning();
 
-  if (!updatedInstance) {
-    throw new CommonError('Failed to update decision process instance');
-  }
-
-  // If phases were updated, update the corresponding transitions
-  if (phases && phases.length > 0) {
-    try {
-      await updateTransitionsForProcess({ processInstance: updatedInstance });
-    } catch (error) {
-      // Log but don't fail instance update if transitions can't be updated
-      console.error(
-        'Failed to update transitions for process instance:',
-        error,
-      );
+    if (!updatedInstance) {
+      throw new CommonError('Failed to update decision process instance');
     }
-  }
+
+    // Determine the final status (updated or existing)
+    const finalStatus = status ?? existingInstance.status;
+
+    // If status is DRAFT, remove all transitions
+    if (finalStatus === ProcessStatus.DRAFT) {
+      await tx
+        .delete(decisionProcessTransitions)
+        .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
+    } else if (phases && phases.length > 0) {
+      // If phases were updated and not DRAFT, update the corresponding transitions
+      await updateTransitionsForProcess({
+        processInstance: updatedInstance,
+        tx,
+      });
+    }
+  });
 
   // Fetch the profile with processInstance joined for the response
   const profile = await db.query.profiles.findFirst({
