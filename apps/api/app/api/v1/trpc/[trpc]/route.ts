@@ -27,8 +27,8 @@ const handler = async (req: NextRequest) => {
   });
 
   const origin = req.headers.get('origin');
-  if (isAllowedOrigin(origin)) {
-    response.headers.set('Access-Control-Allow-Origin', origin!);
+  if (origin && isAllowedOrigin(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
   }
   response.headers.set(
     'Access-Control-Allow-Methods',
@@ -55,8 +55,8 @@ const optionsHandler = async (req: NextRequest) => {
     'Access-Control-Expose-Headers': EXPOSED_HEADERS,
   };
 
-  if (isAllowedOrigin(origin)) {
-    headers['Access-Control-Allow-Origin'] = origin!;
+  if (origin && isAllowedOrigin(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
   }
 
   return new Response(null, {
