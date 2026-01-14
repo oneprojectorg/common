@@ -15,7 +15,7 @@
   "scripts": {
     "build": "pnpm build:styles",
     "build:styles": "tailwindcss -i ./styles.css -o ./dist/index.css --minify",
-    "dev:styles": "tailwindcss -i ./styles.css -o ./dist/index.css --watch",
+    "dev": "tailwindcss -i ./styles.css -o ./dist/index.css --watch",
     "postinstall": "tailwindcss -i ./styles.css -o ./dist/index.css",
     "typecheck": "tsgo --noEmit"
   },

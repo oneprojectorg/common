@@ -4,7 +4,7 @@
     "build": {
       "outputs": ["dist/**"]
     },
-    "dev:styles": {
+    "dev": {
       "cache": false,
       "persistent": true
     }
