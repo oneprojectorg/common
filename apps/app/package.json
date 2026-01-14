@@ -25,7 +25,7 @@
     "@op/hooks": "workspace:*",
     "@op/logging": "workspace:*",
     "@op/realtime": "workspace:*",
-    "@op/styles": "workspace:^",
+    "@op/styles": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "@op/ui": "workspace:*",

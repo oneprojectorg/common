@@ -390,7 +390,7 @@ importers:
         specifier: workspace:*
         version: link:../../services/realtime
       '@op/styles':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/styles
       '@op/supabase':
         specifier: workspace:*

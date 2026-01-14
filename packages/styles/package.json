@@ -8,7 +8,8 @@
     ".": "./shared-styles.css",
     "./tokens": "./tokens.css",
     "./postcss": "./postcss.config.mjs",
-    "./constants": "./constants.ts"
+    "./constants": "./constants.ts",
+    "./tailwind-utils": "./tailwind.utils.mjs"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit"
