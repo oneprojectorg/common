@@ -42,7 +42,7 @@ const inputSchema = z.object({
 // };
 
 export const listRelatedOrganizationPostsRouter = router({
-  listAllPosts: commonAuthedProcedure
+  listAllPosts: commonAuthedProcedure()
     .input(
       dbFilter
         .extend({
@@ -77,7 +77,7 @@ export const listRelatedOrganizationPostsRouter = router({
         hasMore: result.hasMore,
       };
     }),
-  listRelatedPosts: commonAuthedProcedure
+  listRelatedPosts: commonAuthedProcedure()
     .input(inputSchema)
     .output(z.array(postsToOrganizationsEncoder))
     .query(async ({ ctx, input }) => {

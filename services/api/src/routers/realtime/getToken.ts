@@ -1,14 +1,12 @@
 import { generateConnectionToken } from '@op/realtime/server';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 export const getToken = router({
-  getToken: commonProcedure
-    .use(withRateLimited({ windowSize: 60, maxRequests: 100 }))
-    .use(withAuthenticated)
+  getToken: commonAuthedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 100 },
+  })
     .input(z.undefined())
     .output(z.object({ token: z.string() }))
     .query(async ({ ctx }) => {

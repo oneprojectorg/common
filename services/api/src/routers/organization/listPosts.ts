@@ -26,7 +26,7 @@ const inputSchema = dbFilter.extend({
 // };
 
 export const listOrganizationPostsRouter = router({
-  listPosts: commonAuthedProcedure
+  listPosts: commonAuthedProcedure()
     .input(inputSchema)
     .output(
       z.object({

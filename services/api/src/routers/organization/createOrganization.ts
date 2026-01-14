@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const createOrganizationRouter = router({
-  create: commonAuthedProcedure
+  create: commonAuthedProcedure()
     .meta(meta)
     .input(createOrganizationInputSchema)
     .output(organizationsEncoder)

@@ -31,7 +31,7 @@ export const userProfileSchema = z.object({
 });
 
 export const getUserProfiles = router({
-  getUserProfiles: commonAuthedProcedure
+  getUserProfiles: commonAuthedProcedure()
     .meta(meta)
     .input(z.undefined())
     .output(

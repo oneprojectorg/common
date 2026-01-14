@@ -10,18 +10,16 @@ import { VALID_REACTION_TYPES } from '@op/types';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const reactionTypeEnum = z.enum(VALID_REACTION_TYPES as [string, ...string[]]);
 
+const reactionProcedure = commonAuthedProcedure({
+  rateLimit: { windowSize: 10, maxRequests: 20 },
+});
+
 export const reactionsRouter = router({
-  addReaction: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  addReaction: reactionProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -44,10 +42,7 @@ export const reactionsRouter = router({
       }
     }),
 
-  removeReaction: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  removeReaction: reactionProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -63,10 +58,7 @@ export const reactionsRouter = router({
       return { success: true };
     }),
 
-  toggleReaction: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  toggleReaction: reactionProcedure
     .input(
       z.object({
         postId: z.string(),

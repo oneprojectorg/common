@@ -20,7 +20,7 @@ const meta: OpenApiMeta = {
  * TODO: remove!
  */
 export const organizationStatsRouter = router({
-  getStats: commonAuthedProcedure
+  getStats: commonAuthedProcedure()
     .meta(meta)
     .input(z.void())
     .output(

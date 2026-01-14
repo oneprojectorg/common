@@ -23,7 +23,7 @@ const meta: OpenApiMeta = {
 };
 
 export const removeRelationshipRouter = router({
-  removeRelationship: commonAuthedProcedure
+  removeRelationship: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(z.object({ success: z.boolean() }))

@@ -21,7 +21,7 @@ const meta: OpenApiMeta = {
 
 /** @deprecated Use the new decision system instead */
 export const createInstanceRouter = router({
-  createInstance: commonAuthedProcedure
+  createInstance: commonAuthedProcedure()
     .meta(meta)
     .input(legacyCreateInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)

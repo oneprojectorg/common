@@ -23,7 +23,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getMyAccount = router({
-  getMyAccount: commonAuthedProcedure
+  getMyAccount: commonAuthedProcedure()
     .meta(meta)
     .input(z.undefined())
     .output(userEncoder)

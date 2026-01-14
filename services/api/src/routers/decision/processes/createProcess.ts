@@ -6,10 +6,7 @@ import {
   legacyCreateProcessInputSchema,
   legacyDecisionProcessEncoder,
 } from '../../../encoders/legacyDecision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -24,10 +21,9 @@ const meta: OpenApiMeta = {
 
 /** @deprecated Use the new decision system instead */
 export const createProcessRouter = router({
-  createProcess: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  createProcess: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 5 },
+  })
     .meta(meta)
     .input(legacyCreateProcessInputSchema)
     .output(legacyDecisionProcessEncoder)

@@ -3,18 +3,14 @@ import { getPostSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
 
 import { postsEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = postsEncoder;
 
 export const getPost = router({
-  getPost: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getPost: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 20 },
+  })
     .input(getPostSchema)
     .output(outputSchema)
     .query(async ({ input, ctx }) => {

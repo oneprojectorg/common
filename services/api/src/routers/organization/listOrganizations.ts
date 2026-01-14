@@ -18,7 +18,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listOrganizationsRouter = router({
-  list: commonAuthedProcedure
+  list: commonAuthedProcedure()
     .meta(meta)
     .input(
       dbFilter

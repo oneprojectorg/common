@@ -38,7 +38,7 @@ const listMeta: OpenApiMeta = {
 const universalProfileSchema = profileEncoder;
 
 export const getProfileRouter = router({
-  list: commonAuthedProcedure
+  list: commonAuthedProcedure()
     .meta(listMeta)
     .input(
       dbFilter
@@ -91,7 +91,7 @@ export const getProfileRouter = router({
         });
       }
     }),
-  getBySlug: commonAuthedProcedure
+  getBySlug: commonAuthedProcedure()
     .meta(getBySlugMeta)
     .input(inputSchema)
     .output(universalProfileSchema)

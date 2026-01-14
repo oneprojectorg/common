@@ -5,10 +5,7 @@ import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { organizationsEncoder } from '../../encoders/organizations';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { trackFundingToggle } from '../../utils/analytics';
 import { updateOrganizationInputSchema } from './validators';
 
@@ -24,12 +21,9 @@ const meta: OpenApiMeta = {
 };
 
 export const updateOrganizationRouter = router({
-  update: commonProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  update: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 20 },
+  })
     .meta(meta)
     .input(updateOrganizationInputSchema)
     .output(organizationsEncoder)

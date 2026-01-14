@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listInstancesRouter = router({
-  listInstances: commonAuthedProcedure
+  listInstances: commonAuthedProcedure()
     .meta(meta)
     .input(legacyInstanceFilterSchema)
     .output(legacyProcessInstanceListEncoder)

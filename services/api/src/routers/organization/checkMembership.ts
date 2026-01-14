@@ -4,10 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   email: z.email(),
@@ -19,10 +16,9 @@ const outputSchema = z.object({
 });
 
 export const checkMembershipRouter = router({
-  checkMembership: commonProcedure
-    .use(withRateLimited({ windowSize: 60, maxRequests: 20 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  checkMembership: commonAuthedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 20 },
+  })
     .input(inputSchema)
     .output(outputSchema)
     .query(async ({ ctx, input }) => {

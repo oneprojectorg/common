@@ -58,7 +58,7 @@ const nonDirectedInputSchema = z.object({
 // };
 
 export const listRelationshipsRouter = router({
-  listPendingRelationships: commonAuthedProcedure
+  listPendingRelationships: commonAuthedProcedure()
     .input(z.void())
     .query(async ({ ctx }) => {
       const { user } = ctx;
@@ -86,7 +86,7 @@ export const listRelationshipsRouter = router({
         });
       }
     }),
-  listDirectedRelationships: commonAuthedProcedure
+  listDirectedRelationships: commonAuthedProcedure()
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
@@ -135,7 +135,7 @@ export const listRelationshipsRouter = router({
         });
       }
     }),
-  listRelationships: commonAuthedProcedure
+  listRelationships: commonAuthedProcedure()
     .input(nonDirectedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;

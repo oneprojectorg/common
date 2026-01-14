@@ -20,7 +20,7 @@ const meta: OpenApiMeta = {
 };
 
 export const updateInstanceRouter = router({
-  updateInstance: commonAuthedProcedure
+  updateInstance: commonAuthedProcedure()
     .meta(meta)
     .input(legacyUpdateInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)

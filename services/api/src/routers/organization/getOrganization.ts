@@ -30,7 +30,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getOrganizationRouter = router({
-  getBySlug: commonAuthedProcedure
+  getBySlug: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(organizationsWithProfileEncoder)
@@ -77,7 +77,7 @@ export const getOrganizationRouter = router({
         });
       }
     }),
-  getTerms: commonAuthedProcedure
+  getTerms: commonAuthedProcedure()
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(organizationsTermsEncoder)
     .query(async ({ input }) => {

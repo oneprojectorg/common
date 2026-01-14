@@ -5,10 +5,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const endpoint = 'updateLastOrgId';
 
@@ -24,10 +21,9 @@ const meta: OpenApiMeta = {
 };
 
 export const switchOrganization = router({
-  switchOrganization: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  switchOrganization: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 5 },
+  })
     .meta(meta)
     .input(z.object({ organizationId: z.string().min(1) }))
     .output(userEncoder)

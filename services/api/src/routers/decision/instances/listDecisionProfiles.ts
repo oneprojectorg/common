@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listDecisionProfilesRouter = router({
-  listDecisionProfiles: commonAuthedProcedure
+  listDecisionProfiles: commonAuthedProcedure()
     .meta(meta)
     .input(legacyDecisionProfileFilterSchema)
     .output(legacyDecisionProfileListEncoder)

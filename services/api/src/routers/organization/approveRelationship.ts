@@ -28,7 +28,7 @@ const meta: OpenApiMeta = {
 };
 
 export const approveRelationshipRouter = router({
-  approveRelationship: commonAuthedProcedure
+  approveRelationship: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(z.boolean())

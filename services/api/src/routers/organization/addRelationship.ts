@@ -33,7 +33,7 @@ const meta: OpenApiMeta = {
 };
 
 export const addRelationshipRouter = router({
-  addRelationship: commonAuthedProcedure
+  addRelationship: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(z.object({ success: z.boolean() }))

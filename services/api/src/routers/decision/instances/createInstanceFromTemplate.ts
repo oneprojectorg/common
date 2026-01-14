@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const createInstanceFromTemplateRouter = router({
-  createInstanceFromTemplate: commonAuthedProcedure
+  createInstanceFromTemplate: commonAuthedProcedure()
     .meta(meta)
     .input(createInstanceFromTemplateInputSchema)
     .output(decisionProfileEncoder)

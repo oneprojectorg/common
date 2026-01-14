@@ -20,7 +20,7 @@ const meta: OpenApiMeta = {
 };
 
 export const searchOrganizationsRouter = router({
-  search: commonAuthedProcedure
+  search: commonAuthedProcedure()
     .meta(meta)
     .input(
       dbFilter.extend({

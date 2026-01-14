@@ -22,7 +22,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getIndividualRouter = router({
-  getTerms: commonAuthedProcedure
+  getTerms: commonAuthedProcedure()
     .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
@@ -57,7 +57,7 @@ export const getIndividualRouter = router({
         });
       }
     }),
-  getTermsByProfile: commonAuthedProcedure
+  getTermsByProfile: commonAuthedProcedure()
     .input(z.object({ profileId: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
     .query(async ({ input }) => {

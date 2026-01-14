@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getOrganizationsByProfileRouter = router({
-  getOrganizationsByProfile: commonAuthedProcedure
+  getOrganizationsByProfile: commonAuthedProcedure()
     .meta(meta)
     .input(z.object({ profileId: z.uuid() }))
     .output(z.array(organizationsWithProfileEncoder))

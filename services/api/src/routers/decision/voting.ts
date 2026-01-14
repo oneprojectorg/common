@@ -5,10 +5,7 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 // Input Schemas based on our contracts
 const customDataSchema = z.record(z.string(), z.unknown()).optional();
@@ -25,13 +22,14 @@ const validateVoteSelectionInput = z.object({
   selectedProposalIds: z.array(z.uuid()),
 });
 
+const votingProcedure = commonAuthedProcedure({
+  rateLimit: { windowSize: 10, maxRequests: 5 },
+});
+
 export const votingRouter = router({
   // Submit user's vote (validates against current schema)
-  submitVote: commonProcedure
+  submitVote: votingProcedure
     .input(submitVoteInput)
-    .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
     .mutation(async ({ input, ctx }) => {
       return await submitVote({
         data: {
@@ -46,15 +44,12 @@ export const votingRouter = router({
     }),
 
   // Get user's vote status with schema context
-  getVotingStatus: commonProcedure
+  getVotingStatus: votingProcedure
     .input(
       z.object({
         processInstanceId: z.uuid(),
       }),
     )
-    .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
     .query(async ({ input, ctx }) => {
       return await getVotingStatus({
         data: {
@@ -66,11 +61,8 @@ export const votingRouter = router({
     }),
 
   // Validate vote selection against current schema
-  validateVoteSelection: commonProcedure
+  validateVoteSelection: votingProcedure
     .input(validateVoteSelectionInput)
-    .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
     .query(async ({ input, ctx }) => {
       return await validateVoteSelectionService({
         data: {

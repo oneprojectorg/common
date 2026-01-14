@@ -18,7 +18,7 @@ const meta: OpenApiMeta = {
 };
 
 const usernameAvailable = router({
-  usernameAvailable: commonAuthedProcedure
+  usernameAvailable: commonAuthedProcedure()
     .meta(meta)
     .input(
       z.object({

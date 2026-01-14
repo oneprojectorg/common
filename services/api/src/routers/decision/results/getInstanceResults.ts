@@ -8,10 +8,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { legacyInstanceResultsEncoder } from '../../../encoders/legacyDecision';
 import { getInstanceResultsInputSchema } from '../../../encoders/results';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { commonProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -25,10 +22,9 @@ const meta: OpenApiMeta = {
 };
 
 export const getInstanceResultsRouter = router({
-  getInstanceResults: commonProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 30 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getInstanceResults: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 30 },
+  })
     .meta(meta)
     .input(getInstanceResultsInputSchema)
     .output(legacyInstanceResultsEncoder)

@@ -23,7 +23,7 @@ import { trackProposalCommented } from '../../utils/analytics';
 const outputSchema = postsEncoder;
 
 export const createPost = router({
-  createPost: commonAuthedProcedure
+  createPost: commonAuthedProcedure()
     .input(createPostSchema)
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {

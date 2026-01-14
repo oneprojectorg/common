@@ -30,7 +30,7 @@ const meta: OpenApiMeta = {
 };
 
 export const uploadAvatarImage = router({
-  uploadAvatarImage: commonAuthedProcedure
+  uploadAvatarImage: commonAuthedProcedure()
     .meta(meta)
     .input(
       z.object({

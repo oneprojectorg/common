@@ -21,7 +21,7 @@ const meta: OpenApiMeta = {
 };
 
 export const searchProfilesRouter = router({
-  search: commonAuthedProcedure
+  search: commonAuthedProcedure()
     .meta(meta)
     .input(
       dbFilter.extend({

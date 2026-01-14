@@ -21,7 +21,7 @@ import { commonAuthedProcedure, router } from '../../trpcFactory';
 const outputSchema = z.array(postsEncoder);
 
 export const getPosts = router({
-  getPosts: commonAuthedProcedure
+  getPosts: commonAuthedProcedure()
     .input(getPostsSchema)
     .output(outputSchema)
     .query(async ({ input, ctx }) => {

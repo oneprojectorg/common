@@ -18,7 +18,7 @@ const meta: OpenApiMeta = {
 };
 
 const usedStorage = router({
-  usedStorage: commonAuthedProcedure
+  usedStorage: commonAuthedProcedure()
     .meta(meta)
     .input(z.undefined())
     .output(

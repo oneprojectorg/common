@@ -100,7 +100,7 @@ const getGeonames = async ({ q }: { q: string }) => {
 // };
 
 export const getGeoNames = router({
-  getGeoNames: commonAuthedProcedure
+  getGeoNames: commonAuthedProcedure()
     .input(
       z.object({
         q: z.string().min(2).max(255),

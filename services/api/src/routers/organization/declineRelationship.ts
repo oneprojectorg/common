@@ -24,7 +24,7 @@ const meta: OpenApiMeta = {
 };
 
 export const declineRelationshipRouter = router({
-  declineRelationship: commonAuthedProcedure
+  declineRelationship: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(z.boolean())

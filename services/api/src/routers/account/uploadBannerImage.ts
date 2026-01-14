@@ -34,7 +34,7 @@ const meta: OpenApiMeta = {
 };
 
 export const uploadBannerImage = router({
-  uploadBannerImage: commonAuthedProcedure
+  uploadBannerImage: commonAuthedProcedure()
     .use(withDB)
     .meta(meta)
     .input(

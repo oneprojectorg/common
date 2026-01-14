@@ -55,7 +55,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listUsersRouter = router({
-  listUsers: commonAuthedProcedure
+  listUsers: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(z.array(organizationUserEncoder))

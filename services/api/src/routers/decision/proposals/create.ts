@@ -27,7 +27,7 @@ const meta: OpenApiMeta = {
 };
 
 export const createProposalRouter = router({
-  createProposal: commonAuthedProcedure
+  createProposal: commonAuthedProcedure()
     .meta(meta)
     .input(legacyCreateProposalInputSchema)
     .output(legacyProposalEncoder)

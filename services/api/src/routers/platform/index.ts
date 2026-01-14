@@ -8,7 +8,7 @@ import { platformAdminRouter } from './admin';
  * Handles platform-wide operations such as retrieving statistics, listing profiles, users, organizations, etc,.
  */
 export const platformRouter = router({
-  getStats: commonAuthedProcedure
+  getStats: commonAuthedProcedure()
     .input(z.void())
     .output(
       z.object({
