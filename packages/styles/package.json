@@ -11,7 +11,7 @@
     "./constants": "./constants.ts"
   },
   "scripts": {
-    "type-check": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.18",
