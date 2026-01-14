@@ -20,6 +20,10 @@ export const mockDb = {
     decisions: {
       findFirst: vi.fn(),
     },
+    decisionProcessTransitions: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+    },
   },
   insert: vi.fn().mockReturnValue({
     values: vi.fn().mockReturnValue({
@@ -92,6 +96,7 @@ vi.mock('@op/db/client', () => ({
   sql: mockSql,
   ilike: vi.fn(),
   exists: vi.fn(), // Add exists function for subqueries
+  lte: vi.fn(), // For transition scheduling queries
 }));
 
 // Mock Supabase User type

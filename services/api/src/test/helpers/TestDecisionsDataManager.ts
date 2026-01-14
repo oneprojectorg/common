@@ -15,9 +15,9 @@ import { randomUUID } from 'node:crypto';
 import type { z } from 'zod';
 
 import type {
-  decisionProcessEncoder,
-  processInstanceEncoder,
-} from '../../encoders/decision';
+  legacyDecisionProcessEncoder,
+  legacyProcessInstanceEncoder,
+} from '../../encoders/legacyDecision';
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
 import {
@@ -37,7 +37,7 @@ interface CreateDecisionSetupOptions {
   grantAccess?: boolean;
 }
 
-type EncodedProcessInstance = z.infer<typeof processInstanceEncoder>;
+type EncodedProcessInstance = z.infer<typeof legacyProcessInstanceEncoder>;
 
 interface CreatedInstance {
   instance: EncodedProcessInstance;
@@ -45,7 +45,7 @@ interface CreatedInstance {
   slug: string;
 }
 
-type EncodedDecisionProcess = z.infer<typeof decisionProcessEncoder>;
+type EncodedDecisionProcess = z.infer<typeof legacyDecisionProcessEncoder>;
 
 interface DecisionSetupOutput {
   user: User;

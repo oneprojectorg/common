@@ -350,35 +350,6 @@ export const legacySubmitDecisionInputSchema = z.object({
   decisionData: z.record(z.string(), z.unknown()), // Decision data matching voting definition
 });
 
-// Transition Schemas
-export const legacyExecuteTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string(),
-  transitionData: z.record(z.string(), z.unknown()).optional(),
-});
-
-export const legacyCheckTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string().optional(), // If not provided, check all possible transitions
-});
-
-export const legacyTransitionCheckResultEncoder = z.object({
-  canTransition: z.boolean(),
-  availableTransitions: z.array(
-    z.object({
-      toStateId: z.string(),
-      transitionName: z.string(),
-      canExecute: z.boolean(),
-      failedRules: z.array(
-        z.object({
-          ruleId: z.string(),
-          errorMessage: z.string(),
-        }),
-      ),
-    }),
-  ),
-});
-
 // Pagination Schema
 export const legacyPaginationInputSchema = z.object({
   limit: z.number().min(1).max(100).prefault(20),
@@ -443,3 +414,35 @@ export type LegacyDecisionProfile = z.infer<
 export type LegacyDecisionProfileList = z.infer<
   typeof legacyDecisionProfileListEncoder
 >;
+
+// Export processPhaseSchema for frontend components
+export { legacyProcessPhaseSchema as processPhaseSchema };
+
+// Type aliases for API response types - these match what the legacy API returns
+export type DecisionProfile = LegacyDecisionProfile;
+export type DecisionProfileList = LegacyDecisionProfileList;
+export type ProcessInstance = z.infer<typeof legacyProcessInstanceEncoder>;
+export type DecisionProcess = z.infer<typeof legacyDecisionProcessEncoder>;
+export type Proposal = z.infer<typeof legacyProposalEncoder>;
+export type Decision = z.infer<typeof legacyDecisionEncoder>;
+export type ProposalAttachment = z.infer<
+  typeof legacyProposalAttachmentEncoder
+>;
+
+// Encoder aliases for frontend components - these match what the API actually returns
+export { legacyProposalEncoder as proposalEncoder };
+export { legacyProcessInstanceEncoder as processInstanceEncoder };
+export { legacyDecisionProcessEncoder as decisionProcessEncoder };
+export { legacyDecisionEncoder as decisionEncoder };
+export { legacyProposalAttachmentEncoder as proposalAttachmentEncoder };
+export { legacyDecisionProfileEncoder as decisionProfileEncoder };
+export { legacyDecisionProfileListEncoder as decisionProfileListEncoder };
+export { legacyDecisionProfileFilterSchema as decisionProfileFilterSchema };
+export { legacyProposalListEncoder as proposalListEncoder };
+export { legacyInstanceResultsEncoder as instanceResultsEncoder };
+export { legacyDecisionListEncoder as decisionListEncoder };
+export { legacyProcessInstanceListEncoder as processInstanceListEncoder };
+export { legacyDecisionProcessListEncoder as decisionProcessListEncoder };
+export { legacyProposalFilterSchema as proposalFilterSchema };
+export { legacyInstanceFilterSchema as instanceFilterSchema };
+export { legacyPaginationInputSchema as paginationInputSchema };

@@ -7,8 +7,8 @@ import {
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
-// import { processResults } from './processResults';
-import type { ProcessSchema, StateDefinition } from './types';
+import { processResults } from './processResults';
+import type { DecisionSchemaDefinition } from './schemas/types';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -136,26 +136,26 @@ async function processTransition(transitionId: string): Promise<void> {
     throw new CommonError(`Process not found: ${processInstance.processId}`);
   }
 
-  const processSchema = process.processSchema as ProcessSchema;
-  const toState = processSchema.states.find(
-    (state: StateDefinition) => state.id === transition.toStateId,
-  );
-
-  const isTransitioningToFinalState = toState?.type === 'final';
+  // Determine if transitioning to final state (the last phase in the schema)
+  // Type assertion: processSchema is `unknown` in DB to support legacy ProcessSchema for viewing,
+  // but transitions are only created for new DecisionSchemaDefinition processes
+  const schema = process.processSchema as DecisionSchemaDefinition;
+  const lastPhase = schema.phases[schema.phases.length - 1];
+  const isTransitioningToFinalState = lastPhase?.id === transition.toStateId;
 
   // Update both the process instance and transition in a single transaction
   // to ensure atomicity and prevent partial state updates
   // Note: We rely on foreign key constraints to ensure the process instance exists
   await db.transaction(async (tx) => {
-    // Update the process instance to the new state
-    // Use jsonb_set to update only the currentStateId field without reading the entire instanceData
+    // Update the process instance to the new phase
+    // Use jsonb_set to update currentPhaseId in instanceData (DB column is currentStateId but stores phaseId)
     await tx
       .update(processInstances)
       .set({
         currentStateId: transition.toStateId,
         instanceData: sql`jsonb_set(
           ${processInstances.instanceData},
-          '{currentStateId}',
+          '{currentPhaseId}',
           to_jsonb(${transition.toStateId}::text)
         )`,
       })
@@ -178,9 +178,6 @@ async function processTransition(transitionId: string): Promise<void> {
       console.log(
         `Processing results for process instance ${transition.processInstanceId}`,
       );
-      console.log('RESULT PROCESSING DISABLED');
-      // Disabling for now as none are defined in production yet. We need to migrate current processes first.
-      /*
       const result = await processResults({
         processInstanceId: transition.processInstanceId,
       });
@@ -195,7 +192,6 @@ async function processTransition(transitionId: string): Promise<void> {
           `Results processed successfully for process instance ${transition.processInstanceId}. Selected ${result.selectedProposalIds.length} proposals.`,
         );
       }
-      */
     } catch (error) {
       // Log the error but don't fail the transition
       // The transition to the results phase has already been completed
