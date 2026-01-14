@@ -8,8 +8,7 @@
         ".next/**",
         "!.next/cache/**",
         "storybook-static/**",
-        "build/**",
-        "dist/**"
+        "build/**"
       ]
     },
     "migrate": {
