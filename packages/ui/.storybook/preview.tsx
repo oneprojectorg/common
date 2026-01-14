@@ -1,4 +1,4 @@
-import '../dist/index.css';
+import '@op/styles';
 import { withThemeByClassName } from '@storybook/addon-themes';
 import type { Preview } from '@storybook/react-vite';
 import { themes } from 'storybook/theming';
