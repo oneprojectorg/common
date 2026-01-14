@@ -344,7 +344,6 @@ export const listProposals = async ({
         createdAt: proposal.createdAt,
         updatedAt: proposal.updatedAt,
         profileId: proposal.profileId,
-        submittedByProfileId: proposal.submittedByProfileId,
         processInstance: processInstance
           ? {
               id: processInstance.id,

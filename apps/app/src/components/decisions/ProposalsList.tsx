@@ -359,8 +359,8 @@ const ViewProposalsList = ({
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => {
         const isDraft = proposal.status === ProposalStatus.DRAFT;
-        const isOwner = proposal.isEditable;
-        const showMenu = canManageProposals || isOwner;
+        const isEditable = Boolean(proposal.isEditable);
+        const showMenu = canManageProposals || isEditable;
         const editHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
 
         return (
@@ -390,7 +390,7 @@ const ViewProposalsList = ({
                     proposal={proposal}
                     editHref={editHref}
                   />
-                ) : isOwner ? (
+                ) : isEditable ? (
                   <>
                     <ProposalCardMetrics proposal={proposal} />
                     <ProposalCardOwnerActions

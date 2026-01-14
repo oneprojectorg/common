@@ -214,7 +214,6 @@ export const proposalEncoder = createSelectSchema(proposals)
     createdAt: true,
     updatedAt: true,
     profileId: true,
-    submittedByProfileId: true,
   })
   .extend({
     proposalData: z.unknown(), // Keep as unknown to match database schema
