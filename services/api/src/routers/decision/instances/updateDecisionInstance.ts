@@ -4,16 +4,10 @@ import {
   decisionProfileEncoder,
   updateDecisionInstanceInputSchema,
 } from '../../../encoders/decision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const updateDecisionInstanceRouter = router({
-  updateDecisionInstance: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  updateDecisionInstance: commonAuthedProcedure()
     .input(updateDecisionInstanceInputSchema)
     .output(decisionProfileEncoder)
     .mutation(async ({ ctx, input }) => {

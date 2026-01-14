@@ -1,7 +1,7 @@
 import { db, eq } from '@op/db/client';
 import {
-  decisionProcessTransitions,
   ProcessStatus,
+  decisionProcessTransitions,
   processInstances,
   profiles,
 } from '@op/db/schema';
