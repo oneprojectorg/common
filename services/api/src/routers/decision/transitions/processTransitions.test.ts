@@ -4,6 +4,7 @@ import {
   decisionProcessTransitions,
   decisionProcesses,
   processInstances,
+  ProcessStatus,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -99,6 +100,7 @@ const createSimpleInstanceData = (currentPhaseId: string) => ({
 /**
  * Helper to create a test instance with a manually inserted due transition.
  * This bypasses the API's Zod validation which strips `rules` from instance data.
+ * By default, creates instances with 'published' status so transitions are processed.
  */
 async function createInstanceWithDueTransition(
   testData: TestDecisionsDataManager,
@@ -110,6 +112,7 @@ async function createInstanceWithDueTransition(
     fromStateId: string;
     toStateId: string;
     scheduledDate: string;
+    status?: ProcessStatus;
   },
 ) {
   const instance = await testData.createInstanceWithCustomData({
@@ -117,6 +120,7 @@ async function createInstanceWithDueTransition(
     processId: setup.process.id,
     name: options.name,
     instanceData: createSimpleInstanceData(options.currentPhaseId),
+    status: options.status ?? ProcessStatus.PUBLISHED,
   });
 
   // Update currentStateId to match currentPhaseId
@@ -460,6 +464,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         processId: setup.process.id,
         name: 'Future Instance',
         instanceData: createSimpleInstanceData('submission'),
+        status: ProcessStatus.PUBLISHED, // Must be published for meaningful test
       });
 
       await db
@@ -531,6 +536,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         processId: setup.process.id,
         name: 'Completed Test',
         instanceData: createSimpleInstanceData('submission'),
+        status: ProcessStatus.PUBLISHED, // Must be published for meaningful test
       });
 
       await db
@@ -670,6 +676,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         processId: setup.process.id,
         name: 'Sequential Test',
         instanceData: createSimpleInstanceData('submission'),
+        status: ProcessStatus.PUBLISHED,
       });
 
       await db
@@ -751,6 +758,128 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(typeof result.failed).toBe('number');
       expect(Array.isArray(result.errors)).toBe(true);
       expect(result.processed).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('instance status filtering', () => {
+    it('should not process transitions for draft instances', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Draft Status Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createPhasesProcessSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create a DRAFT instance with a due transition
+      const instance = await createInstanceWithDueTransition(
+        testData,
+        setup,
+        caller,
+        {
+          name: 'Draft Instance Test',
+          currentPhaseId: 'submission',
+          fromStateId: 'submission',
+          toStateId: 'review',
+          scheduledDate: createPastDate(1),
+          status: ProcessStatus.DRAFT, // Explicitly set to draft
+        },
+      );
+
+      // Process transitions - draft instance should be skipped
+      await processDecisionsTransitions();
+
+      // Verify the instance state has NOT changed
+      const updatedDecision = await caller.decision.getDecisionBySlug({
+        slug: instance.slug,
+      });
+
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'submission',
+      );
+
+      // Verify the transition is still pending (not completed)
+      const [transition] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transition).toBeDefined();
+      expect(transition!.completedAt).toBeNull();
+    });
+
+    it('should process transitions when instance is published', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Published Status Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createPhasesProcessSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create a PUBLISHED instance with a due transition
+      const instance = await createInstanceWithDueTransition(
+        testData,
+        setup,
+        caller,
+        {
+          name: 'Published Instance Test',
+          currentPhaseId: 'submission',
+          fromStateId: 'submission',
+          toStateId: 'review',
+          scheduledDate: createPastDate(1),
+          status: ProcessStatus.PUBLISHED, // Explicitly set to published
+        },
+      );
+
+      // Process transitions - published instance should be processed
+      await processDecisionsTransitions();
+
+      // Verify the instance state HAS changed
+      const updatedDecision = await caller.decision.getDecisionBySlug({
+        slug: instance.slug,
+      });
+
+      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
+        'review',
+      );
+
+      // Verify the transition is completed
+      const [transition] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transition).toBeDefined();
+      expect(transition!.completedAt).not.toBeNull();
     });
   });
 });

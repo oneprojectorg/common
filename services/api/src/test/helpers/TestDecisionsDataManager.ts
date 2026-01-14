@@ -1,3 +1,4 @@
+import { createTransitionsForProcess } from '@op/common';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -372,6 +373,16 @@ export class TestDecisionsDataManager {
         .update(processInstances)
         .set({ status })
         .where(eq(processInstances.id, profile.processInstance.id));
+
+      // If publishing, create transitions for the instance
+      if (status === ProcessStatus.PUBLISHED) {
+        const fullInstance = await db.query.processInstances.findFirst({
+          where: eq(processInstances.id, profile.processInstance.id),
+        });
+        if (fullInstance) {
+          await createTransitionsForProcess({ processInstance: fullInstance });
+        }
+      }
     }
 
     // Update budget if needed (instanceData may not include budget from template)
@@ -492,6 +503,16 @@ export class TestDecisionsDataManager {
         .update(processInstances)
         .set({ status })
         .where(eq(processInstances.id, instance.id));
+
+      // If publishing, create transitions for the instance
+      if (status === ProcessStatus.PUBLISHED) {
+        const fullInstance = await db.query.processInstances.findFirst({
+          where: eq(processInstances.id, instance.id),
+        });
+        if (fullInstance) {
+          await createTransitionsForProcess({ processInstance: fullInstance });
+        }
+      }
     }
 
     // Fetch the profile to get the slug

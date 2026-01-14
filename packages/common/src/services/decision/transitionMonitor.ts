@@ -1,8 +1,9 @@
-import { db, eq, lte, sql } from '@op/db/client';
+import { db, eq, lte, sql, and, isNull } from '@op/db/client';
 import {
   decisionProcessTransitions,
   decisionProcesses,
   processInstances,
+  ProcessStatus,
 } from '@op/db/schema';
 import pMap from 'p-map';
 
@@ -33,14 +34,30 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
   };
 
   try {
-    const dueTransitions = await db.query.decisionProcessTransitions.findMany({
-      where: (transitions, { and, isNull }) =>
+    // Query due transitions, filtering to only include published instances
+    // Draft, completed, and cancelled instances should not have their transitions processed
+    const dueTransitions = await db
+      .select({
+        id: decisionProcessTransitions.id,
+        processInstanceId: decisionProcessTransitions.processInstanceId,
+        fromStateId: decisionProcessTransitions.fromStateId,
+        toStateId: decisionProcessTransitions.toStateId,
+        scheduledDate: decisionProcessTransitions.scheduledDate,
+        completedAt: decisionProcessTransitions.completedAt,
+      })
+      .from(decisionProcessTransitions)
+      .innerJoin(
+        processInstances,
+        eq(decisionProcessTransitions.processInstanceId, processInstances.id),
+      )
+      .where(
         and(
-          isNull(transitions.completedAt),
-          lte(transitions.scheduledDate, now),
+          isNull(decisionProcessTransitions.completedAt),
+          lte(decisionProcessTransitions.scheduledDate, now),
+          eq(processInstances.status, ProcessStatus.PUBLISHED),
         ),
-      orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
-    });
+      )
+      .orderBy(decisionProcessTransitions.scheduledDate);
 
     // Group transitions by processInstanceId to avoid race conditions
     // within the same process instance
