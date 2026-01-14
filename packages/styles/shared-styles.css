@@ -5,6 +5,7 @@
 
 /* Tell Tailwind where to scan for classes in the UI package */
 @source '../ui/src/**/*.{js,ts,jsx,tsx}';
+@source '../../apps/app/src/**/*.{js,ts,jsx,tsx}';
 
 /* React Aria Components data attribute variants */
 @plugin 'tailwindcss-react-aria-components';
