@@ -1,0 +1,4 @@
+@import '@op/styles';
+
+/* Scan UI package source files for Tailwind classes */
+@source './src/**/*.{js,ts,jsx,tsx}';
