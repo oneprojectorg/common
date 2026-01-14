@@ -528,10 +528,10 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Generates a unique name with both test ID and full UUID for maximum uniqueness
+   * Generates a unique name with UUID first to avoid truncation issues with slug generation
    */
   private generateUniqueName(baseName: string): string {
-    return `${baseName}-${this.testId}-${randomUUID()}`;
+    return `${randomUUID()}-${baseName}-${this.testId}`;
   }
 
   /**
