@@ -4,6 +4,7 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
   processInstances,
+  profileUserToAccessRoles,
   profileUsers,
   profiles,
   users,
@@ -368,17 +369,32 @@ export class TestDecisionsDataManager {
 
   /**
    * Grants profile access to a user
+   * @param profileId - The profile to grant access to
+   * @param authUserId - The auth user ID
+   * @param email - The user's email
+   * @param isAdmin - If true, assigns Admin role; if false, assigns Member role
    */
   async grantProfileAccess(
     profileId: string,
     authUserId: string,
     email: string,
+    isAdmin: boolean = true,
   ): Promise<void> {
-    await db.insert(profileUsers).values({
-      profileId,
-      authUserId,
-      email,
-    });
+    const [profileUser] = await db
+      .insert(profileUsers)
+      .values({
+        profileId,
+        authUserId,
+        email,
+      })
+      .returning();
+
+    if (profileUser) {
+      await db.insert(profileUserToAccessRoles).values({
+        profileUserId: profileUser.id,
+        accessRoleId: isAdmin ? ROLES.ADMIN.id : ROLES.MEMBER.id,
+      });
+    }
   }
 
   /**
@@ -453,9 +469,9 @@ export class TestDecisionsDataManager {
       accessRoleId: ROLES.MEMBER.id,
     });
 
-    // Grant access to instance profiles if provided
+    // Grant access to instance profiles if provided (member role, not admin)
     for (const profileId of instanceProfileIds) {
-      await this.grantProfileAccess(profileId, authUser.id, email);
+      await this.grantProfileAccess(profileId, authUser.id, email, false);
     }
 
     const user: User = {
@@ -512,10 +528,10 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Generates a unique name with both test ID and full UUID for maximum uniqueness
+   * Generates a unique name with UUID first to avoid truncation issues with slug generation
    */
   private generateUniqueName(baseName: string): string {
-    return `${baseName}-${this.testId}-${randomUUID()}`;
+    return `${randomUUID()}-${baseName}-${this.testId}`;
   }
 
   /**

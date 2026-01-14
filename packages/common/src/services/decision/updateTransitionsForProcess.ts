@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { type TransactionType, db, eq } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 import pMap from 'p-map';
@@ -8,6 +8,7 @@ import type { InstanceData, PhaseConfiguration } from './types';
 
 export interface UpdateTransitionsInput {
   processInstance: ProcessInstance;
+  tx?: TransactionType;
 }
 
 export interface UpdateTransitionsResult {
@@ -26,7 +27,10 @@ export interface UpdateTransitionsResult {
  */
 export async function updateTransitionsForProcess({
   processInstance,
+  tx,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
+  const dbClient = tx ?? db;
+
   try {
     const instanceData = processInstance.instanceData as InstanceData;
     const phases = instanceData.phases;
@@ -39,7 +43,7 @@ export async function updateTransitionsForProcess({
 
     // Get existing transitions
     const existingTransitions =
-      await db.query.decisionProcessTransitions.findMany({
+      await dbClient.query.decisionProcessTransitions.findMany({
         where: eq(
           decisionProcessTransitions.processInstanceId,
           processInstance.id,
@@ -92,7 +96,7 @@ export async function updateTransitionsForProcess({
 
           // Update the scheduled date if it changed
           if (existing.scheduledDate !== expected.scheduledDate) {
-            await db
+            await dbClient
               .update(decisionProcessTransitions)
               .set({
                 scheduledDate: expected.scheduledDate,
@@ -105,7 +109,7 @@ export async function updateTransitionsForProcess({
           return { action: 'unchanged' as const };
         } else {
           // Create new transition for this phase
-          await db.insert(decisionProcessTransitions).values({
+          await dbClient.insert(decisionProcessTransitions).values({
             processInstanceId: processInstance.id,
             fromStateId: expected.fromStateId,
             toStateId: expected.toStateId,
@@ -134,7 +138,7 @@ export async function updateTransitionsForProcess({
     await pMap(
       transitionsToDelete,
       async (transition) => {
-        await db
+        await dbClient
           .delete(decisionProcessTransitions)
           .where(eq(decisionProcessTransitions.id, transition.id));
       },

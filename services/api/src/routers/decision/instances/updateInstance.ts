@@ -1,6 +1,5 @@
 import { NotFoundError, UnauthorizedError, updateInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   legacyProcessInstanceEncoder,
@@ -8,20 +7,8 @@ import {
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'PATCH',
-    path: '/decision/instance/{instanceId}',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Update process instance',
-  },
-};
-
 export const updateInstanceRouter = router({
   updateInstance: commonAuthedProcedure()
-    .meta(meta)
     .input(legacyUpdateInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)
     .mutation(async ({ ctx, input }) => {

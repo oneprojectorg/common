@@ -331,6 +331,31 @@ export const createInstanceFromTemplateInputSchema = z.object({
     .optional(),
 });
 
+export const updateDecisionInstanceInputSchema = z.object({
+  instanceId: z.uuid(),
+  name: z.string().min(3).max(256).optional(),
+  description: z.string().optional(),
+  status: z.enum(ProcessStatus).optional(),
+  /** Process-level configuration (e.g., hideBudget) */
+  config: z
+    .object({
+      hideBudget: z.boolean().optional(),
+    })
+    .optional(),
+  /** Phase overrides for dates and settings */
+  phases: z
+    .array(
+      z.object({
+        phaseId: z.string(),
+        startDate: z.string().datetime({ offset: true }).optional(),
+        endDate: z.string().datetime({ offset: true }).optional(),
+        /** Phase-specific settings (e.g., budget, maxProposalsPerMember, maxVotesPerMember) */
+        settings: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
+});
+
 export const updateInstanceInputSchema = createInstanceInputSchema
   .omit({ processId: true })
   .partial()
