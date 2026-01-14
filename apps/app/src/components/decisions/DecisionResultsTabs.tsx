@@ -34,7 +34,7 @@ export const DecisionResultsTabPanel = ({
   children: ReactNode;
 }) => {
   return (
-    <TabPanel id={id} className="flex-grow sm:p-0">
+    <TabPanel id={id} className="grow sm:p-0">
       {children}
     </TabPanel>
   );

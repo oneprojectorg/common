@@ -12,11 +12,11 @@ import { z } from 'zod';
 import { userEncoder } from '../../../encoders/';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
 
 export const listAllUsersRouter = router({
-  listAllUsers: loggedProcedure
+  listAllUsers: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticatedPlatformAdmin)
     .input(

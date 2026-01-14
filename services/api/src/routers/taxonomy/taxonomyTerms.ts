@@ -2,16 +2,10 @@ import { getTerms } from '@op/common';
 import { z } from 'zod';
 
 import { taxonomyTermsWithChildrenEncoder } from '../../encoders/taxonomyTerms';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 export const termsRouter = router({
-  getTerms: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getTerms: commonAuthedProcedure()
     .input(z.object({ name: z.string().min(3), q: z.string().optional() }))
     .output(z.array(taxonomyTermsWithChildrenEncoder))
     .query(async ({ input }) => {

@@ -16,7 +16,7 @@ import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { LuBookmark } from 'react-icons/lu';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -34,13 +34,17 @@ export interface BaseProposalCardProps {
 export function ProposalCard({
   children,
   className,
+  proposal,
   ...props
 }: {
   proposal?: Proposal;
   children: ReactNode;
 } & HTMLAttributes<HTMLDivElement>) {
+  const isDraft = proposal?.status === ProposalStatus.DRAFT;
+
   return (
     <Surface
+      variant={isDraft ? 'filled' : 'empty'}
       className={cn(
         'relative flex w-full min-w-80 flex-col justify-between gap-4 p-6',
         className,
@@ -212,12 +216,12 @@ export function ProposalCardAuthor({
       {withLink ? (
         <Link
           href={`/profile/${proposal.submittedBy.slug}`}
-          className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal"
+          className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal"
         >
           {proposal.submittedBy.name}
         </Link>
       ) : (
-        <div className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal">
+        <div className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal">
           {proposal.submittedBy.name}
         </div>
       )}
@@ -245,7 +249,7 @@ export function ProposalCardCategory({
       <Bullet />
       <Chip
         className={cn(
-          'min-w-6 max-w-96 overflow-hidden overflow-ellipsis text-nowrap',
+          'max-w-96 min-w-6 overflow-hidden text-nowrap overflow-ellipsis',
           className,
         )}
       >
@@ -273,7 +277,7 @@ export function ProposalCardStatus({
       <>
         <Bullet />
         <span
-          className={cn('text-nowrap text-sm text-primary-orange2', className)}
+          className={cn('text-sm text-nowrap text-primary-orange2', className)}
         >
           {t('Hidden')}
         </span>
@@ -282,6 +286,16 @@ export function ProposalCardStatus({
   }
 
   return match(status, {
+    [ProposalStatus.DRAFT]: (
+      <>
+        <Bullet />
+        <span
+          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
+        >
+          {t('Draft')}
+        </span>
+      </>
+    ),
     [ProposalStatus.APPROVED]: (
       <>
         <Bullet />
@@ -302,7 +316,7 @@ export function ProposalCardStatus({
       <>
         <Bullet />
         <span
-          className={cn('text-nowrap text-sm text-neutral-charcoal', className)}
+          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
         >
           {t('Not shortlisted')}
         </span>

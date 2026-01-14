@@ -1,5 +1,5 @@
 import { queryChannelRegistry } from '@op/common/realtime';
-import { OPURLConfig } from '@op/core';
+import { OPURLConfig, isOnPreviewAppDomain } from '@op/core';
 import { logger } from '@op/logging';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -45,6 +45,11 @@ function getPostHogDistinctId(): string | null {
 }
 
 const envURL = OPURLConfig('API');
+
+// On preview deployments, use relative URL (proxied through Next.js rewrites)
+// to avoid cross-origin cookie issues between app and api preview subdomains
+const trpcUrl =
+  envURL.IS_PREVIEW && isOnPreviewAppDomain ? '/api/v1/trpc' : envURL.TRPC_URL;
 
 /**
  * Create a fetch function that handles SSR cookies
@@ -193,12 +198,12 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
       },
       // Use regular httpLink (no batching) when skipBatch is true
       true: httpLink({
-        url: envURL.TRPC_URL,
+        url: trpcUrl,
         transformer: superjson,
         fetch: fetchFn,
       }),
       false: httpBatchStreamLink({
-        url: envURL.TRPC_URL,
+        url: trpcUrl,
         transformer: superjson,
         maxItems: 4,
         fetch: fetchFn,

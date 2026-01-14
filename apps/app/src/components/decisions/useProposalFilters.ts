@@ -58,7 +58,7 @@ export function useProposalFilters({
       case 'my':
         // Show only proposals submitted by the current user
         return proposals.filter(
-          (proposal) => proposal.profileId === currentProfileId,
+          (proposal) => proposal.submittedBy?.id === currentProfileId,
         );
 
       case 'shortlisted':

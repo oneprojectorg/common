@@ -143,7 +143,7 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
   return (
     <>
       {/* nav arrow */}
-      <header className="absolute left-0 top-0 z-50 w-full bg-white px-4 py-3 sm:hidden">
+      <header className="absolute top-0 left-0 z-50 w-full bg-white px-4 py-3 sm:hidden">
         <ErrorBoundary
           errorComponent={() => (
             <Link href="/" className="flex items-center gap-2">

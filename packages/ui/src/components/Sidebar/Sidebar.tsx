@@ -1,14 +1,17 @@
 'use client';
 
 import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { AnimatePresence, motion } from 'motion/react';
 import { createContext, use, useCallback, useMemo, useState } from 'react';
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 import { LuAlignJustify } from 'react-icons/lu';
 
-import { config as twConfig } from '../../../tailwind.shared';
 import { cn } from '../../lib/utils';
 import { IconButton, IconButtonProps } from '../IconButton';
+
+// Tailwind v4 default sm breakpoint (640px)
+const SM_BREAKPOINT = screens.sm;
 
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed';
@@ -58,7 +61,7 @@ const SidebarProvider = ({
     [setOpenProp, open],
   );
 
-  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
+  const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
 
   // Helper to toggle the sidebar.
   const toggleSidebar = useCallback(() => {

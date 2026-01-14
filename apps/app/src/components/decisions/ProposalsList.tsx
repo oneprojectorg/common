@@ -31,6 +31,7 @@ import {
   ProposalCardMenu,
   ProposalCardMeta,
   ProposalCardMetrics,
+  ProposalCardOwnerActions,
 } from './ProposalCard';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
@@ -273,7 +274,7 @@ const VotingProposalsList = ({
             );
           } else {
             return (
-              <ProposalCard key={proposal.id}>
+              <ProposalCard key={proposal.id} proposal={proposal}>
                 <div className="flex h-full flex-col justify-between gap-3 space-y-3">
                   <ProposalCardContent>
                     <ProposalCardHeader
@@ -356,34 +357,58 @@ const ViewProposalsList = ({
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {proposals.map((proposal) => (
-        <ProposalCard key={proposal.id}>
-          <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+      {proposals.map((proposal) => {
+        const isDraft = proposal.status === ProposalStatus.DRAFT;
+        const isEditable = Boolean(proposal.isEditable);
+        const showMenu = canManageProposals || isEditable;
+        const editHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
+
+        return (
+          <ProposalCard key={proposal.id} proposal={proposal}>
+            <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+              <ProposalCardContent>
+                <ProposalCardHeader
+                  proposal={proposal}
+                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                  menu={
+                    showMenu && (
+                      <ProposalCardMenu
+                        proposal={proposal}
+                        canManage={canManageProposals}
+                      />
+                    )
+                  }
+                />
+                <ProposalCardMeta proposal={proposal} />
+                <ProposalCardDescription proposal={proposal} />
+              </ProposalCardContent>
+            </div>
             <ProposalCardContent>
-              <ProposalCardHeader
-                proposal={proposal}
-                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                menu={
-                  (canManageProposals || proposal.isEditable) && (
-                    <ProposalCardMenu
+              <ProposalCardFooter>
+                {isDraft ? (
+                  <ProposalCardOwnerActions
+                    proposal={proposal}
+                    editHref={editHref}
+                  />
+                ) : isEditable ? (
+                  <>
+                    <ProposalCardMetrics proposal={proposal} />
+                    <ProposalCardOwnerActions
                       proposal={proposal}
-                      canManage={canManageProposals}
+                      editHref={editHref}
                     />
-                  )
-                }
-              />
-              <ProposalCardMeta proposal={proposal} />
-              <ProposalCardDescription proposal={proposal} />
+                  </>
+                ) : (
+                  <>
+                    <ProposalCardMetrics proposal={proposal} />
+                    <ProposalCardActions proposal={proposal} />
+                  </>
+                )}
+              </ProposalCardFooter>
             </ProposalCardContent>
-          </div>
-          <ProposalCardContent>
-            <ProposalCardFooter>
-              <ProposalCardMetrics proposal={proposal} />
-              <ProposalCardActions proposal={proposal} />
-            </ProposalCardFooter>
-          </ProposalCardContent>
-        </ProposalCard>
-      ))}
+          </ProposalCard>
+        );
+      })}
     </div>
   );
 };

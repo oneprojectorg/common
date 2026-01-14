@@ -62,7 +62,7 @@ export const RichTextEditorWithToolbar = forwardRef<
         {showToolbar && toolbarPosition === 'bottom' && (
           <RichTextEditorToolbar
             editor={editor}
-            className="border-b-0 border-t"
+            className="border-t border-b-0"
           />
         )}
       </div>

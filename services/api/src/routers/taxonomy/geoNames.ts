@@ -2,10 +2,7 @@ import { cache } from '@op/cache';
 import { logger } from '@op/logging';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const GeoNameSchema = z.object({
   id: z.string(),
@@ -103,11 +100,7 @@ const getGeonames = async ({ q }: { q: string }) => {
 // };
 
 export const getGeoNames = router({
-  getGeoNames: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(meta)
+  getGeoNames: commonAuthedProcedure()
     .input(
       z.object({
         q: z.string().min(2).max(255),

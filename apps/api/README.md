@@ -16,7 +16,7 @@ As a Next.js application using the App Router, the structure includes:
 - **`app/api/v1/[...trpc]/route.ts`**: An additional admin-protected route using `createOpenApiFetchHandler` from `trpc-to-openapi`.
 - **`app/route.tsx`**: The root route serving the API reference UI using `@scalar/nextjs-api-reference`.
 - **`next.config.mjs`**: Next.js configuration file.
-- **`postcss.config.js`, `tailwind.config.js`**: Configuration for PostCSS and Tailwind CSS, although UI might be minimal if it mainly serves the API.
+- **`postcss.config.ts`**: Configuration for PostCSS and Tailwind CSS, although UI might be minimal if it mainly serves the API.
 
 ## Key Technologies
 

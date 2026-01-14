@@ -2,10 +2,7 @@ import { updateUserProfile as updateUserProfileService } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { userEncoder } from '../../encoders';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import {
   handleUpdateUserProfileError,
   updateUserProfileDataSchema,
@@ -25,12 +22,9 @@ const meta: OpenApiMeta = {
 };
 
 const updateUserProfile = router({
-  updateUserProfile: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  updateUserProfile: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 3 },
+  })
     .meta(meta)
     .input(updateUserProfileDataSchema)
     .output(userEncoder)

@@ -46,3 +46,65 @@ Components and utilities are exported via the `exports` map in `package.json`.
 - Run `pnpm dev` to start the Storybook server (usually on port 3600).
 - Run `pnpm lint` to lint and type-check the code.
 - Run `pnpm build` to create a production build of Storybook.
+
+## Adding Intent UI Components
+
+This package is configured to use [Intent UI](https://intentui.com), a shadcn-compatible component library built on React Aria Components. Intent UI components can be added via the shadcn CLI.
+
+### Adding a Component
+
+From the `packages/ui` directory:
+
+```bash
+pnpm dlx shadcn@latest add @intentui/<component-name>
+```
+
+For example:
+
+```bash
+pnpm dlx shadcn@latest add @intentui/button
+pnpm dlx shadcn@latest add @intentui/dialog
+pnpm dlx shadcn@latest add @intentui/combobox
+```
+
+Components are installed to `src/components/ui/` by default.
+
+### Post-Import Steps
+
+After adding a component:
+
+1. **Use existing components**: Where possible, replace Intent UI dependencies with existing `@op/ui` components. For example, replace the Intent UI checkbox import with `@/components/Checkbox`.
+
+2. **Export the component**: Add an export to `package.json`:
+   ```json
+   {
+     "exports": {
+       "./ui/<component>": "./src/components/ui/<component>.tsx"
+     }
+   }
+   ```
+
+3. **Add a Storybook story**: Create a story in `stories/<Component>.stories.tsx`.
+
+4. **Run typecheck**: Verify the component compiles with `pnpm typecheck`.
+
+### Theme Integration
+
+Intent UI components use CSS variables that are mapped to `@op/styles` tokens in `packages/styles/intent-ui-theme.css`. The theme provides:
+
+- **Colors**: `--primary`, `--secondary`, `--danger`, etc. mapped to teal/neutral/red tokens
+- **Border color**: Default border color set via `var(--border)` on all elements
+- **Border radius**: Calc-based system using `--radius-lg` as the base (0.375rem)
+
+To customize colors, edit the mappings in `intent-ui-theme.css`.
+
+### Available Utilities
+
+Intent UI components may use these utilities from this package:
+
+- **`cx()`** from `lib/primitive`: Composes Tailwind classes with React Aria render props
+- **`useMediaQuery()`** from `hooks/use-media-query`: Responsive breakpoint hook
+
+### Browse Available Components
+
+Visit [intentui.com/docs/components](https://intentui.com/docs/components) to see all available components.

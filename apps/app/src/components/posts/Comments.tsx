@@ -78,7 +78,7 @@ export function Comments({
               onReactionClick={onReactionClick}
               className="sm:px-0"
             />
-            <hr className="mt-4 bg-neutral-gray1" />
+            <hr className="mt-4" />
           </div>
         ))}
       </PostFeed>

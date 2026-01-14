@@ -5,10 +5,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -22,10 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getOrganizationsByProfileRouter = router({
-  getOrganizationsByProfile: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getOrganizationsByProfile: commonAuthedProcedure()
     .meta(meta)
     .input(z.object({ profileId: z.uuid() }))
     .output(z.array(organizationsWithProfileEncoder))

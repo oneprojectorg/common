@@ -20,7 +20,7 @@ export const OPInvitationEmail = ({
     <EmailTemplate
       previewText={`${inviterName} invited you to join ${organizationName ? `${organizationName} on ` : ''} Common! 🎉`}
     >
-      <Header className="!my-0 mx-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+      <Header className="mx-0 !my-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Join {organizationName ?? 'Common'}!
       </Header>
       <Text className="my-8 text-lg">

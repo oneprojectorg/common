@@ -62,7 +62,7 @@ export const UsersRow = ({ user }: { user: User }) => {
         <div className="flex items-center text-sm font-normal text-neutral-charcoal">
           {updatedAt ? (
             <TooltipTrigger>
-              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
+              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
                 {relativeUpdatedAt}
               </Button>
               <Tooltip>
@@ -76,7 +76,7 @@ export const UsersRow = ({ user }: { user: User }) => {
         <div className="flex items-center text-sm font-normal text-neutral-charcoal">
           {lastSignInAt ? (
             <TooltipTrigger>
-              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
+              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
                 {relativeLastSignIn}
               </Button>
               <Tooltip>

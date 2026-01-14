@@ -37,7 +37,7 @@ export function ProposalInfoModal({
 
           <ModalBody className="flex-1 overflow-y-auto">
             <div
-              className="prose prose-gray max-w-none"
+              className="prose max-w-none prose-gray"
               dangerouslySetInnerHTML={{
                 __html: translatedContent
                   ? he.decode(t('INFOTRANSLATION'))
@@ -46,7 +46,7 @@ export function ProposalInfoModal({
             />
           </ModalBody>
 
-          <div className="border-neutral-lightgray flex justify-end border-t bg-white px-6 py-4">
+          <div className="flex justify-end border-t bg-white px-6 py-4">
             <Button variant="primary" onPress={onClose}>
               OK
             </Button>

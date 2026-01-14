@@ -95,7 +95,7 @@ export function DiscussionModal({
               withLinks={false}
               onReactionClick={handleReactionClick}
             />
-            <hr className="bg-neutral-gray1" />
+            <hr />
           </PostFeed>
           {/* Comments Display */}
           {isLoading ? (
@@ -122,9 +122,7 @@ export function DiscussionModal({
                         className="sm:px-0"
                       />
                     </div>
-                    {comments.length !== i + 1 && (
-                      <hr className="bg-neutral-gray1" />
-                    )}
+                    {comments.length !== i + 1 && <hr />}
                   </React.Fragment>
                 ))}
               </PostFeed>

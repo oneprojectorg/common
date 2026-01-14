@@ -39,7 +39,7 @@ function CreateProposalPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header loading */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <div className="h-6 w-16 animate-pulse rounded bg-gray-200" />
         <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
         <div className="flex items-center gap-3">
@@ -50,7 +50,7 @@ function CreateProposalPageSkeleton() {
       </div>
 
       {/* Toolbar loading */}
-      <div className="border-b border-gray-200 bg-white px-6 py-2">
+      <div className="border-b bg-white px-6 py-2">
         <div className="flex items-center gap-2">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div

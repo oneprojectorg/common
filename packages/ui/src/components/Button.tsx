@@ -8,12 +8,12 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'flex w-fit items-center justify-center gap-1 text-nowrap rounded-md text-center text-base font-normal leading-3 shadow-md sm:text-base',
+  base: 'flex w-fit cursor-pointer items-center justify-center gap-1 rounded-md text-center text-base leading-3 font-normal text-nowrap shadow-md sm:text-base',
   variants: {
     variant: {
       primary: '',
       icon: 'flex gap-2 text-sm sm:text-base',
-      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
+      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     color: {
       primary:
@@ -26,7 +26,7 @@ const buttonStyle = tv({
       verified:
         'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
       neutral:
-        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
+        'border bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
       ghost:
@@ -49,7 +49,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-noned outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+        'appearance-noned outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
 
     isDisabled: {

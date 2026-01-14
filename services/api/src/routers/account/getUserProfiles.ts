@@ -3,10 +3,7 @@ import { EntityType, ObjectsInStorage, Profile } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -34,10 +31,7 @@ export const userProfileSchema = z.object({
 });
 
 export const getUserProfiles = router({
-  getUserProfiles: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getUserProfiles: commonAuthedProcedure()
     .meta(meta)
     .input(z.undefined())
     .output(

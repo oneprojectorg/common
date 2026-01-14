@@ -85,7 +85,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
             inputProps={{
               placeholder: 'Email address',
               className:
-                'w-[420px] max-w-full md:px-6 md:text-xl md:h-16 md:rounded-xl group-data-[invalid=true]:outline-4 group-data-[invalid=true]:bg-red-50',
+                'w-[420px] max-w-full md:px-6 md:text-xl md:h-16 md:rounded-xl group-data-[invalid=true]:outline-4 group-data-[invalid=true]:bg-red-50 bg-white',
             }}
             fieldClassName="bg-transparent"
             errorClassName="text-base text-red-50"
@@ -108,7 +108,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
 };
 
 const WaitlistSignupSuccess = () => (
-  <div className="flex w-max items-center rounded bg-white/85 p-4 animate-in sm:h-16 sm:rounded-xl sm:px-6 sm:py-4">
+  <div className="flex w-max animate-in items-center rounded bg-white/85 p-4 sm:h-16 sm:rounded-xl sm:px-6 sm:py-4">
     <p className="w-max bg-orangePurple bg-clip-text text-transparent sm:text-xl">
       You're signed up! We'll be in touch.
     </p>

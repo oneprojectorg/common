@@ -10,10 +10,7 @@ import {
   postsEncoder,
   postsToOrganizationsEncoder,
 } from '../../encoders/posts';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const inputSchema = z.object({
@@ -45,11 +42,7 @@ const inputSchema = z.object({
 // };
 
 export const listRelatedOrganizationPostsRouter = router({
-  listAllPosts: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(metaAllPosts)
+  listAllPosts: commonAuthedProcedure()
     .input(
       dbFilter
         .extend({
@@ -84,11 +77,7 @@ export const listRelatedOrganizationPostsRouter = router({
         hasMore: result.hasMore,
       };
     }),
-  listRelatedPosts: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(meta)
+  listRelatedPosts: commonAuthedProcedure()
     .input(inputSchema)
     .output(z.array(postsToOrganizationsEncoder))
     .query(async ({ ctx, input }) => {

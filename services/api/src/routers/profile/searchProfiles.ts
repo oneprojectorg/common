@@ -6,10 +6,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { searchProfilesResultEncoder } from '../../encoders/searchResults';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const meta: OpenApiMeta = {
@@ -24,12 +21,7 @@ const meta: OpenApiMeta = {
 };
 
 export const searchProfilesRouter = router({
-  search: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  search: commonAuthedProcedure()
     .meta(meta)
     .input(
       dbFilter.extend({

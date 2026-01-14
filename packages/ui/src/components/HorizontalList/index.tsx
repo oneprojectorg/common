@@ -10,7 +10,7 @@ export function HorizontalList({
   return (
     <ul
       className={cn(
-        'relative flex max-w-full snap-x snap-mandatory gap-x-2 overflow-x-scroll scrollbar-none',
+        'relative scrollbar-none flex max-w-full snap-x snap-mandatory gap-x-2 overflow-x-scroll',
         className,
       )}
     >

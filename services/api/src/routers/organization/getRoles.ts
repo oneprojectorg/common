@@ -1,9 +1,7 @@
 import { getRoles } from '@op/common';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.object({
   roles: z.array(
@@ -16,9 +14,7 @@ const outputSchema = z.object({
 });
 
 export const getRolesRouter = router({
-  getRoles: loggedProcedure
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getRoles: commonAuthedProcedure()
     .output(outputSchema)
     .query(async () => {
       return await getRoles();

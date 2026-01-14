@@ -326,7 +326,7 @@ export const MultiSelectComboBox = ({
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-none placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-hidden group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -351,7 +351,7 @@ export const MultiSelectComboBox = ({
               placeholder={placeholder}
               style={{ minWidth: 40 }}
             />
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-charcoal">
+            <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-charcoal">
               {isLoading ? (
                 <LoadingSpinner className="size-4" color="gray" />
               ) : (
@@ -386,7 +386,7 @@ export const MultiSelectComboBox = ({
 
         {/* Dropdown menu - always below input and selected options */}
         {isOpen && filteredItems.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
             <ul ref={listRef} className="max-h-60 overflow-auto py-1">
               {filteredItems.map((option, idx) => {
                 const isParent = disableParentSelection && option.hasChildren;
@@ -420,7 +420,7 @@ export const MultiSelectComboBox = ({
                       {option.label}
                     </span>
                     {showDefinitions && option.definition && !isParent ? (
-                      <span className="overflow-hidden text-ellipsis text-wrap text-left text-sm text-neutral-charcoal">
+                      <span className="overflow-hidden text-left text-sm text-wrap text-ellipsis text-neutral-charcoal">
                         {option.definition}
                       </span>
                     ) : null}

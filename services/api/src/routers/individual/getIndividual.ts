@@ -8,10 +8,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { individualsTermsEncoder } from '../../encoders/individuals';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -25,12 +22,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getIndividualRouter = router({
-  getTerms: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  getTerms: commonAuthedProcedure()
     .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
@@ -65,12 +57,7 @@ export const getIndividualRouter = router({
         });
       }
     }),
-  getTermsByProfile: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  getTermsByProfile: commonAuthedProcedure()
     .input(z.object({ profileId: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
     .query(async ({ input }) => {

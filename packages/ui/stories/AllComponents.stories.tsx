@@ -11,7 +11,7 @@
 // import { ToggleButton } from '../src/components/ToggleButton';
 // import { Toolbar } from '../src/components/Toolbar';
 // import { Tooltip, TooltipTrigger } from '../src/components/Tooltip';
-import type { Meta } from '@storybook/react';
+import type { Meta } from '@storybook/react-vite';
 import { DialogTrigger } from 'react-aria-components';
 
 import { AlertDialog } from '../src/components/AlertDialog';

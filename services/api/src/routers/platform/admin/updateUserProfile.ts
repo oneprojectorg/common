@@ -5,14 +5,14 @@ import { z } from 'zod';
 import { userEncoder } from '../../../encoders';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonProcedure, router } from '../../../trpcFactory';
 import {
   handleUpdateUserProfileError,
   updateUserProfileDataSchema,
 } from '../../shared/profile';
 
 export const updateUserProfileRouter = router({
-  updateUserProfile: loggedProcedure
+  updateUserProfile: commonProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticatedPlatformAdmin)
     .input(

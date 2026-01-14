@@ -1,9 +1,9 @@
+import '@op/styles';
 import { withThemeByClassName } from '@storybook/addon-themes';
-import type { Preview } from '@storybook/react';
-import { themes } from '@storybook/theming';
+import type { Preview } from '@storybook/react-vite';
+import { themes } from 'storybook/theming';
 
 import '../stories/index.css';
-import '../tailwind.styles.scss';
 
 const preview: Preview = {
   decorators: [

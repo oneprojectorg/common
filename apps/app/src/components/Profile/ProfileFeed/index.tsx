@@ -194,7 +194,7 @@ export const ProfileFeedList = ({
                 onReactionClick={onReactionClick}
                 onCommentClick={onCommentClick}
               />
-              <hr className="bg-neutral-gray1" />
+              <hr />
             </Fragment>
           ))
         ) : (

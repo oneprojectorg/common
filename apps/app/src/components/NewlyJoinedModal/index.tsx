@@ -33,7 +33,7 @@ export const NewlyJoinedModal = () => {
 
   return (
     <Modal
-      className="inset-shadow-none shadow-green"
+      className="shadow-green inset-shadow-none"
       isOpen={modalOpen}
       onOpenChange={handleModalChange}
       confetti={false}

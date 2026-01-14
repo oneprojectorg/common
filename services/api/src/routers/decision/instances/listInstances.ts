@@ -5,10 +5,7 @@ import {
   legacyInstanceFilterSchema,
   legacyProcessInstanceListEncoder,
 } from '../../../encoders/legacyDecision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -22,10 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listInstancesRouter = router({
-  listInstances: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  listInstances: commonAuthedProcedure()
     .meta(meta)
     .input(legacyInstanceFilterSchema)
     .output(legacyProcessInstanceListEncoder)

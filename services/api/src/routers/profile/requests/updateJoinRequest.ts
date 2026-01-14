@@ -3,9 +3,7 @@ import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The ID of the join profile request to update */
@@ -18,9 +16,9 @@ const inputSchema = z.object({
 });
 
 export const updateJoinRequestRouter = router({
-  updateJoinRequest: loggedProcedure
-    .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
-    .use(withAuthenticated)
+  updateJoinRequest: commonAuthedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 10 },
+  })
     .input(inputSchema)
     .output(joinProfileRequestEncoder)
     .mutation(async ({ input, ctx }) => {

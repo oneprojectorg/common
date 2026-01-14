@@ -29,7 +29,7 @@ export const VoteReviewStep = ({ proposals }: VoteReviewStepProps) => {
       </p>
 
       <div className="space-y-2">
-        <div className="text-sm uppercase tracking-wider text-neutral-gray4">
+        <div className="text-sm tracking-wider text-neutral-gray4 uppercase">
           {t('YOUR SELECTED PROPOSALS')}
         </div>
 

@@ -1,4 +1,5 @@
 import {
+  Channels,
   UnauthorizedError,
   addRelationship,
   sendRelationshipNotification,
@@ -9,10 +10,7 @@ import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { trackRelationshipAdded } from '../../utils/analytics';
 
 const inputSchema = z.object({
@@ -35,10 +33,7 @@ const meta: OpenApiMeta = {
 };
 
 export const addRelationshipRouter = router({
-  addRelationship: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  addRelationship: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(z.object({ success: z.boolean() }))
@@ -56,6 +51,17 @@ export const addRelationshipRouter = router({
           to,
           relationships,
         });
+
+        ctx.registerMutationChannels([
+          Channels.orgRelationshipRequest({
+            type: 'source',
+            orgId: from,
+          }),
+          Channels.orgRelationshipRequest({
+            type: 'target',
+            orgId: to,
+          }),
+        ]);
 
         // Track analytics and trigger async processes
         waitUntil(

@@ -64,14 +64,14 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
               <StatNumber>{stats.membersVoted}</StatNumber>
               <StatLabel>{t('Members Voted')}</StatLabel>
             </Stat>
-            <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
+            <hr className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block" />
           </>
         )}
         <Stat>
           <StatNumber>{stats.proposalsFunded}</StatNumber>
           <StatLabel>{t('Proposals Funded')}</StatLabel>
         </Stat>
-        <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
+        <hr className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block" />
         <Stat>
           <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
           <StatLabel>{t('Total Allocated')}</StatLabel>

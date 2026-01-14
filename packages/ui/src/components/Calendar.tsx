@@ -95,7 +95,7 @@ export const Calendar = <T extends DateValue>({
   return (
     <AriaCalendar
       {...props}
-      className="rounded-md border border-solid border-neutral-gray1 bg-white p-1"
+      className="rounded-md border border-solid bg-white p-1"
     >
       <CalendarHeader />
       <CalendarGrid>
@@ -109,7 +109,7 @@ export const Calendar = <T extends DateValue>({
               return (
                 <span className="relative flex flex-col">
                   {cell}
-                  <span className="absolute bottom-1 left-0 right-0 m-auto size-1 rounded-full bg-primary-teal"></span>
+                  <span className="absolute right-0 bottom-1 left-0 m-auto size-1 rounded-full bg-primary-teal"></span>
                 </span>
               );
             }

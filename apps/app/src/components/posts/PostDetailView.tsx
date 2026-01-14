@@ -53,7 +53,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
           </PostFeed>
 
           {/* Comment Input */}
-          <div className="border-y border-neutral-gray1">
+          <div className="border-y">
             <Surface className="border-0 px-0 py-4">
               <PostUpdate
                 parentPostId={post.id}

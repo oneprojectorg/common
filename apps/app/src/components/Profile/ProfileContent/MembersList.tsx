@@ -226,16 +226,16 @@ const MembersListContent = ({
         return (
           <div
             key={member.id}
-            className="relative flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+            className="relative flex w-full gap-4 rounded border p-6"
           >
-            <div className="absolute right-4 top-4">
+            <div className="absolute top-4 right-4">
               <MemberMenu
                 member={member}
                 organizationId={organizationId}
                 profileId={profileId}
               />
             </div>
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <ProfileAvatar profile={profileForAvatar} className="size-20" />
             </div>
             <div className="min-w-0 flex-1">

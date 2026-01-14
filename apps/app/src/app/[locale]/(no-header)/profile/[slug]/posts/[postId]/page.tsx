@@ -28,7 +28,7 @@ function PostDetailPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header skeleton */}
-      <div className="grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
         <Skeleton className="h-6 w-24" />
         <div className="flex justify-center">
           <Skeleton className="h-10 w-96" />
@@ -58,10 +58,10 @@ function PostDetailPageSkeleton() {
             </div>
           </div>
 
-          <hr className="bg-neutral-gray1" />
+          <hr />
 
           {/* Comment input skeleton */}
-          <div className="border-y border-neutral-gray1">
+          <div className="border-y">
             <div className="flex items-start gap-3 py-4">
               <Skeleton className="h-8 w-8 rounded-full" />
               <Skeleton className="h-16 flex-1" />

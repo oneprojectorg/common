@@ -17,11 +17,11 @@ import { Button } from './Button';
 import { Confetti } from './Confetti';
 
 const overlayStyles = tv({
-  base: 'fixed left-0 top-0 z-[99999] flex h-[--visual-viewport-height] w-full items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm entering:duration-300 entering:ease-out entering:animate-in entering:fade-in exiting:duration-300 exiting:ease-in exiting:animate-out exiting:fade-out',
+  base: 'fixed! inset-0! z-[99999] flex items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm entering:animate-in entering:duration-300 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-300 exiting:ease-in exiting:fade-out',
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border border-neutral-gray1 bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out focus-visible:outline-none sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md',
+  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out',
 });
 
 type ModalContextType = {
@@ -50,7 +50,7 @@ export const ModalHeader = ({
   };
 
   return (
-    <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b border-neutral-gray1 bg-white">
+    <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b bg-white">
       <div className="relative flex w-full items-center justify-center">
         {isDismissable && (
           <button
@@ -60,7 +60,7 @@ export const ModalHeader = ({
             className={cn(
               'absolute left-6 flex h-6 w-6',
               'items-center justify-center',
-              'rounded-sm hover:bg-neutral-gray1 focus:outline-none focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
+              'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 focus:outline-hidden',
               'text-neutral-charcoal',
             )}
           >
@@ -110,7 +110,7 @@ export const ModalFooter = ({
   return (
     <div
       className={cn(
-        'absolute bottom-0 flex w-full flex-col-reverse justify-end gap-4 border-t border-neutral-gray1 bg-white px-6 py-3 sm:sticky sm:flex-row',
+        'absolute bottom-0 flex w-full flex-col-reverse justify-end gap-4 border-t bg-white px-6 py-3 sm:sticky sm:flex-row',
         className,
       )}
     >
@@ -157,7 +157,7 @@ export const ModalStepper = memo(
           'sticky bottom-0',
           'flex w-full items-center justify-between',
           'px-6 py-3',
-          'border-t border-neutral-gray1 bg-white',
+          'border-t bg-white',
         )}
       >
         <span className="flex-1">
@@ -212,6 +212,7 @@ export const ModalInContext = ({
         className={overlayStyles({
           className: cn(overlayClassName),
         })}
+        style={{ zIndex: 99999, position: 'fixed', inset: 0 }}
       >
         {confetti && <Confetti />}
         <div className={wrapperClassName}>

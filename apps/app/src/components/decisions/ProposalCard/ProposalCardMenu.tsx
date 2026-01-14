@@ -14,7 +14,7 @@ import { toast } from '@op/ui/Toast';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { LuCheck, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -202,7 +202,8 @@ export function ProposalCardMenu({
     <>
       <OptionMenu>
         <Menu className="p-2">
-          {canManage && (
+          {/* Admin actions (shortlist, reject, hide) - not for drafts */}
+          {canManage && proposal.status !== ProposalStatus.DRAFT && (
             <>
               <MenuItem
                 key="approve"
@@ -242,6 +243,7 @@ export function ProposalCardMenu({
               </MenuItem>
             </>
           )}
+          {/* Delete action for own proposals (including drafts) */}
           {proposal.isEditable && (
             <MenuItem
               key="delete"

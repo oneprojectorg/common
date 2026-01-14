@@ -85,7 +85,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
             onReactionClick={handleReactionClick}
             onCommentClick={handleCommentClick}
           />
-          <hr className="bg-neutral-gray1" />
+          <hr />
         </Fragment>
       ))}
 

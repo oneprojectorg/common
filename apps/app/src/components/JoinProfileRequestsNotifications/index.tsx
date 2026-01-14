@@ -165,7 +165,7 @@ const JoinProfileRequestsNotificationsError = () => {
       <NotificationPanelHeader title={t('Join requests')} count={0} />
       <NotificationPanelList>
         <NotificationPanelItem>
-          <p className="text-secondary text-sm">
+          <p className="text-sm text-secondary">
             {t('Failed to load join requests')}
           </p>
         </NotificationPanelItem>

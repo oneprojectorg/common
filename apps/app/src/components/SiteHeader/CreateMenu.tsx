@@ -3,10 +3,10 @@
 import { useUser } from '@/utils/UserProvider';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
-import twConfig from '@op/ui/tailwind-config';
 import { useState } from 'react';
 import { LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
@@ -15,6 +15,9 @@ import { useTranslations } from '@/lib/i18n';
 import { InviteUserModal } from '../InviteUserModal';
 import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
 
+// Tailwind v4 default sm breakpoint (640px)
+const SM_BREAKPOINT = screens.sm;
+
 export const CreateMenu = () => {
   const t = useTranslations();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -22,7 +25,7 @@ export const CreateMenu = () => {
     useState(false);
   const { user } = useUser();
   const isOrg = user.currentProfile?.type === EntityType.ORG;
-  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
+  const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
 
   return (
     <>

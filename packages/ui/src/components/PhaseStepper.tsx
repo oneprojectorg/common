@@ -44,7 +44,7 @@ const Step = ({
       >
         {stepState === 'completed' ? <Check className="size-4" /> : index + 1}
       </div>
-      <div className="flex max-w-6 flex-col items-center justify-center text-nowrap text-sm text-neutral-black">
+      <div className="flex max-w-6 flex-col items-center justify-center text-sm text-nowrap text-neutral-black">
         <div>{phase.name}</div>
         {(phase.startDate || phase.endDate) && (
           <div className="text-xs text-neutral-gray4">

@@ -1,4 +1,4 @@
-import { OPURLConfig, urlMatcher } from '@op/core';
+import { OPURLConfig, originUrlMatcher } from '@op/core';
 import { logger, transformMiddlewareRequest } from '@op/logging';
 import { NextResponse } from 'next/server';
 import type { NextFetchEvent, NextRequest } from 'next/server';
@@ -21,7 +21,7 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
   const origin = request.headers.get('origin') ?? '';
   const isAllowedOrigin = IS_DEVELOPMENT
     ? true
-    : origin.match(urlMatcher)?.length;
+    : origin.match(originUrlMatcher)?.length;
 
   // Handle preflighted requests
   const isPreflight = request.method === 'OPTIONS';

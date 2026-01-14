@@ -55,7 +55,7 @@ const EmailTemplate = ({
 
         <Body className="m-auto rounded-[16px] bg-[#FAFBFB] p-8 font-sans text-sm leading-[150%] text-neutral-charcoal">
           <Container className="mt-4 max-w-[648px] p-12 md:mt-10">
-            <Container className="mx-auto w-full rounded-lg border border-solid border-neutral-gray1 bg-white p-12 md:max-w-[600px]">
+            <Container className="mx-auto w-full rounded-lg border border-solid bg-white p-12 md:max-w-[600px]">
               <Section>
                 <Row>
                   <Column align="left">
@@ -77,10 +77,10 @@ const EmailTemplate = ({
               <Container className="mt-8">{children}</Container>
             </Container>
             <Container className="mx-auto mb-0 max-w-[600px] px-12 py-8 font-sans font-normal">
-              <Text className="mb-0 mt-0 text-xs">
+              <Text className="mt-0 mb-0 text-xs">
                 Common is maintained by One Project.
               </Text>
-              <Text className="mb-0 mt-2 text-xs">
+              <Text className="mt-2 mb-0 text-xs">
                 You’re receiving this email as part of our authentication and
                 communication processes.
               </Text>

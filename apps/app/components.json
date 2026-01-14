@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/app/globals.css",
+    "baseColor": "zinc",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@/components",
+    "utils": "@op/ui/lib/utils",
+    "ui": "@op/ui/components",
+    "lib": "@/lib",
+    "hooks": "@op/ui/hooks"
+  },
+  "registries": {
+    "@intentui": "https://intentui.com/r/{name}"
+  }
+}

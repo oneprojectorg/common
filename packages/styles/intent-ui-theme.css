@@ -1,0 +1,159 @@
+/*
+ * Intent UI Theme
+ * Maps Intent UI CSS variables to @op/styles tokens
+ *
+ * Note: Border color defaults and radius values are defined in shared-styles.css
+ */
+
+/* Tailwind theme colors that map to Intent UI variables */
+@theme {
+  --color-secondary: var(--secondary);
+  --color-secondary-fg: var(--secondary-fg);
+  --color-muted: var(--muted);
+  --color-muted-fg: var(--muted-fg);
+  --color-fg: var(--fg);
+  --color-bg: var(--bg);
+  --color-ring: var(--ring);
+}
+
+:root {
+  /* ============================================
+   * Core Colors
+   * ============================================ */
+  --bg: hsl(var(--op-white));
+  --fg: hsl(var(--op-neutral-900));
+
+  /* Primary - teal */
+  --primary: hsl(var(--op-teal-500));
+  --primary-fg: hsl(var(--op-white));
+  --primary-subtle: hsl(var(--op-teal-500) / 0.15);
+  --primary-subtle-fg: hsl(var(--op-teal-600));
+
+  /* Secondary - neutral */
+  --secondary: hsl(var(--op-neutral-200));
+  --secondary-fg: hsl(var(--op-neutral-900));
+
+  /* Overlay */
+  --overlay: hsl(var(--op-neutral-950) / 0.6);
+  --overlay-fg: hsl(var(--op-white));
+
+  /* Accent - neutral */
+  --accent: hsl(var(--op-neutral-200));
+  --accent-fg: hsl(var(--op-neutral-900));
+  --accent-subtle: hsl(var(--op-neutral-500) / 0.1);
+  --accent-subtle-fg: hsl(var(--op-neutral-700));
+
+  /* Muted */
+  --muted: hsl(var(--op-neutral-50));
+  --muted-fg: hsl(var(--op-neutral-700));
+
+  /* ============================================
+   * Semantic Colors
+   * ============================================ */
+  /* Success - green */
+  --success: hsl(var(--op-green-500));
+  --success-fg: hsl(var(--op-white));
+  --success-subtle: hsl(var(--op-green-500) / 0.15);
+  --success-subtle-fg: hsl(var(--op-green-700));
+
+  /* Info - teal */
+  --info: hsl(var(--op-teal-400));
+  --info-fg: hsl(var(--op-white));
+  --info-subtle: hsl(var(--op-teal-400) / 0.15);
+  --info-subtle-fg: hsl(var(--op-teal-700));
+
+  /* Warning - yellow */
+  --warning: hsl(var(--op-yellow-500));
+  --warning-fg: hsl(var(--op-neutral-900));
+  --warning-subtle: hsl(var(--op-yellow-500) / 0.2);
+  --warning-subtle-fg: hsl(var(--op-yellow-700));
+
+  /* Danger - red */
+  --danger: hsl(var(--op-red-500));
+  --danger-fg: hsl(var(--op-white));
+  --danger-subtle: hsl(var(--op-red-500) / 0.15);
+  --danger-subtle-fg: hsl(var(--op-red-700));
+
+  /* ============================================
+   * UI Elements
+   * ============================================ */
+  --border: hsl(var(--op-neutral-200));
+  --input: hsl(var(--op-neutral-200));
+  --ring: hsl(var(--op-teal-500));
+
+  /* ============================================
+   * Layout
+   * ============================================ */
+  --navbar: hsl(var(--op-white));
+  --navbar-fg: hsl(var(--op-neutral-900));
+
+  --sidebar: hsl(var(--op-neutral-50));
+  --sidebar-fg: hsl(var(--op-neutral-900));
+  --sidebar-primary: hsl(var(--op-teal-500) / 0.15);
+  --sidebar-primary-fg: hsl(var(--op-teal-600));
+  --sidebar-accent: hsl(var(--op-neutral-200));
+  --sidebar-accent-fg: hsl(var(--op-neutral-900));
+  --sidebar-border: hsl(var(--op-neutral-200));
+  --sidebar-ring: hsl(var(--op-teal-500));
+
+  /* ============================================
+   * Charts
+   * ============================================ */
+  --chart-1: hsl(var(--op-teal-500));
+  --chart-2: hsl(var(--op-green-500));
+  --chart-3: hsl(var(--op-yellow-500));
+  --chart-4: hsl(var(--op-purple-500));
+  --chart-5: hsl(var(--op-blue-500));
+}
+
+/* Dark mode (for future use) */
+.dark,
+[data-theme='dark'] {
+  --bg: hsl(var(--op-neutral-950));
+  --fg: hsl(var(--op-neutral-50));
+
+  --primary: hsl(var(--op-teal-400));
+  --primary-fg: hsl(var(--op-neutral-950));
+  --primary-subtle: hsl(var(--op-teal-400) / 0.1);
+  --primary-subtle-fg: hsl(var(--op-teal-200));
+
+  --secondary: hsl(var(--op-neutral-700));
+  --secondary-fg: hsl(var(--op-neutral-50));
+
+  --overlay: hsl(var(--op-neutral-900));
+  --overlay-fg: hsl(var(--op-neutral-50));
+
+  --accent: hsl(var(--op-neutral-700));
+  --accent-fg: hsl(var(--op-neutral-50));
+  --accent-subtle: hsl(var(--op-neutral-500) / 0.1);
+  --accent-subtle-fg: hsl(var(--op-neutral-400));
+
+  --muted: hsl(var(--op-neutral-900));
+  --muted-fg: hsl(var(--op-neutral-400));
+
+  --success-subtle: hsl(var(--op-green-500) / 0.1);
+  --success-subtle-fg: hsl(var(--op-green-300));
+
+  --info-subtle: hsl(var(--op-teal-400) / 0.1);
+  --info-subtle-fg: hsl(var(--op-teal-200));
+
+  --warning-subtle: hsl(var(--op-yellow-500) / 0.1);
+  --warning-subtle-fg: hsl(var(--op-yellow-400));
+
+  --danger-subtle: hsl(var(--op-red-500) / 0.1);
+  --danger-subtle-fg: hsl(var(--op-red-300));
+
+  --border: hsl(var(--op-neutral-700));
+  --input: hsl(var(--op-neutral-700));
+
+  --navbar: hsl(var(--op-neutral-900));
+  --navbar-fg: hsl(var(--op-neutral-50));
+
+  --sidebar: hsl(var(--op-neutral-900));
+  --sidebar-fg: hsl(var(--op-neutral-50));
+  --sidebar-primary: hsl(var(--op-teal-400) / 0.1);
+  --sidebar-primary-fg: hsl(var(--op-teal-200));
+  --sidebar-accent: hsl(var(--op-neutral-700));
+  --sidebar-accent-fg: hsl(var(--op-neutral-50));
+  --sidebar-border: hsl(var(--op-neutral-700));
+}

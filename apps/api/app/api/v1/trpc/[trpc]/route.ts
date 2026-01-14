@@ -1,5 +1,5 @@
 import { appRouter, createContext } from '@op/api';
-import { API_TRPC_PTH } from '@op/core';
+import { API_TRPC_PTH, originUrlMatcher } from '@op/core';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
@@ -7,14 +7,13 @@ export const maxDuration = 120;
 
 const EXPOSED_HEADERS = 'x-request-id';
 
-const allowedOrigins = [
-  'https://api-dev.oneproject.tech',
-  'https://api.oneproject.tech',
-  'https://app-dev.oneproject.tech',
-  'https://app.oneproject.tech',
-  'https://common.oneproject.org',
-  'https://api-common.oneproject.org',
-];
+const isAllowedOrigin = (origin: string | null): boolean => {
+  if (!origin) {
+    return false;
+  }
+
+  return originUrlMatcher.test(origin);
+};
 
 const handler = async (req: NextRequest) => {
   const response = await fetchRequestHandler({
@@ -28,7 +27,7 @@ const handler = async (req: NextRequest) => {
   });
 
   const origin = req.headers.get('origin');
-  if (origin && allowedOrigins.includes(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
   }
   response.headers.set(
@@ -56,7 +55,7 @@ const optionsHandler = async (req: NextRequest) => {
     'Access-Control-Expose-Headers': EXPOSED_HEADERS,
   };
 
-  if (origin && allowedOrigins.includes(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     headers['Access-Control-Allow-Origin'] = origin;
   }
 

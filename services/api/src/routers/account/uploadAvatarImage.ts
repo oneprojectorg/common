@@ -8,11 +8,8 @@ import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 import { trackImageUpload } from '../../utils/analytics';
 
@@ -38,13 +35,8 @@ const meta: OpenApiMeta = {
 
 // TODO: This is a duplicate of organization/uploadAvatarImage. Converge these
 export const uploadAvatarImage = router({
-  uploadImage: loggedProcedure
-    // middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  uploadImage: commonAuthedProcedure()
     .use(withDB)
-    // Router
     .meta(meta)
     .input(
       z.object({

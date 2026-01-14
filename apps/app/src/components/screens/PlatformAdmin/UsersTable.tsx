@@ -144,12 +144,7 @@ const UsersTableHeader = () => {
   ];
 
   return (
-    <div
-      className={cn(
-        'bg-neutral-gray0 border-b border-neutral-gray1 py-3',
-        USERS_TABLE_GRID,
-      )}
-    >
+    <div className={cn('bg-neutral-gray0 border-b py-3', USERS_TABLE_GRID)}>
       {columnHeadings.map((heading, idx) => (
         <div
           key={heading}

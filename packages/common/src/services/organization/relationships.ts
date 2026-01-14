@@ -446,12 +446,7 @@ export const getPendingRelationships = async ({
   return { records: organizations, count: organizations.length };
 };
 
-export const removeRelationship = async ({
-  id,
-}: {
-  id: string;
-  user: User;
-}) => {
+export const removeRelationship = async ({ id }: { id: string }) => {
   // const orgUser = await getOrgAccessUser({ user, organizationId: user });
 
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
@@ -462,11 +457,16 @@ export const removeRelationship = async ({
   // }
 
   try {
-    await db
+    const relationship = await db
       .delete(organizationRelationships)
-      .where(eq(organizationRelationships.id, id));
+      .where(eq(organizationRelationships.id, id))
+      .returning();
 
-    return true;
+    if (!relationship[0]) {
+      throw new CommonError('Could not remove relationship');
+    }
+
+    return relationship[0];
   } catch (e) {
     throw new CommonError('Could not remove relationship');
   }

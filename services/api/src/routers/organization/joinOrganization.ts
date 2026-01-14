@@ -8,16 +8,13 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: `/organization/join`,
+    path: '/organization/join',
     protect: true,
     tags: ['organization'],
     summary: 'Join an organization',
@@ -29,12 +26,9 @@ const inputSchema = z.object({
 });
 
 export const joinOrganization = router({
-  join: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 60, maxRequests: 5 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  join: commonAuthedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 5 },
+  })
     .meta(meta)
     .input(inputSchema)
     .output(

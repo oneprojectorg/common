@@ -1,19 +1,19 @@
 import {
+  ChannelName,
+  Channels,
   UnauthorizedError,
   getDirectedRelationships,
   getPendingRelationships,
   getRelatedOrganizations,
 } from '@op/common';
 import { getCurrentOrgId } from '@op/common/src/services/access';
+import { Organization } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const directedInputSchema = z.object({
   from: z.uuid({
@@ -58,11 +58,7 @@ const nonDirectedInputSchema = z.object({
 // };
 
 export const listRelationshipsRouter = router({
-  listPendingRelationships: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(directedMeta)
+  listPendingRelationships: commonAuthedProcedure()
     .input(z.void())
     .query(async ({ ctx }) => {
       const { user } = ctx;
@@ -90,11 +86,7 @@ export const listRelationshipsRouter = router({
         });
       }
     }),
-  listDirectedRelationships: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(directedMeta)
+  listDirectedRelationships: commonAuthedProcedure()
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
@@ -110,6 +102,25 @@ export const listRelationshipsRouter = router({
             pending,
           });
 
+        const targetOrgChannel: ChannelName = Channels.orgRelationshipRequest({
+          type: 'target',
+          orgId: from,
+        });
+
+        const sourceOrgIds = relationships.map(
+          (relationship) =>
+            (relationship.targetOrganization as Organization).id,
+        );
+
+        const sourceOrgChannels: ChannelName[] = sourceOrgIds.map((orgId) => {
+          return Channels.orgRelationshipRequest({
+            type: 'source',
+            orgId,
+          });
+        });
+
+        ctx.registerQueryChannels([...sourceOrgChannels, targetOrgChannel]);
+
         return { relationships, count };
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
@@ -124,11 +135,7 @@ export const listRelationshipsRouter = router({
         });
       }
     }),
-  listRelationships: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(nonDirectedMeta)
+  listRelationships: commonAuthedProcedure()
     .input(nonDirectedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;

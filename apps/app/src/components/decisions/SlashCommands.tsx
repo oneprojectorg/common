@@ -88,7 +88,7 @@ const SlashCommandsList = forwardRef<
   }));
 
   return (
-    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-md border border-neutral-gray1 bg-white p-1 shadow-md">
+    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-md border bg-white p-1 shadow-md">
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
@@ -100,7 +100,7 @@ const SlashCommandsList = forwardRef<
             key={index}
             onClick={() => selectItem(index)}
           >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-sm border border-neutral-gray1 bg-white">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-sm border bg-white">
               <item.icon className="size-4" />
             </div>
             <div>

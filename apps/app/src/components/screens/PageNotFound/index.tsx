@@ -5,7 +5,7 @@ export default function PageNotFound() {
   return (
     <div className="flex size-full flex-col items-center justify-center gap-8">
       <div className="flex flex-col items-center gap-4">
-        <Header2 className="font-serif text-[4rem] font-light leading-[110%]">
+        <Header2 className="font-serif text-[4rem] leading-[110%] font-light">
           404
         </Header2>
         <p className="text-center">

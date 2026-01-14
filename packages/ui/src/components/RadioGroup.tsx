@@ -46,17 +46,18 @@ export const RadioGroup = (props: RadioGroupProps) => {
 
 const styles = tv({
   // extend: focusRing,
-  base: 'bg-neutral-white aspect-square size-4 flex-shrink-0 rounded-full border border-neutral-gray3 transition-all',
+  base: 'bg-neutral-white aspect-square size-4 shrink-0 rounded-full border border-neutral-gray3 transition-all',
   variants: {
     isSelected: {
-      false: 'border group-pressed:border',
-      true: 'border-[0.31rem] border-primary-tealBlack outline outline-1 -outline-offset-1 outline-primary-teal group-pressed:border',
+      false:
+        'border border-neutral-gray3 group-pressed:border group-pressed:border-neutral-gray3',
+      true: 'border-[0.31rem] border-primary-tealBlack outline outline-1 -outline-offset-1 outline-primary-teal group-pressed:border group-pressed:border-primary-tealBlack',
     },
     isInvalid: {
       true: 'border-red-600 group-pressed:border-red-700',
     },
     isDisabled: {
-      true: 'border',
+      true: 'border border-neutral-gray3',
     },
   },
 });

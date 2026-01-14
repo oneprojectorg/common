@@ -1,12 +1,9 @@
-import { UnauthorizedError, removeRelationship } from '@op/common';
+import { Channels, UnauthorizedError, removeRelationship } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   id: z.uuid({
@@ -26,22 +23,31 @@ const meta: OpenApiMeta = {
 };
 
 export const removeRelationshipRouter = router({
-  removeRelationship: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  removeRelationship: commonAuthedProcedure()
     .meta(meta)
     .input(inputSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      const { user } = ctx;
       const { id } = input;
 
       try {
-        await removeRelationship({
-          user,
+        const relationshipRemoved = await removeRelationship({
           id,
         });
+
+        const sourceOrgId = relationshipRemoved.sourceOrganizationId;
+        const targetOrgId = relationshipRemoved.targetOrganizationId;
+
+        ctx.registerMutationChannels([
+          Channels.orgRelationshipRequest({
+            type: 'source',
+            orgId: sourceOrgId,
+          }),
+          Channels.orgRelationshipRequest({
+            type: 'target',
+            orgId: targetOrgId,
+          }),
+        ]);
 
         return { success: true };
       } catch (error: unknown) {

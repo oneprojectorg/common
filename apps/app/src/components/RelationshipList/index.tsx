@@ -64,9 +64,9 @@ const RelationshipListContent = ({
         profiles.map((profile) => (
           <div
             key={profile.id}
-            className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+            className="flex w-full gap-4 rounded border p-6"
           >
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <ProfileAvatar profile={profile} className="size-20" />
             </div>
             <div className="min-w-0 flex-1">
@@ -105,7 +105,7 @@ const RelationshipListContent = ({
                     </div>
                   ) : (
                     /* Show profile type if no relationships */
-                    <div className="text-sm capitalize text-neutral-charcoal">
+                    <div className="text-sm text-neutral-charcoal capitalize">
                       {profile.type === 'org'
                         ? t('Organization')
                         : t('Individual')}

@@ -20,7 +20,7 @@ export const ImageHeader = ({
       >
         {headerImage}
       </div>
-      <div className="absolute bottom-0 left-4 aspect-square size-16 overflow-hidden rounded-full border-2 border-white bg-offWhite shadow sm:size-[7.5rem] sm:border-4">
+      <div className="absolute bottom-0 left-4 aspect-square size-16 overflow-hidden rounded-full border-2 border-white bg-offWhite shadow-sm sm:size-[7.5rem] sm:border-4">
         {avatarImage}
       </div>
     </div>

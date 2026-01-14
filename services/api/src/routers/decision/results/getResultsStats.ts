@@ -7,10 +7,7 @@ import {
   getResultsStatsInputSchema,
   resultsStatsEncoder,
 } from '../../../encoders/results';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -24,10 +21,9 @@ const meta: OpenApiMeta = {
 };
 
 export const getResultsStatsRouter = router({
-  getResultsStats: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 30 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getResultsStats: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 30 },
+  })
     .meta(meta)
     .input(getResultsStatsInputSchema)
     .output(resultsStatsEncoder.nullable())
