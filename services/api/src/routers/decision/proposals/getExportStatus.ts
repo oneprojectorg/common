@@ -3,9 +3,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { commonProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -43,9 +41,7 @@ const exportStatusOutputSchema = z.union([
 ]);
 
 export const getExportStatusRouter = router({
-  getExportStatus: commonProcedure
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getExportStatus: commonAuthedProcedure()
     .meta(meta)
     .input(exportStatusInputSchema)
     .output(exportStatusOutputSchema)

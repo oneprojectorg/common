@@ -12,9 +12,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import { commonProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
@@ -29,9 +27,7 @@ const meta: OpenApiMeta = {
 };
 
 export const getProposalRouter = router({
-  getProposal: commonProcedure
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getProposal: commonAuthedProcedure()
     .meta(meta)
     .input(
       z.object({
