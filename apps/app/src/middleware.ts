@@ -1,4 +1,8 @@
-import { OPURLConfig, cookieOptionsDomain } from '@op/core';
+import {
+  OPURLConfig,
+  cookieOptionsDomain,
+  isOnPreviewAppDomain,
+} from '@op/core';
 import { logger, transformMiddlewareRequest } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
@@ -36,15 +40,17 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
         localeResponse = NextResponse.next({ request });
 
         // Set the locale cookie with proper domain options
+        // Skip domain on preview URLs (use host-only cookies)
+        const shouldSetCookieDomain =
+          (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
+          !isOnPreviewAppDomain;
         localeResponse.cookies.set('NEXT_LOCALE', currentLocale, {
           path: '/',
           maxAge: 60 * 60 * 24 * 365, // 1 year
           secure:
             useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
           sameSite: 'lax',
-          ...(useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
-            ? { domain: cookieOptionsDomain }
-            : {}),
+          ...(shouldSetCookieDomain ? { domain: cookieOptionsDomain } : {}),
         });
       }
     }
@@ -55,18 +61,21 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     NextResponse.next({
       request,
     });
+  // Skip domain on preview URLs (use host-only cookies)
+  const shouldSetCookieDomain =
+    (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
+    !isOnPreviewAppDomain;
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions:
-        useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
-          ? {
-              domain: cookieOptionsDomain,
-              sameSite: 'lax',
-              secure: true,
-            }
-          : {},
+      cookieOptions: shouldSetCookieDomain
+        ? {
+            domain: cookieOptionsDomain,
+            sameSite: 'lax',
+            secure: true,
+          }
+        : {},
       cookies: {
         getAll() {
           return request.cookies.getAll();

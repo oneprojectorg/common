@@ -1,4 +1,5 @@
 import analyzer from '@next/bundle-analyzer';
+import { getPreviewApiUrl } from '@op/core/previews';
 import { withPostHogConfig } from '@posthog/nextjs-config';
 import dotenv from 'dotenv';
 import createNextIntlPlugin from 'next-intl/plugin';
@@ -34,8 +35,18 @@ dotenv.config({
   path: '../../../.env.local',
 });
 
+// Deployment environment variables (sourced from Vercel's injected env vars)
+const DEPLOY_ENV = process.env.VERCEL_ENV;
+const PREVIEW_BRANCH_URL = process.env.VERCEL_BRANCH_URL;
+
 /** @type {import('next').NextConfig} */
 const config = {
+  // Expose deployment info to client-side for preview URL detection
+  env: {
+    NEXT_PUBLIC_DEPLOY_ENV: DEPLOY_ENV,
+    NEXT_PUBLIC_PREVIEW_BRANCH_URL:
+      DEPLOY_ENV === 'preview' ? PREVIEW_BRANCH_URL : undefined,
+  },
   experimental: {
     // reactCompiler: true,
     serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
@@ -84,7 +95,20 @@ const config = {
     return cfg;
   },
   async rewrites() {
+    // On preview deployments, proxy tRPC to avoid cross-origin cookie issues
+    // See packages/core/previews.mjs for the shared preview URL logic
+    const previewApiUrl = getPreviewApiUrl(PREVIEW_BRANCH_URL);
+    const previewApiRewrites = previewApiUrl
+      ? [
+          {
+            source: '/api/v1/trpc/:path*',
+            destination: `${previewApiUrl}/api/v1/trpc/:path*`,
+          },
+        ]
+      : [];
+
     return [
+      ...previewApiRewrites,
       {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
