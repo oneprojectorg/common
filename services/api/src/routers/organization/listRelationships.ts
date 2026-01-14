@@ -113,7 +113,7 @@ export const listRelationshipsRouter = router({
           });
 
         const targetOrgChannel: ChannelName =
-          Channels.profileRelationshipRequest({
+          Channels.orgRelationshipRequest({
             type: 'target',
             orgId: from,
           });
@@ -124,7 +124,7 @@ export const listRelationshipsRouter = router({
         );
 
         const sourceOrgChannels: ChannelName[] = sourceOrgIds.map((orgId) => {
-          return Channels.profileRelationshipRequest({
+          return Channels.orgRelationshipRequest({
             type: 'source',
             orgId,
           });

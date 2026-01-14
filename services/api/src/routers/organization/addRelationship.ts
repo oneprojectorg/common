@@ -59,11 +59,11 @@ export const addRelationshipRouter = router({
         });
 
         ctx.registerMutationChannels([
-          Channels.profileRelationshipRequest({
+          Channels.orgRelationshipRequest({
             type: 'source',
             orgId: from,
           }),
-          Channels.profileRelationshipRequest({
+          Channels.orgRelationshipRequest({
             type: 'target',
             orgId: to,
           }),

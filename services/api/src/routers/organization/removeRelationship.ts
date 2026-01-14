@@ -1,5 +1,4 @@
 import { Channels, UnauthorizedError, removeRelationship } from '@op/common';
-import { Organization } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -46,11 +45,11 @@ export const removeRelationshipRouter = router({
         const targetOrgId = relationshipRemoved.targetOrganizationId;
 
         ctx.registerMutationChannels([
-          Channels.profileRelationshipRequest({
+          Channels.orgRelationshipRequest({
             type: 'source',
             orgId: sourceOrgId,
           }),
-          Channels.profileRelationshipRequest({
+          Channels.orgRelationshipRequest({
             type: 'target',
             orgId: targetOrgId,
           }),
