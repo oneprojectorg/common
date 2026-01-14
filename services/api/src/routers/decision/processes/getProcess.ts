@@ -4,7 +4,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { legacyDecisionProcessEncoder } from '../../../encoders/legacyDecision';
-import { commonProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 
 /** @deprecated Use the new decision system instead */
 export const getProcessRouter = router({
-  getProcess: commonProcedure
+  getProcess: commonAuthedProcedure()
     .meta(meta)
     .input(z.object({ id: z.uuid() }))
     .output(legacyDecisionProcessEncoder)
