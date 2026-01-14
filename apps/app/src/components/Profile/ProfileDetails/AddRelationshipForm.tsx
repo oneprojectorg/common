@@ -17,13 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { FundingRole, FundingRoleModal } from './FundingRoleModal';
 
-export const AddRelationshipForm = ({
-  profile,
-  onChange,
-}: {
-  profile: Organization;
-  onChange: () => void;
-}) => {
+export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
   const t = useTranslations();
   const addRelationship = trpc.organization.addRelationship.useMutation();
 
@@ -70,7 +64,6 @@ export const AddRelationshipForm = ({
           relationships,
         });
 
-        onChange();
         toast.success({
           message: 'Relationship requested',
         });

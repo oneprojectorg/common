@@ -17,6 +17,14 @@ export const Channels = {
     type: 'source' | 'target';
     profileId: string;
   }) => `profileJoinRequest:${type}:${profileId}` as const,
+
+  orgRelationshipRequest: ({
+    type,
+    orgId,
+  }: {
+    type: 'source' | 'target';
+    orgId: string;
+  }) => `orgRelationshipRequest:${type}:${orgId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -24,6 +32,9 @@ export type OrgChannel = ReturnType<typeof Channels.org>;
 export type UserChannel = ReturnType<typeof Channels.user>;
 export type ProfileJoinRequestChannel = ReturnType<
   typeof Channels.profileJoinRequest
+>;
+export type OrgRelationshipRequestChannel = ReturnType<
+  typeof Channels.orgRelationshipRequest
 >;
 
 /**
@@ -33,4 +44,5 @@ export type ChannelName =
   | GlobalChannel
   | OrgChannel
   | UserChannel
-  | ProfileJoinRequestChannel;
+  | ProfileJoinRequestChannel
+  | OrgRelationshipRequestChannel;

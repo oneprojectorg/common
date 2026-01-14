@@ -1,4 +1,5 @@
 import {
+  Channels,
   UnauthorizedError,
   addRelationship,
   sendRelationshipNotification,
@@ -56,6 +57,17 @@ export const addRelationshipRouter = router({
           to,
           relationships,
         });
+
+        ctx.registerMutationChannels([
+          Channels.orgRelationshipRequest({
+            type: 'source',
+            orgId: from,
+          }),
+          Channels.orgRelationshipRequest({
+            type: 'target',
+            orgId: to,
+          }),
+        ]);
 
         // Track analytics and trigger async processes
         waitUntil(
