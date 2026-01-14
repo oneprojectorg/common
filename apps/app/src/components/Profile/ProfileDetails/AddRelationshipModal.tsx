@@ -192,17 +192,7 @@ export const AddRelationshipModalSuspense = ({
             {t('Add relationship')}
           </Button>
           <Modal className="sm:min-w-[29rem]">
-            <AddRelationshipForm
-              profile={profile}
-              onChange={() => {
-                utils.organization.listRelationships.invalidate({
-                  organizationId: profile.id,
-                });
-                utils.organization.listDirectedRelationships.invalidate({
-                  from: profile.id,
-                });
-              }}
-            />
+            <AddRelationshipForm profile={profile} />
           </Modal>
         </DialogTrigger>
       )}
