@@ -4,10 +4,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { organizationsEncoder } from '../../encoders/organizations';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { createOrganizationInputSchema } from './validators';
 
 const meta: OpenApiMeta = {
@@ -22,12 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 export const createOrganizationRouter = router({
-  create: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  create: commonAuthedProcedure
     .meta(meta)
     .input(createOrganizationInputSchema)
     .output(organizationsEncoder)

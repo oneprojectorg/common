@@ -3,10 +3,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.uuid(),
@@ -58,12 +55,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listUsersRouter = router({
-  listUsers: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  listUsers: commonAuthedProcedure
     .meta(meta)
     .input(inputSchema)
     .output(z.array(organizationUserEncoder))

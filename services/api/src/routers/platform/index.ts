@@ -1,20 +1,14 @@
 import { getPlatformStats } from '@op/common';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { platformAdminRouter } from './admin';
 
 /**
  * Handles platform-wide operations such as retrieving statistics, listing profiles, users, organizations, etc,.
  */
 export const platformRouter = router({
-  getStats: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getStats: commonAuthedProcedure
     .input(z.void())
     .output(
       z.object({

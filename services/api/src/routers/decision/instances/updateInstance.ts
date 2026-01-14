@@ -6,10 +6,7 @@ import {
   legacyProcessInstanceEncoder,
   legacyUpdateInstanceInputSchema,
 } from '../../../encoders/legacyDecision';
-import withAnalytics from '../../../middlewares/withAnalytics';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
-import withRateLimited from '../../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -23,10 +20,7 @@ const meta: OpenApiMeta = {
 };
 
 export const updateInstanceRouter = router({
-  updateInstance: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  updateInstance: commonAuthedProcedure
     .meta(meta)
     .input(legacyUpdateInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)

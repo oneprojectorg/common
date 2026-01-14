@@ -8,11 +8,8 @@ import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 import { trackImageUpload } from '../../utils/analytics';
 
@@ -37,13 +34,8 @@ const meta: OpenApiMeta = {
 };
 
 export const uploadBannerImage = router({
-  uploadBannerImage: loggedProcedure
-    // middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  uploadBannerImage: commonAuthedProcedure
     .use(withDB)
-    // Router
     .meta(meta)
     .input(
       z.object({

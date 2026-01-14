@@ -2,10 +2,7 @@ import { getPlatformStats } from '@op/common';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -23,10 +20,7 @@ const meta: OpenApiMeta = {
  * TODO: remove!
  */
 export const organizationStatsRouter = router({
-  getStats: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getStats: commonAuthedProcedure
     .meta(meta)
     .input(z.void())
     .output(

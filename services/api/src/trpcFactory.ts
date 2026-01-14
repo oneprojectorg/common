@@ -10,8 +10,11 @@ import {
   setCookie as _setCookie,
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
+import withAnalytics from './middlewares/withAnalytics';
+import withAuthenticated from './middlewares/withAuthenticated';
 import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
+import withRateLimited from './middlewares/withRateLimited';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -62,3 +65,15 @@ export const { middleware } = t;
 export const { mergeRouters } = t;
 export const createCallerFactory = t.createCallerFactory;
 export const loggedProcedure = t.procedure.use(withChannelMeta).use(withLogger);
+
+/**
+ * Common authenticated procedure with standard rate limiting (10 requests per 10 seconds).
+ * Includes: channelMeta -> logger -> rateLimited -> authenticated -> analytics
+ *
+ * Use this for most authenticated endpoints. For custom rate limits or unauthenticated
+ * endpoints, use `loggedProcedure` with explicit middleware.
+ */
+export const commonAuthedProcedure = loggedProcedure
+  .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+  .use(withAuthenticated)
+  .use(withAnalytics);

@@ -13,10 +13,7 @@ import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const directedInputSchema = z.object({
   from: z.uuid({
@@ -61,11 +58,7 @@ const nonDirectedInputSchema = z.object({
 // };
 
 export const listRelationshipsRouter = router({
-  listPendingRelationships: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(directedMeta)
+  listPendingRelationships: commonAuthedProcedure
     .input(z.void())
     .query(async ({ ctx }) => {
       const { user } = ctx;
@@ -93,10 +86,7 @@ export const listRelationshipsRouter = router({
         });
       }
     }),
-  listDirectedRelationships: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  listDirectedRelationships: commonAuthedProcedure
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
@@ -145,11 +135,7 @@ export const listRelationshipsRouter = router({
         });
       }
     }),
-  listRelationships: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // .meta(nonDirectedMeta)
+  listRelationships: commonAuthedProcedure
     .input(nonDirectedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;

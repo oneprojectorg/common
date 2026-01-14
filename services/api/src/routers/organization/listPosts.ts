@@ -7,10 +7,7 @@ import {
   postsEncoder,
   postsToOrganizationsEncoder,
 } from '../../encoders/posts';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const inputSchema = dbFilter.extend({
@@ -29,13 +26,7 @@ const inputSchema = dbFilter.extend({
 // };
 
 export const listOrganizationPostsRouter = router({
-  listPosts: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
-    // .meta(meta)
+  listPosts: commonAuthedProcedure
     .input(inputSchema)
     .output(
       z.object({

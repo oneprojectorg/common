@@ -5,10 +5,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { profileEncoder } from '../../encoders/profiles';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const inputSchema = z.object({
@@ -41,10 +38,7 @@ const listMeta: OpenApiMeta = {
 const universalProfileSchema = profileEncoder;
 
 export const getProfileRouter = router({
-  list: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  list: commonAuthedProcedure
     .meta(listMeta)
     .input(
       dbFilter
@@ -97,10 +91,7 @@ export const getProfileRouter = router({
         });
       }
     }),
-  getBySlug: loggedProcedure
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
+  getBySlug: commonAuthedProcedure
     .meta(getBySlugMeta)
     .input(inputSchema)
     .output(universalProfileSchema)

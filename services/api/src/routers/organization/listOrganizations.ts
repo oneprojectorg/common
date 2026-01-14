@@ -3,10 +3,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
-import withAnalytics from '../../middlewares/withAnalytics';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const meta: OpenApiMeta = {
@@ -21,12 +18,7 @@ const meta: OpenApiMeta = {
 };
 
 export const listOrganizationsRouter = router({
-  list: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
+  list: commonAuthedProcedure
     .meta(meta)
     .input(
       dbFilter
