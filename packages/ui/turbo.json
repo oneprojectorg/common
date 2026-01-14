@@ -1,0 +1,16 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["build:styles"],
+      "outputs": ["storybook-static/**"]
+    },
+    "build:styles": {
+      "outputs": ["dist/**"]
+    },
+    "dev:styles": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

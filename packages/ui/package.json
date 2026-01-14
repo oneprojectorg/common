@@ -5,6 +5,7 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
+    "./styles.css": "./dist/index.css",
     "./Avatar": "./src/components/Avatar/index.tsx",
     "./AvatarUploader": "./src/components/AvatarUploader.tsx",
     "./Breadcrumbs": "./src/components/Breadcrumbs.tsx",
@@ -67,8 +68,10 @@
   },
   "module": "./src/index.ts",
   "scripts": {
-    "build": "storybook build",
+    "build": "pnpm build:styles && storybook build",
+    "build:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css --minify",
     "dev": "storybook dev -p 3600 --no-open",
+    "dev:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css --watch",
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
@@ -109,6 +112,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.3",
+    "@tailwindcss/cli": "4.1.18",
     "@iconify/json": "2.2.311",
     "@op/typescript-config": "workspace:*",
     "@storybook/addon-docs": "^10.1.11",
