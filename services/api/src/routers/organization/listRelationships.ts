@@ -112,11 +112,10 @@ export const listRelationshipsRouter = router({
             pending,
           });
 
-        const targetOrgChannel: ChannelName =
-          Channels.orgRelationshipRequest({
-            type: 'target',
-            orgId: from,
-          });
+        const targetOrgChannel: ChannelName = Channels.orgRelationshipRequest({
+          type: 'target',
+          orgId: from,
+        });
 
         const sourceOrgIds = relationships.map(
           (relationship) =>
