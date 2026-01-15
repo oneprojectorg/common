@@ -12,6 +12,9 @@ catalogs:
     next:
       specifier: 15.3.8
       version: 15.3.8
+    zod:
+      specifier: ^4.1.12
+      version: 4.1.12
 
 overrides:
   '@iconify/json': 2.2.311
@@ -71,7 +74,6 @@ overrides:
   undici: 5.27.1
   unplugin-icons: 22.1.0
   use-error-boundary: ^2.0.6
-  zod: ^4.1.11
   zustand: ^5.0.3
 
 importers:
@@ -290,7 +292,7 @@ importers:
         specifier: ^2.0.6
         version: 2.0.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
       zustand:
         specifier: ^5.0.3
@@ -332,7 +334,7 @@ importers:
         specifier: ^19.0.1
         version: 19.2.1(react@19.2.1)
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -555,7 +557,7 @@ importers:
         specifier: ^10.0.4
         version: 10.0.4(react@19.2.1)
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
       zustand:
         specifier: ^5.0.3
@@ -673,7 +675,7 @@ importers:
         specifier: ^1.6.6
         version: 1.6.6
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/core':
@@ -809,7 +811,7 @@ importers:
   packages/types:
     dependencies:
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -921,7 +923,7 @@ importers:
         specifier: 3.2.2
         version: 3.2.2(tailwind-merge@3.4.0)(tailwindcss@4.1.18)
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@chromatic-com/storybook':
@@ -1084,7 +1086,7 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -1213,7 +1215,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2(@react-email/render@1.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1))
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -1238,7 +1240,7 @@ importers:
         specifier: ^3.44.0
         version: 3.44.0(h3@1.15.1)(next@15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.12)
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -1260,7 +1262,7 @@ importers:
         specifier: ^9.0.2
         version: 9.0.2
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -1343,7 +1345,7 @@ importers:
         specifier: ^1.12.1
         version: 1.12.1
       zod:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -1365,19 +1367,19 @@ packages:
     resolution: {integrity: sha512-YSzjlko7JvuiyQFmI9RN1tNZdEiZxc+6xld/0tq/VkJaHpEzGAb1yiNxxvmYVcjvfu/PcvCxAAYXmTYQQ63IHQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^4.1.11
+      zod: ^3.0.0
 
   '@ai-sdk/provider-utils@2.2.1':
     resolution: {integrity: sha512-BuExLp+NcpwsAVj1F4bgJuQkSqO/+roV9wM7RdIO+NVrcT8RBUTdXzf5arHt5T58VpK7bZyB2V9qigjaPHE+Dg==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^4.1.11
+      zod: ^3.23.8
 
   '@ai-sdk/provider-utils@2.2.8':
     resolution: {integrity: sha512-fqhG+4sCVv8x7nFzYnFo19ryhAa3w096Kmc3hWxMQfW/TubPOmt3A6tYZhl4mUfQWWQMsuSkLrtjlWuXBVSGQA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^4.1.11
+      zod: ^3.23.8
 
   '@ai-sdk/provider@1.1.0':
     resolution: {integrity: sha512-0M+qjp+clUD0R1E5eWQFhxEvWLNaOtGQRUaBn8CUABnSKredagq92hUS9VjOzGsTm37xLfpaxl97AVtbeOsHew==}
@@ -1392,7 +1394,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^19.0.1
-      zod: ^4.1.11
+      zod: ^3.23.8
     peerDependenciesMeta:
       zod:
         optional: true
@@ -1401,7 +1403,7 @@ packages:
     resolution: {integrity: sha512-BzvMbYm7LHBlbWuLlcG1jQh4eu14MGpz7L+wrGO1+F4oQ+O0fAjgUSNwPWGlZpKmg4NrcVq/QLmxiVJrx2R4Ew==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^4.1.11
+      zod: ^3.23.8
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -5290,7 +5292,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^19.0.1
-      zod: ^4.1.11
+      zod: ^3.23.8
     peerDependenciesMeta:
       react:
         optional: true
@@ -6144,7 +6146,7 @@ packages:
     resolution: {integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==}
     peerDependencies:
       drizzle-orm: ^0.43.1
-      zod: ^4.1.11
+      zod: ^3.25.0 || ^4.0.0
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -6707,7 +6709,7 @@ packages:
       koa: '>=2.14.2'
       next: '>=12.0.0'
       typescript: 5.7.3
-      zod: ^4.1.11
+      zod: '>=3.24.0'
     peerDependenciesMeta:
       '@sveltejs/kit':
         optional: true
@@ -9588,7 +9590,10 @@ packages:
   zod-to-json-schema@3.24.5:
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
-      zod: ^4.1.11
+      zod: ^3.24.1
+
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
   zod@4.1.12:
     resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
@@ -13995,7 +14000,7 @@ snapshots:
 
   access-zones@0.0.1:
     dependencies:
-      zod: 4.1.12
+      zod: 3.25.76
 
   acorn-import-attributes@1.9.5(acorn@8.15.0):
     dependencies:
@@ -18791,6 +18796,8 @@ snapshots:
   zod-to-json-schema@3.24.5(zod@4.1.12):
     dependencies:
       zod: 4.1.12
+
+  zod@3.25.76: {}
 
   zod@4.1.12: {}
 

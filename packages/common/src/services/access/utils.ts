@@ -1,10 +1,12 @@
-import { AccessZoneSchema, NormalizedRole } from 'access-zones';
-import { z } from 'zod';
+import { NormalizedRole } from 'access-zones';
 
-type AccessZone = z.infer<typeof AccessZoneSchema>;
+// Manual type definitions to work around Zod 3->4 upgrade incompatibility
+type AccessZone = {
+  id: string;
+  name: string;
+  description?: string | null;
+};
 
-// Manual type definition to work around Zod 3->4 upgrade incompatibility
-// Schema: { accessRoleId: string, accessZoneId: string, permission: number }
 type AccessRolePermissionOnAccessZone = {
   accessRoleId: string;
   accessZoneId: string;

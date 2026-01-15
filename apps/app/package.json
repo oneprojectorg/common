@@ -80,7 +80,7 @@
     "sonner": "^1.7.1",
     "tiptap-extension-iframely": "^1.0.4",
     "use-debounce": "^10.0.4",
-    "zod": "^4.1.11",
+    "zod": "catalog:",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
