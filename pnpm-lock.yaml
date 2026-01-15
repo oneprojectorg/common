@@ -103,6 +103,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.49.3
         version: 2.49.3
+      '@tailwindcss/cli':
+        specifier: 4.1.18
+        version: 4.1.18
       '@tanstack/query-sync-storage-persister':
         specifier: 5.66.11
         version: 5.66.11
@@ -390,7 +393,7 @@ importers:
         specifier: workspace:*
         version: link:../../services/realtime
       '@op/styles':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/styles
       '@op/supabase':
         specifier: workspace:*
@@ -791,7 +794,7 @@ importers:
   packages/styles:
     devDependencies:
       '@tailwindcss/cli':
-        specifier: ^4.1.18
+        specifier: 4.1.18
         version: 4.1.18
       '@tailwindcss/postcss':
         specifier: 4.1.18

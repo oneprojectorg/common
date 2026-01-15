@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@iconify/json": "2.2.311",
+    "@tailwindcss/cli": "4.1.18",
     "@op/core": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@react-three/drei": "^10.0.4",
