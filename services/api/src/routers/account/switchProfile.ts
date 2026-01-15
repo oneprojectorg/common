@@ -8,28 +8,13 @@ import type { Profile } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const endpoint = 'switchProfile';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'PUT',
-    path: `/account/${endpoint}`,
-    protect: true,
-    tags: ['account'],
-    summary: 'Switch user current profile',
-  },
-};
-
 export const switchProfile = router({
   switchProfile: commonAuthedProcedure()
-    .meta(meta)
     .input(z.object({ profileId: z.uuid() }))
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {

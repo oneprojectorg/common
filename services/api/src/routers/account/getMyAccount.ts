@@ -5,26 +5,13 @@ import {
   createUserByAuthId,
   getUserByAuthId,
 } from '@op/common';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: `/account`,
-    protect: true,
-    tags: ['account'],
-    summary: 'Get user profile',
-  },
-};
-
 export const getMyAccount = router({
   getMyAccount: commonAuthedProcedure()
-    .meta(meta)
     .input(z.undefined())
     .output(userEncoder)
     .query(async ({ ctx }) => {

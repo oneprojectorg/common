@@ -1,6 +1,5 @@
 import { UnauthorizedError, createProcess } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   legacyCreateProcessInputSchema,
@@ -8,23 +7,11 @@ import {
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/decision/process',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Create decision process template',
-  },
-};
-
 /** @deprecated Use the new decision system instead */
 export const createProcessRouter = router({
   createProcess: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
-    .meta(meta)
     .input(legacyCreateProcessInputSchema)
     .output(legacyDecisionProcessEncoder)
     .mutation(async ({ ctx, input }) => {

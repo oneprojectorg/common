@@ -1,19 +1,7 @@
 import { getPlatformStats } from '@op/common';
-import { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/stats',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Get organization statistics',
-  },
-};
 
 /**
  * @deprecated Kept to maintain backward compatibility.
@@ -21,7 +9,6 @@ const meta: OpenApiMeta = {
  */
 export const organizationStatsRouter = router({
   getStats: commonAuthedProcedure()
-    .meta(meta)
     .input(z.void())
     .output(
       z.object({

@@ -5,8 +5,6 @@ import type { tables } from '@op/db/tables';
 import type { User } from '@op/supabase/lib';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
-import type { OpenApiMeta } from 'trpc-to-openapi';
-
 export interface TContext {
   getCookies: () => Record<string, string | undefined>;
   getCookie: (name: string) => string | undefined;
@@ -58,7 +56,7 @@ export interface TContextWithLogger {
 
 export type MiddlewareBuilderBase<TContextAfter = {}> = MiddlewareFunction<
   TContext,
-  OpenApiMeta,
+  object,
   unknown,
   TContextAfter,
   unknown
@@ -69,7 +67,7 @@ export type MiddlewareBuilderBeforeAfter<
   TContextAfter = {},
 > = MiddlewareFunction<
   TContext & TContextBefore,
-  OpenApiMeta,
+  object,
   unknown,
   TContextAfter,
   unknown

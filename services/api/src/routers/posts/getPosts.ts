@@ -1,22 +1,10 @@
 import { getPosts as getPostsService } from '@op/common';
 import { getPostsSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
-// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-
-// const meta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'GET',
-// path: '/posts',
-// protect: true,
-// tags: ['posts'],
-// summary: 'Get posts (with optional children/comments)',
-// },
-// };
 
 const outputSchema = z.array(postsEncoder);
 

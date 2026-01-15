@@ -7,21 +7,9 @@ import {
 import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-
-// const meta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'POST',
-// path: `/organization/invite`,
-// protect: true,
-// tags: ['organization'],
-// summary: 'Invite a user to join the organization',
-// },
-// };
 
 const inputSchema = z
   .object({

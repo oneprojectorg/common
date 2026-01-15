@@ -3,22 +3,9 @@ import { createPostSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 
-// import type { OpenApiMeta } from 'trpc-to-openapi';
-
 import { postsEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { trackProposalCommented } from '../../utils/analytics';
-
-// const meta: OpenApiMeta = {
-// openapi: {
-// enabled: true,
-// method: 'POST',
-// path: '/posts',
-// protect: true,
-// tags: ['posts'],
-// summary: 'Create a post (or comment)',
-// },
-// };
 
 const outputSchema = postsEncoder;
 

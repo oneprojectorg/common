@@ -2,29 +2,16 @@ import { invalidate } from '@op/cache';
 import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { trackFundingToggle } from '../../utils/analytics';
 import { updateOrganizationInputSchema } from './validators';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'PUT',
-    path: '/organization/{id}',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Update organization',
-  },
-};
-
 export const updateOrganizationRouter = router({
   update: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
-    .meta(meta)
     .input(updateOrganizationInputSchema)
     .output(organizationsEncoder)
     .mutation(async ({ ctx, input }) => {

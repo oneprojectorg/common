@@ -1,7 +1,6 @@
 import { deleteOrganizationUser } from '@op/common';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -22,22 +21,10 @@ const outputSchema = z.object({
   updatedAt: z.union([z.string(), z.date()]).nullable(),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'DELETE',
-    path: '/organization/{organizationId}/user/{organizationUserId}',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Delete organization user',
-  },
-};
-
 export const deleteOrganizationUserRouter = router({
   deleteOrganizationUser: commonAuthedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 5 },
   })
-    .meta(meta)
     .input(inputSchema)
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {

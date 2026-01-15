@@ -1,20 +1,8 @@
 import { UnauthorizedError, getExportStatus } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/proposals/export/{exportId}',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Get the status of a proposal export job',
-  },
-};
 
 const exportStatusInputSchema = z.object({
   exportId: z.string().uuid(),
@@ -42,7 +30,6 @@ const exportStatusOutputSchema = z.union([
 
 export const getExportStatusRouter = router({
   getExportStatus: commonAuthedProcedure()
-    .meta(meta)
     .input(exportStatusInputSchema)
     .output(exportStatusOutputSchema)
     .query(async ({ ctx, input }) => {

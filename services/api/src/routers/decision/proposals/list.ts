@@ -1,6 +1,5 @@
 import { UnauthorizedError, listProposals } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   legacyProposalFilterSchema,
@@ -8,20 +7,8 @@ import {
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/proposals',
-    protect: true,
-    tags: ['decision'],
-    summary: 'List proposals with filtering',
-  },
-};
-
 export const listProposalsRouter = router({
   listProposals: commonAuthedProcedure()
-    .meta(meta)
     .input(legacyProposalFilterSchema)
     .output(legacyProposalListEncoder)
     .query(async ({ ctx, input }) => {

@@ -1,6 +1,5 @@
 import { NotFoundError, UnauthorizedError, createInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   legacyCreateInstanceInputSchema,
@@ -8,21 +7,9 @@ import {
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/decision/instance',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Create process instance',
-  },
-};
-
 /** @deprecated Use the new decision system instead */
 export const createInstanceRouter = router({
   createInstance: commonAuthedProcedure()
-    .meta(meta)
     .input(legacyCreateInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)
     .mutation(async ({ ctx, input }) => {

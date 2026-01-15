@@ -4,26 +4,13 @@ import {
   getIndividualTermsByProfile,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { individualsTermsEncoder } from '../../encoders/individuals';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/individual/{id}/terms',
-    protect: true,
-    tags: ['individual'],
-    summary: 'Get individual terms',
-  },
-};
-
 export const getIndividualRouter = router({
   getTerms: commonAuthedProcedure()
-    .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
     .query(async ({ input }) => {

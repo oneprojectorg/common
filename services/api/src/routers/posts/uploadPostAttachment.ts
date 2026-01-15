@@ -1,7 +1,6 @@
 import { CommonError, getCurrentProfileId } from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'buffer';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
@@ -16,23 +15,11 @@ const ALLOWED_MIME_TYPES = [
   'application/pdf',
 ];
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/posts/attachment',
-    protect: true,
-    tags: ['profile'],
-    summary: 'Upload a attachment',
-  },
-};
-
 export const uploadPostAttachment = router({
   uploadPostAttachment: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .use(withDB)
-    .meta(meta)
     .input(
       z.object({
         file: z.string(), // base64 encoded

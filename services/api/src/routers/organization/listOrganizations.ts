@@ -1,25 +1,12 @@
 import { listOrganizations } from '@op/common';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization',
-    protect: true,
-    tags: ['organization'],
-    summary: 'List organizations',
-  },
-};
-
 export const listOrganizationsRouter = router({
   list: commonAuthedProcedure()
-    .meta(meta)
     .input(
       dbFilter
         .extend({

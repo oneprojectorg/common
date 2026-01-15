@@ -7,32 +7,17 @@ import {
   genericEmail,
 } from '@op/core';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withRateLimited from '../../middlewares/withRateLimited';
 import { createSBAdminClient } from '../../supabase/server';
 import { commonProcedure, router } from '../../trpcFactory';
 
-const endpoint = 'login';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: `/account/${endpoint}`,
-    protect: true,
-    tags: ['account'],
-    summary: 'Login via email',
-  },
-};
-
 const login = router({
   login: commonProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     // Router
-    .meta(meta)
     .input(
       z.object({
         email: z.email().toLowerCase().trim(),
