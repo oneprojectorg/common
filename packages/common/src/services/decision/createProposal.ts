@@ -24,7 +24,6 @@ import type { InstanceData, ProcessSchema, ProposalData } from './types';
 
 export interface CreateProposalInput {
   processInstanceId: string;
-  /** Proposal content matching template schema. May include collaborationDocId for TipTap Cloud. */
   proposalData: ProposalData;
   attachmentIds?: string[];
 }

@@ -31,7 +31,6 @@ export function ProposalCardMenu({
   const utils = trpc.useUtils();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Use updateProposal for status changes (approve/reject)
   const updateStatusMutation = trpc.decision.updateProposal.useMutation({
     onMutate: async (variables) => {
       // Cancel outgoing refetches
@@ -126,7 +125,6 @@ export function ProposalCardMenu({
   const { title } = parseProposalData(proposal.proposalData);
   const proposalTitle = title || t('Untitled Proposal');
 
-  // Use updateProposal for visibility changes
   const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {
       toast.error({
