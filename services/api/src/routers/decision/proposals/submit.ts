@@ -17,7 +17,7 @@ export const submitProposalRouter = router({
     .input(submitProposalInputSchema)
     .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {
-      const { user, logger } = ctx;
+      const { user } = ctx;
 
       const proposal = await submitProposal({
         data: input,
