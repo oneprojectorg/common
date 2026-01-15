@@ -539,7 +539,7 @@ export const getInstanceInputSchema = z.object({
 
 export const createProposalInputSchema = z.object({
   processInstanceId: z.uuid(),
-  proposalData: z.record(z.string(), z.unknown()), // Proposal content matching template (includes collaborationDocId for TipTap Cloud)
+  proposalData: z.record(z.string(), z.unknown()),
   attachmentIds: z.array(z.string()).optional(), // Array of attachment IDs to link to this proposal
 });
 
