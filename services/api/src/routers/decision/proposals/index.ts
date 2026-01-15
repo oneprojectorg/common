@@ -5,15 +5,15 @@ import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
 import { getExportStatusRouter } from './getExportStatus';
 import { listProposalsRouter } from './list';
+import { submitProposalRouter } from './submit';
 import { updateProposalRouter } from './update';
-import { updateProposalStatusRouter } from './updateStatus';
 
 export const proposalsRouter = mergeRouters(
   createProposalRouter,
   getProposalRouter,
   listProposalsRouter,
+  submitProposalRouter,
   updateProposalRouter,
-  updateProposalStatusRouter,
   deleteProposalRouter,
   exportProposalsRouter,
   getExportStatusRouter,

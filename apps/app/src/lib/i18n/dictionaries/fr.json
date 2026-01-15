@@ -241,6 +241,7 @@
   "Delete": "Supprimer",
   "Deleting...": "Suppression en cours...",
   "Failed to delete proposal": "Échec de la suppression de la proposition",
+  "Failed to create proposal": "Échec de la création de la proposition",
   "Proposal deleted successfully": "Proposition supprimée avec succès",
   "Draft": "Brouillon",
   "Not shortlisted": "Non présélectionné",

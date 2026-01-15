@@ -29,10 +29,10 @@ export function ProposalCardMenu({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const profileId = proposal.profileId;
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const updateStatusMutation = trpc.decision.updateProposalStatus.useMutation({
+  // Use updateProposal for status changes (approve/reject)
+  const updateStatusMutation = trpc.decision.updateProposal.useMutation({
     onMutate: async (variables) => {
       // Cancel outgoing refetches
       if (proposal.processInstanceId) {
@@ -48,15 +48,16 @@ export function ProposalCardMenu({
           })
         : null;
 
+      const newStatus = variables.data.status;
       // Optimistically update list data
-      if (previousListData && proposal.processInstanceId) {
+      if (previousListData && proposal.processInstanceId && newStatus) {
         const optimisticListData = {
           ...previousListData,
           proposals: previousListData.proposals.map((p) =>
             p.id === proposal.id
               ? {
                   ...p,
-                  status: variables.status,
+                  status: newStatus,
                 }
               : p,
           ),
@@ -83,14 +84,13 @@ export function ProposalCardMenu({
       });
     },
     onSuccess: (_, variables) => {
-      const statusMessage = match(variables.status, {
-        [ProposalStatus.APPROVED]: t('Proposal shortlisted successfully'),
-        [ProposalStatus.REJECTED]: t('Proposal rejected successfully'),
-      });
-
-      toast.success({
-        message: statusMessage,
-      });
+      if (variables.data.status) {
+        const statusMessage = match(variables.data.status, {
+          [ProposalStatus.APPROVED]: t('Proposal shortlisted successfully'),
+          [ProposalStatus.REJECTED]: t('Proposal rejected successfully'),
+        });
+        toast.success({ message: statusMessage });
+      }
     },
     onSettled: () => {
       // Always refetch after error or success
@@ -103,7 +103,7 @@ export function ProposalCardMenu({
   });
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onError: (error, _variables) => {
+    onError: (error) => {
       toast.error({
         message: error.message || t('Failed to delete proposal'),
       });
@@ -126,7 +126,8 @@ export function ProposalCardMenu({
   const { title } = parseProposalData(proposal.proposalData);
   const proposalTitle = title || t('Untitled Proposal');
 
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
+  // Use updateProposal for visibility changes
+  const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {
       toast.error({
         message: error.message || t('Failed to update proposal visibility'),
@@ -152,15 +153,15 @@ export function ProposalCardMenu({
 
   const handleApprove = () => {
     updateStatusMutation.mutate({
-      profileId,
-      status: ProposalStatus.APPROVED,
+      proposalId: proposal.id,
+      data: { status: ProposalStatus.APPROVED },
     });
   };
 
   const handleReject = () => {
     updateStatusMutation.mutate({
-      profileId,
-      status: ProposalStatus.REJECTED,
+      proposalId: proposal.id,
+      data: { status: ProposalStatus.REJECTED },
     });
   };
 
@@ -169,7 +170,7 @@ export function ProposalCardMenu({
       proposal.visibility === Visibility.HIDDEN
         ? Visibility.VISIBLE
         : Visibility.HIDDEN;
-    updateProposalMutation.mutate({
+    updateVisibilityMutation.mutate({
       proposalId: proposal.id,
       data: { visibility: newVisibility },
     });
@@ -196,7 +197,7 @@ export function ProposalCardMenu({
   const isLoading =
     updateStatusMutation.isPending ||
     deleteProposalMutation.isPending ||
-    updateProposalMutation.isPending;
+    updateVisibilityMutation.isPending;
 
   return (
     <>

@@ -2,6 +2,7 @@ import { db, eq } from '@op/db/client';
 import {
   DecisionProcess,
   ProcessInstance,
+  ProposalStatus,
   Visibility,
   organizations,
   processInstances,
@@ -78,7 +79,7 @@ async function updateProposalCategoryLink(
 
 export interface UpdateProposalInput {
   proposalData?: ProposalData;
-  status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
+  status?: ProposalStatus;
   visibility?: Visibility;
 }
 

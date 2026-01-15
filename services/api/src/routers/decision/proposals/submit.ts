@@ -2,35 +2,48 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-  createProposal,
+  submitProposal,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
+import { z } from 'zod';
 
-import {
-  legacyCreateProposalInputSchema,
-  legacyProposalEncoder,
-} from '../../../encoders/legacyDecision';
+import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { trackProposalSubmitted } from '../../../utils/analytics';
 
-export const createProposalRouter = router({
-  /** Creates a new proposal in draft status. Use submitProposal to transition to submitted. */
-  createProposal: commonAuthedProcedure()
-    .input(legacyCreateProposalInputSchema)
+const submitProposalInputSchema = z.object({
+  proposalId: z.uuid(),
+  proposalData: z.record(z.string(), z.unknown()),
+  attachmentIds: z.array(z.string()).optional(),
+});
+
+export const submitProposalRouter = router({
+  /** Submits a draft proposal, transitioning it to 'submitted' status after validation. */
+  submitProposal: commonAuthedProcedure()
+    .input(submitProposalInputSchema)
     .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
       try {
-        const proposal = await createProposal({
+        const proposal = await submitProposal({
           data: input,
           authUserId: user.id,
         });
 
+        // Fire analytics after successful submission
+        waitUntil(
+          trackProposalSubmitted(ctx, proposal.processInstanceId, proposal.id, {
+            created_timestamp: Date.now(),
+          }),
+        );
+
         return legacyProposalEncoder.parse(proposal);
       } catch (error: unknown) {
-        logger.error('Failed to create proposal', {
+        logger.error('Failed to submit proposal', {
           userId: user.id,
-          processInstanceId: input.processInstanceId,
+          proposalId: input.proposalId,
           error,
         });
 
@@ -59,7 +72,7 @@ export const createProposalRouter = router({
         }
 
         throw new TRPCError({
-          message: 'Failed to create proposal',
+          message: 'Failed to submit proposal',
           code: 'INTERNAL_SERVER_ERROR',
         });
       }

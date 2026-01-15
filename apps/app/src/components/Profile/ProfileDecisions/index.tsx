@@ -9,10 +9,11 @@ import { Header2, Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
-import { LuLeaf } from 'react-icons/lu';
+import { LuLeaf, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { CreateDecisionProcessModal } from '../CreateDecisionProcessModal';
 import type { SchemaType } from '../CreateDecisionProcessModal/schemas/schemaLoader';
 import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 
@@ -61,6 +62,14 @@ const DecisionProcessList = ({
                 )}
               </p>
             </div>
+
+            <DialogTrigger>
+              <Button color="primary" size="medium" variant="icon">
+                <LuPlus className="size-4" />
+                {t('Create Process')}
+              </Button>
+              <CreateDecisionProcessModal schema={schema} />
+            </DialogTrigger>
           </>
         ) : (
           <>
@@ -85,6 +94,16 @@ const DecisionProcessList = ({
         <Header2 className="font-serif text-title-sm">
           {t('Active processes')}
         </Header2>
+
+        {isProcessAdmin ? (
+          <DialogTrigger>
+            <Button color="primary" size="medium" variant="icon">
+              <LuPlus className="size-4" />
+              {t('Create Process')}
+            </Button>
+            <CreateDecisionProcessModal schema={schema} />
+          </DialogTrigger>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-4">

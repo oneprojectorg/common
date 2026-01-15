@@ -1,10 +1,12 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { toast } from '@op/ui/Toast';
 import he from 'he';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -27,7 +29,31 @@ export const DecisionActionBar = ({
   const t = useTranslations();
   const { slug } = useParams();
   const router = useRouter();
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const createProposalMutation = trpc.decision.createProposal.useMutation({
+    onSuccess: (proposal) => {
+      // Navigate to edit the newly created draft proposal
+      router.push(
+        `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`,
+      );
+    },
+    onError: (error) => {
+      setIsCreating(false);
+      toast.error({
+        title: t('Failed to create proposal'),
+        message: error.message,
+      });
+    },
+  });
+
+  const handleCreateProposal = () => {
+    setIsCreating(true);
+    createProposalMutation.mutate({
+      processInstanceId: instanceId,
+      proposalData: {}, // Empty draft - user will fill in via edit page
+    });
+  };
 
   return (
     <div className="flex w-full justify-center">
@@ -66,15 +92,10 @@ export const DecisionActionBar = ({
           <Button
             color="primary"
             className="w-full"
-            isDisabled={isNavigating}
-            onPress={() => {
-              setIsNavigating(true);
-              router.push(
-                `/profile/${slug}/decisions/${instanceId}/proposal/create`,
-              );
-            }}
+            isDisabled={isCreating}
+            onPress={handleCreateProposal}
           >
-            {isNavigating ? <LoadingSpinner /> : null}
+            {isCreating ? <LoadingSpinner /> : null}
             {t('Submit a proposal')}
           </Button>
         )}

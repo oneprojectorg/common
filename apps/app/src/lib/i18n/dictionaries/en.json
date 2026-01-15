@@ -241,6 +241,7 @@
   "Delete": "Delete",
   "Deleting...": "Deleting...",
   "Failed to delete proposal": "Failed to delete proposal",
+  "Failed to create proposal": "Failed to create proposal",
   "Proposal deleted successfully": "Proposal deleted successfully",
   "Draft": "Draft",
   "Not shortlisted": "Not shortlisted",

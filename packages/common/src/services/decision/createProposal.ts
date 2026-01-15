@@ -40,8 +40,8 @@ function checkProposalsAllowed(
 
 export interface CreateProposalInput {
   processInstanceId: string;
+  /** Proposal content matching template schema. May include collaborationDocId for TipTap Cloud. */
   proposalData: ProposalData;
-  authUserId: string;
   attachmentIds?: string[];
 }
 
@@ -103,9 +103,18 @@ export const createProposal = async ({
 
     if (!allowed) {
       throw new ValidationError(
+<<<<<<< HEAD
         `Proposals are not allowed in the ${phaseName} phase`,
       );
     }
+=======
+        `Proposals are not allowed in the ${currentState.name} state`,
+      );
+    }
+
+    // NOTE: We skip validation here because createProposal creates drafts.
+    // Validation happens in submitProposal when transitioning from draft to submitted.
+>>>>>>> 686bab09 (feat: implement draft proposal flow)
 
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
@@ -165,7 +174,7 @@ export const createProposal = async ({
           proposalData: data.proposalData,
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
-          status: 'submitted',
+          status: 'draft',
         })
         .returning();
 
