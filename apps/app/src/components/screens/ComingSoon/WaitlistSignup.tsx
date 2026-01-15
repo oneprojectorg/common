@@ -22,8 +22,9 @@ const validator = z.object({
   firstName: z.string().min(1, 'Please enter your first name'),
   lastName: z.string().min(1, 'Please enter your last name'),
   email: z.email({ error: 'Please enter a valid email address' }),
-  organizationName: z.string().optional(),
+  organizationName: z.string(),
 });
+
 const overlayStyles = tv({
   base: 'absolute top-0 left-0 isolate z-20 h-(--page-height) w-full bg-white/[50%] text-center backdrop-blur-[3px]',
   variants: {
