@@ -1,6 +1,7 @@
 import { TRPCProvider } from '@op/api/client';
 import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, printNFO } from '@op/core';
+import '@op/styles';
 import { Toast } from '@op/ui/Toast';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
@@ -11,7 +12,6 @@ import Script from 'next/script';
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
-import '@op/styles';
 
 const roboto = Roboto({
   subsets: ['latin'],

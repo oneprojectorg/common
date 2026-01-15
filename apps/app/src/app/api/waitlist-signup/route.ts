@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
 
   const { firstName, lastName, email, organizationName } = body;
 
+  console.log({ firstName, lastName, email, organizationName });
+
   if (!email) {
     return Response.json({ error: 'Email is required' }, { status: 400 });
   }
