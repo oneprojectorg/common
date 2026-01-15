@@ -1,9 +1,9 @@
-import { db, eq, lte, sql, and, isNull } from '@op/db/client';
+import { and, db, eq, isNull, lte, sql } from '@op/db/client';
 import {
+  ProcessStatus,
   decisionProcessTransitions,
   decisionProcesses,
   processInstances,
-  ProcessStatus,
 } from '@op/db/schema';
 import pMap from 'p-map';
 

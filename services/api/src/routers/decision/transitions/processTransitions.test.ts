@@ -1,10 +1,10 @@
 import { processDecisionsTransitions } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
+  ProcessStatus,
   decisionProcessTransitions,
   decisionProcesses,
   processInstances,
-  ProcessStatus,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
