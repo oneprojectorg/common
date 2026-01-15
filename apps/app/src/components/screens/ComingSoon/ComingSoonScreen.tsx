@@ -1,72 +1,109 @@
-import { SoftBlobs } from '@op/ui/ShaderBackground';
-import * as motion from 'motion/react-client';
+import { ButtonLink } from '@op/ui/Button';
+import { LogoLoop } from '@op/ui/LogoLoop';
+import { cn } from '@op/ui/utils';
 
 import { WaitlistSignup } from './WaitlistSignup';
 
 export const ComingSoonScreen = () => {
-  const backgroundTransition = {
-    duration: 2,
-    ease: 'linear',
-    delay: 1,
-  };
   return (
-    <div className="fixed inset-0 overflow-x-hidden bg-[black] motion-reduce:bg-orangePurple">
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <motion.div
-          className="fixed inset-0 z-10 size-full motion-reduce:hidden"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={backgroundTransition}
+    <div>
+      <div className="pointer-events-none absolute top-0 z-10 h-50 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
+      <div className="pointer-events-none absolute bottom-0 z-10 h-50 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
+      <header className="sticky top-0 z-20 flex items-center justify-between p-4">
+        <img src="/logo-common.svg" alt="Common" className="h-4" />
+        <ButtonLink
+          href="/login"
+          color="secondary"
+          className="rounded-lg text-black shadow-md"
+          size="small"
         >
-          <SoftBlobs />
-        </motion.div>
-        {/* Fade top and bottom edges on mobile */}
-        {/* uses -[black] because -black is renamed in our color system */}
-        <div className="absolute top-0 z-20 h-20 w-full bg-gradient-to-b from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
-        <div className="absolute bottom-0 z-20 h-20 w-full bg-gradient-to-t from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
-      </div>
-      <div className="absolute inset-0 z-20 flex flex-col gap-6 p-4 py-16 text-white sm:p-8 md:p-12 xl:p-20">
-        {/* Render the sign in link first for screenreaders */}
-        <motion.p
-          className="order-3 sm:text-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-        >
-          Already have an account?{' '}
-          <a
-            href="/login"
-            className="underline transition-opacity hover:opacity-80"
-          >
-            Sign in
-          </a>
-        </motion.p>
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-          className="order-1 h-full font-serif text-3xl leading-[1.1] font-light sm:text-6xl sm:leading-[1.25]"
-        >
-          <em>Common.</em>{' '}
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 2 }}
-          >
-            Connecting people, organizations, and resources to coordinate and
-            grow economic democracy to global scale.
-          </motion.span>
-        </motion.h1>
-        <div className="order-2 flex flex-col gap-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 3 }}
-          >
-            <WaitlistSignup />
-          </motion.div>
-        </div>
-      </div>
+          Log in
+        </ButtonLink>
+      </header>
+      <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 text-center sm:my-20">
+        <section className="space-y-12">
+          <h1 className="flex flex-col gap-6 text-center sm:text-lg">
+            <span>
+              Helping people decide together how to use their resources—{' '}
+            </span>
+            <span className="bg-blueGreen bg-clip-text font-serif text-xl text-transparent sm:text-3xl">
+              simply, intuitively, and effectively.
+            </span>
+          </h1>
+          <div>
+            <img
+              src="/coming-soon-hero.png"
+              alt="Screenshot of the Common platform"
+            />
+          </div>
+          <div className="space-y-4 text-balance sm:text-lg">
+            <p>
+              Built for{' '}
+              <FancyWord className="bg-redPurple">communities</FancyWord> ready
+              to share power and co-create{' '}
+              <FancyWord className="bg-redPurple">social change</FancyWord>
+              — and <FancyWord className="bg-redPurple">funders</FancyWord> who
+              trust them to lead.
+            </p>
+            <p>No setup headaches. No learning curve.</p>
+            <p>
+              Common just works, instantly, for{' '}
+              <FancyWord className="bg-redPurple">everyone</FancyWord>.
+            </p>
+          </div>
+        </section>
+        <section className="space-y-6">
+          <h3 className="text-base">Trusted by</h3>
+          <LogoLoop
+            logos={logos}
+            speed={20}
+            direction="left"
+            logoHeight={48}
+            gap={40}
+            hoverSpeed={5}
+            fadeOut
+            fadeOutColor="#ffffff"
+            ariaLabel="Technology partners"
+          />
+        </section>
+        <section className="flex flex-col items-center gap-6">
+          <h2 className="font-serif text-2xl">Get early access</h2>
+          <div>
+            <p>We’re getting ready to welcome more organizations to Common.</p>
+            <p>Sign up now to hold your spot.</p>
+          </div>
+          <WaitlistSignup />
+        </section>
+      </main>
+      <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-neutral-gray4 sm:mt-0 sm:flex-row sm:gap-4">
+        <p>Beautifully designed</p>
+        <p>•</p>
+        <p>Easy to set up</p>
+        <p>•</p>
+        <p>No training required</p>
+      </footer>
     </div>
   );
 };
+
+const FancyWord = ({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) => (
+  <span className={cn(className, 'bg-clip-text font-serif text-transparent')}>
+    {children}
+  </span>
+);
+
+const logos = [
+  { src: '/logo-people-powered.png', alt: 'People Powered' },
+  { src: '/logo-maria-fund.png', alt: 'MariaFund' },
+  { src: '/logo-new-economy-coalition.png', alt: 'New Economy Coalition' },
+  {
+    src: '/logo-center-for-economic-democracy.png',
+    alt: 'Center for Economic Democracy',
+  },
+];

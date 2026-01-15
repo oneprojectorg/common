@@ -1,0 +1,7 @@
+@import './shared-styles.css';
+
+/* Scan UI package for Tailwind classes */
+@source '../ui/src/**/*.{js,ts,jsx,tsx}';
+
+/* Scan app for Tailwind classes */
+@source '../../apps/app/src/**/*.{js,ts,jsx,tsx}';
