@@ -323,9 +323,6 @@ importers:
       '@op/workflows':
         specifier: workspace:*
         version: link:../../services/workflows
-      '@scalar/nextjs-api-reference':
-        specifier: ^0.5.10
-        version: 0.5.10(next@15.3.8(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)
       '@trpc/server':
         specifier: 11.6.0
         version: 11.6.0(typescript@5.7.3)
@@ -341,9 +338,6 @@ importers:
       react-dom:
         specifier: ^19.0.1
         version: 19.2.1(react@19.2.1)
-      trpc-to-openapi:
-        specifier: ^3.1.0
-        version: 3.1.0(@trpc/server@11.6.0(typescript@5.7.3))(zod-openapi@5.4.3(zod@4.1.12))(zod@4.1.12)
       zod:
         specifier: ^4.1.11
         version: 4.1.12
@@ -1096,9 +1090,6 @@ importers:
       superjson:
         specifier: ^2.2.2
         version: 2.2.2
-      trpc-to-openapi:
-        specifier: ^3.1.0
-        version: 3.1.0(@trpc/server@11.6.0(typescript@5.7.3))(zod-openapi@5.4.3(zod@4.1.12))(zod@4.1.12)
       zod:
         specifier: ^4.1.11
         version: 4.1.12
@@ -4205,21 +4196,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@scalar/nextjs-api-reference@0.5.10':
-    resolution: {integrity: sha512-3X0aQXBSg8KnMaornNF+ojCIhAoI2YzGJCBiEW7EQU0nj/bIXvWAJ/quL+ghibY4tWusu6+33pRdG1rpEKw9Tw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      next: ^15.0.0
-      react: ^19.0.1
-
-  '@scalar/openapi-types@0.1.8':
-    resolution: {integrity: sha512-iufA5/6hPCmRIVD2eh7qGpoKvoA08Gw/qUb2JECifBtAwA93fo7+1k9uHK440f2LMJsbxIzA+nv7RS0BmfiO/g==}
-    engines: {node: '>=18'}
-
-  '@scalar/types@0.0.34':
-    resolution: {integrity: sha512-q01ctijmHArM5KOny2zU+sHfhpsgOAENrDENecK2TsQNn5FYLmFZouMKeW2M6F7KFLPZnFxUiL/rT88b6Rp/Kg==}
-    engines: {node: '>=18'}
-
   '@schummar/icu-type-parser@1.21.5':
     resolution: {integrity: sha512-bXHSaW5jRTmke9Vd0h5P7BtWZG9Znqb8gSDxZnxaGSJnGwPLDPfS+3g0BKzeWqzgZPsIVZkM7m2tbo18cm5HBw==}
 
@@ -5162,9 +5138,6 @@ packages:
 
   '@ungap/structured-clone@1.2.1':
     resolution: {integrity: sha512-fEzPV3hSkSMltkw152tJKNARhOupqbH96MZWyRjNaYZOMIzbrTeQDG+MTc6Mr2pgzFQzFxAfmhGDNP5QK++2ZA==}
-
-  '@unhead/schema@1.11.18':
-    resolution: {integrity: sha512-a3TA/OJCRdfbFhcA3Hq24k1ZU1o9szicESrw8DZcGyQFacHnh84mVgnyqSkMnwgCmfN4kvjSiTBlLEHS6+wATw==}
 
   '@use-gesture/core@10.3.1':
     resolution: {integrity: sha512-WcINiDt8WjqBdUXye25anHiNxPc0VOrlT8F6LLkU6cycrOGUDyY/yyFmsg3k8i5OLvv25llc0QC45GhR/C8llw==}
@@ -6654,9 +6627,6 @@ packages:
   homedir-polyfill@1.0.3:
     resolution: {integrity: sha512-eSmmWE5bZTK2Nou4g0AI3zZ9rswp7GRKoKXS1BLUkvPviOqs4YTN1djQIqrXy9k5gEtdLPy86JjRwsNM9tnDcA==}
     engines: {node: '>=0.10.0'}
-
-  hookable@5.5.3:
-    resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
 
   html-encoding-sniffer@4.0.0:
     resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
@@ -9690,9 +9660,6 @@ packages:
   yoctocolors@2.1.1:
     resolution: {integrity: sha512-GQHQqAopRhwU8Kt1DDM8NjibDXHC8eoh1erhGAJPEyveY9qqVeXvVikNKrDz69sHowPMorbPUrH/mx8c50eiBQ==}
     engines: {node: '>=18'}
-
-  zhead@2.2.4:
-    resolution: {integrity: sha512-8F0OI5dpWIA5IGG5NHUg9staDwz/ZPxZtvGVf01j7vHqSyZ0raHY+78atOVxRqb73AotX22uV1pXt3gYSstGag==}
 
   zod-openapi@5.4.3:
     resolution: {integrity: sha512-6kJ/gJdvHZtuxjYHoMtkl2PixCwRuZ/s79dVkEr7arHvZGXfx7Cvh53X3HfJ5h9FzGelXOXlnyjwfX0sKEPByw==}
@@ -12918,19 +12885,6 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.30.1':
     optional: true
 
-  '@scalar/nextjs-api-reference@0.5.10(next@15.3.8(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)':
-    dependencies:
-      '@scalar/types': 0.0.34
-      next: 15.3.8(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
-      react: 19.2.1
-
-  '@scalar/openapi-types@0.1.8': {}
-
-  '@scalar/types@0.0.34':
-    dependencies:
-      '@scalar/openapi-types': 0.1.8
-      '@unhead/schema': 1.11.18
-
   '@schummar/icu-type-parser@1.21.5': {}
 
   '@selderee/plugin-htmlparser2@0.11.0':
@@ -13917,11 +13871,6 @@ snapshots:
       '@typescript/native-preview-win32-x64': 7.0.0-dev.20251214.1
 
   '@ungap/structured-clone@1.2.1': {}
-
-  '@unhead/schema@1.11.18':
-    dependencies:
-      hookable: 5.5.3
-      zhead: 2.2.4
 
   '@use-gesture/core@10.3.1': {}
 
@@ -15497,8 +15446,6 @@ snapshots:
   homedir-polyfill@1.0.3:
     dependencies:
       parse-passwd: 1.0.0
-
-  hookable@5.5.3: {}
 
   html-encoding-sniffer@4.0.0:
     dependencies:
@@ -18980,8 +18927,6 @@ snapshots:
   yocto-queue@1.2.1: {}
 
   yoctocolors@2.1.1: {}
-
-  zhead@2.2.4: {}
 
   zod-openapi@5.4.3(zod@4.1.12):
     dependencies:

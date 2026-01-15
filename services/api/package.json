@@ -67,7 +67,6 @@
     "spacetime": "^7.7.0",
     "ssr-only-secrets": "^0.1.4",
     "superjson": "^2.2.2",
-    "trpc-to-openapi": "^3.1.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

@@ -13,7 +13,6 @@ export const APP_NAME = 'Common';
 export const OP_EMAIL_NAME = 'Common';
 export const OP_EMAIL_HELP = 'support@oneproject.org';
 
-export const API_OPENAPI_PATH = `api/v1`;
 export const API_TRPC_PTH = `api/v1/trpc`;
 export const SUPABASE_PROJECT_ID = 'yrpfxbnidfyrzmmsrfic';
 
@@ -115,7 +114,6 @@ type TOPURLConfig = (type: TTarget) => {
     PREVIEW: string;
     DEVELOPMENT: string;
   };
-  OPENAPI_URL: string;
   TRPC_URL: string;
 };
 
@@ -182,7 +180,6 @@ export const OPURLConfig: TOPURLConfig = (type) => {
     IS_DEVELOPMENT: !isInProductionOrStaging && !isInPreviewDeployment,
     GIT_BRANCH: VERCEL_GIT_BRANCH,
     URLS: urls,
-    OPENAPI_URL: `${apiURL}/${API_OPENAPI_PATH}`,
     TRPC_URL: `${apiURL}/${API_TRPC_PTH}`,
   };
 };
