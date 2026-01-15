@@ -1,10 +1,21 @@
-import { db, eq } from '@op/db/client';
+import { type TransactionType, db, eq } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 import type { DecisionInstanceData } from './schemas/instanceData';
+
+export interface UpdateTransitionsInput {
+  processInstance: ProcessInstance;
+  tx?: TransactionType;
+}
+
+export interface UpdateTransitionsResult {
+  updated: number;
+  created: number;
+  deleted: number;
+}
 
 /**
  * Updates transition records for a process instance when phase dates change.
@@ -17,13 +28,10 @@ import type { DecisionInstanceData } from './schemas/instanceData';
  */
 export async function updateTransitionsForProcess({
   processInstance,
-}: {
-  processInstance: ProcessInstance;
-}): Promise<{
-  updated: number;
-  created: number;
-  deleted: number;
-}> {
+  tx,
+}: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
+  const dbClient = tx ?? db;
+
   try {
     // Type assertion: instanceData is `unknown` in DB to support legacy formats for viewing,
     // but this function is only called for new DecisionInstanceData processes
@@ -38,7 +46,7 @@ export async function updateTransitionsForProcess({
 
     // Get existing transitions
     const existingTransitions =
-      await db.query.decisionProcessTransitions.findMany({
+      await dbClient.query.decisionProcessTransitions.findMany({
         where: eq(
           decisionProcessTransitions.processInstanceId,
           processInstance.id,
@@ -46,7 +54,7 @@ export async function updateTransitionsForProcess({
         orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
       });
 
-    const result = {
+    const result: UpdateTransitionsResult = {
       updated: 0,
       created: 0,
       deleted: 0,
@@ -108,7 +116,7 @@ export async function updateTransitionsForProcess({
             new Date(existing.scheduledDate).getTime() !==
             new Date(expected.scheduledDate).getTime()
           ) {
-            await db
+            await dbClient
               .update(decisionProcessTransitions)
               .set({
                 scheduledDate: expected.scheduledDate,
@@ -121,7 +129,7 @@ export async function updateTransitionsForProcess({
           return { action: 'unchanged' as const };
         } else {
           // Create new transition for this phase
-          await db.insert(decisionProcessTransitions).values({
+          await dbClient.insert(decisionProcessTransitions).values({
             processInstanceId: processInstance.id,
             fromStateId: expected.fromStateId,
             toStateId: expected.toStateId,
@@ -160,7 +168,7 @@ export async function updateTransitionsForProcess({
     await pMap(
       transitionsToDelete,
       async (transition) => {
-        await db
+        await dbClient
           .delete(decisionProcessTransitions)
           .where(eq(decisionProcessTransitions.id, transition.id));
       },
