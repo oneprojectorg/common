@@ -5,6 +5,7 @@ import type { tables } from '@op/db/tables';
 import type { User } from '@op/supabase/lib';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
+
 export interface TContext {
   getCookies: () => Record<string, string | undefined>;
   getCookie: (name: string) => string | undefined;
