@@ -5,21 +5,9 @@ import {
   joinOrganization as joinOrganizationService,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/organization/join',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Join an organization',
-  },
-};
 
 const inputSchema = z.object({
   organizationId: z.uuid('Organization ID must be a valid UUID'),
@@ -29,7 +17,6 @@ export const joinOrganization = router({
   join: commonAuthedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 5 },
   })
-    .meta(meta)
     .input(inputSchema)
     .output(
       z.object({

@@ -1,5 +1,4 @@
 import { listInstances } from '@op/common';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   legacyInstanceFilterSchema,
@@ -7,20 +6,8 @@ import {
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/instances',
-    protect: true,
-    tags: ['decision'],
-    summary: 'List process instances',
-  },
-};
-
 export const listInstancesRouter = router({
   listInstances: commonAuthedProcedure()
-    .meta(meta)
     .input(legacyInstanceFilterSchema)
     .output(legacyProcessInstanceListEncoder)
     .query(async ({ input, ctx }) => {

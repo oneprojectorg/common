@@ -5,27 +5,14 @@ import {
   deleteProposal as deleteProposalService,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'DELETE',
-    path: '/decision/proposal/{proposalId}',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Delete proposal',
-  },
-};
 
 export const deleteProposalRouter = router({
   deleteProposal: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
-    .meta(meta)
     .input(
       z.object({
         proposalId: z.uuid(),

@@ -1,7 +1,6 @@
 import { UnauthorizedError, approveRelationship } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -16,20 +15,8 @@ const inputSchema = z.object({
   }),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/organization/{targetOrganizationId}/relationships/approve',
-    protect: true,
-    tags: ['organization', 'relationships'],
-    summary: 'Approve an organizations relationships',
-  },
-};
-
 export const approveRelationshipRouter = router({
   approveRelationship: commonAuthedProcedure()
-    .meta(meta)
     .input(inputSchema)
     .output(z.boolean())
     .mutation(async ({ ctx, input }) => {

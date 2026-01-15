@@ -1,6 +1,5 @@
 import { getOrganizationUsers } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -43,20 +42,8 @@ const organizationUserEncoder = z.object({
   ),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/{profileId}/users',
-    protect: true,
-    tags: ['organization'],
-    summary: 'List organization users',
-  },
-};
-
 export const listUsersRouter = router({
   listUsers: commonAuthedProcedure()
-    .meta(meta)
     .input(inputSchema)
     .output(z.array(organizationUserEncoder))
     .query(async ({ ctx, input }) => {

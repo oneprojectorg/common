@@ -6,7 +6,6 @@ import {
   updateProposal,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import {
@@ -15,22 +14,10 @@ import {
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'PATCH',
-    path: '/decision/proposal/{proposalId}',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Update proposal',
-  },
-};
-
 export const updateProposalRouter = router({
   updateProposal: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
-    .meta(meta)
     .input(
       z.object({
         proposalId: z.uuid(),

@@ -1,20 +1,8 @@
 import { UnauthorizedError, getProcessCategories } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/instances/{processInstanceId}/categories',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Get categories for a process instance',
-  },
-};
 
 const getCategoriesInputSchema = z.object({
   processInstanceId: z.uuid(),
@@ -32,7 +20,6 @@ const getCategoriesOutputSchema = z.object({
 
 export const getCategoriesRouter = router({
   getCategories: commonAuthedProcedure()
-    .meta(meta)
     .input(getCategoriesInputSchema)
     .output(getCategoriesOutputSchema)
     .query(async ({ ctx, input }) => {

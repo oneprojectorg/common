@@ -2,7 +2,6 @@ import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -16,22 +15,8 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
 ];
 
-const endpoint = 'uploadAvatarImage';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: `/organization/${endpoint}`,
-    protect: true,
-    tags: ['organization'],
-    summary: 'Upload an avatar image temporarily to attach later',
-  },
-};
-
 export const uploadAvatarImage = router({
   uploadAvatarImage: commonAuthedProcedure()
-    .meta(meta)
     .input(
       z.object({
         file: z.string(), // base64 encoded

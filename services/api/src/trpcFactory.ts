@@ -2,7 +2,6 @@ import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';
 import superjson from 'superjson';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   getCookie as _getCookie,
@@ -49,16 +48,13 @@ export const createContext = async ({
   };
 };
 
-const t = initTRPC
-  .meta<OpenApiMeta>()
-  .context<TContext>()
-  .create({
-    errorFormatter,
-    transformer: superjson,
-    experimental: {
-      iterablesAndDeferreds: true,
-    },
-  });
+const t = initTRPC.context<TContext>().create({
+  errorFormatter,
+  transformer: superjson,
+  experimental: {
+    iterablesAndDeferreds: true,
+  },
+});
 
 export const { router } = t;
 export const { middleware } = t;

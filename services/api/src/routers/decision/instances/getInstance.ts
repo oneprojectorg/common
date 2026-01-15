@@ -1,7 +1,6 @@
 import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   legacyGetInstanceInputSchema,
@@ -10,22 +9,10 @@ import {
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProcessViewed } from '../../../utils/analytics';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/instance/{instanceId}',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Get process instance by ID',
-  },
-};
-
 export const getInstanceRouter = router({
   getInstance: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
-    .meta(meta)
     .input(legacyGetInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)
     .query(async ({ ctx, input }) => {

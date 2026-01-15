@@ -1,30 +1,15 @@
 import { switchUserOrganization } from '@op/common';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const endpoint = 'updateLastOrgId';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'PUT',
-    path: `/account/${endpoint}`,
-    protect: true,
-    tags: ['account'],
-    summary: 'Update user lastOrgId',
-  },
-};
-
 export const switchOrganization = router({
   switchOrganization: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
-    .meta(meta)
     .input(z.object({ organizationId: z.string().min(1) }))
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {

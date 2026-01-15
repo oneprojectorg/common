@@ -8,22 +8,10 @@ import {
 import { ProposalStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'PATCH',
-    path: '/decision/proposal/{profileId}/status',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Update proposal status (approve/reject)',
-  },
-};
 
 const updateProposalStatusInput = z.object({
   profileId: z.uuid(),
@@ -34,7 +22,6 @@ export const updateProposalStatusRouter = router({
   updateProposalStatus: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
-    .meta(meta)
     .input(updateProposalStatusInput)
     .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {

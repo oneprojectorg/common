@@ -9,7 +9,6 @@ import { ProfileRelationshipType, proposals } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -70,46 +69,12 @@ const getRelationshipsInputSchema = z.object({
   profileType: z.string().optional(),
 });
 
-const addRelationshipMeta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/profile/relationship/{targetProfileId}',
-    protect: true,
-    tags: ['profile'],
-    summary: 'Add a relationship to a profile',
-  },
-};
-
-const removeRelationshipMeta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'DELETE',
-    path: '/profile/relationship/{targetProfileId}',
-    protect: true,
-    tags: ['profile'],
-    summary: 'Remove a relationship to a profile',
-  },
-};
-
-const getRelationshipsMeta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/profile/relationship',
-    protect: true,
-    tags: ['profile'],
-    summary: 'Get relationships to a profile',
-  },
-};
-
 const relationshipProcedure = commonAuthedProcedure({
   rateLimit: { windowSize: 10, maxRequests: 20 },
 });
 
 export const profileRelationshipRouter = router({
   addRelationship: relationshipProcedure
-    .meta(addRelationshipMeta)
     .input(relationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
@@ -169,7 +134,6 @@ export const profileRelationshipRouter = router({
     }),
 
   removeRelationship: relationshipProcedure
-    .meta(removeRelationshipMeta)
     .input(removeRelationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
@@ -194,7 +158,6 @@ export const profileRelationshipRouter = router({
   getRelationships: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
-    .meta(getRelationshipsMeta)
     .input(getRelationshipsInputSchema)
     .output(
       // Always return grouped format by relationship type

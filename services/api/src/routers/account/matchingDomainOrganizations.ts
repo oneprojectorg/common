@@ -1,26 +1,13 @@
 import { matchingDomainOrganizations as getMatchingDomainOrganizations } from '@op/common';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: `/account/matching-organizations`,
-    protect: true,
-    tags: ['account'],
-    summary: 'Get organizations with matching email domain',
-  },
-};
-
 export const matchingDomainOrganizations = router({
   listMatchingDomainOrganizations: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
-    .meta(meta)
     .input(z.undefined())
     .output(z.array(organizationsWithProfileEncoder))
     .query(async ({ ctx }) => {

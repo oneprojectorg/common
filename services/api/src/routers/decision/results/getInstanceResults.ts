@@ -4,28 +4,15 @@ import {
   getLatestResultWithProposals,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { legacyInstanceResultsEncoder } from '../../../encoders/legacyDecision';
 import { getInstanceResultsInputSchema } from '../../../encoders/results';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/decision/instance/{instanceId}/results',
-    protect: true,
-    tags: ['decision'],
-    summary: 'Get successful proposals for a decision instance',
-  },
-};
-
 export const getInstanceResultsRouter = router({
   getInstanceResults: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
-    .meta(meta)
     .input(getInstanceResultsInputSchema)
     .output(legacyInstanceResultsEncoder)
     .query(async ({ ctx, input }) => {

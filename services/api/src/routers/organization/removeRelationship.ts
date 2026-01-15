@@ -1,6 +1,5 @@
 import { Channels, UnauthorizedError, removeRelationship } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -11,20 +10,8 @@ const inputSchema = z.object({
   }),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'DELETE',
-    path: '/organization/relationship/{id}',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Remove organization relationship',
-  },
-};
-
 export const removeRelationshipRouter = router({
   removeRelationship: commonAuthedProcedure()
-    .meta(meta)
     .input(inputSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
