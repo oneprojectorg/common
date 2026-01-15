@@ -11,12 +11,18 @@ mailchimpClient.setConfig({
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  const { email } = body;
+  const { firstName, lastName, email, organizationName } = body;
 
   if (!email) {
     return Response.json({ error: 'Email is required' }, { status: 400 });
   }
 
+  if (!firstName) {
+    return Response.json({ error: 'First name is required' }, { status: 400 });
+  }
+  if (!lastName) {
+    return Response.json({ error: 'Last name is required' }, { status: 400 });
+  }
   // Generate hash from email to check if exists in Mailchimp
   // If it exists, we'll update the user using `setListMember`
   // That way, this endpoint doesn't fail if a user signs up twice
