@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tailwindcss -i ./shared-styles.css -o ./dist/styles.css",
     "dev": "tailwindcss -i ./shared-styles.css -o ./dist/styles.css --watch",
-    "type-check": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
