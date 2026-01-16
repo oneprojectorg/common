@@ -11,8 +11,6 @@ import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
-
 interface CreateDecisionFromTemplateModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -22,7 +20,6 @@ export const CreateDecisionFromTemplateModal = ({
   isOpen,
   onOpenChange,
 }: CreateDecisionFromTemplateModalProps) => {
-  const t = useTranslations();
   const router = useRouter();
   const utils = trpc.useUtils();
   const isOnline = useConnectionStatus();
@@ -47,8 +44,8 @@ export const CreateDecisionFromTemplateModal = ({
     trpc.decision.createInstanceFromTemplate.useMutation({
       onSuccess: (result) => {
         toast.success({
-          title: t('Decision created'),
-          message: t('Your decision process has been created successfully.'),
+          title: 'Decision created',
+          message: 'Your decision process has been created successfully.',
         });
 
         // Invalidate decision lists
@@ -68,12 +65,12 @@ export const CreateDecisionFromTemplateModal = ({
         const errorInfo = analyzeError(error);
         if (errorInfo.isConnectionError) {
           toast.error({
-            title: t('Connection issue'),
-            message: t('Please check your internet connection and try again.'),
+            title: 'Connection issue',
+            message: 'Please check your internet connection and try again.',
           });
         } else {
           toast.error({
-            title: t('Failed to create decision'),
+            title: 'Failed to create decision',
             message: errorInfo.message,
           });
         }
@@ -90,22 +87,22 @@ export const CreateDecisionFromTemplateModal = ({
   const handleSubmit = () => {
     // Validate
     if (!name || name.length < 3) {
-      setNameError(t('Name must be at least 3 characters'));
+      setNameError('Name must be at least 3 characters');
       return;
     }
 
     if (!selectedTemplateId) {
       toast.error({
-        title: t('Template required'),
-        message: t('Please select a template to create your decision.'),
+        title: 'Template required',
+        message: 'Please select a template to create your decision.',
       });
       return;
     }
 
     if (!isOnline) {
       toast.error({
-        title: t('No connection'),
-        message: t('Please check your internet connection and try again.'),
+        title: 'No connection',
+        message: 'Please check your internet connection and try again.',
       });
       return;
     }
@@ -132,7 +129,7 @@ export const CreateDecisionFromTemplateModal = ({
 
   return (
     <Modal isOpen={isOpen} onOpenChange={handleOpenChange} isDismissable>
-      <ModalHeader>{t('Create Decision')}</ModalHeader>
+      <ModalHeader>Create Decision</ModalHeader>
       <ModalBody className="flex flex-col gap-4">
         {isLoadingTemplates ? (
           <div className="flex items-center justify-center py-8">
@@ -140,13 +137,13 @@ export const CreateDecisionFromTemplateModal = ({
           </div>
         ) : templates.length === 0 ? (
           <p className="py-4 text-center text-neutral-gray4">
-            {t('No templates available')}
+            No templates available
           </p>
         ) : (
           <>
             <Select
-              label={t('Template')}
-              placeholder={t('Select a template')}
+              label="Template"
+              placeholder="Select a template"
               selectedKey={selectedTemplateId}
               onSelectionChange={(key) =>
                 setSelectedTemplateId(key as string | null)
@@ -161,23 +158,23 @@ export const CreateDecisionFromTemplateModal = ({
             </Select>
 
             <TextField
-              label={t('Name')}
+              label="Name"
               value={name}
               onChange={setName}
               errorMessage={nameError}
               isRequired
               inputProps={{
-                placeholder: t('Enter decision name'),
+                placeholder: 'Enter decision name',
               }}
             />
 
             <TextField
-              label={t('Description')}
+              label="Description"
               value={description}
               onChange={setDescription}
               useTextArea
               textareaProps={{
-                placeholder: t('Enter a description (optional)'),
+                placeholder: 'Enter a description (optional)',
                 rows: 3,
               }}
             />
@@ -186,7 +183,7 @@ export const CreateDecisionFromTemplateModal = ({
       </ModalBody>
       <ModalFooter>
         <Button color="secondary" onPress={() => handleOpenChange(false)}>
-          {t('Cancel')}
+          Cancel
         </Button>
         <Button
           color="primary"
@@ -200,7 +197,7 @@ export const CreateDecisionFromTemplateModal = ({
           {createFromTemplate.isPending ? (
             <LoadingSpinner className="size-4" />
           ) : (
-            t('Create')
+            'Create'
           )}
         </Button>
       </ModalFooter>
