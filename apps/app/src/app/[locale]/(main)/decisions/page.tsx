@@ -1,4 +1,4 @@
-import { DecisionProfileList, ProcessStatus } from '@op/api/encoders';
+import { DecisionProfileList } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 
 import { AllDecisions } from '@/components/decisions/AllDecisions';
@@ -20,7 +20,6 @@ const DecisionsListingPage = async () => {
     const client = await createClient();
     decisions = await client.decision.listDecisionProfiles({
       limit: 20,
-      status: ProcessStatus.PUBLISHED,
     });
   } catch (error) {
     // log error but return the empty list
