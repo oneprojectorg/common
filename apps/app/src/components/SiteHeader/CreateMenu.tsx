@@ -8,7 +8,7 @@ import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { useState } from 'react';
-import { LuLeaf, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
+import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -52,7 +52,7 @@ export const CreateMenu = () => {
               id="create-decision"
               onAction={() => setIsCreateDecisionModalOpen(true)}
             >
-              <LuLeaf className="size-4" /> {t('Decision')}
+              <LuMessageCircle className="size-4" /> Decision
             </MenuItem>
             {isOrg ? (
               <MenuItem

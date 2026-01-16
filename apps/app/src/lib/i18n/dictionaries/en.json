@@ -423,19 +423,5 @@
   "Cancel membership request": "Cancel membership request",
   "Are you sure you want to cancel your membership request to {orgName}?": "Are you sure you want to cancel your membership request to {orgName}?",
   "Keep request": "Keep request",
-  "Cancel request": "Cancel request",
-  "Decision": "Decision",
-  "Create Decision": "Create Decision",
-  "Decision created": "Decision created",
-  "Your decision process has been created successfully.": "Your decision process has been created successfully.",
-  "Failed to create decision": "Failed to create decision",
-  "Name must be at least 3 characters": "Name must be at least 3 characters",
-  "Template required": "Template required",
-  "Please select a template to create your decision.": "Please select a template to create your decision.",
-  "Template": "Template",
-  "Select a template": "Select a template",
-  "No templates available": "No templates available",
-  "Enter decision name": "Enter decision name",
-  "Description": "Description",
-  "Enter a description (optional)": "Enter a description (optional)"
+  "Cancel request": "Cancel request"
 }
