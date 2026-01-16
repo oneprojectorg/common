@@ -18,6 +18,180 @@ import { baseProfileEncoder } from './profiles';
 // JSON Schema types
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
+// ============================================================================
+// New DecisionSchemaDefinition format encoders
+// ============================================================================
+
+/** Phase behavior rules */
+const phaseRulesEncoder = z.object({
+  proposals: z
+    .object({
+      submit: z.boolean().optional(),
+      edit: z.boolean().optional(),
+    })
+    .optional(),
+  voting: z
+    .object({
+      submit: z.boolean().optional(),
+      edit: z.boolean().optional(),
+    })
+    .optional(),
+  advancement: z
+    .object({
+      method: z.enum(['date', 'manual']),
+      endDate: z.string().optional(),
+    })
+    .optional(),
+});
+
+/** Selection pipeline block encoder */
+const selectionPipelineBlockEncoder = z.object({
+  id: z.string(),
+  type: z.string(),
+  name: z.string().optional(),
+  sortBy: z
+    .array(
+      z.object({
+        field: z.string(),
+        order: z.enum(['asc', 'desc']).optional(),
+      }),
+    )
+    .optional(),
+  count: z.union([z.number(), z.object({ variable: z.string() })]).optional(),
+  conditions: z.array(z.unknown()).optional(),
+});
+
+/** Selection pipeline encoder */
+const selectionPipelineEncoder = z.object({
+  version: z.string(),
+  blocks: z.array(selectionPipelineBlockEncoder),
+});
+
+/** Phase definition encoder */
+const phaseDefinitionEncoder = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  rules: phaseRulesEncoder,
+  selectionPipeline: selectionPipelineEncoder.optional(),
+  settings: jsonSchemaEncoder.optional(),
+});
+
+/** Process-level configuration */
+const processConfigEncoder = z.object({
+  hideBudget: z.boolean().optional(),
+});
+
+/** DecisionSchemaDefinition encoder - the new format for process schemas */
+export const decisionSchemaDefinitionEncoder = z.object({
+  id: z.string(),
+  version: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  config: processConfigEncoder.optional(),
+  phases: z.array(phaseDefinitionEncoder).min(1),
+});
+
+/** Decision process encoder using new schema format */
+export const decisionProcessWithSchemaEncoder = createSelectSchema(
+  decisionProcesses,
+)
+  .pick({
+    id: true,
+    name: true,
+    description: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    processSchema: decisionSchemaDefinitionEncoder,
+    createdBy: baseProfileEncoder.optional(),
+  });
+
+/** List encoder for decision processes with new schema format */
+export const decisionProcessWithSchemaListEncoder = z.object({
+  processes: z.array(decisionProcessWithSchemaEncoder),
+  total: z.number(),
+  hasMore: z.boolean(),
+});
+
+/** Instance data encoder for new schema format */
+const instanceDataWithSchemaEncoder = z.object({
+  budget: z.number().optional(),
+  hideBudget: z.boolean().optional(),
+  fieldValues: z.record(z.string(), z.unknown()).optional(),
+  currentPhaseId: z.string(),
+  stateData: z
+    .record(
+      z.string(),
+      z.object({
+        enteredAt: z.string().optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
+  phases: z
+    .array(
+      z.object({
+        phaseId: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        rules: z.unknown().optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
+});
+
+/** Process instance encoder using new schema format */
+export const processInstanceWithSchemaEncoder = createSelectSchema(
+  processInstances,
+)
+  .pick({
+    id: true,
+    name: true,
+    description: true,
+    instanceData: true,
+    currentStateId: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    instanceData: instanceDataWithSchemaEncoder,
+    process: decisionProcessWithSchemaEncoder.optional(),
+    owner: baseProfileEncoder.optional(),
+    proposalCount: z.number().optional(),
+    participantCount: z.number().optional(),
+  });
+
+/** Decision profile encoder using new schema format */
+export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
+  processInstance: processInstanceWithSchemaEncoder,
+});
+
+/** Decision profile list encoder using new schema format */
+export const decisionProfileWithSchemaListEncoder = z.object({
+  items: z.array(decisionProfileWithSchemaEncoder),
+  next: z.string().nullish(),
+  hasMore: z.boolean(),
+});
+
+/** Decision profile filter schema */
+export const decisionProfileWithSchemaFilterSchema = z.object({
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(10),
+  orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
+  dir: z.enum(['asc', 'desc']).prefault('desc'),
+  search: z.string().optional(),
+  status: z.enum(ProcessStatus).optional(),
+  ownerProfileId: z.uuid().optional(),
+});
+
+// ============================================================================
+// Legacy format encoders (for backwards compatibility)
+// ============================================================================
+
 // Shared process phase schema
 export const processPhaseSchema = z.object({
   id: z.string(),
@@ -472,6 +646,14 @@ export const decisionProfileFilterSchema = z.object({
   ownerProfileId: z.uuid().optional(),
 });
 
-// Type exports
-export type DecisionProfile = z.infer<typeof decisionProfileEncoder>;
-export type DecisionProfileList = z.infer<typeof decisionProfileListEncoder>;
+// Type exports (using new schema format)
+export type DecisionProfile = z.infer<typeof decisionProfileWithSchemaEncoder>;
+export type DecisionProfileList = z.infer<
+  typeof decisionProfileWithSchemaListEncoder
+>;
+
+// Legacy type exports (for backwards compatibility during migration)
+export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;
+export type LegacyDecisionProfileList = z.infer<
+  typeof decisionProfileListEncoder
+>;

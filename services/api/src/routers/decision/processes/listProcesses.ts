@@ -1,21 +1,21 @@
 import { listProcesses } from '@op/common';
 
 import {
-  legacyDecisionProcessListEncoder,
-  legacyProcessFilterSchema,
-} from '../../../encoders/legacyDecision';
+  decisionProcessWithSchemaListEncoder,
+  processFilterSchema,
+} from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const listProcessesRouter = router({
   listProcesses: commonAuthedProcedure()
-    .input(legacyProcessFilterSchema)
-    .output(legacyDecisionProcessListEncoder)
+    .input(processFilterSchema)
+    .output(decisionProcessWithSchemaListEncoder)
     .query(async ({ input }) => {
       const result = await listProcesses(input);
-      return legacyDecisionProcessListEncoder.parse({
+      return decisionProcessWithSchemaListEncoder.parse({
         processes: result.processes.map((process) => ({
           ...process,
-          processSchema: process.processSchema as Record<string, any>,
+          processSchema: process.processSchema,
           createdBy: process.createdBy || undefined,
         })),
         total: result.total,
