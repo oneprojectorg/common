@@ -423,5 +423,19 @@
   "Cancel membership request": "সদস্যপদ অনুরোধ বাতিল করুন",
   "Are you sure you want to cancel your membership request to {orgName}?": "আপনি কি নিশ্চিত যে আপনি {orgName}-এ আপনার সদস্যপদ অনুরোধ বাতিল করতে চান?",
   "Keep request": "অনুরোধ রাখুন",
-  "Cancel request": "অনুরোধ বাতিল করুন"
+  "Cancel request": "অনুরোধ বাতিল করুন",
+  "Decision": "সিদ্ধান্ত",
+  "Create Decision": "সিদ্ধান্ত তৈরি করুন",
+  "Decision created": "সিদ্ধান্ত তৈরি হয়েছে",
+  "Your decision process has been created successfully.": "আপনার সিদ্ধান্ত প্রক্রিয়া সফলভাবে তৈরি হয়েছে।",
+  "Failed to create decision": "সিদ্ধান্ত তৈরি করতে ব্যর্থ",
+  "Name must be at least 3 characters": "নাম কমপক্ষে ৩ অক্ষর হতে হবে",
+  "Template required": "টেমপ্লেট প্রয়োজন",
+  "Please select a template to create your decision.": "আপনার সিদ্ধান্ত তৈরি করতে একটি টেমপ্লেট নির্বাচন করুন।",
+  "Template": "টেমপ্লেট",
+  "Select a template": "একটি টেমপ্লেট নির্বাচন করুন",
+  "No templates available": "কোন টেমপ্লেট উপলব্ধ নেই",
+  "Enter decision name": "সিদ্ধান্তের নাম লিখুন",
+  "Description": "বিবরণ",
+  "Enter a description (optional)": "একটি বিবরণ লিখুন (ঐচ্ছিক)"
 }
