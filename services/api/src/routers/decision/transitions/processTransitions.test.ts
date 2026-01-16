@@ -1,4 +1,5 @@
 import { processDecisionsTransitions } from '@op/common';
+import type { DecisionSchemaDefinition } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -36,24 +37,11 @@ const createFutureDate = (daysFromNow: number) => {
   return date.toISOString();
 };
 
-// Standard 4-phase schema for transition tests
-const createPhasesProcessSchema = () => ({
+// Standard 4-phase schema for transition tests using DecisionSchemaDefinition
+const createDecisionSchema = (): DecisionSchemaDefinition => ({
+  id: 'test-transition-schema',
+  version: '1.0.0',
   name: 'Transition Test Process',
-  states: [
-    { id: 'submission', name: 'Submission', type: 'initial' as const },
-    { id: 'review', name: 'Review', type: 'intermediate' as const },
-    { id: 'voting', name: 'Voting', type: 'intermediate' as const },
-    { id: 'results', name: 'Results', type: 'final' as const },
-  ],
-  transitions: [
-    { id: 't1', name: 'To Review', from: 'submission', to: 'review' },
-    { id: 't2', name: 'To Voting', from: 'review', to: 'voting' },
-    { id: 't3', name: 'To Results', from: 'voting', to: 'results' },
-  ],
-  initialState: 'submission',
-  decisionDefinition: {},
-  proposalTemplate: {},
-  // Include phases array for transitionMonitor final state detection
   phases: [
     {
       id: 'submission',
@@ -102,6 +90,24 @@ const createSimpleInstanceData = (currentPhaseId: string) => ({
  * This bypasses the API's Zod validation which strips `rules` from instance data.
  * By default, creates instances with 'published' status so transitions are processed.
  */
+/**
+ * Helper to get the current phase ID for an instance via direct DB query.
+ * Avoids API encoder validation issues with new schema format.
+ */
+async function getInstanceCurrentPhaseId(instanceId: string): Promise<string> {
+  const [instance] = await db
+    .select()
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId));
+
+  if (!instance) {
+    throw new Error(`Instance not found: ${instanceId}`);
+  }
+
+  const instanceData = instance.instanceData as { currentPhaseId: string };
+  return instanceData.currentPhaseId;
+}
+
 async function createInstanceWithDueTransition(
   testData: TestDecisionsDataManager,
   setup: Awaited<ReturnType<TestDecisionsDataManager['createDecisionSetup']>>,
@@ -161,7 +167,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -199,14 +205,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.processed).toBeGreaterThanOrEqual(1);
       expect(result.failed).toBe(0);
 
-      // Verify the instance state advanced via API
-      const updatedDecision = await caller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
-        'review',
-      );
+      // Verify the instance state advanced
+      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      expect(currentPhaseId).toBe('review');
     });
 
     it('should update both currentStateId and currentPhaseId', async ({
@@ -222,7 +223,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -269,7 +270,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -328,7 +329,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -352,13 +353,8 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify instance advanced to results (final phase)
-      const updatedDecision = await caller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
-        'results',
-      );
+      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      expect(currentPhaseId).toBe('results');
     });
 
     it('should not process transitions when instance is already in final phase', async ({
@@ -374,7 +370,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -429,13 +425,8 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(transitions).toHaveLength(0);
 
       // Verify instance remains in results phase
-      const updatedDecision = await caller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
-        'results',
-      );
+      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      expect(currentPhaseId).toBe('results');
     });
   });
 
@@ -453,7 +444,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -490,13 +481,8 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       await processDecisionsTransitions();
 
       // Verify the instance state has not changed
-      const updatedDecision = await caller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
-        'submission',
-      );
+      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      expect(currentPhaseId).toBe('submission');
 
       // Verify transition is still pending
       const [transition] = await db
@@ -526,7 +512,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -581,7 +567,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -620,19 +606,11 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify BOTH of our specific instances advanced (this is the important check)
-      const updated1 = await caller.decision.getDecisionBySlug({
-        slug: instance1.slug,
-      });
-      const updated2 = await caller.decision.getDecisionBySlug({
-        slug: instance2.slug,
-      });
+      const currentPhaseId1 = await getInstanceCurrentPhaseId(instance1.instance.id);
+      const currentPhaseId2 = await getInstanceCurrentPhaseId(instance2.instance.id);
 
-      expect(updated1.processInstance.instanceData.currentPhaseId).toBe(
-        'review',
-      );
-      expect(updated2.processInstance.instanceData.currentPhaseId).toBe(
-        'review',
-      );
+      expect(currentPhaseId1).toBe('review');
+      expect(currentPhaseId2).toBe('review');
 
       // Verify both transitions were marked completed
       const transition1 = await db.query.decisionProcessTransitions.findFirst({
@@ -665,7 +643,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -713,13 +691,8 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify the instance advanced through both transitions to voting
-      const updated = await caller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(updated.processInstance.instanceData.currentPhaseId).toBe(
-        'voting',
-      );
+      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      expect(currentPhaseId).toBe('voting');
     });
   });
 
@@ -737,7 +710,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -775,7 +748,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -799,13 +772,8 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       await processDecisionsTransitions();
 
       // Verify the instance state has NOT changed
-      const updatedDecision = await caller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
-        'submission',
-      );
+      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      expect(currentPhaseId).toBe('submission');
 
       // Verify the transition is still pending (not completed)
       const [transition] = await db
@@ -835,7 +803,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       await db
         .update(decisionProcesses)
-        .set({ processSchema: createPhasesProcessSchema() })
+        .set({ processSchema: createDecisionSchema() })
         .where(eq(decisionProcesses.id, setup.process.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -859,13 +827,8 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       await processDecisionsTransitions();
 
       // Verify the instance state HAS changed
-      const updatedDecision = await caller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(updatedDecision.processInstance.instanceData.currentPhaseId).toBe(
-        'review',
-      );
+      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      expect(currentPhaseId).toBe('review');
 
       // Verify the transition is completed
       const [transition] = await db

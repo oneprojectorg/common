@@ -50,3 +50,4 @@ export type { VoteData } from '@op/db/schema';
 
 // Types
 export * from './types';
+export type { DecisionSchemaDefinition, PhaseDefinition, PhaseRules, ProcessConfig } from './schemas/types';
