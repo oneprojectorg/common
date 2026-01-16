@@ -35,21 +35,21 @@ export function ProposalCardMenu({
   const updateStatusMutation = trpc.decision.updateProposalStatus.useMutation({
     onMutate: async (variables) => {
       // Cancel outgoing refetches
-      if (proposal.processInstance?.id) {
+      if (proposal.processInstanceId) {
         await utils.decision.listProposals.cancel({
-          processInstanceId: proposal.processInstance.id,
+          processInstanceId: proposal.processInstanceId,
         });
       }
 
       // Snapshot the previous value
-      const previousListData = proposal.processInstance?.id
+      const previousListData = proposal.processInstanceId
         ? utils.decision.listProposals.getData({
-            processInstanceId: proposal.processInstance.id,
+            processInstanceId: proposal.processInstanceId,
           })
         : null;
 
       // Optimistically update list data
-      if (previousListData && proposal.processInstance?.id) {
+      if (previousListData && proposal.processInstanceId) {
         const optimisticListData = {
           ...previousListData,
           proposals: previousListData.proposals.map((p) =>
@@ -62,7 +62,7 @@ export function ProposalCardMenu({
           ),
         };
         utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstance.id },
+          { processInstanceId: proposal.processInstanceId },
           optimisticListData,
         );
       }
@@ -71,9 +71,9 @@ export function ProposalCardMenu({
     },
     onError: (error, _variables, context) => {
       // Rollback on error
-      if (context?.previousListData && proposal.processInstance?.id) {
+      if (context?.previousListData && proposal.processInstanceId) {
         utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstance.id },
+          { processInstanceId: proposal.processInstanceId },
           context.previousListData,
         );
       }
@@ -94,9 +94,9 @@ export function ProposalCardMenu({
     },
     onSettled: () => {
       // Always refetch after error or success
-      if (proposal.processInstance?.id) {
+      if (proposal.processInstanceId) {
         utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstance.id,
+          processInstanceId: proposal.processInstanceId,
         });
       }
     },
@@ -115,9 +115,9 @@ export function ProposalCardMenu({
     },
     onSettled: () => {
       // Always refetch after error or success
-      if (proposal.processInstance?.id) {
+      if (proposal.processInstanceId) {
         utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstance.id,
+          processInstanceId: proposal.processInstanceId,
         });
       }
     },
@@ -142,9 +142,9 @@ export function ProposalCardMenu({
       }
     },
     onSettled: () => {
-      if (proposal.processInstance?.id) {
+      if (proposal.processInstanceId) {
         utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstance.id,
+          processInstanceId: proposal.processInstanceId,
         });
       }
     },

@@ -330,6 +330,7 @@ export const listProposals = async ({
 
       return {
         id: proposal.id,
+        processInstanceId: proposal.processInstanceId,
         proposalData: proposal.proposalData,
         status: proposal.status,
         visibility: proposal.visibility,

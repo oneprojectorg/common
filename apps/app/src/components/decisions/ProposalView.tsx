@@ -238,7 +238,7 @@ export function ProposalView({
                     label={t('Comment')}
                     onSuccess={scrollToComments}
                     proposalId={currentProposal.id}
-                    processInstanceId={currentProposal.processInstance?.id}
+                    processInstanceId={currentProposal.processInstanceId}
                   />
                 </Surface>
               </div>

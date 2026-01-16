@@ -47,7 +47,7 @@ export function ProposalCardActions({
     invalidateQueries: [
       {
         profileId: currentProposal.profileId,
-        processInstanceId: initialProposal.processInstance?.id,
+        processInstanceId: initialProposal.processInstanceId,
       },
     ],
   });
@@ -102,9 +102,9 @@ export function ProposalCardOwnerActions({
       toast.success({ message: t('Proposal deleted successfully') });
     },
     onSettled: () => {
-      if (proposal.processInstance?.id) {
+      if (proposal.processInstanceId) {
         utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstance.id,
+          processInstanceId: proposal.processInstanceId,
         });
       }
     },
