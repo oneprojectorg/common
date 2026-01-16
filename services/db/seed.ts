@@ -1,6 +1,5 @@
 /* eslint-disable antfu/no-top-level-await */
 import { adminEmails } from '@op/core';
-import { simpleVoting } from '../../packages/common/src/services/decision/schemas/definitions';
 import { createServerClient } from '@supabase/ssr';
 import type { User } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
@@ -10,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { db } from '.';
+import { simpleVoting } from '../../packages/common/src/services/decision/schemas/definitions';
 import {
   decisionProcesses,
   links,
@@ -584,7 +584,9 @@ if (firstProfile) {
     console.error('Error creating decision process template:', error);
   }
 } else {
-  console.warn('No profiles found, skipping decision process template creation');
+  console.warn(
+    'No profiles found, skipping decision process template creation',
+  );
 }
 
 await db.$client.end();
