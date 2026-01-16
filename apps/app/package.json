@@ -61,7 +61,7 @@
     "@tiptap/starter-kit": "^3.2.0",
     "@tiptap/suggestion": "^3.2.0",
     "@vercel/otel": "^2.1.0",
-    "access-zones": "0.0.1",
+    "access-zones": "catalog:",
     "ajv-errors": "^3.0.0",
     "babel-plugin-react-compiler": "19.0.0-beta-e1e972c-20250221",
     "clsx": "^2.1.1",
