@@ -19,7 +19,7 @@ import { baseProfileEncoder } from './profiles';
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
 // ============================================================================
-// New DecisionSchemaDefinition format encoders
+// DecisionSchemaDefinition format encoders
 // ============================================================================
 
 /** Phase behavior rules */
@@ -82,7 +82,7 @@ const processConfigEncoder = z.object({
   hideBudget: z.boolean().optional(),
 });
 
-/** DecisionSchemaDefinition encoder - the new format for process schemas */
+/** DecisionSchemaDefinition encoder */
 export const decisionSchemaDefinitionEncoder = z.object({
   id: z.string(),
   version: z.string(),
@@ -92,7 +92,7 @@ export const decisionSchemaDefinitionEncoder = z.object({
   phases: z.array(phaseDefinitionEncoder).min(1),
 });
 
-/** Decision process encoder using new schema format */
+/** Decision process encoder */
 export const decisionProcessWithSchemaEncoder = createSelectSchema(
   decisionProcesses,
 )
@@ -143,7 +143,7 @@ const instanceDataWithSchemaEncoder = z.object({
     .optional(),
 });
 
-/** Process instance encoder using new schema format */
+/** Process instance encoder  */
 export const processInstanceWithSchemaEncoder = createSelectSchema(
   processInstances,
 )
@@ -165,12 +165,12 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
     participantCount: z.number().optional(),
   });
 
-/** Decision profile encoder using new schema format */
+/** Decision profile encoder  */
 export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
   processInstance: processInstanceWithSchemaEncoder,
 });
 
-/** Decision profile list encoder using new schema format */
+/** Decision profile list encoder  */
 export const decisionProfileWithSchemaListEncoder = z.object({
   items: z.array(decisionProfileWithSchemaEncoder),
   next: z.string().nullish(),
@@ -378,7 +378,7 @@ export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
     uploader: baseProfileEncoder.optional(),
   });
 
-// Proposal Encoder
+/** Proposal encoder (frontend gets instance data separately via getDecisionBySlug) */
 export const proposalEncoder = createSelectSchema(proposals)
   .pick({
     id: true,
@@ -390,28 +390,29 @@ export const proposalEncoder = createSelectSchema(proposals)
     profileId: true,
   })
   .extend({
-    proposalData: z.unknown(), // Keep as unknown to match database schema
-    processInstance: processInstanceEncoder.optional(),
+    proposalData: z.unknown(),
     submittedBy: baseProfileEncoder.optional(),
     profile: baseProfileEncoder.optional(),
     decisionCount: z.number().optional(),
     likesCount: z.number().optional(),
     followersCount: z.number().optional(),
     commentsCount: z.number().optional(),
-    // User relationship status
     isLikedByUser: z.boolean().optional(),
     isFollowedByUser: z.boolean().optional(),
-    // User permissions
     isEditable: z.boolean().optional(),
-    // Attachments
     attachments: z.array(proposalAttachmentEncoder).optional(),
-    // Selection rank (for results)
     selectionRank: z.number().nullable().optional(),
-    // Vote count (for results)
     voteCount: z.number().optional(),
-    // Allocated amount (for results)
     allocated: z.string().nullable().optional(),
   });
+
+/** Proposal list encoder */
+export const proposalListEncoder = z.object({
+  proposals: z.array(proposalEncoder),
+  total: z.number(),
+  hasMore: z.boolean(),
+  canManageProposals: z.boolean().prefault(false),
+});
 
 // Decision Encoder
 export const decisionEncoder = createSelectSchema(decisions)
@@ -452,13 +453,6 @@ export const processInstanceListEncoder = z.object({
   instances: z.array(processInstanceEncoder),
   total: z.number(),
   hasMore: z.boolean(),
-});
-
-export const proposalListEncoder = z.object({
-  proposals: z.array(proposalEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
-  canManageProposals: z.boolean().prefault(false),
 });
 
 export const instanceResultsEncoder = z.object({
@@ -646,7 +640,7 @@ export const decisionProfileFilterSchema = z.object({
   ownerProfileId: z.uuid().optional(),
 });
 
-// Type exports (using new schema format)
+// Type exports
 export type DecisionProfile = z.infer<typeof decisionProfileWithSchemaEncoder>;
 export type DecisionProfileList = z.infer<
   typeof decisionProfileWithSchemaListEncoder
