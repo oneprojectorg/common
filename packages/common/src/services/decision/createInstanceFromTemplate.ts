@@ -3,6 +3,8 @@ import {
   EntityType,
   ProcessStatus,
   processInstances,
+  profileUserToAccessRoles,
+  profileUsers,
   profiles,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -94,6 +96,32 @@ export const createInstanceFromTemplate = async ({
 
     if (!newInstance) {
       throw new CommonError('Failed to create decision process instance');
+    }
+
+    // Add the creator as a profile user with Admin role
+    const [[newProfileUser], adminRole] = await Promise.all([
+      tx
+        .insert(profileUsers)
+        .values({
+          profileId: instanceProfile.id,
+          authUserId: user.id,
+          email: user.email!,
+        })
+        .returning(),
+      tx.query.accessRoles.findFirst({
+        where: (table, { eq }) => eq(table.name, 'Admin'),
+      }),
+    ]);
+
+    if (!newProfileUser) {
+      throw new CommonError('Failed to add creator as profile user');
+    }
+
+    if (adminRole) {
+      await tx.insert(profileUserToAccessRoles).values({
+        profileUserId: newProfileUser.id,
+        accessRoleId: adminRole.id,
+      });
     }
 
     return newInstance;

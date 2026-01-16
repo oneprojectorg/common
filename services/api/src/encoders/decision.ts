@@ -57,9 +57,7 @@ const selectionPipelineBlockEncoder = z.object({
       }),
     )
     .optional(),
-  count: z
-    .union([z.number(), z.object({ variable: z.string() })])
-    .optional(),
+  count: z.union([z.number(), z.object({ variable: z.string() })]).optional(),
   conditions: z.array(z.unknown()).optional(),
 });
 
@@ -115,6 +113,79 @@ export const decisionProcessWithSchemaListEncoder = z.object({
   processes: z.array(decisionProcessWithSchemaEncoder),
   total: z.number(),
   hasMore: z.boolean(),
+});
+
+/** Instance data encoder for new schema format */
+const instanceDataWithSchemaEncoder = z.object({
+  budget: z.number().optional(),
+  hideBudget: z.boolean().optional(),
+  fieldValues: z.record(z.string(), z.unknown()).optional(),
+  currentPhaseId: z.string(),
+  stateData: z
+    .record(
+      z.string(),
+      z.object({
+        enteredAt: z.string().optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
+  phases: z
+    .array(
+      z.object({
+        phaseId: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        rules: z.unknown().optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
+});
+
+/** Process instance encoder using new schema format */
+export const processInstanceWithSchemaEncoder = createSelectSchema(
+  processInstances,
+)
+  .pick({
+    id: true,
+    name: true,
+    description: true,
+    instanceData: true,
+    currentStateId: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    instanceData: instanceDataWithSchemaEncoder,
+    process: decisionProcessWithSchemaEncoder.optional(),
+    owner: baseProfileEncoder.optional(),
+    proposalCount: z.number().optional(),
+    participantCount: z.number().optional(),
+  });
+
+/** Decision profile encoder using new schema format */
+export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
+  processInstance: processInstanceWithSchemaEncoder,
+});
+
+/** Decision profile list encoder using new schema format */
+export const decisionProfileWithSchemaListEncoder = z.object({
+  items: z.array(decisionProfileWithSchemaEncoder),
+  next: z.string().nullish(),
+  hasMore: z.boolean(),
+});
+
+/** Decision profile filter schema */
+export const decisionProfileWithSchemaFilterSchema = z.object({
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(10),
+  orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
+  dir: z.enum(['asc', 'desc']).prefault('desc'),
+  search: z.string().optional(),
+  status: z.enum(ProcessStatus).optional(),
+  ownerProfileId: z.uuid().optional(),
 });
 
 // ============================================================================
@@ -575,6 +646,14 @@ export const decisionProfileFilterSchema = z.object({
   ownerProfileId: z.uuid().optional(),
 });
 
-// Type exports
-export type DecisionProfile = z.infer<typeof decisionProfileEncoder>;
-export type DecisionProfileList = z.infer<typeof decisionProfileListEncoder>;
+// Type exports (using new schema format)
+export type DecisionProfile = z.infer<typeof decisionProfileWithSchemaEncoder>;
+export type DecisionProfileList = z.infer<
+  typeof decisionProfileWithSchemaListEncoder
+>;
+
+// Legacy type exports (for backwards compatibility during migration)
+export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;
+export type LegacyDecisionProfileList = z.infer<
+  typeof decisionProfileListEncoder
+>;

@@ -423,5 +423,19 @@
   "Cancel membership request": "Annuler la demande d'adhésion",
   "Are you sure you want to cancel your membership request to {orgName}?": "Êtes-vous sûr de vouloir annuler votre demande d'adhésion à {orgName} ?",
   "Keep request": "Conserver la demande",
-  "Cancel request": "Annuler la demande"
+  "Cancel request": "Annuler la demande",
+  "Decision": "Décision",
+  "Create Decision": "Créer une Décision",
+  "Decision created": "Décision créée",
+  "Your decision process has been created successfully.": "Votre processus de décision a été créé avec succès.",
+  "Failed to create decision": "Échec de la création de la décision",
+  "Name must be at least 3 characters": "Le nom doit contenir au moins 3 caractères",
+  "Template required": "Modèle requis",
+  "Please select a template to create your decision.": "Veuillez sélectionner un modèle pour créer votre décision.",
+  "Template": "Modèle",
+  "Select a template": "Sélectionner un modèle",
+  "No templates available": "Aucun modèle disponible",
+  "Enter decision name": "Entrez le nom de la décision",
+  "Description": "Description",
+  "Enter a description (optional)": "Entrez une description (facultatif)"
 }

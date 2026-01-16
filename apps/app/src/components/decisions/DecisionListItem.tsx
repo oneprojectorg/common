@@ -32,10 +32,10 @@ const isClosingSoon = (dateString: string) => {
 export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
 
-  // Get current state name from process schema
-  const currentStateName =
-    processInstance?.process?.processSchema?.states?.find(
-      (state) => state.id === processInstance.currentStateId,
+  // Get current phase name from process schema
+  const currentPhaseName =
+    processInstance?.process?.processSchema?.phases?.find(
+      (phase) => phase.id === processInstance.currentStateId,
     )?.name;
 
   // Get closing date from phases - find the current phase's end date
@@ -56,7 +56,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         {/* Process name and status chip */}
         <DecisionProcessHeader
           name={processInstance?.name || item.name}
-          currentState={currentStateName}
+          currentState={currentPhaseName}
         />
 
         {/* Organization and closing date */}
@@ -104,10 +104,10 @@ export const ProfileDecisionListItem = ({
 }) => {
   const { processInstance } = item;
 
-  // Get current state name from process schema
-  const currentStateName =
-    processInstance?.process?.processSchema?.states?.find(
-      (state) => state.id === processInstance.currentStateId,
+  // Get current phase name from process schema
+  const currentPhaseName =
+    processInstance?.process?.processSchema?.phases?.find(
+      (phase) => phase.id === processInstance.currentStateId,
     )?.name;
 
   // Get closing date from phases - find the current phase's end date
@@ -125,7 +125,7 @@ export const ProfileDecisionListItem = ({
         {/* Process name and status chip */}
         <DecisionProcessHeader
           name={processInstance?.name || item.name}
-          currentState={currentStateName}
+          currentState={currentPhaseName}
         />
 
         {/* Organization and closing date */}

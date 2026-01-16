@@ -15,7 +15,7 @@ const DecisionsListSuspense = ({
   status,
   initialData,
 }: {
-  status: ProcessStatus;
+  status?: ProcessStatus;
   initialData?: DecisionProfileList;
 }) => {
   const {
@@ -26,7 +26,7 @@ const DecisionsListSuspense = ({
   } = trpc.decision.listDecisionProfiles.useInfiniteQuery(
     {
       limit: 20,
-      status,
+      ...(status && { status }),
     },
     initialData
       ? {
@@ -94,10 +94,7 @@ export const AllDecisions = ({
         </TabList>
         <TabPanel id="active" className="p-0 sm:p-0">
           <Suspense fallback={<SkeletonLine lines={5} />}>
-            <DecisionsListSuspense
-              status={ProcessStatus.PUBLISHED}
-              initialData={initialData}
-            />
+            <DecisionsListSuspense initialData={initialData} />
           </Suspense>
         </TabPanel>
         <TabPanel id="other" className="p-0 sm:p-0">

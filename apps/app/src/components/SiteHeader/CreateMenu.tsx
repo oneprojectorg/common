@@ -8,12 +8,13 @@ import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { useState } from 'react';
-import { LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
+import { LuLeaf, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { InviteUserModal } from '../InviteUserModal';
 import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
+import { CreateDecisionFromTemplateModal } from './CreateDecisionFromTemplateModal';
 
 // Tailwind v4 default sm breakpoint (640px)
 const SM_BREAKPOINT = screens.sm;
@@ -22,6 +23,8 @@ export const CreateMenu = () => {
   const t = useTranslations();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
+    useState(false);
+  const [isCreateDecisionModalOpen, setIsCreateDecisionModalOpen] =
     useState(false);
   const { user } = useUser();
   const isOrg = user.currentProfile?.type === EntityType.ORG;
@@ -45,6 +48,12 @@ export const CreateMenu = () => {
             >
               <LuUsers className="size-4" /> {t('Organization')}
             </MenuItem>
+            <MenuItem
+              id="create-decision"
+              onAction={() => setIsCreateDecisionModalOpen(true)}
+            >
+              <LuLeaf className="size-4" /> {t('Decision')}
+            </MenuItem>
             {isOrg ? (
               <MenuItem
                 id="invite-member"
@@ -66,6 +75,10 @@ export const CreateMenu = () => {
           onOpenChange={setIsInviteModalOpen}
         />
       )}
+      <CreateDecisionFromTemplateModal
+        isOpen={isCreateDecisionModalOpen}
+        onOpenChange={setIsCreateDecisionModalOpen}
+      />
     </>
   );
 };
