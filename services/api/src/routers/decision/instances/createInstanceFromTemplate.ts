@@ -2,14 +2,14 @@ import { createInstanceFromTemplate } from '@op/common';
 
 import {
   createInstanceFromTemplateInputSchema,
-  decisionProfileEncoder,
+  decisionProfileWithSchemaEncoder,
 } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const createInstanceFromTemplateRouter = router({
   createInstanceFromTemplate: commonAuthedProcedure()
     .input(createInstanceFromTemplateInputSchema)
-    .output(decisionProfileEncoder)
+    .output(decisionProfileWithSchemaEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
@@ -18,6 +18,6 @@ export const createInstanceFromTemplateRouter = router({
         user,
       });
 
-      return decisionProfileEncoder.parse(profile);
+      return decisionProfileWithSchemaEncoder.parse(profile);
     }),
 });

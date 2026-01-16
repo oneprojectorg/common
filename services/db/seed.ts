@@ -9,9 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { db } from '.';
-import { simpleVoting } from '../../packages/common/src/services/decision/schemas/definitions';
 import {
-  decisionProcesses,
   links,
   locations,
   organizationUserToAccessRoles,
@@ -559,34 +557,6 @@ if (firstUser) {
   }
 } else {
   console.warn('No users created, skipping organization creation');
-}
-
-// Seed decision process templates
-console.log('Seeding decision process templates...');
-
-// Get the first profile to use as the creator
-const firstProfile = await db.query.profiles.findFirst();
-
-if (firstProfile) {
-  try {
-    await db
-      .insert(decisionProcesses)
-      .values({
-        name: simpleVoting.name,
-        description: simpleVoting.description,
-        processSchema: simpleVoting,
-        createdByProfileId: firstProfile.id,
-      })
-      .onConflictDoNothing();
-
-    console.log(`Created decision process template: ${simpleVoting.name}`);
-  } catch (error) {
-    console.error('Error creating decision process template:', error);
-  }
-} else {
-  console.warn(
-    'No profiles found, skipping decision process template creation',
-  );
 }
 
 await db.$client.end();

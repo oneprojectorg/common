@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
+  decisionProcesses,
   organizationUserToAccessRoles,
   organizationUsers,
   processInstances,
@@ -16,8 +17,9 @@ import { randomUUID } from 'node:crypto';
 import type { z } from 'zod';
 
 import type {
-  decisionProcessEncoder,
-  processInstanceEncoder,
+  decisionProcessWithSchemaEncoder,
+  decisionSchemaDefinitionEncoder,
+  processInstanceWithSchemaEncoder,
 } from '../../encoders/decision';
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
@@ -38,7 +40,7 @@ interface CreateDecisionSetupOptions {
   grantAccess?: boolean;
 }
 
-type EncodedProcessInstance = z.infer<typeof processInstanceEncoder>;
+type EncodedProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
 
 interface CreatedInstance {
   instance: EncodedProcessInstance;
@@ -46,7 +48,41 @@ interface CreatedInstance {
   slug: string;
 }
 
-type EncodedDecisionProcess = z.infer<typeof decisionProcessEncoder>;
+type EncodedDecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;
+type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
+
+/**
+ * A simple test schema in the new DecisionSchemaDefinition format.
+ * Used for creating test decision processes.
+ */
+const testDecisionSchema: DecisionSchemaDefinition = {
+  id: 'test-schema',
+  version: '1.0.0',
+  name: 'Test Schema',
+  description: 'A simple schema for testing',
+  phases: [
+    {
+      id: 'initial',
+      name: 'Initial Phase',
+      description: 'The starting phase',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
+      },
+    },
+    {
+      id: 'final',
+      name: 'Final Phase',
+      description: 'The ending phase',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
+      },
+    },
+  ],
+};
 
 interface DecisionSetupOutput {
   user: User;
@@ -158,9 +194,12 @@ export class TestDecisionsDataManager {
     }
 
     // Track the profile ID that was created by the trigger for cleanup
-    if (userRecord.profileId) {
-      this.createdProfileIds.push(userRecord.profileId);
+    if (!userRecord.profileId) {
+      throw new Error(`User record missing profileId for ${userEmail}`);
     }
+    this.createdProfileIds.push(userRecord.profileId);
+
+    const userProfileId = userRecord.profileId;
 
     const user: User = {
       id: authUser.id,
@@ -195,37 +234,37 @@ export class TestDecisionsDataManager {
     }
     this.createdProfileIds.push(orgProfileId);
 
-    // 3. Create decision process via router
-    const process = await caller.decision.createProcess({
-      name: this.generateUniqueName(processName),
-      description: processDescription,
-      processSchema: {
-        name: processName,
-        states: [
-          {
-            id: 'initial',
-            name: 'Initial',
-            type: 'initial',
-          },
-          {
-            id: 'final',
-            name: 'Final',
-            type: 'final',
-          },
-        ],
-        transitions: [
-          {
-            id: 'start',
-            name: 'Start',
-            from: 'initial',
-            to: 'final',
-          },
-        ],
-        initialState: 'initial',
-        decisionDefinition: {},
-        proposalTemplate: {},
-      },
-    });
+    // 3. Create decision process via direct DB insert with new schema format
+    // We insert directly because the createProcess router uses the legacy format,
+    // but listDecisionProfiles and other new endpoints expect the new format.
+    const newProcessSchema: DecisionSchemaDefinition = {
+      ...testDecisionSchema,
+      name: processName,
+    };
+
+    const [processRecord] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: this.generateUniqueName(processName),
+        description: processDescription,
+        processSchema: newProcessSchema,
+        createdByProfileId: userProfileId,
+      })
+      .returning();
+
+    if (!processRecord) {
+      throw new Error('Failed to create decision process');
+    }
+
+    // Map to the expected encoder format
+    const process: EncodedDecisionProcess = {
+      id: processRecord.id,
+      name: processRecord.name,
+      description: processRecord.description,
+      createdAt: processRecord.createdAt,
+      updatedAt: processRecord.updatedAt,
+      processSchema: processRecord.processSchema as DecisionSchemaDefinition,
+    };
 
     // 4. Create instances if requested
     const instances: CreatedInstance[] = [];
@@ -259,7 +298,7 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Creates a process instance for an existing process via router.
+   * Creates a process instance for an existing process using createInstanceFromTemplate.
    * Accepts either a caller directly OR a process+user to create the caller internally.
    */
   async createInstanceForProcess(
@@ -301,46 +340,30 @@ export class TestDecisionsDataManager {
       throw new Error('Either processId or process must be provided');
     }
 
-    const instance = await resolvedCaller.decision.createInstance({
-      processId: resolvedProcessId,
+    // Use createInstanceFromTemplate which returns a profile with processInstance
+    const profile = await resolvedCaller.decision.createInstanceFromTemplate({
+      templateId: resolvedProcessId,
       name: this.generateUniqueName(name),
       description: `Test instance ${name}`,
-      instanceData: {
-        budget,
-        hideBudget: false,
-        currentPhaseId: 'initial',
-        phases: [
-          {
-            phaseId: 'initial',
-            startDate: new Date().toISOString(),
-            endDate: new Date(
-              Date.now() + 7 * 24 * 60 * 60 * 1000,
-            ).toISOString(),
-          },
-          {
-            phaseId: 'final',
-            startDate: new Date(
-              Date.now() + 7 * 24 * 60 * 60 * 1000,
-            ).toISOString(),
-            endDate: new Date(
-              Date.now() + 14 * 24 * 60 * 60 * 1000,
-            ).toISOString(),
-          },
-        ],
-      },
+      phases: [
+        {
+          phaseId: 'initial',
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          phaseId: 'final',
+          startDate: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          endDate: new Date(
+            Date.now() + 14 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        },
+      ],
     });
 
-    // Query the database for the profileId (not exposed in the API response)
-    const [instanceRecord] = await db
-      .select({ profileId: processInstances.profileId })
-      .from(processInstances)
-      .where(eq(processInstances.id, instance.id));
-
-    const profileId = instanceRecord?.profileId;
-    if (!profileId) {
-      throw new Error(`Could not find profileId for instance ${instance.id}`);
-    }
-
+    const profileId = profile.id;
     this.createdProfileIds.push(profileId);
 
     // Update status if provided (direct DB update since there's no router for this)
@@ -348,20 +371,34 @@ export class TestDecisionsDataManager {
       await db
         .update(processInstances)
         .set({ status })
-        .where(eq(processInstances.id, instance.id));
+        .where(eq(processInstances.id, profile.processInstance.id));
     }
 
-    // Fetch the profile to get the slug (use profileId we queried earlier, not instance.profileId)
-    const profile = await db.query.profiles.findFirst({
-      where: eq(profiles.id, profileId),
-    });
-
-    if (!profile) {
-      throw new Error(`Profile not found for instance: ${instance.id}`);
+    // Update budget if needed (instanceData may not include budget from template)
+    if (budget) {
+      const instanceRecord = await db.query.processInstances.findFirst({
+        where: eq(processInstances.id, profile.processInstance.id),
+      });
+      if (instanceRecord) {
+        const instanceData = instanceRecord.instanceData as Record<
+          string,
+          unknown
+        >;
+        await db
+          .update(processInstances)
+          .set({
+            instanceData: {
+              ...instanceData,
+              budget,
+              hideBudget: false,
+            },
+          })
+          .where(eq(processInstances.id, profile.processInstance.id));
+      }
     }
 
     return {
-      instance,
+      instance: profile.processInstance,
       profileId,
       slug: profile.slug,
     };
