@@ -84,7 +84,9 @@ export const createProposal = async ({
 
     assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
 
-    const process = instance.process as { processSchema: DecisionSchemaDefinition };
+    const process = instance.process as {
+      processSchema: DecisionSchemaDefinition;
+    };
     const processSchema = process.processSchema;
     const instanceData = instance.instanceData as InstanceData;
     const currentPhaseId = instanceData.currentPhaseId;
