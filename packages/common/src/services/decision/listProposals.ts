@@ -184,11 +184,6 @@ export const listProposals = async ({
       db.query.proposals.findMany({
         where: whereClause,
         with: {
-          processInstance: {
-            with: {
-              process: true,
-            },
-          },
           submittedBy: {
             with: {
               avatarImage: true,
@@ -311,9 +306,6 @@ export const listProposals = async ({
     // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
     // TODO: improve this with more streamlined types
     const proposalsWithCounts = proposalList.map((proposal: any) => {
-      const processInstance = Array.isArray(proposal.processInstance)
-        ? proposal.processInstance[0]
-        : proposal.processInstance;
       const submittedBy = Array.isArray(proposal.submittedBy)
         ? proposal.submittedBy[0]
         : proposal.submittedBy;
@@ -344,28 +336,6 @@ export const listProposals = async ({
         createdAt: proposal.createdAt,
         updatedAt: proposal.updatedAt,
         profileId: proposal.profileId,
-        processInstance: processInstance
-          ? {
-              id: processInstance.id,
-              name: processInstance.name,
-              description: processInstance.description,
-              instanceData: processInstance.instanceData,
-              currentStateId: processInstance.currentStateId,
-              status: processInstance.status,
-              createdAt: processInstance.createdAt,
-              updatedAt: processInstance.updatedAt,
-              process: processInstance.process
-                ? {
-                    id: processInstance.process.id,
-                    name: processInstance.process.name,
-                    description: processInstance.process.description,
-                    createdAt: processInstance.process.createdAt,
-                    updatedAt: processInstance.process.updatedAt,
-                    processSchema: processInstance.process.processSchema,
-                  }
-                : undefined,
-            }
-          : undefined,
         submittedBy: submittedBy,
         profile: profile,
         decisionCount: decisions.length,

@@ -20,8 +20,23 @@ import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
-import { schemaValidator } from './schemaValidator';
-import type { InstanceData, ProcessSchema, ProposalData } from './types';
+import type { DecisionSchemaDefinition } from './schemas/types';
+import type { InstanceData, ProposalData } from './types';
+
+/**
+ * Helper to check if proposals are allowed in the current phase.
+ */
+function checkProposalsAllowed(
+  schema: DecisionSchemaDefinition,
+  currentPhaseId: string,
+): { allowed: boolean; phaseName: string } {
+  const phase = schema.phases.find((p) => p.id === currentPhaseId);
+  if (!phase) {
+    return { allowed: false, phaseName: 'Unknown' };
+  }
+  const allowed = phase.rules?.proposals?.submit !== false;
+  return { allowed, phaseName: phase.name };
+}
 
 export interface CreateProposalInput {
   processInstanceId: string;
@@ -69,32 +84,24 @@ export const createProposal = async ({
 
     assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
 
-    // TODO: why doesn't this get resolved by drizzle
-    const process = instance.process as any;
-    const processSchema = process.processSchema as ProcessSchema;
+    const process = instance.process as { processSchema: DecisionSchemaDefinition };
+    const processSchema = process.processSchema;
     const instanceData = instance.instanceData as InstanceData;
-    const currentStateId =
-      instanceData.currentPhaseId || instance.currentStateId;
+    const currentPhaseId = instanceData.currentPhaseId;
 
-    const currentState = processSchema.states.find(
-      (s) => s.id === currentStateId,
+    if (!currentPhaseId) {
+      throw new ValidationError('Invalid phase in process instance');
+    }
+
+    // Check if proposals are allowed in current phase
+    const { allowed, phaseName } = checkProposalsAllowed(
+      processSchema,
+      currentPhaseId,
     );
-    if (!currentState) {
-      throw new ValidationError('Invalid state in process instance');
-    }
 
-    // Check if proposals are allowed in current state
-    if (currentState.config?.allowProposals === false) {
+    if (!allowed) {
       throw new ValidationError(
-        `Proposals are not allowed in the ${currentState.name} state`,
-      );
-    }
-
-    // Validate proposal data against processSchema.proposalTemplate
-    if (processSchema.proposalTemplate) {
-      schemaValidator.validateProposalData(
-        processSchema.proposalTemplate,
-        data.proposalData,
+        `Proposals are not allowed in the ${phaseName} phase`,
       );
     }
 
