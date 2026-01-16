@@ -589,7 +589,7 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Cleans up test data by deleting profiles and auth users created for this test.
+   * Cleans up test data by deleting profiles, users, and auth users created for this test.
    * Uses exact IDs tracked during creation to avoid race conditions with concurrent tests.
    * Relies on database cascade deletes to automatically clean up related records.
    */
@@ -608,7 +608,15 @@ export class TestDecisionsDataManager {
       await db.delete(profiles).where(inArray(profiles.id, validProfileIds));
     }
 
-    // 2. Delete auth users by exact IDs
+    // 2. Delete users table rows by auth user IDs
+    // This must happen before deleting auth users since users.authUserId references auth.users
+    if (this.createdAuthUserIds.length > 0) {
+      await db
+        .delete(users)
+        .where(inArray(users.authUserId, this.createdAuthUserIds));
+    }
+
+    // 3. Delete auth users by exact IDs
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
         this.createdAuthUserIds.map((userId) =>
