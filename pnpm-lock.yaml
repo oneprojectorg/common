@@ -9,6 +9,9 @@ catalogs:
     '@rjsf/utils':
       specifier: ^5.24.12
       version: 5.24.12
+    access-zones:
+      specifier: 1.0.0
+      version: 1.0.0
     next:
       specifier: 15.3.8
       version: 15.3.8
@@ -1151,8 +1154,8 @@ importers:
         specifier: ^8.11.11
         version: 8.11.11
       access-zones:
-        specifier: 0.0.1
-        version: 0.0.1
+        specifier: 'catalog:'
+        version: 1.0.0
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -5269,6 +5272,10 @@ packages:
 
   access-zones@0.0.1:
     resolution: {integrity: sha512-or5Ys9+sWUfJA4HOQoXNAOe/2d504PJmJrWmgNCVOtQiCZRNTkB8zqYMmzzUjdlFXbwoOnjp1D76711aVGx52w==}
+    engines: {node: '>=16.0.0'}
+
+  access-zones@1.0.0:
+    resolution: {integrity: sha512-JP9n/ulebplYYnU2ESXvjzcoOThIJSvF/eMjq9DRnCnZrnU1QbgRYiz9RW4M8MjnYTf1UrchNEJfrxMB2lDCZQ==}
     engines: {node: '>=16.0.0'}
 
   acorn-import-attributes@1.9.5:
@@ -14011,6 +14018,8 @@ snapshots:
   access-zones@0.0.1:
     dependencies:
       zod: 3.25.76
+
+  access-zones@1.0.0: {}
 
   acorn-import-attributes@1.9.5(acorn@8.15.0):
     dependencies:
