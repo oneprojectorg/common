@@ -55,7 +55,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.71.0 # Pinned: v2.71.1+ breaks auth.admin.deleteUser() in test cleanup
 
       - name: Use CI config
         run: cp supabase/supabase-ci.toml supabase/config.toml
