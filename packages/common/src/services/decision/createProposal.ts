@@ -20,13 +20,11 @@ import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
-import { schemaValidator } from './schemaValidator';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
 
 export interface CreateProposalInput {
   processInstanceId: string;
   proposalData: ProposalData;
-  authUserId: string;
   attachmentIds?: string[];
 }
 
@@ -90,13 +88,8 @@ export const createProposal = async ({
       );
     }
 
-    // Validate proposal data against processSchema.proposalTemplate
-    if (processSchema.proposalTemplate) {
-      schemaValidator.validateProposalData(
-        processSchema.proposalTemplate,
-        data.proposalData,
-      );
-    }
+    // NOTE: We skip validation here because createProposal creates drafts.
+    // Validation happens in submitProposal when transitioning from draft to submitted.
 
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
@@ -156,7 +149,7 @@ export const createProposal = async ({
           proposalData: data.proposalData,
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
-          status: 'submitted',
+          status: 'draft',
         })
         .returning();
 

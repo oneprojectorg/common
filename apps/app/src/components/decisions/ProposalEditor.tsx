@@ -127,6 +127,31 @@ export function ProposalEditor({
     onError: (error) => handleValidationError(error, 'update'),
   });
 
+  const submitProposalMutation = trpc.decision.submitProposal.useMutation({
+    onSuccess: async () => {
+      // Track successful proposal submission
+      if (posthog) {
+        posthog.capture('submit_proposal_success', {
+          process_instance_id: instance.id,
+          process_name: instance.process?.name,
+        });
+      }
+
+      await utils.decision.getProposal.invalidate({
+        profileId: existingProposal?.profileId,
+      });
+      await utils.decision.listProposals.invalidate({
+        processInstanceId: instance.id,
+      });
+      // Navigate after cache invalidation completes
+      router.push(backHref);
+    },
+    onError: (error) => handleValidationError(error, 'update'),
+  });
+
+  // Check if we're editing a draft proposal (should show info modal and use submitProposal)
+  const isDraft = isEditMode && existingProposal?.status === 'draft';
+
   // Extract template data from the instance
   const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
   const descriptionGuidance = instance.instanceData?.fieldValues
@@ -251,12 +276,13 @@ export function ProposalEditor({
 
   // Content setting is now handled by RichTextEditorContent component via the content prop
 
-  // Show proposal info modal when creating a new proposal (not editing)
+  // Show proposal info modal when creating a new proposal OR editing a draft
   useEffect(() => {
-    if (!isEditMode && proposalInfoTitle && proposalInfoContent) {
+    const shouldShowModal = !isEditMode || isDraft;
+    if (shouldShowModal && proposalInfoTitle && proposalInfoContent) {
       setShowInfoModal(true);
     }
-  }, [isEditMode, proposalInfoTitle, proposalInfoContent]);
+  }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
 
   // Auto-focus budget input when it becomes visible
   useEffect(() => {
@@ -349,14 +375,23 @@ export function ProposalEditor({
       }
 
       if (isEditMode && existingProposal) {
-        // Update existing proposal - navigation handled in onSuccess callback
-        await updateProposalMutation.mutateAsync({
-          proposalId: existingProposal.id,
-          data: {
+        if (isDraft) {
+          // Submit draft proposal - validates and transitions to 'submitted' status
+          await submitProposalMutation.mutateAsync({
+            proposalId: existingProposal.id,
             proposalData,
-            attachmentIds, // Include attachment IDs for updates
-          },
-        });
+            attachmentIds,
+          });
+        } else {
+          // Update existing submitted proposal - navigation handled in onSuccess callback
+          await updateProposalMutation.mutateAsync({
+            proposalId: existingProposal.id,
+            data: {
+              proposalData,
+              attachmentIds, // Include attachment IDs for updates
+            },
+          });
+        }
       } else {
         // Create new proposal - navigation handled in onSuccess callback
         await createProposalMutation.mutateAsync({
@@ -383,12 +418,14 @@ export function ProposalEditor({
     instance,
     createProposalMutation,
     updateProposalMutation,
+    submitProposalMutation,
     isEditMode,
+    isDraft,
     existingProposal,
-    backHref,
-    router,
     imageAttachments,
     isBudgetRequired,
+    categories,
+    budgetCapAmount,
   ]);
 
   return (
@@ -398,6 +435,7 @@ export function ProposalEditor({
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
+      isDraft={isDraft}
     >
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">

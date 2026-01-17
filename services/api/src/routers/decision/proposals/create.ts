@@ -5,35 +5,26 @@ import {
   createProposal,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import { waitUntil } from '@vercel/functions';
 
 import {
   legacyCreateProposalInputSchema,
   legacyProposalEncoder,
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-import { trackProposalSubmitted } from '../../../utils/analytics';
 
 export const createProposalRouter = router({
+  /** Creates a new proposal in draft status. Use submitProposal to transition to submitted. */
   createProposal: commonAuthedProcedure()
     .input(legacyCreateProposalInputSchema)
     .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
-      const { processInstanceId } = input;
 
       try {
         const proposal = await createProposal({
-          data: { ...input, authUserId: user.id },
+          data: input,
           authUserId: user.id,
         });
-
-        waitUntil(
-          trackProposalSubmitted(ctx, processInstanceId, proposal.id, {
-            // Keep the original timestamp format for consistency
-            created_timestamp: Date.now(),
-          }),
-        );
 
         return legacyProposalEncoder.parse(proposal);
       } catch (error: unknown) {

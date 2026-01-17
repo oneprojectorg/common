@@ -334,7 +334,7 @@ export const legacyGetInstanceInputSchema = z.object({
 
 export const legacyCreateProposalInputSchema = z.object({
   processInstanceId: z.uuid(),
-  proposalData: z.record(z.string(), z.unknown()), // Proposal content matching template
+  proposalData: z.record(z.string(), z.unknown()),
   attachmentIds: z.array(z.string()).optional(), // Array of attachment IDs to link to this proposal
 });
 
@@ -343,6 +343,7 @@ export const legacyUpdateProposalInputSchema = legacyCreateProposalInputSchema
   .partial()
   .extend({
     visibility: z.enum(Visibility).optional(),
+    status: z.enum(ProposalStatus).optional(),
   });
 
 export const legacySubmitDecisionInputSchema = z.object({
