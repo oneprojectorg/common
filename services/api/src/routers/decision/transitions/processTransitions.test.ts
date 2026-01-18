@@ -206,7 +206,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify the instance state advanced
-      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
       expect(currentPhaseId).toBe('review');
     });
 
@@ -353,7 +355,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify instance advanced to results (final phase)
-      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
       expect(currentPhaseId).toBe('results');
     });
 
@@ -425,7 +429,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(transitions).toHaveLength(0);
 
       // Verify instance remains in results phase
-      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
       expect(currentPhaseId).toBe('results');
     });
   });
@@ -481,7 +487,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       await processDecisionsTransitions();
 
       // Verify the instance state has not changed
-      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
       expect(currentPhaseId).toBe('submission');
 
       // Verify transition is still pending
@@ -606,8 +614,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify BOTH of our specific instances advanced (this is the important check)
-      const currentPhaseId1 = await getInstanceCurrentPhaseId(instance1.instance.id);
-      const currentPhaseId2 = await getInstanceCurrentPhaseId(instance2.instance.id);
+      const currentPhaseId1 = await getInstanceCurrentPhaseId(
+        instance1.instance.id,
+      );
+      const currentPhaseId2 = await getInstanceCurrentPhaseId(
+        instance2.instance.id,
+      );
 
       expect(currentPhaseId1).toBe('review');
       expect(currentPhaseId2).toBe('review');
@@ -691,7 +703,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify the instance advanced through both transitions to voting
-      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
       expect(currentPhaseId).toBe('voting');
     });
   });
@@ -772,7 +786,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       await processDecisionsTransitions();
 
       // Verify the instance state has NOT changed
-      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
       expect(currentPhaseId).toBe('submission');
 
       // Verify the transition is still pending (not completed)
@@ -827,7 +843,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       await processDecisionsTransitions();
 
       // Verify the instance state HAS changed
-      const currentPhaseId = await getInstanceCurrentPhaseId(instance.instance.id);
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
       expect(currentPhaseId).toBe('review');
 
       // Verify the transition is completed

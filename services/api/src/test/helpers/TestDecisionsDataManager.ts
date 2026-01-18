@@ -43,7 +43,9 @@ interface CreateDecisionSetupOptions {
 }
 
 type EncodedProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
-type LegacyEncodedProcessInstance = z.infer<typeof legacyProcessInstanceEncoder>;
+type LegacyEncodedProcessInstance = z.infer<
+  typeof legacyProcessInstanceEncoder
+>;
 
 interface CreatedInstance {
   instance: EncodedProcessInstance;
