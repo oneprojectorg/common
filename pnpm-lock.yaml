@@ -9,6 +9,9 @@ catalogs:
     '@rjsf/utils':
       specifier: ^5.24.12
       version: 5.24.12
+    access-zones:
+      specifier: 1.0.0
+      version: 1.0.0
     next:
       specifier: 15.3.8
       version: 15.3.8
@@ -503,8 +506,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0(@opentelemetry/api-logs@0.208.0)(@opentelemetry/api@1.9.0)(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.0))(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))
       access-zones:
-        specifier: 0.0.1
-        version: 0.0.1
+        specifier: 'catalog:'
+        version: 1.0.0
       ajv-errors:
         specifier: ^3.0.0
         version: 3.0.0(ajv@8.17.1)
@@ -651,8 +654,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       access-zones:
-        specifier: 0.0.1
-        version: 0.0.1
+        specifier: 'catalog:'
+        version: 1.0.0
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -1044,8 +1047,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       access-zones:
-        specifier: 0.0.1
-        version: 0.0.1
+        specifier: 'catalog:'
+        version: 1.0.0
       ai:
         specifier: ^4.2.2
         version: 4.2.2(react@19.2.1)(zod@4.1.12)
@@ -1151,8 +1154,8 @@ importers:
         specifier: ^8.11.11
         version: 8.11.11
       access-zones:
-        specifier: 0.0.1
-        version: 0.0.1
+        specifier: 'catalog:'
+        version: 1.0.0
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -5267,8 +5270,8 @@ packages:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
     engines: {node: '>= 0.6'}
 
-  access-zones@0.0.1:
-    resolution: {integrity: sha512-or5Ys9+sWUfJA4HOQoXNAOe/2d504PJmJrWmgNCVOtQiCZRNTkB8zqYMmzzUjdlFXbwoOnjp1D76711aVGx52w==}
+  access-zones@1.0.0:
+    resolution: {integrity: sha512-JP9n/ulebplYYnU2ESXvjzcoOThIJSvF/eMjq9DRnCnZrnU1QbgRYiz9RW4M8MjnYTf1UrchNEJfrxMB2lDCZQ==}
     engines: {node: '>=16.0.0'}
 
   acorn-import-attributes@1.9.5:
@@ -9592,9 +9595,6 @@ packages:
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
       zod: ^3.24.1
-
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
   zod@4.1.12:
     resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
@@ -14008,9 +14008,7 @@ snapshots:
       mime-types: 2.1.35
       negotiator: 0.6.3
 
-  access-zones@0.0.1:
-    dependencies:
-      zod: 3.25.76
+  access-zones@1.0.0: {}
 
   acorn-import-attributes@1.9.5(acorn@8.15.0):
     dependencies:
@@ -18795,8 +18793,6 @@ snapshots:
   zod-to-json-schema@3.24.5(zod@4.1.12):
     dependencies:
       zod: 4.1.12
-
-  zod@3.25.76: {}
 
   zod@4.1.12: {}
 

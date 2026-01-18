@@ -30,7 +30,7 @@
     "@op/core": "workspace:*",
     "@op/supabase": "workspace:^",
     "@types/pg": "^8.11.11",
-    "access-zones": "0.0.1",
+    "access-zones": "catalog:",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",
     "drizzle-seed": "^0.3.1",

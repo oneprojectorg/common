@@ -81,25 +81,33 @@ export const ZONES = {
 // Permission flags
 export const PERMISSIONS = permission;
 
+// Permissions for the Admin role (all bits set)
+const ADMIN_ROLE_PERMISSIONS =
+  PERMISSIONS.ADMIN |
+  PERMISSIONS.CREATE |
+  PERMISSIONS.READ |
+  PERMISSIONS.UPDATE |
+  PERMISSIONS.DELETE;
+
 // Access role permissions on access zones (based on production patterns)
 export const ACCESS_ROLE_PERMISSIONS = [
   // Admin gets full permissions on admin zone
   {
     accessRoleId: ACCESS_ROLE_IDS.ADMIN,
     accessZoneId: ACCESS_ZONE_IDS.ADMIN,
-    permission: PERMISSIONS.ADMIN,
+    permission: ADMIN_ROLE_PERMISSIONS,
   },
   // Admin gets full permissions on decisions zone
   {
     accessRoleId: ACCESS_ROLE_IDS.ADMIN,
     accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
-    permission: PERMISSIONS.ADMIN,
+    permission: ADMIN_ROLE_PERMISSIONS,
   },
   // Admin gets full permissions on profile zone
   {
     accessRoleId: ACCESS_ROLE_IDS.ADMIN,
     accessZoneId: ACCESS_ZONE_IDS.PROFILE,
-    permission: PERMISSIONS.ADMIN,
+    permission: ADMIN_ROLE_PERMISSIONS,
   },
   // Member gets read permissions on profile zone
   {
