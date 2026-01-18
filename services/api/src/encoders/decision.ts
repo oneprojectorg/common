@@ -22,8 +22,8 @@ const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 // DecisionSchemaDefinition format encoders
 // ============================================================================
 
-/** Phase behavior rules (strict, for new schema format) */
-const strictPhaseRulesEncoder = z.object({
+/** Phase behavior rules for new schema format */
+const phaseRulesEncoder = z.object({
   proposals: z
     .object({
       submit: z.boolean().optional(),
@@ -61,19 +61,19 @@ const selectionPipelineBlockEncoder = z.object({
   conditions: z.array(z.unknown()).optional(),
 });
 
-/** Selection pipeline encoder (strict, for new schema format) */
-const strictSelectionPipelineEncoder = z.object({
+/** Selection pipeline encoder for new schema format */
+const selectionPipelineEncoder = z.object({
   version: z.string(),
   blocks: z.array(selectionPipelineBlockEncoder),
 });
 
-/** Phase definition encoder (strict, for new schema format) */
-const strictPhaseDefinitionEncoder = z.object({
+/** Phase definition encoder for new schema format */
+const phaseDefinitionEncoder = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  rules: strictPhaseRulesEncoder,
-  selectionPipeline: strictSelectionPipelineEncoder.optional(),
+  rules: phaseRulesEncoder,
+  selectionPipeline: selectionPipelineEncoder.optional(),
   settings: jsonSchemaEncoder.optional(),
 });
 
@@ -89,7 +89,7 @@ export const decisionSchemaDefinitionEncoder = z.object({
   name: z.string(),
   description: z.string().optional(),
   config: processConfigEncoder.optional(),
-  phases: z.array(strictPhaseDefinitionEncoder).min(1),
+  phases: z.array(phaseDefinitionEncoder).min(1),
 });
 
 /** Decision process encoder */
@@ -208,9 +208,9 @@ export const processPhaseSchema = z.object({
 });
 
 // =============================================================================
-// Phase Rules Encoder (new format)
+// Legacy Phase Rules Encoder (for backwards compatibility)
 // =============================================================================
-const phaseRulesEncoder = z
+const legacyPhaseRulesEncoder = z
   .object({
     proposals: z
       .object({
@@ -236,7 +236,7 @@ const phaseRulesEncoder = z
   })
   .passthrough();
 
-const selectionPipelineEncoder = z
+const legacySelectionPipelineEncoder = z
   .object({
     steps: z.array(
       z
@@ -249,13 +249,13 @@ const selectionPipelineEncoder = z
   })
   .passthrough();
 
-const phaseDefinitionEncoder = z
+const legacyPhaseDefinitionEncoder = z
   .object({
     id: z.string(),
     name: z.string(),
     description: z.string().optional(),
-    rules: phaseRulesEncoder,
-    selectionPipeline: selectionPipelineEncoder.optional(),
+    rules: legacyPhaseRulesEncoder,
+    selectionPipeline: legacySelectionPipelineEncoder.optional(),
     settings: jsonSchemaEncoder.optional(),
   })
   .passthrough();
@@ -277,7 +277,7 @@ const processSchemaEncoder = z
       })
       .passthrough()
       .optional(),
-    phases: z.array(phaseDefinitionEncoder).optional(),
+    phases: z.array(legacyPhaseDefinitionEncoder).optional(),
 
     // --- DEPRECATED: Legacy format fields (to be removed after migration) ---
     budget: z.number().optional(),
