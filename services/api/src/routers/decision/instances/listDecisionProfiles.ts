@@ -1,15 +1,15 @@
 import { listDecisionProfiles } from '@op/common';
 
 import {
-  legacyDecisionProfileFilterSchema,
-  legacyDecisionProfileListEncoder,
-} from '../../../encoders/legacyDecision';
+  decisionProfileWithSchemaFilterSchema,
+  decisionProfileWithSchemaListEncoder,
+} from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const listDecisionProfilesRouter = router({
   listDecisionProfiles: commonAuthedProcedure()
-    .input(legacyDecisionProfileFilterSchema)
-    .output(legacyDecisionProfileListEncoder)
+    .input(decisionProfileWithSchemaFilterSchema)
+    .output(decisionProfileWithSchemaListEncoder)
     .query(async ({ input, ctx }) => {
       const { user } = ctx;
 
@@ -18,6 +18,6 @@ export const listDecisionProfilesRouter = router({
         user,
       });
 
-      return legacyDecisionProfileListEncoder.parse(result);
+      return decisionProfileWithSchemaListEncoder.parse(result);
     }),
 });

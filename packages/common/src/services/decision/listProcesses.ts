@@ -1,4 +1,4 @@
-import { db, desc, eq, ilike, sql } from '@op/db/client';
+import { and, db, desc, eq, ilike, sql } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
 
 export interface ListProcessesInput {
@@ -17,6 +17,16 @@ export const listProcesses = async ({
   try {
     const conditions = [];
 
+    // Filter for new schema format using JSON operators
+    // New format has: processSchema->'id', processSchema->'version', processSchema->'phases'
+    conditions.push(sql`${decisionProcesses.processSchema}->>'id' IS NOT NULL`);
+    conditions.push(
+      sql`${decisionProcesses.processSchema}->>'version' IS NOT NULL`,
+    );
+    conditions.push(
+      sql`${decisionProcesses.processSchema}->'phases' IS NOT NULL`,
+    );
+
     if (search) {
       conditions.push(ilike(decisionProcesses.name, `%${search}%`));
     }
@@ -27,10 +37,7 @@ export const listProcesses = async ({
       );
     }
 
-    const whereClause =
-      conditions.length > 0
-        ? sql`${sql.raw(conditions.map(() => '?').join(' AND '))}`
-        : undefined;
+    const whereClause = and(...conditions);
 
     const [processes, totalResult] = await Promise.all([
       db.query.decisionProcesses.findMany({
@@ -43,14 +50,14 @@ export const listProcesses = async ({
         offset,
       }),
       db
-        .select({ count: sql<number>`count(*)` })
+        .select({ count: sql<string>`count(*)` })
         .from(decisionProcesses)
         .where(whereClause),
     ]);
 
     const hasMore = processes.length > limit;
     const resultProcesses = hasMore ? processes.slice(0, -1) : processes;
-    const total = totalResult[0]?.count ?? 0;
+    const total = Number(totalResult[0]?.count ?? 0);
 
     return {
       processes: resultProcesses,
