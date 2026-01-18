@@ -1,16 +1,14 @@
 import { UnauthorizedError, listProposals } from '@op/common';
 import { TRPCError } from '@trpc/server';
 
-import {
-  legacyProposalFilterSchema,
-  legacyProposalListEncoder,
-} from '../../../encoders/legacyDecision';
+import { proposalListEncoder } from '../../../encoders/decision';
+import { legacyProposalFilterSchema } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const listProposalsRouter = router({
   listProposals: commonAuthedProcedure()
     .input(legacyProposalFilterSchema)
-    .output(legacyProposalListEncoder)
+    .output(proposalListEncoder)
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
@@ -20,7 +18,7 @@ export const listProposalsRouter = router({
           user,
         });
 
-        return result;
+        return proposalListEncoder.parse(result);
       } catch (error: unknown) {
         logger.error('Failed to list proposals', {
           userId: user.id,

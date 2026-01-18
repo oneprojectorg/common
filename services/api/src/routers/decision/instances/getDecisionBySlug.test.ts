@@ -46,14 +46,20 @@ describe.concurrent('getDecisionBySlug', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // Create instance WITHOUT granting access
+    // Create instance (creator has access by default via createInstanceFromTemplate)
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: false,
     });
 
     const { slug } = setup.instances[0]!;
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Create a different user who doesn't have access to the instance
+    const otherUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [], // Don't grant access to any instances
+    });
+    const caller = await createAuthenticatedCaller(otherUser.email);
 
     await expect(caller.decision.getDecisionBySlug({ slug })).rejects.toThrow();
   });
