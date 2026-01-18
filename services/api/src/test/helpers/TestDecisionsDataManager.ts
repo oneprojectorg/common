@@ -22,6 +22,7 @@ import type {
   decisionSchemaDefinitionEncoder,
   processInstanceWithSchemaEncoder,
 } from '../../encoders/decision';
+import type { legacyProcessInstanceEncoder } from '../../encoders/legacyDecision';
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
 import {
@@ -42,9 +43,16 @@ interface CreateDecisionSetupOptions {
 }
 
 type EncodedProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
+type LegacyEncodedProcessInstance = z.infer<typeof legacyProcessInstanceEncoder>;
 
 interface CreatedInstance {
   instance: EncodedProcessInstance;
+  profileId: string;
+  slug: string;
+}
+
+interface LegacyCreatedInstance {
+  instance: LegacyEncodedProcessInstance;
   profileId: string;
   slug: string;
 }
@@ -459,7 +467,7 @@ export class TestDecisionsDataManager {
     name: string;
     instanceData: Record<string, unknown>;
     status?: ProcessStatus;
-  }): Promise<CreatedInstance> {
+  }): Promise<LegacyCreatedInstance> {
     this.ensureCleanupRegistered();
 
     // Resolve caller - either use provided caller or create one from user
