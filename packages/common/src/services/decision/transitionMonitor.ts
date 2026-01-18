@@ -1,5 +1,6 @@
-import { db, eq, lte, sql } from '@op/db/client';
+import { and, db, eq, isNull, lte, sql } from '@op/db/client';
 import {
+  ProcessStatus,
   decisionProcessTransitions,
   decisionProcesses,
   processInstances,
@@ -8,7 +9,7 @@ import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 // import { processResults } from './processResults';
-import type { ProcessSchema, StateDefinition } from './types';
+import type { DecisionSchemaDefinition } from './schemas/types';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -33,14 +34,30 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
   };
 
   try {
-    const dueTransitions = await db.query.decisionProcessTransitions.findMany({
-      where: (transitions, { and, isNull }) =>
+    // Query due transitions, filtering to only include published instances
+    // Draft, completed, and cancelled instances should not have their transitions processed
+    const dueTransitions = await db
+      .select({
+        id: decisionProcessTransitions.id,
+        processInstanceId: decisionProcessTransitions.processInstanceId,
+        fromStateId: decisionProcessTransitions.fromStateId,
+        toStateId: decisionProcessTransitions.toStateId,
+        scheduledDate: decisionProcessTransitions.scheduledDate,
+        completedAt: decisionProcessTransitions.completedAt,
+      })
+      .from(decisionProcessTransitions)
+      .innerJoin(
+        processInstances,
+        eq(decisionProcessTransitions.processInstanceId, processInstances.id),
+      )
+      .where(
         and(
-          isNull(transitions.completedAt),
-          lte(transitions.scheduledDate, now),
+          isNull(decisionProcessTransitions.completedAt),
+          lte(decisionProcessTransitions.scheduledDate, now),
+          eq(processInstances.status, ProcessStatus.PUBLISHED),
         ),
-      orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
-    });
+      )
+      .orderBy(decisionProcessTransitions.scheduledDate);
 
     // Group transitions by processInstanceId to avoid race conditions
     // within the same process instance
@@ -136,26 +153,26 @@ async function processTransition(transitionId: string): Promise<void> {
     throw new CommonError(`Process not found: ${processInstance.processId}`);
   }
 
-  const processSchema = process.processSchema as ProcessSchema;
-  const toState = processSchema.states.find(
-    (state: StateDefinition) => state.id === transition.toStateId,
-  );
+  const processSchema = process.processSchema as DecisionSchemaDefinition;
+  const phases = processSchema.phases;
 
-  const isTransitioningToFinalState = toState?.type === 'final';
+  // Final state is the last phase in the array (per DecisionSchemaDefinition convention)
+  const lastPhase = phases[phases.length - 1];
+  const isTransitioningToFinalState = lastPhase?.id === transition.toStateId;
 
   // Update both the process instance and transition in a single transaction
   // to ensure atomicity and prevent partial state updates
   // Note: We rely on foreign key constraints to ensure the process instance exists
   await db.transaction(async (tx) => {
     // Update the process instance to the new state
-    // Use jsonb_set to update only the currentStateId field without reading the entire instanceData
+    // Use jsonb_set to update only the currentPhaseId field without reading the entire instanceData
     await tx
       .update(processInstances)
       .set({
         currentStateId: transition.toStateId,
         instanceData: sql`jsonb_set(
           ${processInstances.instanceData},
-          '{currentStateId}',
+          '{currentPhaseId}',
           to_jsonb(${transition.toStateId}::text)
         )`,
       })
