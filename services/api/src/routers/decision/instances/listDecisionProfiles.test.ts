@@ -325,7 +325,7 @@ describe.concurrent('listDecisionProfiles', () => {
       {
         id: setup.instances[0]?.profileId,
         processInstance: {
-          id: setup.instances[0]?.id,
+          id: setup.instances[0]?.instance.id,
         },
       },
     ]);
