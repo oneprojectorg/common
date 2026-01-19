@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { drizzle } from 'drizzle-orm/postgres-js';
 
 import config from './drizzle.config';
+import { relations } from './relations';
 import * as schema from './schema';
 
 // For local development, we need to load the .env.local file from the root of the monorepo
@@ -30,5 +31,6 @@ export const db = drizzle({
   },
   casing: config.casing,
   schema,
+  relations,
   logger: process.env.NODE_ENV !== 'test',
 });

@@ -4,7 +4,6 @@ import {
   joinProfileRequests,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { and, eq } from 'drizzle-orm';
 
 import { decodeCursor, encodeCursor, getCursorCondition } from '../../../utils';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
@@ -43,26 +42,23 @@ export const listProfileJoinRequests = async ({
       })
     : undefined;
 
-  // Build where clause using SQL expressions (v2 object-style where doesn't support complex AND/OR with SQL)
-  const whereClause = and(
-    eq(joinProfileRequests.targetProfileId, targetProfileId),
-    status ? eq(joinProfileRequests.status, status) : undefined,
-    cursorCondition,
-  );
-
   const [, results] = await Promise.all([
     assertTargetProfileAdminAccess({ user, targetProfileId }),
-    db.query.joinProfileRequests.findMany({
-      where: {
-        RAW: whereClause,
-      },
+    db._query.joinProfileRequests.findMany({
+      where: (table, { and, eq }) =>
+        and(
+          eq(table.targetProfileId, targetProfileId),
+          status ? eq(table.status, status) : undefined,
+          cursorCondition,
+        ),
       with: {
         requestProfile: true,
         targetProfile: true,
       },
-      orderBy: {
-        createdAt: dir,
-      },
+      orderBy: (_, { asc, desc }) =>
+        dir === 'asc'
+          ? asc(joinProfileRequests.createdAt)
+          : desc(joinProfileRequests.createdAt),
       limit: limit + 1,
     }),
   ]);

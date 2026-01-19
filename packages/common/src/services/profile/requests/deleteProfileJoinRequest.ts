@@ -19,8 +19,8 @@ export const deleteProfileJoinRequest = async ({
   requestId: string;
 }) => {
   // Find the existing request by ID with profiles
-  const existingRequest = await db._query.joinProfileRequests.findFirst({
-    where: (table, { eq }) => eq(table.id, requestId),
+  const existingRequest = await db.query.joinProfileRequests.findFirst({
+    where: { id: requestId },
     with: {
       requestProfile: true,
       targetProfile: true,
