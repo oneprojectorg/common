@@ -118,7 +118,9 @@ export const getInstanceRouter = router({
 
         // Merge instance phase dates into schema phases
         const processSchemaWithDates =
-          typeof schema === 'object' && schema !== null && !Array.isArray(schema)
+          typeof schema === 'object' &&
+          schema !== null &&
+          !Array.isArray(schema)
             ? {
                 ...schema,
                 phases: Array.isArray(schema.phases)
