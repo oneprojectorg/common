@@ -1,12 +1,6 @@
 import { cache } from '@op/cache';
-import {
-  NotFoundError,
-  UnauthorizedError,
-  getPermissionsOnProposal,
-  getProposal,
-} from '@op/common';
+import { getPermissionsOnProposal, getProposal } from '@op/common';
 import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 

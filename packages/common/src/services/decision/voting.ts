@@ -23,20 +23,22 @@ import { validateVoteSelection } from './schemaValidators';
 /**
  * Helper to find current phase/state and extract voting config.
  * Supports both legacy (states) and new (phases) schema formats.
+ * Returns undefined if the current phase/state is not found.
  */
 function getCurrentPhaseConfig(processInstance: {
   instanceData: unknown;
   process: unknown;
-}): {
-  found: boolean;
-  allowProposals: boolean;
-  allowDecisions: boolean;
-} {
+}):
+  | {
+      allowProposals: boolean;
+      allowDecisions: boolean;
+    }
+  | undefined {
   const instanceData = processInstance.instanceData as any;
   const processSchema = (processInstance.process as any)?.processSchema;
 
   if (!processSchema || !instanceData?.currentPhaseId) {
-    return { found: false, allowProposals: false, allowDecisions: false };
+    return undefined;
   }
 
   const currentPhaseId = instanceData.currentPhaseId;
@@ -48,7 +50,6 @@ function getCurrentPhaseConfig(processInstance: {
     );
     if (currentPhase) {
       return {
-        found: true,
         allowProposals: currentPhase.rules?.proposals?.submit ?? false,
         allowDecisions: currentPhase.rules?.voting?.submit ?? false,
       };
@@ -62,14 +63,13 @@ function getCurrentPhaseConfig(processInstance: {
     );
     if (currentState) {
       return {
-        found: true,
         allowProposals: currentState.config?.allowProposals ?? false,
         allowDecisions: currentState.config?.allowDecisions ?? false,
       };
     }
   }
 
-  return { found: false, allowProposals: false, allowDecisions: false };
+  return undefined;
 }
 
 export type CustomData = Record<string, unknown>;
@@ -189,7 +189,7 @@ export const submitVote = async ({
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
-    if (!phaseConfig.found) {
+    if (!phaseConfig) {
       throw new ValidationError('Current state not found');
     }
 
@@ -383,7 +383,7 @@ export const getVotingStatus = async ({
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
-    if (!phaseConfig.found) {
+    if (!phaseConfig) {
       throw new ValidationError('Current state not found');
     }
 
@@ -511,7 +511,7 @@ export const validateVoteSelectionService = async ({
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
-    if (!phaseConfig.found) {
+    if (!phaseConfig) {
       return {
         isValid: false,
         errors: ['Current state not found'],
