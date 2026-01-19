@@ -14,8 +14,9 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
 import { processProposalContent } from './proposalContentProcessor';
-import { schemaValidator } from './schemaValidator';
-import type { InstanceData, ProcessSchema, ProposalData } from './types';
+import { DecisionSchemaDefinition } from './schemas';
+import type { InstanceData, ProposalData } from './types';
+import { checkProposalsAllowed } from './utils/proposal';
 
 type ProcessInstanceWithProcess = ProcessInstance & {
   process: DecisionProcess;
@@ -83,36 +84,26 @@ export const submitProposal = async ({
 
   assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
 
-  // Check if proposals are allowed in current state
-  const process = instance.process as { processSchema: ProcessSchema };
+  const process = instance.process as {
+    processSchema: DecisionSchemaDefinition;
+  };
   const processSchema = process.processSchema;
   const instanceData = instance.instanceData as InstanceData;
   const currentPhaseId = instanceData.currentPhaseId;
 
   if (!currentPhaseId) {
-    throw new ValidationError(
-      'Legacy processes are not supported for draft proposal submission',
-    );
+    throw new ValidationError('Invalid phase in process instance');
   }
 
-  const currentState = processSchema.states.find(
-    (s) => s.id === currentPhaseId,
+  // Check if proposals are allowed in current phase
+  const { allowed, phaseName } = checkProposalsAllowed(
+    processSchema,
+    currentPhaseId,
   );
-  if (!currentState) {
-    throw new ValidationError('Invalid state in process instance');
-  }
 
-  if (currentState.config?.allowProposals === false) {
+  if (!allowed) {
     throw new ValidationError(
-      `Proposals are not allowed in the ${currentState.name} state`,
-    );
-  }
-
-  // Validate proposal data against processSchema.proposalTemplate
-  if (processSchema.proposalTemplate) {
-    schemaValidator.validateProposalData(
-      processSchema.proposalTemplate,
-      data.proposalData,
+      `Proposals are not allowed in the ${phaseName} phase`,
     );
   }
 
