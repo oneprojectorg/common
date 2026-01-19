@@ -1,9 +1,10 @@
-import { profiles } from '@op/db/schema';
+import { profiles, profileUsers } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { individualsEncoder } from './individuals';
 import { type organizationsEncoder } from './organizations';
+import { accessRoleMinimalEncoder, storageItemMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 
 // Base profile encoder without organization reference
@@ -46,40 +47,29 @@ export const profileWithAvatarEncoder = baseProfileEncoder;
 
 export type Profile = z.infer<typeof profileEncoder>;
 
-// Profile user encoders
-export const profileUserEncoder = z.object({
-  id: z.string(),
-  authUserId: z.string(),
-  name: z.string().nullable(),
-  email: z.string(),
-  about: z.string().nullable(),
-  profileId: z.string(),
-  createdAt: z.union([z.string(), z.date()]).nullable(),
-  updatedAt: z.union([z.string(), z.date()]).nullable(),
-  profile: z
-    .object({
-      id: z.string(),
-      name: z.string().nullable(),
-      slug: z.string(),
-      bio: z.string().nullable(),
-      email: z.string().nullable(),
-      type: z.string(),
-      avatarImage: z
-        .object({
-          id: z.string(),
-          name: z.string().nullable(),
-        })
-        .nullable(),
-    })
-    .nullable(),
-  roles: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      description: z.string().nullable(),
-    }),
-  ),
-});
+// Profile user encoders - using createSelectSchema for base fields
+export const profileUserEncoder = createSelectSchema(profileUsers)
+  .extend({
+    // Override timestamp fields to handle both string and Date
+    createdAt: z.union([z.string(), z.date()]).nullable(),
+    updatedAt: z.union([z.string(), z.date()]).nullable(),
+    // Nested profile with minimal fields needed for display
+    profile: baseProfileEncoder
+      .pick({
+        id: true,
+        name: true,
+        slug: true,
+        bio: true,
+        email: true,
+        type: true,
+      })
+      .extend({
+        avatarImage: storageItemMinimalEncoder.nullable(),
+      })
+      .nullable(),
+    // Roles using shared minimal encoder
+    roles: z.array(accessRoleMinimalEncoder),
+  });
 
 export const profileUserListEncoder = z.array(profileUserEncoder);
 
