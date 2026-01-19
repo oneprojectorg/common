@@ -16,6 +16,10 @@ export {
   searchProfiles,
   listProfiles,
   inviteUsersToProfile,
+  listProfileUsers,
+  addProfileUser,
+  updateProfileUserRole,
+  removeProfileUser,
 } from './profile';
 export {
   addRelationship as addProfileRelationship,
