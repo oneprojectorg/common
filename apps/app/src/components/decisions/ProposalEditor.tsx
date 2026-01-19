@@ -380,8 +380,6 @@ export function ProposalEditor({
           // Submit draft proposal - validates and transitions to 'submitted' status
           await submitProposalMutation.mutateAsync({
             proposalId: existingProposal.id,
-            proposalData,
-            attachmentIds,
           });
         } else {
           // Update existing submitted proposal - navigation handled in onSuccess callback
