@@ -82,7 +82,7 @@ describe.concurrent('profile.users', () => {
 
       const memberUser = memberUsers[0];
       if (!memberUser) {
-        throw new Error('Member user not created');
+        throw new Error('Expected memberUser to be defined');
       }
 
       const { session } = await createIsolatedSession(memberUser.email);
@@ -167,7 +167,7 @@ describe.concurrent('profile.users', () => {
 
       const memberUser = memberUsers[0];
       if (!memberUser) {
-        throw new Error('Member user not created');
+        throw new Error('Expected memberUser to be defined');
       }
 
       const { session } = await createIsolatedSession(adminUser.email);
@@ -193,7 +193,7 @@ describe.concurrent('profile.users', () => {
 
       const memberUser = memberUsers[0];
       if (!memberUser) {
-        throw new Error('Member user not created');
+        throw new Error('Expected memberUser to be defined');
       }
 
       const standaloneUser = await testData.createStandaloneUser();
@@ -267,7 +267,7 @@ describe.concurrent('profile.users', () => {
 
       const memberUser = memberUsers[0];
       if (!memberUser) {
-        throw new Error('Member user not created');
+        throw new Error('Expected memberUser to be defined');
       }
 
       const { session } = await createIsolatedSession(adminUser.email);
@@ -308,7 +308,7 @@ describe.concurrent('profile.users', () => {
 
       const memberUser = memberUsers[0];
       if (!memberUser) {
-        throw new Error('Member user not created');
+        throw new Error('Expected memberUser to be defined');
       }
 
       const { session } = await createIsolatedSession(adminUser.email);
@@ -387,7 +387,7 @@ describe.concurrent('profile.users', () => {
       const memberUser1 = memberUsers[0];
       const memberUser2 = memberUsers[1];
       if (!memberUser1 || !memberUser2) {
-        throw new Error('Member users not created');
+        throw new Error('Expected memberUser1 and memberUser2 to be defined');
       }
 
       const { session } = await createIsolatedSession(memberUser1.email);
@@ -414,7 +414,7 @@ describe.concurrent('profile.users', () => {
 
       const memberUser = memberUsers[0];
       if (!memberUser) {
-        throw new Error('Member user not created');
+        throw new Error('Expected memberUser to be defined');
       }
 
       const { session } = await createIsolatedSession(adminUser.email);
@@ -445,7 +445,7 @@ describe.concurrent('profile.users', () => {
       const memberUser1 = memberUsers[0];
       const memberUser2 = memberUsers[1];
       if (!memberUser1 || !memberUser2) {
-        throw new Error('Member users not created');
+        throw new Error('Expected memberUser1 and memberUser2 to be defined');
       }
 
       const { session } = await createIsolatedSession(memberUser1.email);
