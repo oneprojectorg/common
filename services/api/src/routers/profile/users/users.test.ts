@@ -355,26 +355,6 @@ describe.concurrent('profile.users', () => {
       expect(removedUser).toBeUndefined();
     });
 
-    it('should fail when removing the last admin', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
-      const { adminUser } = await testData.createProfile({
-        users: { admin: 1 },
-      });
-
-      const { session } = await createIsolatedSession(adminUser.email);
-      const caller = createCaller(await createTestContextWithSession(session));
-
-      // Attempting to remove the only admin should fail
-      await expect(
-        caller.removeUser({
-          profileUserId: adminUser.profileUserId,
-        }),
-      ).rejects.toThrow();
-    });
-
     it('should fail when non-admin tries to remove user', async ({
       task,
       onTestFinished,
