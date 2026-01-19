@@ -102,18 +102,9 @@ export const createProposal = async ({
 
     if (!allowed) {
       throw new ValidationError(
-<<<<<<< HEAD
         `Proposals are not allowed in the ${phaseName} phase`,
       );
     }
-=======
-        `Proposals are not allowed in the ${currentState.name} state`,
-      );
-    }
-
-    // NOTE: We skip validation here because createProposal creates drafts.
-    // Validation happens in submitProposal when transitioning from draft to submitted.
->>>>>>> 686bab09 (feat: implement draft proposal flow)
 
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);

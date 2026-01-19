@@ -3,6 +3,7 @@ import {
   type DecisionProcess,
   type ProcessInstance,
   proposalAttachments,
+  proposalCategories,
   proposals,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -94,10 +95,16 @@ export const submitProposal = async ({
   const process = instance.process as { processSchema: ProcessSchema };
   const processSchema = process.processSchema;
   const instanceData = instance.instanceData as InstanceData;
-  const currentStateId = instanceData.currentPhaseId || instance.currentStateId;
+  const currentPhaseId = instanceData.currentPhaseId;
+
+  if (!currentPhaseId) {
+    throw new ValidationError(
+      'Legacy processes are not supported for draft proposal submission',
+    );
+  }
 
   const currentState = processSchema.states.find(
-    (s) => s.id === currentStateId,
+    (s) => s.id === currentPhaseId,
   );
   if (!currentState) {
     throw new ValidationError('Invalid state in process instance');
@@ -152,9 +159,6 @@ export const submitProposal = async ({
 
     // Update category if specified (delete existing, insert new)
     if (categoryTermId) {
-      // Note: proposalCategories has composite primary key, so we need to handle carefully
-      const { proposalCategories } = await import('@op/db/schema');
-
       // Delete existing categories for this proposal
       await tx
         .delete(proposalCategories)
