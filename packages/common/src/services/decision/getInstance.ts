@@ -64,6 +64,9 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     );
     const participantCount = uniqueParticipants.size;
 
+    // Extract decision profile slug for /decisions/[slug] navigation
+    const profileSlug = (instance.profile as { slug?: string } | null)?.slug;
+
     // Filter budget if hideBudget is true (for all users, including owner)
     const instanceData = instance.instanceData as any;
     const shouldHideBudget = instanceData?.hideBudget === true;
@@ -77,6 +80,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       instanceData: filteredInstanceData,
       proposalCount,
       participantCount,
+      profileSlug,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

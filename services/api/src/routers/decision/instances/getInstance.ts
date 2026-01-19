@@ -141,12 +141,6 @@ export const getInstanceRouter = router({
             }
           : {};
 
-        // Extract decision profile slug for navigation
-        const profileSlug =
-          instance.profile && typeof instance.profile === 'object'
-            ? (instance.profile as { slug?: string }).slug
-            : undefined;
-
         return processInstanceWithSchemaEncoder.parse({
           ...instance,
           instanceData,
@@ -156,9 +150,6 @@ export const getInstanceRouter = router({
                 processSchema: processSchemaWithDates,
               }
             : undefined,
-          proposalCount: instance.proposalCount,
-          participantCount: instance.participantCount,
-          profileSlug,
         });
       } catch (error) {
         if (error instanceof NotFoundError) {
