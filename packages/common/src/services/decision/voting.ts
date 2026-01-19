@@ -534,7 +534,7 @@ export const validateVoteSelectionService = async ({
 
         if (!proposal) {
           errors.push('Proposal not found');
-        } else if (proposal.status !== 'submitted') {
+        } else if (proposal.status !== ProposalStatus.SUBMITTED) {
           errors.push('Proposal is not available for voting');
         }
 

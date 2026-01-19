@@ -18,6 +18,7 @@ interface ProposalEditorLayoutProps {
   onSubmitProposal: () => void;
   isSubmitting: boolean;
   isEditMode?: boolean;
+  isDraft?: boolean;
 }
 
 export function ProposalEditorLayout({
@@ -27,6 +28,7 @@ export function ProposalEditorLayout({
   onSubmitProposal,
   isSubmitting,
   isEditMode = false,
+  isDraft = false,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -59,7 +61,7 @@ export function ProposalEditorLayout({
             className="px-4 py-2"
           >
             {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-            {isEditMode ? (
+            {isEditMode && !isDraft ? (
               <>
                 <span className="inline lg:hidden">{t('Update')}</span>
                 <span className="hidden lg:inline">{t('Update Proposal')}</span>
