@@ -11,6 +11,7 @@ import {
 import { baseProfileEncoder } from './profiles';
 
 const permissionSchema = z.object({
+  admin: z.boolean(),
   create: z.boolean(),
   read: z.boolean(),
   update: z.boolean(),

@@ -13,6 +13,7 @@ const defaultPermissions = AccessZones.reduce<CommonZonePermissions>(
   (accum, key) => ({
     ...accum,
     [key]: {
+      admin: false,
       create: false,
       read: false,
       update: false,
