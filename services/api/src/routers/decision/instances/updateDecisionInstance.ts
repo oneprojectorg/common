@@ -1,7 +1,7 @@
 import { updateDecisionInstance } from '@op/common';
 
 import {
-  decisionProfileEncoder,
+  decisionProfileWithSchemaEncoder,
   updateDecisionInstanceInputSchema,
 } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -9,7 +9,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 export const updateDecisionInstanceRouter = router({
   updateDecisionInstance: commonAuthedProcedure()
     .input(updateDecisionInstanceInputSchema)
-    .output(decisionProfileEncoder)
+    .output(decisionProfileWithSchemaEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
@@ -18,6 +18,6 @@ export const updateDecisionInstanceRouter = router({
         user,
       });
 
-      return decisionProfileEncoder.parse(profile);
+      return decisionProfileWithSchemaEncoder.parse(profile);
     }),
 });

@@ -66,7 +66,7 @@ export const deleteProposal = async ({
     const isSubmitter =
       existingProposal.submittedByProfileId === dbUser.currentProfileId;
     const isProcessOwner =
-      processInstance?.ownerProfileId === dbUser.currentProfileId;
+      processInstance.ownerProfileId === dbUser.currentProfileId;
 
     if (!isSubmitter && !hasPermissions && !isProcessOwner) {
       throw new UnauthorizedError('Not authorized to delete this proposal');

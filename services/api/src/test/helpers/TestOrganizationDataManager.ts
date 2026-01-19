@@ -379,8 +379,7 @@ export class TestOrganizationDataManager {
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 3. Delete auth users by exact IDs (not pattern matching)
-    // This will cascade to users and organizationUsers tables
+    // 4. Delete auth users by exact IDs (not pattern matching)
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
         this.createdAuthUserIds.map((userId) =>

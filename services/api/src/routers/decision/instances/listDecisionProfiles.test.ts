@@ -292,18 +292,27 @@ describe.concurrent('listDecisionProfiles', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
+    // Create a setup where the main user has access to 1 instance
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
     });
 
-    // Create another instance WITHOUT granting access
-    await testData.createInstanceForProcess({
-      process: setup.process,
-      user: setup.user,
-      name: 'Inaccessible Process',
-      budget: 100000,
+    // Create a different user who will own another instance
+    const otherUser = await testData.createMemberUser({
+      organization: setup.organization,
     });
+
+    // Create an instance owned by the other user (so main user doesn't have access)
+    const otherUserCaller = await createAuthenticatedCaller(otherUser.email);
+    const otherUserInstance =
+      await otherUserCaller.decision.createInstanceFromTemplate({
+        templateId: setup.process.id,
+        name: 'Other User Instance',
+        description: 'Instance owned by other user',
+      });
+    // Track the profile for cleanup
+    testData.trackProfileForCleanup(otherUserInstance.id);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -311,8 +320,15 @@ describe.concurrent('listDecisionProfiles', () => {
       limit: 10,
     });
 
-    // Should only return the profile the user has access to
-    expect(result.items).toHaveLength(1);
+    // Main user should only see the profile they have access to
+    expect(result.items).toMatchObject([
+      {
+        id: setup.instances[0]?.profileId,
+        processInstance: {
+          id: setup.instances[0]?.instance.id,
+        },
+      },
+    ]);
   });
 
   it('should properly paginate through all items', async ({

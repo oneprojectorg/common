@@ -212,6 +212,7 @@ export const legacyProposalAttachmentEncoder = createSelectSchema(
 export const legacyProposalEncoder = createSelectSchema(proposals)
   .pick({
     id: true,
+    processInstanceId: true,
     proposalData: true,
     status: true,
     visibility: true,
