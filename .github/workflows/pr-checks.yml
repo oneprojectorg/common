@@ -47,6 +47,3 @@ jobs:
 
       - name: Run TypeScript checks - App
         run: pnpm typecheck
-
-      - name: Run tests
-        run: pnpm test

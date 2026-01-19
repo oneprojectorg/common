@@ -1,11 +1,11 @@
-name: API Tests
+name: Tests
 
 on:
   pull_request:
 
 jobs:
   test:
-    name: API Tests
+    name: Tests
     runs-on: ubuntu-latest
 
     env:
@@ -72,5 +72,5 @@ jobs:
       - name: Wait for Supabase to be ready and run migrations
         run: pnpm w:db migrate:test
 
-      - name: Run API tests
-        run: pnpm w:api test
+      - name: Run tests
+        run: pnpm test
