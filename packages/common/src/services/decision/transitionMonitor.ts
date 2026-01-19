@@ -1,7 +1,10 @@
-import { db, eq, lte, sql } from '@op/db/client';
+import { and, db, eq, isNull, lte, sql } from '@op/db/client';
 import {
+  type DecisionProcess,
+  type DecisionProcessTransition,
+  type ProcessInstance,
+  ProcessStatus,
   decisionProcessTransitions,
-  decisionProcesses,
   processInstances,
 } from '@op/db/schema';
 import pMap from 'p-map';
@@ -9,6 +12,13 @@ import pMap from 'p-map';
 import { CommonError } from '../../utils';
 // import { processResults } from './processResults';
 import type { ProcessSchema, StateDefinition } from './types';
+
+/** Transition with nested process instance and process relations */
+type TransitionWithRelations = DecisionProcessTransition & {
+  processInstance: ProcessInstance & {
+    process: DecisionProcess;
+  };
+};
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -33,14 +43,30 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
   };
 
   try {
-    const dueTransitions = await db._query.decisionProcessTransitions.findMany({
-      where: (transitions, { and, isNull }) =>
+    // Query due transitions, filtering to only include published instances
+    // Draft, completed, and cancelled instances should not have their transitions processed
+    const dueTransitions = await db
+      .select({
+        id: decisionProcessTransitions.id,
+        processInstanceId: decisionProcessTransitions.processInstanceId,
+        fromStateId: decisionProcessTransitions.fromStateId,
+        toStateId: decisionProcessTransitions.toStateId,
+        scheduledDate: decisionProcessTransitions.scheduledDate,
+        completedAt: decisionProcessTransitions.completedAt,
+      })
+      .from(decisionProcessTransitions)
+      .innerJoin(
+        processInstances,
+        eq(decisionProcessTransitions.processInstanceId, processInstances.id),
+      )
+      .where(
         and(
-          isNull(transitions.completedAt),
-          lte(transitions.scheduledDate, now),
+          isNull(decisionProcessTransitions.completedAt),
+          lte(decisionProcessTransitions.scheduledDate, now),
+          eq(processInstances.status, ProcessStatus.PUBLISHED),
         ),
-      orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
-    });
+      )
+      .orderBy(decisionProcessTransitions.scheduledDate);
 
     // Group transitions by processInstanceId to avoid race conditions
     // within the same process instance
@@ -57,7 +83,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
       }
     }
 
-    // Process each process instance's transitions in parallel (up to 4 processes at a time)
+    // Process each process instance's transitions in parallel (up to 5 processes at a time)
     // but process transitions WITHIN each process sequentially to prevent race conditions per process
     await pMap(
       Array.from(transitionsByProcess.entries()),
@@ -84,7 +110,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           }
         }
       },
-      { concurrency: 4 },
+      { concurrency: 5 },
     );
 
     return result;
@@ -102,36 +128,41 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
  * If transitioning to a final state (results phase), triggers results processing.
  */
 async function processTransition(transitionId: string): Promise<void> {
-  const transition = await db._query.decisionProcessTransitions.findFirst({
-    where: eq(decisionProcessTransitions.id, transitionId),
-  });
+  // Fetch transition with related process instance and process in a single query
+  const transitionResult = await db._query.decisionProcessTransitions.findFirst(
+    {
+      where: eq(decisionProcessTransitions.id, transitionId),
+      with: {
+        processInstance: {
+          with: {
+            process: true,
+          },
+        },
+      },
+    },
+  );
 
-  if (!transition) {
+  if (!transitionResult) {
     throw new CommonError(
       `Transition not found: ${transitionId}. It may have been deleted or the ID is invalid.`,
     );
   }
 
+  // Type assertion for the nested relations (Drizzle's type inference doesn't handle nested `with` well)
+  const transition = transitionResult as TransitionWithRelations;
+
   if (transition.completedAt) {
     return;
   }
 
-  // Get the process instance to check if we're transitioning to a final state
-  const processInstance = await db._query.processInstances.findFirst({
-    where: eq(processInstances.id, transition.processInstanceId),
-  });
-
+  const processInstance = transition.processInstance;
   if (!processInstance) {
     throw new CommonError(
       `Process instance not found: ${transition.processInstanceId}`,
     );
   }
 
-  // Get the process schema to check the state type
-  const process = await db._query.decisionProcesses.findFirst({
-    where: eq(decisionProcesses.id, processInstance.processId),
-  });
-
+  const process = processInstance.process;
   if (!process) {
     throw new CommonError(`Process not found: ${processInstance.processId}`);
   }
