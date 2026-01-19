@@ -31,64 +31,37 @@ export const getLegacyInstanceRouter = router({
     .input(legacyGetInstanceInputSchema)
     .output(legacyProcessInstanceEncoder)
     .query(async ({ ctx, input }) => {
-      const { user, logger } = ctx;
+      const { user } = ctx;
 
-      try {
-        const instance = await getInstance({
-          instanceId: input.instanceId,
-          authUserId: user.id,
-          user,
-        });
+      const instance = await getInstance({
+        instanceId: input.instanceId,
+        authUserId: user.id,
+        user,
+      });
 
-        // Track process viewed event
-        waitUntil(trackProcessViewed(ctx, input.instanceId));
+      // Track process viewed event
+      waitUntil(trackProcessViewed(ctx, input.instanceId));
 
-        return legacyProcessInstanceEncoder.parse({
-          ...instance,
-          instanceData: instance.instanceData as Record<string, any>,
-          // Some typechecking since these are unknown
-          process: instance.process
-            ? {
-                ...instance.process,
-                processSchema: (() => {
-                  const schema = (instance.process as any)?.processSchema;
-                  return typeof schema === 'object' &&
-                    schema !== null &&
-                    !Array.isArray(schema)
-                    ? schema
-                    : {};
-                })(),
-              }
-            : undefined,
-          proposalCount: instance.proposalCount,
-          participantCount: instance.participantCount,
-        });
-      } catch (error) {
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: error.message,
-          });
-        }
-
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: error.message,
-          });
-        }
-
-        logger.error('Error retrieving legacy process instance', {
-          userId: user.id,
-          instanceId: input.instanceId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve process instance',
-        });
-      }
+      return legacyProcessInstanceEncoder.parse({
+        ...instance,
+        instanceData: instance.instanceData as Record<string, any>,
+        // Some typechecking since these are unknown
+        process: instance.process
+          ? {
+              ...instance.process,
+              processSchema: (() => {
+                const schema = (instance.process as any)?.processSchema;
+                return typeof schema === 'object' &&
+                  schema !== null &&
+                  !Array.isArray(schema)
+                  ? schema
+                  : {};
+              })(),
+            }
+          : undefined,
+        proposalCount: instance.proposalCount,
+        participantCount: instance.participantCount,
+      });
     }),
 });
 
