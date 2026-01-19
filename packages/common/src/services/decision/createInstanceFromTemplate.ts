@@ -115,7 +115,7 @@ export const createInstanceFromTemplate = async ({
           email: user.email,
         })
         .returning(),
-      tx.query.accessRoles.findFirst({
+      tx._query.accessRoles.findFirst({
         where: (table, { eq }) => eq(table.name, 'Admin'),
       }),
     ]);
@@ -153,7 +153,7 @@ export const createInstanceFromTemplate = async ({
 
   // Fetch the profile with processInstance joined for the response
   // profileId is guaranteed to be set since we just created it above
-  const profile = await db.query.profiles.findFirst({
+  const profile = await db._query.profiles.findFirst({
     where: eq(profiles.id, instance.profileId!),
     with: {
       processInstance: true,

@@ -91,7 +91,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(result.processInstance.status).toBe('draft');
 
     // Verify instance data has phases
-    const instance = await db.query.processInstances.findFirst({
+    const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, result.processInstance.id),
     });
 
@@ -154,7 +154,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(result.processInstance.id).toBeDefined();
 
     // Verify transitions were created
-    const transitions = await db.query.decisionProcessTransitions.findMany({
+    const transitions = await db._query.decisionProcessTransitions.findMany({
       where: eq(
         decisionProcessTransitions.processInstanceId,
         result.processInstance.id,
@@ -213,7 +213,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     // result.id is now the profile ID
     testData.trackProfileForCleanup(result.id);
 
-    const instance = await db.query.processInstances.findFirst({
+    const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, result.processInstance.id),
     });
 

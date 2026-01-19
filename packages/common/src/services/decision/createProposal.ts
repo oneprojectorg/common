@@ -44,7 +44,7 @@ export const createProposal = async ({
 
   try {
     // Verify the process instance exists and get the process schema
-    const instance = await db.query.processInstances.findFirst({
+    const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
       with: {
         process: true,
@@ -102,7 +102,7 @@ export const createProposal = async ({
 
     if (categoryLabel?.trim()) {
       try {
-        const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
+        const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
           where: eq(taxonomyTerms.label, categoryLabel.trim()),
           with: {
             taxonomy: true,

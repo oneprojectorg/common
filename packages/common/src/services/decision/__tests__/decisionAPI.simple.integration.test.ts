@@ -110,7 +110,7 @@ describe('Decision API Simple Integration Tests', () => {
         createdByProfileId: 'profile-id-123',
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
           returning: vi.fn().mockResolvedValueOnce([mockProcess]),
@@ -145,8 +145,8 @@ describe('Decision API Simple Integration Tests', () => {
         currentStateId: 'draft',
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.decisionProcesses.findFirst.mockResolvedValueOnce(
         mockProcess as any,
       );
       mockDb.insert.mockReturnValueOnce({
@@ -181,8 +181,8 @@ describe('Decision API Simple Integration Tests', () => {
         status: 'submitted',
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce({
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce({
         ...mockInstance,
         process: mockProcess,
       } as any);
@@ -214,8 +214,8 @@ describe('Decision API Simple Integration Tests', () => {
         },
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstanceInReview as any,
       );
 
@@ -245,7 +245,7 @@ describe('Decision API Simple Integration Tests', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
 
@@ -281,12 +281,12 @@ describe('Decision API Simple Integration Tests', () => {
       };
 
       // Mock transition check and execution
-      mockDb.query.processInstances.findFirst
+      mockDb._query.processInstances.findFirst
         .mockResolvedValueOnce(mockInstance as any) // For check
         .mockResolvedValueOnce(mockInstance as any) // For execute
         .mockResolvedValueOnce(updatedInstance as any); // For final result
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
 
       const mockTrx = {
         update: vi.fn().mockReturnValue({
@@ -331,7 +331,7 @@ describe('Decision API Simple Integration Tests', () => {
 
     it('should reject users without active profiles', async () => {
       const userWithoutProfile = { ...mockDbUser, currentProfileId: null };
-      mockDb.query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
+      mockDb._query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
 
       await expect(
         createProcess({
@@ -352,7 +352,7 @@ describe('Decision API Simple Integration Tests', () => {
         states: [], // Empty states
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
           returning: vi.fn().mockResolvedValueOnce([
@@ -391,8 +391,8 @@ describe('Decision API Simple Integration Tests', () => {
         currentStateId: 'draft', // Override with valid state
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.decisionProcesses.findFirst.mockResolvedValueOnce(
         mockProcess as any,
       );
       mockDb.insert.mockReturnValueOnce({
@@ -422,7 +422,7 @@ describe('Decision API Simple Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database connection errors', async () => {
-      mockDb.query.users.findFirst.mockRejectedValueOnce(
+      mockDb._query.users.findFirst.mockRejectedValueOnce(
         new Error('Database connection failed'),
       );
 
@@ -438,7 +438,7 @@ describe('Decision API Simple Integration Tests', () => {
     });
 
     it('should handle invalid instance IDs in transitions', async () => {
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(null);
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(null);
 
       await expect(
         TransitionEngine.checkAvailableTransitions({

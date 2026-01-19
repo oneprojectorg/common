@@ -90,7 +90,7 @@ describe.skip('Profile Invite Integration Tests', () => {
     createdAuthUserIds.push(adminAuthUser.id);
 
     // Wait for trigger to create user record, then fetch it
-    const adminUserRecord = await db.query.users.findFirst({
+    const adminUserRecord = await db._query.users.findFirst({
       where: eq(users.authUserId, adminAuthUser.id),
     });
 
@@ -146,7 +146,7 @@ describe.skip('Profile Invite Integration Tests', () => {
     expect(result.details.failed).toHaveLength(0);
 
     // 6. Verify profileUser was created
-    const createdProfileUser = await db.query.profileUsers.findFirst({
+    const createdProfileUser = await db._query.profileUsers.findFirst({
       where: (table, { eq, and }) =>
         and(
           eq(table.profileId, profile.id),

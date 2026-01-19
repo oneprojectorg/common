@@ -85,7 +85,7 @@ const createdUsers: User[] = [];
 for (const email of adminEmails) {
   try {
     // Check if user already exists in local users table
-    const existingUser = await db.query.users.findFirst({
+    const existingUser = await db._query.users.findFirst({
       where: (table, { eq }) => eq(table.email, email),
     });
 
@@ -394,7 +394,7 @@ if (firstUser) {
             email: user.email!,
           })
           .returning(),
-        db.query.accessRoles.findFirst({
+        db._query.accessRoles.findFirst({
           where: (table, { eq }) => eq(table.name, 'Admin'),
         }),
         db

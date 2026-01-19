@@ -54,7 +54,7 @@ export const listProfileJoinRequests = async ({
 
   const [, results] = await Promise.all([
     assertTargetProfileAdminAccess({ user, targetProfileId }),
-    db.query.joinProfileRequests.findMany({
+    db._query.joinProfileRequests.findMany({
       where: whereClause,
       with: {
         requestProfile: true,

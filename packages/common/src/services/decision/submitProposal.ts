@@ -33,7 +33,7 @@ export const submitProposal = async ({
   authUserId: string;
 }) => {
   // Fetch the proposal with its process instance
-  const existingProposal = await db.query.proposals.findFirst({
+  const existingProposal = await db._query.proposals.findFirst({
     where: eq(proposals.id, data.proposalId),
     with: {
       processInstance: {

@@ -34,7 +34,7 @@ export const checkMembershipRouter = router({
         assertAccess({ profile: permission.ADMIN }, orgUser?.roles ?? []);
 
         // Check if the target email is a member of the organization
-        const membershipExists = await db.query.organizationUsers.findFirst({
+        const membershipExists = await db._query.organizationUsers.findFirst({
           where: (table, { and, eq }) =>
             and(
               eq(table.email, email.toLowerCase()),

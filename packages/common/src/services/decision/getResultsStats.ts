@@ -49,7 +49,7 @@ export const getResultsStats = async ({
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
-  const result = await db.query.decisionProcessResults.findFirst({
+  const result = await db._query.decisionProcessResults.findFirst({
     where: eq(decisionProcessResults.processInstanceId, instanceId),
     orderBy: [desc(decisionProcessResults.executedAt)],
   });

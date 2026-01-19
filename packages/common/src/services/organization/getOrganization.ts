@@ -20,7 +20,7 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
     throw new NotFoundError('Could not find organization');
   }
 
-  const org = await db.query.organizations.findFirst({
+  const org = await db._query.organizations.findFirst({
     where: (table, { eq }) => eq(table.profileId, profileId),
     with: {
       projects: true,

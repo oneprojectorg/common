@@ -50,7 +50,7 @@ describe.concurrent('profile.deleteJoinRequest', () => {
     expect(result.status).toBe(JoinProfileRequestStatus.PENDING);
 
     // Verify the request was deleted from database
-    const deletedRequest = await db.query.joinProfileRequests.findFirst({
+    const deletedRequest = await db._query.joinProfileRequests.findFirst({
       where: eq(joinProfileRequests.id, joinRequest.id),
     });
 

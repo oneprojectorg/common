@@ -37,7 +37,7 @@ export const joinOrganization = async ({
 
   // Check if user is already a member of this organization and if they are on the allow list
   const [existingMembership, allowListUser] = await Promise.all([
-    db.query.organizationUsers.findFirst({
+    db._query.organizationUsers.findFirst({
       where: (table, { and, eq }) =>
         and(
           eq(table.authUserId, user.authUserId),
@@ -112,7 +112,7 @@ const determineTargetRole = async (
   roleId?: AccessRole['id'],
 ): Promise<AccessRole> => {
   if (roleId) {
-    const role = await db.query.accessRoles.findFirst({
+    const role = await db._query.accessRoles.findFirst({
       where: eq(accessRoles.id, roleId),
     });
 
@@ -121,7 +121,7 @@ const determineTargetRole = async (
     }
   }
 
-  const memberRole = await db.query.accessRoles.findFirst({
+  const memberRole = await db._query.accessRoles.findFirst({
     where: (table, { eq }) => eq(table.name, 'Member'),
   });
 

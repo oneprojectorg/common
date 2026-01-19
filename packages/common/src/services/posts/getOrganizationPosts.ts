@@ -43,7 +43,7 @@ export const getOrganizationPosts = async (
     // If parentPostId is undefined, we get all posts regardless of parent
 
     // Organization posts are filtered through postsToOrganizations
-    const orgPosts = await db.query.postsToOrganizations.findMany({
+    const orgPosts = await db._query.postsToOrganizations.findMany({
       where: eq(postsToOrganizations.organizationId, organizationId),
       with: {
         post: {

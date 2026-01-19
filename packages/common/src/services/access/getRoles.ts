@@ -11,7 +11,7 @@ export interface GetRolesResult {
 }
 
 export const getRoles = async (): Promise<GetRolesResult> => {
-  const roles = await db.query.accessRoles.findMany({
+  const roles = await db._query.accessRoles.findMany({
     orderBy: (table, { asc }) => [asc(table.name)],
   });
 

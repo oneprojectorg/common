@@ -636,6 +636,9 @@ importers:
       '@op/cache':
         specifier: workspace:*
         version: link:../../services/cache
+      '@op/db':
+        specifier: workspace:*
+        version: link:../../services/db
       '@op/emails':
         specifier: workspace:*
         version: link:../../services/emails
@@ -660,6 +663,9 @@ importers:
       csv-stringify:
         specifier: ^6.6.0
         version: 6.6.0
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -682,9 +688,6 @@ importers:
       '@op/core':
         specifier: workspace:*
         version: link:../core
-      '@op/db':
-        specifier: workspace:*
-        version: link:../../services/db
       '@op/supabase':
         specifier: workspace:*
         version: link:../../services/supabase
@@ -1342,6 +1345,9 @@ importers:
       '@op/types':
         specifier: workspace:*
         version: link:../../packages/types
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       inngest:
         specifier: ^3.44.0
         version: 3.44.0(h3@1.15.1)(next@15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.12)

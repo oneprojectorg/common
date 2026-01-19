@@ -11,7 +11,7 @@ import type { DecisionSchemaDefinition } from './schemas/types';
 export const getTemplate = async (
   templateId: string,
 ): Promise<DecisionSchemaDefinition> => {
-  const templateRecord = await db.query.decisionProcesses.findFirst({
+  const templateRecord = await db._query.decisionProcesses.findFirst({
     where: eq(decisionProcesses.id, templateId),
   });
 

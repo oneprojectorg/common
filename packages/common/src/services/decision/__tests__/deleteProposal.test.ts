@@ -67,7 +67,7 @@ describe('deleteProposal', () => {
     mockCheckPermission.mockReturnValue(false);
 
     // Default mock organization and org user setup
-    mockDb.query.organizations.findFirst.mockResolvedValue(mockOrganization);
+    mockDb._query.organizations.findFirst.mockResolvedValue(mockOrganization);
 
     // Mock getOrgAccessUser to return mockOrgUser
     vi.doMock('../../../services/access', () => ({
@@ -81,8 +81,8 @@ describe('deleteProposal', () => {
       processInstanceId: 'instance-id-123',
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       mockExistingProposal as any,
     );
     mockDb.delete.mockReturnValueOnce({
@@ -101,8 +101,8 @@ describe('deleteProposal', () => {
       deletedId: 'proposal-id-123',
     });
 
-    expect(mockDb.query.users.findFirst).toHaveBeenCalled();
-    expect(mockDb.query.proposals.findFirst).toHaveBeenCalled();
+    expect(mockDb._query.users.findFirst).toHaveBeenCalled();
+    expect(mockDb._query.proposals.findFirst).toHaveBeenCalled();
     expect(mockDb.delete).toHaveBeenCalled();
   });
 
@@ -116,8 +116,8 @@ describe('deleteProposal', () => {
       id: 'proposal-id-123',
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(processOwnerDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(processOwnerDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       mockExistingProposal as any,
     );
     mockDb.delete.mockReturnValueOnce({
@@ -149,8 +149,8 @@ describe('deleteProposal', () => {
     // Mock admin permissions
     mockCheckPermission.mockReturnValue(true);
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(adminDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(adminDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       mockExistingProposal as any,
     );
     mockDb.delete.mockReturnValueOnce({
@@ -180,12 +180,12 @@ describe('deleteProposal', () => {
       }),
     ).rejects.toThrow(UnauthorizedError);
 
-    expect(mockDb.query.proposals.findFirst).not.toHaveBeenCalled();
+    expect(mockDb._query.proposals.findFirst).not.toHaveBeenCalled();
   });
 
   it('should throw UnauthorizedError when user has no active profile', async () => {
     const userWithoutProfile = { ...mockDbUser, currentProfileId: null };
-    mockDb.query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
 
     await expect(
       deleteProposal({
@@ -196,8 +196,8 @@ describe('deleteProposal', () => {
   });
 
   it('should throw NotFoundError when proposal does not exist', async () => {
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(null);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(null);
 
     await expect(
       deleteProposal({
@@ -218,8 +218,8 @@ describe('deleteProposal', () => {
     // Ensure no admin permissions
     mockCheckPermission.mockReturnValue(false);
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(unauthorizedDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(unauthorizedDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       mockExistingProposal as any,
     );
 
@@ -254,8 +254,8 @@ describe('deleteProposal', () => {
       ],
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       proposalWithDecisions as any,
     );
 
@@ -270,8 +270,8 @@ describe('deleteProposal', () => {
   });
 
   it('should throw CommonError when database delete fails', async () => {
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       mockExistingProposal as any,
     );
     mockDb.delete.mockReturnValueOnce({
@@ -289,7 +289,7 @@ describe('deleteProposal', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    mockDb.query.users.findFirst.mockRejectedValueOnce(
+    mockDb._query.users.findFirst.mockRejectedValueOnce(
       new Error('Database connection failed'),
     );
 
@@ -311,8 +311,8 @@ describe('deleteProposal', () => {
       id: 'proposal-id-123',
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       proposalWithNullDecisions as any,
     );
     mockDb.delete.mockReturnValueOnce({
@@ -337,8 +337,8 @@ describe('deleteProposal', () => {
       decisions: [{ id: 'decision-1', decisionData: {} }],
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       proposalWithDecisions as any,
     );
 
@@ -359,8 +359,8 @@ describe('deleteProposal', () => {
       currentProfileId: 'unauthorized-profile-id',
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(unauthorizedDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(unauthorizedDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       mockExistingProposal as any,
     );
 
@@ -379,8 +379,8 @@ describe('deleteProposal', () => {
       decisions: [{ id: 'decision-1' }],
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       proposalWithDecisions as any,
     );
 

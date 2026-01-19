@@ -14,7 +14,7 @@ export async function assertProfile(
   id: string,
   error: Error = new NotFoundError('Profile', id),
 ): Promise<Profile> {
-  const profile = await db.query.profiles.findFirst({
+  const profile = await db._query.profiles.findFirst({
     where: (table, { eq }) => eq(table.id, id),
   });
 
@@ -36,7 +36,7 @@ export async function assertProfileBySlug(
   slug: string,
   error: Error = new NotFoundError('Profile', slug),
 ): Promise<Profile> {
-  const profile = await db.query.profiles.findFirst({
+  const profile = await db._query.profiles.findFirst({
     where: (table, { eq }) => eq(table.slug, slug),
   });
 

@@ -118,7 +118,7 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     // Verify the config was updated in the database
-    const dbInstance = await db.query.processInstances.findFirst({
+    const dbInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instance.instance.id),
     });
 
@@ -143,7 +143,7 @@ describe.concurrent('updateDecisionInstance', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // Get current phases to know which phase IDs exist
-    const dbInstance = await db.query.processInstances.findFirst({
+    const dbInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instance.instance.id),
     });
     const currentData = dbInstance!.instanceData as DecisionInstanceData;
@@ -164,7 +164,7 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     // Verify the settings were updated
-    const updatedInstance = await db.query.processInstances.findFirst({
+    const updatedInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instance.instance.id),
     });
 
@@ -210,7 +210,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.status).toBe(ProcessStatus.PUBLISHED);
 
     // Verify config in database
-    const dbInstance = await db.query.processInstances.findFirst({
+    const dbInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instance.instance.id),
     });
 

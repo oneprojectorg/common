@@ -16,7 +16,7 @@ export async function aggregateVoteData(
 ): Promise<Record<string, VoteAggregation>> {
   try {
     // Get all proposals for this process instance
-    const processProposals = await db.query.proposals.findMany({
+    const processProposals = await db._query.proposals.findMany({
       where: eq(proposals.processInstanceId, processInstanceId),
     });
 
@@ -27,7 +27,7 @@ export async function aggregateVoteData(
     }
 
     // Get all vote submissions for proposals in this process instance
-    const voteSubmissions = await db.query.decisionsVoteSubmissions.findMany({
+    const voteSubmissions = await db._query.decisionsVoteSubmissions.findMany({
       where: eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
       with: {
         voteProposals: true,

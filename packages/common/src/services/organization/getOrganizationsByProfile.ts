@@ -4,7 +4,7 @@ import { locations } from '@op/db/schema';
 export const getOrganizationsByProfile = async (profileId: string) => {
   // Find all users who have access to this profile
   // Either as their personal profile or as their current profile
-  const usersWithProfile = await db.query.users.findMany({
+  const usersWithProfile = await db._query.users.findMany({
     where: (table, { eq, or }) =>
       or(eq(table.profileId, profileId), eq(table.currentProfileId, profileId)),
     with: {

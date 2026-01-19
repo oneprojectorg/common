@@ -55,7 +55,7 @@ export class TransitionEngine {
   }): Promise<TransitionCheckResult> {
     try {
       // Get the process instance with related data
-      const instance = await db.query.processInstances.findFirst({
+      const instance = await db._query.processInstances.findFirst({
         where: eq(processInstances.id, instanceId),
         with: {
           process: true,
@@ -169,7 +169,7 @@ export class TransitionEngine {
       }
 
       // Get the instance again for updating
-      const instance = await db.query.processInstances.findFirst({
+      const instance = await db._query.processInstances.findFirst({
         where: eq(processInstances.id, data.instanceId),
         with: {
           process: true,
@@ -249,7 +249,7 @@ export class TransitionEngine {
       });
 
       // Return updated instance
-      const updatedInstance = await db.query.processInstances.findFirst({
+      const updatedInstance = await db._query.processInstances.findFirst({
         where: eq(processInstances.id, data.instanceId),
         with: {
           process: true,

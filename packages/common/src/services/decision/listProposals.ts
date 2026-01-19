@@ -181,7 +181,7 @@ export const listProposals = async ({
     const orderFn = dir === 'asc' ? asc : desc;
 
     const [proposalList, countResult] = await Promise.all([
-      db.query.proposals.findMany({
+      db._query.proposals.findMany({
         where: whereClause,
         with: {
           submittedBy: {

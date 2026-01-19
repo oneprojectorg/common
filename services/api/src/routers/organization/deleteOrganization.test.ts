@@ -40,7 +40,7 @@ describe.concurrent('organization.deleteOrganization', () => {
     expect(result.deletedId).toBe(organizationProfile.id);
 
     // Verify the organization was actually deleted from the database
-    const deletedProfile = await db.query.profiles.findFirst({
+    const deletedProfile = await db._query.profiles.findFirst({
       where: eq(profiles.id, organizationProfile.id),
     });
     expect(deletedProfile).toBeUndefined();
@@ -91,7 +91,7 @@ describe.concurrent('organization.deleteOrganization', () => {
     });
 
     // Verify the organization was NOT deleted
-    const existingProfile = await db.query.profiles.findFirst({
+    const existingProfile = await db._query.profiles.findFirst({
       where: eq(profiles.id, organizationProfile.id),
     });
     expect(existingProfile).toBeDefined();
@@ -128,7 +128,7 @@ describe.concurrent('organization.deleteOrganization', () => {
     ).rejects.toThrow();
 
     // Verify the organization was NOT deleted
-    const existingProfile = await db.query.profiles.findFirst({
+    const existingProfile = await db._query.profiles.findFirst({
       where: eq(profiles.id, organizationProfile.id),
     });
     expect(existingProfile).toBeDefined();

@@ -22,7 +22,7 @@ export const deleteProposal = async ({
   try {
     const [sessionUser, existingProposal] = await Promise.all([
       getUserSession({ authUserId: user.id }),
-      db.query.proposals.findFirst({
+      db._query.proposals.findFirst({
         where: eq(proposals.id, proposalId),
         with: {
           processInstance: true,

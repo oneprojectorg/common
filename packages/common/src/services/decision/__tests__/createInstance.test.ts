@@ -72,8 +72,8 @@ describe('createInstance', () => {
     };
 
     // Mock database queries
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+    vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(
       mockProcess as any,
     );
     vi.mocked(db.insert).mockReturnValueOnce({
@@ -93,10 +93,10 @@ describe('createInstance', () => {
     });
 
     expect(result).toEqual(mockCreatedInstance);
-    expect(db.query.users.findFirst).toHaveBeenCalledWith({
+    expect(db._query.users.findFirst).toHaveBeenCalledWith({
       where: expect.any(Function),
     });
-    expect(db.query.decisionProcesses.findFirst).toHaveBeenCalledWith({
+    expect(db._query.decisionProcesses.findFirst).toHaveBeenCalledWith({
       where: expect.any(Function),
     });
     expect(db.insert).toHaveBeenCalled();
@@ -108,8 +108,8 @@ describe('createInstance', () => {
       currentStateId: 'draft', // Should match initialState
     };
 
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+    vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(
       mockProcess as any,
     );
     vi.mocked(db.insert).mockReturnValueOnce({
@@ -151,8 +151,8 @@ describe('createInstance', () => {
       currentStateId: 'draft', // Should use first state
     };
 
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+    vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(
       processWithoutInitialState as any,
     );
     vi.mocked(db.insert).mockReturnValueOnce({
@@ -192,7 +192,7 @@ describe('createInstance', () => {
 
   it('should throw UnauthorizedError when user has no active profile', async () => {
     const userWithoutProfile = { ...mockDbUser, currentProfileId: null };
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(
+    vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(
       userWithoutProfile,
     );
 
@@ -209,8 +209,8 @@ describe('createInstance', () => {
   });
 
   it('should throw NotFoundError when process not found', async () => {
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(null);
+    vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(null);
 
     await expect(
       createInstance({
@@ -225,8 +225,8 @@ describe('createInstance', () => {
   });
 
   it('should throw CommonError when database insert fails', async () => {
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+    vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(
       mockProcess as any,
     );
     vi.mocked(db.insert).mockReturnValueOnce({
@@ -248,7 +248,7 @@ describe('createInstance', () => {
   });
 
   it('should handle database connection errors', async () => {
-    vi.mocked(db.query.users.findFirst).mockRejectedValueOnce(
+    vi.mocked(db._query.users.findFirst).mockRejectedValueOnce(
       new Error('Database connection failed'),
     );
 
@@ -270,8 +270,8 @@ describe('createInstance', () => {
       budget: 10000,
     } as any;
 
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+    vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(
       mockProcess as any,
     );
 

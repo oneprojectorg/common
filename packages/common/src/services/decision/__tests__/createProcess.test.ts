@@ -93,7 +93,7 @@ describe('createProcess', () => {
     };
 
     // Mock database queries
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
     mockDb.insert.mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([mockCreatedProcess]),
@@ -110,7 +110,7 @@ describe('createProcess', () => {
     });
 
     expect(result).toEqual(mockCreatedProcess);
-    expect(mockDb.query.users.findFirst).toHaveBeenCalled();
+    expect(mockDb._query.users.findFirst).toHaveBeenCalled();
     expect(mockDb.insert).toHaveBeenCalled();
   });
 
@@ -128,7 +128,7 @@ describe('createProcess', () => {
 
   it('should throw UnauthorizedError when user has no active profile', async () => {
     const userWithoutProfile = { ...mockDbUser, currentProfileId: null };
-    mockDb.query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
 
     await expect(
       createProcess({
@@ -142,7 +142,7 @@ describe('createProcess', () => {
   });
 
   it('should throw UnauthorizedError when database user is not found', async () => {
-    mockDb.query.users.findFirst.mockResolvedValueOnce(null);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(null);
 
     await expect(
       createProcess({
@@ -156,7 +156,7 @@ describe('createProcess', () => {
   });
 
   it('should throw CommonError when database insert fails', async () => {
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
     mockDb.insert.mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([]), // Empty array = no result
@@ -175,7 +175,7 @@ describe('createProcess', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    mockDb.query.users.findFirst.mockRejectedValueOnce(
+    mockDb._query.users.findFirst.mockRejectedValueOnce(
       new Error('Database connection failed'),
     );
 
@@ -191,7 +191,7 @@ describe('createProcess', () => {
   });
 
   it('should validate required fields', async () => {
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
 
     await expect(
       createProcess({

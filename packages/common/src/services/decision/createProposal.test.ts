@@ -91,11 +91,11 @@ describe('createProposal with attachments', () => {
     vi.clearAllMocks();
 
     // Mock database queries
-    (db.query.users.findFirst as any).mockResolvedValue(mockDbUser);
-    (db.query.processInstances.findFirst as any).mockResolvedValue(
+    (db._query.users.findFirst as any).mockResolvedValue(mockDbUser);
+    (db._query.processInstances.findFirst as any).mockResolvedValue(
       mockProcessInstance,
     );
-    (db.query.taxonomyTerms.findFirst as any).mockResolvedValue(null);
+    (db._query.taxonomyTerms.findFirst as any).mockResolvedValue(null);
 
     // Mock transaction
     (db.transaction as any).mockImplementation(async (callback) => {
@@ -334,7 +334,7 @@ describe('createProposal with attachments', () => {
 
   describe('error handling', () => {
     it('should throw error if user not found', async () => {
-      (db.query.users.findFirst as any).mockResolvedValue(null);
+      (db._query.users.findFirst as any).mockResolvedValue(null);
 
       const proposalInput: CreateProposalInput = {
         processInstanceId: 'test-process-instance-id',
@@ -351,7 +351,7 @@ describe('createProposal with attachments', () => {
     });
 
     it('should throw error if process instance not found', async () => {
-      (db.query.processInstances.findFirst as any).mockResolvedValue(null);
+      (db._query.processInstances.findFirst as any).mockResolvedValue(null);
 
       const proposalInput: CreateProposalInput = {
         processInstanceId: 'invalid-process-instance-id',
@@ -385,7 +385,7 @@ describe('createProposal with attachments', () => {
         },
       };
 
-      (db.query.processInstances.findFirst as any).mockResolvedValue(
+      (db._query.processInstances.findFirst as any).mockResolvedValue(
         mockProcessInstanceWithRestrictedState,
       );
 

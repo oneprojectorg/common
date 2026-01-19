@@ -35,7 +35,7 @@ import {
 // const [name, facet] = taxonomyName.split(':');
 
 // // retrieve the taxonomy so we can grab the id
-// const taxonomy = await tx.query.taxonomies.findFirst({
+// const taxonomy = await tx._query.taxonomies.findFirst({
 // where: () => eq(taxonomies.name, name ?? taxonomyName),
 // });
 
@@ -165,7 +165,7 @@ export const createOrganization = async ({
         email: user.email!,
       })
       .returning(),
-    db.query.accessRoles.findFirst({
+    db._query.accessRoles.findFirst({
       where: (table, { eq }) => eq(table.name, 'Admin'),
     }),
     db

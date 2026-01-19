@@ -14,7 +14,7 @@ export async function assertUser(
   id: string,
   error: Error = new NotFoundError('User', id),
 ): Promise<CommonUser> {
-  const user = await db.query.users.findFirst({
+  const user = await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.id, id),
   });
 
@@ -36,7 +36,7 @@ export async function assertUserByAuthId(
   authUserId: string,
   error: Error = new NotFoundError('User', authUserId),
 ): Promise<CommonUser> {
-  const user = await db.query.users.findFirst({
+  const user = await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
   });
 

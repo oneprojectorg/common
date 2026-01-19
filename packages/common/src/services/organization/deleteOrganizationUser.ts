@@ -28,7 +28,7 @@ export async function deleteOrganizationUser({
   assertAccess({ admin: permission.UPDATE }, orgUser?.roles || []);
 
   // Check if the organization user to delete exists
-  const targetOrgUser = await db.query.organizationUsers.findFirst({
+  const targetOrgUser = await db._query.organizationUsers.findFirst({
     where: (table, { eq, and }) =>
       and(
         eq(table.id, organizationUserId),

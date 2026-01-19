@@ -33,7 +33,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
   };
 
   try {
-    const dueTransitions = await db.query.decisionProcessTransitions.findMany({
+    const dueTransitions = await db._query.decisionProcessTransitions.findMany({
       where: (transitions, { and, isNull }) =>
         and(
           isNull(transitions.completedAt),
@@ -102,7 +102,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
  * If transitioning to a final state (results phase), triggers results processing.
  */
 async function processTransition(transitionId: string): Promise<void> {
-  const transition = await db.query.decisionProcessTransitions.findFirst({
+  const transition = await db._query.decisionProcessTransitions.findFirst({
     where: eq(decisionProcessTransitions.id, transitionId),
   });
 
@@ -117,7 +117,7 @@ async function processTransition(transitionId: string): Promise<void> {
   }
 
   // Get the process instance to check if we're transitioning to a final state
-  const processInstance = await db.query.processInstances.findFirst({
+  const processInstance = await db._query.processInstances.findFirst({
     where: eq(processInstances.id, transition.processInstanceId),
   });
 
@@ -128,7 +128,7 @@ async function processTransition(transitionId: string): Promise<void> {
   }
 
   // Get the process schema to check the state type
-  const process = await db.query.decisionProcesses.findFirst({
+  const process = await db._query.decisionProcesses.findFirst({
     where: eq(decisionProcesses.id, processInstance.processId),
   });
 

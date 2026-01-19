@@ -225,7 +225,7 @@ describe('Voting Process Integration Test', () => {
         createdByProfileId: 'profile-id-123',
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
           returning: vi.fn().mockResolvedValueOnce([mockCreatedProcess]),
@@ -277,8 +277,8 @@ describe('Voting Process Integration Test', () => {
         ownerProfileId: 'profile-id-123',
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.decisionProcesses.findFirst.mockResolvedValueOnce(
         mockProcess as any,
       );
       mockDb.insert.mockReturnValueOnce({
@@ -331,8 +331,8 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
       mockDb.insert.mockReturnValueOnce({
@@ -366,8 +366,8 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
 
@@ -405,7 +405,7 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
       mockDb.$count.mockResolvedValueOnce(2); // Only 2 proposals (need 3+)
@@ -440,7 +440,7 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
       mockDb.$count.mockResolvedValueOnce(5); // 5 proposals (meets minimum)
@@ -487,7 +487,7 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
 
@@ -531,7 +531,7 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
 
@@ -561,7 +561,7 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
 
@@ -592,7 +592,7 @@ describe('Voting Process Integration Test', () => {
       };
 
       // Mock for checkAvailableTransitions
-      mockDb.query.processInstances.findFirst
+      mockDb._query.processInstances.findFirst
         .mockResolvedValueOnce(mockInstance as any) // For check
         .mockResolvedValueOnce(mockInstance as any) // For execute
         .mockResolvedValueOnce({
@@ -609,7 +609,7 @@ describe('Voting Process Integration Test', () => {
           },
         } as any);
 
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+      mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
 
       // Mock transaction
       const mockTrx = {
@@ -653,7 +653,7 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
         mockInstance as any,
       );
 

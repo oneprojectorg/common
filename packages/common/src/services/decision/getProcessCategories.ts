@@ -22,7 +22,7 @@ export const getProcessCategories = async ({
 }): Promise<ProcessCategory[]> => {
   try {
     // Get the process instance with its process schema
-    const instance = await db.query.processInstances.findFirst({
+    const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, processInstanceId),
       with: {
         process: true,
@@ -65,7 +65,7 @@ export const getProcessCategories = async ({
     }
 
     // Get the "proposal" taxonomy
-    const proposalTaxonomy = await db.query.taxonomies.findFirst({
+    const proposalTaxonomy = await db._query.taxonomies.findFirst({
       where: eq(taxonomies.name, 'proposal'),
       with: {
         taxonomyTerms: true,
