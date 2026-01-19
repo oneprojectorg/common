@@ -32,6 +32,7 @@ export const getProposal = async ({
     commentsCount: number;
     likesCount: number;
     followersCount: number;
+    decisionSlug?: string;
   }
 > => {
   try {
@@ -119,11 +120,17 @@ export const getProposal = async ({
     // TODO: Add access control - check if user can view this proposal
     // For now, any authenticated user can view any proposal
 
+    // Extract decision profile slug for /decisions/[slug] navigation
+    const decisionSlug = (
+      proposal.processInstance?.profile as { slug?: string } | null
+    )?.slug;
+
     return {
       ...proposal,
       commentsCount,
       likesCount,
       followersCount,
+      decisionSlug,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

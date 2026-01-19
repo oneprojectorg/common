@@ -32,83 +32,44 @@ export const getProposalRouter = router({
         profileId = 'e05db18a-7c18-4cd5-90fc-a33e25a257b1';
       }
 
-      try {
-        const proposal = await cache({
-          type: 'profile',
-          params: [profileId],
-          fetch: () =>
-            getProposal({
-              profileId,
-              user,
-            }),
-          options: {
-            skipMemCache: true, // We need these to be editable and then immediately accessible
-          },
-        });
-
-        // Don't cache permission
-        try {
-          proposal.isEditable = await getPermissionsOnProposal({
-            user,
-            proposal,
-          });
-        } catch (error) {
-          logger.error('Error getting permissions on proposal', {
-            error,
+      const proposal = await cache({
+        type: 'profile',
+        params: [profileId],
+        fetch: () =>
+          getProposal({
             profileId,
-          });
-        }
+            user,
+          }),
+        options: {
+          skipMemCache: true, // We need these to be editable and then immediately accessible
+        },
+      });
 
-        // Track proposal viewed event
-        if (
-          proposal.processInstance &&
-          typeof proposal.processInstance === 'object' &&
-          !Array.isArray(proposal.processInstance) &&
-          'id' in proposal.processInstance
-        ) {
-          waitUntil(
-            trackProposalViewed(ctx, proposal.processInstance.id, proposal.id),
-          );
-        }
-
-        // Extract decision profile slug for navigation
-        const decisionSlug =
-          proposal.processInstance &&
-          typeof proposal.processInstance === 'object' &&
-          'profile' in proposal.processInstance &&
-          proposal.processInstance.profile &&
-          typeof proposal.processInstance.profile === 'object' &&
-          'slug' in proposal.processInstance.profile
-            ? (proposal.processInstance.profile.slug as string)
-            : undefined;
-
-        return proposalEncoder.parse({
-          ...proposal,
-          decisionSlug,
+      // Don't cache permission
+      try {
+        proposal.isEditable = await getPermissionsOnProposal({
+          user,
+          proposal,
         });
-      } catch (error: unknown) {
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'NOT_FOUND',
-          });
-        }
-
-        logger.error('Error fetching proposal', {
+      } catch (error) {
+        logger.error('Error getting permissions on proposal', {
           error,
           profileId,
         });
-        throw new TRPCError({
-          message: 'Failed to fetch proposal',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
       }
+
+      // Track proposal viewed event
+      if (
+        proposal.processInstance &&
+        typeof proposal.processInstance === 'object' &&
+        !Array.isArray(proposal.processInstance) &&
+        'id' in proposal.processInstance
+      ) {
+        waitUntil(
+          trackProposalViewed(ctx, proposal.processInstance.id, proposal.id),
+        );
+      }
+
+      return proposalEncoder.parse(proposal);
     }),
 });
