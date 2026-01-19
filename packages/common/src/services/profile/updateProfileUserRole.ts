@@ -27,18 +27,17 @@ export const updateProfileUserRoles = async ({
     throw new CommonError('At least one role must be specified');
   }
 
-  const [targetProfileUser, validRoles, existingRoleAssignments] =
-    await Promise.all([
-      db.query.profileUsers.findFirst({
-        where: eq(profileUsers.id, profileUserId),
-      }),
-      db.query.accessRoles.findMany({
-        where: (table, { inArray }) => inArray(table.id, roleIds),
-      }),
-      db.query.profileUserToAccessRoles.findMany({
-        where: eq(profileUserToAccessRoles.profileUserId, profileUserId),
-      }),
-    ]);
+  const [targetProfileUser, validRoles] = await Promise.all([
+    db.query.profileUsers.findFirst({
+      where: eq(profileUsers.id, profileUserId),
+      with: {
+        roles: true,
+      },
+    }),
+    db.query.accessRoles.findMany({
+      where: (table, { inArray }) => inArray(table.id, roleIds),
+    }),
+  ]);
 
   if (!targetProfileUser) {
     throw new NotFoundError('Member not found');
@@ -66,12 +65,12 @@ export const updateProfileUserRoles = async ({
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
 
   const existingRoleIds = new Set(
-    existingRoleAssignments.map((r) => r.accessRoleId),
+    targetProfileUser.roles.map((r) => r.accessRoleId),
   );
   const desiredRoleIds = new Set(roleIds);
 
   const rolesToAdd = roleIds.filter((id) => !existingRoleIds.has(id));
-  const rolesToRemove = existingRoleAssignments
+  const rolesToRemove = targetProfileUser.roles
     .filter((r) => !desiredRoleIds.has(r.accessRoleId))
     .map((r) => r.accessRoleId);
 
