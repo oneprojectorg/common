@@ -1,3 +1,4 @@
+import type { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 export interface DecisionProcessSchema {
@@ -75,7 +76,7 @@ export interface VotingProposalData {
   submitterName: string;
   amount?: number;
   category?: string;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected';
+  status: ProposalStatus;
   schemaSpecificData?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;

@@ -8,7 +8,7 @@ import {
 } from '@/utils/proposalContentProcessor';
 import { parseProposalData } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
+import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
@@ -150,7 +150,8 @@ export function ProposalEditor({
   });
 
   // Check if we're editing a draft proposal (should show info modal and use submitProposal)
-  const isDraft = isEditMode && existingProposal?.status === 'draft';
+  const isDraft =
+    isEditMode && existingProposal?.status === ProposalStatus.DRAFT;
 
   // Extract template data from the instance
   const proposalTemplate = instance.process?.processSchema?.proposalTemplate;

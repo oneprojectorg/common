@@ -1,6 +1,7 @@
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
+  ProposalStatus,
   processInstances,
   profiles,
   proposalAttachments,
@@ -164,7 +165,7 @@ export const createProposal = async ({
           proposalData: data.proposalData,
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
-          status: 'draft',
+          status: ProposalStatus.DRAFT,
         })
         .returning();
 

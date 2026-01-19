@@ -2,6 +2,7 @@ import { db, eq } from '@op/db/client';
 import {
   type DecisionProcess,
   type ProcessInstance,
+  ProposalStatus,
   proposalAttachments,
   proposalCategories,
   proposals,
@@ -55,7 +56,7 @@ export const submitProposal = async ({
   }
 
   // Only allow submitting drafts
-  if (existingProposal.status !== 'draft') {
+  if (existingProposal.status !== ProposalStatus.DRAFT) {
     throw new ValidationError(
       'Only draft proposals can be submitted. This proposal has already been submitted.',
     );
@@ -139,7 +140,7 @@ export const submitProposal = async ({
       .update(proposals)
       .set({
         proposalData: data.proposalData,
-        status: 'submitted',
+        status: ProposalStatus.SUBMITTED,
       })
       .where(eq(proposals.id, data.proposalId))
       .returning();
