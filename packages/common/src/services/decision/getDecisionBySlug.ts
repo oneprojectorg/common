@@ -30,7 +30,7 @@ const decisionProfileQueryConfig = {
 
 type DecisionProfileQueryResult = Awaited<
   ReturnType<
-    typeof db.query.profiles.findFirst<typeof decisionProfileQueryConfig>
+    typeof db._query.profiles.findFirst<typeof decisionProfileQueryConfig>
   >
 >;
 
@@ -86,7 +86,7 @@ export const getDecisionBySlug = async ({
         return rows[0];
       }),
     // Full profile data
-    db.query.profiles.findFirst({
+    db._query.profiles.findFirst({
       where: and(
         eq(profiles.slug, slug),
         eq(profiles.type, EntityType.DECISION),

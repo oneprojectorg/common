@@ -26,7 +26,7 @@ export const getPost = async ({
   try {
     // Query post directly by ID
     const [post, actorProfileId] = await Promise.all([
-      db.query.posts.findFirst({
+      db._query.posts.findFirst({
         where: eq(posts.id, postId),
         with: {
           profile: {

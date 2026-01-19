@@ -88,7 +88,7 @@ export const listInstances = async ({
 
     const orderFn = orderDirection === 'asc' ? asc : desc;
 
-    const instanceList = await db.query.processInstances.findMany({
+    const instanceList = await db._query.processInstances.findMany({
       where: whereClause,
       with: {
         process: true,

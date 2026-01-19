@@ -14,7 +14,7 @@ export async function assertOrganization(
   id: string,
   error: Error = new NotFoundError('Organization', id),
 ): Promise<Organization> {
-  const organization = await db.query.organizations.findFirst({
+  const organization = await db._query.organizations.findFirst({
     where: (table, { eq }) => eq(table.id, id),
   });
 
@@ -36,7 +36,7 @@ export async function assertOrganizationByProfileId(
   profileId: string,
   error: Error = new NotFoundError('Organization', profileId),
 ): Promise<Organization> {
-  const organization = await db.query.organizations.findFirst({
+  const organization = await db._query.organizations.findFirst({
     where: (table, { eq }) => eq(table.profileId, profileId),
   });
 

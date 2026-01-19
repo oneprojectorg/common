@@ -376,7 +376,7 @@ export class TestDecisionsDataManager {
 
     // Update budget if needed (instanceData may not include budget from template)
     if (budget) {
-      const instanceRecord = await db.query.processInstances.findFirst({
+      const instanceRecord = await db._query.processInstances.findFirst({
         where: eq(processInstances.id, profile.processInstance.id),
       });
       if (instanceRecord) {

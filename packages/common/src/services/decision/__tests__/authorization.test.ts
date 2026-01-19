@@ -53,7 +53,7 @@ describe('Decision Authorization', () => {
       } as any);
 
       // Mock database queries to avoid actual DB calls
-      mockDb.query.users.findFirst = vi.fn().mockResolvedValue({
+      mockDb._query.users.findFirst = vi.fn().mockResolvedValue({
         id: 'user-id',
         currentProfileId: 'profile-id',
       });
@@ -101,7 +101,7 @@ describe('Decision Authorization', () => {
       } as any);
 
       // Mock database queries to avoid actual DB calls
-      mockDb.query.processInstances.findFirst = vi.fn().mockResolvedValue({
+      mockDb._query.processInstances.findFirst = vi.fn().mockResolvedValue({
         id: 'instance-id',
         process: { processSchema: { fields: { categories: [] } } },
       });

@@ -15,7 +15,7 @@ export async function deleteOrganization({
   user: User;
 }) {
   // First, find the organization by its profile ID to get the organization ID
-  const organization = await db.query.organizations.findFirst({
+  const organization = await db._query.organizations.findFirst({
     where: (table, { eq }) => eq(table.profileId, organizationProfileId),
   });
 

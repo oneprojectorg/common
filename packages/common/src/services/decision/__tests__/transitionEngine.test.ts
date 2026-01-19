@@ -113,7 +113,7 @@ describe('TransitionEngine', () => {
 
   describe('checkAvailableTransitions', () => {
     it('should return available transitions for current state', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+      vi.mocked(db._query.processInstances.findFirst).mockResolvedValueOnce(
         mockInstance as any,
       );
       vi.mocked(db.$count).mockResolvedValueOnce(5); // 5 proposals
@@ -130,7 +130,7 @@ describe('TransitionEngine', () => {
     });
 
     it('should return false when conditions are not met', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+      vi.mocked(db._query.processInstances.findFirst).mockResolvedValueOnce(
         mockInstance as any,
       );
       vi.mocked(db.$count).mockResolvedValueOnce(0); // No proposals
@@ -146,7 +146,7 @@ describe('TransitionEngine', () => {
     });
 
     it('should filter to specific transition when toStateId provided', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+      vi.mocked(db._query.processInstances.findFirst).mockResolvedValueOnce(
         mockInstance as any,
       );
       vi.mocked(db.$count).mockResolvedValueOnce(5);
@@ -162,7 +162,7 @@ describe('TransitionEngine', () => {
     });
 
     it('should throw NotFoundError when instance not found', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+      vi.mocked(db._query.processInstances.findFirst).mockResolvedValueOnce(
         null,
       );
 
@@ -196,12 +196,12 @@ describe('TransitionEngine', () => {
       };
 
       // Mock transition check to return success
-      vi.mocked(db.query.processInstances.findFirst)
+      vi.mocked(db._query.processInstances.findFirst)
         .mockResolvedValueOnce(mockInstance as any) // For checkAvailableTransitions
         .mockResolvedValueOnce(mockInstance as any) // For executeTransition
         .mockResolvedValueOnce(updatedInstance as any); // Final result
 
-      vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+      vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
       vi.mocked(db.$count).mockResolvedValueOnce(5); // Proposals count
 
       // Mock transaction
@@ -231,10 +231,10 @@ describe('TransitionEngine', () => {
     });
 
     it('should throw ValidationError when transition is not allowed', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+      vi.mocked(db._query.processInstances.findFirst).mockResolvedValueOnce(
         mockInstance as any,
       );
-      vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
+      vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
       vi.mocked(db.$count).mockResolvedValueOnce(0); // No proposals - condition fails
 
       await expect(
@@ -320,7 +320,7 @@ describe('TransitionEngine', () => {
 
   describe('error handling', () => {
     it('should handle database errors gracefully', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockRejectedValueOnce(
+      vi.mocked(db._query.processInstances.findFirst).mockRejectedValueOnce(
         new Error('Database connection failed'),
       );
 

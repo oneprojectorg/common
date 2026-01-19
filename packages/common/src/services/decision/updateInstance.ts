@@ -22,7 +22,7 @@ async function ensureProposalTaxonomy(categories: string[]): Promise<string[]> {
   }
 
   // Ensure "proposal" taxonomy exists
-  let proposalTaxonomy = await db.query.taxonomies.findFirst({
+  let proposalTaxonomy = await db._query.taxonomies.findFirst({
     where: eq(taxonomies.name, 'proposal'),
   });
 
@@ -55,7 +55,7 @@ async function ensureProposalTaxonomy(categories: string[]): Promise<string[]> {
       .replace(/[^a-z0-9-]/g, '');
 
     // Check if taxonomy term already exists
-    let existingTerm = await db.query.taxonomyTerms.findFirst({
+    let existingTerm = await db._query.taxonomyTerms.findFirst({
       where: eq(taxonomyTerms.termUri, termUri),
     });
 
@@ -120,7 +120,7 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
     }
 
     // Verify the instance exists and user has permission
-    const existingInstance = await db.query.processInstances.findFirst({
+    const existingInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, data.instanceId),
     });
 
@@ -159,7 +159,7 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
 
       // Also update the process schema to keep categories in sync
       if (existingInstance.processId) {
-        const existingProcess = await db.query.decisionProcesses.findFirst({
+        const existingProcess = await db._query.decisionProcesses.findFirst({
           where: eq(decisionProcesses.id, existingInstance.processId),
         });
 

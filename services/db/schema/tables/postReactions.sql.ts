@@ -1,4 +1,5 @@
-import { InferModel, relations } from 'drizzle-orm';
+import { InferModel } from 'drizzle-orm';
+import { relations } from 'drizzle-orm/_relations';
 import { index, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';

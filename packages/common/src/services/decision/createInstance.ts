@@ -38,7 +38,7 @@ export const createInstance = async ({
     }
 
     // Verify the process exists
-    const process = await db.query.decisionProcesses.findFirst({
+    const process = await db._query.decisionProcesses.findFirst({
       where: eq(decisionProcesses.id, data.processId),
     });
 

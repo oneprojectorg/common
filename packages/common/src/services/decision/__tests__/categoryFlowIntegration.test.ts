@@ -94,7 +94,7 @@ describe('Category Flow Integration Tests', () => {
     expect(process).toBeDefined();
 
     // Verify taxonomy and terms were created
-    const proposalTaxonomy = await db.query.taxonomies.findFirst({
+    const proposalTaxonomy = await db._query.taxonomies.findFirst({
       where: eq(taxonomies.name, 'proposal'),
       with: { taxonomyTerms: true },
     });
@@ -192,7 +192,7 @@ describe('Category Flow Integration Tests', () => {
     expect(proposal3).toBeDefined();
 
     // Step 5: Verify proposals are linked to taxonomy terms
-    const proposalCategoryLinks = await db.query.proposalCategories.findMany();
+    const proposalCategoryLinks = await db._query.proposalCategories.findMany();
     expect(proposalCategoryLinks).toHaveLength(3); // One link per proposal
 
     // Step 6: Test filtering - should return all proposals (no filter)
@@ -322,7 +322,7 @@ describe('Category Flow Integration Tests', () => {
     expect(proposalWithEmptyCategory).toBeDefined();
 
     // No proposal category links should be created
-    const links = await db.query.proposalCategories.findMany();
+    const links = await db._query.proposalCategories.findMany();
     expect(links).toHaveLength(0);
 
     // Both proposals should appear when not filtering by category

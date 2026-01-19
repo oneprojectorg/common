@@ -42,7 +42,7 @@ export const listAllRelatedOrganizationPosts = async (
 
   // Fetch posts for all organizations with pagination
   const [result, profileId] = await Promise.all([
-    db.query.postsToOrganizations.findMany({
+    db._query.postsToOrganizations.findMany({
       where: (table) => {
         // Filter to only include top-level posts (no parentPostId)
         const topLevelPostFilter = exists(
@@ -126,7 +126,7 @@ export const listRelatedOrganizationPosts = async (
   orgIds.push(organizationId); // Add our own org so we see our own posts
 
   // Fetch posts for all related organizations
-  const result = await db.query.postsToOrganizations.findMany({
+  const result = await db._query.postsToOrganizations.findMany({
     where: (table) => {
       // Filter to only include top-level posts (no parentPostId)
       const topLevelPostFilter = exists(

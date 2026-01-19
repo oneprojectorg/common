@@ -86,7 +86,7 @@ export const inviteUserRouter = router({
           // Invalidate caches for users who were successfully added to the organization
           if (result.details?.successful.length > 0) {
             // Find existing users by email to get their auth user IDs
-            const existingUsers = await db.query.users.findMany({
+            const existingUsers = await db._query.users.findMany({
               where: (table, { inArray }) =>
                 inArray(table.email, result.details.successful),
               columns: { authUserId: true },

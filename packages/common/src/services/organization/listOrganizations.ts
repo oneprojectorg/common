@@ -34,7 +34,7 @@ export const listOrganizations = async ({
         })
       : undefined;
 
-    const result = await db.query.organizations.findMany({
+    const result = await db._query.organizations.findMany({
       where: cursorCondition,
       with: {
         projects: true,

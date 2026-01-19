@@ -14,7 +14,7 @@ export interface GetInstanceInput {
 
 export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
-    const instance = await db.query.processInstances.findFirst({
+    const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instanceId),
       with: {
         process: true,

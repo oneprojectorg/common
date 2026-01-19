@@ -68,7 +68,7 @@ export const inviteUsersToOrganization = async (
 
   assertAccess({ profile: permission.ADMIN }, orgUser.roles || []);
 
-  const authUser = (await db.query.users.findFirst({
+  const authUser = (await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, user.id),
     with: {
       currentOrganization: {
@@ -98,7 +98,7 @@ export const inviteUsersToOrganization = async (
     const email = rawEmail.toLowerCase();
     try {
       // Check if user already exists in the system
-      const existingUser = await db.query.users.findFirst({
+      const existingUser = await db._query.users.findFirst({
         where: (table, { eq }) => eq(table.email, email),
         with: {
           organizationUsers: {
@@ -112,7 +112,7 @@ export const inviteUsersToOrganization = async (
         // User exists - check if they're already in this organization
         if (existingUser.organizationUsers.length === 0) {
           // User exists but not in this organization - add them directly
-          const targetRole = await db.query.accessRoles.findFirst({
+          const targetRole = await db._query.accessRoles.findFirst({
             where: (table, { eq }) => eq(table.id, roleId),
           });
 
@@ -164,7 +164,7 @@ export const inviteUsersToOrganization = async (
       }
 
       // Check if email is already in the allowList
-      const existingEntry = await db.query.allowList.findFirst({
+      const existingEntry = await db._query.allowList.findFirst({
         where: (table, { eq }) => eq(table.email, email),
       });
 
@@ -258,7 +258,7 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   const { emails, personalMessage, user } = input;
 
   // Get the current user's database record with profile details
-  const authUser = (await db.query.users.findFirst({
+  const authUser = (await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, user.id),
     with: {
       currentOrganization: {
@@ -300,7 +300,7 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
     const email = rawEmail.toLowerCase();
     try {
       // Check if email is already in the allowList
-      const existingEntry = await db.query.allowList.findFirst({
+      const existingEntry = await db._query.allowList.findFirst({
         where: (table, { eq }) => eq(table.email, email),
       });
 

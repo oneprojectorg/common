@@ -54,7 +54,7 @@ export const getPosts = async (input: GetPostsInput) => {
 
     if (profileId) {
       // Query by profile through postsToProfiles
-      const profilePosts = await db.query.postsToProfiles.findMany({
+      const profilePosts = await db._query.postsToProfiles.findMany({
         where: eq(postsToProfiles.profileId, profileId),
         with: {
           post: {
@@ -110,7 +110,7 @@ export const getPosts = async (input: GetPostsInput) => {
       postsData = profilePosts;
     } else {
       // Query comments directly from posts table when no profileId but parentPostId exists
-      const directPosts = await db.query.posts.findMany({
+      const directPosts = await db._query.posts.findMany({
         where: conditions.length > 0 ? and(...conditions) : undefined,
         with: {
           profile: {

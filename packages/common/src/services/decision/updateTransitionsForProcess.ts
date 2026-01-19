@@ -43,7 +43,7 @@ export async function updateTransitionsForProcess({
 
     // Get existing transitions
     const existingTransitions =
-      await dbClient.query.decisionProcessTransitions.findMany({
+      await dbClient._query.decisionProcessTransitions.findMany({
         where: eq(
           decisionProcessTransitions.processInstanceId,
           processInstance.id,

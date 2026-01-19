@@ -15,7 +15,7 @@ async function ensureProposalTaxonomy(categories: string[]): Promise<string[]> {
   }
 
   // Ensure "proposal" taxonomy exists
-  let proposalTaxonomy = await db.query.taxonomies.findFirst({
+  let proposalTaxonomy = await db._query.taxonomies.findFirst({
     where: eq(taxonomies.name, 'proposal'),
   });
 
@@ -48,7 +48,7 @@ async function ensureProposalTaxonomy(categories: string[]): Promise<string[]> {
       .replace(/[^a-z0-9-]/g, '');
 
     // Check if taxonomy term already exists
-    let existingTerm = await db.query.taxonomyTerms.findFirst({
+    let existingTerm = await db._query.taxonomyTerms.findFirst({
       where: eq(taxonomyTerms.termUri, termUri),
     });
 

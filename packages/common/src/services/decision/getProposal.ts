@@ -45,7 +45,7 @@ export const getProposal = async ({
       throw new UnauthorizedError('User must have an active profile');
     }
 
-    const proposal = (await db.query.proposals.findFirst({
+    const proposal = (await db._query.proposals.findFirst({
       where: eq(proposals.profileId, profileId),
       with: {
         processInstance: {

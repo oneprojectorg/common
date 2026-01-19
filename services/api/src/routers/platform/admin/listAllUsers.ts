@@ -65,7 +65,7 @@ export const listAllUsersRouter = router({
       // Parallel database queries for optimal performance
       const [allUsers, totalCountResult] = await Promise.all([
         // Fetch users with complete profile, organization, and role data
-        db.query.users.findMany({
+        db._query.users.findMany({
           where: whereCondition,
           with: {
             authUser: true,

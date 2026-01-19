@@ -103,9 +103,9 @@ describe.skip('uploadProposalAttachment', () => {});
 //     vi.clearAllMocks();
 //
 //     // Mock database responses
-//     (db.query.users.findFirst as any).mockResolvedValue(mockDbUser);
-//     (db.query.profiles.findFirst as any).mockResolvedValue(mockProfile);
-//     (db.query.organizationUsers.findFirst as any).mockResolvedValue(mockOrgUser);
+//     (db._query.users.findFirst as any).mockResolvedValue(mockDbUser);
+//     (db._query.profiles.findFirst as any).mockResolvedValue(mockProfile);
+//     (db._query.organizationUsers.findFirst as any).mockResolvedValue(mockOrgUser);
 //
 //     // Mock database insert
 //     (db.insert as any).mockReturnValue({

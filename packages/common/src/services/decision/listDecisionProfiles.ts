@@ -42,7 +42,7 @@ const decisionProfileQueryConfig = {
 
 type DecisionProfileQueryResult = Awaited<
   ReturnType<
-    typeof db.query.profiles.findMany<typeof decisionProfileQueryConfig>
+    typeof db._query.profiles.findMany<typeof decisionProfileQueryConfig>
   >
 >[number];
 
@@ -151,7 +151,7 @@ export const listDecisionProfiles = async ({
     whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
   // Get profiles with their process instances
-  const profileList = await db.query.profiles.findMany({
+  const profileList = await db._query.profiles.findMany({
     where: whereClause,
     ...decisionProfileQueryConfig,
     orderBy: orderFn(profiles[orderBy]),

@@ -85,7 +85,7 @@ describe('createProcess with categories', () => {
     expect(result.name).toBe('Test Process');
 
     // Check that the "proposal" taxonomy was created
-    const proposalTaxonomy = await db.query.taxonomies.findFirst({
+    const proposalTaxonomy = await db._query.taxonomies.findFirst({
       where: eq(taxonomies.name, 'proposal'),
     });
 
@@ -96,7 +96,7 @@ describe('createProcess with categories', () => {
     );
 
     // Check that taxonomy terms were created for each category
-    const terms = await db.query.taxonomyTerms.findMany({
+    const terms = await db._query.taxonomyTerms.findMany({
       where: eq(taxonomyTerms.taxonomyId, proposalTaxonomy!.id),
     });
 
@@ -181,11 +181,11 @@ describe('createProcess with categories', () => {
     await createProcess({ data: processData2, user: testUser });
 
     // Check that we have the right number of unique terms
-    const proposalTaxonomy = await db.query.taxonomies.findFirst({
+    const proposalTaxonomy = await db._query.taxonomies.findFirst({
       where: eq(taxonomies.name, 'proposal'),
     });
 
-    const terms = await db.query.taxonomyTerms.findMany({
+    const terms = await db._query.taxonomyTerms.findMany({
       where: eq(taxonomyTerms.taxonomyId, proposalTaxonomy!.id),
     });
 
@@ -221,7 +221,7 @@ describe('createProcess with categories', () => {
     expect(result).toBeDefined();
 
     // Should not create any taxonomy
-    const proposalTaxonomy = await db.query.taxonomies.findFirst({
+    const proposalTaxonomy = await db._query.taxonomies.findFirst({
       where: eq(taxonomies.name, 'proposal'),
     });
 

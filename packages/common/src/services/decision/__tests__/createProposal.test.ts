@@ -86,8 +86,8 @@ describe('createProposal', () => {
       updatedAt: '2024-01-01T00:00:00Z',
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
       mockInstance as any,
     );
     mockDb.insert.mockReturnValueOnce({
@@ -106,8 +106,8 @@ describe('createProposal', () => {
     });
 
     expect(result).toEqual(mockCreatedProposal);
-    expect(mockDb.query.users.findFirst).toHaveBeenCalled();
-    expect(mockDb.query.processInstances.findFirst).toHaveBeenCalled();
+    expect(mockDb._query.users.findFirst).toHaveBeenCalled();
+    expect(mockDb._query.processInstances.findFirst).toHaveBeenCalled();
     expect(mockDb.insert).toHaveBeenCalled();
   });
 
@@ -126,7 +126,7 @@ describe('createProposal', () => {
 
   it('should throw UnauthorizedError when user has no active profile', async () => {
     const userWithoutProfile = { ...mockDbUser, currentProfileId: null };
-    mockDb.query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
 
     await expect(
       createProposal({
@@ -141,8 +141,8 @@ describe('createProposal', () => {
   });
 
   it('should throw NotFoundError when process instance not found', async () => {
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(null);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce(null);
 
     await expect(
       createProposal({
@@ -159,8 +159,8 @@ describe('createProposal', () => {
   it('should throw NotFoundError when process definition not found', async () => {
     const instanceWithoutProcess = { ...mockInstance, process: null };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
       instanceWithoutProcess as any,
     );
 
@@ -182,8 +182,8 @@ describe('createProposal', () => {
       instanceData: { ...mockInstanceData, currentStateId: 'invalid-state' },
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
       instanceWithInvalidState as any,
     );
 
@@ -206,8 +206,8 @@ describe('createProposal', () => {
       instanceData: { ...mockInstanceData, currentStateId: 'review' },
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
       instanceInReviewState as any,
     );
 
@@ -254,8 +254,8 @@ describe('createProposal', () => {
       status: 'submitted',
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
       instanceWithoutConfig as any,
     );
     mockDb.insert.mockReturnValueOnce({
@@ -277,8 +277,8 @@ describe('createProposal', () => {
   });
 
   it('should throw CommonError when database insert fails', async () => {
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce(
       mockInstance as any,
     );
     mockDb.insert.mockReturnValueOnce({
@@ -300,7 +300,7 @@ describe('createProposal', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    mockDb.query.users.findFirst.mockRejectedValueOnce(
+    mockDb._query.users.findFirst.mockRejectedValueOnce(
       new Error('Database connection failed'),
     );
 
@@ -345,8 +345,8 @@ describe('createProposal', () => {
       status: 'submitted',
     };
 
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce({
+    mockDb._query.users.findFirst.mockResolvedValueOnce(mockDbUser);
+    mockDb._query.processInstances.findFirst.mockResolvedValueOnce({
       ...instanceWithFallbackState,
       process: {
         ...instanceWithFallbackState.process,

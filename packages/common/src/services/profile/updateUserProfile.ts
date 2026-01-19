@@ -36,7 +36,7 @@ export const updateUserProfile = async ({
     input;
 
   // Get the current user to check if they have a profile
-  const currentUser = await dbClient.query.users.findFirst({
+  const currentUser = await dbClient._query.users.findFirst({
     where: eq(users.authUserId, user.id),
     with: {
       profile: true,
@@ -111,7 +111,7 @@ export const updateUserProfile = async ({
   if (focusAreas !== undefined || pronouns !== undefined) {
     // TODO: optimize this
     // First, ensure the user has an individual record
-    const updatedCurrentUser = await dbClient.query.users.findFirst({
+    const updatedCurrentUser = await dbClient._query.users.findFirst({
       where: eq(users.authUserId, user.id),
       with: {
         profile: true,
@@ -120,7 +120,7 @@ export const updateUserProfile = async ({
 
     if (updatedCurrentUser?.profile) {
       // Check if individual record exists
-      let individualRecord = await dbClient.query.individuals.findFirst({
+      let individualRecord = await dbClient._query.individuals.findFirst({
         where: eq(
           individuals.profileId,
           (updatedCurrentUser.profile as any).id,
@@ -177,7 +177,7 @@ export const updateUserProfile = async ({
   }
 
   // Return the updated user with all relations
-  const updatedUser = await dbClient.query.users.findFirst({
+  const updatedUser = await dbClient._query.users.findFirst({
     where: eq(users.authUserId, user.id),
     with: {
       avatarImage: true,

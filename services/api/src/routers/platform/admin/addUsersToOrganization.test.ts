@@ -390,7 +390,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       ]);
 
       // Verify organizationUser record and role assignment
-      const orgUser = await db.query.organizationUsers.findFirst({
+      const orgUser = await db._query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
             eq(table.authUserId, userToAdd.authUserId),
@@ -463,7 +463,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       expect(result[0]?.authUserId).toBe(userToAdd.authUserId);
 
       // Verify role is assigned
-      const orgUser = await db.query.organizationUsers.findFirst({
+      const orgUser = await db._query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
             eq(table.authUserId, userToAdd.authUserId),
@@ -541,7 +541,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       expect(result).toHaveLength(3);
 
       // Verify each user has correct roles
-      const orgUsers = await db.query.organizationUsers.findMany({
+      const orgUsers = await db._query.organizationUsers.findMany({
         where: (table, { eq }) => eq(table.organizationId, targetOrg.id),
         with: {
           roles: {

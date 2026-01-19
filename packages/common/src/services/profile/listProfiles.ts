@@ -51,7 +51,7 @@ export const listProfiles = async ({
           : and(...whereConditions)
         : undefined;
 
-    const result = await db.query.profiles.findMany({
+    const result = await db._query.profiles.findMany({
       where: whereClause,
       with: {
         headerImage: true,

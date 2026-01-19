@@ -71,7 +71,7 @@ describe('getProposal', () => {
   });
 
   it('should fetch proposal successfully with all relations', async () => {
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       mockFullProposal as any,
     );
 
@@ -81,7 +81,7 @@ describe('getProposal', () => {
     });
 
     expect(result).toEqual(mockFullProposal);
-    expect(mockDb.query.proposals.findFirst).toHaveBeenCalledWith(
+    expect(mockDb._query.proposals.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         with: {
           processInstance: {
@@ -109,11 +109,11 @@ describe('getProposal', () => {
       }),
     ).rejects.toThrow(UnauthorizedError);
 
-    expect(mockDb.query.proposals.findFirst).not.toHaveBeenCalled();
+    expect(mockDb._query.proposals.findFirst).not.toHaveBeenCalled();
   });
 
   it('should throw NotFoundError when proposal does not exist', async () => {
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(null);
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(null);
 
     await expect(
       getProposal({
@@ -122,7 +122,7 @@ describe('getProposal', () => {
       }),
     ).rejects.toThrow(NotFoundError);
 
-    expect(mockDb.query.proposals.findFirst).toHaveBeenCalled();
+    expect(mockDb._query.proposals.findFirst).toHaveBeenCalled();
   });
 
   it('should handle proposals with no decisions', async () => {
@@ -131,7 +131,7 @@ describe('getProposal', () => {
       decisions: [],
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       proposalWithoutDecisions as any,
     );
 
@@ -172,7 +172,7 @@ describe('getProposal', () => {
       decisions: [],
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       minimalProposal as any,
     );
 
@@ -185,7 +185,7 @@ describe('getProposal', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    mockDb.query.proposals.findFirst.mockRejectedValueOnce(
+    mockDb._query.proposals.findFirst.mockRejectedValueOnce(
       new Error('Database connection failed'),
     );
 
@@ -212,7 +212,7 @@ describe('getProposal', () => {
         status,
       };
 
-      mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+      mockDb._query.proposals.findFirst.mockResolvedValueOnce(
         proposalWithStatus as any,
       );
 
@@ -253,7 +253,7 @@ describe('getProposal', () => {
       },
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       proposalWithComplexData as any,
     );
 
@@ -298,7 +298,7 @@ describe('getProposal', () => {
       ],
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+    mockDb._query.proposals.findFirst.mockResolvedValueOnce(
       proposalWithMultipleDecisions as any,
     );
 

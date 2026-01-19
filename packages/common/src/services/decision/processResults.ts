@@ -38,7 +38,7 @@ export async function processResults({
 }: ProcessResultsInput): Promise<ProcessResultsOutput> {
   try {
     // Get the process instance
-    const processInstance = await db.query.processInstances.findFirst({
+    const processInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, processInstanceId),
       with: {
         process: true,
@@ -56,7 +56,7 @@ export async function processResults({
     }
 
     // Get all proposals for this process instance
-    const processProposals = await db.query.proposals.findMany({
+    const processProposals = await db._query.proposals.findMany({
       where: eq(proposals.processInstanceId, processInstanceId),
     });
 

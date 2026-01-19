@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations } from 'drizzle-orm/_relations';
 import { index, pgEnum, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 import {

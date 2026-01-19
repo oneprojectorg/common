@@ -52,11 +52,11 @@ export const inviteUsersToProfile = async (input: {
     // Get the profile details for the invite
     assertProfile(requesterProfileId),
     // Get the target role
-    db.query.accessRoles.findFirst({
+    db._query.accessRoles.findFirst({
       where: (table, { eq }) => eq(table.id, roleId),
     }),
     // Get all users with their profile memberships for this profile
-    db.query.users.findMany({
+    db._query.users.findMany({
       where: (table, { inArray }) => inArray(table.email, normalizedEmails),
       with: {
         profileUsers: {
@@ -65,7 +65,7 @@ export const inviteUsersToProfile = async (input: {
       },
     }),
     // Get all existing allowList entries for these emails
-    db.query.allowList.findMany({
+    db._query.allowList.findMany({
       where: (table, { inArray }) => inArray(table.email, normalizedEmails),
     }),
     getProfileAccessUser({

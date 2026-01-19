@@ -51,7 +51,7 @@ export const listPosts = async ({
       throw new NotFoundError('Could not find organization');
     }
 
-    const org = await db.query.organizations.findFirst({
+    const org = await db._query.organizations.findFirst({
       where: (_, { eq }) => eq(organizations.profileId, profileId),
     });
 
@@ -63,7 +63,7 @@ export const listPosts = async ({
       throw new NotFoundError('Organization not found');
     }
 
-    const result = await db.query.postsToOrganizations.findMany({
+    const result = await db._query.postsToOrganizations.findMany({
       where: cursorCondition
         ? and(eq(postsToOrganizations.organizationId, org.id), cursorCondition)
         : (table, { eq }) => eq(table.organizationId, org.id),

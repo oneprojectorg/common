@@ -35,7 +35,7 @@ export const getOrgAccessUser = async ({
   organizationId: string;
 }): Promise<OrgUserWithNormalizedRoles | undefined> => {
   const getOrgUser = async () => {
-    const orgUser = await db.query.organizationUsers.findFirst({
+    const orgUser = await db._query.organizationUsers.findFirst({
       where: (table, { eq }) =>
         and(
           eq(table.organizationId, organizationId),
@@ -96,7 +96,7 @@ export const getProfileAccessUser = async ({
   profileId: string;
 }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
   const getProfileUser = async () => {
-    const profileUser = await db.query.profileUsers.findFirst({
+    const profileUser = await db._query.profileUsers.findFirst({
       where: (table, { eq }) =>
         and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
       with: {
@@ -278,7 +278,7 @@ export const getUserSession = async ({
   const validatedAuthUserId = validateAuthUserId(authUserId);
 
   try {
-    const dbUser = await db.query.users.findFirst({
+    const dbUser = await db._query.users.findFirst({
       where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
       with: {
         organizationUsers: true,

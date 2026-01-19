@@ -45,7 +45,7 @@ async function updateProposalCategoryLink(
     // Add new category link if provided
     if (newCategoryLabel?.trim()) {
       // Find the "proposal" taxonomy
-      const proposalTaxonomy = await db.query.taxonomies.findFirst({
+      const proposalTaxonomy = await db._query.taxonomies.findFirst({
         where: eq(taxonomies.name, 'proposal'),
       });
 
@@ -55,7 +55,7 @@ async function updateProposalCategoryLink(
       }
 
       // Find the taxonomy term that matches the category label
-      const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
+      const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
         where: eq(taxonomyTerms.label, newCategoryLabel.trim()),
       });
 
@@ -100,7 +100,7 @@ export const updateProposal = async ({
     }
 
     // Check if proposal exists and user has permission to update it
-    const existingProposal = await db.query.proposals.findFirst({
+    const existingProposal = await db._query.proposals.findFirst({
       where: eq(proposals.id, proposalId),
       with: {
         processInstance: {

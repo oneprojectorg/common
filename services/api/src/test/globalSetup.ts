@@ -7,7 +7,6 @@ import {
 import { count, getTableName, inArray } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
 
 /**
  * Global setup for Vitest - runs once before all test files
@@ -63,8 +62,11 @@ export async function teardown() {
     );
   }
 
-  const client = postgres(databaseUrl);
-  const db = drizzle(client, { schema, casing: 'snake_case' });
+  const db = drizzle({
+    connection: { url: databaseUrl },
+    schema,
+    casing: 'snake_case',
+  });
 
   // Seeded tables that will be "deseeded" - only the exact seeded rows should exist
   const seededTables = new Set([
@@ -146,6 +148,4 @@ export async function teardown() {
     .delete(schema.accessZones)
     .where(inArray(schema.accessZones.id, accessZoneIds));
   console.log('✅ Deseeding completed');
-
-  await client.end();
 }

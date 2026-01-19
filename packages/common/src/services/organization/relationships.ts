@@ -88,11 +88,11 @@ export const sendRelationshipNotification = async ({
   relationships: Array<string>;
 }) => {
   const [sourceOrg, targetOrg] = await Promise.all([
-    db.query.organizations.findFirst({
+    db._query.organizations.findFirst({
       where: eq(organizations.id, from),
       with: { profile: true },
     }),
-    db.query.organizations.findFirst({
+    db._query.organizations.findFirst({
       where: eq(organizations.id, to),
       with: { profile: true },
     }),
@@ -104,7 +104,7 @@ export const sendRelationshipNotification = async ({
 
   // Send email notifications to target organization admin users only
   try {
-    const adminUsers = await db.query.organizationUsers.findMany({
+    const adminUsers = await db._query.organizationUsers.findMany({
       where: and(
         eq(organizationUsers.organizationId, to),
         inArray(
@@ -185,7 +185,7 @@ export const getRelatedOrganizations = async ({
         : []),
     );
 
-  const relationships = await db.query.organizationRelationships.findMany({
+  const relationships = await db._query.organizationRelationships.findMany({
     where,
     with: {
       targetOrganization: {
@@ -285,7 +285,7 @@ export const getDirectedRelationships = async ({
   // }
   //
   const allRelationshipsFromDb =
-    await db.query.organizationRelationships.findMany({
+    await db._query.organizationRelationships.findMany({
       where: () =>
         and(
           or(
@@ -372,7 +372,7 @@ export const getPendingRelationships = async ({
     );
 
   const [relationships] = await Promise.all([
-    db.query.organizationRelationships.findMany({
+    db._query.organizationRelationships.findMany({
       where,
       with: {
         targetOrganization: {

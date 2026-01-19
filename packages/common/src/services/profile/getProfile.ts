@@ -62,7 +62,7 @@ export const getProfile = async ({
   user: _user, // Currently unused but kept for future extensibility
 }: GetProfileParams) => {
   try {
-    const profile = await db.query.profiles.findFirst({
+    const profile = await db._query.profiles.findFirst({
       where: eq(profiles.slug, slug),
       with: {
         avatarImage: true,

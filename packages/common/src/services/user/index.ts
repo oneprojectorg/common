@@ -141,7 +141,7 @@ export const getUserByAuthId = async ({
   authUserId: string;
   includePermissions?: boolean;
 }) => {
-  const user = await db.query.users.findFirst({
+  const user = await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
       avatarImage: true,
@@ -265,7 +265,7 @@ export const getUserWithProfiles = async ({
   authUserId: string;
   includeRoles?: boolean;
 }) => {
-  return await db.query.users.findFirst({
+  return await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
       profile: {
@@ -302,7 +302,7 @@ export const getUserForProfileSwitch = async ({
 }: {
   authUserId: string;
 }) => {
-  return await db.query.users.findFirst({
+  return await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
       profile: true,
@@ -410,7 +410,7 @@ export const switchUserOrganization = async (
 ) => {
   const { authUserId, organizationId } = options;
   // First, get the organization to find its profile ID
-  const organization = await db.query.organizations.findFirst({
+  const organization = await db._query.organizations.findFirst({
     where: eq(organizations.id, organizationId),
   });
 

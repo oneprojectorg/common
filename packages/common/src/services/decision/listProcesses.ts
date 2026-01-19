@@ -40,7 +40,7 @@ export const listProcesses = async ({
     const whereClause = and(...conditions);
 
     const [processes, totalResult] = await Promise.all([
-      db.query.decisionProcesses.findMany({
+      db._query.decisionProcesses.findMany({
         where: whereClause,
         with: {
           createdBy: true,

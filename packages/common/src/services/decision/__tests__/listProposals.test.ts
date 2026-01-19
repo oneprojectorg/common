@@ -128,7 +128,7 @@ describe('listProposals', () => {
     mockCheckPermission.mockReturnValue(false);
 
     // Default mock setup for successful queries
-    mockDb.query.users.findFirst.mockResolvedValue(mockDbUser);
+    mockDb._query.users.findFirst.mockResolvedValue(mockDbUser);
 
     // Mock organization and access queries
     mockDb.select.mockImplementation(() => ({
@@ -155,7 +155,7 @@ describe('listProposals', () => {
     });
 
     // Mock proposals query
-    mockDb.query.proposals.findMany.mockResolvedValue(mockProposals);
+    mockDb._query.proposals.findMany.mockResolvedValue(mockProposals);
 
     // Mock the new CTE-based relationship query
     mockDb.execute.mockResolvedValue([
@@ -211,8 +211,8 @@ describe('listProposals', () => {
       canManageProposals: false,
     });
 
-    expect(mockDb.query.users.findFirst).toHaveBeenCalled();
-    expect(mockDb.query.proposals.findMany).toHaveBeenCalled();
+    expect(mockDb._query.users.findFirst).toHaveBeenCalled();
+    expect(mockDb._query.proposals.findMany).toHaveBeenCalled();
     expect(mockCheckPermission).toHaveBeenCalledWith(
       { decisions: 'admin' },
       mockOrgUser.roles,
@@ -230,7 +230,7 @@ describe('listProposals', () => {
 
   it('should throw UnauthorizedError when user has no active profile', async () => {
     const userWithoutProfile = { ...mockDbUser, currentProfileId: null };
-    mockDb.query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
+    mockDb._query.users.findFirst.mockResolvedValueOnce(userWithoutProfile);
 
     await expect(
       listProposals({
@@ -242,7 +242,7 @@ describe('listProposals', () => {
 
   it('should filter proposals by processInstanceId', async () => {
     const filteredProposals = [mockProposals[0]];
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(filteredProposals);
+    mockDb._query.proposals.findMany.mockResolvedValueOnce(filteredProposals);
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValueOnce({
         where: vi.fn().mockResolvedValueOnce([{ count: 1 }]),
@@ -263,7 +263,7 @@ describe('listProposals', () => {
 
   it('should filter proposals by submittedByProfileId', async () => {
     const filteredProposals = [mockProposals[1]];
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(filteredProposals);
+    mockDb._query.proposals.findMany.mockResolvedValueOnce(filteredProposals);
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValueOnce({
         where: vi.fn().mockResolvedValueOnce([{ count: 1 }]),
@@ -283,7 +283,7 @@ describe('listProposals', () => {
 
   it('should filter proposals by status', async () => {
     const approvedProposals = [mockProposals[1]];
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(approvedProposals);
+    mockDb._query.proposals.findMany.mockResolvedValueOnce(approvedProposals);
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValueOnce({
         where: vi.fn().mockResolvedValueOnce([{ count: 1 }]),
@@ -303,7 +303,7 @@ describe('listProposals', () => {
 
   it('should support search functionality', async () => {
     const searchResults = [mockProposals[0]];
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(searchResults);
+    mockDb._query.proposals.findMany.mockResolvedValueOnce(searchResults);
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValueOnce({
         where: vi.fn().mockResolvedValueOnce([{ count: 1 }]),
@@ -323,7 +323,7 @@ describe('listProposals', () => {
 
   it('should handle pagination correctly', async () => {
     const paginatedProposals = [mockProposals[1]];
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(paginatedProposals);
+    mockDb._query.proposals.findMany.mockResolvedValueOnce(paginatedProposals);
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValueOnce({
         where: vi.fn().mockResolvedValueOnce([{ count: 10 }]),
@@ -343,7 +343,7 @@ describe('listProposals', () => {
     expect(result.hasMore).toBe(true);
 
     // Check that findMany was called with correct limit and offset
-    expect(mockDb.query.proposals.findMany).toHaveBeenCalledWith(
+    expect(mockDb._query.proposals.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         limit: 1,
         offset: 1,
@@ -359,7 +359,7 @@ describe('listProposals', () => {
     ];
 
     for (const testCase of orderingTests) {
-      mockDb.query.proposals.findMany.mockResolvedValueOnce(mockProposals);
+      mockDb._query.proposals.findMany.mockResolvedValueOnce(mockProposals);
 
       await listProposals({
         input: {
@@ -370,7 +370,7 @@ describe('listProposals', () => {
       });
 
       // Verify that findMany was called with orderBy parameter
-      expect(mockDb.query.proposals.findMany).toHaveBeenCalledWith(
+      expect(mockDb._query.proposals.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: expect.any(Function),
         }),
@@ -378,7 +378,7 @@ describe('listProposals', () => {
 
       vi.clearAllMocks();
       // Reset mocks for next iteration
-      mockDb.query.users.findFirst.mockResolvedValue(mockDbUser);
+      mockDb._query.users.findFirst.mockResolvedValue(mockDbUser);
       mockDb.select.mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockResolvedValue([{ count: 2 }]),
@@ -389,7 +389,7 @@ describe('listProposals', () => {
 
   it('should combine multiple filters correctly', async () => {
     const filteredProposals = [mockProposals[0]];
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(filteredProposals);
+    mockDb._query.proposals.findMany.mockResolvedValueOnce(filteredProposals);
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValueOnce({
         where: vi.fn().mockResolvedValueOnce([{ count: 1 }]),
@@ -416,7 +416,7 @@ describe('listProposals', () => {
   });
 
   it('should handle empty results', async () => {
-    mockDb.query.proposals.findMany.mockResolvedValueOnce([]);
+    mockDb._query.proposals.findMany.mockResolvedValueOnce([]);
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValueOnce({
         where: vi.fn().mockResolvedValueOnce([{ count: 0 }]),
@@ -442,7 +442,7 @@ describe('listProposals', () => {
       }),
     );
 
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(
+    mockDb._query.proposals.findMany.mockResolvedValueOnce(
       proposalsWithDifferentCounts,
     );
 
@@ -475,7 +475,7 @@ describe('listProposals', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    mockDb.query.users.findFirst.mockRejectedValueOnce(
+    mockDb._query.users.findFirst.mockRejectedValueOnce(
       new Error('Database connection failed'),
     );
 

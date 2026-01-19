@@ -291,10 +291,10 @@ export const updateOrganization = async ({
 
   // Fetch the updated organization and profile separately to ensure proper typing
   const [updatedOrg, updatedProfile] = await Promise.all([
-    db.query.organizations.findFirst({
+    db._query.organizations.findFirst({
       where: eq(organizations.id, organizationId),
     }),
-    db.query.profiles.findFirst({
+    db._query.profiles.findFirst({
       where: eq(profiles.id, existingOrg.profileId),
       with: {
         headerImage: true,

@@ -54,7 +54,7 @@ describe.concurrent('organization.listUsers', () => {
     });
 
     // Get the organization user
-    const orgUser = await db.query.organizationUsers.findFirst({
+    const orgUser = await db._query.organizationUsers.findFirst({
       where: (table, { eq, and }) =>
         and(
           eq(table.organizationId, organization.id),

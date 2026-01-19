@@ -60,8 +60,8 @@ describe('proposalContentProcessor with public URLs', () => {
     vi.clearAllMocks();
 
     // Mock database queries
-    (db.query.proposals.findFirst as any).mockResolvedValue(mockProposal);
-    (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+    (db._query.proposals.findFirst as any).mockResolvedValue(mockProposal);
+    (db._query.proposalAttachments.findMany as any).mockResolvedValue(
       mockProposalAttachmentJoins,
     );
 
@@ -119,10 +119,10 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       ];
 
-      (db.query.proposals.findFirst as any).mockResolvedValue(
+      (db._query.proposals.findFirst as any).mockResolvedValue(
         mockProposalMultiImages,
       );
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+      (db._query.proposalAttachments.findMany as any).mockResolvedValue(
         mockAttachments,
       );
 
@@ -155,7 +155,7 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       };
 
-      (db.query.proposals.findFirst as any).mockResolvedValue(
+      (db._query.proposals.findFirst as any).mockResolvedValue(
         mockProposalNoImages,
       );
 
@@ -169,7 +169,7 @@ describe('proposalContentProcessor with public URLs', () => {
     });
 
     it('should handle proposals without attachments', async () => {
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue([]);
+      (db._query.proposalAttachments.findMany as any).mockResolvedValue([]);
 
       await processProposalContent({
         conn: db,
@@ -181,7 +181,7 @@ describe('proposalContentProcessor with public URLs', () => {
     });
 
     it('should not fail when proposal is not found', async () => {
-      (db.query.proposals.findFirst as any).mockResolvedValue(null);
+      (db._query.proposals.findFirst as any).mockResolvedValue(null);
 
       // Should not throw
       await expect(
@@ -202,7 +202,7 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       ];
 
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+      (db._query.proposalAttachments.findMany as any).mockResolvedValue(
         mockAttachmentsWithNull,
       );
 
@@ -226,7 +226,7 @@ describe('proposalContentProcessor with public URLs', () => {
     });
 
     it('should return empty object when no attachments exist', async () => {
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue([]);
+      (db._query.proposalAttachments.findMany as any).mockResolvedValue([]);
 
       const urlMap = await getProposalAttachmentUrls('test-proposal-id');
 
@@ -253,7 +253,7 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       ];
 
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+      (db._query.proposalAttachments.findMany as any).mockResolvedValue(
         mockMultipleAttachments,
       );
 
@@ -277,7 +277,7 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       ];
 
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+      (db._query.proposalAttachments.findMany as any).mockResolvedValue(
         mockAttachmentsWithMissing,
       );
 
@@ -318,7 +318,7 @@ describe('proposalContentProcessor with public URLs', () => {
           attachment: { ...mockAttachment, storageObjectId: storagePath },
         };
 
-        (db.query.proposalAttachments.findMany as any).mockResolvedValue([
+        (db._query.proposalAttachments.findMany as any).mockResolvedValue([
           mockAttachmentWithPath,
         ]);
 

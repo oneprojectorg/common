@@ -66,7 +66,7 @@ export const getLatestResultWithProposals = async ({
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
   // Get the latest result (without loading all selections)
-  const result = await db.query.decisionProcessResults.findFirst({
+  const result = await db._query.decisionProcessResults.findFirst({
     where: eq(decisionProcessResults.processInstanceId, processInstanceId),
     orderBy: [desc(decisionProcessResults.executedAt)],
   });

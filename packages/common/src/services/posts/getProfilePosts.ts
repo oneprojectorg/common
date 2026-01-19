@@ -14,7 +14,7 @@ export const getProfilePosts = async (input: GetProfilePostsInput) => {
 
   try {
     // Get posts attached to this profile via postsToProfiles junction table
-    const profilePosts = await db.query.postsToProfiles.findMany({
+    const profilePosts = await db._query.postsToProfiles.findMany({
       where: eq(postsToProfiles.profileId, input.profileId),
       with: {
         post: {

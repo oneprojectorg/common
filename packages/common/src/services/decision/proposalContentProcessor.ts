@@ -23,7 +23,7 @@ export async function processProposalContent({
 }): Promise<void> {
   try {
     // Get the proposal content
-    const proposal = await conn.query.proposals.findFirst({
+    const proposal = await conn._query.proposals.findFirst({
       where: eq(proposals.id, proposalId),
     });
 
@@ -42,7 +42,7 @@ export async function processProposalContent({
 
     // Get all attachments for this proposal through the join table
     const proposalAttachmentJoins =
-      await conn.query.proposalAttachments.findMany({
+      await conn._query.proposalAttachments.findMany({
         where: eq(proposalAttachments.proposalId, proposalId),
         with: {
           attachment: true,
@@ -177,7 +177,7 @@ function extractImageUrlsFromContent(htmlContent: string): string[] {
 export async function getProposalAttachmentUrls(
   proposalId: string,
 ): Promise<Record<string, string>> {
-  const proposalAttachmentJoins = await db.query.proposalAttachments.findMany({
+  const proposalAttachmentJoins = await db._query.proposalAttachments.findMany({
     where: eq(proposalAttachments.proposalId, proposalId),
     with: {
       attachment: true,

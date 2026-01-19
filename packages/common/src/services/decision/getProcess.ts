@@ -5,7 +5,7 @@ import { NotFoundError } from '../../utils';
 
 export const getProcess = async (processId: string) => {
   try {
-    const process = await db.query.decisionProcesses.findFirst({
+    const process = await db._query.decisionProcesses.findFirst({
       where: eq(decisionProcesses.id, processId),
       with: {
         createdBy: true,
