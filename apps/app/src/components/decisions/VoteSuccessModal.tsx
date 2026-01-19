@@ -32,15 +32,15 @@ const VoteSuccessModalSuspense = ({
   });
 
   const nextSteps =
-    processInstance?.process?.processSchema?.states &&
-    processInstance?.instanceData
+    processInstance.process?.processSchema?.states &&
+    processInstance.instanceData
       ? getNextSteps(
           processInstance.process.processSchema.states,
           processInstance.instanceData,
         )
       : [];
 
-  const processTitle = processInstance?.name;
+  const processTitle = processInstance.name;
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>

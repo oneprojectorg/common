@@ -33,19 +33,18 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
 
   // Get current phase name from process schema
-  const currentPhaseName =
-    processInstance?.process?.processSchema?.phases?.find(
-      (phase) => phase.id === processInstance.currentStateId,
-    )?.name;
+  const currentPhaseName = processInstance.process?.processSchema?.phases?.find(
+    (phase) => phase.id === processInstance.currentStateId,
+  )?.name;
 
   // Get closing date from phases - find the current phase's end date
-  const currentPhase = processInstance?.instanceData?.phases?.find(
+  const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
   const closingDate = currentPhase?.endDate;
 
   // Owner organization info
-  const owner = processInstance?.owner;
+  const owner = processInstance.owner;
 
   return (
     <Link

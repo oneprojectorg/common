@@ -147,7 +147,7 @@ export const updateProposal = async ({
     const processInstance =
       existingProposal.processInstance as ProcessInstanceWithProcess;
     const canUpdateProposal =
-      processInstance?.ownerProfileId === dbUser.currentProfileId ||
+      processInstance.ownerProfileId === dbUser.currentProfileId ||
       hasPermissions;
 
     if (!isSubmitter && !canUpdateProposal) {
@@ -169,7 +169,7 @@ export const updateProposal = async ({
     }
 
     // Validate proposal data against schema if updating proposalData
-    if (data.proposalData && processInstance?.process) {
+    if (data.proposalData && processInstance.process) {
       const process = processInstance.process as any;
       const processSchema = process.processSchema;
 
