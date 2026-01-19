@@ -49,23 +49,6 @@ function ResultsPageLegacy({
   );
 }
 
-function ResultsPageNew({
-  instanceId,
-  slug,
-}: {
-  instanceId: string;
-  slug: string;
-}) {
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  return (
-    <ResultsPageContent
-      instanceId={instanceId}
-      slug={slug}
-      instance={instance}
-    />
-  );
-}
-
 export function ResultsPage({
   instanceId,
   slug,
@@ -79,7 +62,10 @@ export function ResultsPage({
   if (useLegacy) {
     return <ResultsPageLegacy instanceId={instanceId} slug={slug} />;
   }
-  return <ResultsPageNew instanceId={instanceId} slug={slug} />;
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  return (
+    <ResultsPageContent instanceId={instanceId} slug={slug} instance={instance} />
+  );
 }
 
 function ResultsPageContent({
