@@ -83,8 +83,14 @@ describe.concurrent('listDecisionProfiles', () => {
       status: ProcessStatus.PUBLISHED,
     });
 
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0]?.processInstance.status).toBe('published');
+    expect(result.items).toMatchObject([
+      {
+        name: expect.stringContaining('Published Process'),
+        processInstance: {
+          status: 'published',
+        },
+      },
+    ]);
   });
 
   it('should filter by owner', async ({ task, onTestFinished }) => {

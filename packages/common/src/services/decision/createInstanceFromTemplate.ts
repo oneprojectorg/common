@@ -98,6 +98,13 @@ export const createInstanceFromTemplate = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
+    // TODO: This shouldn't be a requirement in the future and we need to resolve that (SMS accounts for instance)
+    if (!user.email) {
+      throw new CommonError(
+        'Failed to create decision process instance. User email was missing',
+      );
+    }
+
     // Add the creator as a profile user with Admin role
     const [[newProfileUser], adminRole] = await Promise.all([
       tx
@@ -105,7 +112,7 @@ export const createInstanceFromTemplate = async ({
         .values({
           profileId: instanceProfile.id,
           authUserId: user.id,
-          email: user.email!,
+          email: user.email,
         })
         .returning(),
       tx.query.accessRoles.findFirst({
