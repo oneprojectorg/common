@@ -210,7 +210,9 @@ describe('createInstance', () => {
 
   it('should throw NotFoundError when process not found', async () => {
     vi.mocked(db._query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(null);
+    vi.mocked(db._query.decisionProcesses.findFirst).mockResolvedValueOnce(
+      null,
+    );
 
     await expect(
       createInstance({
