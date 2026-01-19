@@ -83,14 +83,8 @@ describe.concurrent('listDecisionProfiles', () => {
       status: ProcessStatus.PUBLISHED,
     });
 
-    expect(result.items).toMatchObject([
-      {
-        name: expect.stringContaining('Published Process'),
-        processInstance: {
-          status: 'published',
-        },
-      },
-    ]);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.processInstance.status).toBe('published');
   });
 
   it('should filter by owner', async ({ task, onTestFinished }) => {
@@ -327,7 +321,14 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     // Main user should only see the profile they have access to
-    expect(result.items).toHaveLength(1);
+    expect(result.items).toMatchObject([
+      {
+        id: setup.instances[0]?.profileId,
+        processInstance: {
+          id: setup.instances[0]?.id,
+        },
+      },
+    ]);
   });
 
   it('should properly paginate through all items', async ({
