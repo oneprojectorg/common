@@ -44,13 +44,10 @@ export const listProfileUsers = async ({
   profileId: string;
   user: User;
 }) => {
-  await assertProfile(profileId);
-
-  // Check if user has ADMIN access on the profile
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId,
-  });
+  const [, profileUser] = await Promise.all([
+    assertProfile(profileId),
+    getProfileAccessUser({ user, profileId }),
+  ]);
 
   if (!profileUser) {
     throw new UnauthorizedError('You do not have access to this profile');
@@ -135,13 +132,10 @@ export const addProfileUser = async ({
   personalMessage?: string;
   user: User;
 }) => {
-  const profile = await assertProfile(profileId);
-
-  // Check if user has ADMIN access on the profile
-  const currentProfileUser = await getProfileAccessUser({
-    user,
-    profileId,
-  });
+  const [profile, currentProfileUser] = await Promise.all([
+    assertProfile(profileId),
+    getProfileAccessUser({ user, profileId }),
+  ]);
 
   if (!currentProfileUser) {
     throw new UnauthorizedError('You do not have access to this profile');
