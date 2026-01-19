@@ -64,7 +64,11 @@ export function ResultsPage({
   }
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   return (
-    <ResultsPageContent instanceId={instanceId} slug={slug} instance={instance} />
+    <ResultsPageContent
+      instanceId={instanceId}
+      slug={slug}
+      instance={instance}
+    />
   );
 }
 
