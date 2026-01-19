@@ -3,19 +3,15 @@ import {
   type DecisionProcess,
   type ProcessInstance,
   ProposalStatus,
-  proposalAttachments,
-  proposalCategories,
   proposals,
-  taxonomyTerms,
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
-import { processProposalContent } from './proposalContentProcessor';
-import { DecisionSchemaDefinition } from './schemas';
-import type { InstanceData, ProposalData } from './types';
+import type { DecisionSchemaDefinition } from './schemas';
+import type { InstanceData } from './types';
 import { checkProposalsAllowed } from './utils/proposal';
 
 type ProcessInstanceWithProcess = ProcessInstance & {
@@ -24,14 +20,10 @@ type ProcessInstanceWithProcess = ProcessInstance & {
 
 export interface SubmitProposalInput {
   proposalId: string;
-  /** Updated proposal data - required fields validated at submit time */
-  proposalData: ProposalData;
-  attachmentIds?: string[];
 }
 
 /**
  * Submits a draft proposal, transitioning it to 'submitted' status.
- * Validates required fields against the process schema before submission.
  */
 export const submitProposal = async ({
   data,
@@ -107,79 +99,18 @@ export const submitProposal = async ({
     );
   }
 
-  // Pre-fetch category term if specified
-  const categoryLabel = (data.proposalData as Record<string, unknown>)
-    ?.category as string | undefined;
-  let categoryTermId: string | null = null;
+  // Update proposal status to submitted
+  const [updatedProposal] = await db
+    .update(proposals)
+    .set({
+      status: ProposalStatus.SUBMITTED,
+    })
+    .where(eq(proposals.id, data.proposalId))
+    .returning();
 
-  if (categoryLabel?.trim()) {
-    const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
-      where: eq(taxonomyTerms.label, categoryLabel.trim()),
-      with: {
-        taxonomy: true,
-      },
-    });
-
-    if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
-      categoryTermId = taxonomyTerm.id;
-    }
+  if (!updatedProposal) {
+    throw new CommonError('Failed to submit proposal');
   }
 
-  // Update proposal: set status to submitted and update proposalData
-  const proposal = await db.transaction(async (tx) => {
-    const [updatedProposal] = await tx
-      .update(proposals)
-      .set({
-        proposalData: data.proposalData,
-        status: ProposalStatus.SUBMITTED,
-      })
-      .where(eq(proposals.id, data.proposalId))
-      .returning();
-
-    if (!updatedProposal) {
-      throw new CommonError('Failed to submit proposal');
-    }
-
-    // Update category if specified (delete existing, insert new)
-    if (categoryTermId) {
-      // Delete existing categories for this proposal
-      await tx
-        .delete(proposalCategories)
-        .where(eq(proposalCategories.proposalId, data.proposalId));
-
-      // Insert new category
-      await tx.insert(proposalCategories).values({
-        proposalId: data.proposalId,
-        taxonomyTermId: categoryTermId,
-      });
-    }
-
-    // Link attachments to proposal if provided
-    if (data.attachmentIds && data.attachmentIds.length > 0) {
-      // Get submittedByProfileId from existing proposal
-      const profileId = existingProposal.submittedByProfileId;
-
-      // Delete existing attachments and re-add (simpler than diffing)
-      await tx
-        .delete(proposalAttachments)
-        .where(eq(proposalAttachments.proposalId, data.proposalId));
-
-      const proposalAttachmentValues = data.attachmentIds.map(
-        (attachmentId) => ({
-          proposalId: data.proposalId,
-          attachmentId: attachmentId,
-          uploadedBy: profileId,
-        }),
-      );
-
-      await tx.insert(proposalAttachments).values(proposalAttachmentValues);
-
-      // Process proposal content to replace temporary URLs with permanent ones
-      await processProposalContent({ conn: tx, proposalId: data.proposalId });
-    }
-
-    return updatedProposal;
-  });
-
-  return proposal;
+  return updatedProposal;
 };

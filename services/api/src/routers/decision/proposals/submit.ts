@@ -8,8 +8,6 @@ import { trackProposalSubmitted } from '../../../utils/analytics';
 
 const submitProposalInputSchema = z.object({
   proposalId: z.uuid(),
-  proposalData: z.record(z.string(), z.unknown()),
-  attachmentIds: z.array(z.string()).optional(),
 });
 
 export const submitProposalRouter = router({
