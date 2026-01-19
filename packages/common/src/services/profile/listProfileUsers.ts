@@ -1,0 +1,112 @@
+import { db, eq } from '@op/db/client';
+import {
+  type AccessRole,
+  type Profile,
+  type ProfileUser,
+  profileUsers,
+} from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
+
+import { UnauthorizedError } from '../../utils/error';
+import { getProfileAccessUser } from '../access';
+import { assertProfile } from '../assert';
+
+/**
+ * Type for profile user query result with relations.
+ * Used for listProfileUsers which includes serviceUser.profile and roles.accessRole.
+ */
+type ProfileUserWithRelations = ProfileUser & {
+  serviceUser: {
+    profile:
+      | (Pick<Profile, 'id' | 'name' | 'slug' | 'bio' | 'email' | 'type'> & {
+          avatarImage: { id: string; name: string | null } | null;
+        })
+      | null;
+  } | null;
+  roles: Array<{
+    accessRole: Pick<AccessRole, 'id' | 'name' | 'description'>;
+  }>;
+};
+
+/**
+ * List all members of a profile
+ */
+export const listProfileUsers = async ({
+  profileId,
+  user,
+}: {
+  profileId: string;
+  user: User;
+}) => {
+  const [profileUser] = await Promise.all([
+    getProfileAccessUser({ user, profileId }),
+    assertProfile(profileId),
+  ]);
+
+  if (!profileUser) {
+    throw new UnauthorizedError('You do not have access to this profile');
+  }
+
+  assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
+
+  // Fetch all profile users with their roles and user profiles
+  const members = await db.query.profileUsers.findMany({
+    where: eq(profileUsers.profileId, profileId),
+    with: {
+      roles: {
+        with: {
+          accessRole: true,
+        },
+      },
+      serviceUser: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: (table, { asc }) => [asc(table.name), asc(table.email)],
+  });
+
+  // Transform the data to a clean format
+  return members.map((member) => {
+    const typedMember = member as ProfileUserWithRelations;
+    const userProfile = typedMember.serviceUser?.profile;
+
+    return {
+      id: member.id,
+      authUserId: member.authUserId,
+      name: userProfile?.name || member.name,
+      email: member.email,
+      about: userProfile?.bio || member.about,
+      profileId: member.profileId,
+      createdAt: member.createdAt,
+      updatedAt: member.updatedAt,
+      profile: userProfile
+        ? {
+            id: userProfile.id,
+            name: userProfile.name,
+            slug: userProfile.slug,
+            bio: userProfile.bio,
+            email: userProfile.email,
+            type: userProfile.type,
+            avatarImage: userProfile.avatarImage
+              ? {
+                  id: userProfile.avatarImage.id,
+                  name: userProfile.avatarImage.name,
+                }
+              : null,
+          }
+        : null,
+      roles: member.roles.map((roleJunction) => ({
+        id: roleJunction.accessRole.id,
+        name: roleJunction.accessRole.name,
+        description: roleJunction.accessRole.description,
+      })),
+    };
+  });
+};
