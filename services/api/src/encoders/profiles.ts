@@ -50,9 +50,10 @@ export type Profile = z.infer<typeof profileEncoder>;
 // Profile user encoders - using createSelectSchema for base fields
 export const profileUserEncoder = createSelectSchema(profileUsers)
   .extend({
-    // Override timestamp fields to handle both string and Date
-    createdAt: z.union([z.string(), z.date()]).nullable(),
-    updatedAt: z.union([z.string(), z.date()]).nullable(),
+    // Override timestamp fields to handle both string and Date, and allow null/undefined
+    createdAt: z.union([z.string(), z.date()]).nullish(),
+    updatedAt: z.union([z.string(), z.date()]).nullish(),
+    deletedAt: z.union([z.string(), z.date()]).nullish(),
     // Nested profile with minimal fields needed for display
     profile: baseProfileEncoder
       .pick({

@@ -1,0 +1,357 @@
+import { db } from '@op/db/client';
+import { profileUsers } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
+import { eq } from 'drizzle-orm';
+import { describe, expect, it, vi } from 'vitest';
+
+import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
+import {
+  createIsolatedSession,
+  createTestContextWithSession,
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+import { usersRouter } from './index';
+
+// Mock the event system to avoid Inngest API calls in tests
+vi.mock('@op/events', async () => {
+  const actual = await vi.importActual('@op/events');
+  return {
+    ...actual,
+    event: {
+      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
+    },
+  };
+});
+
+describe.concurrent('profile.users', () => {
+  const createCaller = createCallerFactory(usersRouter);
+
+  describe('listUsers', () => {
+    it('should list all users for a profile', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+      });
+
+      expect(result).toHaveLength(3);
+      expect(result.map((u) => u.email)).toContain(adminUser.email);
+      expect(result.map((u) => u.email)).toContain(memberUsers[0]?.email);
+      expect(result.map((u) => u.email)).toContain(memberUsers[1]?.email);
+    });
+
+    it('should return users with their roles', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+      });
+
+      const admin = result.find((u) => u.email === adminUser.email);
+      expect(admin).toBeDefined();
+      expect(admin?.roles).toHaveLength(1);
+      expect(admin?.roles[0]?.name).toBe(ROLES.ADMIN.name);
+    });
+
+    it('should throw error for non-admin users', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const memberUser = memberUsers[0];
+      if (!memberUser) {
+        throw new Error('Member user not created');
+      }
+
+      const { session } = await createIsolatedSession(memberUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await expect(
+        caller.listUsers({
+          profileId: profile.id,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should throw error for invalid profile ID', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { adminUser } = await testData.createProfile();
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await expect(
+        caller.listUsers({
+          profileId: '00000000-0000-0000-0000-000000000000',
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('addUser', () => {
+    it('should add a user to the profile', async ({ task, onTestFinished }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      // Create a standalone user to be added
+      const standaloneUser = await testData.createStandaloneUser();
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.addUser({
+        profileId: profile.id,
+        email: standaloneUser.email,
+        roleId: ROLES.MEMBER.id,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.email).toBe(standaloneUser.email);
+
+      // Verify user was added to the profile
+      const addedUser = await db.query.profileUsers.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.profileId, profile.id),
+            eq(table.email, standaloneUser.email),
+          ),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      expect(addedUser).toBeDefined();
+      expect(addedUser?.roles).toHaveLength(1);
+      expect(addedUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
+    });
+
+    it('should fail when user is already a member', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const memberUser = memberUsers[0];
+      if (!memberUser) {
+        throw new Error('Member user not created');
+      }
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await expect(
+        caller.addUser({
+          profileId: profile.id,
+          email: memberUser.email,
+          roleId: ROLES.MEMBER.id,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should fail when non-admin tries to add user', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const memberUser = memberUsers[0];
+      if (!memberUser) {
+        throw new Error('Member user not created');
+      }
+
+      const standaloneUser = await testData.createStandaloneUser();
+
+      const { session } = await createIsolatedSession(memberUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await expect(
+        caller.addUser({
+          profileId: profile.id,
+          email: standaloneUser.email,
+          roleId: ROLES.MEMBER.id,
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('updateUserRole', () => {
+    it('should update user role', async ({ task, onTestFinished }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const memberUser = memberUsers[0];
+      if (!memberUser) {
+        throw new Error('Member user not created');
+      }
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Update member to admin
+      const result = await caller.updateUserRole({
+        profileUserId: memberUser.profileUserId,
+        roleId: ROLES.ADMIN.id,
+      });
+
+      expect(result).toBeDefined();
+
+      // Verify role was updated
+      const updatedUser = await db.query.profileUsers.findFirst({
+        where: eq(profileUsers.id, memberUser.profileUserId),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      expect(updatedUser?.roles).toHaveLength(1);
+      expect(updatedUser?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
+    });
+
+    it('should fail when non-admin tries to update role', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+        profileName: 'Role Update Test',
+      });
+
+      const memberUser1 = memberUsers[0];
+      const memberUser2 = memberUsers[1];
+      if (!memberUser1 || !memberUser2) {
+        throw new Error('Member users not created');
+      }
+
+      const { session } = await createIsolatedSession(memberUser1.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await expect(
+        caller.updateUserRole({
+          profileUserId: memberUser2.profileUserId,
+          roleId: ROLES.ADMIN.id,
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('removeUser', () => {
+    it('should remove a user from the profile', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const memberUser = memberUsers[0];
+      if (!memberUser) {
+        throw new Error('Member user not created');
+      }
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await caller.removeUser({
+        profileUserId: memberUser.profileUserId,
+      });
+
+      // Verify user was removed
+      const removedUser = await db.query.profileUsers.findFirst({
+        where: eq(profileUsers.id, memberUser.profileUserId),
+      });
+
+      expect(removedUser).toBeUndefined();
+    });
+
+    it('should fail when removing the last admin', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Attempting to remove the only admin should fail
+      await expect(
+        caller.removeUser({
+          profileUserId: adminUser.profileUserId,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should fail when non-admin tries to remove user', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+        profileName: 'Remove User Test',
+      });
+
+      const memberUser1 = memberUsers[0];
+      const memberUser2 = memberUsers[1];
+      if (!memberUser1 || !memberUser2) {
+        throw new Error('Member users not created');
+      }
+
+      const { session } = await createIsolatedSession(memberUser1.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await expect(
+        caller.removeUser({
+          profileUserId: memberUser2.profileUserId,
+        }),
+      ).rejects.toThrow();
+    });
+  });
+});
