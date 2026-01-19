@@ -18,6 +18,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:changes": "git diff --name-only --diff-filter=ACM | xargs pnpx prettier --write",
     "format:check": "turbo format:check",
+    "test": "turbo test",
     "tmux": "bash scripts/tmux.sh",
     "typecheck": "turbo typecheck",
     "w:api": "pnpm -C ./services/api",

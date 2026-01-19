@@ -14,10 +14,7 @@
   },
   "main": "src/index.ts",
   "scripts": {
-    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@op/cache": "workspace:*",
@@ -46,8 +43,6 @@
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "@op/typescript-config": "workspace:*",
-    "@types/json-schema": "^7.0.15",
-    "@vitest/coverage-v8": "^1.0.0",
-    "vitest": "^1.0.0"
+    "@types/json-schema": "^7.0.15"
   }
 }

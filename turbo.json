@@ -19,7 +19,7 @@
       "dependsOn": ["^typecheck"]
     },
     "format:check": {},
-
+    "test": {},
     "dev": {
       "cache": false,
       "persistent": true

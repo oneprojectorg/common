@@ -13,7 +13,6 @@
     "dev": "./start-centrifugo.sh",
     "down": "docker stop centrifugo",
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
-    "test": "vitest",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
@@ -27,7 +26,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
     "dotenv": "^16.4.7",
-    "vitest": "^3.2.4",
+    "vitest": "catalog:",
     "ws": "^8.18.3"
   }
 }

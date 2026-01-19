@@ -16,17 +16,10 @@
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "test": "vitest",
     "test:check-supabase": "tsx src/test/check-supabase.ts",
-    "test:coverage": "vitest --coverage",
     "test:db:reset": "pnpm test:supabase:reset && pnpm test:migrate",
-    "test:integration": "tsx src/test/check-supabase.ts && vitest run src/test/integration/",
-    "test:integration:migrate": "tsx src/test/check-supabase.ts --migrations && vitest run src/test/integration/",
-    "test:integration:watch": "tsx src/test/check-supabase.ts && vitest watch src/test/integration/",
-    "test:migrate": "tsx src/test/check-supabase.ts --migrations",
-    "test:supabase:reset": "tsx src/test/supabase-test.ts reset",
     "test:supabase:start": "tsx src/test/supabase-test.ts start",
     "test:supabase:status": "tsx src/test/supabase-test.ts status",
     "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
-    "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
     "typecheck": "tsgo --noEmit"
   },
@@ -72,10 +65,8 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
-    "@vitest/coverage-v8": "^3.2.4",
-    "@vitest/ui": "^3.2.4",
     "jsonwebtoken": "^9.0.2",
     "typescript": "5.7.3",
-    "vitest": "^3.2.4"
+    "vitest": "catalog:"
   }
 }
