@@ -28,9 +28,7 @@ export function VotingPage({
         processInstanceId: instanceId,
         limit: 20,
       }),
-      t.decision.getInstance({
-        instanceId,
-      }),
+      t.decision.getInstance({ instanceId }),
       t.decision.getVotingStatus({
         processInstanceId: instanceId,
       }),

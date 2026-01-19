@@ -3,14 +3,22 @@ import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 
 import {
+  getInstanceInputSchema,
+  processInstanceWithSchemaEncoder,
+} from '../../../encoders/decision';
+import {
   legacyGetInstanceInputSchema,
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProcessViewed } from '../../../utils/analytics';
 
-export const getInstanceRouter = router({
-  getInstance: commonAuthedProcedure({
+/**
+ * Legacy getInstance endpoint - uses legacy encoders with state-based format.
+ * Used by the legacy route: /profile/[slug]/decisions/[id]
+ */
+export const getLegacyInstanceRouter = router({
+  getLegacyInstance: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(legacyGetInstanceInputSchema)
@@ -43,6 +51,100 @@ export const getInstanceRouter = router({
                     ? schema
                     : {};
                 })(),
+              }
+            : undefined,
+          proposalCount: instance.proposalCount,
+          participantCount: instance.participantCount,
+        });
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: error.message,
+          });
+        }
+
+        logger.error('Error retrieving legacy process instance', {
+          userId: user.id,
+          instanceId: input.instanceId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve process instance',
+        });
+      }
+    }),
+});
+
+/**
+ * New getInstance endpoint - uses v2 encoders with phase-based format.
+ * Used by the new route: /decisions/[slug]
+ * Only supports new decision-making schemas.
+ */
+export const getInstanceRouter = router({
+  getInstance: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 30 },
+  })
+    .input(getInstanceInputSchema)
+    .output(processInstanceWithSchemaEncoder)
+    .query(async ({ ctx, input }) => {
+      const { user, logger } = ctx;
+
+      try {
+        const instance = await getInstance({
+          instanceId: input.instanceId,
+          authUserId: user.id,
+          user,
+        });
+
+        // Track process viewed event
+        waitUntil(trackProcessViewed(ctx, input.instanceId));
+
+        // Get schema and instance data
+        const schema = (instance.process as any)?.processSchema;
+        const instanceData = instance.instanceData as Record<string, any>;
+        const instancePhases = instanceData?.phases as
+          | Array<{ phaseId: string; startDate?: string; endDate?: string }>
+          | undefined;
+
+        // Merge instance phase dates into schema phases
+        const processSchemaWithDates =
+          typeof schema === 'object' && schema !== null && !Array.isArray(schema)
+            ? {
+                ...schema,
+                phases: Array.isArray(schema.phases)
+                  ? schema.phases.map(
+                      (phase: { id: string; [key: string]: unknown }) => {
+                        const instancePhase = instancePhases?.find(
+                          (p) => p.phaseId === phase.id,
+                        );
+                        return {
+                          ...phase,
+                          startDate: instancePhase?.startDate,
+                          endDate: instancePhase?.endDate,
+                        };
+                      },
+                    )
+                  : [],
+              }
+            : {};
+
+        return processInstanceWithSchemaEncoder.parse({
+          ...instance,
+          instanceData,
+          process: instance.process
+            ? {
+                ...instance.process,
+                processSchema: processSchemaWithDates,
               }
             : undefined,
           proposalCount: instance.proposalCount,

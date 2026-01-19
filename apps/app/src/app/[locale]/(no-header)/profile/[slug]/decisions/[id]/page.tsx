@@ -41,9 +41,9 @@ const DecisionInstancePageContent = ({
 }) => {
   return (
     <Suspense fallback={<DecisionHeaderSkeleton />}>
-      <DecisionHeader instanceId={instanceId} slug={slug}>
+      <DecisionHeader instanceId={instanceId} slug={slug} useLegacy>
         <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionStateRouter instanceId={instanceId} slug={slug} />
+          <DecisionStateRouter instanceId={instanceId} slug={slug} useLegacy />
         </Suspense>
       </DecisionHeader>
     </Suspense>

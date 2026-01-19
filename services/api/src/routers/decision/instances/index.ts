@@ -3,7 +3,7 @@ import { createInstanceRouter } from './createInstance';
 import { createInstanceFromTemplateRouter } from './createInstanceFromTemplate';
 import { getCategoriesRouter } from './getCategories';
 import { getDecisionBySlugRouter } from './getDecisionBySlug';
-import { getInstanceRouter } from './getInstance';
+import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listInstancesRouter } from './listInstances';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
@@ -16,6 +16,7 @@ export const instancesRouter = mergeRouters(
   updateDecisionInstanceRouter,
   listInstancesRouter,
   getInstanceRouter,
+  getLegacyInstanceRouter,
   getCategoriesRouter,
   listDecisionProfilesRouter,
   getDecisionBySlugRouter,

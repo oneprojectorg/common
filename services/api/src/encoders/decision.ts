@@ -67,7 +67,7 @@ const selectionPipelineEncoder = z.object({
   blocks: z.array(selectionPipelineBlockEncoder),
 });
 
-/** Phase definition encoder */
+/** Phase definition encoder (includes merged instance dates) */
 const phaseDefinitionEncoder = z.object({
   id: z.string(),
   name: z.string(),
@@ -75,6 +75,9 @@ const phaseDefinitionEncoder = z.object({
   rules: phaseRulesEncoder,
   selectionPipeline: selectionPipelineEncoder.optional(),
   settings: jsonSchemaEncoder.optional(),
+  // Instance-specific dates (merged from instanceData.phases)
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 /** Process-level configuration */

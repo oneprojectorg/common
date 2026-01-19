@@ -13,7 +13,6 @@ import { DecisionHero } from '../DecisionHero';
 import { EmptyProposalsState } from '../EmptyProposalsState';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
-import { ProcessPhase } from '../types';
 
 export function StandardDecisionPage({
   instanceId,
@@ -29,22 +28,14 @@ export function StandardDecisionPage({
       processInstanceId: instanceId,
       limit: 20,
     }),
-    t.decision.getInstance({
-      instanceId,
-    }),
+    t.decision.getInstance({ instanceId }),
   ]);
 
-  const instanceData = instance.instanceData as any;
-  const processSchema = instance.process?.processSchema as any;
-  const templateStates: ProcessPhase[] = processSchema?.states || [];
+  const phases = instance.process?.processSchema?.phases ?? [];
+  const currentPhaseId = instance.instanceData.currentPhaseId;
+  const currentPhase = phases.find((phase) => phase.id === currentPhaseId);
 
-  const currentStateId =
-    instanceData?.currentStateId || instance.currentStateId;
-  const currentState = templateStates.find(
-    (state) => state.id === currentStateId,
-  );
-
-  const allowProposals = currentState?.config?.allowProposals !== false;
+  const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   const description = instance?.description?.match('PPDESCRIPTION')
@@ -87,7 +78,7 @@ export function StandardDecisionPage({
       ),
     }),
     'one-project': () => ({
-      title: match(currentState?.id, {
+      title: match(currentPhaseId, {
         review: () => t('TIME TO VOTE.'),
         _: () => t('SHARE YOUR IDEAS.'),
       }),
@@ -106,7 +97,7 @@ export function StandardDecisionPage({
               meg@oneproject.org
             </a>
           </p>
-          {currentState?.id === 'review' && maxVotesPerMember && (
+          {currentPhaseId === 'review' && maxVotesPerMember && (
             <p>
               Please select <strong>{maxVotesPerMember} proposals.</strong>
             </p>

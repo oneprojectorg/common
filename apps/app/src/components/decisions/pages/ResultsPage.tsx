@@ -21,18 +21,77 @@ import { ProposalListSkeleton } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
 
-export function ResultsPage({
+// Common instance fields used by ResultsPage
+interface ResultsPageInstance {
+  name: string;
+  description: string | null;
+  process?: {
+    description: string | null;
+  } | null;
+}
+
+function ResultsPageLegacy({
   instanceId,
   slug,
 }: {
   instanceId: string;
   slug: string;
 }) {
-  const t = useTranslations();
-
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+  const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
     instanceId,
   });
+  return (
+    <ResultsPageContent
+      instanceId={instanceId}
+      slug={slug}
+      instance={instance}
+    />
+  );
+}
+
+function ResultsPageNew({
+  instanceId,
+  slug,
+}: {
+  instanceId: string;
+  slug: string;
+}) {
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  return (
+    <ResultsPageContent
+      instanceId={instanceId}
+      slug={slug}
+      instance={instance}
+    />
+  );
+}
+
+export function ResultsPage({
+  instanceId,
+  slug,
+  useLegacy = false,
+}: {
+  instanceId: string;
+  slug: string;
+  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
+  useLegacy?: boolean;
+}) {
+  if (useLegacy) {
+    return <ResultsPageLegacy instanceId={instanceId} slug={slug} />;
+  }
+  return <ResultsPageNew instanceId={instanceId} slug={slug} />;
+}
+
+function ResultsPageContent({
+  instanceId,
+  slug,
+  instance,
+}: {
+  instanceId: string;
+  slug: string;
+  instance: ResultsPageInstance;
+}) {
+  const t = useTranslations();
 
   // Organization-specific content
   const heroContent = match<{
