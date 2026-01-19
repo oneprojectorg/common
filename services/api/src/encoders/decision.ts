@@ -168,6 +168,8 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
     owner: baseProfileEncoder.optional(),
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
+    // Decision profile slug for /decisions/[slug] navigation
+    profileSlug: z.string().optional(),
   });
 
 /** Decision profile encoder  */
@@ -410,6 +412,8 @@ export const proposalEncoder = createSelectSchema(proposals)
     selectionRank: z.number().nullable().optional(),
     voteCount: z.number().optional(),
     allocated: z.string().nullable().optional(),
+    // Decision profile slug for /decisions/[slug] navigation
+    decisionSlug: z.string().optional(),
   });
 
 /** Proposal list encoder */

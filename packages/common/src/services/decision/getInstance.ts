@@ -19,6 +19,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       with: {
         process: true,
         owner: true,
+        profile: true, // Decision profile for /decisions/[slug] navigation
         proposals: {
           columns: {
             id: true,

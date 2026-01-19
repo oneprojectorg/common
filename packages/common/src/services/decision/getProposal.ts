@@ -1,6 +1,5 @@
 import { and, count, db, eq } from '@op/db/client';
 import {
-  Decision,
   ProcessInstance,
   Profile,
   ProfileRelationshipType,
@@ -30,9 +29,6 @@ export const getProposal = async ({
     submittedBy: Profile & { avatarImage: any }; // fix drizzle types
     processInstance: ProcessInstance;
     profile: Profile;
-    decisions: (Decision & {
-      decidedBy: Profile;
-    })[];
     commentsCount: number;
     likesCount: number;
     followersCount: number;
@@ -50,8 +46,7 @@ export const getProposal = async ({
       with: {
         processInstance: {
           with: {
-            process: true,
-            owner: true,
+            profile: true, // Decision profile with slug for /decisions/[slug] navigation
           },
         },
         submittedBy: {
@@ -60,19 +55,11 @@ export const getProposal = async ({
           },
         },
         profile: true,
-        decisions: {
-          with: {
-            decidedBy: true,
-          },
-        },
       },
     })) as Proposal & {
       submittedBy: Profile & { avatarImage: any }; // fix drizzle types
-      processInstance: ProcessInstance;
+      processInstance: ProcessInstance & { profile: Profile | null };
       profile: Profile;
-      decisions: (Decision & {
-        decidedBy: Profile;
-      })[];
     };
 
     if (!proposal) {

@@ -8,10 +8,8 @@ export const dynamic = 'force-dynamic';
 
 async function CreateProposalPageContent({
   instanceId,
-  slug,
 }: {
   instanceId: string;
-  slug: string;
 }) {
   try {
     const client = await createClient();
@@ -23,12 +21,12 @@ async function CreateProposalPageContent({
       notFound();
     }
 
-    return (
-      <ProposalEditor
-        instance={instance}
-        backHref={`/profile/${slug}/decisions/${instanceId}`}
-      />
-    );
+    // Use the decision profile slug for navigation to the new /decisions/[slug] route
+    const backHref = instance.profileSlug
+      ? `/decisions/${instance.profileSlug}`
+      : '/decisions';
+
+    return <ProposalEditor instance={instance} backHref={backHref} />;
   } catch (error) {
     console.error('Error loading decision instance:', error);
     notFound();
@@ -83,13 +81,13 @@ function CreateProposalPageSkeleton() {
 const CreateProposalPage = async ({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>;
+  params: Promise<{ id: string }>;
 }) => {
-  const { id, slug } = await params;
+  const { id } = await params;
 
   return (
     <Suspense fallback={<CreateProposalPageSkeleton />}>
-      <CreateProposalPageContent instanceId={id} slug={slug} />
+      <CreateProposalPageContent instanceId={id} />
     </Suspense>
   );
 };

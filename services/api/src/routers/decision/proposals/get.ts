@@ -71,7 +71,21 @@ export const getProposalRouter = router({
           );
         }
 
-        return proposalEncoder.parse(proposal);
+        // Extract decision profile slug for navigation
+        const decisionSlug =
+          proposal.processInstance &&
+          typeof proposal.processInstance === 'object' &&
+          'profile' in proposal.processInstance &&
+          proposal.processInstance.profile &&
+          typeof proposal.processInstance.profile === 'object' &&
+          'slug' in proposal.processInstance.profile
+            ? (proposal.processInstance.profile.slug as string)
+            : undefined;
+
+        return proposalEncoder.parse({
+          ...proposal,
+          decisionSlug,
+        });
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
