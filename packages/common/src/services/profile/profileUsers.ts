@@ -12,7 +12,11 @@ import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, UnauthorizedError } from '../../utils/error';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
 import type { AllowListMetadata } from '../user/validators';
@@ -145,26 +149,24 @@ export const addProfileUser = async ({
 
   const normalizedEmail = email.toLowerCase();
 
-  // Get the target role
-  const targetRole = await db.query.accessRoles.findFirst({
-    where: (table, { eq }) => eq(table.id, roleId),
-  });
+  const [targetRole, existingUser] = await Promise.all([
+    db.query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.id, roleId),
+    }),
+    db.query.users.findFirst({
+      where: (table, { eq }) => eq(table.email, normalizedEmail),
+      with: {
+        profileUsers: {
+          where: (table, { eq }) => eq(table.profileId, profileId),
+        },
+      },
+    }),
+  ]);
 
   if (!targetRole) {
     throw new CommonError('Invalid role specified');
   }
 
-  // Check if user already exists in the system
-  const existingUser = await db.query.users.findFirst({
-    where: (table, { eq }) => eq(table.email, normalizedEmail),
-    with: {
-      profileUsers: {
-        where: (table, { eq }) => eq(table.profileId, profileId),
-      },
-    },
-  });
-
-  // Check if user is already a member of this profile
   if (existingUser && existingUser.profileUsers.length > 0) {
     throw new CommonError('User is already a member of this profile');
   }
@@ -249,17 +251,25 @@ export const updateProfileUserRole = async ({
   roleId: string;
   user: User;
 }) => {
-  const targetProfileUser = await db.query.profileUsers.findFirst({
-    where: eq(profileUsers.id, profileUserId),
-  });
+  const [targetProfileUser, targetRole] = await Promise.all([
+    db.query.profileUsers.findFirst({
+      where: eq(profileUsers.id, profileUserId),
+    }),
+    db.query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.id, roleId),
+    }),
+  ]);
 
   if (!targetProfileUser) {
     throw new NotFoundError('Member not found');
   }
 
+  if (!targetRole) {
+    throw new CommonError('Invalid role specified');
+  }
+
   const profileId = targetProfileUser.profileId;
 
-  // Check if user has ADMIN access on the profile
   const currentProfileUser = await getProfileAccessUser({
     user,
     profileId,
@@ -270,15 +280,6 @@ export const updateProfileUserRole = async ({
   }
 
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
-
-  // Validate the new role exists
-  const targetRole = await db.query.accessRoles.findFirst({
-    where: (table, { eq }) => eq(table.id, roleId),
-  });
-
-  if (!targetRole) {
-    throw new CommonError('Invalid role specified');
-  }
 
   // Update the role in a transaction
   await db.transaction(async (tx) => {
