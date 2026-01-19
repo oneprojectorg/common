@@ -7,18 +7,14 @@ import {
   allowList,
   profileUserToAccessRoles,
   profileUsers,
-  profiles,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-} from '../../utils/error';
+import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
+import { assertProfile } from '../assert';
 import type { AllowListMetadata } from '../user/validators';
 
 /**
@@ -39,21 +35,6 @@ type ProfileUserWithRelations = ProfileUser & {
 };
 
 /**
- * Verify a profile exists and return it
- */
-const getProfileById = async (profileId: string) => {
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, profileId),
-  });
-
-  if (!profile) {
-    throw new NotFoundError('Profile not found');
-  }
-
-  return profile;
-};
-
-/**
  * List all members of a profile
  */
 export const listProfileUsers = async ({
@@ -63,7 +44,7 @@ export const listProfileUsers = async ({
   profileId: string;
   user: User;
 }) => {
-  await getProfileById(profileId);
+  await assertProfile(profileId);
 
   // Check if user has ADMIN access on the profile
   const profileUser = await getProfileAccessUser({
@@ -154,7 +135,7 @@ export const addProfileUser = async ({
   personalMessage?: string;
   user: User;
 }) => {
-  const profile = await getProfileById(profileId);
+  const profile = await assertProfile(profileId);
 
   // Check if user has ADMIN access on the profile
   const currentProfileUser = await getProfileAccessUser({
