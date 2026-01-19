@@ -84,9 +84,6 @@ importers:
 
   .:
     dependencies:
-      drizzle-seed:
-        specifier: 1.0.0-beta.9-e89174b
-        version: 1.0.0-beta.9-e89174b(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))
       prettier-plugin-sql:
         specifier: ^0.18.1
         version: 0.18.1(prettier@3.5.2)

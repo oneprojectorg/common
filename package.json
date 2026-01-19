@@ -30,7 +30,6 @@
     "w:workflows": "pnpm -C ./services/workflows"
   },
   "dependencies": {
-    "drizzle-seed": "1.0.0-beta.9-e89174b",
     "prettier-plugin-sql": "^0.18.1"
   },
   "devDependencies": {
