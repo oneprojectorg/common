@@ -17,6 +17,7 @@ import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 export function StandardDecisionPage({
   instanceId,
   slug,
+  decisionSlug,
   allowProposals,
   description,
   currentPhaseId,
@@ -24,6 +25,8 @@ export function StandardDecisionPage({
 }: {
   instanceId: string;
   slug: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
   /** Whether proposal submission is allowed in the current phase */
   allowProposals: boolean;
   /** Description to show in the action bar */
@@ -142,7 +145,11 @@ export function StandardDecisionPage({
               </EmptyProposalsState>
             ) : (
               <Suspense fallback={<ProposalListSkeleton />}>
-                <ProposalsList slug={slug} instanceId={instanceId} />
+                <ProposalsList
+                  slug={slug}
+                  instanceId={instanceId}
+                  decisionSlug={decisionSlug}
+                />
               </Suspense>
             )}
           </div>
