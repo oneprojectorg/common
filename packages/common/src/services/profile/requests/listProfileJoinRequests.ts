@@ -1,11 +1,9 @@
 import { db } from '@op/db/client';
-import {
-  type JoinProfileRequestStatus,
-  joinProfileRequests,
-} from '@op/db/schema';
+import type { JoinProfileRequestStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { and, eq, gt, lt, or } from 'drizzle-orm';
 
-import { decodeCursor, encodeCursor, getCursorCondition } from '../../../utils';
+import { decodeCursor, encodeCursor } from '../../../utils';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
 
 type ListJoinProfileRequestsCursor = {
@@ -32,33 +30,36 @@ export const listProfileJoinRequests = async ({
   limit?: number;
   dir?: 'asc' | 'desc';
 }) => {
-  // Build cursor condition for pagination
-  const cursorCondition = cursor
-    ? getCursorCondition({
-        column: joinProfileRequests.createdAt,
-        tieBreakerColumn: joinProfileRequests.id,
-        cursor: decodeCursor<ListJoinProfileRequestsCursor>(cursor),
-        direction: dir,
-      })
+  const decodedCursor = cursor
+    ? decodeCursor<ListJoinProfileRequestsCursor>(cursor)
     : undefined;
 
   const [, results] = await Promise.all([
     assertTargetProfileAdminAccess({ user, targetProfileId }),
-    db._query.joinProfileRequests.findMany({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.targetProfileId, targetProfileId),
-          status ? eq(table.status, status) : undefined,
-          cursorCondition,
-        ),
+    db.query.joinProfileRequests.findMany({
+      where: {
+        targetProfileId,
+        ...(status && { status }),
+        ...(decodedCursor && {
+          RAW: (table) => {
+            const compareFn = dir === 'asc' ? gt : lt;
+            return or(
+              compareFn(table.createdAt, decodedCursor.value),
+              and(
+                eq(table.createdAt, decodedCursor.value),
+                compareFn(table.id, decodedCursor.id),
+              ),
+            ) as ReturnType<typeof or> & {};
+          },
+        }),
+      },
       with: {
         requestProfile: true,
         targetProfile: true,
       },
-      orderBy: (_, { asc, desc }) =>
-        dir === 'asc'
-          ? asc(joinProfileRequests.createdAt)
-          : desc(joinProfileRequests.createdAt),
+      orderBy: {
+        createdAt: dir,
+      },
       limit: limit + 1,
     }),
   ]);

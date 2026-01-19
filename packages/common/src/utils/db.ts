@@ -1,5 +1,5 @@
 import { and, eq, gt, lt, or, sql } from 'drizzle-orm';
-import { PgColumn } from 'drizzle-orm/pg-core';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 
 import { CommonError } from './error';
 
@@ -84,4 +84,4 @@ export const constructTextSearch = ({
   column: PgColumn;
   query: string;
 }) =>
-  sql`to_tsvector('english', ${column}) @@to_tsquery('english', ${query.trim().replaceAll(' ', '\\ ') + ':*'})`;
+  sql`to_tsvector('english', ${column}) @@to_tsquery('english', ${`${query.trim().replaceAll(' ', '\\ ')}:*`})`;

@@ -37,12 +37,11 @@ export const deleteProfileJoinRequest = async ({
   }
 
   // Check authorization - user must own the requesting profile
-  const requestingUser = await db._query.users.findFirst({
-    where: (table, { and, eq }) =>
-      and(
-        eq(table.authUserId, user.id),
-        eq(table.profileId, existingRequest.requestProfileId),
-      ),
+  const requestingUser = await db.query.users.findFirst({
+    where: {
+      authUserId: user.id,
+      profileId: existingRequest.requestProfileId,
+    },
   });
 
   if (!requestingUser) {
