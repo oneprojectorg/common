@@ -6,6 +6,7 @@ import {
   profileUsers,
   profiles,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -13,6 +14,89 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import type { AllowListMetadata } from '../user/validators';
+
+/**
+ * Type for profile user query result with relations
+ */
+type ProfileUserWithRelations = Awaited<
+  ReturnType<typeof db.query.profileUsers.findMany>
+>[number] & {
+  serviceUser: {
+    profile: {
+      id: string;
+      name: string | null;
+      slug: string;
+      bio: string | null;
+      email: string | null;
+      type: string;
+      avatarImage: {
+        id: string;
+        name: string | null;
+      } | null;
+    } | null;
+  } | null;
+  roles: Array<{
+    accessRole: {
+      id: string;
+      name: string;
+      description: string | null;
+    };
+  }>;
+};
+
+/**
+ * Check if removing/demoting a user would leave the profile without an admin.
+ * Returns true if the operation is safe, throws CommonError if it would orphan the profile.
+ */
+const ensureProfileHasOtherAdmins = async ({
+  profileId,
+  excludeProfileUserId,
+}: {
+  profileId: string;
+  excludeProfileUserId: string;
+}): Promise<void> => {
+  // Count admins excluding the target user
+  const otherAdmins = await db.query.profileUsers.findMany({
+    where: and(
+      eq(profileUsers.profileId, profileId),
+      ne(profileUsers.id, excludeProfileUserId),
+    ),
+    with: {
+      roles: {
+        where: eq(profileUserToAccessRoles.accessRoleId, ROLES.ADMIN.id),
+      },
+    },
+  });
+
+  const otherAdminCount = otherAdmins.filter(
+    (member) => member.roles.length > 0,
+  ).length;
+
+  if (otherAdminCount === 0) {
+    throw new CommonError(
+      'Cannot complete this action: it would leave the profile without an admin',
+    );
+  }
+};
+
+/**
+ * Type for profile user with roles relation loaded.
+ * Used to properly type Drizzle query results that include `with: { roles: { with: { accessRole: true }}}`.
+ */
+type ProfileUserWithRoles = {
+  id: string;
+  profileId: string;
+  roles: Array<{ accessRole: { id: string } }>;
+};
+
+/**
+ * Check if a profile user has the admin role
+ */
+const isProfileUserAdmin = (profileUser: ProfileUserWithRoles): boolean => {
+  return profileUser.roles.some(
+    (role) => role.accessRole.id === ROLES.ADMIN.id,
+  );
+};
 
 /**
  * Verify a profile exists and return it
@@ -77,8 +161,8 @@ export const listProfileUsers = async ({
 
   // Transform the data to a clean format
   return members.map((member) => {
-    const serviceUser = member.serviceUser as any;
-    const userProfile = serviceUser?.profile;
+    const typedMember = member as ProfileUserWithRelations;
+    const userProfile = typedMember.serviceUser?.profile;
 
     return {
       id: member.id,
@@ -170,7 +254,7 @@ export const addProfileUser = async ({
     throw new CommonError('User is already a member of this profile');
   }
 
-  // If user exists in the system, add them directly
+  // If user exists in the system, add them directly and return early (no invite email needed)
   if (existingUser) {
     await db.transaction(async (tx) => {
       const [newProfileUser] = await tx
@@ -190,6 +274,9 @@ export const addProfileUser = async ({
         });
       }
     });
+
+    // User already exists in the system - no need to send invite email
+    return { success: true, email: normalizedEmail };
   }
 
   // Check if email is in the allowList
@@ -247,10 +334,18 @@ export const updateProfileUserRole = async ({
   roleId: string;
   user: User;
 }) => {
-  // Get the profile user to find the profileId
-  const targetProfileUser = await db.query.profileUsers.findFirst({
+  // Get the profile user with their current roles
+  // Type assertion needed because Drizzle infers `roles` as `{ [x: string]: any }[]`
+  const targetProfileUser = (await db.query.profileUsers.findFirst({
     where: eq(profileUsers.id, profileUserId),
-  });
+    with: {
+      roles: {
+        with: {
+          accessRole: true,
+        },
+      },
+    },
+  })) as (typeof profileUsers.$inferSelect & ProfileUserWithRoles) | undefined;
 
   if (!targetProfileUser) {
     throw new NotFoundError('Member not found');
@@ -270,7 +365,7 @@ export const updateProfileUserRole = async ({
 
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
 
-  // Get the target role
+  // Validate the new role exists
   const targetRole = await db.query.accessRoles.findFirst({
     where: (table, { eq }) => eq(table.id, roleId),
   });
@@ -279,40 +374,15 @@ export const updateProfileUserRole = async ({
     throw new CommonError('Invalid role specified');
   }
 
-  // If target is currently admin and new role is not admin, check if there are other admins
-  if (targetRole.name.toLowerCase() !== 'admin') {
-    const adminRoleId = (
-      await db.query.accessRoles.findFirst({
-        where: (table, { ilike }) => ilike(table.name, 'admin'),
-      })
-    )?.id;
+  // If demoting from admin, ensure there are other admins
+  const isDemotingFromAdmin =
+    isProfileUserAdmin(targetProfileUser) && roleId !== ROLES.ADMIN.id;
 
-    if (adminRoleId) {
-      // Get all admin members for this profile
-      const adminMembers = await db.query.profileUsers.findMany({
-        where: eq(profileUsers.profileId, profileId),
-        with: {
-          roles: {
-            where: eq(profileUserToAccessRoles.accessRoleId, adminRoleId),
-          },
-        },
-      });
-
-      const adminCount = adminMembers.filter(
-        (member) => member.roles.length > 0,
-      ).length;
-
-      // Check if target user is currently an admin
-      const targetIsAdmin = adminMembers.some(
-        (member) => member.id === profileUserId && member.roles.length > 0,
-      );
-
-      if (targetIsAdmin && adminCount <= 1) {
-        throw new CommonError(
-          'Cannot change role: this would leave the profile without an admin',
-        );
-      }
-    }
+  if (isDemotingFromAdmin) {
+    await ensureProfileHasOtherAdmins({
+      profileId,
+      excludeProfileUserId: profileUserId,
+    });
   }
 
   // Update the role in a transaction
@@ -343,7 +413,8 @@ export const removeProfileUser = async ({
   user: User;
 }) => {
   // Get the profile user to find the profileId
-  const targetProfileUser = await db.query.profileUsers.findFirst({
+  // Type assertion needed because Drizzle infers `roles` as `{ [x: string]: any }[]`
+  const targetProfileUser = (await db.query.profileUsers.findFirst({
     where: eq(profileUsers.id, profileUserId),
     with: {
       roles: {
@@ -352,7 +423,7 @@ export const removeProfileUser = async ({
         },
       },
     },
-  });
+  })) as (typeof profileUsers.$inferSelect & ProfileUserWithRoles) | undefined;
 
   if (!targetProfileUser) {
     throw new NotFoundError('Member not found');
@@ -373,42 +444,11 @@ export const removeProfileUser = async ({
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
 
   // Prevent removal if user is the last admin
-  const isTargetAdmin = targetProfileUser.roles.some(
-    (role) => role.accessRole.name.toLowerCase() === 'admin',
-  );
-
-  if (isTargetAdmin) {
-    // Get admin role ID
-    const adminRoleId = (
-      await db.query.accessRoles.findFirst({
-        where: (table, { ilike }) => ilike(table.name, 'admin'),
-      })
-    )?.id;
-
-    if (adminRoleId) {
-      // Count admins (excluding the target user)
-      const otherAdmins = await db.query.profileUsers.findMany({
-        where: and(
-          eq(profileUsers.profileId, profileId),
-          ne(profileUsers.id, profileUserId),
-        ),
-        with: {
-          roles: {
-            where: eq(profileUserToAccessRoles.accessRoleId, adminRoleId),
-          },
-        },
-      });
-
-      const otherAdminCount = otherAdmins.filter(
-        (member) => member.roles.length > 0,
-      ).length;
-
-      if (otherAdminCount === 0) {
-        throw new CommonError(
-          'Cannot remove member: this would leave the profile without an admin',
-        );
-      }
-    }
+  if (isProfileUserAdmin(targetProfileUser)) {
+    await ensureProfileHasOtherAdmins({
+      profileId,
+      excludeProfileUserId: profileUserId,
+    });
   }
 
   // Delete the profile user (this cascades to profileUserToAccessRoles)

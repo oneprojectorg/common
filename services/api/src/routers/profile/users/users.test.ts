@@ -209,6 +209,53 @@ describe.concurrent('profile.users', () => {
         }),
       ).rejects.toThrow();
     });
+
+    it('should add new email to allowList with personalMessage', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      // Generate a new email that doesn't exist in the system
+      const newEmail = `new-user-${task.id}@oneproject.org`;
+      testData.trackAllowListEmail(newEmail);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const personalMessage = 'Welcome to our team!';
+      const result = await caller.addUser({
+        profileId: profile.id,
+        email: newEmail,
+        roleId: ROLES.MEMBER.id,
+        personalMessage,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.email).toBe(newEmail.toLowerCase());
+
+      // Verify the allowList entry was created with the personalMessage
+      const allowListEntry = await db.query.allowList.findFirst({
+        where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
+      });
+
+      expect(allowListEntry).toBeDefined();
+      expect(allowListEntry?.metadata).toBeDefined();
+
+      const metadata = allowListEntry?.metadata as {
+        personalMessage?: string;
+        inviteType?: string;
+        roleId?: string;
+        profileId?: string;
+      };
+      expect(metadata.personalMessage).toBe(personalMessage);
+      expect(metadata.inviteType).toBe('profile');
+      expect(metadata.roleId).toBe(ROLES.MEMBER.id);
+      expect(metadata.profileId).toBe(profile.id);
+    });
   });
 
   describe('updateUserRole', () => {

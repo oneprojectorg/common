@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import {
+  allowList,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -67,6 +68,7 @@ export class TestProfileUserDataManager {
   private createdProfileIds: string[] = [];
   private createdAuthUserIds: string[] = [];
   private createdProfileUserIds: string[] = [];
+  private createdAllowListEmails: string[] = [];
 
   constructor(
     testId: string,
@@ -257,6 +259,15 @@ export class TestProfileUserDataManager {
   }
 
   /**
+   * Tracks an allowList entry for cleanup.
+   * Call this when testing addUser with a new email that will be added to the allowList.
+   */
+  trackAllowListEmail(email: string): void {
+    this.ensureCleanupRegistered();
+    this.createdAllowListEmails.push(email.toLowerCase());
+  }
+
+  /**
    * Generates a unique email for test users.
    */
   private generateEmail(
@@ -283,7 +294,7 @@ export class TestProfileUserDataManager {
   }
 
   /**
-   * Cleans up test data by deleting profiles, auth users, and profile users.
+   * Cleans up test data by deleting profiles, auth users, profile users, and allowList entries.
    * Uses exact IDs tracked during creation to avoid race conditions with concurrent tests.
    */
   async cleanup(): Promise<void> {
@@ -291,21 +302,28 @@ export class TestProfileUserDataManager {
       throw new Error('Supabase admin test client not initialized');
     }
 
-    // 1. Delete profile users by exact IDs
+    // 1. Delete allowList entries by exact emails
+    if (this.createdAllowListEmails.length > 0) {
+      await db
+        .delete(allowList)
+        .where(inArray(allowList.email, this.createdAllowListEmails));
+    }
+
+    // 2. Delete profile users by exact IDs
     if (this.createdProfileUserIds.length > 0) {
       await db
         .delete(profileUsers)
         .where(inArray(profileUsers.id, this.createdProfileUserIds));
     }
 
-    // 2. Delete profiles by exact IDs (cascades to profileUsers -> profileUserToAccessRoles)
+    // 3. Delete profiles by exact IDs (cascades to profileUsers -> profileUserToAccessRoles)
     if (this.createdProfileIds.length > 0) {
       await db
         .delete(profiles)
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 3. Delete auth users by exact IDs (cascades to users table)
+    // 4. Delete auth users by exact IDs (cascades to users table)
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
         this.createdAuthUserIds.map((userId) =>
