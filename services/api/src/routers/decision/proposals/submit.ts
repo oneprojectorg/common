@@ -2,7 +2,7 @@ import { submitProposal } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
+import { proposalEncoder } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
@@ -13,7 +13,7 @@ const submitProposalInputSchema = z.object({
 export const submitProposalRouter = router({
   submitProposal: commonAuthedProcedure()
     .input(submitProposalInputSchema)
-    .output(legacyProposalEncoder)
+    .output(proposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
@@ -29,6 +29,6 @@ export const submitProposalRouter = router({
         }),
       );
 
-      return legacyProposalEncoder.parse(proposal);
+      return proposalEncoder.parse(proposal);
     }),
 });
