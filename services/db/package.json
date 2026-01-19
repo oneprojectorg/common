@@ -32,7 +32,7 @@
     "@types/pg": "^8.11.11",
     "access-zones": "catalog:",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.40.0",
+    "drizzle-orm": "catalog:",
     "drizzle-seed": "^0.3.1",
     "pg": "^8.16.0",
     "postgres": "^3.4.5",
@@ -43,7 +43,7 @@
     "@supabase/ssr": "0.5.2",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
-    "drizzle-kit": "^0.30.5",
+    "drizzle-kit": "1.0.0-beta.11-05230d9",
     "typescript": "5.7.3",
     "unplugin-icons": "22.1.0"
   }
