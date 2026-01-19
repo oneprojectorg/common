@@ -9,7 +9,7 @@ export const storageItemEncoder = createSelectSchema(objectsInStorage)
     // TODO: add metadata but make sure TRPC can resolve the type properly
   })
   .extend({
-    name: z.string().nullable(),
+    name: z.string(),
     metadata: z
       .object({
         eTag: z.string(),

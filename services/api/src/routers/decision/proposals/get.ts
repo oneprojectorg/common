@@ -10,7 +10,7 @@ import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
+import { proposalEncoder } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 
@@ -21,7 +21,7 @@ export const getProposalRouter = router({
         profileId: z.uuid(),
       }),
     )
-    .output(legacyProposalEncoder)
+    .output(proposalEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
       let { profileId } = input;
@@ -71,7 +71,7 @@ export const getProposalRouter = router({
           );
         }
 
-        return legacyProposalEncoder.parse(proposal);
+        return proposalEncoder.parse(proposal);
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
@@ -87,6 +87,10 @@ export const getProposalRouter = router({
           });
         }
 
+        logger.error('Error fetching proposal', {
+          error,
+          profileId,
+        });
         throw new TRPCError({
           message: 'Failed to fetch proposal',
           code: 'INTERNAL_SERVER_ERROR',

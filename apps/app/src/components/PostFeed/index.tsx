@@ -70,7 +70,8 @@ const PostAttachments = ({
   }
 
   return attachments.map(({ fileName, storageObject }) => {
-    const { mimetype, size } = storageObject.metadata;
+    const mimetype = storageObject.metadata?.mimetype;
+    const size = storageObject.metadata?.size;
 
     return (
       <MediaDisplay
@@ -81,7 +82,7 @@ const PostAttachments = ({
         size={size}
       >
         <AttachmentImage
-          mimetype={mimetype}
+          mimetype={mimetype ?? ''}
           fileName={fileName}
           storageObjectName={storageObject.name}
         />
