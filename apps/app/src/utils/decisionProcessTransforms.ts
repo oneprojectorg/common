@@ -23,43 +23,6 @@ export interface LegacyProcessInstance {
   updatedAt?: string | null;
 }
 
-/** V2 ProcessInstance - uses phases-based DecisionSchemaDefinition format */
-export interface ProcessInstance {
-  id: string;
-  name: string;
-  description?: string | null;
-  instanceData?: InstanceData;
-  process?: {
-    id: string;
-    name: string;
-    description?: string | null;
-    processSchema: {
-      id: string;
-      version: string;
-      name: string;
-      description?: string;
-      config?: { hideBudget?: boolean };
-      phases: Array<{
-        id: string;
-        name: string;
-        description?: string;
-        rules?: {
-          proposals?: { submit?: boolean; edit?: boolean };
-          voting?: { submit?: boolean; edit?: boolean };
-        };
-        startDate?: string;
-        endDate?: string;
-      }>;
-      proposalTemplate?: Record<string, unknown>;
-    };
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  };
-  status?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-}
-
 export interface PhaseConfiguration {
   phaseId: string;
   startDate?: string;

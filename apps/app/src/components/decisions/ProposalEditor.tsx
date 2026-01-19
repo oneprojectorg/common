@@ -1,6 +1,5 @@
 'use client';
 
-import { ProcessInstance } from '@/utils/decisionProcessTransforms';
 import {
   type ImageAttachment,
   extractAttachmentIdsFromUrls,
@@ -8,7 +7,11 @@ import {
 } from '@/utils/proposalContentProcessor';
 import { parseProposalData } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
-import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
+import {
+  type ProcessInstance,
+  ProposalStatus,
+  type proposalEncoder,
+} from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
