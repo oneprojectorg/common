@@ -92,7 +92,7 @@ describe.concurrent('profile.users', () => {
         caller.listUsers({
           profileId: profile.id,
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/not authenticated/i);
     });
 
     it('should throw error for invalid profile ID', async ({
@@ -109,7 +109,7 @@ describe.concurrent('profile.users', () => {
         caller.listUsers({
           profileId: '00000000-0000-0000-0000-000000000000',
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/not found/i);
     });
   });
 
@@ -179,7 +179,7 @@ describe.concurrent('profile.users', () => {
           email: memberUser.email,
           roleIds: [ROLES.MEMBER.id],
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/already a member/i);
     });
 
     it('should fail when non-admin tries to add user', async ({
@@ -207,7 +207,7 @@ describe.concurrent('profile.users', () => {
           email: standaloneUser.email,
           roleIds: [ROLES.MEMBER.id],
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/not authenticated/i);
     });
 
     it('should add new email to allowList with personalMessage', async ({
@@ -297,6 +297,83 @@ describe.concurrent('profile.users', () => {
       expect(updatedUser?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
     });
 
+    it('should support multiple roles and sync correctly', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const memberUser = memberUsers[0];
+      if (!memberUser) {
+        throw new Error('Member user not created');
+      }
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Verify member starts with one role (MEMBER)
+      const initialUser = await db.query.profileUsers.findFirst({
+        where: eq(profileUsers.id, memberUser.profileUserId),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      expect(initialUser?.roles).toHaveLength(1);
+      expect(initialUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
+
+      // Add ADMIN role while keeping MEMBER role
+      await caller.updateUserRoles({
+        profileUserId: memberUser.profileUserId,
+        roleIds: [ROLES.MEMBER.id, ROLES.ADMIN.id],
+      });
+
+      // Verify user now has both roles
+      const userWithBothRoles = await db.query.profileUsers.findFirst({
+        where: eq(profileUsers.id, memberUser.profileUserId),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      expect(userWithBothRoles?.roles).toHaveLength(2);
+      const roleIds = userWithBothRoles?.roles.map((r) => r.accessRole.id);
+      expect(roleIds).toContain(ROLES.MEMBER.id);
+      expect(roleIds).toContain(ROLES.ADMIN.id);
+
+      // Remove MEMBER role, keeping only ADMIN
+      await caller.updateUserRoles({
+        profileUserId: memberUser.profileUserId,
+        roleIds: [ROLES.ADMIN.id],
+      });
+
+      // Verify user now has only ADMIN role
+      const userWithAdminOnly = await db.query.profileUsers.findFirst({
+        where: eq(profileUsers.id, memberUser.profileUserId),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      expect(userWithAdminOnly?.roles).toHaveLength(1);
+      expect(userWithAdminOnly?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
+    });
+
     it('should fail when non-admin tries to update roles', async ({
       task,
       onTestFinished,
@@ -321,7 +398,7 @@ describe.concurrent('profile.users', () => {
           profileUserId: memberUser2.profileUserId,
           roleIds: [ROLES.ADMIN.id],
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/not authenticated/i);
     });
   });
 
@@ -378,7 +455,7 @@ describe.concurrent('profile.users', () => {
         caller.removeUser({
           profileUserId: memberUser2.profileUserId,
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/not authenticated/i);
     });
   });
 });
