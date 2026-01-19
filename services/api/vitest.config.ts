@@ -24,11 +24,6 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30000, // Increased timeout for database operations
     hookTimeout: 30000, // Increased timeout for setup/teardown
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'src/test/', '**/*.config.ts', '**/*.d.ts'],
-    },
     // Enable parallel execution with multiple threads
     poolOptions: {
       threads: {

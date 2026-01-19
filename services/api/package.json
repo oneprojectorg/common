@@ -16,12 +16,10 @@
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "test": "vitest",
     "test:check-supabase": "tsx src/test/check-supabase.ts",
-    "test:coverage": "vitest --coverage",
     "test:db:reset": "pnpm test:supabase:reset && pnpm test:migrate",
     "test:supabase:start": "tsx src/test/supabase-test.ts start",
     "test:supabase:status": "tsx src/test/supabase-test.ts status",
     "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
-    "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
     "typecheck": "tsgo --noEmit"
   },
@@ -67,10 +65,8 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
-    "@vitest/coverage-v8": "^3.2.4",
-    "@vitest/ui": "^3.2.4",
     "jsonwebtoken": "^9.0.2",
     "typescript": "5.7.3",
-    "vitest": "^3.2.4"
+    "vitest": "catalog:"
   }
 }
