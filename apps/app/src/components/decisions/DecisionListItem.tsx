@@ -55,7 +55,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
         <DecisionProcessHeader
-          name={processInstance?.name || item.name}
+          name={processInstance.name || item.name}
           currentState={currentPhaseName}
         />
 
@@ -83,11 +83,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
       <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
         <DecisionStat
-          number={processInstance?.participantCount ?? 0}
+          number={processInstance.participantCount ?? 0}
           label="Participants"
         />
         <DecisionStat
-          number={processInstance?.proposalCount ?? 0}
+          number={processInstance.proposalCount ?? 0}
           label="Proposals"
         />
       </div>
@@ -105,13 +105,12 @@ export const ProfileDecisionListItem = ({
   const { processInstance } = item;
 
   // Get current phase name from process schema
-  const currentPhaseName =
-    processInstance?.process?.processSchema?.phases?.find(
-      (phase) => phase.id === processInstance.currentStateId,
-    )?.name;
+  const currentPhaseName = processInstance.process?.processSchema?.phases?.find(
+    (phase) => phase.id === processInstance.currentStateId,
+  )?.name;
 
   // Get closing date from phases - find the current phase's end date
-  const currentPhase = processInstance?.instanceData?.phases?.find(
+  const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
   const closingDate = currentPhase?.endDate;
@@ -124,7 +123,7 @@ export const ProfileDecisionListItem = ({
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
         <DecisionProcessHeader
-          name={processInstance?.name || item.name}
+          name={processInstance.name || item.name}
           currentState={currentPhaseName}
         />
 
@@ -133,12 +132,12 @@ export const ProfileDecisionListItem = ({
           {closingDate && <DecisionClosingDate closingDate={closingDate} />}
           <div className="flex items-end gap-4 text-neutral-black">
             <DecisionStat
-              number={processInstance?.participantCount ?? 0}
+              number={processInstance.participantCount ?? 0}
               label="Participants"
               className="sm:flex-row sm:items-end sm:gap-1"
             />
             <DecisionStat
-              number={processInstance?.proposalCount ?? 0}
+              number={processInstance.proposalCount ?? 0}
               label="Proposals"
               className="sm:flex-row sm:items-end sm:gap-1"
             />
