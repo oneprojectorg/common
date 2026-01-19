@@ -379,14 +379,6 @@ export class TestOrganizationDataManager {
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 3. Delete users table rows by auth user IDs
-    // This must happen before deleting auth users since users.authUserId references auth.users
-    if (this.createdAuthUserIds.length > 0) {
-      await db
-        .delete(users)
-        .where(inArray(users.authUserId, this.createdAuthUserIds));
-    }
-
     // 4. Delete auth users by exact IDs (not pattern matching)
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
