@@ -1,5 +1,7 @@
 'use client';
 
+import { generateCollabDocId, useTiptapCollab } from '@/hooks/useTiptapCollab';
+import type { ProcessInstance } from '@/utils/decisionProcessTransforms';
 import {
   type ImageAttachment,
   extractAttachmentIdsFromUrls,
@@ -18,10 +20,11 @@ import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
+import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { z } from 'zod';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -32,30 +35,24 @@ import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-// Utility function to handle tRPC validation errors
-function handleValidationError(error: any, operationType: 'create' | 'update') {
+/** Handles tRPC validation errors from mutation responses */
+function handleMutationError(
+  error: { data?: unknown; message?: string },
+  operationType: 'create' | 'update' | 'submit',
+) {
   console.error(`Failed to ${operationType} proposal:`, error);
 
   // Check if error has field-specific validation errors
-  if (
-    error.data &&
-    'cause' in error.data &&
-    error.data.cause &&
-    typeof error.data.cause === 'object' &&
-    'fieldErrors' in error.data.cause
-  ) {
-    const fieldErrors = error.data.cause.fieldErrors as Record<string, string>;
-
-    // Show individual error messages for each field, or combine if multiple
+  const errorData = error.data as
+    | { cause?: { fieldErrors?: Record<string, string> } }
+    | undefined;
+  if (errorData?.cause?.fieldErrors) {
+    const fieldErrors = errorData.cause.fieldErrors;
     const errorMessages = Object.values(fieldErrors);
 
     if (errorMessages.length === 1) {
-      // Single error - show just the message
-      toast.error({
-        message: errorMessages[0],
-      });
+      toast.error({ message: errorMessages[0] });
     } else {
-      // Multiple errors - show with title
       toast.error({
         title: 'Please fix the following issues:',
         message: errorMessages.join(', '),
@@ -87,7 +84,7 @@ export function ProposalEditor({
   const [budget, setBudget] = useState<number | null>(null);
   const [showBudgetInput, setShowBudgetInput] = useState(false);
   const [editorContent, setEditorContent] = useState('');
-  const [editorInstance, setEditorInstance] = useState<any>(null);
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [imageAttachments] = useState<ImageAttachment[]>([]);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
@@ -97,39 +94,40 @@ export function ProposalEditor({
   const posthog = usePostHog();
   const t = useTranslations();
 
+  // A draft is essentially a "new" proposal that's been persisted for TipTap Cloud sync
+  const isDraft = existingProposal?.status === 'draft';
+
+  // Generate or use existing collaboration document ID
+  // For new proposals, generate a new docId; for existing, use stored one from proposalData (or generate if missing)
+  const collabDocId = useMemo(() => {
+    const existingDocId = (
+      existingProposal?.proposalData as Record<string, unknown>
+    )?.collaborationDocId as string | undefined;
+    if (isEditMode && existingDocId) {
+      return existingDocId;
+    }
+    // Generate a new docId for new proposals or legacy proposals without one
+    return generateCollabDocId(instance.id, existingProposal?.id);
+  }, [
+    instance.id,
+    isEditMode,
+    existingProposal?.id,
+    existingProposal?.proposalData,
+  ]);
+
+  // Initialize TipTap Cloud collaboration
+  // isSynced and isConnected will be used in Phase 2 for save status indicator
+  const { ydoc } = useTiptapCollab({
+    docId: collabDocId,
+    enabled: true,
+  });
+
+  // createProposal now always creates as draft - we follow up with submitProposal
   const createProposalMutation = trpc.decision.createProposal.useMutation({
-    onSuccess: async () => {
-      // Track successful proposal creation
-      if (posthog) {
-        posthog.capture('create_proposal_success', {
-          process_instance_id: instance.id,
-          process_name: instance.process?.name,
-        });
-      }
-
-      await utils.decision.listProposals.invalidate({
-        processInstanceId: instance.id,
-      });
-      // Navigate after cache invalidation completes
-      router.push(backHref);
-    },
-    onError: (error) => handleValidationError(error, 'create'),
+    onError: (error) => handleMutationError(error, 'create'),
   });
 
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onSuccess: async () => {
-      await utils.decision.getProposal.invalidate({
-        profileId: existingProposal?.profileId,
-      });
-      await utils.decision.listProposals.invalidate({
-        processInstanceId: instance.id,
-      });
-      // Navigate after cache invalidation completes
-      router.push(backHref);
-    },
-    onError: (error) => handleValidationError(error, 'update'),
-  });
-
+  // submitProposal transitions draft -> submitted with validation
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
       // Track successful proposal submission
@@ -140,16 +138,26 @@ export function ProposalEditor({
         });
       }
 
+      await utils.decision.listProposals.invalidate({
+        processInstanceId: instance.id,
+      });
+      router.push(backHref);
+    },
+    onError: (error) => handleMutationError(error, 'submit'),
+  });
+
+  // updateProposal is for editing already-submitted proposals (no status change)
+  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
+    onSuccess: async () => {
       await utils.decision.getProposal.invalidate({
         profileId: existingProposal?.profileId,
       });
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
       });
-      // Navigate after cache invalidation completes
       router.push(backHref);
     },
-    onError: (error) => handleValidationError(error, 'update'),
+    onError: (error) => handleMutationError(error, 'update'),
   });
 
   // Check if we're editing a draft proposal (should show info modal and use submitProposal)
@@ -203,21 +211,6 @@ export function ProposalEditor({
       .budgetCapAmount as number;
   }
 
-  const isBudgetRequired = (() => {
-    // First check the proposal template schema
-    if (
-      proposalTemplate &&
-      typeof proposalTemplate === 'object' &&
-      'required' in proposalTemplate &&
-      Array.isArray(proposalTemplate.required)
-    ) {
-      return proposalTemplate.required.includes('budget');
-    }
-
-    // Safe default: require budget for all proposals unless explicitly configured otherwise
-    return true;
-  })();
-
   // Parse proposal data for editing
   const parsedProposalData =
     isEditMode && existingProposal
@@ -238,7 +231,7 @@ export function ProposalEditor({
   }, []);
 
   // Handle editor ready callback
-  const handleEditorReady = useCallback((editor: any) => {
+  const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
   }, []);
 
@@ -280,10 +273,9 @@ export function ProposalEditor({
 
   // Content setting is now handled by RichTextEditorContent component via the content prop
 
-  // Show proposal info modal when creating a new proposal OR editing a draft
+  // Show proposal info modal when creating a new proposal or editing a draft
   useEffect(() => {
-    const shouldShowModal = !isEditMode || isDraft;
-    if (shouldShowModal && proposalInfoTitle && proposalInfoContent) {
+    if ((!isEditMode || isDraft) && proposalInfoTitle && proposalInfoContent) {
       setShowInfoModal(true);
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
@@ -305,56 +297,6 @@ export function ProposalEditor({
     setIsSubmitting(true);
 
     try {
-      // Validate required fields
-      const missingFields: string[] = [];
-
-      if (!title || title.trim() === '') {
-        missingFields.push('Title');
-      }
-
-      // Check for empty content (rich text editor can have various empty states)
-      const isContentEmpty =
-        !content ||
-        content.trim() === '' ||
-        content === '<p></p>' ||
-        content === '<p><br></p>' ||
-        content.replace(/<[^>]*>/g, '').trim() === '';
-
-      if (isContentEmpty) {
-        missingFields.push('Description');
-      }
-
-      if (isBudgetRequired && (budget === null || budget === undefined)) {
-        missingFields.push('Budget');
-      }
-
-      // Validate budget cap if there's a limit
-      if (
-        budget !== null &&
-        budget !== undefined &&
-        budgetCapAmount &&
-        budget > budgetCapAmount
-      ) {
-        toast.error({
-          message: `Budget cannot exceed ${budgetCapAmount.toLocaleString()}`,
-        });
-        return;
-      }
-
-      if (missingFields.length > 0) {
-        if (missingFields.length === 1) {
-          toast.error({
-            message: `${missingFields[0]} is required`,
-          });
-        } else {
-          toast.error({
-            title: 'Please complete the following required fields:',
-            message: missingFields.join(', '),
-          });
-        }
-        return;
-      }
-
       // Extract image URLs from content and get attachment IDs
       const imageUrls = extractImageUrlsFromContent(content);
       const attachmentIds = extractAttachmentIdsFromUrls(
@@ -365,7 +307,7 @@ export function ProposalEditor({
       // Create the proposal data structure
       const proposalData: Record<string, unknown> = {};
 
-      // Always include required fields (they've been validated above)
+      // Include all fields (validation happens on submitProposal)
       proposalData.title = title;
       proposalData.description = content;
 
@@ -377,6 +319,9 @@ export function ProposalEditor({
       if (budget !== null && budget !== undefined) {
         proposalData.budget = budget;
       }
+
+      // Include TipTap Cloud collaboration document ID
+      proposalData.collaborationDocId = collabDocId;
 
       if (isEditMode && existingProposal) {
         // First, save the proposal data (for both drafts and submitted proposals)
@@ -390,18 +335,35 @@ export function ProposalEditor({
 
         // If it's a draft, also transition to submitted status
         if (isDraft) {
+          // Existing draft: submitProposal validates and transitions to submitted
           await submitProposalMutation.mutateAsync({
             proposalId: existingProposal.id,
+          });
+        } else {
+          // Already submitted: just update, no status change
+          await updateProposalMutation.mutateAsync({
+            proposalId: existingProposal.id,
+            data: {
+              proposalData,
+              attachmentIds,
+            },
           });
         }
         // Note: navigation is handled in the mutation's onSuccess callbacks
         return;
       } else {
-        // Create new proposal - navigation handled in onSuccess callback
-        await createProposalMutation.mutateAsync({
+        // New proposal: create draft, then immediately submit
+        const draft = await createProposalMutation.mutateAsync({
           processInstanceId: instance.id,
           proposalData,
-          attachmentIds, // Include attachment IDs for new proposals
+          attachmentIds,
+        });
+
+        // Submit the draft (validates and transitions to submitted)
+        await submitProposalMutation.mutateAsync({
+          proposalId: draft.id,
+          proposalData,
+          attachmentIds,
         });
       }
     } catch (error) {
@@ -421,15 +383,14 @@ export function ProposalEditor({
     budget,
     instance,
     createProposalMutation,
-    updateProposalMutation,
     submitProposalMutation,
+    updateProposalMutation,
     isEditMode,
-    isDraft,
     existingProposal,
     imageAttachments,
-    isBudgetRequired,
+    isDraft,
+    collabDocId,
     categories,
-    budgetCapAmount,
   ]);
 
   return (
@@ -439,7 +400,6 @@ export function ProposalEditor({
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
-      isDraft={isDraft}
     >
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
@@ -508,7 +468,7 @@ export function ProposalEditor({
 
           <RichTextEditor
             ref={editorRef}
-            extensions={getEditorExtensions()}
+            extensions={getEditorExtensions(ydoc)}
             content={initialContent || ''}
             onUpdate={handleEditorUpdate}
             placeholder={t('Write your proposal here...')}

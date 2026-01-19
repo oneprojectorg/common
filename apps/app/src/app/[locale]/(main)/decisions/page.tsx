@@ -20,7 +20,6 @@ const DecisionsListingPage = async () => {
     const client = await createClient();
     decisions = await client.decision.listDecisionProfiles({
       limit: 20,
-      status: ProcessStatus.PUBLISHED,
     });
   } catch (error) {
     // log error but return the empty list

@@ -10,6 +10,9 @@ import * as path from 'path';
 
 import { db } from '.';
 import {
+  accessRolePermissionsOnAccessZones,
+  accessRoles,
+  accessZones,
   links,
   locations,
   organizationUserToAccessRoles,
@@ -23,6 +26,11 @@ import {
   organizations,
   organizationsWhereWeWork,
 } from './schema/tables/organizations.sql';
+import {
+  ACCESS_ROLES,
+  ACCESS_ROLE_PERMISSIONS,
+  ACCESS_ZONES,
+} from './seedData/accessControl';
 
 // For local development, we need to load the .env.local file from the root of the monorepo
 dotenv.config({
@@ -152,34 +160,22 @@ for (const email of adminEmails) {
   }
 }
 
-// Run the SQL seed scripts
+// Seed access control data
+console.log('Seeding access zones...');
+await db.insert(accessZones).values(ACCESS_ZONES).onConflictDoNothing();
+
+console.log('Seeding access roles...');
+await db.insert(accessRoles).values(ACCESS_ROLES).onConflictDoNothing();
+
+console.log('Seeding access role permissions...');
+await db
+  .insert(accessRolePermissionsOnAccessZones)
+  .values(ACCESS_ROLE_PERMISSIONS)
+  .onConflictDoNothing();
+
+console.log('Access control seeding completed');
+
 const seedDataPath = path.join(process.cwd(), 'seedData');
-
-// Execute SQL files in order: Access Roles -> Taxonomies -> Terms
-const sqlFiles = ['AccessRoles.sql', 'TaxonomiesRows.sql'];
-
-for (const fileName of sqlFiles) {
-  const filePath = path.join(seedDataPath, fileName);
-  const sqlContent = fs.readFileSync(filePath, 'utf8');
-
-  // Split by statement-breakpoint if exists, otherwise execute as single statement
-  const statements = sqlContent.includes('--> statement-breakpoint')
-    ? sqlContent.split('--> statement-breakpoint')
-    : [sqlContent];
-
-  for (const statement of statements) {
-    const trimmedStatement = statement.trim();
-    if (trimmedStatement && trimmedStatement.length > 0) {
-      try {
-        await db.execute(sql.raw(trimmedStatement));
-        console.log(`Executed SQL from ${fileName}`);
-      } catch (error) {
-        console.error(`Error executing SQL from ${fileName}:`, error);
-        throw error;
-      }
-    }
-  }
-}
 // Import taxonomy terms from CSV
 const taxonomyTermsCsvPath = path.join(seedDataPath, 'TaxonomyTerms.csv');
 const taxonomyTermsCsvContent = fs.readFileSync(taxonomyTermsCsvPath, 'utf8');

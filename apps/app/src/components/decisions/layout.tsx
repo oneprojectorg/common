@@ -3,7 +3,7 @@
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { LuArrowLeft, LuCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -18,7 +18,6 @@ interface ProposalEditorLayoutProps {
   onSubmitProposal: () => void;
   isSubmitting: boolean;
   isEditMode?: boolean;
-  isDraft?: boolean;
 }
 
 export function ProposalEditorLayout({
@@ -28,7 +27,6 @@ export function ProposalEditorLayout({
   onSubmitProposal,
   isSubmitting,
   isEditMode = false,
-  isDraft = false,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -38,6 +36,7 @@ export function ProposalEditorLayout({
       {/* Header */}
       <div className="grid grid-cols-3 items-center gap-2 border-b px-4 py-4 sm:px-6">
         <button
+          type="button"
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
         >
@@ -61,7 +60,7 @@ export function ProposalEditorLayout({
             className="px-4 py-2"
           >
             {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-            {isEditMode && !isDraft ? (
+            {isEditMode ? (
               <>
                 <span className="inline lg:hidden">{t('Update')}</span>
                 <span className="hidden lg:inline">{t('Update Proposal')}</span>
