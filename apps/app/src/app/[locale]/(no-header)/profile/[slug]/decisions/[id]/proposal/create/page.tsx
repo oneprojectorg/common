@@ -8,8 +8,10 @@ export const dynamic = 'force-dynamic';
 
 async function CreateProposalPageContent({
   instanceId,
+  decisionSlug,
 }: {
   instanceId: string;
+  decisionSlug: string;
 }) {
   try {
     const client = await createClient();
@@ -21,10 +23,7 @@ async function CreateProposalPageContent({
       notFound();
     }
 
-    // Use the decision profile slug for navigation to the new /decisions/[slug] route
-    const backHref = instance.profileSlug
-      ? `/decisions/${instance.profileSlug}`
-      : '/decisions';
+    const backHref = `/decisions/${decisionSlug}`;
 
     return <ProposalEditor instance={instance} backHref={backHref} />;
   } catch (error) {
@@ -81,13 +80,13 @@ function CreateProposalPageSkeleton() {
 const CreateProposalPage = async ({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; slug: string }>;
 }) => {
-  const { id } = await params;
+  const { id, slug } = await params;
 
   return (
     <Suspense fallback={<CreateProposalPageSkeleton />}>
-      <CreateProposalPageContent instanceId={id} />
+      <CreateProposalPageContent instanceId={id} decisionSlug={slug} />
     </Suspense>
   );
 };

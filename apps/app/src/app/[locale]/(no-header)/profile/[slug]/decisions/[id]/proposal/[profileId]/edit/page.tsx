@@ -10,9 +10,11 @@ import { ProposalEditor } from '@/components/decisions/ProposalEditor';
 function ProposalEditPageContent({
   profileId,
   instanceId,
+  decisionSlug,
 }: {
   profileId: string;
   instanceId: string;
+  decisionSlug: string;
 }) {
   // Get both the proposal and the instance in parallel
   const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
@@ -24,10 +26,7 @@ function ProposalEditPageContent({
     notFound();
   }
 
-  // Use the decision profile slug for navigation to the new /decisions/[slug] route
-  const backHref = instance.profileSlug
-    ? `/decisions/${instance.profileSlug}`
-    : '/decisions';
+  const backHref = `/decisions/${decisionSlug}`;
 
   return (
     <ProposalEditor
@@ -65,15 +64,20 @@ function ProposalEditPageSkeleton() {
 }
 
 const ProposalEditPage = () => {
-  const { profileId, id } = useParams<{
+  const { profileId, id, slug } = useParams<{
     profileId: string;
     id: string;
+    slug: string;
   }>();
 
   return (
     <ErrorBoundary>
       <Suspense fallback={<ProposalEditPageSkeleton />}>
-        <ProposalEditPageContent profileId={profileId} instanceId={id} />
+        <ProposalEditPageContent
+          profileId={profileId}
+          instanceId={id}
+          decisionSlug={slug}
+        />
       </Suspense>
     </ErrorBoundary>
   );

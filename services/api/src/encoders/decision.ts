@@ -168,8 +168,6 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
     owner: baseProfileEncoder.optional(),
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
-    // Decision profile slug for /decisions/[slug] navigation
-    profileSlug: z.string().optional(),
   });
 
 /** Decision profile encoder  */

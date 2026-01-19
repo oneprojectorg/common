@@ -9,23 +9,20 @@ import { ProposalView } from '@/components/decisions/ProposalView';
 
 function ProposalViewPageContent({
   profileId,
-  instanceId,
+  decisionSlug,
 }: {
   profileId: string;
-  instanceId: string;
+  decisionSlug: string;
 }) {
-  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
+    profileId,
+  });
 
-  if (!proposal || !instance) {
+  if (!proposal) {
     notFound();
   }
 
-  const backHref = instance.profileSlug
-    ? `/decisions/${instance.profileSlug}`
-    : '/decisions';
+  const backHref = `/decisions/${decisionSlug}`;
 
   return <ProposalView proposal={proposal} backHref={backHref} />;
 }
@@ -77,15 +74,15 @@ function ProposalViewPageSkeleton() {
 }
 
 const ProposalViewPage = () => {
-  const { profileId, id } = useParams<{
+  const { profileId, slug } = useParams<{
     profileId: string;
-    id: string;
+    slug: string;
   }>();
 
   return (
     <ErrorBoundary>
       <Suspense fallback={<ProposalViewPageSkeleton />}>
-        <ProposalViewPageContent profileId={profileId} instanceId={id} />
+        <ProposalViewPageContent profileId={profileId} decisionSlug={slug} />
       </Suspense>
     </ErrorBoundary>
   );
