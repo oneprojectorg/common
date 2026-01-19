@@ -39,16 +39,16 @@ export const listProfileUsers = async ({
   profileId: string;
   user: User;
 }) => {
-  const [profileUser] = await Promise.all([
+  const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
     assertProfile(profileId),
   ]);
 
-  if (!profileUser) {
+  if (!profileAccessUser) {
     throw new UnauthorizedError('You do not have access to this profile');
   }
 
-  assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
+  assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
   // Fetch all profile users with their roles and user profiles
   const members = await db.query.profileUsers.findMany({
