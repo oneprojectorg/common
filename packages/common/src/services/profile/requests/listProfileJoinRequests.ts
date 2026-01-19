@@ -1,11 +1,13 @@
 import { db } from '@op/db/client';
-import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import {
+  type JoinProfileRequestStatus,
+  joinProfileRequests,
+} from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
 import { decodeCursor, encodeCursor, getCursorCondition } from '../../../utils';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
-import { JoinProfileRequestWithProfiles } from './types';
 
 type ListJoinProfileRequestsCursor = {
   value: string;
@@ -30,11 +32,7 @@ export const listProfileJoinRequests = async ({
   cursor?: string | null;
   limit?: number;
   dir?: 'asc' | 'desc';
-}): Promise<{
-  items: JoinProfileRequestWithProfiles[];
-  next: string | null;
-  hasMore: boolean;
-}> => {
+}) => {
   // Build cursor condition for pagination
   const cursorCondition = cursor
     ? getCursorCondition({
@@ -45,7 +43,7 @@ export const listProfileJoinRequests = async ({
       })
     : undefined;
 
-  // Build where clause
+  // Build where clause using SQL expressions (v2 object-style where doesn't support complex AND/OR with SQL)
   const whereClause = and(
     eq(joinProfileRequests.targetProfileId, targetProfileId),
     status ? eq(joinProfileRequests.status, status) : undefined,
@@ -54,14 +52,17 @@ export const listProfileJoinRequests = async ({
 
   const [, results] = await Promise.all([
     assertTargetProfileAdminAccess({ user, targetProfileId }),
-    db._query.joinProfileRequests.findMany({
-      where: whereClause,
+    db.query.joinProfileRequests.findMany({
+      where: {
+        RAW: whereClause,
+      },
       with: {
         requestProfile: true,
         targetProfile: true,
       },
-      orderBy: (table, { asc, desc }) =>
-        dir === 'asc' ? asc(table.createdAt) : desc(table.createdAt),
+      orderBy: {
+        createdAt: dir,
+      },
       limit: limit + 1,
     }),
   ]);
@@ -79,11 +80,7 @@ export const listProfileJoinRequests = async ({
       : null;
 
   return {
-    // Type assertion needed because Drizzle's relational queries infer relations as
-    // { [x: string]: any } | { [x: string]: any }[] instead of the actual Profile type.
-    // This is a known Drizzle ORM limitation (see github.com/drizzle-team/drizzle-orm/issues/695)
-    // TODO: Re-check if this is still needed after upgrading to Drizzle v1
-    items: items as JoinProfileRequestWithProfiles[],
+    items,
     next: nextCursor,
     hasMore,
   };

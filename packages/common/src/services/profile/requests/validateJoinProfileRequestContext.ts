@@ -6,11 +6,11 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
-import { JoinProfileRequestContext } from './types';
+import type { JoinProfileRequestContext } from './types';
 
 /**
  * Fetches and validates the context needed for join profile request operations.
@@ -57,12 +57,11 @@ export const validateJoinProfileRequestContext = async ({
       )
       .where(inArray(profiles.id, [requestProfileId, targetProfileId])),
 
-    db._query.joinProfileRequests.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.requestProfileId, requestProfileId),
-          eq(table.targetProfileId, targetProfileId),
-        ),
+    db.query.joinProfileRequests.findFirst({
+      where: {
+        requestProfileId,
+        targetProfileId,
+      },
     }),
   ]);
 

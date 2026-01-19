@@ -4,7 +4,6 @@ import type { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
-import { JoinProfileRequestWithProfiles } from './types';
 
 /**
  * Deletes (cancels) a pending join profile request.
@@ -18,7 +17,7 @@ export const deleteProfileJoinRequest = async ({
   user: User;
   /** The ID of the join profile request to delete */
   requestId: string;
-}): Promise<JoinProfileRequestWithProfiles> => {
+}) => {
   // Find the existing request by ID with profiles
   const existingRequest = await db._query.joinProfileRequests.findFirst({
     where: (table, { eq }) => eq(table.id, requestId),
@@ -56,7 +55,5 @@ export const deleteProfileJoinRequest = async ({
     .delete(joinProfileRequests)
     .where(eq(joinProfileRequests.id, requestId));
 
-  // Type assertion needed because Drizzle's relational query types don't properly
-  // infer the `with` clause relations as non-array single objects
-  return existingRequest as JoinProfileRequestWithProfiles;
+  return existingRequest;
 };

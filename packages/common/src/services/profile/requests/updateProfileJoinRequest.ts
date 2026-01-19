@@ -6,13 +6,13 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../../utils';
 import { assertProfile } from '../../assert';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
-import { JoinProfileRequestWithProfiles } from './types';
+import type { JoinProfileRequestWithProfiles } from './types';
 
 /**
  * Updates the status of an existing join profile request to approved or rejected.
@@ -29,8 +29,8 @@ export const updateProfileJoinRequest = async ({
   status: JoinProfileRequestStatus.APPROVED | JoinProfileRequestStatus.REJECTED;
 }): Promise<JoinProfileRequestWithProfiles> => {
   // Find the existing request by ID
-  const existingRequest = await db._query.joinProfileRequests.findFirst({
-    where: (table, { eq }) => eq(table.id, requestId),
+  const existingRequest = await db.query.joinProfileRequests.findFirst({
+    where: { id: requestId },
   });
 
   if (!existingRequest) {
@@ -85,9 +85,8 @@ export const updateProfileJoinRequest = async ({
     }
 
     // Get the owner of the requesting profile (their authUserId)
-    const requestingUser = await db._query.users.findFirst({
-      where: (table, { eq }) =>
-        eq(table.profileId, existingRequest.requestProfileId),
+    const requestingUser = await db.query.users.findFirst({
+      where: { profileId: existingRequest.requestProfileId },
     });
 
     if (requestingUser) {
@@ -95,12 +94,11 @@ export const updateProfileJoinRequest = async ({
       // NOTE: We're using organizationUsers instead of profileUsers because we're in between
       // memberships - the profile user membership (new) and the organization user membership (old).
       // After we migrate to profile users, this code should be changed to use profileUsers.
-      const existingMembership = await db._query.organizationUsers.findFirst({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.authUserId, requestingUser.authUserId),
-            eq(table.organizationId, organization.id),
-          ),
+      const existingMembership = await db.query.organizationUsers.findFirst({
+        where: {
+          authUserId: requestingUser.authUserId,
+          organizationId: organization.id,
+        },
       });
 
       // Only create membership if it doesn't already exist
@@ -108,8 +106,8 @@ export const updateProfileJoinRequest = async ({
         // TODO: We should find a better way to reference the Member role
         // rather than querying by name. Consider using a constant ID or
         // a more robust role resolution mechanism.
-        const memberRole = await db._query.accessRoles.findFirst({
-          where: (table, { eq }) => eq(table.name, 'Member'),
+        const memberRole = await db.query.accessRoles.findFirst({
+          where: { name: 'Member' },
         });
 
         if (!memberRole) {
