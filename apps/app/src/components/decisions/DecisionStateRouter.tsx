@@ -48,7 +48,11 @@ function DecisionStateRouterNew({
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,
     voting: () => (
-      <VotingPage instanceId={instanceId} slug={slug} decisionSlug={decisionSlug} />
+      <VotingPage
+        instanceId={instanceId}
+        slug={slug}
+        decisionSlug={decisionSlug}
+      />
     ),
     _: () => (
       <StandardDecisionPage
