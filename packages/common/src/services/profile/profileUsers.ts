@@ -44,9 +44,9 @@ export const listProfileUsers = async ({
   profileId: string;
   user: User;
 }) => {
-  const [, profileUser] = await Promise.all([
-    assertProfile(profileId),
+  const [profileUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
+    assertProfile(profileId),
   ]);
 
   if (!profileUser) {
