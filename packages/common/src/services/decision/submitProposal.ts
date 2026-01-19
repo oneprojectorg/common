@@ -9,12 +9,7 @@ import {
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from '../../utils';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
 import { processProposalContent } from './proposalContentProcessor';
@@ -43,10 +38,6 @@ export const submitProposal = async ({
   data: SubmitProposalInput;
   authUserId: string;
 }) => {
-  if (!authUserId) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   // Fetch the proposal with its process instance
   const existingProposal = await db.query.proposals.findFirst({
     where: eq(proposals.id, data.proposalId),
