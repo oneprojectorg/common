@@ -1,6 +1,9 @@
 import { OPURLConfig } from '@op/core';
 import { and, db, eq, ne } from '@op/db/client';
 import {
+  type AccessRole,
+  type Profile,
+  type ProfileUser,
   allowList,
   profileUserToAccessRoles,
   profileUsers,
@@ -20,31 +23,19 @@ import { getProfileAccessUser } from '../access';
 import type { AllowListMetadata } from '../user/validators';
 
 /**
- * Type for profile user query result with relations
+ * Type for profile user query result with relations.
+ * Used for listProfileUsers which includes serviceUser.profile and roles.accessRole.
  */
-type ProfileUserWithRelations = Awaited<
-  ReturnType<typeof db.query.profileUsers.findMany>
->[number] & {
+type ProfileUserWithRelations = ProfileUser & {
   serviceUser: {
-    profile: {
-      id: string;
-      name: string | null;
-      slug: string;
-      bio: string | null;
-      email: string | null;
-      type: string;
-      avatarImage: {
-        id: string;
-        name: string | null;
-      } | null;
-    } | null;
+    profile:
+      | (Pick<Profile, 'id' | 'name' | 'slug' | 'bio' | 'email' | 'type'> & {
+          avatarImage: { id: string; name: string | null } | null;
+        })
+      | null;
   } | null;
   roles: Array<{
-    accessRole: {
-      id: string;
-      name: string;
-      description: string | null;
-    };
+    accessRole: Pick<AccessRole, 'id' | 'name' | 'description'>;
   }>;
 };
 
@@ -87,10 +78,8 @@ const ensureProfileHasOtherAdmins = async ({
  * Type for profile user with roles relation loaded.
  * Used to properly type Drizzle query results that include `with: { roles: { with: { accessRole: true }}}`.
  */
-type ProfileUserWithRoles = {
-  id: string;
-  profileId: string;
-  roles: Array<{ accessRole: { id: string } }>;
+type ProfileUserWithRoles = Pick<ProfileUser, 'id' | 'profileId'> & {
+  roles: Array<{ accessRole: Pick<AccessRole, 'id'> }>;
 };
 
 /**
@@ -349,7 +338,7 @@ export const updateProfileUserRole = async ({
         },
       },
     },
-  })) as (typeof profileUsers.$inferSelect & ProfileUserWithRoles) | undefined;
+  })) as (ProfileUser & ProfileUserWithRoles) | undefined;
 
   if (!targetProfileUser) {
     throw new NotFoundError('Member not found');
@@ -427,7 +416,7 @@ export const removeProfileUser = async ({
         },
       },
     },
-  })) as (typeof profileUsers.$inferSelect & ProfileUserWithRoles) | undefined;
+  })) as (ProfileUser & ProfileUserWithRoles) | undefined;
 
   if (!targetProfileUser) {
     throw new NotFoundError('Member not found');
