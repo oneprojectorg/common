@@ -7,11 +7,7 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProposalView } from '@/components/decisions/ProposalView';
 
-function ProposalViewPageContent({
-  profileId,
-}: {
-  profileId: string;
-}) {
+function ProposalViewPageContent({ profileId }: { profileId: string }) {
   const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
     profileId,
   });

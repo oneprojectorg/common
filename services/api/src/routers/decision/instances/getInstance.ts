@@ -1,4 +1,11 @@
-import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
+import {
+  type DecisionSchemaDefinition,
+  type InstanceData,
+  NotFoundError,
+  type PhaseDefinition,
+  UnauthorizedError,
+  getInstance,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 
@@ -109,36 +116,30 @@ export const getInstanceRouter = router({
         // Track process viewed event
         waitUntil(trackProcessViewed(ctx, input.instanceId));
 
-        // Get schema and instance data
-        const schema = (instance.process as any)?.processSchema;
-        const instanceData = instance.instanceData as Record<string, any>;
-        const instancePhases = instanceData?.phases as
-          | Array<{ phaseId: string; startDate?: string; endDate?: string }>
+        // Get schema and instance data with proper typing
+        const process = instance.process as
+          | { processSchema?: DecisionSchemaDefinition }
           | undefined;
+        const schema = process?.processSchema;
+        const instanceData = instance.instanceData as InstanceData | undefined;
+        const instancePhases = instanceData?.phases;
 
         // Merge instance phase dates into schema phases
-        const processSchemaWithDates =
-          typeof schema === 'object' &&
-          schema !== null &&
-          !Array.isArray(schema)
-            ? {
-                ...schema,
-                phases: Array.isArray(schema.phases)
-                  ? schema.phases.map(
-                      (phase: { id: string; [key: string]: unknown }) => {
-                        const instancePhase = instancePhases?.find(
-                          (p) => p.phaseId === phase.id,
-                        );
-                        return {
-                          ...phase,
-                          startDate: instancePhase?.startDate,
-                          endDate: instancePhase?.endDate,
-                        };
-                      },
-                    )
-                  : [],
-              }
-            : {};
+        const processSchemaWithDates = schema
+          ? {
+              ...schema,
+              phases: schema.phases.map((phase: PhaseDefinition) => {
+                const instancePhase = instancePhases?.find(
+                  (p) => p.phaseId === phase.id,
+                );
+                return {
+                  ...phase,
+                  startDate: instancePhase?.startDate,
+                  endDate: instancePhase?.endDate,
+                };
+              }),
+            }
+          : {};
 
         // Extract decision profile slug for navigation
         const profileSlug =

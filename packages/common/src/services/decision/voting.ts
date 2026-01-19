@@ -530,7 +530,8 @@ export const validateVoteSelectionService = async ({
       allowDecisions: phaseConfig.allowDecisions,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.maxVotesPerMember || 3,
+          (processInstance.instanceData as any)?.fieldValues
+            ?.maxVotesPerMember || 3,
       },
       schemaType: 'simple',
     };
