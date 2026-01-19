@@ -11,7 +11,11 @@ import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils/error';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import type { AllowListMetadata } from '../user/validators';
 

@@ -1,4 +1,4 @@
-import { profiles, profileUsers } from '@op/db/schema';
+import { profileUsers, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -48,29 +48,28 @@ export const profileWithAvatarEncoder = baseProfileEncoder;
 export type Profile = z.infer<typeof profileEncoder>;
 
 // Profile user encoders - using createSelectSchema for base fields
-export const profileUserEncoder = createSelectSchema(profileUsers)
-  .extend({
-    // Override timestamp fields to handle both string and Date, and allow null/undefined
-    createdAt: z.union([z.string(), z.date()]).nullish(),
-    updatedAt: z.union([z.string(), z.date()]).nullish(),
-    deletedAt: z.union([z.string(), z.date()]).nullish(),
-    // Nested profile with minimal fields needed for display
-    profile: baseProfileEncoder
-      .pick({
-        id: true,
-        name: true,
-        slug: true,
-        bio: true,
-        email: true,
-        type: true,
-      })
-      .extend({
-        avatarImage: storageItemMinimalEncoder.nullable(),
-      })
-      .nullable(),
-    // Roles using shared minimal encoder
-    roles: z.array(accessRoleMinimalEncoder),
-  });
+export const profileUserEncoder = createSelectSchema(profileUsers).extend({
+  // Override timestamp fields to handle both string and Date, and allow null/undefined
+  createdAt: z.union([z.string(), z.date()]).nullish(),
+  updatedAt: z.union([z.string(), z.date()]).nullish(),
+  deletedAt: z.union([z.string(), z.date()]).nullish(),
+  // Nested profile with minimal fields needed for display
+  profile: baseProfileEncoder
+    .pick({
+      id: true,
+      name: true,
+      slug: true,
+      bio: true,
+      email: true,
+      type: true,
+    })
+    .extend({
+      avatarImage: storageItemMinimalEncoder.nullable(),
+    })
+    .nullable(),
+  // Roles using shared minimal encoder
+  roles: z.array(accessRoleMinimalEncoder),
+});
 
 export const profileUserListEncoder = z.array(profileUserEncoder);
 

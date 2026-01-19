@@ -11,4 +11,9 @@ export const usersRouter = mergeRouters(
   removeUserRouter,
 );
 
-export { addUserRouter, listUsersRouter, removeUserRouter, updateUserRoleRouter };
+export {
+  addUserRouter,
+  listUsersRouter,
+  removeUserRouter,
+  updateUserRoleRouter,
+};
