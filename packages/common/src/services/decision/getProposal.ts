@@ -32,7 +32,6 @@ export const getProposal = async ({
     commentsCount: number;
     likesCount: number;
     followersCount: number;
-    decisionSlug?: string;
   }
 > => {
   try {
@@ -45,11 +44,7 @@ export const getProposal = async ({
     const proposal = (await db._query.proposals.findFirst({
       where: eq(proposals.profileId, profileId),
       with: {
-        processInstance: {
-          with: {
-            profile: true, // Decision profile with slug for /decisions/[slug] navigation
-          },
-        },
+        processInstance: true,
         submittedBy: {
           with: {
             avatarImage: true,
@@ -59,7 +54,7 @@ export const getProposal = async ({
       },
     })) as Proposal & {
       submittedBy: Profile & { avatarImage: any }; // fix drizzle types
-      processInstance: ProcessInstance & { profile: Profile | null };
+      processInstance: ProcessInstance;
       profile: Profile;
     };
 
@@ -120,17 +115,11 @@ export const getProposal = async ({
     // TODO: Add access control - check if user can view this proposal
     // For now, any authenticated user can view any proposal
 
-    // Extract decision profile slug for /decisions/[slug] navigation
-    const decisionSlug = (
-      proposal.processInstance?.profile as { slug?: string } | null
-    )?.slug;
-
     return {
       ...proposal,
       commentsCount,
       likesCount,
       followersCount,
-      decisionSlug,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

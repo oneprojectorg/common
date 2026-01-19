@@ -412,8 +412,6 @@ export const proposalEncoder = createSelectSchema(proposals)
     selectionRank: z.number().nullable().optional(),
     voteCount: z.number().optional(),
     allocated: z.string().nullable().optional(),
-    // Decision profile slug for /decisions/[slug] navigation
-    decisionSlug: z.string().optional(),
   });
 
 /** Proposal list encoder */

@@ -25,8 +25,8 @@ function ProposalEditPageContent({
   }
 
   // Use the decision profile slug for navigation to the new /decisions/[slug] route
-  const backHref = proposal.decisionSlug
-    ? `/decisions/${proposal.decisionSlug}`
+  const backHref = instance.profileSlug
+    ? `/decisions/${instance.profileSlug}`
     : '/decisions';
 
   return (

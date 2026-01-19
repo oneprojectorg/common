@@ -7,17 +7,24 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProposalView } from '@/components/decisions/ProposalView';
 
-function ProposalViewPageContent({ profileId }: { profileId: string }) {
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
-  });
+function ProposalViewPageContent({
+  profileId,
+  instanceId,
+}: {
+  profileId: string;
+  instanceId: string;
+}) {
+  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getProposal({ profileId }),
+    t.decision.getInstance({ instanceId }),
+  ]);
 
-  if (!proposal) {
+  if (!proposal || !instance) {
     notFound();
   }
 
-  const backHref = proposal.decisionSlug
-    ? `/decisions/${proposal.decisionSlug}`
+  const backHref = instance.profileSlug
+    ? `/decisions/${instance.profileSlug}`
     : '/decisions';
 
   return <ProposalView proposal={proposal} backHref={backHref} />;
@@ -70,14 +77,15 @@ function ProposalViewPageSkeleton() {
 }
 
 const ProposalViewPage = () => {
-  const { profileId } = useParams<{
+  const { profileId, id } = useParams<{
     profileId: string;
+    id: string;
   }>();
 
   return (
     <ErrorBoundary>
       <Suspense fallback={<ProposalViewPageSkeleton />}>
-        <ProposalViewPageContent profileId={profileId} />
+        <ProposalViewPageContent profileId={profileId} instanceId={id} />
       </Suspense>
     </ErrorBoundary>
   );
