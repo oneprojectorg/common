@@ -24,12 +24,12 @@ export const removeProfileUser = async ({
     throw new NotFoundError('Member not found');
   }
 
-  const profileId = targetProfileUser.profileId;
+  const targetProfileId = targetProfileUser.profileId;
 
   // Check if user has ADMIN access on the profile
   const currentProfileUser = await getProfileAccessUser({
     user,
-    profileId,
+    profileId: targetProfileId,
   });
 
   if (!currentProfileUser) {

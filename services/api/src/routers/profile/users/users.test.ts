@@ -258,8 +258,8 @@ describe.concurrent('profile.users', () => {
     });
   });
 
-  describe('updateUserRole', () => {
-    it('should update user role', async ({ task, onTestFinished }) => {
+  describe('updateUserRoles', () => {
+    it('should update user roles', async ({ task, onTestFinished }) => {
       const testData = new TestProfileUserDataManager(task.id, onTestFinished);
       const { adminUser, memberUsers } = await testData.createProfile({
         users: { admin: 1, member: 1 },
@@ -274,9 +274,9 @@ describe.concurrent('profile.users', () => {
       const caller = createCaller(await createTestContextWithSession(session));
 
       // Update member to admin
-      const result = await caller.updateUserRole({
+      const result = await caller.updateUserRoles({
         profileUserId: memberUser.profileUserId,
-        roleId: ROLES.ADMIN.id,
+        roleIds: [ROLES.ADMIN.id],
       });
 
       expect(result).toBeDefined();
@@ -297,7 +297,7 @@ describe.concurrent('profile.users', () => {
       expect(updatedUser?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
     });
 
-    it('should fail when non-admin tries to update role', async ({
+    it('should fail when non-admin tries to update roles', async ({
       task,
       onTestFinished,
     }) => {
@@ -317,9 +317,9 @@ describe.concurrent('profile.users', () => {
       const caller = createCaller(await createTestContextWithSession(session));
 
       await expect(
-        caller.updateUserRole({
+        caller.updateUserRoles({
           profileUserId: memberUser2.profileUserId,
-          roleId: ROLES.ADMIN.id,
+          roleIds: [ROLES.ADMIN.id],
         }),
       ).rejects.toThrow();
     });

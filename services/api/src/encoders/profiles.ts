@@ -85,9 +85,9 @@ export const addProfileUserInputSchema = z.object({
   personalMessage: z.string().optional(),
 });
 
-export const updateProfileUserRoleInputSchema = z.object({
+export const updateProfileUserRolesInputSchema = z.object({
   profileUserId: z.uuid(),
-  roleId: z.uuid(),
+  roleIds: z.array(z.uuid()).min(1, 'At least one role must be specified'),
 });
 
 export const removeProfileUserInputSchema = z.object({

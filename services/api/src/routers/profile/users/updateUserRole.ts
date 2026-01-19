@@ -1,24 +1,24 @@
-import { updateProfileUserRole } from '@op/common';
+import { updateProfileUserRoles } from '@op/common';
 import { z } from 'zod';
 
-import { updateProfileUserRoleInputSchema } from '../../../encoders/profiles';
+import { updateProfileUserRolesInputSchema } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const outputSchema = z.object({
   success: z.boolean(),
 });
 
-export const updateUserRoleRouter = router({
-  updateUserRole: commonAuthedProcedure()
-    .input(updateProfileUserRoleInputSchema)
+export const updateUserRolesRouter = router({
+  updateUserRoles: commonAuthedProcedure()
+    .input(updateProfileUserRolesInputSchema)
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { profileUserId, roleId } = input;
+      const { profileUserId, roleIds } = input;
 
-      const result = await updateProfileUserRole({
+      const result = await updateProfileUserRoles({
         profileUserId,
-        roleId,
+        roleIds,
         user,
       });
 

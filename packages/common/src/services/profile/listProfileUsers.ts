@@ -14,10 +14,10 @@ import { assertProfile } from '../assert';
 
 /**
  * Type for profile user query result with relations.
- * Used for listProfileUsers which includes commonUser.profile and roles.accessRole.
+ * Used for listProfileUsers which includes serviceUser.profile and roles.accessRole.
  */
 type ProfileUserWithRelations = ProfileUser & {
-  commonUser: {
+  serviceUser: {
     profile:
       | (Pick<Profile, 'id' | 'name' | 'slug' | 'bio' | 'email' | 'type'> & {
           avatarImage: { id: string; name: string | null } | null;
@@ -59,7 +59,7 @@ export const listProfileUsers = async ({
           accessRole: true,
         },
       },
-      commonUser: {
+      serviceUser: {
         with: {
           profile: {
             with: {
@@ -72,10 +72,10 @@ export const listProfileUsers = async ({
     orderBy: (table, { asc }) => [asc(table.name), asc(table.email)],
   });
 
-  // Transform the data to a clean format
+  // Transform the data to a simpler format
   return members.map((member) => {
     const typedMember = member as ProfileUserWithRelations;
-    const userProfile = typedMember.commonUser?.profile;
+    const userProfile = typedMember.serviceUser?.profile;
 
     return {
       id: member.id,

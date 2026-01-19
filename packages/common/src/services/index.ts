@@ -18,7 +18,7 @@ export {
   inviteUsersToProfile,
   listProfileUsers,
   addProfileUser,
-  updateProfileUserRole,
+  updateProfileUserRoles,
   removeProfileUser,
 } from './profile';
 export {

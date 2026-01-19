@@ -2,12 +2,12 @@ import { mergeRouters } from '../../../trpcFactory';
 import { addUserRouter } from './addUser';
 import { listUsersRouter } from './listUsers';
 import { removeUserRouter } from './removeUser';
-import { updateUserRoleRouter } from './updateUserRole';
+import { updateUserRolesRouter } from './updateUserRole';
 
 export const usersRouter = mergeRouters(
   listUsersRouter,
   addUserRouter,
-  updateUserRoleRouter,
+  updateUserRolesRouter,
   removeUserRouter,
 );
 
@@ -15,5 +15,5 @@ export {
   addUserRouter,
   listUsersRouter,
   removeUserRouter,
-  updateUserRoleRouter,
+  updateUserRolesRouter,
 };
