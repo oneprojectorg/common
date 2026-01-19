@@ -17,33 +17,30 @@ import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 export function StandardDecisionPage({
   instanceId,
   slug,
+  allowProposals,
+  description,
+  currentPhaseId,
+  maxVotesPerMember,
 }: {
   instanceId: string;
   slug: string;
+  /** Whether proposal submission is allowed in the current phase */
+  allowProposals: boolean;
+  /** Description to show in the action bar */
+  description?: string;
+  /** Current phase ID - used for slug-specific hero content */
+  currentPhaseId?: string;
+  /** Max votes per member - used for one-project specific content */
+  maxVotesPerMember?: number;
 }) {
   const t = useTranslations();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instanceId,
+    limit: 20,
+  });
 
-  const phases = instance.process?.processSchema?.phases ?? [];
-  const currentPhaseId = instance.instanceData.currentPhaseId;
-  const currentPhase = phases.find((phase) => phase.id === currentPhaseId);
-
-  const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
   const uniqueSubmitters = getUniqueSubmitters(proposals);
-
-  const description = instance?.description?.match('PPDESCRIPTION')
-    ? t('PPDESCRIPTION')
-    : (instance.description ?? instance.process?.description ?? undefined);
-
-  const maxVotesPerMember = instance?.instanceData?.fieldValues
-    ?.maxVotesPerMember as number;
 
   // Organization-specific content
   const heroContent = match(slug, {

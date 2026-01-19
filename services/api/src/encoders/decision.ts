@@ -93,6 +93,8 @@ export const decisionSchemaDefinitionEncoder = z.object({
   description: z.string().optional(),
   config: processConfigEncoder.optional(),
   phases: z.array(phaseDefinitionEncoder).min(1),
+  // Optional proposal template for budget/field configuration (legacy compatibility)
+  proposalTemplate: jsonSchemaEncoder.optional(),
 });
 
 /** Decision process encoder */

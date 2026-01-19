@@ -3,6 +3,8 @@
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
 
+import { useTranslations } from '@/lib/i18n/routing';
+
 import { ResultsPage } from './pages/ResultsPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
@@ -25,14 +27,35 @@ function DecisionStateRouterNew({
   instanceId: string;
   slug: string;
 }) {
+  const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const { currentStateId } = instance;
 
+  // Derive values for StandardDecisionPage (format-agnostic)
+  const phases = instance.process?.processSchema?.phases ?? [];
+  const currentPhaseId = instance.instanceData.currentPhaseId;
+  const currentPhase = phases.find((phase) => phase.id === currentPhaseId);
+  const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
+  const description = instance?.description?.match('PPDESCRIPTION')
+    ? t('PPDESCRIPTION')
+    : (instance.description ?? instance.process?.description ?? undefined);
+  const maxVotesPerMember = instance?.instanceData?.fieldValues
+    ?.maxVotesPerMember as number | undefined;
+
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,
     voting: () => <VotingPage instanceId={instanceId} slug={slug} />,
-    _: () => <StandardDecisionPage instanceId={instanceId} slug={slug} />,
+    _: () => (
+      <StandardDecisionPage
+        instanceId={instanceId}
+        slug={slug}
+        allowProposals={allowProposals}
+        description={description}
+        currentPhaseId={currentPhaseId}
+        maxVotesPerMember={maxVotesPerMember}
+      />
+    ),
   });
 }
 
