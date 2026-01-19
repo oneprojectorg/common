@@ -16,22 +16,12 @@ const TEST_ENV = {
 
 export default defineConfig({
   test: {
-    fileParallelism: true,
-    maxConcurrency: 10, // Allow up to 10 concurrent tests
     environment: 'node',
     globals: true,
     globalSetup: ['./src/test/globalSetup.ts'],
     setupFiles: ['./src/test/setup.ts'],
-    testTimeout: 30000, // Increased timeout for database operations
-    hookTimeout: 30000, // Increased timeout for setup/teardown
-    // Enable parallel execution with multiple threads
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        minThreads: 1,
-        maxThreads: 4, // Use up to 4 worker threads
-      },
-    },
+    testTimeout: 30000,
+    hookTimeout: 30000,
     // Set actual process.env values - works in globalSetup and setupFiles
     env: TEST_ENV,
   },
