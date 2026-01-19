@@ -10,6 +10,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type {
   DecisionInstanceData,
   PhaseOverride,
@@ -184,14 +185,20 @@ export const updateDecisionInstance = async ({
 
     // Determine the final status (updated or existing)
     const finalStatus = status ?? existingInstance.status;
+    const wasPublished =
+      status === ProcessStatus.PUBLISHED &&
+      existingInstance.status === ProcessStatus.DRAFT;
 
     // If status is DRAFT, remove all transitions
     if (finalStatus === ProcessStatus.DRAFT) {
       await tx
         .delete(decisionProcessTransitions)
         .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
+    } else if (wasPublished) {
+      // When publishing a draft, create transitions for all date-based phases
+      await createTransitionsForProcess({ processInstance: updatedInstance });
     } else if (phases && phases.length > 0) {
-      // If phases were updated and not DRAFT, update the corresponding transitions
+      // If phases were updated and already published, update the corresponding transitions
       await updateTransitionsForProcess({
         processInstance: updatedInstance,
         tx,

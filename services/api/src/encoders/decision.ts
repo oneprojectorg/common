@@ -23,7 +23,7 @@ const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 // DecisionSchemaDefinition format encoders
 // ============================================================================
 
-/** Phase behavior rules */
+/** Phase behavior rules  */
 const phaseRulesEncoder = z.object({
   proposals: z
     .object({
@@ -127,7 +127,7 @@ export const decisionProcessWithSchemaEncoder = createSelectSchema(
     createdBy: baseProfileEncoder.optional(),
   });
 
-/** List encoder for decision processes with new schema format */
+/** List encoder for decision processes */
 export const decisionProcessWithSchemaListEncoder = z.object({
   processes: z.array(decisionProcessWithSchemaEncoder),
   total: z.number(),
@@ -229,7 +229,7 @@ export const decisionProfileWithSchemaFilterSchema = z.object({
 // Legacy format encoders (for backwards compatibility)
 // ============================================================================
 
-// Shared process phase schema
+// Shared process phase schema (legacy format)
 export const processPhaseSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -244,71 +244,145 @@ export const processPhaseSchema = z.object({
   type: z.enum(['initial', 'intermediate', 'final']).optional(),
 });
 
-// Process Schema Encoder
-const processSchemaEncoder = z.object({
-  name: z.string(),
-  description: z.string().optional(),
-  budget: z.number().optional(),
-  fields: jsonSchemaEncoder.optional(),
-  states: z.array(
-    processPhaseSchema.extend({
-      fields: jsonSchemaEncoder.optional(),
-      config: z
+// =============================================================================
+// Legacy Phase Rules Encoder (for backwards compatibility)
+// =============================================================================
+const legacyPhaseRulesEncoder = z
+  .object({
+    proposals: z
+      .object({
+        submit: z.boolean().optional(),
+        edit: z.boolean().optional(),
+      })
+      .passthrough()
+      .optional(),
+    voting: z
+      .object({
+        submit: z.boolean().optional(),
+        edit: z.boolean().optional(),
+      })
+      .passthrough()
+      .optional(),
+    advancement: z
+      .object({
+        method: z.enum(['date', 'manual']),
+        endDate: z.string().optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+const legacySelectionPipelineEncoder = z
+  .object({
+    steps: z.array(
+      z
         .object({
-          allowProposals: z.boolean().optional(),
-          allowDecisions: z.boolean().optional(),
-          visibleComponents: z.array(z.string()).optional(),
+          type: z.string(),
+          config: z.record(z.string(), z.unknown()).optional(),
         })
-        .optional(),
-    }),
-  ),
-  transitions: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      from: z.union([z.string(), z.array(z.string())]),
-      to: z.string(),
-      rules: z
-        .object({
-          type: z.enum(['manual', 'automatic']),
-          conditions: z
+        .passthrough(),
+    ),
+  })
+  .passthrough();
+
+const legacyPhaseDefinitionEncoder = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    rules: legacyPhaseRulesEncoder,
+    selectionPipeline: legacySelectionPipelineEncoder.optional(),
+    settings: jsonSchemaEncoder.optional(),
+  })
+  .passthrough();
+
+// =============================================================================
+// Process Schema Encoder (supports both legacy and new formats)
+// =============================================================================
+const processSchemaEncoder = z
+  .object({
+    name: z.string(),
+    description: z.string().optional(),
+
+    // --- New format fields (DecisionSchemaDefinition) ---
+    id: z.string().optional(),
+    version: z.string().optional(),
+    config: z
+      .object({
+        hideBudget: z.boolean().optional(),
+      })
+      .passthrough()
+      .optional(),
+    phases: z.array(legacyPhaseDefinitionEncoder).optional(),
+
+    // --- DEPRECATED: Legacy format fields (to be removed after migration) ---
+    budget: z.number().optional(),
+    fields: jsonSchemaEncoder.optional(),
+    states: z
+      .array(
+        processPhaseSchema.extend({
+          fields: jsonSchemaEncoder.optional(),
+          config: z
+            .object({
+              allowProposals: z.boolean().optional(),
+              allowDecisions: z.boolean().optional(),
+              visibleComponents: z.array(z.string()).optional(),
+            })
+            .optional(),
+        }),
+      )
+      .optional(),
+    transitions: z
+      .array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          from: z.union([z.string(), z.array(z.string())]),
+          to: z.string(),
+          rules: z
+            .object({
+              type: z.enum(['manual', 'automatic']),
+              conditions: z
+                .array(
+                  z.object({
+                    type: z.enum([
+                      'time',
+                      'proposalCount',
+                      'participationCount',
+                      'approvalRate',
+                      'customField',
+                    ]),
+                    operator: z.enum([
+                      'equals',
+                      'greaterThan',
+                      'lessThan',
+                      'between',
+                    ]),
+                    value: z.unknown().optional(),
+                    field: z.string().optional(),
+                  }),
+                )
+                .optional(),
+              requireAll: z.boolean().optional(),
+            })
+            .optional(),
+          actions: z
             .array(
               z.object({
-                type: z.enum([
-                  'time',
-                  'proposalCount',
-                  'participationCount',
-                  'approvalRate',
-                  'customField',
-                ]),
-                operator: z.enum([
-                  'equals',
-                  'greaterThan',
-                  'lessThan',
-                  'between',
-                ]),
-                value: z.unknown().optional(),
-                field: z.string().optional(),
+                type: z.enum(['notify', 'updateField', 'createRecord']),
+                config: z.record(z.string(), z.unknown()),
               }),
             )
             .optional(),
-          requireAll: z.boolean().optional(),
-        })
-        .optional(),
-      actions: z
-        .array(
-          z.object({
-            type: z.enum(['notify', 'updateField', 'createRecord']),
-            config: z.record(z.string(), z.unknown()),
-          }),
-        )
-        .optional(),
-    }),
-  ),
-  initialState: z.string(),
-  decisionDefinition: jsonSchemaEncoder,
-  proposalTemplate: jsonSchemaEncoder,
-});
+        }),
+      )
+      .optional(),
+    initialState: z.string().optional(),
+    decisionDefinition: jsonSchemaEncoder.optional(),
+    proposalTemplate: jsonSchemaEncoder.optional(),
+  })
+  .passthrough();
 
 // Instance Data Encoder that supports both new and legacy field names
 const instanceDataEncoder = z.preprocess(

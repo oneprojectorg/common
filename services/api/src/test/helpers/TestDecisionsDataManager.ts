@@ -1,3 +1,4 @@
+import { createTransitionsForProcess } from '@op/common';
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
@@ -21,6 +22,7 @@ import type {
   decisionSchemaDefinitionEncoder,
   processInstanceWithSchemaEncoder,
 } from '../../encoders/decision';
+import type { legacyProcessInstanceEncoder } from '../../encoders/legacyDecision';
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
 import {
@@ -45,9 +47,18 @@ interface CreateDecisionSetupOptions {
 }
 
 type EncodedProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
+type LegacyEncodedProcessInstance = z.infer<
+  typeof legacyProcessInstanceEncoder
+>;
 
 interface CreatedInstance {
   instance: EncodedProcessInstance;
+  profileId: string;
+  slug: string;
+}
+
+interface LegacyCreatedInstance {
+  instance: LegacyEncodedProcessInstance;
   profileId: string;
   slug: string;
 }
@@ -344,6 +355,16 @@ export class TestDecisionsDataManager {
         .update(processInstances)
         .set({ status })
         .where(eq(processInstances.id, profile.processInstance.id));
+
+      // If publishing, create transitions for the instance
+      if (status === ProcessStatus.PUBLISHED) {
+        const fullInstance = await db.query.processInstances.findFirst({
+          where: eq(processInstances.id, profile.processInstance.id),
+        });
+        if (fullInstance) {
+          await createTransitionsForProcess({ processInstance: fullInstance });
+        }
+      }
     }
 
     // Update budget if needed (instanceData may not include budget from template)
@@ -371,6 +392,122 @@ export class TestDecisionsDataManager {
 
     return {
       instance: profile.processInstance,
+      profileId,
+      slug: profile.slug,
+    };
+  }
+
+  /**
+   * Creates a process instance with custom instanceData.
+   * Use this when you need to control phase dates, advancement methods, or other
+   * instance configuration for testing specific scenarios like transition processing.
+   *
+   * @example
+   * ```ts
+   * const instance = await testData.createInstanceWithCustomData({
+   *   caller,
+   *   processId: process.id,
+   *   name: 'Test Instance',
+   *   instanceData: {
+   *     currentPhaseId: 'submission',
+   *     phases: [
+   *       {
+   *         phaseId: 'submission',
+   *         startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+   *         endDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // Past date
+   *         rules: { advancement: { method: 'date' } },
+   *       },
+   *       // ... more phases
+   *     ],
+   *   },
+   * });
+   * ```
+   */
+  async createInstanceWithCustomData({
+    caller,
+    processId,
+    process,
+    user,
+    name,
+    instanceData,
+    status,
+  }: {
+    caller?: Awaited<
+      ReturnType<TestDecisionsDataManager['createAuthenticatedCaller']>
+    >;
+    processId?: string;
+    process?: EncodedDecisionProcess;
+    user?: User;
+    name: string;
+    instanceData: Record<string, unknown>;
+    status?: ProcessStatus;
+  }): Promise<LegacyCreatedInstance> {
+    this.ensureCleanupRegistered();
+
+    // Resolve caller - either use provided caller or create one from user
+    let resolvedCaller = caller;
+    if (!resolvedCaller && user?.email) {
+      resolvedCaller = await this.createAuthenticatedCaller(user.email);
+    }
+    if (!resolvedCaller) {
+      throw new Error('Either caller or user with email must be provided');
+    }
+
+    // Resolve processId - either use provided processId or get from process object
+    const resolvedProcessId = processId ?? process?.id;
+    if (!resolvedProcessId) {
+      throw new Error('Either processId or process must be provided');
+    }
+
+    const instance = await resolvedCaller.decision.createInstance({
+      processId: resolvedProcessId,
+      name: this.generateUniqueName(name),
+      description: `Test instance ${name}`,
+      instanceData,
+    });
+
+    // Query the database for the profileId (not exposed in the API response)
+    const [instanceRecord] = await db
+      .select({ profileId: processInstances.profileId })
+      .from(processInstances)
+      .where(eq(processInstances.id, instance.id));
+
+    const profileId = instanceRecord?.profileId;
+    if (!profileId) {
+      throw new Error(`Could not find profileId for instance ${instance.id}`);
+    }
+
+    this.createdProfileIds.push(profileId);
+
+    // Update status if provided (direct DB update since there's no router for this)
+    if (status) {
+      await db
+        .update(processInstances)
+        .set({ status })
+        .where(eq(processInstances.id, instance.id));
+
+      // If publishing, create transitions for the instance
+      if (status === ProcessStatus.PUBLISHED) {
+        const fullInstance = await db.query.processInstances.findFirst({
+          where: eq(processInstances.id, instance.id),
+        });
+        if (fullInstance) {
+          await createTransitionsForProcess({ processInstance: fullInstance });
+        }
+      }
+    }
+
+    // Fetch the profile to get the slug
+    const profile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, profileId),
+    });
+
+    if (!profile) {
+      throw new Error(`Profile not found for instance: ${instance.id}`);
+    }
+
+    return {
+      instance,
       profileId,
       slug: profile.slug,
     };
@@ -545,10 +682,12 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Generates a unique name with UUID first to avoid truncation issues with slug generation
+   * Generates a unique name with UUID first to survive slug truncation.
+   * Profile slugs are truncated to ~30 chars, so UUID must be at the start.
    */
   private generateUniqueName(baseName: string): string {
-    return `${randomUUID()}-${baseName}-${this.testId}`;
+    // UUID first ensures uniqueness survives slug truncation
+    return `${randomUUID().substring(0, 8)}-${baseName}`;
   }
 
   /**
