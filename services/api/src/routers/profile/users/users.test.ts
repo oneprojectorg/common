@@ -129,7 +129,7 @@ describe.concurrent('profile.users', () => {
       const result = await caller.addUser({
         profileId: profile.id,
         email: standaloneUser.email,
-        roleId: ROLES.MEMBER.id,
+        roleIds: [ROLES.MEMBER.id],
       });
 
       expect(result).toBeDefined();
@@ -177,7 +177,7 @@ describe.concurrent('profile.users', () => {
         caller.addUser({
           profileId: profile.id,
           email: memberUser.email,
-          roleId: ROLES.MEMBER.id,
+          roleIds: [ROLES.MEMBER.id],
         }),
       ).rejects.toThrow();
     });
@@ -205,7 +205,7 @@ describe.concurrent('profile.users', () => {
         caller.addUser({
           profileId: profile.id,
           email: standaloneUser.email,
-          roleId: ROLES.MEMBER.id,
+          roleIds: [ROLES.MEMBER.id],
         }),
       ).rejects.toThrow();
     });
@@ -230,7 +230,7 @@ describe.concurrent('profile.users', () => {
       const result = await caller.addUser({
         profileId: profile.id,
         email: newEmail,
-        roleId: ROLES.MEMBER.id,
+        roleIds: [ROLES.MEMBER.id],
         personalMessage,
       });
 
@@ -248,12 +248,12 @@ describe.concurrent('profile.users', () => {
       const metadata = allowListEntry?.metadata as {
         personalMessage?: string;
         inviteType?: string;
-        roleId?: string;
+        roleIds?: string[];
         profileId?: string;
       };
       expect(metadata.personalMessage).toBe(personalMessage);
       expect(metadata.inviteType).toBe('profile');
-      expect(metadata.roleId).toBe(ROLES.MEMBER.id);
+      expect(metadata.roleIds).toEqual([ROLES.MEMBER.id]);
       expect(metadata.profileId).toBe(profile.id);
     });
   });

@@ -15,12 +15,12 @@ export const addUserRouter = router({
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { profileId, email, roleId, personalMessage } = input;
+      const { profileId, email, roleIds, personalMessage } = input;
 
       const result = await addProfileUser({
         profileId,
         email,
-        roleId,
+        roleIds,
         personalMessage,
         user,
       });

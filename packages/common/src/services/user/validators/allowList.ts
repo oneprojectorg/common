@@ -13,7 +13,8 @@ export const allowListMetadataSchema = z
       .enum(['existing_organization', 'new_organization', 'profile'])
       .optional(),
     personalMessage: z.string().optional(),
-    roleId: z.string().optional(),
+    roleId: z.string().optional(), // Legacy single role
+    roleIds: z.array(z.string()).optional(), // Multiple roles
     profileId: z.string().optional(),
     organizationId: z.string().optional(),
     inviterOrganizationName: z.string().optional(),

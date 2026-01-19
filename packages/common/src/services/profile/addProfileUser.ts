@@ -15,21 +15,25 @@ import { assertProfile } from '../assert';
 import type { AllowListMetadata } from '../user/validators';
 
 /**
- * Add a member to a profile
+ * Add a member to a profile with one or more roles
  */
 export const addProfileUser = async ({
   profileId,
   email,
-  roleId,
+  roleIds,
   personalMessage,
   user,
 }: {
   profileId: string;
   email: string;
-  roleId: string;
+  roleIds: string[];
   personalMessage?: string;
   user: User;
 }) => {
+  if (roleIds.length === 0) {
+    throw new CommonError('At least one role must be specified');
+  }
+
   const [profile, currentProfileUser] = await Promise.all([
     assertProfile(profileId),
     getProfileAccessUser({ user, profileId }),
@@ -43,9 +47,9 @@ export const addProfileUser = async ({
 
   const normalizedEmail = email.toLowerCase();
 
-  const [targetRole, existingUser] = await Promise.all([
-    db.query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, roleId),
+  const [validRoles, existingUser] = await Promise.all([
+    db.query.accessRoles.findMany({
+      where: (table, { inArray }) => inArray(table.id, roleIds),
     }),
     db.query.users.findFirst({
       where: (table, { eq }) => eq(table.email, normalizedEmail),
@@ -57,8 +61,12 @@ export const addProfileUser = async ({
     }),
   ]);
 
-  if (!targetRole) {
-    throw new CommonError('Invalid role specified');
+  if (validRoles.length !== roleIds.length) {
+    const validRoleIds = new Set(validRoles.map((r) => r.id));
+    const invalidRoleIds = roleIds.filter((id) => !validRoleIds.has(id));
+    throw new CommonError(
+      `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
+    );
   }
 
   if (existingUser && existingUser.profileUsers.length > 0) {
@@ -79,10 +87,12 @@ export const addProfileUser = async ({
         .returning();
 
       if (newProfileUser) {
-        await tx.insert(profileUserToAccessRoles).values({
-          profileUserId: newProfileUser.id,
-          accessRoleId: targetRole.id,
-        });
+        await tx.insert(profileUserToAccessRoles).values(
+          roleIds.map((accessRoleId) => ({
+            profileUserId: newProfileUser.id,
+            accessRoleId,
+          })),
+        );
       }
     });
 
@@ -101,7 +111,7 @@ export const addProfileUser = async ({
       invitedAt: new Date().toISOString(),
       inviteType: 'profile',
       personalMessage,
-      roleId,
+      roleIds,
       profileId,
       inviterProfileName: profile.name,
     };

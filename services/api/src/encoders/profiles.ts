@@ -81,7 +81,7 @@ export const listProfileUsersInputSchema = z.object({
 export const addProfileUserInputSchema = z.object({
   profileId: z.uuid(),
   email: z.string().email(),
-  roleId: z.uuid(),
+  roleIds: z.array(z.uuid()).min(1, 'At least one role must be specified'),
   personalMessage: z.string().optional(),
 });
 
