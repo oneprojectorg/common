@@ -11,7 +11,7 @@ import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 // import { processResults } from './processResults';
-import type { ProcessSchema, StateDefinition } from './types';
+import type { DecisionInstanceData } from './schemas/instanceData';
 
 /** Transition with nested process instance and process relations */
 type TransitionWithRelations = DecisionProcessTransition & {
@@ -167,12 +167,12 @@ async function processTransition(transitionId: string): Promise<void> {
     throw new CommonError(`Process not found: ${processInstance.processId}`);
   }
 
-  const processSchema = process.processSchema as ProcessSchema;
-  const toState = processSchema.states.find(
-    (state: StateDefinition) => state.id === transition.toStateId,
-  );
-
-  const isTransitioningToFinalState = toState?.type === 'final';
+  // Determine if transitioning to final state using instanceData.phases
+  // In the new schema format, the last phase is always the final state
+  const instanceData = processInstance.instanceData as DecisionInstanceData;
+  const phases = instanceData.phases;
+  const lastPhaseId = phases[phases.length - 1]?.phaseId;
+  const isTransitioningToFinalState = transition.toStateId === lastPhaseId;
 
   // Update both the process instance and transition in a single transaction
   // to ensure atomicity and prevent partial state updates
