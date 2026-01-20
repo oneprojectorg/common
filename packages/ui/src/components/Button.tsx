@@ -26,7 +26,8 @@ const buttonStyle = tv({
       verified:
         'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
       neutral:
-        'border bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
+        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
+      warn: 'bg-yellow-50 text-yellow-700 shadow-light hover:bg-yellow-100/75 hover:text-yellow-800 pressed:bg-yellow-100/80',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
       ghost:
