@@ -1054,8 +1054,8 @@ importers:
         specifier: 'catalog:'
         version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       drizzle-zod:
-        specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12)
+        specifier: 1.0.0-beta.11-05230d9
+        version: 1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12)
       fast-xml-parser:
         specifier: ^5.2.1
         version: 5.3.2
@@ -1152,8 +1152,8 @@ importers:
         specifier: 'catalog:'
         version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       drizzle-seed:
-        specifier: 1.0.0-beta.9-e89174b
-        version: 1.0.0-beta.9-e89174b(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))
+        specifier: 1.0.0-beta.11-05230d9
+        version: 1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))
       pg:
         specifier: ^8.16.0
         version: 8.16.0
@@ -6079,15 +6079,15 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-seed@1.0.0-beta.9-e89174b:
-    resolution: {integrity: sha512-E6zVvB2G9Ne1owpQ+0Sa4Ttix+FSHXePvoceWwLXqT8SfQLYHbxI2LGvJZCa357+Mh5ptc8DxJvnfrN2uWQTJA==}
+  drizzle-seed@1.0.0-beta.11-05230d9:
+    resolution: {integrity: sha512-ppHJ2NoxrBXJuK1TkippMCTw6taNQ29x9qcUmooSkEU26nQUsIjoiefPKMS1heajT8yoqPfZBBkPE+SCJ91kKw==}
     peerDependencies:
       drizzle-orm: '>=1.0.0-beta.2'
 
-  drizzle-zod@0.8.3:
-    resolution: {integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==}
+  drizzle-zod@1.0.0-beta.11-05230d9:
+    resolution: {integrity: sha512-uWaoWt/TRUSCVbQqPWwavBEhddQyJUhQvy6A4OgvoIWkch2dJBcguZsJ2wSiN9D5wgd6S8rUrtpnuJ+ooqd19Q==}
     peerDependencies:
-      drizzle-orm: '>=0.36.0'
+      drizzle-orm: '>=1.0.0-beta.2'
       zod: ^3.25.0 || ^4.0.0
 
   dunder-proto@1.0.1:
@@ -14583,12 +14583,12 @@ snapshots:
       pg: 8.16.0
       postgres: 3.4.5
 
-  drizzle-seed@1.0.0-beta.9-e89174b(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)):
+  drizzle-seed@1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)):
     dependencies:
       drizzle-orm: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       pure-rand: 6.1.0
 
-  drizzle-zod@0.8.3(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12):
+  drizzle-zod@1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12):
     dependencies:
       drizzle-orm: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       zod: 4.1.12
