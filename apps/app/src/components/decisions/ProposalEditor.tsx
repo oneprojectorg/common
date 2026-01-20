@@ -191,10 +191,6 @@ export function ProposalEditor({
   }, [isEditMode, parsedProposalData, descriptionGuidance]);
 
   // Mutations
-  const createProposalMutation = trpc.decision.createProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'create'),
-  });
-
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
       posthog?.capture('submit_proposal_success', {
@@ -307,36 +303,24 @@ export function ProposalEditor({
         proposalData.budget = budget;
       }
 
-      if (isEditMode && existingProposal) {
-        // Update existing proposal
-        await updateProposalMutation.mutateAsync({
-          proposalId: existingProposal.id,
-          data: { proposalData, attachmentIds },
-        });
+      if (!existingProposal) {
+        throw new Error('No proposal to update');
+      }
 
-        // If draft, also submit (transition to submitted status)
-        if (isDraft) {
-          await submitProposalMutation.mutateAsync({
-            proposalId: existingProposal.id,
-          });
-        }
-      } else {
-        // Create new proposal as draft, then submit
-        const draft = await createProposalMutation.mutateAsync({
-          processInstanceId: instance.id,
-          proposalData,
-          attachmentIds,
-        });
+      // Update existing proposal
+      await updateProposalMutation.mutateAsync({
+        proposalId: existingProposal.id,
+        data: { proposalData, attachmentIds },
+      });
 
+      // If draft, also submit (transition to submitted status)
+      if (isDraft) {
         await submitProposalMutation.mutateAsync({
-          proposalId: draft.id,
+          proposalId: existingProposal.id,
         });
       }
     } catch (error) {
-      console.error(
-        `Failed to ${isEditMode ? 'update' : 'submit'} proposal:`,
-        error,
-      );
+      console.error('Failed to update proposal:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -347,12 +331,9 @@ export function ProposalEditor({
     budget,
     collabDocId,
     categories,
-    instance.id,
-    isEditMode,
     existingProposal,
     isDraft,
     imageAttachments,
-    createProposalMutation,
     submitProposalMutation,
     updateProposalMutation,
   ]);
