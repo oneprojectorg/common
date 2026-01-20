@@ -6,6 +6,7 @@ import { Avatar } from '@op/ui/Avatar';
 import { Header1, Header2 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,10 +14,6 @@ import { useTranslations } from '@/lib/i18n';
 type DecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;
 
 export const ProcessBuilderProcessSelector = () => {
-  // Get available templates
-  const { data: templatesData, isLoading: isLoadingTemplates } =
-    trpc.decision.listProcesses.useQuery({});
-  const templates = templatesData?.processes;
   const t = useTranslations();
 
   return (
@@ -26,30 +23,27 @@ export const ProcessBuilderProcessSelector = () => {
           {t('How do you want to structure your decision-making process?')}
         </Header1>
         <div className="flex w-full flex-wrap items-stretch justify-center gap-4">
-          {isLoadingTemplates ? (
-            <>
-              <ProcessCardSkeleton />
-              <ProcessCardSkeleton />
-            </>
-          ) : (
-            <ProcessSelector templates={templates} />
-          )}
+          <Suspense fallback={<TemplateListSkeleton />}>
+            <TemplateList />
+          </Suspense>
         </div>
       </div>
     </div>
   );
 };
 
-const ProcessSelector = ({ templates }: { templates?: DecisionProcess[] }) => {
+const TemplateList = () => {
   const router = useRouter();
+  const t = useTranslations();
+  const [templatesData] = trpc.decision.listProcesses.useSuspenseQuery({});
+  const templates = templatesData?.processes;
+
   const createDecisionInstance =
     trpc.decision.createInstanceFromTemplate.useMutation({
       onSuccess: (data) => {
         router.push(`/decisions/edit/${data.slug}`);
       },
     });
-
-  const t = useTranslations();
 
   if (!templates?.length) {
     return (
@@ -59,7 +53,7 @@ const ProcessSelector = ({ templates }: { templates?: DecisionProcess[] }) => {
     );
   }
 
-  return Object.values(templates).map((template) => (
+  return templates.map((template) => (
     <ProcessBuilderProcessCard
       key={template.id}
       template={template}
@@ -98,7 +92,7 @@ export const ProcessBuilderProcessCard = ({
   );
 };
 
-const ProcessCardSkeleton = () => {
+const TemplateCardSkeleton = () => {
   return (
     <div className="flex w-full flex-col items-start gap-4 rounded-lg border bg-white p-6 sm:w-72 sm:items-center md:aspect-[4/3] md:w-90 md:p-12">
       <div className="flex gap-2 md:flex-col md:items-center md:gap-6">
@@ -110,5 +104,14 @@ const ProcessCardSkeleton = () => {
         <Skeleton className="h-3 w-50" />
       </div>
     </div>
+  );
+};
+
+const TemplateListSkeleton = () => {
+  return (
+    <>
+      <TemplateCardSkeleton />
+      <TemplateCardSkeleton />
+    </>
   );
 };
