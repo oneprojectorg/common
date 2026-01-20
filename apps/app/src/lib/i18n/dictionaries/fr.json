@@ -434,5 +434,7 @@
   "You are about to delete this account. This action cannot be undone.": "Vous êtes sur le point de supprimer ce compte. Cette action est irréversible.",
   "{profileName} has been deleted. All associated data have been permanently removed.": "{profileName} a été supprimé. Toutes les données associées ont été définitivement supprimées.",
   "User avatar": "Avatar de l'utilisateur",
-  "Done": "Terminé"
+  "Done": "Terminé",
+  "How do you want to structure your decision-making process?": "Comment souhaitez-vous structurer votre processus de prise de décision ?",
+  "No templates found": "Aucun modèle trouvé"
 }

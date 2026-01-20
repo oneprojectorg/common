@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from 'next';
 import { getLocale } from 'next-intl/server';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
@@ -84,7 +85,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >
           <PostHogProvider>
-            <IconProvider>{children}</IconProvider>
+            <NuqsAdapter>
+              <IconProvider>{children}</IconProvider>
+            </NuqsAdapter>
           </PostHogProvider>
           <ReactQueryDevtools initialIsOpen={false} />
           <Toast />

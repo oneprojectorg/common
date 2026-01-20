@@ -434,5 +434,7 @@
   "You are about to delete this account. This action cannot be undone.": "You are about to delete this account. This action cannot be undone.",
   "{profileName} has been deleted. All associated data have been permanently removed.": "{profileName} has been deleted. All associated data have been permanently removed.",
   "User avatar": "User avatar",
-  "Done": "Done"
+  "Done": "Done",
+  "How do you want to structure your decision-making process?": "How do you want to structure your decision-making process?",
+  "No templates found": "No templates found"
 }

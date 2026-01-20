@@ -433,5 +433,7 @@
   "You are about to delete this account. This action cannot be undone.": "Estás a punto de eliminar esta cuenta. Esta acción no se puede deshacer.",
   "{profileName} has been deleted. All associated data have been permanently removed.": "{profileName} ha sido eliminada. Todos los datos asociados han sido eliminados permanentemente.",
   "User avatar": "Avatar del usuario",
-  "Done": "Listo"
+  "Done": "Listo",
+  "How do you want to structure your decision-making process?": "¿Cómo quieres estructurar tu proceso de toma de decisiones?",
+  "No templates found": "No se encontraron plantillas"
 }
