@@ -29,7 +29,11 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
     <Suspense fallback={<DecisionHeaderSkeleton />}>
       <DecisionHeader instanceId={instanceId} slug={ownerSlug}>
         <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionStateRouter instanceId={instanceId} slug={ownerSlug} />
+          <DecisionStateRouter
+            instanceId={instanceId}
+            slug={ownerSlug}
+            decisionSlug={slug}
+          />
         </Suspense>
       </DecisionHeader>
     </Suspense>

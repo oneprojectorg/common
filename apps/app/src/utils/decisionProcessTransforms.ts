@@ -3,7 +3,9 @@ import type { InstanceData, ProcessSchema } from '@op/common';
 import type { SchemaType } from '../components/Profile/CreateDecisionProcessModal/schemas/schemaLoader';
 
 // Type definitions for data transformation
-export interface ProcessInstance {
+
+/** Legacy ProcessInstance - uses states-based ProcessSchema format */
+export interface LegacyProcessInstance {
   id: string;
   name: string;
   description?: string | null;
@@ -49,7 +51,7 @@ interface FormPhaseData {
  * that can be used in the multi-step form
  */
 export const transformInstanceDataToFormData = (
-  instance: ProcessInstance,
+  instance: LegacyProcessInstance,
   schemaDefaults: Record<string, unknown>,
 ): Record<string, unknown> => {
   const formData: Record<string, unknown> = {

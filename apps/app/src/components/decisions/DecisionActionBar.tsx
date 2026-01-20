@@ -34,9 +34,7 @@ export const DecisionActionBar = ({
   const createProposalMutation = trpc.decision.createProposal.useMutation({
     onSuccess: (proposal) => {
       // Navigate to edit the newly created draft proposal
-      router.push(
-        `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`,
-      );
+      router.push(`/decisions/${slug}/proposal/${proposal.profileId}/edit`);
     },
     onError: (error) => {
       setIsCreating(false);

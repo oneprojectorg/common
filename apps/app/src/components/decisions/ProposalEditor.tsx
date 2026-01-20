@@ -1,6 +1,5 @@
 'use client';
 
-import { ProcessInstance } from '@/utils/decisionProcessTransforms';
 import {
   type ImageAttachment,
   extractAttachmentIdsFromUrls,
@@ -8,7 +7,11 @@ import {
 } from '@/utils/proposalContentProcessor';
 import { parseProposalData } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
-import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
+import {
+  type ProcessInstance,
+  ProposalStatus,
+  type proposalEncoder,
+} from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
@@ -376,21 +379,23 @@ export function ProposalEditor({
       }
 
       if (isEditMode && existingProposal) {
+        // First, save the proposal data (for both drafts and submitted proposals)
+        await updateProposalMutation.mutateAsync({
+          proposalId: existingProposal.id,
+          data: {
+            proposalData,
+            attachmentIds, // Include attachment IDs for updates
+          },
+        });
+
+        // If it's a draft, also transition to submitted status
         if (isDraft) {
-          // Submit draft proposal - validates and transitions to 'submitted' status
           await submitProposalMutation.mutateAsync({
             proposalId: existingProposal.id,
           });
-        } else {
-          // Update existing submitted proposal - navigation handled in onSuccess callback
-          await updateProposalMutation.mutateAsync({
-            proposalId: existingProposal.id,
-            data: {
-              proposalData,
-              attachmentIds, // Include attachment IDs for updates
-            },
-          });
         }
+        // Note: navigation is handled in the mutation's onSuccess callbacks
+        return;
       } else {
         // Create new proposal - navigation handled in onSuccess callback
         await createProposalMutation.mutateAsync({

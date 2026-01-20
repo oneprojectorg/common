@@ -16,9 +16,12 @@ import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 export function VotingPage({
   instanceId,
   slug,
+  decisionSlug,
 }: {
   instanceId: string;
   slug: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
 }) {
   const t = useTranslations();
 
@@ -28,9 +31,7 @@ export function VotingPage({
         processInstanceId: instanceId,
         limit: 20,
       }),
-      t.decision.getInstance({
-        instanceId,
-      }),
+      t.decision.getInstance({ instanceId }),
       t.decision.getVotingStatus({
         processInstanceId: instanceId,
       }),
@@ -150,7 +151,11 @@ export function VotingPage({
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <div className="lg:col-span-3">
             <Suspense fallback={<ProposalListSkeleton />}>
-              <ProposalsList slug={slug} instanceId={instanceId} />
+              <ProposalsList
+                slug={slug}
+                instanceId={instanceId}
+                decisionSlug={decisionSlug}
+              />
             </Suspense>
           </div>
         </div>

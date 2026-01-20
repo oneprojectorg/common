@@ -5,7 +5,7 @@
 //
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import {
-  type ProcessInstance,
+  type LegacyProcessInstance,
   transformFormDataToInstanceData,
   transformInstanceDataToFormData,
   validatePhaseSequence,
@@ -34,7 +34,7 @@ import {
 } from '../CreateDecisionProcessModal/schemas/schemaLoader';
 
 interface EditDecisionProcessModalProps {
-  instance?: ProcessInstance;
+  instance?: LegacyProcessInstance;
   schema?: SchemaType;
 }
 

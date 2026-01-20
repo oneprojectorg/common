@@ -1,4 +1,4 @@
-import { objectsInStorage, organizationUsers, users } from '@op/db/schema';
+import { organizationUsers, users } from '@op/db/schema';
 import type { ZonePermissions } from 'access-zones';
 import { authUsers } from 'drizzle-orm/supabase';
 import { createSelectSchema } from 'drizzle-zod';
@@ -9,6 +9,7 @@ import {
   organizationsWithProfileEncoder,
 } from './organizations';
 import { baseProfileEncoder } from './profiles';
+import { storageItemEncoder } from './storageItem';
 
 const permissionSchema = z.object({
   admin: z.boolean(),
@@ -63,7 +64,7 @@ const organizationUserWithPermissionsEncoder = createSelectSchema(
  */
 export const userEncoder = createSelectSchema(users).extend({
   authUser: createSelectSchema(authUsers).nullish(),
-  avatarImage: createSelectSchema(objectsInStorage).nullish(),
+  avatarImage: storageItemEncoder.nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
   currentOrganization: organizationsWithProfileEncoder.nullish(),
   currentProfile: baseProfileEncoder.nullish(),

@@ -20,6 +20,58 @@ import { assertOrganizationByProfileId } from '../assert';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 
+/**
+ * Helper to find current phase/state and extract voting config.
+ * Supports both legacy (states) and new (phases) schema formats.
+ * Returns undefined if the current phase/state is not found.
+ */
+function getCurrentPhaseConfig(processInstance: {
+  instanceData: unknown;
+  process: unknown;
+}):
+  | {
+      allowProposals: boolean;
+      allowDecisions: boolean;
+    }
+  | undefined {
+  const instanceData = processInstance.instanceData as any;
+  const processSchema = (processInstance.process as any)?.processSchema;
+
+  if (!processSchema || !instanceData?.currentPhaseId) {
+    return undefined;
+  }
+
+  const currentPhaseId = instanceData.currentPhaseId;
+
+  // Try new format first (phases with rules)
+  if (processSchema.phases) {
+    const currentPhase = processSchema.phases.find(
+      (p: any) => p.id === currentPhaseId,
+    );
+    if (currentPhase) {
+      return {
+        allowProposals: currentPhase.rules?.proposals?.submit ?? false,
+        allowDecisions: currentPhase.rules?.voting?.submit ?? false,
+      };
+    }
+  }
+
+  // Fall back to legacy format (states with config)
+  if (processSchema.states) {
+    const currentState = processSchema.states.find(
+      (s: any) => s.id === currentPhaseId,
+    );
+    if (currentState) {
+      return {
+        allowProposals: currentState.config?.allowProposals ?? false,
+        allowDecisions: currentState.config?.allowDecisions ?? false,
+      };
+    }
+  }
+
+  return undefined;
+}
+
 export type CustomData = Record<string, unknown>;
 
 export interface SubmitVoteInput {
@@ -134,14 +186,10 @@ export const submitVote = async ({
 
     assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
 
-    // Extract voting configuration from current state
-    const currentStateId = (processInstance.instanceData as any)
-      ?.currentPhaseId;
-    const currentState = (
-      processInstance.process as any
-    )?.processSchema?.states?.find((s: any) => s.id === currentStateId);
+    // Extract voting configuration from current phase/state
+    const phaseConfig = getCurrentPhaseConfig(processInstance);
 
-    if (!currentState) {
+    if (!phaseConfig) {
       throw new ValidationError('Current state not found');
     }
 
@@ -151,8 +199,8 @@ export const submitVote = async ({
     );
     // Build schema data for validation
     const schemaData = {
-      allowProposals: currentState.config?.allowProposals || false,
-      allowDecisions: currentState.config?.allowDecisions || false,
+      allowProposals: phaseConfig.allowProposals,
+      allowDecisions: phaseConfig.allowDecisions,
       instanceData: {
         maxVotesPerMember:
           (processInstance.instanceData as any)?.fieldValues
@@ -332,25 +380,21 @@ export const getVotingStatus = async ({
 
     assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
-    // Extract voting configuration from current state
-    const currentStateId = (processInstance.instanceData as any)
-      ?.currentPhaseId;
-    const currentState = (
-      processInstance.process as any
-    )?.processSchema?.states?.find((s: any) => s.id === currentStateId);
+    // Extract voting configuration from current phase/state
+    const phaseConfig = getCurrentPhaseConfig(processInstance);
 
-    if (!currentState) {
+    if (!phaseConfig) {
       throw new ValidationError('Current state not found');
     }
 
     // Build schema data for validation
     const schemaData = {
-      allowProposals: currentState.config?.allowProposals || false,
-      allowDecisions: currentState.config?.allowDecisions || false,
+      allowProposals: phaseConfig.allowProposals,
+      allowDecisions: phaseConfig.allowDecisions,
       instanceData: {
         maxVotesPerMember:
           (processInstance.instanceData as any)?.fieldValues
-            .maxVotesPerMember || 3,
+            ?.maxVotesPerMember || 3,
       },
       schemaType: 'simple',
     };
@@ -464,14 +508,10 @@ export const validateVoteSelectionService = async ({
 
     assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
-    // Extract voting configuration from current state
-    const currentStateId = (processInstance.instanceData as any)
-      ?.currentPhaseId;
-    const currentState = (
-      processInstance.process as any
-    )?.processSchema?.states?.find((s: any) => s.id === currentStateId);
+    // Extract voting configuration from current phase/state
+    const phaseConfig = getCurrentPhaseConfig(processInstance);
 
-    if (!currentState) {
+    if (!phaseConfig) {
       return {
         isValid: false,
         errors: ['Current state not found'],
@@ -486,11 +526,12 @@ export const validateVoteSelectionService = async ({
 
     // Build schema data for validation
     const schemaData = {
-      allowProposals: currentState.config?.allowProposals || false,
-      allowDecisions: currentState.config?.allowDecisions || false,
+      allowProposals: phaseConfig.allowProposals,
+      allowDecisions: phaseConfig.allowDecisions,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.maxVotesPerMember || 3,
+          (processInstance.instanceData as any)?.fieldValues
+            ?.maxVotesPerMember || 3,
       },
       schemaType: 'simple',
     };

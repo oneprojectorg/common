@@ -6,24 +6,25 @@ import { ProposalEditor } from '@/components/decisions/ProposalEditor';
 
 export const dynamic = 'force-dynamic';
 
-async function CreateProposalPageContent({
-  instanceId,
-  decisionSlug,
-}: {
-  instanceId: string;
-  decisionSlug: string;
-}) {
+async function CreateProposalPageContent({ slug }: { slug: string }) {
   try {
     const client = await createClient();
-    const instance = await client.decision.getInstance({
-      instanceId,
-    });
+
+    // Get the decision profile to find the instance ID
+    const decisionProfile = await client.decision.getDecisionBySlug({ slug });
+
+    if (!decisionProfile?.processInstance) {
+      notFound();
+    }
+
+    const instanceId = decisionProfile.processInstance.id;
+    const instance = await client.decision.getInstance({ instanceId });
 
     if (!instance) {
       notFound();
     }
 
-    const backHref = `/decisions/${decisionSlug}`;
+    const backHref = `/decisions/${slug}`;
 
     return <ProposalEditor instance={instance} backHref={backHref} />;
   } catch (error) {
@@ -80,13 +81,13 @@ function CreateProposalPageSkeleton() {
 const CreateProposalPage = async ({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>;
+  params: Promise<{ slug: string }>;
 }) => {
-  const { id, slug } = await params;
+  const { slug } = await params;
 
   return (
     <Suspense fallback={<CreateProposalPageSkeleton />}>
-      <CreateProposalPageContent instanceId={id} decisionSlug={slug} />
+      <CreateProposalPageContent slug={slug} />
     </Suspense>
   );
 };

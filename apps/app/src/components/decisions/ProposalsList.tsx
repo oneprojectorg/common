@@ -128,6 +128,8 @@ interface ProposalsProps {
   proposals?: Proposal[];
   instanceId: string;
   slug: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
   isLoading: boolean;
   canManageProposals?: boolean;
   votedProposalIds?: string[];
@@ -349,6 +351,7 @@ const ViewProposalsList = ({
   proposals,
   instanceId,
   slug,
+  decisionSlug,
   canManageProposals = false,
 }: ProposalsProps) => {
   if (!proposals || proposals.length === 0) {
@@ -361,7 +364,13 @@ const ViewProposalsList = ({
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);
         const showMenu = canManageProposals || isEditable;
-        const editHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
+        // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
+        const editHref = decisionSlug
+          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
+          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
+        const viewHref = decisionSlug
+          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
+          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
 
         return (
           <ProposalCard key={proposal.id} proposal={proposal}>
@@ -369,7 +378,7 @@ const ViewProposalsList = ({
               <ProposalCardContent>
                 <ProposalCardHeader
                   proposal={proposal}
-                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                  viewHref={viewHref}
                   menu={
                     showMenu && (
                       <ProposalCardMenu
@@ -442,9 +451,12 @@ const Proposals = (props: ProposalsProps) => {
 export const ProposalsList = ({
   slug,
   instanceId,
+  decisionSlug,
 }: {
   slug: string;
   instanceId: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -678,6 +690,7 @@ export const ProposalsList = ({
         proposals={proposals}
         instanceId={instanceId}
         slug={slug}
+        decisionSlug={decisionSlug}
         canManageProposals={canManageProposals}
         votedProposalIds={selectedProposalIds}
       />

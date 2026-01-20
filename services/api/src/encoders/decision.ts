@@ -67,7 +67,7 @@ const selectionPipelineEncoder = z.object({
   blocks: z.array(selectionPipelineBlockEncoder),
 });
 
-/** Phase definition encoder */
+/** Phase definition encoder (includes merged instance dates) */
 const phaseDefinitionEncoder = z.object({
   id: z.string(),
   name: z.string(),
@@ -75,6 +75,9 @@ const phaseDefinitionEncoder = z.object({
   rules: phaseRulesEncoder,
   selectionPipeline: selectionPipelineEncoder.optional(),
   settings: jsonSchemaEncoder.optional(),
+  // Instance-specific dates (merged from instanceData.phases)
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 /** Process-level configuration */
@@ -90,6 +93,8 @@ export const decisionSchemaDefinitionEncoder = z.object({
   description: z.string().optional(),
   config: processConfigEncoder.optional(),
   phases: z.array(phaseDefinitionEncoder).min(1),
+  // Optional proposal template for budget/field configuration (legacy compatibility)
+  proposalTemplate: jsonSchemaEncoder.optional(),
 });
 
 /** Decision process encoder */
@@ -642,6 +647,7 @@ export const decisionProfileFilterSchema = z.object({
 });
 
 // Type exports
+export type ProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
 export type DecisionProfile = z.infer<typeof decisionProfileWithSchemaEncoder>;
 export type DecisionProfileList = z.infer<
   typeof decisionProfileWithSchemaListEncoder

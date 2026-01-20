@@ -9,13 +9,22 @@ import { ProposalEditor } from '@/components/decisions/ProposalEditor';
 
 function ProposalEditPageContent({
   profileId,
-  instanceId,
-  decisionSlug,
+  slug,
 }: {
   profileId: string;
-  instanceId: string;
-  decisionSlug: string;
+  slug: string;
 }) {
+  // Get the decision profile to find the instance ID
+  const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
+    slug,
+  });
+
+  if (!decisionProfile?.processInstance) {
+    notFound();
+  }
+
+  const instanceId = decisionProfile.processInstance.id;
+
   // Get both the proposal and the instance in parallel
   const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
     t.decision.getProposal({ profileId }),
@@ -26,7 +35,7 @@ function ProposalEditPageContent({
     notFound();
   }
 
-  const backHref = `/decisions/${decisionSlug}`;
+  const backHref = `/decisions/${slug}`;
 
   return (
     <ProposalEditor
@@ -64,20 +73,15 @@ function ProposalEditPageSkeleton() {
 }
 
 const ProposalEditPage = () => {
-  const { profileId, id, slug } = useParams<{
+  const { profileId, slug } = useParams<{
     profileId: string;
-    id: string;
     slug: string;
   }>();
 
   return (
     <ErrorBoundary>
       <Suspense fallback={<ProposalEditPageSkeleton />}>
-        <ProposalEditPageContent
-          profileId={profileId}
-          instanceId={id}
-          decisionSlug={slug}
-        />
+        <ProposalEditPageContent profileId={profileId} slug={slug} />
       </Suspense>
     </ErrorBoundary>
   );

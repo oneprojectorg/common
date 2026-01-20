@@ -31,14 +31,23 @@ const VoteSuccessModalSuspense = ({
     instanceId,
   });
 
-  const nextSteps =
-    processInstance.process?.processSchema?.states &&
-    processInstance.instanceData
-      ? getNextSteps(
-          processInstance.process.processSchema.states,
-          processInstance.instanceData,
-        )
-      : [];
+  // Schema phases now include merged dates from backend
+  const phases = processInstance.process?.processSchema?.phases ?? [];
+
+  // Transform to format expected by getNextSteps
+  const phasesForNextSteps = phases.map((phase) => ({
+    id: phase.id,
+    name: phase.name,
+    description: phase.description,
+    phase: phase.startDate
+      ? { startDate: phase.startDate, endDate: phase.endDate }
+      : undefined,
+  }));
+
+  const nextSteps = getNextSteps(
+    phasesForNextSteps,
+    processInstance.instanceData,
+  );
 
   const processTitle = processInstance.name;
 

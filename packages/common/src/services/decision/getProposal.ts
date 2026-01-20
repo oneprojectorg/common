@@ -1,6 +1,5 @@
 import { and, count, db, eq } from '@op/db/client';
 import {
-  Decision,
   ProcessInstance,
   Profile,
   ProfileRelationshipType,
@@ -30,9 +29,6 @@ export const getProposal = async ({
     submittedBy: Profile & { avatarImage: any }; // fix drizzle types
     processInstance: ProcessInstance;
     profile: Profile;
-    decisions: (Decision & {
-      decidedBy: Profile;
-    })[];
     commentsCount: number;
     likesCount: number;
     followersCount: number;
@@ -48,31 +44,18 @@ export const getProposal = async ({
     const proposal = (await db._query.proposals.findFirst({
       where: eq(proposals.profileId, profileId),
       with: {
-        processInstance: {
-          with: {
-            process: true,
-            owner: true,
-          },
-        },
+        processInstance: true,
         submittedBy: {
           with: {
             avatarImage: true,
           },
         },
         profile: true,
-        decisions: {
-          with: {
-            decidedBy: true,
-          },
-        },
       },
     })) as Proposal & {
       submittedBy: Profile & { avatarImage: any }; // fix drizzle types
       processInstance: ProcessInstance;
       profile: Profile;
-      decisions: (Decision & {
-        decidedBy: Profile;
-      })[];
     };
 
     if (!proposal) {

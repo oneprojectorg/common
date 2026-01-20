@@ -10,15 +10,17 @@ export const storageItemEncoder = createSelectSchema(objectsInStorage)
   })
   .extend({
     name: z.string(),
-    metadata: z.object({
-      eTag: z.string(),
-      size: z.number(),
-      mimetype: z.string(),
-      cacheControl: z.string(),
-      lastModified: z.string(),
-      contentLength: z.number(),
-      httpStatusCode: z.number(),
-    }),
+    metadata: z
+      .object({
+        eTag: z.string(),
+        size: z.number(),
+        mimetype: z.string(),
+        cacheControl: z.string(),
+        lastModified: z.string(),
+        contentLength: z.number(),
+        httpStatusCode: z.number(),
+      })
+      .nullish(),
   });
 
 export type StorageItem = z.infer<typeof storageItemEncoder>;

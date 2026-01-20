@@ -13,46 +13,37 @@ import { DecisionHero } from '../DecisionHero';
 import { EmptyProposalsState } from '../EmptyProposalsState';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
-import { ProcessPhase } from '../types';
 
 export function StandardDecisionPage({
   instanceId,
   slug,
+  decisionSlug,
+  allowProposals,
+  description,
+  currentPhaseId,
+  maxVotesPerMember,
 }: {
   instanceId: string;
   slug: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
+  /** Whether proposal submission is allowed in the current phase */
+  allowProposals: boolean;
+  /** Description to show in the action bar */
+  description?: string;
+  /** Current phase ID - used for slug-specific hero content */
+  currentPhaseId?: string;
+  /** Max votes per member - used for one-project specific content */
+  maxVotesPerMember?: number;
 }) {
   const t = useTranslations();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
-    t.decision.getInstance({
-      instanceId,
-    }),
-  ]);
+  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instanceId,
+    limit: 20,
+  });
 
-  const instanceData = instance.instanceData as any;
-  const processSchema = instance.process?.processSchema as any;
-  const templateStates: ProcessPhase[] = processSchema?.states || [];
-
-  const currentStateId =
-    instanceData?.currentStateId || instance.currentStateId;
-  const currentState = templateStates.find(
-    (state) => state.id === currentStateId,
-  );
-
-  const allowProposals = currentState?.config?.allowProposals !== false;
   const uniqueSubmitters = getUniqueSubmitters(proposals);
-
-  const description = instance?.description?.match('PPDESCRIPTION')
-    ? t('PPDESCRIPTION')
-    : (instance.description ?? instance.process?.description ?? undefined);
-
-  const maxVotesPerMember = instance?.instanceData?.fieldValues
-    ?.maxVotesPerMember as number;
 
   // Organization-specific content
   const heroContent = match(slug, {
@@ -87,7 +78,7 @@ export function StandardDecisionPage({
       ),
     }),
     'one-project': () => ({
-      title: match(currentState?.id, {
+      title: match(currentPhaseId, {
         review: () => t('TIME TO VOTE.'),
         _: () => t('SHARE YOUR IDEAS.'),
       }),
@@ -106,7 +97,7 @@ export function StandardDecisionPage({
               meg@oneproject.org
             </a>
           </p>
-          {currentState?.id === 'review' && maxVotesPerMember && (
+          {currentPhaseId === 'review' && maxVotesPerMember && (
             <p>
               Please select <strong>{maxVotesPerMember} proposals.</strong>
             </p>
@@ -154,7 +145,11 @@ export function StandardDecisionPage({
               </EmptyProposalsState>
             ) : (
               <Suspense fallback={<ProposalListSkeleton />}>
-                <ProposalsList slug={slug} instanceId={instanceId} />
+                <ProposalsList
+                  slug={slug}
+                  instanceId={instanceId}
+                  decisionSlug={decisionSlug}
+                />
               </Suspense>
             )}
           </div>

@@ -1,16 +1,10 @@
 import { cache } from '@op/cache';
-import {
-  NotFoundError,
-  UnauthorizedError,
-  getPermissionsOnProposal,
-  getProposal,
-} from '@op/common';
+import { getPermissionsOnProposal, getProposal } from '@op/common';
 import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
+import { proposalEncoder } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 
@@ -21,7 +15,7 @@ export const getProposalRouter = router({
         profileId: z.uuid(),
       }),
     )
-    .output(legacyProposalEncoder)
+    .output(proposalEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
       let { profileId } = input;
@@ -32,65 +26,44 @@ export const getProposalRouter = router({
         profileId = 'e05db18a-7c18-4cd5-90fc-a33e25a257b1';
       }
 
-      try {
-        const proposal = await cache({
-          type: 'profile',
-          params: [profileId],
-          fetch: () =>
-            getProposal({
-              profileId,
-              user,
-            }),
-          options: {
-            skipMemCache: true, // We need these to be editable and then immediately accessible
-          },
-        });
-
-        // Don't cache permission
-        try {
-          proposal.isEditable = await getPermissionsOnProposal({
-            user,
-            proposal,
-          });
-        } catch (error) {
-          logger.error('Error getting permissions on proposal', {
-            error,
+      const proposal = await cache({
+        type: 'profile',
+        params: [profileId],
+        fetch: () =>
+          getProposal({
             profileId,
-          });
-        }
+            user,
+          }),
+        options: {
+          skipMemCache: true, // We need these to be editable and then immediately accessible
+        },
+      });
 
-        // Track proposal viewed event
-        if (
-          proposal.processInstance &&
-          typeof proposal.processInstance === 'object' &&
-          !Array.isArray(proposal.processInstance) &&
-          'id' in proposal.processInstance
-        ) {
-          waitUntil(
-            trackProposalViewed(ctx, proposal.processInstance.id, proposal.id),
-          );
-        }
-
-        return legacyProposalEncoder.parse(proposal);
-      } catch (error: unknown) {
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'NOT_FOUND',
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Failed to fetch proposal',
-          code: 'INTERNAL_SERVER_ERROR',
+      // Don't cache permission
+      try {
+        proposal.isEditable = await getPermissionsOnProposal({
+          user,
+          proposal,
+        });
+      } catch (error) {
+        logger.error('Error getting permissions on proposal', {
+          error,
+          profileId,
         });
       }
+
+      // Track proposal viewed event
+      if (
+        proposal.processInstance &&
+        typeof proposal.processInstance === 'object' &&
+        !Array.isArray(proposal.processInstance) &&
+        'id' in proposal.processInstance
+      ) {
+        waitUntil(
+          trackProposalViewed(ctx, proposal.processInstance.id, proposal.id),
+        );
+      }
+
+      return proposalEncoder.parse(proposal);
     }),
 });

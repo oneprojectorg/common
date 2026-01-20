@@ -11,47 +11,44 @@ interface DecisionHeaderProps {
   instanceId: string;
   slug: string;
   children?: ReactNode;
+  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
+  useLegacy?: boolean;
 }
 
 export async function DecisionHeader({
   instanceId,
   slug,
   children,
+  useLegacy = false,
 }: DecisionHeaderProps) {
   const client = await createClient();
 
-  const instance = await client.decision.getInstance({
-    instanceId,
-  });
+  const instance = useLegacy
+    ? await client.decision.getLegacyInstance({ instanceId })
+    : await client.decision.getInstance({ instanceId });
 
   if (!instance) {
     notFound();
   }
 
   const processSchema = instance.process?.processSchema as any;
-  const instanceData = instance.instanceData as any;
 
-  // Merge template states with actual instance phase data
-  const templateStates: ProcessPhase[] = processSchema?.states || [];
-  const instancePhases = instanceData?.phases || [];
+  // Legacy format: uses 'states' with phase.startDate structure
+  // V2 format: uses 'phases' with startDate/endDate merged from backend
+  const templateStates = processSchema?.states || processSchema?.phases || [];
 
-  const phases: ProcessPhase[] = templateStates.map((templateState) => {
-    // Find corresponding instance phase data
-    const instancePhase = instancePhases.find(
-      (phase: any) => phase.phaseId === templateState.id,
-    );
-
-    return {
-      ...templateState,
-      phase: instancePhase
-        ? {
-            startDate: instancePhase.startDate,
-            endDate: instancePhase.endDate,
-            sortOrder: templateState.phase?.sortOrder,
-          }
-        : templateState.phase,
-    };
-  });
+  const phases: ProcessPhase[] = templateStates.map((state: any) => ({
+    id: state.id,
+    name: state.name,
+    description: state.description,
+    type: state.type,
+    config: state.config,
+    // V2 has startDate/endDate directly, legacy has them in phase object
+    phase: state.phase || {
+      startDate: state.startDate,
+      endDate: state.endDate,
+    },
+  }));
 
   const isResultsPhase = instance.currentStateId === 'results';
 
