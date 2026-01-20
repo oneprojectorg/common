@@ -1,11 +1,6 @@
 'use client';
 
 import {
-  type ImageAttachment,
-  extractAttachmentIdsFromUrls,
-  extractImageUrlsFromContent,
-} from '@/utils/proposalContentProcessor';
-import {
   generateProposalCollabDocId,
   parseProposalData,
 } from '@/utils/proposalUtils';
@@ -30,7 +25,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   CollaborativeEditor,
-  type CollaborativeEditorRef,
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
@@ -91,14 +85,12 @@ export function ProposalEditor({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
   const [showBudgetInput, setShowBudgetInput] = useState(false);
-  const [editorContent, setEditorContent] = useState('');
+
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-  const [imageAttachments] = useState<ImageAttachment[]>([]);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Refs
-  const editorRef = useRef<CollaborativeEditorRef>(null);
   const budgetInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
 
@@ -131,8 +123,6 @@ export function ProposalEditor({
   );
 
   // Extract template data from the instance
-  const descriptionGuidance = instance.instanceData?.fieldValues
-    ?.descriptionGuidance as string | undefined;
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
   const proposalInfoContent = instance.instanceData?.fieldValues
@@ -184,14 +174,6 @@ export function ProposalEditor({
     [isEditMode, existingProposal],
   );
 
-  // Initial content for editor
-  const initialContent = useMemo(() => {
-    if (isEditMode && parsedProposalData?.description) {
-      return parsedProposalData.description;
-    }
-    return descriptionGuidance ? `<p>${descriptionGuidance}</p>` : '';
-  }, [isEditMode, parsedProposalData, descriptionGuidance]);
-
   // Mutations
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
@@ -230,7 +212,6 @@ export function ProposalEditor({
     ) {
       const {
         title: existingTitle,
-        description: existingDescription,
         category: existingCategory,
         budget: existingBudget,
       } = parsedProposalData;
@@ -244,9 +225,6 @@ export function ProposalEditor({
       if (existingBudget !== undefined) {
         setBudget(existingBudget);
         setShowBudgetInput(true);
-      }
-      if (existingDescription) {
-        setEditorContent(existingDescription);
       }
 
       initializedRef.current = true;
@@ -267,11 +245,6 @@ export function ProposalEditor({
     }
   }, [showBudgetInput]);
 
-  // Handlers
-  const handleEditorUpdate = useCallback((content: string) => {
-    setEditorContent(content);
-  }, []);
-
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
   }, []);
@@ -281,19 +254,11 @@ export function ProposalEditor({
   }, []);
 
   const handleSubmitProposal = useCallback(async () => {
-    const content = editorRef.current?.getHTML() || editorContent;
     setIsSubmitting(true);
 
     try {
-      const imageUrls = extractImageUrlsFromContent(content);
-      const attachmentIds = extractAttachmentIdsFromUrls(
-        imageUrls,
-        imageAttachments,
-      );
-
       const proposalData: Record<string, unknown> = {
         title,
-        description: content,
         collaborationDocId: collabDocId,
       };
 
@@ -312,7 +277,7 @@ export function ProposalEditor({
       // Update existing proposal
       await updateProposalMutation.mutateAsync({
         proposalId: existingProposal.id,
-        data: { proposalData, attachmentIds },
+        data: { proposalData },
       });
 
       // If draft, also submit (transition to submitted status)
@@ -327,7 +292,6 @@ export function ProposalEditor({
       setIsSubmitting(false);
     }
   }, [
-    editorContent,
     title,
     selectedCategory,
     budget,
@@ -335,7 +299,6 @@ export function ProposalEditor({
     categories,
     existingProposal,
     isDraft,
-    imageAttachments,
     submitProposalMutation,
     updateProposalMutation,
   ]);
@@ -415,11 +378,8 @@ export function ProposalEditor({
 
           {/* Rich Text Editor with Collaboration */}
           <CollaborativeEditor
-            ref={editorRef}
             docId={collabDocId}
             extensions={editorExtensions}
-            content={initialContent}
-            onUpdate={handleEditorUpdate}
             onEditorReady={handleEditorReady}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
