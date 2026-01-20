@@ -1,8 +1,7 @@
 import { db } from '@op/db/client';
-import { type Organization, type Profile, organizations } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { Organization, Profile } from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../../utils';
 import { getOrgAccessUser } from '../../access';
@@ -29,8 +28,10 @@ export const assertTargetProfileAdminAccess = async ({
 }): Promise<TargetProfileAdminContext> => {
   const [targetProfile, organization] = await Promise.all([
     assertProfile(targetProfileId),
-    db._query.organizations.findFirst({
-      where: eq(organizations.profileId, targetProfileId),
+    db.query.organizations.findFirst({
+      where: {
+        profileId: targetProfileId,
+      },
     }),
   ]);
 
