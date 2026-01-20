@@ -71,12 +71,3 @@ export function useTiptapCollab({
     isConnected: status === 'connected',
   };
 }
-
-/** Generate collab doc ID: `proposal-{instanceId}-{proposalId}` */
-export function generateCollabDocId(
-  instanceId: string,
-  proposalId?: string,
-): string {
-  const id = proposalId || crypto.randomUUID();
-  return `proposal-${instanceId}-${id}`;
-}

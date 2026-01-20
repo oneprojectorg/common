@@ -37,7 +37,7 @@ export function getProposalExtensions(
     ...getBaseExtensions(),
     Link.configure({
       openOnClick: false,
-      linkOnPaste: false,
+      linkOnPaste: false, // Disable auto-linking on paste to let Iframely extension handle it
     }),
   ];
 

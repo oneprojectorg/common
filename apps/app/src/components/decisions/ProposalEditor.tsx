@@ -1,12 +1,14 @@
 'use client';
 
-import { generateCollabDocId } from '@/hooks/useTiptapCollab';
 import {
   type ImageAttachment,
   extractAttachmentIdsFromUrls,
   extractImageUrlsFromContent,
 } from '@/utils/proposalContentProcessor';
-import { parseProposalData } from '@/utils/proposalUtils';
+import {
+  generateProposalCollabDocId,
+  parseProposalData,
+} from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
@@ -114,7 +116,7 @@ export function ProposalEditor({
       return existingDocId;
     }
     // Generate new docId for new proposals or legacy proposals without one
-    return generateCollabDocId(instance.id, existingProposal?.id);
+    return generateProposalCollabDocId(instance.id, existingProposal?.id);
   }, [
     instance.id,
     isEditMode,
