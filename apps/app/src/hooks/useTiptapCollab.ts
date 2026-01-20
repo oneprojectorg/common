@@ -31,20 +31,6 @@ export interface UseTiptapCollabReturn {
  *
  * Creates a Y.js document and connects to TipTap Cloud for real-time sync.
  * The Y.Doc is passed to the Collaboration extension in your editor config.
- *
- * @example
- * ```tsx
- * const { ydoc, status, isSynced } = useTiptapCollab({
- *   docId: 'proposal-123-456',
- *   enabled: true,
- * });
- *
- * // Pass ydoc to Collaboration extension
- * const extensions = [
- *   StarterKit.configure({ history: false }),
- *   Collaboration.configure({ document: ydoc }),
- * ];
- * ```
  */
 export function useTiptapCollab({
   docId,

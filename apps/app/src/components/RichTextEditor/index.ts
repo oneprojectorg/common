@@ -22,6 +22,5 @@ export { useRichTextEditorFloatingToolbar } from './useRichTextEditorFloatingToo
 export {
   getProposalExtensions,
   getViewerExtensions,
-  getEditorExtensions, // Legacy alias for getProposalExtensions
   type EditorExtensionOptions,
 } from './editorConfig';

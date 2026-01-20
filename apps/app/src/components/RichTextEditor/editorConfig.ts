@@ -99,7 +99,3 @@ export function getViewerExtensions(): AnyExtension[] {
     IframelyExtension as AnyExtension,
   ];
 }
-
-// Legacy export for backward compatibility
-// TODO: Remove after migrating all usages to getProposalExtensions
-export const getEditorExtensions = getProposalExtensions;

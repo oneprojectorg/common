@@ -28,15 +28,6 @@ export interface RichTextEditorWithToolbarProps {
  *
  * This is a non-collaborative editor for local editing use cases.
  * For real-time collaboration, use `CollaborativeEditor` instead.
- *
- * @example
- * ```tsx
- * <RichTextEditorWithToolbar
- *   content={content}
- *   onUpdate={setContent}
- *   showToolbar={true}
- * />
- * ```
  */
 export const RichTextEditorWithToolbar = forwardRef<
   RichTextEditorRef,
@@ -59,7 +50,6 @@ export const RichTextEditorWithToolbar = forwardRef<
     const editorRef = useRef<RichTextEditorRef>(null);
     const [editor, setEditor] = useState<Editor | null>(null);
 
-    // Memoize extensions to avoid recreating on every render
     const extensions = useMemo(
       () => getProposalExtensions(extensionOptions),
       [extensionOptions],

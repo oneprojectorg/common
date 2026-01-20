@@ -49,15 +49,6 @@ export interface CollaborativeEditorProps {
  * - Y.js document sync via TipTap Cloud
  * - Collaboration extension (disables local undo/redo)
  * - Connection status tracking
- *
- * @example
- * ```tsx
- * <CollaborativeEditor
- *   docId="proposal-123-456"
- *   extensions={[SlashCommands, IframelyExtension]}
- *   onUpdate={setContent}
- * />
- * ```
  */
 export const CollaborativeEditor = forwardRef<
   CollaborativeEditorRef,
