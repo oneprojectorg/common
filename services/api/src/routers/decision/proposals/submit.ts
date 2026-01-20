@@ -11,7 +11,6 @@ const submitProposalInputSchema = z.object({
 });
 
 export const submitProposalRouter = router({
-  /** Submits a draft proposal, transitioning it to 'submitted' status after validation. */
   submitProposal: commonAuthedProcedure()
     .input(submitProposalInputSchema)
     .output(proposalEncoder)
