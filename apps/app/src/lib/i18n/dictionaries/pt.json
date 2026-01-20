@@ -424,5 +424,15 @@
   "Cancel membership request": "Cancelar solicitação de adesão",
   "Are you sure you want to cancel your membership request to {orgName}?": "Tem certeza de que deseja cancelar sua solicitação de adesão a {orgName}?",
   "Keep request": "Manter solicitação",
-  "Cancel request": "Cancelar solicitação"
+  "Cancel request": "Cancelar solicitação",
+  "Delete an Account": "Excluir uma conta",
+  "Delete account": "Excluir conta",
+  "Account Deleted": "Conta excluída",
+  "Failed to delete account": "Falha ao excluir a conta",
+  "Removing...": "Excluindo...",
+  "Please select the account you'd like to delete. This action cannot be undone.": "Por favor, selecione a conta que deseja excluir. Esta ação não pode ser desfeita.",
+  "You are about to delete this account. This action cannot be undone.": "Você está prestes a excluir esta conta. Esta ação não pode ser desfeita.",
+  "{profileName} has been deleted. All associated data have been permanently removed.": "{profileName} foi excluída. Todos os dados associados foram removidos permanentemente.",
+  "User avatar": "Avatar do usuário",
+  "Done": "Concluído"
 }
