@@ -17,6 +17,7 @@ import { useEffect, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+// TODO: typing here needs to be fixed
 type AccountProfile = RouterOutput['account']['getUserProfiles'][number];
 
 interface OrgDeletionModalProps {
