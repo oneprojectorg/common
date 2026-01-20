@@ -3,8 +3,6 @@ export {
   CollaborativeEditor,
   type CollaborativeEditorProps,
   type CollaborativeEditorRef,
-  useEditorMode,
-  type EditorModeProps,
 } from './CollaborativeEditor';
 
 // App-specific RichTextEditor with toolbar (non-collaborative)
