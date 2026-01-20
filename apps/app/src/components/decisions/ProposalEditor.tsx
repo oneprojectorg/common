@@ -1,7 +1,6 @@
 'use client';
 
 import { generateCollabDocId, useTiptapCollab } from '@/hooks/useTiptapCollab';
-import type { ProcessInstance } from '@/utils/decisionProcessTransforms';
 import {
   type ImageAttachment,
   extractAttachmentIdsFromUrls,
@@ -94,8 +93,8 @@ export function ProposalEditor({
   const posthog = usePostHog();
   const t = useTranslations();
 
-  // A draft is essentially a "new" proposal that's been persisted for TipTap Cloud sync
-  const isDraft = existingProposal?.status === 'draft';
+  // // A draft is essentially a "new" proposal that's been persisted for TipTap Cloud sync
+  // const isDraft = existingProposal?.status === 'draft';
 
   // Generate or use existing collaboration document ID
   // For new proposals, generate a new docId; for existing, use stored one from proposalData (or generate if missing)
