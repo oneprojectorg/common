@@ -63,7 +63,9 @@ export const addProfileUser = async ({
 
   if (validRoles.length !== roleIdsToAssign.length) {
     const validRoleIds = new Set(validRoles.map((r) => r.id));
-    const invalidRoleIds = roleIdsToAssign.filter((id) => !validRoleIds.has(id));
+    const invalidRoleIds = roleIdsToAssign.filter(
+      (id) => !validRoleIds.has(id),
+    );
     throw new CommonError(
       `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
     );
@@ -131,7 +133,8 @@ export const addProfileUser = async ({
       invitations: [
         {
           email: normalizedEmail,
-          inviterName: currentProfileUser.name || currentUser.email || 'A team member',
+          inviterName:
+            currentProfileUser.name || currentUser.email || 'A team member',
           profileName: profile.name,
           inviteUrl: OPURLConfig('APP').ENV_URL,
           personalMessage,

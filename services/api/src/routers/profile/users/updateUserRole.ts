@@ -12,7 +12,9 @@ export const updateUserRolesRouter = router({
     .input(
       z.object({
         profileUserId: z.uuid(),
-        roleIds: z.array(z.uuid()).min(1, 'At least one role must be specified'),
+        roleIds: z
+          .array(z.uuid())
+          .min(1, 'At least one role must be specified'),
       }),
     )
     .output(outputSchema)
