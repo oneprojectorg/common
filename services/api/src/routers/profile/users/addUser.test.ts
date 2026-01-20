@@ -43,7 +43,10 @@ describe.concurrent('profile.users.addUser', () => {
     });
 
     expect(result).toBeDefined();
-    expect(result.email).toBe(standaloneUser.email);
+    expect(result.invited).toBe(false);
+    if (result.invited === false) {
+      expect(result.profileUser.email).toBe(standaloneUser.email);
+    }
 
     // Verify user was added to the profile
     const addedUser = await db._query.profileUsers.findFirst({
@@ -145,7 +148,10 @@ describe.concurrent('profile.users.addUser', () => {
     });
 
     expect(result).toBeDefined();
-    expect(result.email).toBe(newEmail.toLowerCase());
+    expect(result.invited).toBe(true);
+    if (result.invited === true) {
+      expect(result.email).toBe(newEmail.toLowerCase());
+    }
 
     // Verify the allowList entry was created with the personalMessage
     const allowListEntry = await db._query.allowList.findFirst({

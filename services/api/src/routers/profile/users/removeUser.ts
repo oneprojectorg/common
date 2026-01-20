@@ -1,16 +1,13 @@
 import { removeProfileUser } from '@op/common';
 import { z } from 'zod';
 
+import { profileUserEncoder } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-
-const outputSchema = z.object({
-  success: z.boolean(),
-});
 
 export const removeUserRouter = router({
   removeUser: commonAuthedProcedure()
     .input(z.object({ profileUserId: z.uuid() }))
-    .output(outputSchema)
+    .output(profileUserEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
       const { profileUserId } = input;
@@ -20,6 +17,6 @@ export const removeUserRouter = router({
         user,
       });
 
-      return outputSchema.parse(result);
+      return profileUserEncoder.parse(result);
     }),
 });

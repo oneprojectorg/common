@@ -1,11 +1,8 @@
 import { updateProfileUserRoles } from '@op/common';
 import { z } from 'zod';
 
+import { profileUserEncoder } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-
-const outputSchema = z.object({
-  success: z.boolean(),
-});
 
 export const updateUserRolesRouter = router({
   updateUserRoles: commonAuthedProcedure()
@@ -17,7 +14,7 @@ export const updateUserRolesRouter = router({
           .min(1, 'At least one role must be specified'),
       }),
     )
-    .output(outputSchema)
+    .output(profileUserEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
       const { profileUserId, roleIds } = input;
@@ -28,6 +25,6 @@ export const updateUserRolesRouter = router({
         user,
       });
 
-      return outputSchema.parse(result);
+      return profileUserEncoder.parse(result);
     }),
 });

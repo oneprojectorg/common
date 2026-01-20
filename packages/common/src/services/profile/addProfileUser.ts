@@ -13,6 +13,7 @@ import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
 import type { AllowListMetadata } from '../user/validators';
+import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
  * Add a member to a profile with one or more roles
@@ -77,6 +78,8 @@ export const addProfileUser = async ({
 
   // If user exists in the system, add them directly and return early (no invite email needed)
   if (existingUser) {
+    let newProfileUserId: string | undefined;
+
     await db.transaction(async (tx) => {
       const [newProfileUser] = await tx
         .insert(profileUsers)
@@ -89,6 +92,7 @@ export const addProfileUser = async ({
         .returning();
 
       if (newProfileUser) {
+        newProfileUserId = newProfileUser.id;
         await tx.insert(profileUserToAccessRoles).values(
           roleIdsToAssignDeduped.map((accessRoleId) => ({
             profileUserId: newProfileUser.id,
@@ -98,8 +102,16 @@ export const addProfileUser = async ({
       }
     });
 
-    // User already exists in the system - no need to send invite email
-    return { email: normalizedEmail };
+    // Fetch the newly created profile user with full relations
+    if (newProfileUserId) {
+      const profileUser = await getProfileUserWithRelations(newProfileUserId);
+      if (profileUser) {
+        return { profileUser, invited: false as const };
+      }
+    }
+
+    // Fallback (shouldn't happen)
+    throw new CommonError('Failed to create profile user');
   }
 
   // Check if email is in the allowList
@@ -143,5 +155,5 @@ export const addProfileUser = async ({
     },
   });
 
-  return { success: true, email: normalizedEmail };
+  return { email: normalizedEmail, invited: true as const };
 };

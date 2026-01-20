@@ -8,4 +8,5 @@ export * from './listProfileUsers';
 export * from './addProfileUser';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
+export * from './getProfileUserWithRelations';
 export * from './requests';

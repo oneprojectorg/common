@@ -9,6 +9,7 @@ import {
   UnauthorizedError,
 } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
+import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
  * Update a profile member's roles by syncing to the provided roleIds.
@@ -99,5 +100,11 @@ export const updateProfileUserRoles = async ({
     });
   }
 
-  return { success: true };
+  // Fetch and return the updated profile user with full relations
+  const updatedProfileUser = await getProfileUserWithRelations(profileUserId);
+  if (!updatedProfileUser) {
+    throw new CommonError('Failed to fetch updated profile user');
+  }
+
+  return updatedProfileUser;
 };
