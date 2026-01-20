@@ -1,7 +1,6 @@
 import { removeProfileUser } from '@op/common';
 import { z } from 'zod';
 
-import { removeProfileUserInputSchema } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const outputSchema = z.object({
@@ -10,7 +9,7 @@ const outputSchema = z.object({
 
 export const removeUserRouter = router({
   removeUser: commonAuthedProcedure()
-    .input(removeProfileUserInputSchema)
+    .input(z.object({ profileUserId: z.uuid() }))
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;

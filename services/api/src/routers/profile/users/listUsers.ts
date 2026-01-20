@@ -1,14 +1,12 @@
 import { listProfileUsers } from '@op/common';
+import { z } from 'zod';
 
-import {
-  listProfileUsersInputSchema,
-  profileUserListEncoder,
-} from '../../../encoders/profiles';
+import { profileUserListEncoder } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const listUsersRouter = router({
   listUsers: commonAuthedProcedure()
-    .input(listProfileUsersInputSchema)
+    .input(z.object({ profileId: z.uuid() }))
     .output(profileUserListEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;

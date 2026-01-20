@@ -38,8 +38,8 @@ describe.concurrent('profile.users.addUser', () => {
 
     const result = await caller.addUser({
       profileId: profile.id,
-      email: standaloneUser.email,
-      roleIds: [ROLES.MEMBER.id],
+      inviteeEmail: standaloneUser.email,
+      roleIdsToAssign: [ROLES.MEMBER.id],
     });
 
     expect(result).toBeDefined();
@@ -86,8 +86,8 @@ describe.concurrent('profile.users.addUser', () => {
     await expect(
       caller.addUser({
         profileId: profile.id,
-        email: memberUser.email,
-        roleIds: [ROLES.MEMBER.id],
+        inviteeEmail: memberUser.email,
+        roleIdsToAssign: [ROLES.MEMBER.id],
       }),
     ).rejects.toThrow(/already a member/i);
   });
@@ -114,8 +114,8 @@ describe.concurrent('profile.users.addUser', () => {
     await expect(
       caller.addUser({
         profileId: profile.id,
-        email: standaloneUser.email,
-        roleIds: [ROLES.MEMBER.id],
+        inviteeEmail: standaloneUser.email,
+        roleIdsToAssign: [ROLES.MEMBER.id],
       }),
     ).rejects.toThrow(/not authenticated/i);
   });
@@ -139,8 +139,8 @@ describe.concurrent('profile.users.addUser', () => {
     const personalMessage = 'Welcome to our team!';
     const result = await caller.addUser({
       profileId: profile.id,
-      email: newEmail,
-      roleIds: [ROLES.MEMBER.id],
+      inviteeEmail: newEmail,
+      roleIdsToAssign: [ROLES.MEMBER.id],
       personalMessage,
     });
 

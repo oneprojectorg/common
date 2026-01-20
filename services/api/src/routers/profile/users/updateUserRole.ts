@@ -1,7 +1,6 @@
 import { updateProfileUserRoles } from '@op/common';
 import { z } from 'zod';
 
-import { updateProfileUserRolesInputSchema } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const outputSchema = z.object({
@@ -10,7 +9,12 @@ const outputSchema = z.object({
 
 export const updateUserRolesRouter = router({
   updateUserRoles: commonAuthedProcedure()
-    .input(updateProfileUserRolesInputSchema)
+    .input(
+      z.object({
+        profileUserId: z.uuid(),
+        roleIds: z.array(z.uuid()).min(1, 'At least one role must be specified'),
+      }),
+    )
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;

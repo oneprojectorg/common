@@ -1,7 +1,6 @@
 import { addProfileUser } from '@op/common';
 import { z } from 'zod';
 
-import { addProfileUserInputSchema } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const outputSchema = z.object({
@@ -11,18 +10,27 @@ const outputSchema = z.object({
 
 export const addUserRouter = router({
   addUser: commonAuthedProcedure()
-    .input(addProfileUserInputSchema)
+    .input(
+      z.object({
+        profileId: z.uuid(),
+        inviteeEmail: z.string().email(),
+        roleIdsToAssign: z
+          .array(z.uuid())
+          .min(1, 'At least one role must be specified'),
+        personalMessage: z.string().optional(),
+      }),
+    )
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { profileId, email, roleIds, personalMessage } = input;
+      const { profileId, inviteeEmail, roleIdsToAssign, personalMessage } = input;
 
       const result = await addProfileUser({
         profileId,
-        email,
-        roleIds,
+        inviteeEmail,
+        roleIdsToAssign,
         personalMessage,
-        user,
+        currentUser: user,
       });
 
       return outputSchema.parse(result);

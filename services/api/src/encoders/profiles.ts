@@ -72,24 +72,3 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
 });
 
 export const profileUserListEncoder = z.array(profileUserEncoder);
-
-// Profile user input schemas
-export const listProfileUsersInputSchema = z.object({
-  profileId: z.uuid(),
-});
-
-export const addProfileUserInputSchema = z.object({
-  profileId: z.uuid(),
-  email: z.string().email(),
-  roleIds: z.array(z.uuid()).min(1, 'At least one role must be specified'),
-  personalMessage: z.string().optional(),
-});
-
-export const updateProfileUserRolesInputSchema = z.object({
-  profileUserId: z.uuid(),
-  roleIds: z.array(z.uuid()).min(1, 'At least one role must be specified'),
-});
-
-export const removeProfileUserInputSchema = z.object({
-  profileUserId: z.uuid(),
-});

@@ -19,24 +19,24 @@ import type { AllowListMetadata } from '../user/validators';
  */
 export const addProfileUser = async ({
   profileId,
-  email,
-  roleIds,
+  inviteeEmail,
+  roleIdsToAssign,
   personalMessage,
-  user,
+  currentUser,
 }: {
   profileId: string;
-  email: string;
-  roleIds: string[];
+  inviteeEmail: string;
+  roleIdsToAssign: string[];
   personalMessage?: string;
-  user: User;
+  currentUser: User;
 }) => {
-  if (roleIds.length === 0) {
+  if (roleIdsToAssign.length === 0) {
     throw new CommonError('At least one role must be specified');
   }
 
   const [profile, currentProfileUser] = await Promise.all([
     assertProfile(profileId),
-    getProfileAccessUser({ user, profileId }),
+    getProfileAccessUser({ user: currentUser, profileId }),
   ]);
 
   if (!currentProfileUser) {
@@ -45,11 +45,11 @@ export const addProfileUser = async ({
 
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
 
-  const normalizedEmail = email.toLowerCase();
+  const normalizedEmail = inviteeEmail.toLowerCase();
 
   const [validRoles, existingUser] = await Promise.all([
     db.query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, roleIds),
+      where: (table, { inArray }) => inArray(table.id, roleIdsToAssign),
     }),
     db.query.users.findFirst({
       where: (table, { eq }) => eq(table.email, normalizedEmail),
@@ -61,9 +61,9 @@ export const addProfileUser = async ({
     }),
   ]);
 
-  if (validRoles.length !== roleIds.length) {
+  if (validRoles.length !== roleIdsToAssign.length) {
     const validRoleIds = new Set(validRoles.map((r) => r.id));
-    const invalidRoleIds = roleIds.filter((id) => !validRoleIds.has(id));
+    const invalidRoleIds = roleIdsToAssign.filter((id) => !validRoleIds.has(id));
     throw new CommonError(
       `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
     );
@@ -88,7 +88,7 @@ export const addProfileUser = async ({
 
       if (newProfileUser) {
         await tx.insert(profileUserToAccessRoles).values(
-          roleIds.map((accessRoleId) => ({
+          roleIdsToAssign.map((accessRoleId) => ({
             profileUserId: newProfileUser.id,
             accessRoleId,
           })),
@@ -107,11 +107,11 @@ export const addProfileUser = async ({
 
   if (!existingAllowListEntry) {
     const metadata: AllowListMetadata = {
-      invitedBy: user.id,
+      invitedBy: currentUser.id,
       invitedAt: new Date().toISOString(),
       inviteType: 'profile',
       personalMessage,
-      roleIds,
+      roleIds: roleIdsToAssign,
       profileId,
       inviterProfileName: profile.name,
     };
@@ -131,7 +131,7 @@ export const addProfileUser = async ({
       invitations: [
         {
           email: normalizedEmail,
-          inviterName: currentProfileUser.name || user.email || 'A team member',
+          inviterName: currentProfileUser.name || currentUser.email || 'A team member',
           profileName: profile.name,
           inviteUrl: OPURLConfig('APP').ENV_URL,
           personalMessage,
