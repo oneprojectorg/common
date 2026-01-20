@@ -3,10 +3,10 @@ import { ProcessBuilderProcessSelector } from '@/components/decisions/ProcessBui
 
 const NewDecisionPage = () => {
   return (
-    <>
+    <div className="flex size-full flex-col">
       <ProcessBuilderHeader />
       <ProcessBuilderProcessSelector />
-    </>
+    </div>
   );
 };
 
