@@ -35,33 +35,31 @@ export const addProfileUser = async ({
   }
 
   const roleIdsToAssignDeduped = Array.from(new Set(roleIdsToAssign));
+  const normalizedEmail = inviteeEmail.toLowerCase();
 
-  const [profile, currentProfileUser] = await Promise.all([
-    assertProfile(profileId),
-    getProfileAccessUser({ user: currentUser, profileId }),
-  ]);
+  const [profile, currentProfileUser, validRoles, existingUser] =
+    await Promise.all([
+      assertProfile(profileId),
+      getProfileAccessUser({ user: currentUser, profileId }),
+      db._query.accessRoles.findMany({
+        where: (table, { inArray }) =>
+          inArray(table.id, roleIdsToAssignDeduped),
+      }),
+      db._query.users.findFirst({
+        where: (table, { eq }) => eq(table.email, normalizedEmail),
+        with: {
+          profileUsers: {
+            where: (table, { eq }) => eq(table.profileId, profileId),
+          },
+        },
+      }),
+    ]);
 
   if (!currentProfileUser) {
     throw new UnauthorizedError('You do not have access to this profile');
   }
 
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
-
-  const normalizedEmail = inviteeEmail.toLowerCase();
-
-  const [validRoles, existingUser] = await Promise.all([
-    db._query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, roleIdsToAssignDeduped),
-    }),
-    db._query.users.findFirst({
-      where: (table, { eq }) => eq(table.email, normalizedEmail),
-      with: {
-        profileUsers: {
-          where: (table, { eq }) => eq(table.profileId, profileId),
-        },
-      },
-    }),
-  ]);
 
   if (validRoles.length !== roleIdsToAssignDeduped.length) {
     const validRoleIds = new Set(validRoles.map((r) => r.id));

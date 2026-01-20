@@ -46,7 +46,7 @@ describe.concurrent('profile.users.addUser', () => {
     expect(result.email).toBe(standaloneUser.email);
 
     // Verify user was added to the profile
-    const addedUser = await db.query.profileUsers.findFirst({
+    const addedUser = await db._query.profileUsers.findFirst({
       where: (table, { eq, and }) =>
         and(
           eq(table.profileId, profile.id),
@@ -148,7 +148,7 @@ describe.concurrent('profile.users.addUser', () => {
     expect(result.email).toBe(newEmail.toLowerCase());
 
     // Verify the allowList entry was created with the personalMessage
-    const allowListEntry = await db.query.allowList.findFirst({
+    const allowListEntry = await db._query.allowList.findFirst({
       where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
     });
 

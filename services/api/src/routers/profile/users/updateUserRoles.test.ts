@@ -49,7 +49,7 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     expect(result).toBeDefined();
 
     // Verify role was updated
-    const updatedUser = await db.query.profileUsers.findFirst({
+    const updatedUser = await db._query.profileUsers.findFirst({
       where: eq(profileUsers.id, memberUser.profileUserId),
       with: {
         roles: {
@@ -82,7 +82,7 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Verify member starts with one role (MEMBER)
-    const initialUser = await db.query.profileUsers.findFirst({
+    const initialUser = await db._query.profileUsers.findFirst({
       where: eq(profileUsers.id, memberUser.profileUserId),
       with: {
         roles: {
@@ -103,7 +103,7 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     });
 
     // Verify user now has both roles
-    const userWithBothRoles = await db.query.profileUsers.findFirst({
+    const userWithBothRoles = await db._query.profileUsers.findFirst({
       where: eq(profileUsers.id, memberUser.profileUserId),
       with: {
         roles: {
@@ -126,7 +126,7 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     });
 
     // Verify user now has only ADMIN role
-    const userWithAdminOnly = await db.query.profileUsers.findFirst({
+    const userWithAdminOnly = await db._query.profileUsers.findFirst({
       where: eq(profileUsers.id, memberUser.profileUserId),
       with: {
         roles: {

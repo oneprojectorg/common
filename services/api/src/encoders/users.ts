@@ -10,6 +10,7 @@ import {
 } from './organizations';
 import { baseProfileEncoder } from './profiles';
 import { accessRoleMinimalEncoder } from './shared';
+import { storageItemEncoder } from './storageItem';
 
 const permissionSchema = z.object({
   admin: z.boolean(),
