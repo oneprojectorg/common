@@ -1,75 +1,105 @@
-import Blockquote from '@tiptap/extension-blockquote';
-import Collaboration from '@tiptap/extension-collaboration';
-import Heading from '@tiptap/extension-heading';
-import HorizontalRule from '@tiptap/extension-horizontal-rule';
-import Image from '@tiptap/extension-image';
+/**
+ * App-specific editor extensions that build on @op/ui's base config.
+ *
+ * This file adds proposal-specific extensions (SlashCommands, IframelyExtension)
+ * while reusing the shared base extensions from @op/ui.
+ */
+import { defaultEditorExtensions } from '@op/ui/RichTextEditor';
 import Link from '@tiptap/extension-link';
-import Strike from '@tiptap/extension-strike';
-import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import type { AnyExtension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import type { Doc } from 'yjs';
 
 import { IframelyExtension } from '../decisions/IframelyExtension';
 import { SlashCommands } from '../decisions/SlashCommands';
 
-const baseExtensions: AnyExtension[] = [
-  TextAlign.configure({
-    types: ['heading', 'paragraph'],
-  }),
-  Image.configure({
-    inline: true,
-    allowBase64: true,
-  }),
-  Heading.configure({
-    levels: [1, 2, 3],
-  }),
-  Underline,
-  Strike,
-  Blockquote,
-  HorizontalRule,
-  // IframelyExtension uses older tiptap types, cast to satisfy mixed versions
-  IframelyExtension as AnyExtension,
-];
+/**
+ * Get base editor extensions for the app.
+ * These are the @op/ui defaults without StarterKit (to allow custom config).
+ */
+function getBaseExtensions(): AnyExtension[] {
+  // Filter out StarterKit from defaults - we configure it ourselves
+  return defaultEditorExtensions.filter(
+    (ext) => ext.name !== 'starterKit',
+  ) as AnyExtension[];
+}
+
+export interface EditorExtensionOptions {
+  /** Enable slash commands (default: true for proposals) */
+  slashCommands?: boolean;
+  /** Enable link embeds via Iframely (default: true for proposals) */
+  linkEmbeds?: boolean;
+  /** Enable collaboration - disables local undo/redo (default: false) */
+  collaborative?: boolean;
+}
 
 /**
- * Get editor extensions for the proposal editor.
+ * Get editor extensions for proposal editing.
  *
- * @param ydoc - Optional Y.Doc for collaboration. When provided, enables real-time sync.
+ * @param options - Configuration for which extensions to include
+ * @returns Array of TipTap extensions
+ *
+ * @example
+ * ```tsx
+ * // Standard proposal editor (local)
+ * const extensions = getProposalExtensions();
+ *
+ * // Collaborative proposal editor
+ * const extensions = getProposalExtensions({ collaborative: true });
+ *
+ * // Minimal editor without slash commands
+ * const extensions = getProposalExtensions({ slashCommands: false });
+ * ```
  */
-export const getEditorExtensions = (ydoc?: Doc): AnyExtension[] => {
+export function getProposalExtensions(
+  options: EditorExtensionOptions = {},
+): AnyExtension[] {
+  const {
+    slashCommands = true,
+    linkEmbeds = true,
+    collaborative = false,
+  } = options;
+
   const extensions: AnyExtension[] = [
-    // StarterKit must be configured differently when using Collaboration
-    // to avoid conflicts with history management
+    // StarterKit with conditional history management
     StarterKit.configure({
-      undoRedo: ydoc ? false : undefined, // Disable undo/redo when collaborating
+      // Disable built-in undo/redo when using Yjs collaboration
+      // (Yjs handles its own history)
+      undoRedo: collaborative ? false : undefined,
     }),
-    ...baseExtensions,
+    ...getBaseExtensions(),
+    // Override Link config for proposal editing
     Link.configure({
       openOnClick: false,
-      linkOnPaste: false, // Disable auto-linking on paste to let Iframely extension handle it
+      linkOnPaste: false, // Let Iframely handle URL pastes
     }),
-    SlashCommands,
   ];
 
-  // Add Collaboration extension when ydoc is provided
-  if (ydoc) {
-    extensions.push(
-      Collaboration.configure({
-        document: ydoc,
-      }) as AnyExtension,
-    );
+  // Add optional proposal-specific extensions
+  if (linkEmbeds) {
+    extensions.push(IframelyExtension as AnyExtension);
+  }
+
+  if (slashCommands) {
+    extensions.push(SlashCommands);
   }
 
   return extensions;
-};
+}
 
-export const getViewerExtensions = () => {
+/**
+ * Get viewer extensions for displaying proposal content (read-only).
+ */
+export function getViewerExtensions(): AnyExtension[] {
   return [
-    ...baseExtensions,
+    StarterKit,
+    ...getBaseExtensions(),
     Link.configure({
-      openOnClick: true, // Allow clicking links in view mode
+      openOnClick: true,
     }),
+    IframelyExtension as AnyExtension,
   ];
-};
+}
+
+// Legacy export for backward compatibility
+// TODO: Remove after migrating all usages to getProposalExtensions
+export const getEditorExtensions = getProposalExtensions;

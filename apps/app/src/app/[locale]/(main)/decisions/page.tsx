@@ -1,4 +1,4 @@
-import { DecisionProfileList, ProcessStatus } from '@op/api/encoders';
+import type { DecisionProfileList } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 
 import { AllDecisions } from '@/components/decisions/AllDecisions';
