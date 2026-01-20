@@ -33,7 +33,7 @@
     "access-zones": "catalog:",
     "dotenv": "^16.4.7",
     "drizzle-orm": "catalog:",
-    "drizzle-seed": "1.0.0-beta.9-e89174b",
+    "drizzle-seed": "1.0.0-beta.11-05230d9",
     "pg": "^8.16.0",
     "postgres": "^3.4.5",
     "server-only": "^0.0.1"
