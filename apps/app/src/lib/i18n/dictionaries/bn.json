@@ -435,4 +435,6 @@
   "{profileName} has been deleted. All associated data have been permanently removed.": "{profileName} মুছে ফেলা হয়েছে। সমস্ত সম্পর্কিত ডেটা স্থায়ীভাবে সরানো হয়েছে।",
   "User avatar": "ব্যবহারকারীর অবতার",
   "Done": "সম্পন্ন"
+  "How do you want to structure your decision-making process?": "আপনি কীভাবে আপনার সিদ্ধান্ত গ্রহণ প্রক্রিয়া গঠন করতে চান?",
+  "No templates found": "কোনো টেমপ্লেট পাওয়া যায়নি"
 }
