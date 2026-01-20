@@ -1,13 +1,16 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { type DecisionProfile } from '@op/api/encoders';
+import { decisionProcessWithSchemaEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1, Header2 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+
+type DecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;
 
 export const ProcessBuilderProcessSelector = () => {
   // Get available templates
@@ -29,7 +32,7 @@ export const ProcessBuilderProcessSelector = () => {
               <ProcessCardSkeleton />
             </>
           ) : (
-            <ProccessSelector templates={templates} />
+            <ProcessSelector templates={templates} />
           )}
         </div>
       </div>
@@ -37,12 +40,12 @@ export const ProcessBuilderProcessSelector = () => {
   );
 };
 
-const ProccessSelector = ({ templates }: { templates?: DecisionProfile[] }) => {
+const ProcessSelector = ({ templates }: { templates?: DecisionProcess[] }) => {
   const router = useRouter();
   const createDecisionInstance =
     trpc.decision.createInstanceFromTemplate.useMutation({
       onSuccess: (data) => {
-        router.push(`/decisions/${data.processInstance.id}`);
+        router.push(`/decisions/edit/${data.slug}`);
       },
     });
 
@@ -70,7 +73,7 @@ export const ProcessBuilderProcessCard = ({
   template,
   onSelect,
 }: {
-  template: DecisionProfile;
+  template: DecisionProcess;
   onSelect: () => void;
 }) => {
   const { name, description } = template;
