@@ -52,7 +52,11 @@ const ProcessSelector = ({ templates }: { templates?: DecisionProcess[] }) => {
   const t = useTranslations();
 
   if (!templates?.length) {
-    return <p>{t('No templates found')}</p>;
+    return (
+      <div className="grid aspect-square h-64 items-center rounded-lg border bg-white text-center">
+        <p>{t('No templates found')}</p>
+      </div>
+    );
   }
 
   return Object.values(templates).map((template) => (
