@@ -1,7 +1,7 @@
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderProcessSelector } from '@/components/decisions/ProcessBuilder/ProcessBuilderProcessSelector';
 
-const NewDecisionPage = () => {
+const CreateDecisionPage = () => {
   return (
     <div className="flex size-full flex-col">
       <ProcessBuilderHeader />
@@ -10,4 +10,4 @@ const NewDecisionPage = () => {
   );
 };
 
-export default NewDecisionPage;
+export default CreateDecisionPage;
