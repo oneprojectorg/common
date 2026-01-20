@@ -7,17 +7,20 @@ import { Header1, Header2 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { useRouter } from 'next/navigation';
 
+import { useTranslations } from '@/lib/i18n';
+
 export const ProcessBuilderProcessSelector = () => {
-  // TODO: create instance when a template is selected
+  // Get available templates
   const { data: templatesData, isLoading: isLoadingTemplates } =
     trpc.decision.listProcesses.useQuery({});
   const templates = templatesData?.processes;
+  const t = useTranslations();
 
   return (
     <div className="size-full p-4 sm:p-8">
       <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto rounded-lg border bg-neutral-offWhite p-4 md:gap-8 md:p-8">
         <Header1 className="text-center">
-          How do you want to structure your decision-making process?
+          {t('How do you want to structure your decision-making process?')}
         </Header1>
         <div className="flex w-full flex-wrap items-stretch justify-center gap-4">
           {isLoadingTemplates ? (
@@ -43,8 +46,10 @@ const ProccessSelector = ({ templates }: { templates?: DecisionProfile[] }) => {
       },
     });
 
+  const t = useTranslations();
+
   if (!templates?.length) {
-    return <p>No templates found</p>;
+    return <p>{t('No templates found')}</p>;
   }
 
   return Object.values(templates).map((template) => (
