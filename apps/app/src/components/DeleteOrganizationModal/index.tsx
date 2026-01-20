@@ -2,8 +2,9 @@
 
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
+import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { EntityType, Profile } from '@op/api/encoders';
+import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -15,6 +16,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+type AccountProfile = RouterOutput['account']['getUserProfiles'][number];
 
 interface OrgDeletionModalProps {
   isOpen: boolean;
@@ -28,7 +31,7 @@ export const DeleteOrganizationModal = ({
   const t = useTranslations();
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
   const [selectedProfileId, setSelectedProfileId] = useState<string>();
-  const [profileToDelete, setProfileToDelete] = useState<Profile>();
+  const [profileToDelete, setProfileToDelete] = useState<AccountProfile>();
   const [currentStep, setCurrentStep] = useState(0);
 
   const [isSubmitting, startTransition] = useTransition();
@@ -40,14 +43,11 @@ export const DeleteOrganizationModal = ({
   const router = useRouter();
 
   const userProfiles =
-    profiles?.reduce<Profile[]>((acc, profile) => {
-      // Filter out everything that's not an ORG profile
-      if (!profile || profile?.type !== EntityType.ORG) {
-        return acc;
-      }
-      acc.push(profile as Profile);
-      return acc;
-    }, []) ?? [];
+    profiles?.filter(
+      (profile) =>
+        // Filter out everything that's not an ORG profile
+        profile && profile?.type === EntityType.ORG,
+    ) ?? [];
 
   const closeModal = () => {
     onOpenChange?.(false);
@@ -76,8 +76,7 @@ export const DeleteOrganizationModal = ({
           }
         }
 
-        await utils.account.getUserProfiles.invalidate();
-        await utils.account.getMyAccount.invalidate();
+        await utils.account.invalidate();
         await utils.organization.listAllPosts.invalidate();
 
         router.refresh();
@@ -148,7 +147,7 @@ const SelectProfileStep = ({
   cancelButtonAction,
   submitButtonAction,
 }: {
-  allProfiles: Profile[];
+  allProfiles: AccountProfile[];
   selectedProfile?: string;
   setSelectedProfile: (profiles: string) => void;
   cancelButtonAction: () => void;
@@ -219,7 +218,7 @@ const ConfirmProfileStep = ({
   profileToDelete,
   isSubmitting,
 }: {
-  profileToDelete: Profile;
+  profileToDelete: AccountProfile;
   backButtonAction: () => void;
   submitButtonAction: () => void;
   isSubmitting: boolean;
