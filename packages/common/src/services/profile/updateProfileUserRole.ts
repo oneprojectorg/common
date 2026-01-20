@@ -28,13 +28,13 @@ export const updateProfileUserRoles = async ({
   }
 
   const [targetProfileUser, validRoles] = await Promise.all([
-    db.query.profileUsers.findFirst({
+    db._query.profileUsers.findFirst({
       where: eq(profileUsers.id, profileUserId),
       with: {
         roles: true,
       },
     }),
-    db.query.accessRoles.findMany({
+    db._query.accessRoles.findMany({
       where: (table, { inArray }) => inArray(table.id, roleIds),
     }),
   ]);

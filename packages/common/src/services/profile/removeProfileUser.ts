@@ -16,7 +16,7 @@ export const removeProfileUser = async ({
   profileUserId: string;
   user: User;
 }) => {
-  const targetProfileUser = await db.query.profileUsers.findFirst({
+  const targetProfileUser = await db._query.profileUsers.findFirst({
     where: eq(profileUsers.id, profileUserId),
   });
 

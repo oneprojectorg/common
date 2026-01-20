@@ -51,7 +51,7 @@ export const listProfileUsers = async ({
   assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
   // Fetch all profile users with their roles and user profiles
-  const members = await db.query.profileUsers.findMany({
+  const members = await db._query.profileUsers.findMany({
     where: eq(profileUsers.profileId, profileId),
     with: {
       roles: {

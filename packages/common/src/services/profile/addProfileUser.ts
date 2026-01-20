@@ -34,6 +34,8 @@ export const addProfileUser = async ({
     throw new CommonError('At least one role must be specified');
   }
 
+  const roleIdsToAssignDeduped = Array.from(new Set(roleIdsToAssign));
+
   const [profile, currentProfileUser] = await Promise.all([
     assertProfile(profileId),
     getProfileAccessUser({ user: currentUser, profileId }),
@@ -48,10 +50,10 @@ export const addProfileUser = async ({
   const normalizedEmail = inviteeEmail.toLowerCase();
 
   const [validRoles, existingUser] = await Promise.all([
-    db.query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, roleIdsToAssign),
+    db._query.accessRoles.findMany({
+      where: (table, { inArray }) => inArray(table.id, roleIdsToAssignDeduped),
     }),
-    db.query.users.findFirst({
+    db._query.users.findFirst({
       where: (table, { eq }) => eq(table.email, normalizedEmail),
       with: {
         profileUsers: {
@@ -61,9 +63,9 @@ export const addProfileUser = async ({
     }),
   ]);
 
-  if (validRoles.length !== roleIdsToAssign.length) {
+  if (validRoles.length !== roleIdsToAssignDeduped.length) {
     const validRoleIds = new Set(validRoles.map((r) => r.id));
-    const invalidRoleIds = roleIdsToAssign.filter(
+    const invalidRoleIds = roleIdsToAssignDeduped.filter(
       (id) => !validRoleIds.has(id),
     );
     throw new CommonError(
@@ -90,7 +92,7 @@ export const addProfileUser = async ({
 
       if (newProfileUser) {
         await tx.insert(profileUserToAccessRoles).values(
-          roleIdsToAssign.map((accessRoleId) => ({
+          roleIdsToAssignDeduped.map((accessRoleId) => ({
             profileUserId: newProfileUser.id,
             accessRoleId,
           })),
@@ -99,11 +101,11 @@ export const addProfileUser = async ({
     });
 
     // User already exists in the system - no need to send invite email
-    return { success: true, email: normalizedEmail };
+    return { email: normalizedEmail };
   }
 
   // Check if email is in the allowList
-  const existingAllowListEntry = await db.query.allowList.findFirst({
+  const existingAllowListEntry = await db._query.allowList.findFirst({
     where: (table, { eq }) => eq(table.email, normalizedEmail),
   });
 
@@ -113,7 +115,7 @@ export const addProfileUser = async ({
       invitedAt: new Date().toISOString(),
       inviteType: 'profile',
       personalMessage,
-      roleIds: roleIdsToAssign,
+      roleIds: roleIdsToAssignDeduped,
       profileId,
       inviterProfileName: profile.name,
     };
