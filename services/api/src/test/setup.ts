@@ -54,6 +54,17 @@ const mockPlatformAdminEmails = {
   },
 };
 
+// Mock the event system to avoid Inngest API calls in tests
+vi.mock('@op/events', async () => {
+  const actual = await vi.importActual('@op/events');
+  return {
+    ...actual,
+    event: {
+      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
+    },
+  };
+});
+
 // Mock @op/core to return test environment values and use mock platformAdminEmails
 vi.mock('@op/core', async () => {
   const actual = await vi.importActual('@op/core');
