@@ -4,16 +4,16 @@ import { useQueryState } from 'nuqs';
 import { useCallback, useMemo } from 'react';
 
 import {
-  DEFAULT_VISIBILITY_CONFIG,
+  DEFAULT_NAVIGATION_CONFIG,
   SECTIONS_BY_STEP,
   STEPS,
+  type NavigationConfig,
   type SectionId,
   type StepId,
-  type VisibilityConfig,
 } from './navigation-config';
 
 export function useProcessNavigation(
-  visibilityConfig: VisibilityConfig = DEFAULT_VISIBILITY_CONFIG,
+  navigationConfig: NavigationConfig = DEFAULT_NAVIGATION_CONFIG,
 ) {
   const [stepParam, setStepParam] = useQueryState('step');
   const [sectionParam, setSectionParam] = useQueryState('section');
@@ -22,11 +22,11 @@ export function useProcessNavigation(
   const visibleSteps = useMemo(
     () =>
       STEPS.filter((s) => {
-        const visibility = visibilityConfig.steps?.[s.id];
+        const visibility = navigationConfig.steps?.[s.id];
         // Default to visible if not specified
         return visibility !== false;
       }),
-    [visibilityConfig.steps],
+    [navigationConfig.steps],
   );
 
   // Current step (fallback to first visible step)
@@ -42,7 +42,7 @@ export function useProcessNavigation(
     }
 
     const allSections = SECTIONS_BY_STEP[currentStep.id];
-    const allowedSectionIds = visibilityConfig.sections?.[currentStep.id];
+    const allowedSectionIds = navigationConfig.sections?.[currentStep.id];
 
     // If no section config, show all sections for this step
     if (!allowedSectionIds) {
@@ -53,7 +53,7 @@ export function useProcessNavigation(
     return allSections.filter((s) =>
       allowedSectionIds.includes(s.id as SectionId),
     );
-  }, [currentStep, visibilityConfig.sections]);
+  }, [currentStep, navigationConfig.sections]);
 
   // Current section (fallback to first visible section)
   const currentSection = useMemo(() => {
@@ -71,7 +71,7 @@ export function useProcessNavigation(
 
       // Get first section of the new step
       const newStepSections = SECTIONS_BY_STEP[newStep.id];
-      const allowedSectionIds = visibilityConfig.sections?.[newStep.id];
+      const allowedSectionIds = navigationConfig.sections?.[newStep.id];
       const firstVisibleSection = allowedSectionIds
         ? newStepSections.find((s) =>
             allowedSectionIds.includes(s.id as SectionId),
@@ -81,7 +81,7 @@ export function useProcessNavigation(
       setStepParam(newStepId);
       setSectionParam(firstVisibleSection?.id ?? null);
     },
-    [visibleSteps, visibilityConfig.sections, setStepParam, setSectionParam],
+    [visibleSteps, navigationConfig.sections, setStepParam, setSectionParam],
   );
 
   // Handle section change

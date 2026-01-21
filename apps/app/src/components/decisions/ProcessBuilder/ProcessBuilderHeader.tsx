@@ -1,57 +1,77 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { useQueryState } from 'nuqs';
+import { Tab, TabList, Tabs } from '@op/ui/Tabs';
+import { Key } from 'react-aria-components';
 import { LuChevronRight, LuCircleAlert, LuHouse, LuPlus } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
-export const ProcessBuilderHeader = ({
-  steps,
-}: {
-  steps?: { id: string; label: string }[];
-}) => {
-  const [currentStep, setCurrentStep] = useQueryState('step');
+import { useProcessBuilderContext } from './ProcessBuilderProvider';
+import { useProcessNavigation } from './useProcessNavigation';
+
+export const ProcessBuilderHeader = () => {
+  const t = useTranslations();
+  const { navigationConfig } = useProcessBuilderContext();
+  const { visibleSteps, currentStep, setStep } =
+    useProcessNavigation(navigationConfig);
+
+  const handleSelectionChange = (key: Key) => {
+    setStep(String(key));
+  };
+
   return (
     <header className="relative flex h-14 w-dvw items-center justify-between border-b">
       <div className="relative z-10 flex items-center gap-2 pl-4 md:pl-8">
         <Link href="/" className="flex items-center gap-2 text-primary">
           <LuHouse className="size-4" />
-          Home
+          {t('Home')}
         </Link>
         <LuChevronRight className="size-4" />
-        <span>New process</span>
+        <span>{t('New process')}</span>
       </div>
-      <nav className="absolute z-0 hidden h-full w-full justify-center gap-2 md:flex">
-        {steps &&
-          steps?.length > 0 &&
-          steps.map((step) => (
-            <button
-              key={step.id}
-              className={`cursor-pointer border-b border-transparent px-2 text-neutral-gray4 hover:border-neutral-400 hover:text-black data-active:border-black data-active:text-black`}
-              id={step.id}
-              onClick={() => setCurrentStep(step.id)}
-              data-active={step.id === currentStep ? true : undefined}
+      <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
+        {visibleSteps.length > 0 && (
+          <Tabs
+            selectedKey={currentStep?.id}
+            onSelectionChange={handleSelectionChange}
+            className="h-full"
+          >
+            <TabList
+              aria-label={t('Process steps')}
+              className="h-full border-none"
             >
-              {step.label}
-            </button>
-          ))}
+              {visibleSteps.map((step) => (
+                <Tab
+                  key={step.id}
+                  id={step.id}
+                  // className="h-full cursor-pointer border-b-2 border-transparent px-3 text-neutral-gray4 hover:border-neutral-gray3 hover:text-black data-[selected]:border-black data-[selected]:text-black"
+                  className="h-full"
+                  // unstyled
+                >
+                  {t(step.labelKey)}
+                </Tab>
+              ))}
+            </TabList>
+          </Tabs>
+        )}
       </nav>
       <div className="relative z-10 flex gap-4 pr-4 md:pr-8">
-        {steps && steps.length > 0 && (
+        {visibleSteps.length > 0 && (
           <div className="flex gap-2">
             <Button
               className="flex aspect-square h-8 gap-2 rounded-sm md:aspect-auto"
               color="warn"
             >
               <LuCircleAlert className="size-4 shrink-0" />
-              <span className="hidden md:block">3 steps remaining</span>
+              <span className="hidden md:block">{t('3 steps remaining')}</span>
             </Button>
             <Button className="h-8 rounded-sm">
               <LuPlus className="size-4" />
-              Launch<span className="hidden md:inline"> Process</span>
+              {t('Launch')}
+              <span className="hidden md:inline"> {t('Process')}</span>
             </Button>
           </div>
         )}

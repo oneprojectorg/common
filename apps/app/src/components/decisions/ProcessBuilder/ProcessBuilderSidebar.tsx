@@ -1,55 +1,50 @@
 'use client';
 
-import { MenuItem } from '@op/ui/Menu';
 import { Sidebar } from '@op/ui/Sidebar';
-import { cn } from '@op/ui/utils';
-import { useQueryState } from 'nuqs';
-import { Menu } from 'react-aria-components';
+import { Tab, TabList, Tabs } from '@op/ui/Tabs';
+import { Key } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 
-export const ProcessBuilderSidebar = () => {
-  const [section, setSection] = useQueryState('section');
-  const t = useTranslations();
+import { useProcessBuilderContext } from './ProcessBuilderProvider';
+import { useProcessNavigation } from './useProcessNavigation';
 
-  const navSections = [
-    { slug: 'overview', label: t('Overview') },
-    { slug: 'phases', label: t('Phases') },
-    { slug: 'categories', label: t('Proposal Categories') },
-    { slug: 'voting', label: t('Voting') },
-  ];
+export const ProcessBuilderSidebar = () => {
+  const t = useTranslations();
+  const { navigationConfig } = useProcessBuilderContext();
+  const { visibleSections, currentSection, setSection } =
+    useProcessNavigation(navigationConfig);
+
+  const handleSelectionChange = (key: Key) => {
+    setSection(String(key));
+  };
 
   return (
     <Sidebar className="border-r p-8">
-      <Menu className="flex flex-col gap-1">
-        {navSections.map(({ slug, label }) => (
-          <SidebarLink
-            key={slug}
-            isCurrent={section === slug}
-            onPress={() => setSection(slug)}
-            label={label}
-          />
-        ))}
-      </Menu>
+      {visibleSections.length > 0 && (
+        <Tabs
+          orientation="vertical"
+          selectedKey={currentSection?.id}
+          onSelectionChange={handleSelectionChange}
+        >
+          <TabList
+            aria-label={t('Section navigation')}
+            className="flex w-full flex-col gap-1 border-none"
+          >
+            {visibleSections.map((section) => (
+              <Tab
+                key={section.id}
+                id={section.id}
+                variant="pill"
+                // TODO: Figure out why focus styles aren't being picked up here
+                className="hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline selected:bg-neutral-offWhite selected:text-neutral-gray4"
+              >
+                {t(section.labelKey)}
+              </Tab>
+            ))}
+          </TabList>
+        </Tabs>
+      )}
     </Sidebar>
-  );
-};
-
-const SidebarLink = ({
-  label,
-  isCurrent,
-  onPress,
-}: {
-  label: string;
-  isCurrent: boolean;
-  onPress: () => void;
-}) => {
-  return (
-    <MenuItem
-      className={cn(isCurrent && 'bg-neutral-offWhite')}
-      onAction={onPress}
-    >
-      {label}
-    </MenuItem>
   );
 };

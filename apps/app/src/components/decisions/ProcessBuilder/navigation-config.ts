@@ -36,11 +36,11 @@ export const SECTIONS_BY_STEP = {
 // Derive SectionId from all sections across all steps
 export type SectionId = (typeof SECTIONS_BY_STEP)[StepId][number]['id'];
 
-// Visibility configuration (from API)
-export interface VisibilityConfig {
+// Navigation configuration (from API)
+export interface NavigationConfig {
   steps?: Partial<Record<StepId, boolean>>;
   sections?: Partial<Record<StepId, SectionId[]>>;
 }
 
-// Default visibility (all visible)
-export const DEFAULT_VISIBILITY_CONFIG: VisibilityConfig = {};
+// Default navigation config (all visible)
+export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {};
