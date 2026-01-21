@@ -70,5 +70,3 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
   // Roles using shared minimal encoder
   roles: z.array(accessRoleMinimalEncoder),
 });
-
-export const profileUserListEncoder = z.array(profileUserEncoder);
