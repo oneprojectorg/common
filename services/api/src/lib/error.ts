@@ -1,10 +1,11 @@
-import { CommonError } from '@op/common';
+import { CommonError, UnauthorizedError } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
 import {
   type ErrorFormatter,
   getStatusKeyFromCode,
 } from '@trpc/server/unstable-core-do-not-import';
+import { AccessControlException } from 'access-zones';
 import { ZodError } from 'zod';
 
 import type { TContext } from '../types';
@@ -33,8 +34,7 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
   error,
 }) => {
   const cause = error.cause;
-
-  if (cause instanceof CommonError) {
+  const commonErrorToTRPCError = (cause: CommonError) => {
     return {
       ...shape,
       message: cause.message,
@@ -46,6 +46,14 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
         // Omit the entire error object before it goes to the client
       },
     };
+  };
+
+  if (cause instanceof AccessControlException) {
+    return commonErrorToTRPCError(new UnauthorizedError(cause.message));
+  }
+
+  if (cause instanceof CommonError) {
+    return commonErrorToTRPCError(cause);
   }
 
   const backendError = error as BackendError;

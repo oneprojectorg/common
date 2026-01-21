@@ -10,12 +10,14 @@ import {
   updateJoinRequestRouter,
 } from './requests';
 import { searchProfilesRouter } from './searchProfiles';
+import { usersRouter } from './users';
 
 const profileRouter = mergeRouters(
   getProfileRouter,
   searchProfilesRouter,
   profileRelationshipRouter,
   inviteProfileUserRouter,
+  usersRouter,
   createJoinRequestRouter,
   deleteJoinRequestRouter,
   getJoinRequestRouter,

@@ -9,6 +9,7 @@ import {
   organizationsWithProfileEncoder,
 } from './organizations';
 import { baseProfileEncoder } from './profiles';
+import { accessRoleMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 
 const permissionSchema = z.object({
@@ -37,10 +38,8 @@ const zonePermissionSchema = z.object({
   accessZone: accessZoneSchema,
 });
 
-const accessRoleSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().nullish(),
+// Extend the shared minimal encoder with zone permissions for full role context
+const accessRoleSchema = accessRoleMinimalEncoder.extend({
   zonePermissions: z.array(zonePermissionSchema).nullish(),
 });
 

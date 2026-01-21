@@ -4,17 +4,17 @@
  */
 import { permission } from 'access-zones';
 
-// Predefined UUIDs for access zones
+// Predefined UUIDs for access zones (v4 format with version=4 and variant=8)
 const ACCESS_ZONE_IDS = {
-  PROFILE: '00000000-0000-0000-0000-000000000001',
-  ADMIN: '00000000-0000-0000-0000-000000000002',
-  DECISIONS: '00000000-0000-0000-0000-000000000003',
+  PROFILE: '00000000-0000-4000-8000-000000000001',
+  ADMIN: '00000000-0000-4000-8000-000000000002',
+  DECISIONS: '00000000-0000-4000-8000-000000000003',
 } as const;
 
-// Predefined UUIDs for access roles
+// Predefined UUIDs for access roles (v4 format with version=4 and variant=8)
 const ACCESS_ROLE_IDS = {
-  ADMIN: '00000000-0000-0000-0000-000000000011',
-  MEMBER: '00000000-0000-0000-0000-000000000012',
+  ADMIN: '00000000-0000-4000-8000-000000000011',
+  MEMBER: '00000000-0000-4000-8000-000000000012',
 } as const;
 
 // Access zones data

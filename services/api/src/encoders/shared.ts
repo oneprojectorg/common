@@ -14,3 +14,20 @@ export const entityTermsEncoder = z.record(
 );
 
 export type EntityTerms = z.infer<typeof entityTermsEncoder>;
+
+// Minimal access role encoder for contexts where we only need basic role info
+export const accessRoleMinimalEncoder = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+});
+
+export type AccessRoleMinimal = z.infer<typeof accessRoleMinimalEncoder>;
+
+// Minimal storage item encoder for avatar/image references where we only need id and name
+export const storageItemMinimalEncoder = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+});
+
+export type StorageItemMinimal = z.infer<typeof storageItemMinimalEncoder>;
