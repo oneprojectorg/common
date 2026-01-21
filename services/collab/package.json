@@ -1,0 +1,20 @@
+{
+  "name": "@op/collab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "ky": "^1.8.1"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "@types/jsonwebtoken": "^9.0.10"
+  }
+}
