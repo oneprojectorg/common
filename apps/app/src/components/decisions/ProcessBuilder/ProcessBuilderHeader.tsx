@@ -48,13 +48,7 @@ export const ProcessBuilderHeader = ({
               className="h-full border-none"
             >
               {visibleSteps.map((step) => (
-                <Tab
-                  key={step.id}
-                  id={step.id}
-                  // className="h-full cursor-pointer border-b-2 border-transparent px-3 text-neutral-gray4 hover:border-neutral-gray3 hover:text-black data-[selected]:border-black data-[selected]:text-black"
-                  className="h-full"
-                  // unstyled
-                >
+                <Tab key={step.id} id={step.id} className="h-full">
                   {t(step.labelKey)}
                 </Tab>
               ))}
