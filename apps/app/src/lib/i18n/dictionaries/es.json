@@ -442,4 +442,14 @@
   "Role updated successfully": "Rol actualizado exitosamente",
   "Failed to update role": "Error al actualizar el rol",
   "Members list": "Lista de miembros"
+  "Overview": "Resumen",
+  "Proposal Template": "Plantilla de propuesta",
+  "Review Rubric": "Rúbrica de revisión",
+  "Phases": "Fases",
+  "Proposal Categories": "Categorías de propuestas",
+  "Voting": "Votación",
+  "Form Builder": "Constructor de formularios",
+  "Criteria": "Criterios",
+  "Settings": "Configuración",
+  "Roles & permissions": "Roles y permisos"
 }

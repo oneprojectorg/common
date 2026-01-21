@@ -443,4 +443,14 @@
   "Role updated successfully": "ভূমিকা সফলভাবে আপডেট করা হয়েছে",
   "Failed to update role": "ভূমিকা আপডেট করতে ব্যর্থ",
   "Members list": "সদস্যদের তালিকা"
+  "Overview": "সারসংক্ষেপ",
+  "Proposal Template": "প্রস্তাব টেমপ্লেট",
+  "Review Rubric": "পর্যালোচনা রুব্রিক",
+  "Phases": "পর্যায়সমূহ",
+  "Proposal Categories": "প্রস্তাব বিভাগসমূহ",
+  "Voting": "ভোটদান",
+  "Form Builder": "ফর্ম নির্মাতা",
+  "Criteria": "মানদণ্ড",
+  "Settings": "সেটিংস",
+  "Roles & permissions": "ভূমিকা ও অনুমতিসমূহ"
 }
