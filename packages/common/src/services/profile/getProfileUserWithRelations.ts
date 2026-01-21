@@ -39,11 +39,6 @@ export const getProfileUserWithRelations = async (
   const profileUser = await db._query.profileUsers.findFirst({
     where: eq(profileUsers.id, profileUserId),
     with: {
-      roles: {
-        with: {
-          accessRole: true,
-        },
-      },
       serviceUser: {
         with: {
           profile: {
@@ -51,6 +46,11 @@ export const getProfileUserWithRelations = async (
               avatarImage: true,
             },
           },
+        },
+      },
+      roles: {
+        with: {
+          accessRole: true,
         },
       },
     },
