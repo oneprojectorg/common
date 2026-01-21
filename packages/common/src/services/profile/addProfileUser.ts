@@ -1,5 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
+import { waitUntil } from '@vercel/functions';
 import {
   allowList,
   profileUserToAccessRoles,
@@ -138,22 +139,24 @@ export const addProfileUser = async ({
   }
 
   // Send invite email via event
-  await event.send({
-    name: Events.profileInviteSent.name,
-    data: {
-      senderProfileId: currentProfileUser.profileId,
-      invitations: [
-        {
-          email: normalizedEmail,
-          inviterName:
-            currentProfileUser.name || currentUser.email || 'A team member',
-          profileName: profile.name,
-          inviteUrl: OPURLConfig('APP').ENV_URL,
-          personalMessage,
-        },
-      ],
-    },
-  });
+  waitUntil(
+    event.send({
+      name: Events.profileInviteSent.name,
+      data: {
+        senderProfileId: currentProfileUser.profileId,
+        invitations: [
+          {
+            email: normalizedEmail,
+            inviterName:
+              currentProfileUser.name || currentUser.email || 'A team member',
+            profileName: profile.name,
+            inviteUrl: OPURLConfig('APP').ENV_URL,
+            personalMessage,
+          },
+        ],
+      },
+    }),
+  );
 
   return { email: normalizedEmail, invited: true as const };
 };
