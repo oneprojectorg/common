@@ -28,6 +28,8 @@ export const updateProfileUserRoles = async ({
     throw new CommonError('At least one role must be specified');
   }
 
+  const roleIdsDeduped = [...new Set(roleIds)];
+
   const [targetProfileUser, validRoles] = await Promise.all([
     db._query.profileUsers.findFirst({
       where: eq(profileUsers.id, profileUserId),
@@ -36,17 +38,17 @@ export const updateProfileUserRoles = async ({
       },
     }),
     db._query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, roleIds),
+      where: (table, { inArray }) => inArray(table.id, roleIdsDeduped),
     }),
   ]);
 
   if (!targetProfileUser) {
-    throw new NotFoundError('Member not found');
+    throw new NotFoundError('User not found');
   }
 
-  if (validRoles.length !== roleIds.length) {
+  if (validRoles.length !== roleIdsDeduped.length) {
     const validRoleIds = new Set(validRoles.map((r) => r.id));
-    const invalidRoleIds = roleIds.filter((id) => !validRoleIds.has(id));
+    const invalidRoleIds = roleIdsDeduped.filter((id) => !validRoleIds.has(id));
     throw new CommonError(
       `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
     );
@@ -68,9 +70,9 @@ export const updateProfileUserRoles = async ({
   const existingRoleIds = new Set(
     targetProfileUser.roles.map((r) => r.accessRoleId),
   );
-  const desiredRoleIds = new Set(roleIds);
+  const desiredRoleIds = new Set(roleIdsDeduped);
 
-  const rolesToAdd = roleIds.filter((id) => !existingRoleIds.has(id));
+  const rolesToAdd = roleIdsDeduped.filter((id) => !existingRoleIds.has(id));
   const rolesToRemove = targetProfileUser.roles
     .filter((r) => !desiredRoleIds.has(r.accessRoleId))
     .map((r) => r.accessRoleId);
