@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryState } from 'nuqs';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import {
   DEFAULT_NAVIGATION_CONFIG,
@@ -61,6 +61,31 @@ export function useProcessNavigation(
     return found ?? visibleSections[0];
   }, [sectionParam, visibleSections]);
 
+  // Replace invalid params in URL
+  useEffect(() => {
+    if (stepParam && !visibleSteps.some((s) => s.id === stepParam)) {
+      setStepParam(null);
+    }
+    if (sectionParam && !visibleSections.some((s) => s.id === sectionParam)) {
+      setSectionParam(currentSection?.id ?? null);
+    }
+  }, [
+    stepParam,
+    sectionParam,
+    visibleSteps,
+    visibleSections,
+    currentSection,
+    setStepParam,
+    setSectionParam,
+  ]);
+
+  // Hide section param for single-section steps
+  useEffect(() => {
+    if (sectionParam && visibleSections.length <= 1) {
+      setSectionParam(null);
+    }
+  }, [sectionParam, visibleSections.length, setSectionParam]);
+
   // Handle step change - resets section to first of new step
   const setStep = useCallback(
     (newStepId: StepId | string) => {
@@ -79,7 +104,10 @@ export function useProcessNavigation(
         : newStepSections[0];
 
       setStepParam(newStepId);
-      setSectionParam(firstVisibleSection?.id ?? null);
+      // Only set section param if step has multiple sections
+      setSectionParam(
+        newStepSections.length > 1 ? (firstVisibleSection?.id ?? null) : null,
+      );
     },
     [visibleSteps, navigationConfig.sections, setStepParam, setSectionParam],
   );
