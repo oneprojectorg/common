@@ -1,12 +1,6 @@
 import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import { beforeAll, beforeEach, vi } from 'vitest';
 
-/**
- * Mock generateUniqueProfileSlug to always return a UUID-based slug.
- * This avoids race conditions in concurrent tests where multiple tests
- * might try to create profiles with the same slug (e.g., "my-proposal-2").
- * Uses __mocks__/utils.ts file in packages/common/src/services/profile/
- */
 vi.mock('@op/common/src/services/profile/utils');
 
 // Mock server-only modules before any other imports
