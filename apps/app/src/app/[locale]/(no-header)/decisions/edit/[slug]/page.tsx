@@ -1,24 +1,28 @@
-import { createClient } from '@op/api/serverClient';
+'use client';
+
+import { trpc } from '@op/api/client';
 import { SidebarLayout } from '@op/ui/Sidebar';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderProvider';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSidebar';
 
-const EditDecisionPage = async ({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) => {
-  const { slug } = await params;
-  const client = await createClient();
+const EditDecisionPage = ({}: {}) => {
+  const { slug } = useParams<{ slug: string }>();
 
-  const decisionProfile = await client.decision.getDecisionBySlug({ slug });
+  console.log(slug);
 
-  if (!decisionProfile || !decisionProfile.processInstance) {
+  // Get the decision profile to find the instance ID
+  const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
+    slug,
+  });
+
+  if (!decisionProfile?.processInstance) {
     notFound();
   }
+
+  const instanceId = decisionProfile.processInstance.id;
 
   return (
     <ProcessBuilderProvider>
