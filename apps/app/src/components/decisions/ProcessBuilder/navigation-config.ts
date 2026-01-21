@@ -1,0 +1,44 @@
+// Process Builder Navigation Configuration
+// Steps and sections are defined here with `as const` - types are derived from this config
+
+export const STEPS = [
+  { id: 'overview', labelKey: 'Overview' },
+  { id: 'phases', labelKey: 'Phases' },
+  { id: 'categories', labelKey: 'Proposal Categories' },
+  { id: 'voting', labelKey: 'Voting' },
+] as const;
+
+export const SECTIONS_BY_STEP = {
+  overview: [
+    { id: 'basics', labelKey: 'Basics' },
+    { id: 'timeline', labelKey: 'Timeline' },
+    { id: 'permissions', labelKey: 'Permissions' },
+  ],
+  phases: [
+    { id: 'submission', labelKey: 'Submission' },
+    { id: 'review', labelKey: 'Review' },
+    { id: 'deliberation', labelKey: 'Deliberation' },
+  ],
+  categories: [
+    { id: 'types', labelKey: 'Types' },
+    { id: 'limits', labelKey: 'Limits' },
+  ],
+  voting: [
+    { id: 'method', labelKey: 'Voting Method' },
+    { id: 'quorum', labelKey: 'Quorum' },
+    { id: 'results', labelKey: 'Results' },
+  ],
+} as const satisfies Record<StepId, readonly { id: string; labelKey: string }[]>;
+
+// Derived types from config
+export type StepId = (typeof STEPS)[number]['id'];
+export type SectionId = (typeof SECTIONS_BY_STEP)[StepId][number]['id'];
+
+// Visibility configuration (from API)
+export interface VisibilityConfig {
+  steps?: Partial<Record<StepId, boolean>>;
+  sections?: Partial<Record<StepId, SectionId[]>>;
+}
+
+// Default visibility (all visible)
+export const DEFAULT_VISIBILITY_CONFIG: VisibilityConfig = {};
