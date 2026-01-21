@@ -34,100 +34,92 @@ export const getProposal = async ({
     followersCount: number;
   }
 > => {
-  try {
-    const dbUser = await assertUserByAuthId(user.id);
+  const dbUser = await assertUserByAuthId(user.id);
 
-    if (!dbUser.currentProfileId) {
-      throw new UnauthorizedError('User must have an active profile');
-    }
+  if (!dbUser.currentProfileId) {
+    throw new UnauthorizedError('User must have an active profile');
+  }
 
-    const proposal = (await db._query.proposals.findFirst({
-      where: eq(proposals.profileId, profileId),
-      with: {
-        processInstance: true,
-        submittedBy: {
-          with: {
-            avatarImage: true,
-          },
+  const proposal = (await db._query.proposals.findFirst({
+    where: eq(proposals.profileId, profileId),
+    with: {
+      processInstance: true,
+      submittedBy: {
+        with: {
+          avatarImage: true,
         },
-        profile: true,
       },
-    })) as Proposal & {
-      submittedBy: Profile & { avatarImage: any }; // fix drizzle types
-      processInstance: ProcessInstance;
-      profile: Profile;
-    };
+      profile: true,
+    },
+  })) as Proposal & {
+    submittedBy: Profile & { avatarImage: any }; // fix drizzle types
+    processInstance: ProcessInstance;
+    profile: Profile;
+  };
 
-    if (!proposal) {
-      throw new NotFoundError('Proposal not found');
-    }
-
-    // Get engagement counts for this proposal
-    let commentsCount = 0;
-    let likesCount = 0;
-    let followersCount = 0;
-
-    if (proposal.profileId) {
-      // Run all count queries in parallel for better performance
-      const [commentCountResult, likesCountResult, followersCountResult] =
-        await Promise.all([
-          // Get comment count
-          db
-            .select({ count: count() })
-            .from(posts)
-            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-            .where(eq(postsToProfiles.profileId, proposal.profileId)),
-
-          // Get likes count
-          db
-            .select({ count: count() })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.targetProfileId, proposal.profileId),
-                eq(
-                  profileRelationships.relationshipType,
-                  ProfileRelationshipType.LIKES,
-                ),
-              ),
-            ),
-
-          // Get followers count
-          db
-            .select({ count: count() })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.targetProfileId, proposal.profileId),
-                eq(
-                  profileRelationships.relationshipType,
-                  ProfileRelationshipType.FOLLOWING,
-                ),
-              ),
-            ),
-        ]);
-
-      commentsCount = Number(commentCountResult[0]?.count || 0);
-      likesCount = Number(likesCountResult[0]?.count || 0);
-      followersCount = Number(followersCountResult[0]?.count || 0);
-    }
-
-    // TODO: Add access control - check if user can view this proposal
-    // For now, any authenticated user can view any proposal
-
-    return {
-      ...proposal,
-      commentsCount,
-      likesCount,
-      followersCount,
-    };
-  } catch (error) {
-    if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
-      throw error;
-    }
-    console.error('Error fetching proposal:', error);
+  if (!proposal) {
     throw new NotFoundError('Proposal not found');
   }
+
+  // Get engagement counts for this proposal
+  let commentsCount = 0;
+  let likesCount = 0;
+  let followersCount = 0;
+
+  if (proposal.profileId) {
+    // Run all count queries in parallel for better performance
+    const [commentCountResult, likesCountResult, followersCountResult] =
+      await Promise.all([
+        // Get comment count
+        db
+          .select({ count: count() })
+          .from(posts)
+          .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
+          .where(eq(postsToProfiles.profileId, proposal.profileId)),
+
+        // Get likes count
+        db
+          .select({ count: count() })
+          .from(profileRelationships)
+          .where(
+            and(
+              eq(profileRelationships.targetProfileId, proposal.profileId),
+              eq(
+                profileRelationships.relationshipType,
+                ProfileRelationshipType.LIKES,
+              ),
+            ),
+          ),
+
+        // Get followers count
+        db
+          .select({ count: count() })
+          .from(profileRelationships)
+          .where(
+            and(
+              eq(profileRelationships.targetProfileId, proposal.profileId),
+              eq(
+                profileRelationships.relationshipType,
+                ProfileRelationshipType.FOLLOWING,
+              ),
+            ),
+          ),
+      ]);
+
+    commentsCount = Number(commentCountResult[0]?.count || 0);
+    likesCount = Number(likesCountResult[0]?.count || 0);
+    followersCount = Number(followersCountResult[0]?.count || 0);
+  }
+
+  // TODO: Add access control - check if user can view this proposal
+  // For now, any authenticated user can view any proposal
+
+  return {
+    ...proposal,
+    commentsCount,
+    likesCount,
+    followersCount,
+  };
 };
 
 export const getPermissionsOnProposal = async ({
