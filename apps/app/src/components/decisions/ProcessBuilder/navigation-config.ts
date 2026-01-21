@@ -31,7 +31,10 @@ export const SECTIONS_BY_STEP = {
     { id: 'quorum', labelKey: 'Quorum' },
     { id: 'results', labelKey: 'Results' },
   ],
-} as const satisfies Record<StepId, readonly { id: string; labelKey: string }[]>;
+} as const satisfies Record<
+  StepId,
+  readonly { id: string; labelKey: string }[]
+>;
 
 // Derive SectionId from all sections across all steps
 export type SectionId = (typeof SECTIONS_BY_STEP)[StepId][number]['id'];

@@ -5,9 +5,9 @@ import { useCallback, useMemo } from 'react';
 
 import {
   DEFAULT_NAVIGATION_CONFIG,
+  type NavigationConfig,
   SECTIONS_BY_STEP,
   STEPS,
-  type NavigationConfig,
   type SectionId,
   type StepId,
 } from './navigation-config';

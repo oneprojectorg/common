@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { SidebarLayout } from '@op/ui/Sidebar';
 import { notFound, useParams } from 'next/navigation';
 
+import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderProvider';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSidebar';
@@ -30,11 +31,12 @@ const EditDecisionPage = () => {
       <ProcessBuilderHeader />
       <SidebarLayout>
         <ProcessBuilderSidebar />
-        <div className="flex-1 p-8">
-          {/* Main content area - will show section content based on query param */}
-          <h2>Editing: {decisionProfile.name}</h2>
-          {/* TODO: Add section-specific content components */}
-        </div>
+        <main className="flex-1 p-8">
+          <ProcessBuilderContent
+            decisionId={decisionProfile.id}
+            decisionName={decisionProfile.name}
+          />
+        </main>
       </SidebarLayout>
     </ProcessBuilderProvider>
   );
