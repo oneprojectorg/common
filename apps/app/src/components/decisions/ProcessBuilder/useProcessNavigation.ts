@@ -15,8 +15,10 @@ import {
 export function useProcessNavigation(
   navigationConfig: NavigationConfig = DEFAULT_NAVIGATION_CONFIG,
 ) {
-  const [stepParam, setStepParam] = useQueryState('step');
-  const [sectionParam, setSectionParam] = useQueryState('section');
+  const [stepParam, setStepParam] = useQueryState('step', { history: 'push' });
+  const [sectionParam, setSectionParam] = useQueryState('section', {
+    history: 'push',
+  });
 
   // Filter to visible steps only
   const visibleSteps = useMemo(
