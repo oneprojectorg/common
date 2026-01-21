@@ -53,6 +53,7 @@ export const getProposal = async ({
           avatarImage: true,
         },
       },
+      profile: true,
     },
   });
 
