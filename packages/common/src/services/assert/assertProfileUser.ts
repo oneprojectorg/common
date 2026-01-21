@@ -5,10 +5,6 @@ import { NotFoundError } from '../../utils';
 
 /**
  * Fetches a profile user by ID and throws if not found.
- *
- * @param id - The profile user ID to look up
- * @param error - Custom error to throw if not found (defaults to NotFoundError)
- * @throws The provided error or NotFoundError if profile user is not found
  */
 export async function assertProfileUser(
   id: string,
