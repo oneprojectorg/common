@@ -12,12 +12,12 @@ import { assertAccess, permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
+import type { ProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
  * Type for profile user query result with relations.
- * Used for listProfileUsers which includes serviceUser.profile and roles.accessRole.
  */
-type ProfileUserWithRelations = ProfileUser & {
+type ProfileUserQueryResult = ProfileUser & {
   serviceUser: {
     profile: (Profile & { avatarImage: ObjectsInStorage | null }) | null;
   } | null;
@@ -35,7 +35,7 @@ export const listProfileUsers = async ({
 }: {
   profileId: string;
   user: User;
-}) => {
+}): Promise<ProfileUserWithRelations[]> => {
   const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
     assertProfile(profileId),
@@ -48,7 +48,7 @@ export const listProfileUsers = async ({
   assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
   // Fetch all profile users with their roles and user profiles
-  const members = await db._query.profileUsers.findMany({
+  const profileUserResults = await db._query.profileUsers.findMany({
     where: eq(profileUsers.profileId, profileId),
     with: {
       roles: {
@@ -69,22 +69,17 @@ export const listProfileUsers = async ({
     orderBy: (table, { asc }) => [asc(table.name), asc(table.email)],
   });
 
-  // Transform the data to a simpler format
-  return members.map((member) => {
-    const typedMember = member as ProfileUserWithRelations;
-    const userProfile = typedMember.serviceUser?.profile;
+  return profileUserResults.map((result) => {
+    const { serviceUser, roles, ...baseProfileUser } =
+      result as ProfileUserQueryResult;
+    const userProfile = serviceUser?.profile;
 
     return {
-      id: member.id,
-      authUserId: member.authUserId,
-      name: userProfile?.name || member.name,
-      email: member.email,
-      about: userProfile?.bio || member.about,
-      profileId: member.profileId,
-      createdAt: member.createdAt,
-      updatedAt: member.updatedAt,
+      ...baseProfileUser,
+      name: userProfile?.name || baseProfileUser.name,
+      about: userProfile?.bio || baseProfileUser.about,
       profile: userProfile ?? null,
-      roles: member.roles.map((roleJunction) => roleJunction.accessRole),
+      roles: roles.map((roleJunction) => roleJunction.accessRole),
     };
   });
 };

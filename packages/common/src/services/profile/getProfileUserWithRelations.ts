@@ -9,9 +9,8 @@ import {
 
 /**
  * Type for profile user query result with relations.
- * Used for fetching a single profile user with serviceUser.profile and roles.accessRole.
  */
-type ProfileUserWithRelations = ProfileUser & {
+type ProfileUserQueryResult = ProfileUser & {
   serviceUser: {
     profile: (Profile & { avatarImage: ObjectsInStorage | null }) | null;
   } | null;
@@ -20,11 +19,23 @@ type ProfileUserWithRelations = ProfileUser & {
   }>;
 };
 
+type ProfileWithAvatar = Profile & { avatarImage: ObjectsInStorage | null };
+
+/**
+ * Return type for getProfileUserWithRelations.
+ */
+export type ProfileUserWithRelations = ProfileUser & {
+  profile: ProfileWithAvatar | null;
+  roles: AccessRole[];
+};
+
 /**
  * Fetch a single profile user with full relations.
  * Returns the same shape as items from listProfileUsers.
  */
-export const getProfileUserWithRelations = async (profileUserId: string) => {
+export const getProfileUserWithRelations = async (
+  profileUserId: string,
+): Promise<ProfileUserWithRelations | null> => {
   const profileUser = await db._query.profileUsers.findFirst({
     where: eq(profileUsers.id, profileUserId),
     with: {
@@ -49,23 +60,15 @@ export const getProfileUserWithRelations = async (profileUserId: string) => {
     return null;
   }
 
-  const typedProfileUser = profileUser as ProfileUserWithRelations;
-  const userProfile = typedProfileUser.serviceUser?.profile;
+  const { serviceUser, roles, ...baseProfileUser } =
+    profileUser as ProfileUserQueryResult;
+  const userProfile = serviceUser?.profile;
 
   return {
-    id: profileUser.id,
-    authUserId: profileUser.authUserId,
-    name: userProfile?.name || profileUser.name,
-    email: profileUser.email,
-    about: userProfile?.bio || profileUser.about,
-    profileId: profileUser.profileId,
-    createdAt: profileUser.createdAt,
-    updatedAt: profileUser.updatedAt,
+    ...baseProfileUser,
+    name: userProfile?.name || baseProfileUser.name,
+    about: userProfile?.bio || baseProfileUser.about,
     profile: userProfile ?? null,
-    roles: profileUser.roles.map((roleJunction) => roleJunction.accessRole),
+    roles: roles.map((roleJunction) => roleJunction.accessRole),
   };
 };
-
-export type ProfileUserWithRelationsResult = NonNullable<
-  Awaited<ReturnType<typeof getProfileUserWithRelations>>
->;
