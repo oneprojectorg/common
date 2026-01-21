@@ -16,7 +16,6 @@ export function ProcessBuilderContent({
     currentStep?.id,
     currentSection?.id,
   );
-  const sectionKey = `${currentStep?.id}-${currentSection?.id}`;
 
   if (!ContentComponent) {
     return <div>Section not found</div>;

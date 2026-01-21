@@ -3,7 +3,8 @@
 import { type ComponentType } from 'react';
 
 import type { StepId } from './navigation-config';
-
+import LimitsSection from './sections/categories/LimitsSection';
+import TypesSection from './sections/categories/TypesSection';
 // Direct imports (no lazy loading) - test if this fixes skeleton flash
 import BasicsSection from './sections/overview/BasicsSection';
 import PermissionsSection from './sections/overview/PermissionsSection';
@@ -11,8 +12,6 @@ import TimelineSection from './sections/overview/TimelineSection';
 import DeliberationSection from './sections/phases/DeliberationSection';
 import ReviewSection from './sections/phases/ReviewSection';
 import SubmissionSection from './sections/phases/SubmissionSection';
-import LimitsSection from './sections/categories/LimitsSection';
-import TypesSection from './sections/categories/TypesSection';
 import MethodSection from './sections/voting/MethodSection';
 import QuorumSection from './sections/voting/QuorumSection';
 import ResultsSection from './sections/voting/ResultsSection';

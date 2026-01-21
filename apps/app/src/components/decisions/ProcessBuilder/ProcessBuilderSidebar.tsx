@@ -15,8 +15,6 @@ export const ProcessBuilderSidebar = () => {
   const { visibleSections, currentSection, currentStep, setSection } =
     useProcessNavigation(navigationConfig);
 
-  console.log('[Sidebar] currentStep:', currentStep?.id, 'currentSection:', currentSection?.id, 'visibleSections:', visibleSections.length);
-
   const handleSelectionChange = (key: Key) => {
     setSection(String(key));
   };
