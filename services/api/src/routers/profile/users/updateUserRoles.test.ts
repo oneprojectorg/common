@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { eq } from 'drizzle-orm';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import {
@@ -11,17 +11,6 @@ import {
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 import { usersRouter } from './index';
-
-// Mock the event system to avoid Inngest API calls in tests
-vi.mock('@op/events', async () => {
-  const actual = await vi.importActual('@op/events');
-  return {
-    ...actual,
-    event: {
-      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
-    },
-  };
-});
 
 describe.concurrent('profile.users.updateUserRoles', () => {
   const createCaller = createCallerFactory(usersRouter);
@@ -165,6 +154,6 @@ describe.concurrent('profile.users.updateUserRoles', () => {
         profileUserId: memberUser2.profileUserId,
         roleIds: [ROLES.ADMIN.id],
       }),
-    ).rejects.toThrow(/not authenticated/i);
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 });

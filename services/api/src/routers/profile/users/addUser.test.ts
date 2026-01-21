@@ -109,7 +109,7 @@ describe.concurrent('profile.users.addUser', () => {
         inviteeEmail: standaloneUser.email,
         roleIdsToAssign: [ROLES.MEMBER.id],
       }),
-    ).rejects.toThrow(/not authenticated/i);
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('should add new email to allowList with personalMessage', async ({
