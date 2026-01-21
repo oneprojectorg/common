@@ -8,6 +8,9 @@ export const STEPS = [
   { id: 'voting', labelKey: 'Voting' },
 ] as const;
 
+// Derive StepId first so we can use it in SECTIONS_BY_STEP
+export type StepId = (typeof STEPS)[number]['id'];
+
 export const SECTIONS_BY_STEP = {
   overview: [
     { id: 'basics', labelKey: 'Basics' },
@@ -30,8 +33,7 @@ export const SECTIONS_BY_STEP = {
   ],
 } as const satisfies Record<StepId, readonly { id: string; labelKey: string }[]>;
 
-// Derived types from config
-export type StepId = (typeof STEPS)[number]['id'];
+// Derive SectionId from all sections across all steps
 export type SectionId = (typeof SECTIONS_BY_STEP)[StepId][number]['id'];
 
 // Visibility configuration (from API)
