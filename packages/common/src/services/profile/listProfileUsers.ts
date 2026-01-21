@@ -1,30 +1,15 @@
 import { db, eq } from '@op/db/client';
-import {
-  type AccessRole,
-  type ObjectsInStorage,
-  type Profile,
-  type ProfileUser,
-  profileUsers,
-} from '@op/db/schema';
+import { profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
-import type { ProfileUserWithRelations } from './getProfileUserWithRelations';
-
-/**
- * Type for profile user query result with relations.
- */
-type ProfileUserQueryResult = ProfileUser & {
-  serviceUser: {
-    profile: (Profile & { avatarImage: ObjectsInStorage | null }) | null;
-  } | null;
-  roles: Array<{
-    accessRole: AccessRole;
-  }>;
-};
+import type {
+  ProfileUserQueryResult,
+  ProfileUserWithRelations,
+} from './getProfileUserWithRelations';
 
 /**
  * List all members of a profile

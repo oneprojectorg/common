@@ -10,7 +10,7 @@ import {
 /**
  * Type for profile user query result with relations.
  */
-type ProfileUserQueryResult = ProfileUser & {
+export type ProfileUserQueryResult = ProfileUser & {
   serviceUser: {
     profile: (Profile & { avatarImage: ObjectsInStorage | null }) | null;
   } | null;
