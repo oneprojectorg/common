@@ -7,11 +7,10 @@ import { notFound, useParams } from 'next/navigation';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderProvider';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSidebar';
+import { type NavigationConfig } from '@/components/decisions/ProcessBuilder/navigation-config';
 
-const EditDecisionPage = ({}: {}) => {
+const EditDecisionPage = () => {
   const { slug } = useParams<{ slug: string }>();
-
-  console.log(slug);
 
   // Get the decision profile to find the instance ID
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
@@ -22,18 +21,13 @@ const EditDecisionPage = ({}: {}) => {
     notFound();
   }
 
-  const instanceId = decisionProfile.processInstance.id;
+  // TODO: Get navigation config from process instance or process type
+  // For now, show all steps and sections (empty config = all visible)
+  const navigationConfig: NavigationConfig = {};
 
   return (
-    <ProcessBuilderProvider>
-      <ProcessBuilderHeader
-        steps={[
-          { id: 'overview', label: 'Overview' },
-          { id: 'phases', label: 'Phases' },
-          { id: 'categories', label: 'Categories' },
-          { id: 'voting', label: 'Voting' },
-        ]}
-      />
+    <ProcessBuilderProvider navigationConfig={navigationConfig}>
+      <ProcessBuilderHeader />
       <SidebarLayout>
         <ProcessBuilderSidebar />
         <div className="flex-1 p-8">
