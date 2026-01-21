@@ -1,15 +1,15 @@
 import type { SectionProps } from '../../content-registry';
 
-export default function DeliberationSection({
+export default function MembersSection({
   decisionId,
   decisionName,
 }: SectionProps) {
   return (
     <div>
-      <h2 className="text-xl font-semibold">Deliberation</h2>
+      <h2 className="text-xl font-semibold">Members</h2>
       <p className="text-neutral-gray4">Decision: {decisionName}</p>
       <p className="text-neutral-gray4">ID: {decisionId}</p>
-      {/* TODO: Implement deliberation phase configuration */}
+      {/* TODO: Implement members configuration */}
     </div>
   );
 }

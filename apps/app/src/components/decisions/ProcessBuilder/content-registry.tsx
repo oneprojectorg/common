@@ -3,18 +3,15 @@
 import { type ComponentType } from 'react';
 
 import type { StepId } from './navigation-config';
-import LimitsSection from './sections/categories/LimitsSection';
-import TypesSection from './sections/categories/TypesSection';
-// Direct imports (no lazy loading) - test if this fixes skeleton flash
-import BasicsSection from './sections/overview/BasicsSection';
-import PermissionsSection from './sections/overview/PermissionsSection';
-import TimelineSection from './sections/overview/TimelineSection';
-import DeliberationSection from './sections/phases/DeliberationSection';
-import ReviewSection from './sections/phases/ReviewSection';
-import SubmissionSection from './sections/phases/SubmissionSection';
-import MethodSection from './sections/voting/MethodSection';
-import QuorumSection from './sections/voting/QuorumSection';
-import ResultsSection from './sections/voting/ResultsSection';
+import MembersSection from './stepContent/members/MembersSection';
+import RolesSection from './stepContent/members/RolesSection';
+import OverviewSection from './stepContent/overview/OverviewSection';
+import PhasesSection from './stepContent/overview/PhasesSection';
+import ProposalCategoriesSection from './stepContent/overview/ProposalCategoriesSection';
+import VotingSection from './stepContent/overview/VotingSection';
+import CriteriaSection from './stepContent/rubric/CriteriaSection';
+import SettingsSection from './stepContent/rubric/SettingsSection';
+import FormBuilderSection from './stepContent/template/FormBuilderSection';
 
 // Props that all section components receive
 export interface SectionProps {
@@ -31,23 +28,21 @@ type ContentRegistry = {
 
 const CONTENT_REGISTRY: ContentRegistry = {
   overview: {
-    basics: BasicsSection,
-    timeline: TimelineSection,
-    permissions: PermissionsSection,
+    overview: OverviewSection,
+    phases: PhasesSection,
+    proposalCategories: ProposalCategoriesSection,
+    voting: VotingSection,
   },
-  phases: {
-    submission: SubmissionSection,
-    review: ReviewSection,
-    deliberation: DeliberationSection,
+  template: {
+    formBuilder: FormBuilderSection,
   },
-  categories: {
-    types: TypesSection,
-    limits: LimitsSection,
+  rubric: {
+    criteria: CriteriaSection,
+    settings: SettingsSection,
   },
-  voting: {
-    method: MethodSection,
-    quorum: QuorumSection,
-    results: ResultsSection,
+  members: {
+    roles: RolesSection,
+    members: MembersSection,
   },
 };
 

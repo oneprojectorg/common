@@ -18,11 +18,7 @@ export const SECTIONS_BY_STEP = {
     { id: 'proposalCategories', labelKey: 'Proposal Categories' },
     { id: 'voting', labelKey: 'Voting' },
   ],
-  template: [
-    { id: 'submission', labelKey: 'Submission' },
-    { id: 'review', labelKey: 'Review' },
-    { id: 'deliberation', labelKey: 'Deliberation' },
-  ],
+  template: [{ id: 'formBuilder', labelKey: 'Form Builder' }],
   rubric: [
     { id: 'criteria', labelKey: 'Criteria' },
     { id: 'settings', labelKey: 'Settings' },

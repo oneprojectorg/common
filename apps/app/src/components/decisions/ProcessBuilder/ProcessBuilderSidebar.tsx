@@ -19,6 +19,12 @@ export const ProcessBuilderSidebar = () => {
     setSection(String(key));
   };
 
+  // Don't render sidebar for single-section steps
+  // These steps manage their own layout (e.g., template step with form builder)
+  if (visibleSections.length <= 1) {
+    return null;
+  }
+
   return (
     <Sidebar className="border-r p-8">
       {visibleSections.length > 0 && (
