@@ -12,7 +12,11 @@ import { UserAvatarMenu } from '@/components/SiteHeader';
 import { useProcessBuilderContext } from './ProcessBuilderProvider';
 import { useProcessNavigation } from './useProcessNavigation';
 
-export const ProcessBuilderHeader = () => {
+export const ProcessBuilderHeader = ({
+  processName,
+}: {
+  processName?: string;
+}) => {
   const t = useTranslations();
   const { navigationConfig } = useProcessBuilderContext();
   const { visibleSteps, currentStep, setStep } =
@@ -30,7 +34,7 @@ export const ProcessBuilderHeader = () => {
           {t('Home')}
         </Link>
         <LuChevronRight className="size-4" />
-        <span>{t('New process')}</span>
+        <span>{processName || t('New process')}</span>
       </div>
       <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
         {visibleSteps.length > 0 && (

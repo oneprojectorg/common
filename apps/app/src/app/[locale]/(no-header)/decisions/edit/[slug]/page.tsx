@@ -28,7 +28,7 @@ const EditDecisionPage = () => {
 
   return (
     <ProcessBuilderProvider navigationConfig={navigationConfig}>
-      <ProcessBuilderHeader />
+      <ProcessBuilderHeader processName={decisionProfile.name} />
       <SidebarLayout>
         <ProcessBuilderSidebar />
         <main className="flex-1 p-8">

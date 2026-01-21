@@ -3,9 +3,9 @@
 
 export const STEPS = [
   { id: 'overview', labelKey: 'Overview' },
-  { id: 'phases', labelKey: 'Phases' },
-  { id: 'categories', labelKey: 'Proposal Categories' },
-  { id: 'voting', labelKey: 'Voting' },
+  { id: 'template', labelKey: 'Proposal Template' },
+  { id: 'rubric', labelKey: 'Review Rubric' },
+  { id: 'members', labelKey: 'Members' },
 ] as const;
 
 // Derive StepId first so we can use it in SECTIONS_BY_STEP
@@ -13,23 +13,23 @@ export type StepId = (typeof STEPS)[number]['id'];
 
 export const SECTIONS_BY_STEP = {
   overview: [
-    { id: 'basics', labelKey: 'Basics' },
-    { id: 'timeline', labelKey: 'Timeline' },
-    { id: 'permissions', labelKey: 'Permissions' },
+    { id: 'overview', labelKey: 'Overview' },
+    { id: 'phases', labelKey: 'Phases' },
+    { id: 'proposalCategories', labelKey: 'Proposal Categories' },
+    { id: 'voting', labelKey: 'Voting' },
   ],
-  phases: [
+  template: [
     { id: 'submission', labelKey: 'Submission' },
     { id: 'review', labelKey: 'Review' },
     { id: 'deliberation', labelKey: 'Deliberation' },
   ],
-  categories: [
-    { id: 'types', labelKey: 'Types' },
-    { id: 'limits', labelKey: 'Limits' },
+  rubric: [
+    { id: 'criteria', labelKey: 'Criteria' },
+    { id: 'settings', labelKey: 'Settings' },
   ],
-  voting: [
-    { id: 'method', labelKey: 'Voting Method' },
-    { id: 'quorum', labelKey: 'Quorum' },
-    { id: 'results', labelKey: 'Results' },
+  members: [
+    { id: 'roles', labelKey: 'Roles & permissions' },
+    { id: 'members', labelKey: 'Members' },
   ],
 } as const satisfies Record<
   StepId,

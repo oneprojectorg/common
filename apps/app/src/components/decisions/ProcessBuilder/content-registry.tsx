@@ -51,9 +51,6 @@ const CONTENT_REGISTRY: ContentRegistry = {
   },
 };
 
-// No-op for now (no lazy loading to preload)
-export function preloadAllSections() {}
-
 export function getContentComponent(
   stepId: StepId | undefined,
   sectionId: string | undefined,
