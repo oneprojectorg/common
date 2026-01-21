@@ -1,6 +1,7 @@
 import { db, eq } from '@op/db/client';
 import {
   type AccessRole,
+  type ObjectsInStorage,
   type Profile,
   type ProfileUser,
   profileUsers,
@@ -18,14 +19,10 @@ import { assertProfile } from '../assert';
  */
 type ProfileUserWithRelations = ProfileUser & {
   serviceUser: {
-    profile:
-      | (Pick<Profile, 'id' | 'name' | 'slug' | 'bio' | 'email' | 'type'> & {
-          avatarImage: { id: string; name: string | null } | null;
-        })
-      | null;
+    profile: (Profile & { avatarImage: ObjectsInStorage | null }) | null;
   } | null;
   roles: Array<{
-    accessRole: Pick<AccessRole, 'id' | 'name' | 'description'>;
+    accessRole: AccessRole;
   }>;
 };
 
@@ -86,27 +83,8 @@ export const listProfileUsers = async ({
       profileId: member.profileId,
       createdAt: member.createdAt,
       updatedAt: member.updatedAt,
-      profile: userProfile
-        ? {
-            id: userProfile.id,
-            name: userProfile.name,
-            slug: userProfile.slug,
-            bio: userProfile.bio,
-            email: userProfile.email,
-            type: userProfile.type,
-            avatarImage: userProfile.avatarImage
-              ? {
-                  id: userProfile.avatarImage.id,
-                  name: userProfile.avatarImage.name,
-                }
-              : null,
-          }
-        : null,
-      roles: member.roles.map((roleJunction) => ({
-        id: roleJunction.accessRole.id,
-        name: roleJunction.accessRole.name,
-        description: roleJunction.accessRole.description,
-      })),
+      profile: userProfile ?? null,
+      roles: member.roles.map((roleJunction) => roleJunction.accessRole),
     };
   });
 };
