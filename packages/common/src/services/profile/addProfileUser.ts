@@ -36,7 +36,7 @@ export const addProfileUser = async ({
     throw new CommonError('At least one role must be specified');
   }
 
-  const roleIdsToAssignDeduped = Array.from(new Set(roleIdsToAssign));
+  const roleIdsToAssignDeduped = [...new Set(roleIdsToAssign)];
   const normalizedEmail = inviteeEmail.toLowerCase();
 
   const [profile, currentProfileUser, validRoles, existingUser] =
