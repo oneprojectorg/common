@@ -134,9 +134,11 @@ export function ProposalEditor({
   });
   const { categories } = categoriesData;
 
-  // Extract budget cap from template or instance data
-  const budgetCapAmount = useMemo(() => {
+  // Extract budget config from template or instance data
+  const { budgetCapAmount, isBudgetRequired } = useMemo(() => {
     const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
+    let cap: number | undefined;
+    let required = true; // Default to required
 
     if (
       proposalTemplate &&
@@ -155,14 +157,25 @@ export function ProposalEditor({
           typeof budgetProp === 'object' &&
           'maximum' in budgetProp
         ) {
-          return budgetProp.maximum as number;
+          cap = budgetProp.maximum as number;
         }
+      }
+
+      // Check if budget is in required array
+      if (
+        'required' in proposalTemplate &&
+        Array.isArray(proposalTemplate.required)
+      ) {
+        required = proposalTemplate.required.includes('budget');
       }
     }
 
-    return instance.instanceData?.fieldValues?.budgetCapAmount as
-      | number
-      | undefined;
+    // Fallback to instance data
+    if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
+      cap = instance.instanceData.fieldValues.budgetCapAmount as number;
+    }
+
+    return { budgetCapAmount: cap, isBudgetRequired: required };
   }, [instance]);
 
   // Parse existing proposal data for editing
@@ -254,6 +267,43 @@ export function ProposalEditor({
   }, []);
 
   const handleSubmitProposal = useCallback(async () => {
+    // Validate required fields
+    const missingFields: string[] = [];
+
+    if (!title || title.trim() === '') {
+      missingFields.push(t('Title'));
+    }
+
+    // Check for empty content in the editor
+    if (editorInstance) {
+      const isEmpty = editorInstance.isEmpty;
+      if (isEmpty) {
+        missingFields.push(t('Description'));
+      }
+    }
+
+    if (isBudgetRequired && budget === null) {
+      missingFields.push(t('Budget'));
+    }
+
+    // Validate budget cap
+    if (budget !== null && budgetCapAmount && budget > budgetCapAmount) {
+      toast.error({
+        message: t('Budget cannot exceed {amount}', {
+          amount: budgetCapAmount.toLocaleString(),
+        }),
+      });
+      return;
+    }
+
+    if (missingFields.length > 0) {
+      toast.error({
+        title: t('Please complete the following required fields:'),
+        message: missingFields.join(', '),
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -292,9 +342,13 @@ export function ProposalEditor({
       setIsSubmitting(false);
     }
   }, [
+    t,
     title,
-    selectedCategory,
+    editorInstance,
+    isBudgetRequired,
     budget,
+    budgetCapAmount,
+    selectedCategory,
     collabDocId,
     categories,
     existingProposal,
@@ -310,6 +364,7 @@ export function ProposalEditor({
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
+      isDraft={isDraft}
     >
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
