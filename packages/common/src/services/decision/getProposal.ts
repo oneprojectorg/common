@@ -1,17 +1,19 @@
 import { and, count, db, eq } from '@op/db/client';
-import {
+import type {
+  ObjectsInStorage,
   ProcessInstance,
   Profile,
-  ProfileRelationshipType,
   Proposal,
+} from '@op/db/schema';
+import {
+  ProfileRelationshipType,
   organizations,
   posts,
   postsToProfiles,
   processInstances,
   profileRelationships,
-  proposals,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -26,7 +28,7 @@ export const getProposal = async ({
   user: User;
 }): Promise<
   Proposal & {
-    submittedBy: Profile & { avatarImage: any }; // fix drizzle types
+    submittedBy: Profile & { avatarImage: ObjectsInStorage | null };
     processInstance: ProcessInstance;
     profile: Profile;
     commentsCount: number;
@@ -40,8 +42,10 @@ export const getProposal = async ({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const proposal = (await db._query.proposals.findFirst({
-    where: eq(proposals.profileId, profileId),
+  const proposal = await db.query.proposals.findFirst({
+    where: {
+      profileId,
+    },
     with: {
       processInstance: true,
       submittedBy: {
@@ -49,13 +53,8 @@ export const getProposal = async ({
           avatarImage: true,
         },
       },
-      profile: true,
     },
-  })) as Proposal & {
-    submittedBy: Profile & { avatarImage: any }; // fix drizzle types
-    processInstance: ProcessInstance;
-    profile: Profile;
-  };
+  });
 
   if (!proposal) {
     throw new NotFoundError('Proposal not found');
