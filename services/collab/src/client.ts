@@ -14,6 +14,8 @@ type TipTapClientConfig = {
   secret: string;
 };
 
+export type TipTapClient = ReturnType<typeof createTipTapClient>;
+
 /**
  * Create a TipTap Cloud REST API client
  *

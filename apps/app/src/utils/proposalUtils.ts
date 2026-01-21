@@ -11,6 +11,7 @@ export const proposalDataSchema = z
     category: z.string().optional(),
     budget: z.number().optional(),
     attachmentIds: z.array(z.string()).optional().prefault([]),
+    collaborationDocId: z.string().optional(), // TipTap Cloud document ID for rich text editing
   }) // Allow additional fields
   .transform((data) => {
     // Handle backward compatibility: if content exists but not description, use content as description

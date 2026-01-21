@@ -27,6 +27,7 @@
     "@ai-sdk/anthropic": "^1.2.1",
     "@op/analytics": "workspace:*",
     "@op/cache": "workspace:*",
+    "@op/collab": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",

@@ -383,6 +383,24 @@ export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
     uploader: baseProfileEncoder.optional(),
   });
 
+/**
+ * Document content discriminated union.
+ * - `json`: TipTap document fetched from collaboration service
+ * - `html`: Legacy HTML/plain text description from proposalData
+ */
+const documentContentEncoder = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('json'),
+    content: z.array(z.unknown()),
+  }),
+  z.object({
+    type: z.literal('html'),
+    content: z.string(),
+  }),
+]);
+
+export type DocumentContent = z.infer<typeof documentContentEncoder>;
+
 /** Proposal encoder (frontend gets instance data separately via getDecisionBySlug) */
 export const proposalEncoder = createSelectSchema(proposals)
   .pick({
@@ -410,6 +428,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     selectionRank: z.number().nullable().optional(),
     voteCount: z.number().optional(),
     allocated: z.string().nullable().optional(),
+    documentContent: documentContentEncoder.optional(),
   });
 
 /** Proposal list encoder */
