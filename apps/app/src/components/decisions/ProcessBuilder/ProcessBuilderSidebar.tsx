@@ -12,8 +12,10 @@ import { useProcessNavigation } from './useProcessNavigation';
 export const ProcessBuilderSidebar = () => {
   const t = useTranslations();
   const { navigationConfig } = useProcessBuilderContext();
-  const { visibleSections, currentSection, setSection } =
+  const { visibleSections, currentSection, currentStep, setSection } =
     useProcessNavigation(navigationConfig);
+
+  console.log('[Sidebar] currentStep:', currentStep?.id, 'currentSection:', currentSection?.id, 'visibleSections:', visibleSections.length);
 
   const handleSelectionChange = (key: Key) => {
     setSection(String(key));
@@ -23,6 +25,7 @@ export const ProcessBuilderSidebar = () => {
     <Sidebar className="border-r p-8">
       {visibleSections.length > 0 && (
         <Tabs
+          key={currentStep?.id}
           orientation="vertical"
           selectedKey={currentSection?.id}
           onSelectionChange={handleSelectionChange}

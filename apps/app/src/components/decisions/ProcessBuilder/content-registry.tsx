@@ -1,8 +1,21 @@
 'use client';
 
-import { type ComponentType, lazy } from 'react';
+import { type ComponentType } from 'react';
 
 import type { StepId } from './navigation-config';
+
+// Direct imports (no lazy loading) - test if this fixes skeleton flash
+import BasicsSection from './sections/overview/BasicsSection';
+import PermissionsSection from './sections/overview/PermissionsSection';
+import TimelineSection from './sections/overview/TimelineSection';
+import DeliberationSection from './sections/phases/DeliberationSection';
+import ReviewSection from './sections/phases/ReviewSection';
+import SubmissionSection from './sections/phases/SubmissionSection';
+import LimitsSection from './sections/categories/LimitsSection';
+import TypesSection from './sections/categories/TypesSection';
+import MethodSection from './sections/voting/MethodSection';
+import QuorumSection from './sections/voting/QuorumSection';
+import ResultsSection from './sections/voting/ResultsSection';
 
 // Props that all section components receive
 export interface SectionProps {
@@ -19,25 +32,28 @@ type ContentRegistry = {
 
 const CONTENT_REGISTRY: ContentRegistry = {
   overview: {
-    basics: lazy(() => import('./sections/overview/BasicsSection')),
-    timeline: lazy(() => import('./sections/overview/TimelineSection')),
-    permissions: lazy(() => import('./sections/overview/PermissionsSection')),
+    basics: BasicsSection,
+    timeline: TimelineSection,
+    permissions: PermissionsSection,
   },
   phases: {
-    submission: lazy(() => import('./sections/phases/SubmissionSection')),
-    review: lazy(() => import('./sections/phases/ReviewSection')),
-    deliberation: lazy(() => import('./sections/phases/DeliberationSection')),
+    submission: SubmissionSection,
+    review: ReviewSection,
+    deliberation: DeliberationSection,
   },
   categories: {
-    types: lazy(() => import('./sections/categories/TypesSection')),
-    limits: lazy(() => import('./sections/categories/LimitsSection')),
+    types: TypesSection,
+    limits: LimitsSection,
   },
   voting: {
-    method: lazy(() => import('./sections/voting/MethodSection')),
-    quorum: lazy(() => import('./sections/voting/QuorumSection')),
-    results: lazy(() => import('./sections/voting/ResultsSection')),
+    method: MethodSection,
+    quorum: QuorumSection,
+    results: ResultsSection,
   },
 };
+
+// No-op for now (no lazy loading to preload)
+export function preloadAllSections() {}
 
 export function getContentComponent(
   stepId: StepId | undefined,
