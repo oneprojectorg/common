@@ -1,6 +1,5 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { waitUntil } from '@vercel/functions';
 import {
   allowList,
   profileUserToAccessRoles,
@@ -8,6 +7,7 @@ import {
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, UnauthorizedError } from '../../utils/error';
