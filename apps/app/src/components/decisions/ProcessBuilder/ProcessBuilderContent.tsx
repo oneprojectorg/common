@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import { useProcessBuilderContext } from './ProcessBuilderProvider';
@@ -24,8 +25,19 @@ export function ProcessBuilderContent({
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<ContentSkeleton />}>
       <ContentComponent decisionId={decisionId} decisionName={decisionName} />
     </Suspense>
   );
 }
+
+const ContentSkeleton = () => {
+  return (
+    <div>
+      <Skeleton className="mb-4 h-5 w-64" />
+      <Skeleton className="mb-6 h-3 w-44" />
+      <Skeleton className="mb-2 h-3 w-94" />
+      <Skeleton className="mb-2 h-3 w-74" />
+    </div>
+  );
+};
