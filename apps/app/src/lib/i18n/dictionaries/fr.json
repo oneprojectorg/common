@@ -437,5 +437,7 @@
   "User avatar": "Avatar de l'utilisateur",
   "Done": "Terminé",
   "How do you want to structure your decision-making process?": "Comment souhaitez-vous structurer votre processus de prise de décision ?",
-  "No templates found": "Aucun modèle trouvé"
+  "No templates found": "Aucun modèle trouvé",
+  "Roles could not be loaded": "Les rôles n'ont pas pu être chargés",
+  "Try again": "Réessayer"
 }

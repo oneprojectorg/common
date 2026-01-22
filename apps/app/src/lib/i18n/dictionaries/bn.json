@@ -437,5 +437,7 @@
   "User avatar": "ব্যবহারকারীর অবতার",
   "Done": "সম্পন্ন",
   "How do you want to structure your decision-making process?": "আপনি কীভাবে আপনার সিদ্ধান্ত গ্রহণ প্রক্রিয়া গঠন করতে চান?",
-  "No templates found": "কোনো টেমপ্লেট পাওয়া যায়নি"
+  "No templates found": "কোনো টেমপ্লেট পাওয়া যায়নি",
+  "Roles could not be loaded": "ভূমিকাগুলি লোড করা যায়নি",
+  "Try again": "আবার চেষ্টা করুন"
 }

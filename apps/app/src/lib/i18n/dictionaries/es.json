@@ -436,5 +436,7 @@
   "User avatar": "Avatar del usuario",
   "Done": "Listo",
   "How do you want to structure your decision-making process?": "¿Cómo quieres estructurar tu proceso de toma de decisiones?",
-  "No templates found": "No se encontraron plantillas"
+  "No templates found": "No se encontraron plantillas",
+  "Roles could not be loaded": "No se pudieron cargar los roles",
+  "Try again": "Intentar de nuevo"
 }

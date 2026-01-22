@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
+import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -15,6 +16,7 @@ import {
   TableRow,
 } from '@op/ui/ui/table';
 import { Suspense, useEffect, useState } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -164,11 +166,23 @@ const DecisionMembersTableContent = ({
   );
 };
 
-const RolesLoadError = () => {
+const RolesLoadError = ({
+  resetErrorBoundary,
+}: {
+  resetErrorBoundary?: () => void;
+}) => {
   const t = useTranslations();
   return (
-    <div className="py-8 text-center text-sm text-neutral-gray4">
-      {t('Unable to load roles')}
+    <div className="flex min-h-40 w-full flex-col items-center justify-center py-6">
+      <div className="flex flex-col items-center justify-center gap-3 text-neutral-gray4">
+        <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+          <LuCircleAlert />
+        </div>
+        <span>{t('Roles could not be loaded')}</span>
+        <Button onPress={resetErrorBoundary} color="secondary" size="small">
+          {t('Try again')}
+        </Button>
+      </div>
     </div>
   );
 };

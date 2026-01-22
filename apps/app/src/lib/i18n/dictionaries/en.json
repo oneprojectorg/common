@@ -437,5 +437,7 @@
   "User avatar": "User avatar",
   "Done": "Done",
   "How do you want to structure your decision-making process?": "How do you want to structure your decision-making process?",
-  "No templates found": "No templates found"
+  "No templates found": "No templates found",
+  "Roles could not be loaded": "Roles could not be loaded",
+  "Try again": "Try again"
 }
