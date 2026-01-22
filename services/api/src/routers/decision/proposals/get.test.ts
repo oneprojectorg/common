@@ -1,4 +1,4 @@
-import { mockCollab } from '@op/collab/__mocks__';
+import { mockCollab } from '@op/collab/testing';
 import { Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 

@@ -5,7 +5,7 @@
  * responses per document ID without interfering with parallel tests.
  *
  * @example
- * import { mockCollab } from '@op/collab/__mocks__/client';
+ * import { mockCollab } from '@op/collab/testing';
  *
  * afterEach(() => mockCollab.reset());
  *

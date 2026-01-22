@@ -2,7 +2,7 @@ import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import { beforeAll, beforeEach, vi } from 'vitest';
 
 vi.mock('@op/common/src/services/profile/utils');
-vi.mock('@op/collab', async () => import('@op/collab/__mocks__'));
+vi.mock('@op/collab', async () => import('@op/collab/testing'));
 
 // Mock server-only modules before any other imports
 vi.mock('server-only', () => ({}));
