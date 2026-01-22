@@ -33,20 +33,23 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create multiple proposals
-    const proposal1 = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'First Proposal', description: 'Description 1' },
-    });
-
-    const proposal2 = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Second Proposal', description: 'Description 2' },
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    // Create multiple proposals and caller in parallel
+    const [proposal1, proposal2, caller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'First Proposal', description: 'Description 1' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Second Proposal',
+          description: 'Description 2',
+        },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
 
     const result = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
@@ -108,17 +111,18 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Test Proposal', description: 'A test' },
-    });
-
-    // Create a non-admin member
-    const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    // Create proposal and non-admin member in parallel
+    const [, memberUser] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Test Proposal', description: 'A test' },
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
 
     const memberCaller = await createAuthenticatedCaller(memberUser.email);
 
@@ -151,14 +155,15 @@ describe.concurrent('listProposals', () => {
       instanceProfileIds: [instance.profileId],
     });
 
-    // Submitter creates their own proposal
-    const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'My Proposal', description: 'My description' },
-    });
-
-    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    // Submitter creates their own proposal and caller in parallel
+    const [proposal, submitterCaller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: submitter.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'My Proposal', description: 'My description' },
+      }),
+      createAuthenticatedCaller(submitter.email),
+    ]);
 
     const result = await submitterCaller.decision.listProposals({
       processInstanceId: instance.instance.id,
@@ -184,30 +189,30 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create visible and hidden proposals
-    const visibleProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Visible Proposal', description: 'A test' },
-    });
-
-    const hiddenProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Hidden Proposal', description: 'A test' },
-    });
+    // Create visible and hidden proposals, admin caller, and non-admin member in parallel
+    const [visibleProposal, hiddenProposal, adminCaller, memberUser] =
+      await Promise.all([
+        testData.createProposal({
+          callerEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Visible Proposal', description: 'A test' },
+        }),
+        testData.createProposal({
+          callerEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Hidden Proposal', description: 'A test' },
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+      ]);
 
     // Hide one proposal
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.decision.updateProposal({
       proposalId: hiddenProposal.id,
       data: { visibility: Visibility.HIDDEN },
-    });
-
-    // Create a non-admin member
-    const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
     });
 
     const memberCaller = await createAuthenticatedCaller(memberUser.email);
@@ -237,21 +242,22 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create visible and hidden proposals
-    await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Visible Proposal', description: 'A test' },
-    });
-
-    const hiddenProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Hidden Proposal', description: 'A test' },
-    });
+    // Create visible and hidden proposals and admin caller in parallel
+    const [, hiddenProposal, adminCaller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Visible Proposal', description: 'A test' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Hidden Proposal', description: 'A test' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
 
     // Hide one proposal
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.decision.updateProposal({
       proposalId: hiddenProposal.id,
       data: { visibility: Visibility.HIDDEN },
@@ -281,11 +287,14 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who will submit a proposal
-    const submitter = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    // Create a member who will submit a proposal and admin caller in parallel
+    const [submitter, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
 
     const proposal = await testData.createProposal({
       callerEmail: submitter.email,
@@ -294,7 +303,6 @@ describe.concurrent('listProposals', () => {
     });
 
     // Admin hides the proposal
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.decision.updateProposal({
       proposalId: proposal.id,
       data: { visibility: Visibility.HIDDEN },
@@ -327,26 +335,25 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create 3 proposals
-    await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Proposal 1', description: 'Desc 1' },
-    });
-
-    await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Proposal 2', description: 'Desc 2' },
-    });
-
-    await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Proposal 3', description: 'Desc 3' },
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    // Create 3 proposals and caller in parallel
+    const [, , , caller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal 1', description: 'Desc 1' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal 2', description: 'Desc 2' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal 3', description: 'Desc 3' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
 
     // First page
     const page1 = await caller.decision.listProposals({

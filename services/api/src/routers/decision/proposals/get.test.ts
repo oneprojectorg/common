@@ -105,18 +105,21 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    // Admin creates a proposal
-    const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Test Proposal', description: 'A test proposal' },
-    });
-
-    // Create a non-admin member
-    const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    // Admin creates a proposal and create a non-admin member in parallel
+    const [proposal, memberUser] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Test Proposal',
+          description: 'A test proposal',
+        },
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
 
     const memberCaller = await createAuthenticatedCaller(memberUser.email);
 
@@ -239,11 +242,14 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who will submit a proposal
-    const submitter = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    // Create a member who will submit a proposal and admin caller in parallel
+    const [submitter, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
 
     const proposal = await testData.createProposal({
       callerEmail: submitter.email,
@@ -252,7 +258,6 @@ describe.concurrent('getProposal', () => {
     });
 
     // Admin hides the proposal
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.decision.updateProposal({
       proposalId: proposal.id,
       data: { visibility: Visibility.HIDDEN },
