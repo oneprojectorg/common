@@ -3,7 +3,12 @@ import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { SortDir } from '../../utils/db';
+import {
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+  type SortDir,
+} from '../../utils/db';
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
@@ -14,8 +19,14 @@ import type {
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
 
+type PaginatedProfileUsersResult = {
+  items: ProfileUserWithRelations[];
+  next: string | null;
+  hasMore: boolean;
+};
+
 /**
- * List all members of a profile
+ * List all members of a profile with cursor-based pagination
  */
 export const listProfileUsers = async ({
   profileId,
@@ -23,13 +34,17 @@ export const listProfileUsers = async ({
   orderBy = 'name',
   dir = 'asc',
   query,
+  cursor,
+  limit = 50,
 }: {
   profileId: string;
   user: User;
   orderBy?: ProfileUserOrderBy;
   dir?: SortDir;
   query?: string;
-}): Promise<ProfileUserWithRelations[]> => {
+  cursor?: string | null;
+  limit?: number;
+}): Promise<PaginatedProfileUsersResult> => {
   const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
     assertProfile(profileId),
@@ -66,11 +81,31 @@ export const listProfileUsers = async ({
         })()
       : undefined;
 
-  const whereClause = searchFilter
-    ? and(eq(profileUsers.profileId, profileId), searchFilter)
-    : eq(profileUsers.profileId, profileId);
+  // Determine the column to use for cursor-based pagination
+  // For role sorting, we use email as the cursor column since role values can be duplicated
+  const orderByColumn =
+    orderBy === 'email' ? profileUsers.email : profileUsers.email;
 
-  // Fetch all profile users with their roles and user profiles
+  // Build cursor condition for pagination
+  // Always use id as tiebreaker for stable pagination
+  const cursorCondition = cursor
+    ? getCursorCondition({
+        column: orderByColumn,
+        tieBreakerColumn: profileUsers.id,
+        cursor: decodeCursor<{ value: string; id?: string }>(cursor),
+        direction: dir,
+      })
+    : undefined;
+
+  // Combine all conditions
+  const baseCondition = eq(profileUsers.profileId, profileId);
+  const conditions = [baseCondition, searchFilter, cursorCondition].filter(
+    Boolean,
+  );
+  const whereClause = conditions.length > 1 ? and(...conditions) : baseCondition;
+
+  // Fetch profile users with their roles and user profiles
+  // Request one extra to check if there are more results
   const profileUserResults = await db._query.profileUsers.findMany({
     where: whereClause,
     with: {
@@ -103,19 +138,28 @@ export const listProfileUsers = async ({
           ORDER BY ar.name
           LIMIT 1
         )`;
-        return [orderFn(roleNameSubquery)];
+        // Add email as secondary sort for consistent cursor pagination
+        return [orderFn(roleNameSubquery), orderFn(table.email)];
       }
 
       if (orderBy === 'email') {
         return [orderFn(table.email)];
       }
 
-      // Default to name
-      return [orderFn(table.name)];
+      // Default to name, with email as secondary for consistent ordering
+      return [orderFn(table.name), orderFn(table.email)];
     },
+    limit: limit + 1,
   });
 
-  return profileUserResults.map((result) => {
+  // Check if there are more results
+  const hasMore = profileUserResults.length > limit;
+  const resultItems = hasMore
+    ? profileUserResults.slice(0, limit)
+    : profileUserResults;
+
+  // Transform results
+  const items = resultItems.map((result) => {
     const { serviceUser, roles, ...baseProfileUser } =
       result as ProfileUserQueryResult;
     const userProfile = serviceUser?.profile;
@@ -128,4 +172,20 @@ export const listProfileUsers = async ({
       roles: roles.map((roleJunction) => roleJunction.accessRole),
     };
   });
+
+  // Build next cursor from last item
+  const lastItem = resultItems[resultItems.length - 1];
+  const nextCursor =
+    hasMore && lastItem
+      ? encodeCursor<{ value: string; id?: string }>({
+          value: lastItem.email,
+          id: lastItem.id,
+        })
+      : null;
+
+  return {
+    items,
+    next: nextCursor,
+    hasMore,
+  };
 };
