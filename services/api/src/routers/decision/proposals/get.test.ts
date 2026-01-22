@@ -89,7 +89,7 @@ describe.concurrent('getProposal', () => {
     expect(result.isEditable).toBe(true);
   });
 
-  it('should set isEditable to false for non-admin users', async ({
+  it('should set isEditable to false for non-admin users who are not owners', async ({
     task,
     onTestFinished,
   }) => {
@@ -105,15 +105,11 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    // Admin creates a proposal and create a non-admin member in parallel
-    const [proposal, memberUser] = await Promise.all([
-      testData.createProposal({
-        callerEmail: setup.userEmail,
-        processInstanceId: instance.instance.id,
-        proposalData: {
-          title: 'Test Proposal',
-          description: 'A test proposal',
-        },
+    // Create two non-admin members in parallel
+    const [memberA, memberB] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
       }),
       testData.createMemberUser({
         organization: setup.organization,
@@ -121,9 +117,20 @@ describe.concurrent('getProposal', () => {
       }),
     ]);
 
-    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    // MemberA creates a proposal
+    const proposal = await testData.createProposal({
+      callerEmail: memberA.email,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Test Proposal',
+        description: 'A test proposal',
+      },
+    });
 
-    const result = await memberCaller.decision.getProposal({
+    // MemberB should not be able to edit memberA's proposal
+    const memberBCaller = await createAuthenticatedCaller(memberB.email);
+
+    const result = await memberBCaller.decision.getProposal({
       profileId: proposal.profileId,
     });
 

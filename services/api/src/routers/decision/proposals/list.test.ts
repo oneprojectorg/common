@@ -80,15 +80,23 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
+    // Create a member who will submit a proposal
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    // Member creates a proposal
     await testData.createProposal({
-      callerEmail: setup.userEmail,
+      callerEmail: memberUser.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    // Admin should see canManageProposals as true
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.listProposals({
+    const result = await adminCaller.decision.listProposals({
       processInstanceId: instance.instance.id,
     });
 
@@ -242,22 +250,28 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create visible and hidden proposals and admin caller in parallel
+    // Create a member who will submit proposals
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    // Create visible and hidden proposals (by member) and admin caller in parallel
     const [, hiddenProposal, adminCaller] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        callerEmail: memberUser.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Visible Proposal', description: 'A test' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        callerEmail: memberUser.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Hidden Proposal', description: 'A test' },
       }),
       createAuthenticatedCaller(setup.userEmail),
     ]);
 
-    // Hide one proposal
+    // Admin hides one of the member's proposals
     await adminCaller.decision.updateProposal({
       proposalId: hiddenProposal.id,
       data: { visibility: Visibility.HIDDEN },
@@ -267,7 +281,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    // Admin should see both proposals
+    // Admin should see both proposals (including member's hidden proposal)
     expect(result.proposals).toHaveLength(2);
   });
 
@@ -404,4 +418,44 @@ describe.concurrent('listProposals', () => {
     expect(result.total).toBe(0);
     expect(result.hasMore).toBe(false);
   });
+
+  it.fails(
+    'should throw error when user does not have access to instance',
+    async ({ task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      // Create a proposal
+      await testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Test Proposal', description: 'A test' },
+      });
+
+      // Create a user without access to the instance (member of the org but not the instance)
+      const unauthorizedUser = await testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [], // No access to any instance
+      });
+
+      const unauthorizedCaller = await createAuthenticatedCaller(
+        unauthorizedUser.email,
+      );
+
+      await expect(
+        unauthorizedCaller.decision.listProposals({
+          processInstanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'ForbiddenError' } });
+    },
+  );
 });
