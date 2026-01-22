@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactElement, ReactNode } from 'react';
+import { cloneElement, ReactElement, ReactNode } from 'react';
 import {
   FallbackProps,
   ErrorBoundary as ReactErrorBoundary,
@@ -19,16 +19,16 @@ export const APIErrorBoundary = ({
 }) => {
   return (
     <ReactErrorBoundary
-      fallbackRender={({ error }: FallbackProps) => {
+      fallbackRender={({ error, resetErrorBoundary }: FallbackProps) => {
         const fallback = fallbacks[error.data?.httpStatus];
 
         if (fallback) {
-          return fallback;
+          return cloneElement(fallback, { resetErrorBoundary });
         }
 
         // support a default fallback
         if (fallbacks['default']) {
-          return fallbacks['default'];
+          return cloneElement(fallbacks['default'], { resetErrorBoundary });
         }
 
         throw error;
