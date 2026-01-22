@@ -3,7 +3,6 @@ import { profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { type SortDir, constructTextSearch } from '../../utils/db';
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
