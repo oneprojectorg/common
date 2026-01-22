@@ -21,6 +21,7 @@ import {
   getOrgAccessUser,
   getProfileAccessUser,
 } from '../access';
+import { parseProposalData } from './proposalDataSchema';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -340,7 +341,7 @@ export const listProposals = async ({
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
-      proposalData: proposal.proposalData,
+      proposalData: parseProposalData(proposal.proposalData),
       status: proposal.status,
       visibility: proposal.visibility,
       createdAt: proposal.createdAt,

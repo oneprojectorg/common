@@ -19,6 +19,7 @@ import { checkPermission, permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { type ProposalData, parseProposalData } from './proposalDataSchema';
 
 export const getProposal = async ({
   profileId,
@@ -27,7 +28,8 @@ export const getProposal = async ({
   profileId: string;
   user: User;
 }): Promise<
-  Proposal & {
+  Omit<Proposal, 'proposalData'> & {
+    proposalData: ProposalData;
     submittedBy: Profile & { avatarImage: ObjectsInStorage | null };
     processInstance: ProcessInstance;
     profile: Profile;
@@ -116,6 +118,7 @@ export const getProposal = async ({
 
   return {
     ...proposal,
+    proposalData: parseProposalData(proposal.proposalData),
     commentsCount,
     likesCount,
     followersCount,

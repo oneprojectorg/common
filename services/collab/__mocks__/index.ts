@@ -7,8 +7,6 @@
  * @example
  * import { mockCollab } from '@op/collab/testing';
  *
- * afterEach(() => mockCollab.reset());
- *
  * it('fetches document', () => {
  *   mockCollab.setDocResponse('doc-id', { type: 'doc', content: [] });
  *   // ... test code
@@ -27,11 +25,6 @@ export const mockCollab = {
   /** Set a mock error response for a specific document ID. */
   setDocError: (docId: string, error: Error) => {
     docResponses.set(docId, () => Promise.reject(error));
-  },
-
-  /** Clear all mock responses. Call this in afterEach. */
-  reset: () => {
-    docResponses.clear();
   },
 };
 
