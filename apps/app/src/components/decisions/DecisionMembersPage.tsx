@@ -53,6 +53,7 @@ export const DecisionMembersPage = ({ profileId }: { profileId: string }) => {
         <Button
           color="secondary"
           variant="icon"
+          size="small"
           onPress={() => setIsInviteModalOpen(true)}
         >
           <LuUserPlus className="size-4" />
