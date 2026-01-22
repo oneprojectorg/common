@@ -1,6 +1,5 @@
 'use client';
 
-import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { SearchField } from '@op/ui/SearchField';
@@ -37,11 +36,18 @@ export const DecisionMembersPage = ({ profileId }: { profileId: string }) => {
 
   if (!members || members.length === 0) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
+        <h2 className="font-serif text-title-sm font-light text-neutral-black">
+          {t('Members')}
+        </h2>
+
         <div className="flex items-center justify-between">
-          <h2 className="font-serif text-title-base text-neutral-black">
-            {t('Members')}
-          </h2>
+          <SearchField
+            placeholder={t('Search')}
+            value={searchQuery}
+            onChange={setSearchQuery}
+            className="w-[368px]"
+          />
           <Button
             color="secondary"
             variant="icon"
@@ -52,7 +58,7 @@ export const DecisionMembersPage = ({ profileId }: { profileId: string }) => {
           </Button>
         </div>
 
-        <div className="flex flex-col items-center justify-center rounded-lg border border-neutral-gray2 bg-white py-12 text-center">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-gray1">
             <LuUsers className="h-6 w-6 text-neutral-gray4" />
           </div>
@@ -74,30 +80,26 @@ export const DecisionMembersPage = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="font-serif text-title-base text-neutral-black">
-            {members.length} {pluralize(t('member'), members.length)}
-          </h2>
-        </div>
+    <div className="flex flex-col gap-4">
+      <h2 className="font-serif text-title-sm font-light text-neutral-black">
+        {t('Members')}
+      </h2>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <SearchField
-            placeholder={t('Search members')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-            className="w-full sm:w-64"
-          />
-          <Button
-            color="secondary"
-            variant="icon"
-            onPress={() => setIsInviteModalOpen(true)}
-          >
-            <LuUserPlus className="size-4" />
-            {t('Invite')}
-          </Button>
-        </div>
+      <div className="flex items-center justify-between">
+        <SearchField
+          placeholder={t('Search')}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          className="w-[368px]"
+        />
+        <Button
+          color="secondary"
+          variant="icon"
+          onPress={() => setIsInviteModalOpen(true)}
+        >
+          <LuUserPlus className="size-4" />
+          {t('Invite')}
+        </Button>
       </div>
 
       <DecisionMembersTable members={filteredMembers} profileId={profileId} />
