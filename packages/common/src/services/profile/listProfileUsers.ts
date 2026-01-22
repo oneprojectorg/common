@@ -1,9 +1,9 @@
-import { db, eq, sql } from '@op/db/client';
+import { and, db, eq, or, sql } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import type { SortDir } from '../../utils/db';
+import { type SortDir, constructTextSearch } from '../../utils/db';
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
@@ -22,11 +22,13 @@ export const listProfileUsers = async ({
   user,
   orderBy = 'name',
   dir = 'asc',
+  query,
 }: {
   profileId: string;
   user: User;
   orderBy?: ProfileUserOrderBy;
   dir?: SortDir;
+  query?: string;
 }): Promise<ProfileUserWithRelations[]> => {
   const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
@@ -39,9 +41,23 @@ export const listProfileUsers = async ({
 
   assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
+  // Build where clause with optional search filter (minimum 2 characters)
+  // Uses tsvector full-text search (email has GIN index for performance)
+  const searchFilter =
+    query && query.length >= 2
+      ? or(
+          constructTextSearch({ column: profileUsers.name, query }),
+          constructTextSearch({ column: profileUsers.email, query }),
+        )
+      : undefined;
+
+  const whereClause = searchFilter
+    ? and(eq(profileUsers.profileId, profileId), searchFilter)
+    : eq(profileUsers.profileId, profileId);
+
   // Fetch all profile users with their roles and user profiles
   const profileUserResults = await db._query.profileUsers.findMany({
-    where: eq(profileUsers.profileId, profileId),
+    where: whereClause,
     with: {
       roles: {
         with: {
