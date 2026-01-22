@@ -53,7 +53,7 @@ export function useProcessNavigation(
 
     // Filter to only allowed sections
     return allSections.filter((s) =>
-      allowedSectionIds.includes(s.id as SectionId),
+      allowedSectionIds.some((id) => id === s.id ),
     );
   }, [currentStep, navigationConfig.sections]);
 
