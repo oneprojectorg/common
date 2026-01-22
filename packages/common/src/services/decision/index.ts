@@ -31,6 +31,7 @@ export * from './getResultsStats';
 export * from './selectionPipeline';
 
 // Proposal management
+export * from './proposalDataSchema';
 export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';

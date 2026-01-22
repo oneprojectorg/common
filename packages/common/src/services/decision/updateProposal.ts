@@ -22,8 +22,8 @@ import {
 } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
+import type { ProposalDataInput } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
-import type { ProposalData } from './types';
 
 type ProcessInstanceWithProcess = ProcessInstance & {
   process: DecisionProcess;
@@ -78,7 +78,7 @@ async function updateProposalCategoryLink(
 }
 
 export interface UpdateProposalInput {
-  proposalData?: ProposalData;
+  proposalData?: ProposalDataInput;
   status?: ProposalStatus;
   visibility?: Visibility;
 }

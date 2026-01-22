@@ -1,35 +1,11 @@
-import { z } from 'zod';
-
 import { formatCurrency, formatDate } from './formatting';
 
-// Define the expected structure of proposalData with better type safety
-export const proposalDataSchema = z
-  .looseObject({
-    title: z.string().optional(),
-    description: z.string().optional(), // Schema expects 'description'
-    content: z.string().optional(), // Keep for backward compatibility
-    category: z.string().optional(),
-    budget: z.number().optional(),
-    attachmentIds: z.array(z.string()).optional().prefault([]),
-    collaborationDocId: z.string().optional(), // TipTap Cloud document ID for rich text editing
-  }) // Allow additional fields
-  .transform((data) => {
-    // Handle backward compatibility: if content exists but not description, use content as description
-    if (data.content && !data.description) {
-      data.description = data.content;
-    }
-    return data;
-  });
-
-export type ProposalData = z.infer<typeof proposalDataSchema>;
-
-/**
- * Safely parse proposal data with fallback to unknown structure
- */
-export function parseProposalData(proposalData: unknown): ProposalData {
-  const result = proposalDataSchema.safeParse(proposalData);
-  return result.success ? result.data : (proposalData as any) || {};
-}
+// Re-export schema and utilities from @op/common for backward compatibility
+export {
+  type ProposalData,
+  parseProposalData,
+  proposalDataSchema,
+} from '@op/common';
 
 // Re-export formatting utilities for backward compatibility
 export { formatCurrency, formatDate };

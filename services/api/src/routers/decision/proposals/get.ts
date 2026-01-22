@@ -1,6 +1,11 @@
 import { cache } from '@op/cache';
 import { type TipTapDocument, createTipTapClient } from '@op/collab';
-import { getPermissionsOnProposal, getProposal } from '@op/common';
+import {
+  type ProposalData,
+  getPermissionsOnProposal,
+  getProposal,
+  parseProposalData,
+} from '@op/common';
 import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -46,12 +51,9 @@ async function fetchTipTapDocument(
  * - Otherwise: undefined
  */
 async function buildDocumentContent(
-  proposalData: Record<string, unknown> | null,
+  proposalData: ProposalData,
 ): Promise<DocumentContent | undefined> {
-  const collaborationDocId =
-    typeof proposalData?.collaborationDocId === 'string'
-      ? proposalData.collaborationDocId
-      : undefined;
+  const { collaborationDocId, description } = proposalData;
 
   // New proposals with TipTap collaboration
   if (collaborationDocId) {
@@ -64,11 +66,6 @@ async function buildDocumentContent(
   }
 
   // Legacy proposals with HTML/text description
-  const description =
-    typeof proposalData?.description === 'string'
-      ? proposalData.description
-      : undefined;
-
   if (description) {
     return { type: 'html', content: description };
   }
@@ -101,10 +98,7 @@ export const getProposalRouter = router({
         },
       });
 
-      const proposalData = proposal.proposalData as Record<
-        string,
-        unknown
-      > | null;
+      const proposalData = parseProposalData(proposal.proposalData);
 
       // Fetch document content and permissions in parallel
       const [documentContent, isEditable] = await Promise.all([

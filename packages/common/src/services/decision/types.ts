@@ -156,11 +156,7 @@ export interface RuleCondition {
   field?: string; // For custom field rules
 }
 
-// Proposal Data Structure
-export interface ProposalData {
-  // Proposal content should match the proposalTemplate schema
-  [key: string]: unknown;
-}
+// ProposalData is now exported from ./proposalDataSchema with proper Zod inference
 
 // Decision Data Structure
 export interface DecisionData {
