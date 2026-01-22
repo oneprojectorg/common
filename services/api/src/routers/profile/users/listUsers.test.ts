@@ -413,7 +413,7 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(result.next).toBeNull();
     });
 
-    it('should paginate through all results using cursor', async ({
+    it('should paginate through all results using cursor with no duplicates', async ({
       task,
       onTestFinished,
     }) => {
@@ -425,54 +425,49 @@ describe.concurrent('profile.users.listUsers', () => {
       const { session } = await createIsolatedSession(adminUser.email);
       const caller = createCaller(await createTestContextWithSession(session));
 
-      // First page
-      const page1 = await caller.listUsers({
-        profileId: profile.id,
-        limit: 2,
-        orderBy: 'email',
-        dir: 'asc',
-      });
+      // Collect all emails across pages
+      const allEmails: string[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
 
-      expect(page1.items).toHaveLength(2);
-      expect(page1.hasMore).toBe(true);
-      expect(page1.next).toBeTruthy();
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'email',
+          dir: 'asc',
+        });
 
-      // Second page using cursor
-      const page2 = await caller.listUsers({
-        profileId: profile.id,
-        limit: 2,
-        cursor: page1.next!,
-        orderBy: 'email',
-        dir: 'asc',
-      });
+        allEmails.push(...page.items.map((u) => u.email));
+        cursor = page.next;
+        pageCount++;
 
-      expect(page2.items).toHaveLength(2);
-      expect(page2.hasMore).toBe(true);
+        // Safety check to prevent infinite loops
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
 
-      // Third page - last page
-      const page3 = await caller.listUsers({
-        profileId: profile.id,
-        limit: 2,
-        cursor: page2.next!,
-        orderBy: 'email',
-        dir: 'asc',
-      });
-
-      expect(page3.items).toHaveLength(1);
-      expect(page3.hasMore).toBe(false);
-      expect(page3.next).toBeNull();
-
-      // Verify all users were returned across pages (no duplicates)
-      const allEmails = [
-        ...page1.items.map((u) => u.email),
-        ...page2.items.map((u) => u.email),
-        ...page3.items.map((u) => u.email),
-      ];
+      // Verify we got all 5 items
       expect(allEmails).toHaveLength(5);
+
+      // Verify no duplicates
+      const uniqueEmails = new Set(allEmails);
+      expect(uniqueEmails.size).toBe(5);
+
+      // Verify all expected users are present
       expect(allEmails).toContain(adminUser.email);
       memberUsers.forEach((m) => {
         expect(allEmails).toContain(m.email);
       });
+
+      // Verify correct ascending order across all pages
+      const sortedEmails = [...allEmails].sort();
+      expect(allEmails).toEqual(sortedEmails);
+
+      // Verify we needed 3 pages (2 + 2 + 1)
+      expect(pageCount).toBe(3);
     });
 
     it('should work with search and pagination combined', async ({
@@ -488,43 +483,33 @@ describe.concurrent('profile.users.listUsers', () => {
       const caller = createCaller(await createTestContextWithSession(session));
 
       // Search for "member" with pagination
-      const page1 = await caller.listUsers({
-        profileId: profile.id,
-        query: 'member',
-        limit: 2,
-        orderBy: 'email',
-        dir: 'asc',
-      });
+      const allEmails: string[] = [];
+      let cursor: string | null | undefined;
 
-      expect(page1.items).toHaveLength(2);
-      expect(page1.hasMore).toBe(true);
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          query: 'member',
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'email',
+          dir: 'asc',
+        });
 
-      // Second page
-      const page2 = await caller.listUsers({
-        profileId: profile.id,
-        query: 'member',
-        limit: 2,
-        cursor: page1.next!,
-        orderBy: 'email',
-        dir: 'asc',
-      });
-
-      expect(page2.items).toHaveLength(2);
-      expect(page2.hasMore).toBe(false);
+        allEmails.push(...page.items.map((u) => u.email));
+        cursor = page.next;
+      } while (cursor);
 
       // All 4 members returned, admin filtered out
-      const allEmails = [
-        ...page1.items.map((u) => u.email),
-        ...page2.items.map((u) => u.email),
-      ];
       expect(allEmails).toHaveLength(4);
+      expect(new Set(allEmails).size).toBe(4); // No duplicates
       expect(allEmails).not.toContain(adminUser.email);
       memberUsers.forEach((m) => {
         expect(allEmails).toContain(m.email);
       });
     });
 
-    it('should default to limit of 50 when not specified', async ({
+    it('should return all results when no limit specified', async ({
       task,
       onTestFinished,
     }) => {
@@ -540,9 +525,122 @@ describe.concurrent('profile.users.listUsers', () => {
         profileId: profile.id,
       });
 
-      // With only 3 users, all should be returned
+      // With only 3 users (less than default limit), all should be returned
       expect(result.items).toHaveLength(3);
       expect(result.hasMore).toBe(false);
+    });
+
+    it('should throw error for invalid cursor', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await expect(
+        caller.listUsers({
+          profileId: profile.id,
+          limit: 10,
+          cursor: 'invalid-cursor',
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should paginate correctly when ordering by name', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 4 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Collect all names across pages, ordered by name ascending
+      const allNames: (string | null)[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'name',
+          dir: 'asc',
+        });
+
+        allNames.push(...page.items.map((u) => u.name));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      // Verify we got all 5 items
+      expect(allNames).toHaveLength(5);
+
+      // Verify no duplicates (by checking unique count matches total)
+      const uniqueNames = new Set(allNames);
+      expect(uniqueNames.size).toBe(5);
+
+      // Verify correct alphabetical order
+      const sortedNames = [...allNames].sort((a, b) =>
+        (a ?? '').localeCompare(b ?? ''),
+      );
+      expect(allNames).toEqual(sortedNames);
+    });
+
+    it('should paginate correctly when ordering by role', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 4 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Collect all users across pages, ordered by role ascending
+      const allEmails: string[] = [];
+      let cursor: string | null | undefined;
+      let pageCount = 0;
+
+      do {
+        const page = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor: cursor ?? undefined,
+          orderBy: 'role',
+          dir: 'asc',
+        });
+
+        allEmails.push(...page.items.map((u) => u.email));
+        cursor = page.next;
+        pageCount++;
+
+        if (pageCount > 10) {
+          throw new Error('Too many pages - possible infinite loop');
+        }
+      } while (cursor);
+
+      // Verify we got all 5 items with no duplicates
+      expect(allEmails).toHaveLength(5);
+      expect(new Set(allEmails).size).toBe(5);
+
+      // Admin should be first (A < M alphabetically)
+      expect(allEmails[0]).toBe(adminUser.email);
     });
   });
 });
