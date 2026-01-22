@@ -42,13 +42,22 @@ export const listProfileUsers = async ({
   assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
   // Build where clause with optional search filter (minimum 2 characters)
-  // Uses tsvector full-text search (email has GIN index for performance)
+  // Searches user's profile name (via profiles.search with GIN index) and profileUsers.email
   const searchFilter =
     query && query.length >= 2
-      ? or(
-          constructTextSearch({ column: profileUsers.name, query }),
-          constructTextSearch({ column: profileUsers.email, query }),
-        )
+      ? (() => {
+          const tsQuery = query.trim().replaceAll(' ', '\\ ') + ':*';
+          // Subquery to search the user's profile name via the profiles.search tsvector
+          const profileSearchSubquery = sql`EXISTS (
+            SELECT 1 FROM ${users} u
+            INNER JOIN ${profiles} p ON p.id = u.profile_id
+            WHERE u.auth_user_id = ${profileUsers.authUserId}
+            AND p.search @@ to_tsquery('english', ${tsQuery})
+          )`;
+          // Also search profileUsers.email
+          const emailSearch = sql`to_tsvector('english', ${profileUsers.email}) @@ to_tsquery('english', ${tsQuery})`;
+          return or(profileSearchSubquery, emailSearch);
+        })()
       : undefined;
 
   const whereClause = searchFilter
