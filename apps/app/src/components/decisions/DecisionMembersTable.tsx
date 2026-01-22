@@ -15,7 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import { Suspense, useEffect, useState } from 'react';
+import type { SortDescriptor } from 'react-aria-components';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -108,9 +109,42 @@ const DecisionMembersTableContent = ({
 }) => {
   const t = useTranslations();
   const isHydrated = useIsHydrated();
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+    column: 'name',
+    direction: 'ascending',
+  });
 
   // Fetch roles once at table level with suspense - boundary is outside this component
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+
+  const sortedMembers = useMemo(() => {
+    return [...members].sort((a, b) => {
+      let aValue: string;
+      let bValue: string;
+
+      switch (sortDescriptor.column) {
+        case 'name':
+          aValue = a.profile?.name || a.name || a.email.split('@')[0] || '';
+          bValue = b.profile?.name || b.name || b.email.split('@')[0] || '';
+          break;
+        case 'email':
+          aValue = a.email || '';
+          bValue = b.email || '';
+          break;
+        case 'role':
+          aValue = a.roles[0]?.name || '';
+          bValue = b.roles[0]?.name || '';
+          break;
+        default:
+          return 0;
+      }
+
+      const comparison = aValue.localeCompare(bValue);
+      return sortDescriptor.direction === 'descending'
+        ? -comparison
+        : comparison;
+    });
+  }, [members, sortDescriptor]);
 
   // Don't render table until after hydration due to React Aria SSR limitations
   if (!isHydrated) {
@@ -118,16 +152,25 @@ const DecisionMembersTableContent = ({
   }
 
   return (
-    <Table aria-label={t('Members list')} className="w-full table-fixed">
+    <Table
+      aria-label={t('Members list')}
+      className="w-full table-fixed"
+      sortDescriptor={sortDescriptor}
+      onSortChange={setSortDescriptor}
+    >
       <TableHeader>
-        <TableColumn isRowHeader className="w-[200px]">
+        <TableColumn isRowHeader id="name" allowsSorting className="w-[200px]">
           {t('Name')}
         </TableColumn>
-        <TableColumn className="w-auto">{t('Email')}</TableColumn>
-        <TableColumn className="w-[140px] text-right">{t('Role')}</TableColumn>
+        <TableColumn id="email" allowsSorting className="w-auto">
+          {t('Email')}
+        </TableColumn>
+        <TableColumn id="role" allowsSorting className="w-[140px] text-right">
+          {t('Role')}
+        </TableColumn>
       </TableHeader>
       <TableBody>
-        {members.map((member) => {
+        {sortedMembers.map((member) => {
           const displayName =
             member.profile?.name || member.name || member.email.split('@')[0];
           const currentRole = member.roles[0];
