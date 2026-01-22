@@ -134,12 +134,26 @@ export function ProposalEditor({
   });
   const { categories } = categoriesData;
 
-  // Extract budget config from template or instance data
+  // Extract budget config from current phase settings or legacy template
   const { budgetCapAmount, isBudgetRequired } = useMemo(() => {
-    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
     let cap: number | undefined;
     let required = true; // Default to required
 
+    // New schema: get budget from current phase settings
+    const currentPhaseId = instance.instanceData?.currentPhaseId;
+    const currentPhaseData = instance.instanceData?.phases?.find(
+      (p) => p.phaseId === currentPhaseId,
+    );
+    const phaseBudget = currentPhaseData?.settings?.budget as
+      | number
+      | undefined;
+
+    if (phaseBudget != null) {
+      return { budgetCapAmount: phaseBudget, isBudgetRequired: required };
+    }
+
+    // Legacy schema: extract from proposalTemplate.properties.budget
+    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
     if (
       proposalTemplate &&
       typeof proposalTemplate === 'object' &&
@@ -170,7 +184,7 @@ export function ProposalEditor({
       }
     }
 
-    // Fallback to instance data
+    // Fallback to instance data fieldValues
     if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
       cap = instance.instanceData.fieldValues.budgetCapAmount as number;
     }
