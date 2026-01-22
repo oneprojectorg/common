@@ -1,11 +1,9 @@
 'use client';
 
 import {
-  type ImageAttachment,
-  extractAttachmentIdsFromUrls,
-  extractImageUrlsFromContent,
-} from '@/utils/proposalContentProcessor';
-import { parseProposalData } from '@/utils/proposalUtils';
+  generateProposalCollabDocId,
+  parseProposalData,
+} from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
@@ -14,48 +12,45 @@ import {
 } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
-import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
+import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { z } from 'zod';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { RichTextEditorToolbar } from '../RichTextEditor';
-import { getEditorExtensions } from '../RichTextEditor/editorConfig';
+import {
+  CollaborativeEditor,
+  RichTextEditorToolbar,
+  getProposalExtensions,
+} from '../RichTextEditor';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-// Utility function to handle tRPC validation errors
-function handleValidationError(error: any, operationType: 'create' | 'update') {
+/** Handles tRPC validation errors from mutation responses */
+function handleMutationError(
+  error: { data?: unknown; message?: string },
+  operationType: 'create' | 'update' | 'submit',
+) {
   console.error(`Failed to ${operationType} proposal:`, error);
 
-  // Check if error has field-specific validation errors
-  if (
-    error.data &&
-    'cause' in error.data &&
-    error.data.cause &&
-    typeof error.data.cause === 'object' &&
-    'fieldErrors' in error.data.cause
-  ) {
-    const fieldErrors = error.data.cause.fieldErrors as Record<string, string>;
+  const errorData = error.data as
+    | { cause?: { fieldErrors?: Record<string, string> } }
+    | undefined;
 
-    // Show individual error messages for each field, or combine if multiple
+  if (errorData?.cause?.fieldErrors) {
+    const fieldErrors = errorData.cause.fieldErrors;
     const errorMessages = Object.values(fieldErrors);
 
     if (errorMessages.length === 1) {
-      // Single error - show just the message
-      toast.error({
-        message: errorMessages[0],
-      });
+      toast.error({ message: errorMessages[0] });
     } else {
-      // Multiple errors - show with title
       toast.error({
         title: 'Please fix the following issues:',
         message: errorMessages.join(', '),
@@ -81,39 +76,144 @@ export function ProposalEditor({
   isEditMode?: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations();
+  const posthog = usePostHog();
+  const utils = trpc.useUtils();
+
+  // Form state
   const [title, setTitle] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
   const [showBudgetInput, setShowBudgetInput] = useState(false);
-  const [editorContent, setEditorContent] = useState('');
-  const [editorInstance, setEditorInstance] = useState<any>(null);
-  const [imageAttachments] = useState<ImageAttachment[]>([]);
+
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const editorRef = useRef<RichTextEditorRef>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Refs
   const budgetInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
-  const utils = trpc.useUtils();
-  const posthog = usePostHog();
-  const t = useTranslations();
 
-  const createProposalMutation = trpc.decision.createProposal.useMutation({
-    onSuccess: async () => {
-      // Track successful proposal creation
-      if (posthog) {
-        posthog.capture('create_proposal_success', {
-          process_instance_id: instance.id,
-          process_name: instance.process?.name,
-        });
+  // Check if editing a draft (should show info modal and use submitProposal)
+  const isDraft =
+    isEditMode && existingProposal?.status === ProposalStatus.DRAFT;
+
+  // Generate or use existing collaboration document ID
+  const collabDocId = useMemo(() => {
+    const existingDocId = (
+      existingProposal?.proposalData as Record<string, unknown>
+    )?.collaborationDocId as string | undefined;
+
+    if (isEditMode && existingDocId) {
+      return existingDocId;
+    }
+    // Generate new docId for new proposals or legacy proposals without one
+    return generateProposalCollabDocId(instance.id, existingProposal?.id);
+  }, [
+    instance.id,
+    isEditMode,
+    existingProposal?.id,
+    existingProposal?.proposalData,
+  ]);
+
+  // Editor extensions - memoized with collaborative flag
+  const editorExtensions = useMemo(
+    () => getProposalExtensions({ collaborative: true }),
+    [],
+  );
+
+  // Extract template data from the instance
+  const proposalInfoTitle = instance.instanceData?.fieldValues
+    ?.proposalInfoTitle as string | undefined;
+  const proposalInfoContent = instance.instanceData?.fieldValues
+    ?.proposalInfoContent as string | undefined;
+
+  // Get categories from database
+  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId: instance.id,
+  });
+  const { categories } = categoriesData;
+
+  // Extract budget config from current phase settings or legacy template
+  const { budgetCapAmount, isBudgetRequired } = useMemo(() => {
+    let cap: number | undefined;
+    let required = true; // Default to required
+
+    // New schema: get budget from current phase settings
+    const currentPhaseId = instance.instanceData?.currentPhaseId;
+    const currentPhaseData = instance.instanceData?.phases?.find(
+      (p) => p.phaseId === currentPhaseId,
+    );
+    const phaseBudget = currentPhaseData?.settings?.budget as
+      | number
+      | undefined;
+
+    if (phaseBudget != null) {
+      return { budgetCapAmount: phaseBudget, isBudgetRequired: required };
+    }
+
+    // Legacy schema: extract from proposalTemplate.properties.budget
+    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
+    if (
+      proposalTemplate &&
+      typeof proposalTemplate === 'object' &&
+      'properties' in proposalTemplate
+    ) {
+      const properties = proposalTemplate.properties;
+      if (
+        properties &&
+        typeof properties === 'object' &&
+        'budget' in properties
+      ) {
+        const budgetProp = properties.budget;
+        if (
+          budgetProp &&
+          typeof budgetProp === 'object' &&
+          'maximum' in budgetProp
+        ) {
+          cap = budgetProp.maximum as number;
+        }
       }
 
+      // Check if budget is in required array
+      if (
+        'required' in proposalTemplate &&
+        Array.isArray(proposalTemplate.required)
+      ) {
+        required = proposalTemplate.required.includes('budget');
+      }
+    }
+
+    // Fallback to instance data fieldValues
+    if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
+      cap = instance.instanceData.fieldValues.budgetCapAmount as number;
+    }
+
+    return { budgetCapAmount: cap, isBudgetRequired: required };
+  }, [instance]);
+
+  // Parse existing proposal data for editing
+  const parsedProposalData = useMemo(
+    () =>
+      isEditMode && existingProposal
+        ? parseProposalData(existingProposal.proposalData)
+        : null,
+    [isEditMode, existingProposal],
+  );
+
+  // Mutations
+  const submitProposalMutation = trpc.decision.submitProposal.useMutation({
+    onSuccess: async () => {
+      posthog?.capture('submit_proposal_success', {
+        process_instance_id: instance.id,
+        process_name: instance.process?.name,
+      });
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
       });
-      // Navigate after cache invalidation completes
       router.push(backHref);
     },
-    onError: (error) => handleValidationError(error, 'create'),
+    onError: (error) => handleMutationError(error, 'submit'),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
@@ -124,125 +224,12 @@ export function ProposalEditor({
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
       });
-      // Navigate after cache invalidation completes
       router.push(backHref);
     },
-    onError: (error) => handleValidationError(error, 'update'),
+    onError: (error) => handleMutationError(error, 'update'),
   });
 
-  const submitProposalMutation = trpc.decision.submitProposal.useMutation({
-    onSuccess: async () => {
-      // Track successful proposal submission
-      if (posthog) {
-        posthog.capture('submit_proposal_success', {
-          process_instance_id: instance.id,
-          process_name: instance.process?.name,
-        });
-      }
-
-      await utils.decision.getProposal.invalidate({
-        profileId: existingProposal?.profileId,
-      });
-      await utils.decision.listProposals.invalidate({
-        processInstanceId: instance.id,
-      });
-      // Navigate after cache invalidation completes
-      router.push(backHref);
-    },
-    onError: (error) => handleValidationError(error, 'update'),
-  });
-
-  // Check if we're editing a draft proposal (should show info modal and use submitProposal)
-  const isDraft =
-    isEditMode && existingProposal?.status === ProposalStatus.DRAFT;
-
-  // Extract template data from the instance
-  const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
-  const descriptionGuidance = instance.instanceData?.fieldValues
-    ?.descriptionGuidance as string | undefined;
-
-  // Extract proposal info from the instance field values
-  const proposalInfoTitle = instance.instanceData?.fieldValues
-    ?.proposalInfoTitle as string | undefined;
-  const proposalInfoContent = instance.instanceData?.fieldValues
-    ?.proposalInfoContent as string | undefined;
-
-  // Get categories dynamically from the database
-  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId: instance.id,
-  });
-  const { categories } = categoriesData;
-  let budgetCapAmount: number | undefined;
-
-  // Extract budget cap from the template if available
-  if (
-    proposalTemplate &&
-    typeof proposalTemplate === 'object' &&
-    'properties' in proposalTemplate
-  ) {
-    const properties = proposalTemplate.properties;
-    if (
-      properties &&
-      typeof properties === 'object' &&
-      'budget' in properties
-    ) {
-      const budgetProp = properties.budget;
-      if (
-        budgetProp &&
-        typeof budgetProp === 'object' &&
-        'maximum' in budgetProp
-      ) {
-        budgetCapAmount = budgetProp.maximum as number;
-      }
-    }
-  }
-
-  // Also check for budgetCapAmount in instance data
-  if (!budgetCapAmount && instance.instanceData?.fieldValues?.budgetCapAmount) {
-    budgetCapAmount = instance.instanceData.fieldValues
-      .budgetCapAmount as number;
-  }
-
-  const isBudgetRequired = (() => {
-    // First check the proposal template schema
-    if (
-      proposalTemplate &&
-      typeof proposalTemplate === 'object' &&
-      'required' in proposalTemplate &&
-      Array.isArray(proposalTemplate.required)
-    ) {
-      return proposalTemplate.required.includes('budget');
-    }
-
-    // Safe default: require budget for all proposals unless explicitly configured otherwise
-    return true;
-  })();
-
-  // Parse proposal data for editing
-  const parsedProposalData =
-    isEditMode && existingProposal
-      ? parseProposalData(existingProposal.proposalData)
-      : null;
-
-  // Use existing content if editing, otherwise use placeholder content
-  const initialContent =
-    isEditMode && parsedProposalData
-      ? parsedProposalData.description
-      : descriptionGuidance
-        ? `<p>${descriptionGuidance}</p>`
-        : undefined;
-
-  // Update editor content when it changes
-  const handleEditorUpdate = useCallback((content: string) => {
-    setEditorContent(content);
-  }, []);
-
-  // Handle editor ready callback
-  const handleEditorReady = useCallback((editor: any) => {
-    setEditorInstance(editor);
-  }, []);
-
-  // Initialize form with existing proposal data if in edit mode
+  // Initialize form with existing proposal data
   useEffect(() => {
     if (
       isEditMode &&
@@ -252,7 +239,6 @@ export function ProposalEditor({
     ) {
       const {
         title: existingTitle,
-        description: existingDescription,
         category: existingCategory,
         budget: existingBudget,
       } = parsedProposalData;
@@ -268,168 +254,121 @@ export function ProposalEditor({
         setShowBudgetInput(true);
       }
 
-      // Set editor content state immediately
-      if (existingDescription) {
-        setEditorContent(existingDescription);
-      }
-
-      // Mark as initialized to prevent re-running
       initializedRef.current = true;
     }
   }, [isEditMode, existingProposal, parsedProposalData]);
 
-  // Content setting is now handled by RichTextEditorContent component via the content prop
-
-  // Show proposal info modal when creating a new proposal OR editing a draft
+  // Show info modal for new proposals or drafts
   useEffect(() => {
-    const shouldShowModal = !isEditMode || isDraft;
-    if (shouldShowModal && proposalInfoTitle && proposalInfoContent) {
+    if ((!isEditMode || isDraft) && proposalInfoTitle && proposalInfoContent) {
       setShowInfoModal(true);
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
 
-  // Auto-focus budget input when it becomes visible
+  // Auto-focus budget input when shown
   useEffect(() => {
     if (showBudgetInput && budgetInputRef.current) {
       budgetInputRef.current.focus();
     }
   }, [showBudgetInput]);
 
-  const handleCloseInfoModal = () => {
+  const handleEditorReady = useCallback((editor: Editor) => {
+    setEditorInstance(editor);
+  }, []);
+
+  const handleCloseInfoModal = useCallback(() => {
     setShowInfoModal(false);
-  };
+  }, []);
 
   const handleSubmitProposal = useCallback(async () => {
-    const content = editorRef.current?.getHTML() || editorContent;
+    // Validate required fields
+    const missingFields: string[] = [];
+
+    if (!title || title.trim() === '') {
+      missingFields.push(t('Title'));
+    }
+
+    // Check for empty content in the editor
+    if (editorInstance) {
+      const isEmpty = editorInstance.isEmpty;
+      if (isEmpty) {
+        missingFields.push(t('Description'));
+      }
+    }
+
+    if (isBudgetRequired && budget === null) {
+      missingFields.push(t('Budget'));
+    }
+
+    // Validate budget cap
+    if (budget !== null && budgetCapAmount && budget > budgetCapAmount) {
+      toast.error({
+        message: t('Budget cannot exceed {amount}', {
+          amount: budgetCapAmount.toLocaleString(),
+        }),
+      });
+      return;
+    }
+
+    if (missingFields.length > 0) {
+      toast.error({
+        title: t('Please complete the following required fields:'),
+        message: missingFields.join(', '),
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
-      // Validate required fields
-      const missingFields: string[] = [];
+      const proposalData: Record<string, unknown> = {
+        title,
+        collaborationDocId: collabDocId,
+      };
 
-      if (!title || title.trim() === '') {
-        missingFields.push('Title');
-      }
-
-      // Check for empty content (rich text editor can have various empty states)
-      const isContentEmpty =
-        !content ||
-        content.trim() === '' ||
-        content === '<p></p>' ||
-        content === '<p><br></p>' ||
-        content.replace(/<[^>]*>/g, '').trim() === '';
-
-      if (isContentEmpty) {
-        missingFields.push('Description');
-      }
-
-      if (isBudgetRequired && (budget === null || budget === undefined)) {
-        missingFields.push('Budget');
-      }
-
-      // Validate budget cap if there's a limit
-      if (
-        budget !== null &&
-        budget !== undefined &&
-        budgetCapAmount &&
-        budget > budgetCapAmount
-      ) {
-        toast.error({
-          message: `Budget cannot exceed ${budgetCapAmount.toLocaleString()}`,
-        });
-        return;
-      }
-
-      if (missingFields.length > 0) {
-        if (missingFields.length === 1) {
-          toast.error({
-            message: `${missingFields[0]} is required`,
-          });
-        } else {
-          toast.error({
-            title: 'Please complete the following required fields:',
-            message: missingFields.join(', '),
-          });
-        }
-        return;
-      }
-
-      // Extract image URLs from content and get attachment IDs
-      const imageUrls = extractImageUrlsFromContent(content);
-      const attachmentIds = extractAttachmentIdsFromUrls(
-        imageUrls,
-        imageAttachments,
-      );
-
-      // Create the proposal data structure
-      const proposalData: Record<string, unknown> = {};
-
-      // Always include required fields (they've been validated above)
-      proposalData.title = title;
-      proposalData.description = content;
-
-      // Include category field if categories are available for this process
       if (categories && categories.length > 0) {
         proposalData.category = selectedCategory;
       }
 
-      if (budget !== null && budget !== undefined) {
+      if (budget !== null) {
         proposalData.budget = budget;
       }
 
-      if (isEditMode && existingProposal) {
-        // First, save the proposal data (for both drafts and submitted proposals)
-        await updateProposalMutation.mutateAsync({
-          proposalId: existingProposal.id,
-          data: {
-            proposalData,
-            attachmentIds, // Include attachment IDs for updates
-          },
-        });
+      if (!existingProposal) {
+        throw new Error('No proposal to update');
+      }
 
-        // If it's a draft, also transition to submitted status
-        if (isDraft) {
-          await submitProposalMutation.mutateAsync({
-            proposalId: existingProposal.id,
-          });
-        }
-        // Note: navigation is handled in the mutation's onSuccess callbacks
-        return;
-      } else {
-        // Create new proposal - navigation handled in onSuccess callback
-        await createProposalMutation.mutateAsync({
-          processInstanceId: instance.id,
-          proposalData,
-          attachmentIds, // Include attachment IDs for new proposals
+      // Update existing proposal
+      await updateProposalMutation.mutateAsync({
+        proposalId: existingProposal.id,
+        data: { proposalData },
+      });
+
+      // If draft, also submit (transition to submitted status)
+      if (isDraft) {
+        await submitProposalMutation.mutateAsync({
+          proposalId: existingProposal.id,
         });
       }
     } catch (error) {
-      // Error handling is now done by the mutation's onError callbacks
-      // This catch block handles any other unexpected errors
-      console.error(
-        `Failed to ${isEditMode ? 'update' : 'submit'} proposal:`,
-        error,
-      );
+      console.error('Failed to update proposal:', error);
     } finally {
       setIsSubmitting(false);
     }
   }, [
-    editorContent,
+    t,
     title,
-    selectedCategory,
-    budget,
-    instance,
-    createProposalMutation,
-    updateProposalMutation,
-    submitProposalMutation,
-    isEditMode,
-    isDraft,
-    existingProposal,
-    imageAttachments,
+    editorInstance,
     isBudgetRequired,
-    categories,
+    budget,
     budgetCapAmount,
+    selectedCategory,
+    collabDocId,
+    categories,
+    existingProposal,
+    isDraft,
+    submitProposalMutation,
+    updateProposalMutation,
   ]);
 
   return (
@@ -441,24 +380,24 @@ export function ProposalEditor({
       isEditMode={isEditMode}
       isDraft={isDraft}
     >
-      {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+
         <div className="mx-auto flex max-w-4xl flex-col gap-4">
-          {/* Title input */}
+          {/* Title */}
           <TextField
             type="text"
             value={title}
-            onChange={(value) => setTitle(value)}
+            onChange={setTitle}
             inputProps={{
               placeholder: 'Untitled Proposal',
               className: 'border-0 p-0 font-serif text-title-lg',
             }}
           />
 
-          {/* Category and Budget selectors */}
+          {/* Category and Budget */}
           <div className="flex gap-6">
-            {categories && categories.length > 0 ? (
+            {categories && categories.length > 0 && (
               <Select
                 variant="pill"
                 size="medium"
@@ -478,8 +417,9 @@ export function ProposalEditor({
                   </SelectItem>
                 ))}
               </Select>
-            ) : null}
-            {!showBudgetInput ? (
+            )}
+
+            {!showBudgetInput && (
               <Button
                 variant="pill"
                 color="pill"
@@ -487,14 +427,13 @@ export function ProposalEditor({
               >
                 Add budget
               </Button>
-            ) : null}
+            )}
+
             {showBudgetInput && (
               <NumberField
                 ref={budgetInputRef}
                 value={budget}
-                onChange={(value) => {
-                  setBudget(value);
-                }}
+                onChange={setBudget}
                 prefixText="$"
                 inputProps={{
                   placeholder: budgetCapAmount
@@ -506,13 +445,12 @@ export function ProposalEditor({
             )}
           </div>
 
-          <RichTextEditor
-            ref={editorRef}
-            extensions={getEditorExtensions()}
-            content={initialContent || ''}
-            onUpdate={handleEditorUpdate}
-            placeholder={t('Write your proposal here...')}
+          {/* Rich Text Editor with Collaboration */}
+          <CollaborativeEditor
+            docId={collabDocId}
+            extensions={editorExtensions}
             onEditorReady={handleEditorReady}
+            placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
           />
         </div>

@@ -52,3 +52,15 @@ export function getUniqueSubmitters<
     [] as Array<NonNullable<T['submittedBy']>>,
   );
 }
+
+/**
+ * Generate a collaboration document ID for a proposal.
+ * Format: `proposal-{instanceId}-{proposalId}`
+ */
+export function generateProposalCollabDocId(
+  instanceId: string,
+  proposalId?: string,
+): string {
+  const id = proposalId || crypto.randomUUID();
+  return `proposal-${instanceId}-${id}`;
+}

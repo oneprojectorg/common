@@ -1,4 +1,11 @@
-// App-specific RichTextEditor with toolbar
+// Collaborative editor (real-time sync via TipTap Cloud)
+export {
+  CollaborativeEditor,
+  type CollaborativeEditorProps,
+  type CollaborativeEditorRef,
+} from './CollaborativeEditor';
+
+// App-specific RichTextEditor with toolbar (non-collaborative)
 export {
   RichTextEditorWithToolbar,
   type RichTextEditorWithToolbarProps,
@@ -10,4 +17,8 @@ export { RichTextEditorFloatingToolbar } from './RichTextEditorFloatingToolbar';
 export { useRichTextEditorFloatingToolbar } from './useRichTextEditorFloatingToolbar';
 
 // App-specific editor extensions
-export { getEditorExtensions, getViewerExtensions } from './editorConfig';
+export {
+  getProposalExtensions,
+  getViewerExtensions,
+  type EditorExtensionOptions,
+} from './editorConfig';

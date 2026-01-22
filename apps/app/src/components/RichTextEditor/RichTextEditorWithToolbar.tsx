@@ -2,10 +2,13 @@
 
 import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
 import type { Editor } from '@tiptap/react';
-import { forwardRef, useRef, useState } from 'react';
+import { forwardRef, useMemo, useRef, useState } from 'react';
 
 import { RichTextEditorToolbar } from './RichTextEditorToolbar';
-import { getEditorExtensions } from './editorConfig';
+import {
+  type EditorExtensionOptions,
+  getProposalExtensions,
+} from './editorConfig';
 
 export interface RichTextEditorWithToolbarProps {
   content?: string;
@@ -16,8 +19,16 @@ export interface RichTextEditorWithToolbarProps {
   editorClassName?: string;
   showToolbar?: boolean;
   toolbarPosition?: 'top' | 'bottom';
+  /** Extension options (slash commands, link embeds, etc.) */
+  extensionOptions?: EditorExtensionOptions;
 }
 
+/**
+ * Rich text editor with formatting toolbar.
+ *
+ * This is a non-collaborative editor for local editing use cases.
+ * For real-time collaboration, use `CollaborativeEditor` instead.
+ */
 export const RichTextEditorWithToolbar = forwardRef<
   RichTextEditorRef,
   RichTextEditorWithToolbarProps
@@ -32,11 +43,17 @@ export const RichTextEditorWithToolbar = forwardRef<
       editorClassName = '',
       showToolbar = true,
       toolbarPosition = 'top',
+      extensionOptions,
     },
     ref,
   ) => {
     const editorRef = useRef<RichTextEditorRef>(null);
     const [editor, setEditor] = useState<Editor | null>(null);
+
+    const extensions = useMemo(
+      () => getProposalExtensions(extensionOptions),
+      [extensionOptions],
+    );
 
     const handleEditorReady = (editorInstance: Editor) => {
       setEditor(editorInstance);
@@ -50,7 +67,7 @@ export const RichTextEditorWithToolbar = forwardRef<
 
         <RichTextEditor
           ref={ref || editorRef}
-          extensions={getEditorExtensions()}
+          extensions={extensions}
           content={content}
           placeholder={placeholder}
           onUpdate={onUpdate}
