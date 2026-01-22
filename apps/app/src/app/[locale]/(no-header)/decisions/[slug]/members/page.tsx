@@ -1,8 +1,8 @@
 import { createClient } from '@op/api/serverClient';
 import { notFound } from 'next/navigation';
 
-import { DecisionMembersHeader } from '@/components/decisions/DecisionMembersHeader';
-import { DecisionMembersPage } from '@/components/decisions/DecisionMembersPage';
+import { ProfileUsersAccessHeader } from '@/components/decisions/ProfileUsersAccessHeader';
+import { ProfileUsersAccessPage } from '@/components/decisions/ProfileUsersAccessPage';
 
 const DecisionMembersContent = async ({ slug }: { slug: string }) => {
   const client = await createClient();
@@ -27,7 +27,7 @@ const DecisionMembersContent = async ({ slug }: { slug: string }) => {
 
   return (
     <div className="min-h-screen bg-neutral-offWhite">
-      <DecisionMembersHeader
+      <ProfileUsersAccessHeader
         backTo={{
           label: decisionName,
           href: `/decisions/${slug}`,
@@ -35,7 +35,7 @@ const DecisionMembersContent = async ({ slug }: { slug: string }) => {
         title="Members"
       />
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <DecisionMembersPage profileId={profileId} />
+        <ProfileUsersAccessPage profileId={profileId} />
       </div>
     </div>
   );

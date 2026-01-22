@@ -9,7 +9,7 @@ import { Link } from '@/lib/i18n/routing';
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
-export const DecisionMembersHeader = ({
+export const ProfileUsersAccessHeader = ({
   backTo,
   title,
 }: {

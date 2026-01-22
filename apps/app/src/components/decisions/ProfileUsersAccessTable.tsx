@@ -1,8 +1,7 @@
 'use client';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
+import type { profileUserEncoder } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -15,34 +14,38 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
+import { Suspense, useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
-import { Suspense, useEffect, useMemo, useState } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 
-// Infer the Member type from the tRPC router output
-type Member = RouterOutput['profile']['listUsers'][number];
+// Infer the ProfileUser type from the encoder
+type ProfileUser = z.infer<typeof profileUserEncoder>;
 
-const getMemberStatus = (member: Member): string => {
+const getProfileUserStatus = (profileUser: ProfileUser): string => {
   // Check for status field if available, otherwise derive from data
-  if ('status' in member && typeof member.status === 'string') {
+  if ('status' in profileUser && typeof profileUser.status === 'string') {
     // Capitalize first letter
-    return member.status.charAt(0).toUpperCase() + member.status.slice(1);
+    return (
+      profileUser.status.charAt(0).toUpperCase() + profileUser.status.slice(1)
+    );
   }
-  // Default to "Active" for existing members
+  // Default to "Active" for existing profile users
   return 'Active';
 };
 
-const MemberRoleSelect = ({
-  memberId,
+const ProfileUserRoleSelect = ({
+  profileUserId,
   currentRoleId,
   profileId,
   roles,
 }: {
-  memberId: string;
+  profileUserId: string;
   currentRoleId?: string;
   profileId: string;
   roles: { id: string; name: string }[];
@@ -65,7 +68,7 @@ const MemberRoleSelect = ({
   const handleRoleChange = (roleId: string) => {
     if (roleId && roleId !== currentRoleId) {
       updateRoles.mutate({
-        profileUserId: memberId,
+        profileUserId,
         roleIds: [roleId],
       });
     }
@@ -100,51 +103,22 @@ const useIsHydrated = () => {
 };
 
 // Inner component that uses suspense query - Suspense boundary is OUTSIDE the table
-const DecisionMembersTableContent = ({
-  members,
+const ProfileUsersAccessTableContent = ({
+  profileUsers,
   profileId,
+  sortDescriptor,
+  onSortChange,
 }: {
-  members: Member[];
+  profileUsers: ProfileUser[];
   profileId: string;
+  sortDescriptor: SortDescriptor;
+  onSortChange: (descriptor: SortDescriptor) => void;
 }) => {
   const t = useTranslations();
   const isHydrated = useIsHydrated();
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: 'name',
-    direction: 'ascending',
-  });
 
   // Fetch roles once at table level with suspense - boundary is outside this component
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
-
-  const sortedMembers = useMemo(() => {
-    return [...members].sort((a, b) => {
-      let aValue: string;
-      let bValue: string;
-
-      switch (sortDescriptor.column) {
-        case 'name':
-          aValue = a.profile?.name || a.name || a.email.split('@')[0] || '';
-          bValue = b.profile?.name || b.name || b.email.split('@')[0] || '';
-          break;
-        case 'email':
-          aValue = a.email || '';
-          bValue = b.email || '';
-          break;
-        case 'role':
-          aValue = a.roles[0]?.name || '';
-          bValue = b.roles[0]?.name || '';
-          break;
-        default:
-          return 0;
-      }
-
-      const comparison = aValue.localeCompare(bValue);
-      return sortDescriptor.direction === 'descending'
-        ? -comparison
-        : comparison;
-    });
-  }, [members, sortDescriptor]);
 
   // Don't render table until after hydration due to React Aria SSR limitations
   if (!isHydrated) {
@@ -156,7 +130,7 @@ const DecisionMembersTableContent = ({
       aria-label={t('Members list')}
       className="w-full table-fixed"
       sortDescriptor={sortDescriptor}
-      onSortChange={setSortDescriptor}
+      onSortChange={onSortChange}
     >
       <TableHeader>
         <TableColumn isRowHeader id="name" allowsSorting className="w-[200px]">
@@ -170,17 +144,22 @@ const DecisionMembersTableContent = ({
         </TableColumn>
       </TableHeader>
       <TableBody>
-        {sortedMembers.map((member) => {
+        {profileUsers.map((profileUser) => {
           const displayName =
-            member.profile?.name || member.name || member.email.split('@')[0];
-          const currentRole = member.roles[0];
-          const status = getMemberStatus(member);
+            profileUser.profile?.name ||
+            profileUser.name ||
+            profileUser.email.split('@')[0];
+          const currentRole = profileUser.roles[0];
+          const status = getProfileUserStatus(profileUser);
 
           return (
-            <TableRow key={member.id} id={member.id}>
+            <TableRow key={profileUser.id} id={profileUser.id}>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <ProfileAvatar profile={member.profile} withLink={false} />
+                  <ProfileAvatar
+                    profile={profileUser.profile}
+                    withLink={false}
+                  />
                   <div className="flex flex-col">
                     <span className="text-sm text-neutral-black">
                       {displayName}
@@ -191,12 +170,12 @@ const DecisionMembersTableContent = ({
               </TableCell>
               <TableCell>
                 <span className="text-sm text-neutral-black">
-                  {member.email}
+                  {profileUser.email}
                 </span>
               </TableCell>
               <TableCell className="text-right">
-                <MemberRoleSelect
-                  memberId={member.id}
+                <ProfileUserRoleSelect
+                  profileUserId={profileUser.id}
                   currentRoleId={currentRole?.id}
                   profileId={profileId}
                   roles={rolesData.roles}
@@ -232,17 +211,26 @@ const RolesLoadError = ({
 };
 
 // Exported component wraps with Suspense + ErrorBoundary OUTSIDE the table
-export const DecisionMembersTable = ({
-  members,
+export const ProfileUsersAccessTable = ({
+  profileUsers,
   profileId,
+  sortDescriptor,
+  onSortChange,
 }: {
-  members: Member[];
+  profileUsers: ProfileUser[];
   profileId: string;
+  sortDescriptor: SortDescriptor;
+  onSortChange: (descriptor: SortDescriptor) => void;
 }) => {
   return (
     <APIErrorBoundary fallbacks={{ default: <RolesLoadError /> }}>
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-        <DecisionMembersTableContent members={members} profileId={profileId} />
+        <ProfileUsersAccessTableContent
+          profileUsers={profileUsers}
+          profileId={profileId}
+          sortDescriptor={sortDescriptor}
+          onSortChange={onSortChange}
+        />
       </Suspense>
     </APIErrorBoundary>
   );
