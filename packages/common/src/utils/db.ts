@@ -6,6 +6,13 @@ import { CommonError } from './error';
 /** Standard sort direction type for database queries */
 export type SortDir = 'asc' | 'desc';
 
+/** Generic paginated result type for cursor-based pagination */
+export type PaginatedResult<T> = {
+  items: T[];
+  next: string | null;
+  hasMore: boolean;
+};
+
 // Cursor utilities
 type GenericCursor = {
   date: Date;

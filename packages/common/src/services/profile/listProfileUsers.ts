@@ -4,6 +4,7 @@ import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import {
+  type PaginatedResult,
   type SortDir,
   decodeCursor,
   encodeCursor,
@@ -18,12 +19,6 @@ import type {
 } from './getProfileUserWithRelations';
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
-
-type PaginatedProfileUsersResult = {
-  items: ProfileUserWithRelations[];
-  next: string | null;
-  hasMore: boolean;
-};
 
 /**
  * List all members of a profile with cursor-based pagination
@@ -44,7 +39,7 @@ export const listProfileUsers = async ({
   query?: string;
   cursor?: string | null;
   limit?: number;
-}): Promise<PaginatedProfileUsersResult> => {
+}): Promise<PaginatedResult<ProfileUserWithRelations>> => {
   const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
     assertProfile(profileId),
@@ -155,9 +150,7 @@ export const listProfileUsers = async ({
 
   // Check if there are more results
   const hasMore = profileUserResults.length > limit;
-  const resultItems = hasMore
-    ? profileUserResults.slice(0, limit)
-    : profileUserResults;
+  const resultItems = profileUserResults.slice(0, limit);
 
   // Transform results
   const items = resultItems.map((result) => {
