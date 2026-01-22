@@ -42,7 +42,7 @@ export * from './getProcessCategories';
 export * from './exportProposals';
 export * from './getExportStatus';
 export * from './exports';
-export * from './fetchDocumentContents';
+export * from './getProposalDocumentsContent';
 
 // Voting management
 export * from './voting';

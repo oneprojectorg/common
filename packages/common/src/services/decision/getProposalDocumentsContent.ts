@@ -4,9 +4,9 @@ import pMap from 'p-map';
 import { parseProposalData } from './proposalDataSchema';
 
 /**
- * Document content can be either TipTap JSON or legacy HTML
+ * Proposal document content can be either TipTap JSON or legacy HTML
  */
-export type DocumentContent =
+export type ProposalDocumentContent =
   | { type: 'json'; content: unknown[] }
   | { type: 'html'; content: string };
 
@@ -20,10 +20,10 @@ export type DocumentContent =
  *
  * @returns Map of proposalId -> DocumentContent
  */
-export async function fetchDocumentContents(
+export async function getProposalDocumentsContent(
   proposals: Array<{ id: string; proposalData: unknown }>,
-): Promise<Map<string, DocumentContent>> {
-  const documentContentMap = new Map<string, DocumentContent>();
+): Promise<Map<string, ProposalDocumentContent>> {
+  const documentContentMap = new Map<string, ProposalDocumentContent>();
 
   const proposalsWithCollabDoc: Array<{
     id: string;
@@ -52,7 +52,7 @@ export async function fetchDocumentContents(
     const secret = process.env.TIPTAP_SECRET;
 
     if (!appId || !secret) {
-      console.warn(
+      console.error(
         'TipTap credentials not configured, skipping document fetch',
       );
       return documentContentMap;

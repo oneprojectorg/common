@@ -20,9 +20,9 @@ import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import {
-  type DocumentContent,
-  fetchDocumentContents,
-} from './fetchDocumentContents';
+  type ProposalDocumentContent,
+  getProposalDocumentsContent,
+} from './getProposalDocumentsContent';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 
 export const getProposal = async ({
@@ -40,7 +40,7 @@ export const getProposal = async ({
     commentsCount: number;
     likesCount: number;
     followersCount: number;
-    documentContent: DocumentContent | undefined;
+    documentContent: ProposalDocumentContent | undefined;
   }
 > => {
   const dbUser = await assertUserByAuthId(user.id);
@@ -115,7 +115,7 @@ export const getProposal = async ({
       : Promise.resolve({ commentsCount: 0, likesCount: 0, followersCount: 0 }),
 
     // Fetch document content
-    fetchDocumentContents([
+    getProposalDocumentsContent([
       { id: proposal.id, proposalData: proposal.proposalData },
     ]),
   ]);

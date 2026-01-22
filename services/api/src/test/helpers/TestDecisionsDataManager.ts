@@ -538,10 +538,11 @@ export class TestDecisionsDataManager {
   }: {
     callerEmail: string;
     processInstanceId: string;
-    proposalData:
-      | { title: string; description: string } // Legacy format (deprecated)
-      | { title: string; collaborationDocId: string } // TipTap collaboration format
-      | { title: string }; // Minimal (no content)
+    proposalData: {
+      title: string;
+      description?: string;
+      collaborationDocId?: string;
+    };
   }) {
     this.ensureCleanupRegistered();
 

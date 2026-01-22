@@ -14,11 +14,9 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2",
     "ky": "^1.8.1"
   },
   "devDependencies": {
-    "@op/typescript-config": "workspace:*",
-    "@types/jsonwebtoken": "^9.0.10"
+    "@op/typescript-config": "workspace:*"
   }
 }

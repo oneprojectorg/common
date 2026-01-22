@@ -21,7 +21,7 @@ import {
   getOrgAccessUser,
   getProfileAccessUser,
 } from '../access';
-import { fetchDocumentContents } from './fetchDocumentContents';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 
 export interface ListProposalsInput {
@@ -214,7 +214,6 @@ export const listProposals = async ({
   const count = countResult[0]?.count || 0;
 
   // Get relationship data for all proposal profiles using optimized Drizzle queries
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profileIds = proposalList
     .map((p: any) => p.profileId)
     .filter((id: any): id is string => Boolean(id));
@@ -276,9 +275,8 @@ export const listProposals = async ({
         ])
       : Promise.resolve(null),
 
-    // Fetch document contents for all proposals
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fetchDocumentContents(
+    // Get document contents for all proposals
+    getProposalDocumentsContent(
       proposalList.map((p: any) => ({
         id: p.id,
         proposalData: p.proposalData,
@@ -333,7 +331,6 @@ export const listProposals = async ({
 
   // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
   // TODO: improve this with more streamlined types
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const proposalsWithCounts = proposalList.map((proposal: any) => {
     const submittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]

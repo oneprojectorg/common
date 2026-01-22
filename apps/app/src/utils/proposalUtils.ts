@@ -1,15 +1,3 @@
-import { formatCurrency, formatDate } from './formatting';
-
-// Re-export schema and utilities from @op/common for backward compatibility
-export {
-  type ProposalData,
-  parseProposalData,
-  proposalDataSchema,
-} from '@op/common';
-
-// Re-export formatting utilities for backward compatibility
-export { formatCurrency, formatDate };
-
 /**
  * Extract unique submitters from proposals for display components like FacePile
  */

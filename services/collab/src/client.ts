@@ -36,10 +36,10 @@ export function createTipTapClient(config: TipTapClientConfig) {
      */
     getDocument: async (docName: string): Promise<TipTapDocument> => {
       return api
-        .get(`documents/${encodeURIComponent(docName)}`, {
+        .get<TipTapDocument>(`documents/${encodeURIComponent(docName)}`, {
           searchParams: { format: 'json' },
         })
-        .json<TipTapDocument>();
+        .json();
     },
   };
 }

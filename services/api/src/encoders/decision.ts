@@ -399,8 +399,6 @@ const documentContentEncoder = z.discriminatedUnion('type', [
   }),
 ]);
 
-export type DocumentContent = z.infer<typeof documentContentEncoder>;
-
 /** Proposal encoder (frontend gets instance data separately via getDecisionBySlug) */
 export const proposalEncoder = createSelectSchema(proposals)
   .pick({

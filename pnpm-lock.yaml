@@ -1211,9 +1211,6 @@ importers:
 
   services/collab:
     dependencies:
-      jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.2
       ky:
         specifier: ^1.8.1
         version: 1.14.2
@@ -1221,9 +1218,6 @@ importers:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
 
   services/db:
     dependencies:
