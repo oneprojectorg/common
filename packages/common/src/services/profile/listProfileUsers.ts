@@ -4,10 +4,10 @@ import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import {
+  type SortDir,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
-  type SortDir,
 } from '../../utils/db';
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
@@ -102,7 +102,8 @@ export const listProfileUsers = async ({
   const conditions = [baseCondition, searchFilter, cursorCondition].filter(
     Boolean,
   );
-  const whereClause = conditions.length > 1 ? and(...conditions) : baseCondition;
+  const whereClause =
+    conditions.length > 1 ? and(...conditions) : baseCondition;
 
   // Fetch profile users with their roles and user profiles
   // Request one extra to check if there are more results

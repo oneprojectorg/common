@@ -140,7 +140,9 @@ describe.concurrent('profile.users.listUsers', () => {
       // "Test Admin User" < "Test Member User" alphabetically (A < M after "Test ")
       // So admin should be first in ASC order and last in DESC order
       expect(resultAsc.items[0]?.email).toBe(adminUser.email);
-      expect(resultDesc.items[resultDesc.items.length - 1]?.email).toBe(adminUser.email);
+      expect(resultDesc.items[resultDesc.items.length - 1]?.email).toBe(
+        adminUser.email,
+      );
     });
 
     it('should reverse order when switching between asc and desc for email', async ({
@@ -206,7 +208,9 @@ describe.concurrent('profile.users.listUsers', () => {
       // "Admin" comes before "Member" alphabetically
       // So admin should be first in ASC order and last in DESC order
       expect(resultAsc.items[0]?.email).toBe(adminUser.email);
-      expect(resultDesc.items[resultDesc.items.length - 1]?.email).toBe(adminUser.email);
+      expect(resultDesc.items[resultDesc.items.length - 1]?.email).toBe(
+        adminUser.email,
+      );
     });
   });
 
