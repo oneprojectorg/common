@@ -35,7 +35,7 @@ export const listProfileUsers = async ({
   dir = 'asc',
   query,
   cursor,
-  limit = 50,
+  limit = 25,
 }: {
   profileId: string;
   user: User;
