@@ -76,6 +76,7 @@ const MemberRoleSelect = ({
       selectedKey={currentRoleId || ''}
       onSelectionChange={(key) => handleRoleChange(key as string)}
       isDisabled={updateRoles.isPending}
+      size="small"
       className="w-32"
     >
       {roles.map((role) => (
