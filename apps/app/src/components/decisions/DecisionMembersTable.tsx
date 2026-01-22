@@ -1,6 +1,11 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api/client';
+import { trpc } from '@op/api/client';
+import { Select, SelectItem } from '@op/ui/Select';
+import { Skeleton } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
 import {
   Table,
   TableBody,
@@ -9,11 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
+import { Suspense, useEffect, useState } from 'react';
 
-import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useTranslations } from '@/lib/i18n';
 
-import { DecisionMemberRoleSelect } from './DecisionMemberRoleSelect';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 // Infer the Member type from the tRPC router output
 type Member = RouterOutput['profile']['listUsers'][number];
@@ -28,7 +33,70 @@ const getMemberStatus = (member: Member): string => {
   return 'Active';
 };
 
-export const DecisionMembersTable = ({
+const MemberRoleSelect = ({
+  memberId,
+  currentRoleId,
+  profileId,
+  roles,
+}: {
+  memberId: string;
+  currentRoleId?: string;
+  profileId: string;
+  roles: { id: string; name: string }[];
+}) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  const updateRoles = trpc.profile.updateUserRoles.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Role updated successfully') });
+      void utils.profile.listUsers.invalidate({ profileId });
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to update role'),
+      });
+    },
+  });
+
+  const handleRoleChange = (roleId: string) => {
+    if (roleId && roleId !== currentRoleId) {
+      updateRoles.mutate({
+        profileUserId: memberId,
+        roleIds: [roleId],
+      });
+    }
+  };
+
+  return (
+    <Select
+      aria-label={t('Role')}
+      selectedKey={currentRoleId || ''}
+      onSelectionChange={(key) => handleRoleChange(key as string)}
+      isDisabled={updateRoles.isPending}
+      className="w-32"
+    >
+      {roles.map((role) => (
+        <SelectItem key={role.id} id={role.id}>
+          {role.name}
+        </SelectItem>
+      ))}
+    </Select>
+  );
+};
+
+// Hook to detect client-side hydration (workaround for React Aria Table SSR issue)
+// See: https://github.com/adobe/react-spectrum/issues/4870
+const useIsHydrated = () => {
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+  return isHydrated;
+};
+
+// Inner component that uses suspense query - Suspense boundary is OUTSIDE the table
+const DecisionMembersTableContent = ({
   members,
   profileId,
 }: {
@@ -36,6 +104,15 @@ export const DecisionMembersTable = ({
   profileId: string;
 }) => {
   const t = useTranslations();
+  const isHydrated = useIsHydrated();
+
+  // Fetch roles once at table level with suspense - boundary is outside this component
+  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+
+  // Don't render table until after hydration due to React Aria SSR limitations
+  if (!isHydrated) {
+    return <Skeleton className="h-64 w-full" />;
+  }
 
   return (
     <Table aria-label={t('Members list')} className="w-full table-fixed">
@@ -72,10 +149,11 @@ export const DecisionMembersTable = ({
                 </span>
               </TableCell>
               <TableCell className="text-right">
-                <DecisionMemberRoleSelect
+                <MemberRoleSelect
                   memberId={member.id}
                   currentRoleId={currentRole?.id}
                   profileId={profileId}
+                  roles={rolesData.roles}
                 />
               </TableCell>
             </TableRow>
@@ -83,5 +161,31 @@ export const DecisionMembersTable = ({
         })}
       </TableBody>
     </Table>
+  );
+};
+
+const RolesLoadError = () => {
+  const t = useTranslations();
+  return (
+    <div className="py-8 text-center text-sm text-neutral-gray4">
+      {t('Unable to load roles')}
+    </div>
+  );
+};
+
+// Exported component wraps with Suspense + ErrorBoundary OUTSIDE the table
+export const DecisionMembersTable = ({
+  members,
+  profileId,
+}: {
+  members: Member[];
+  profileId: string;
+}) => {
+  return (
+    <APIErrorBoundary fallbacks={{ default: <RolesLoadError /> }}>
+      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+        <DecisionMembersTableContent members={members} profileId={profileId} />
+      </Suspense>
+    </APIErrorBoundary>
   );
 };
