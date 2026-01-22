@@ -101,7 +101,7 @@ export const listPosts = async ({
     const filteredResult = result.filter((item) => item.post !== null);
 
     const hasMore = filteredResult.length > limit;
-    const items = hasMore ? filteredResult.slice(0, limit) : filteredResult;
+    const items = filteredResult.slice(0, limit);
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.createdAt
