@@ -711,6 +711,9 @@ importers:
       '@op/cache':
         specifier: workspace:*
         version: link:../../services/cache
+      '@op/collab':
+        specifier: workspace:*
+        version: link:../../services/collab
       '@op/db':
         specifier: workspace:*
         version: link:../../services/db

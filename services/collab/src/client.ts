@@ -26,7 +26,7 @@ export function createTipTapClient(config: TipTapClientConfig) {
     prefixUrl: `https://${config.appId}.collab.tiptap.cloud/api`,
     headers: { Authorization: config.secret },
     retry: { limit: 2, methods: ['get'] },
-    timeout: 5000,
+    timeout: 3_000,
   });
 
   return {

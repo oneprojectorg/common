@@ -156,8 +156,6 @@ export interface RuleCondition {
   field?: string; // For custom field rules
 }
 
-// ProposalData is now exported from ./proposalDataSchema with proper Zod inference
-
 // Decision Data Structure
 export interface DecisionData {
   // Decision content should match the decisionDefinition schema

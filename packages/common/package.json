@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@op/cache": "workspace:*",
+    "@op/collab": "workspace:*",
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",

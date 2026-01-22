@@ -1,14 +1,20 @@
 import { createTipTapClient } from '@op/collab';
-import { parseProposalData } from '@op/common';
-import { logger } from '@op/logging';
+import pMap from 'p-map';
 
-import { type DocumentContent } from '../../../encoders/decision';
+import { parseProposalData } from './proposalDataSchema';
+
+/**
+ * Document content can be either TipTap JSON or legacy HTML
+ */
+export type DocumentContent =
+  | { type: 'json'; content: unknown[] }
+  | { type: 'html'; content: string };
 
 /**
  * Fetch document contents for proposals, handling both TipTap collaboration docs
  * and legacy HTML descriptions.
  *
- * - Proposals with `collaborationDocId`: fetched from TipTap in parallel
+ * - Proposals with `collaborationDocId`: fetched from TipTap with controlled concurrency
  * - Proposals with `description`: returned as HTML content (no network call)
  * - Proposals with neither: not included in the returned map
  *
@@ -40,31 +46,35 @@ export async function fetchDocumentContents(
     }
   }
 
-  // Fetch TipTap documents in parallel
+  // Fetch TipTap documents with controlled concurrency
   if (proposalsWithCollabDoc.length > 0) {
     const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
     const secret = process.env.TIPTAP_SECRET;
 
     if (!appId || !secret) {
-      logger.warn('TipTap credentials not configured, skipping document fetch');
+      console.warn(
+        'TipTap credentials not configured, skipping document fetch',
+      );
       return documentContentMap;
     }
 
     const client = createTipTapClient({ appId, secret });
 
-    const results = await Promise.all(
-      proposalsWithCollabDoc.map(async ({ id, collaborationDocId }) => {
+    const results = await pMap(
+      proposalsWithCollabDoc,
+      async ({ id, collaborationDocId }) => {
         try {
           const doc = await client.getDocument(collaborationDocId);
           return { id, doc };
         } catch (error) {
-          logger.warn('Failed to fetch TipTap document', {
+          console.warn('Failed to fetch TipTap document', {
             collaborationDocId,
             error: error instanceof Error ? error.message : String(error),
           });
           return { id, doc: undefined };
         }
-      }),
+      },
+      { concurrency: 10 },
     );
 
     for (const { id, doc } of results) {

@@ -19,6 +19,10 @@ import { checkPermission, permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
+import {
+  type DocumentContent,
+  fetchDocumentContents,
+} from './fetchDocumentContents';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 
 export const getProposal = async ({
@@ -36,6 +40,7 @@ export const getProposal = async ({
     commentsCount: number;
     likesCount: number;
     followersCount: number;
+    documentContent: DocumentContent | undefined;
   }
 > => {
   const dbUser = await assertUserByAuthId(user.id);
@@ -63,55 +68,57 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal not found');
   }
 
-  // Get engagement counts for this proposal
-  let commentsCount = 0;
-  let likesCount = 0;
-  let followersCount = 0;
+  // Run engagement counts and document fetch in parallel
+  const [engagementCounts, documentContentMap] = await Promise.all([
+    // Get engagement counts if proposal has a profile
+    proposal.profileId
+      ? Promise.all([
+          // Get comment count
+          db
+            .select({ count: count() })
+            .from(posts)
+            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
+            .where(eq(postsToProfiles.profileId, proposal.profileId)),
 
-  if (proposal.profileId) {
-    // Run all count queries in parallel for better performance
-    const [commentCountResult, likesCountResult, followersCountResult] =
-      await Promise.all([
-        // Get comment count
-        db
-          .select({ count: count() })
-          .from(posts)
-          .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-          .where(eq(postsToProfiles.profileId, proposal.profileId)),
-
-        // Get likes count
-        db
-          .select({ count: count() })
-          .from(profileRelationships)
-          .where(
-            and(
-              eq(profileRelationships.targetProfileId, proposal.profileId),
-              eq(
-                profileRelationships.relationshipType,
-                ProfileRelationshipType.LIKES,
+          // Get likes count
+          db
+            .select({ count: count() })
+            .from(profileRelationships)
+            .where(
+              and(
+                eq(profileRelationships.targetProfileId, proposal.profileId),
+                eq(
+                  profileRelationships.relationshipType,
+                  ProfileRelationshipType.LIKES,
+                ),
               ),
             ),
-          ),
 
-        // Get followers count
-        db
-          .select({ count: count() })
-          .from(profileRelationships)
-          .where(
-            and(
-              eq(profileRelationships.targetProfileId, proposal.profileId),
-              eq(
-                profileRelationships.relationshipType,
-                ProfileRelationshipType.FOLLOWING,
+          // Get followers count
+          db
+            .select({ count: count() })
+            .from(profileRelationships)
+            .where(
+              and(
+                eq(profileRelationships.targetProfileId, proposal.profileId),
+                eq(
+                  profileRelationships.relationshipType,
+                  ProfileRelationshipType.FOLLOWING,
+                ),
               ),
             ),
-          ),
-      ]);
+        ]).then(([comments, likes, followers]) => ({
+          commentsCount: Number(comments[0]?.count || 0),
+          likesCount: Number(likes[0]?.count || 0),
+          followersCount: Number(followers[0]?.count || 0),
+        }))
+      : Promise.resolve({ commentsCount: 0, likesCount: 0, followersCount: 0 }),
 
-    commentsCount = Number(commentCountResult[0]?.count || 0);
-    likesCount = Number(likesCountResult[0]?.count || 0);
-    followersCount = Number(followersCountResult[0]?.count || 0);
-  }
+    // Fetch document content
+    fetchDocumentContents([
+      { id: proposal.id, proposalData: proposal.proposalData },
+    ]),
+  ]);
 
   // TODO: Add access control - check if user can view this proposal
   // For now, any authenticated user can view any proposal
@@ -119,9 +126,8 @@ export const getProposal = async ({
   return {
     ...proposal,
     proposalData: parseProposalData(proposal.proposalData),
-    commentsCount,
-    likesCount,
-    followersCount,
+    ...engagementCounts,
+    documentContent: documentContentMap.get(proposal.id),
   };
 };
 

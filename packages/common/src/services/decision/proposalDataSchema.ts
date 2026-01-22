@@ -35,5 +35,5 @@ export type ProposalDataInput = z.input<typeof proposalDataSchema>;
  */
 export function parseProposalData(proposalData: unknown): ProposalData {
   const result = proposalDataSchema.safeParse(proposalData);
-  return result.success ? result.data : (proposalData as ProposalData) || {};
+  return result.success ? result.data : { attachmentIds: [] };
 }

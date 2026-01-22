@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { proposalEncoder } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
-import { fetchDocumentContents } from './documentContent';
 
 export const getProposalRouter = router({
   getProposal: commonAuthedProcedure()
@@ -21,6 +20,7 @@ export const getProposalRouter = router({
       const { user } = ctx;
       const { profileId } = input;
 
+      // Fetch proposal (includes documentContent)
       const proposal = await cache({
         type: 'profile',
         params: [profileId],
@@ -34,21 +34,17 @@ export const getProposalRouter = router({
         },
       });
 
-      // Fetch document content and permissions in parallel
-      const [documentContentMap, isEditable] = await Promise.all([
-        fetchDocumentContents([
-          { id: proposal.id, proposalData: proposal.proposalData },
-        ]),
-        getPermissionsOnProposal({ user, proposal }).catch((error) => {
-          logger.error('Error getting permissions on proposal', {
-            error,
-            profileId,
-          });
-          return false;
-        }),
-      ]);
-
-      proposal.isEditable = isEditable;
+      // Fetch permissions
+      const isEditable = await getPermissionsOnProposal({
+        user,
+        proposal,
+      }).catch((error) => {
+        logger.error('Error getting permissions on proposal', {
+          error,
+          profileId,
+        });
+        return false;
+      });
 
       // Track proposal viewed event
       if (
@@ -64,7 +60,7 @@ export const getProposalRouter = router({
 
       return proposalEncoder.parse({
         ...proposal,
-        documentContent: documentContentMap.get(proposal.id),
+        isEditable,
       });
     }),
 });
