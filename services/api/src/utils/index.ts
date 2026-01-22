@@ -1,11 +1,37 @@
+import type { SortDir } from '@op/common';
 import sanitizeForS3 from 'sanitize-s3-objectkey';
 import { z } from 'zod';
+
+/** Standard sort direction schema */
+export const sortDir = z.enum(['asc', 'desc']) satisfies z.ZodType<SortDir>;
+export type { SortDir };
+
+/**
+ * Creates a type-safe sortable schema for a given set of columns
+ * @example
+ * const userSortable = createSortable(['name', 'email', 'createdAt']);
+ * // Results in: { orderBy?: 'name' | 'email' | 'createdAt', dir?: 'asc' | 'desc' }
+ */
+export const createSortable = <T extends readonly [string, ...string[]]>(
+  columns: T,
+) =>
+  z.object({
+    orderBy: z.enum(columns).optional(),
+    dir: sortDir.optional(),
+  });
+
+/** Generic sortable schema when column types aren't constrained */
+export const sortable = z.object({
+  orderBy: z.string().optional(),
+  dir: sortDir.optional(),
+});
+export type Sortable = z.infer<typeof sortable>;
 
 export const dbFilter = z.object({
   limit: z.number().optional(),
   cursor: z.string().nullish(),
   orderBy: z.string().optional(),
-  dir: z.enum(['asc', 'desc']).optional(),
+  dir: sortDir.optional(),
 });
 
 export function sanitizeS3Filename(filename: string) {
