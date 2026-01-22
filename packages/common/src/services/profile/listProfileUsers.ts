@@ -1,4 +1,4 @@
-import { SortDir } from '@/src/utils/db';
+import { SortDir } from '../../utils/db';
 import { and, db, eq, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
