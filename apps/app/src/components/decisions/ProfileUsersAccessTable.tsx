@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuCircleAlert } from 'react-icons/lu';
 import type { z } from 'zod';
@@ -22,7 +22,6 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 
 // Infer the ProfileUser type from the encoder
 type ProfileUser = z.infer<typeof profileUserEncoder>;
@@ -102,98 +101,120 @@ const useIsHydrated = () => {
   return isHydrated;
 };
 
-// Inner component that uses suspense query - Suspense boundary is OUTSIDE the table
+// Inner table content component
 const ProfileUsersAccessTableContent = ({
   profileUsers,
   profileId,
   sortDescriptor,
   onSortChange,
+  isLoading,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
   sortDescriptor: SortDescriptor;
   onSortChange: (descriptor: SortDescriptor) => void;
+  isLoading: boolean;
 }) => {
   const t = useTranslations();
   const isHydrated = useIsHydrated();
 
-  // Fetch roles once at table level with suspense - boundary is outside this component
-  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+  // Fetch roles with regular query
+  const {
+    data: rolesData,
+    isPending: rolesPending,
+    isError: rolesError,
+  } = trpc.organization.getRoles.useQuery();
 
   // Don't render table until after hydration due to React Aria SSR limitations
-  if (!isHydrated) {
+  if (!isHydrated || rolesPending) {
     return <Skeleton className="h-64 w-full" />;
   }
 
-  return (
-    <Table
-      aria-label={t('Members list')}
-      className="w-full table-fixed"
-      sortDescriptor={sortDescriptor}
-      onSortChange={onSortChange}
-    >
-      <TableHeader>
-        <TableColumn isRowHeader id="name" allowsSorting className="w-[200px]">
-          {t('Name')}
-        </TableColumn>
-        <TableColumn id="email" allowsSorting className="w-auto">
-          {t('Email')}
-        </TableColumn>
-        <TableColumn id="role" allowsSorting className="w-[140px] text-right">
-          {t('Role')}
-        </TableColumn>
-      </TableHeader>
-      <TableBody>
-        {profileUsers.map((profileUser) => {
-          const displayName =
-            profileUser.profile?.name ||
-            profileUser.name ||
-            profileUser.email.split('@')[0];
-          const currentRole = profileUser.roles[0];
-          const status = getProfileUserStatus(profileUser);
+  if (rolesError) {
+    return null; // Error handled by parent
+  }
 
-          return (
-            <TableRow key={profileUser.id} id={profileUser.id}>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <ProfileAvatar
-                    profile={profileUser.profile}
-                    withLink={false}
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-sm text-neutral-black">
-                      {displayName}
-                    </span>
-                    <span className="text-xs text-neutral-gray4">{status}</span>
+  const roles = rolesData?.roles ?? [];
+
+  return (
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+          <Skeleton className="h-8 w-32" />
+        </div>
+      )}
+      <Table
+        aria-label={t('Members list')}
+        className="w-full table-fixed"
+        sortDescriptor={sortDescriptor}
+        onSortChange={onSortChange}
+      >
+        <TableHeader>
+          <TableColumn
+            isRowHeader
+            id="name"
+            allowsSorting
+            className="w-[200px]"
+          >
+            {t('Name')}
+          </TableColumn>
+          <TableColumn id="email" allowsSorting className="w-auto">
+            {t('Email')}
+          </TableColumn>
+          <TableColumn id="role" allowsSorting className="w-[140px] text-right">
+            {t('Role')}
+          </TableColumn>
+        </TableHeader>
+        <TableBody>
+          {profileUsers.map((profileUser) => {
+            const displayName =
+              profileUser.profile?.name ||
+              profileUser.name ||
+              profileUser.email.split('@')[0];
+            const currentRole = profileUser.roles[0];
+            const status = getProfileUserStatus(profileUser);
+
+            return (
+              <TableRow key={profileUser.id} id={profileUser.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <ProfileAvatar
+                      profile={profileUser.profile}
+                      withLink={false}
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm text-neutral-black">
+                        {displayName}
+                      </span>
+                      <span className="text-xs text-neutral-gray4">
+                        {status}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-sm text-neutral-black">
-                  {profileUser.email}
-                </span>
-              </TableCell>
-              <TableCell className="text-right">
-                <ProfileUserRoleSelect
-                  profileUserId={profileUser.id}
-                  currentRoleId={currentRole?.id}
-                  profileId={profileId}
-                  roles={rolesData.roles}
-                />
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm text-neutral-black">
+                    {profileUser.email}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <ProfileUserRoleSelect
+                    profileUserId={profileUser.id}
+                    currentRoleId={currentRole?.id}
+                    profileId={profileId}
+                    roles={roles}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
-const RolesLoadError = ({
-  resetErrorBoundary,
-}: {
-  resetErrorBoundary?: () => void;
-}) => {
+const MembersLoadError = ({ onRetry }: { onRetry: () => void }) => {
   const t = useTranslations();
   return (
     <div className="flex min-h-40 w-full flex-col items-center justify-center py-6">
@@ -201,8 +222,8 @@ const RolesLoadError = ({
         <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
           <LuCircleAlert />
         </div>
-        <span>{t('Roles could not be loaded')}</span>
-        <Button onPress={resetErrorBoundary} color="secondary" size="small">
+        <span>{t('Members could not be loaded')}</span>
+        <Button onPress={onRetry} color="secondary" size="small">
           {t('Try again')}
         </Button>
       </div>
@@ -210,28 +231,35 @@ const RolesLoadError = ({
   );
 };
 
-// Exported component wraps with Suspense + ErrorBoundary OUTSIDE the table
+// Exported component with loading and error states
 export const ProfileUsersAccessTable = ({
   profileUsers,
   profileId,
   sortDescriptor,
   onSortChange,
+  isLoading,
+  isError,
+  onRetry,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
   sortDescriptor: SortDescriptor;
   onSortChange: (descriptor: SortDescriptor) => void;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
 }) => {
+  if (isError) {
+    return <MembersLoadError onRetry={onRetry} />;
+  }
+
   return (
-    <APIErrorBoundary fallbacks={{ default: <RolesLoadError /> }}>
-      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-        <ProfileUsersAccessTableContent
-          profileUsers={profileUsers}
-          profileId={profileId}
-          sortDescriptor={sortDescriptor}
-          onSortChange={onSortChange}
-        />
-      </Suspense>
-    </APIErrorBoundary>
+    <ProfileUsersAccessTableContent
+      profileUsers={profileUsers}
+      profileId={profileId}
+      sortDescriptor={sortDescriptor}
+      onSortChange={onSortChange}
+      isLoading={isLoading}
+    />
   );
 };

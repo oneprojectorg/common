@@ -18,7 +18,11 @@ type SortDirection = NonNullable<ListUsersInput['dir']>;
 
 const ITEMS_PER_PAGE = 25;
 
-export const ProfileUsersAccessPage = ({ profileId }: { profileId: string }) => {
+export const ProfileUsersAccessPage = ({
+  profileId,
+}: {
+  profileId: string;
+}) => {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
@@ -53,8 +57,13 @@ export const ProfileUsersAccessPage = ({ profileId }: { profileId: string }) => 
     query: debouncedQuery.length >= 2 ? debouncedQuery : undefined,
   };
 
-  const [data] = trpc.profile.listUsers.useSuspenseQuery(queryInput);
-  const { items: profileUsers, next, hasMore } = data;
+  // Use regular query - cache handles exact query matches, loading shown for uncached queries
+  const { data, isPending, isError, refetch } =
+    trpc.profile.listUsers.useQuery(queryInput);
+
+  const profileUsers = data?.items ?? [];
+  const next = data?.next;
+  const hasMore = data?.hasMore ?? false;
 
   const onNext = () => {
     if (hasMore && next) {
@@ -80,6 +89,9 @@ export const ProfileUsersAccessPage = ({ profileId }: { profileId: string }) => 
         profileId={profileId}
         sortDescriptor={sortDescriptor}
         onSortChange={setSortDescriptor}
+        isLoading={isPending}
+        isError={isError}
+        onRetry={() => void refetch()}
       />
 
       <Pagination
