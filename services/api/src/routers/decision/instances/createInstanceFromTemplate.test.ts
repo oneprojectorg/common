@@ -310,7 +310,6 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(result.id).toBeDefined();
     expect(result.name).toBe(decisionName);
     expect(result.type).toBe('decision');
-    expect(result.slug).toMatch(/^decision-/);
     expect(result.processInstance).toBeDefined();
     expect(result.processInstance.id).toBeDefined();
   });

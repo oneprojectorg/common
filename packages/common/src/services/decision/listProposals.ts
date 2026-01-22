@@ -16,7 +16,11 @@ import { assertAccess, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
-import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import {
+  getCurrentProfileId,
+  getOrgAccessUser,
+  getProfileAccessUser,
+} from '../access';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -86,6 +90,7 @@ export const listProposals = async ({
     .select({
       id: organizations.id,
       currentStateId: processInstances.currentStateId,
+      instanceProfileId: processInstances.profileId,
     })
     .from(organizations)
     .leftJoin(
@@ -112,6 +117,16 @@ export const listProposals = async ({
 
     assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
+    // Check instance-level access - user must have access to the instance's profile
+    if (instanceOrg[0].instanceProfileId) {
+      const profileUser = await getProfileAccessUser({
+        user,
+        profileId: instanceOrg[0].instanceProfileId,
+      });
+
+      assertAccess({ profile: permission.READ }, profileUser?.roles ?? []);
+    }
+
     // Check if user can manage proposals (approve/reject)
     canManageProposals = checkPermission(
       { decisions: permission.ADMIN },
@@ -122,244 +137,231 @@ export const listProposals = async ({
   // Get current user's profile ID early for hidden filter and later for editable checks
   const currentProfileId = await getCurrentProfileId(input.authUserId);
 
-  try {
-    const {
-      limit = 20,
-      offset = 0,
-      orderBy = 'createdAt',
-      dir = 'desc',
-    } = input;
+  const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
-    // Build shared WHERE clause using the extracted function
-    const baseWhereClause = buildWhereConditions(input);
+  // Build shared WHERE clause using the extracted function
+  const baseWhereClause = buildWhereConditions(input);
 
-    // Handle category filtering separately to avoid table reference issues
-    const { categoryId } = input;
-    let whereClause = baseWhereClause;
-    let categoryProposalIds: string[] = [];
+  // Handle category filtering separately to avoid table reference issues
+  const { categoryId } = input;
+  let whereClause = baseWhereClause;
+  let categoryProposalIds: string[] = [];
 
-    if (categoryId) {
-      // First get proposal IDs that belong to the category
-      const proposalIdsInCategory = await db
-        .select({ proposalId: proposalCategories.proposalId })
-        .from(proposalCategories)
-        .where(eq(proposalCategories.taxonomyTermId, categoryId));
+  if (categoryId) {
+    // First get proposal IDs that belong to the category
+    const proposalIdsInCategory = await db
+      .select({ proposalId: proposalCategories.proposalId })
+      .from(proposalCategories)
+      .where(eq(proposalCategories.taxonomyTermId, categoryId));
 
-      categoryProposalIds = proposalIdsInCategory.map((p) => p.proposalId);
+    categoryProposalIds = proposalIdsInCategory.map((p) => p.proposalId);
 
-      if (categoryProposalIds.length === 0) {
-        // No proposals in this category, return empty result early
-        return {
-          proposals: [],
-          total: 0,
-          hasMore: false,
-          canManageProposals,
-        };
-      }
-
-      // Add category filter to WHERE clause
-      const categoryFilter = inArray(proposals.id, categoryProposalIds);
-      whereClause = baseWhereClause
-        ? and(baseWhereClause, categoryFilter)
-        : categoryFilter;
-    }
-
-    // Filter out hidden proposals unless user can manage proposals (admin) or is the owner
-    if (!canManageProposals) {
-      const visibilityFilter = or(
-        eq(proposals.visibility, Visibility.VISIBLE),
-        eq(proposals.submittedByProfileId, currentProfileId),
-      );
-      whereClause = whereClause
-        ? and(whereClause, visibilityFilter)
-        : visibilityFilter;
-    }
-
-    // Get proposals with optimized ordering
-    const orderColumn = proposals[orderBy] ?? proposals.createdAt;
-
-    const orderFn = dir === 'asc' ? asc : desc;
-
-    const [proposalList, countResult] = await Promise.all([
-      db._query.proposals.findMany({
-        where: whereClause,
-        with: {
-          submittedBy: {
-            with: {
-              avatarImage: true,
-            },
-          },
-          profile: true,
-          decisions: true,
-        },
-        limit,
-        offset,
-        orderBy: orderFn(orderColumn),
-      }),
-      // Get count using Drizzle's count function instead of raw SQL
-      db.select({ count: countFn() }).from(proposals).where(whereClause),
-    ]);
-
-    const count = countResult[0]?.count || 0;
-
-    // Get relationship data for all proposal profiles using optimized Drizzle queries
-    const proposalIds = proposalList
-      .map((p: any) => p.profileId)
-      .filter((id: any): id is string => Boolean(id));
-
-    let relationshipData = new Map<
-      string,
-      {
-        likesCount: number;
-        followersCount: number;
-        isLikedByUser: boolean;
-        isFollowedByUser: boolean;
-        commentsCount: number;
-      }
-    >();
-
-    if (proposalIds.length > 0) {
-      // Optimized: Get relationship counts, user relationships, and comment counts in parallel
-      const [relationshipCounts, userRelationships, commentCounts] =
-        await Promise.all([
-          // Get relationship counts for all profile IDs (likes and follows)
-          db
-            .select({
-              targetProfileId: profileRelationships.targetProfileId,
-              relationshipType: profileRelationships.relationshipType,
-              count: countFn(),
-            })
-            .from(profileRelationships)
-            .where(inArray(profileRelationships.targetProfileId, proposalIds))
-            .groupBy(
-              profileRelationships.targetProfileId,
-              profileRelationships.relationshipType,
-            ),
-
-          // Get user's relationships to these profiles
-          db
-            .select({
-              targetProfileId: profileRelationships.targetProfileId,
-              relationshipType: profileRelationships.relationshipType,
-            })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.sourceProfileId, currentProfileId),
-                inArray(profileRelationships.targetProfileId, proposalIds),
-              ),
-            ),
-
-          // Get comment counts for all profile IDs
-          db
-            .select({
-              profileId: postsToProfiles.profileId,
-              count: countFn(),
-            })
-            .from(posts)
-            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-            .where(inArray(postsToProfiles.profileId, proposalIds))
-            .groupBy(postsToProfiles.profileId),
-        ]);
-
-      // Build the relationship data map efficiently
-      proposalIds.forEach((profileId: string) => {
-        const likesCount =
-          relationshipCounts.find(
-            (rc) =>
-              rc.targetProfileId === profileId &&
-              rc.relationshipType === ProfileRelationshipType.LIKES,
-          )?.count || 0;
-
-        const followersCount =
-          relationshipCounts.find(
-            (rc) =>
-              rc.targetProfileId === profileId &&
-              rc.relationshipType === ProfileRelationshipType.FOLLOWING,
-          )?.count || 0;
-
-        const isLikedByUser = userRelationships.some(
-          (ur) =>
-            ur.targetProfileId === profileId &&
-            ur.relationshipType === ProfileRelationshipType.LIKES,
-        );
-
-        const isFollowedByUser = userRelationships.some(
-          (ur) =>
-            ur.targetProfileId === profileId &&
-            ur.relationshipType === ProfileRelationshipType.FOLLOWING,
-        );
-
-        const commentsCount =
-          commentCounts.find((cc) => cc.profileId === profileId)?.count || 0;
-
-        relationshipData.set(profileId, {
-          likesCount: Number(likesCount),
-          followersCount: Number(followersCount),
-          isLikedByUser,
-          isFollowedByUser,
-          commentsCount: Number(commentsCount),
-        });
-      });
-    }
-
-    // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
-    // TODO: improve this with more streamlined types
-    const proposalsWithCounts = proposalList.map((proposal: any) => {
-      const submittedBy = Array.isArray(proposal.submittedBy)
-        ? proposal.submittedBy[0]
-        : proposal.submittedBy;
-      const profile = Array.isArray(proposal.profile)
-        ? proposal.profile[0]
-        : proposal.profile;
-      const decisions = Array.isArray(proposal.decisions)
-        ? proposal.decisions
-        : [];
-
-      const relationshipInfo = proposal.profileId
-        ? relationshipData.get(proposal.profileId)
-        : null;
-
-      // Check if proposal is editable by current user
-      const isOwner = proposal.submittedByProfileId === currentProfileId;
-      const hasAdminPermission = checkPermission(
-        { decisions: permission.ADMIN },
-        orgUser?.roles ?? [],
-      );
-      const isEditable = isOwner || hasAdminPermission;
-
+    if (categoryProposalIds.length === 0) {
+      // No proposals in this category, return empty result early
       return {
-        id: proposal.id,
-        processInstanceId: proposal.processInstanceId,
-        proposalData: proposal.proposalData,
-        status: proposal.status,
-        visibility: proposal.visibility,
-        createdAt: proposal.createdAt,
-        updatedAt: proposal.updatedAt,
-        profileId: proposal.profileId,
-        submittedBy: submittedBy,
-        profile: profile,
-        decisionCount: decisions.length,
-        likesCount: relationshipInfo?.likesCount || 0,
-        followersCount: relationshipInfo?.followersCount || 0,
-        isLikedByUser: relationshipInfo?.isLikedByUser || false,
-        isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
-        commentsCount: relationshipInfo?.commentsCount || 0,
-        isEditable,
+        proposals: [],
+        total: 0,
+        hasMore: false,
+        canManageProposals,
       };
+    }
+
+    // Add category filter to WHERE clause
+    const categoryFilter = inArray(proposals.id, categoryProposalIds);
+    whereClause = baseWhereClause
+      ? and(baseWhereClause, categoryFilter)
+      : categoryFilter;
+  }
+
+  // Filter out hidden proposals unless user can manage proposals (admin) or is the owner
+  if (!canManageProposals) {
+    const visibilityFilter = or(
+      eq(proposals.visibility, Visibility.VISIBLE),
+      eq(proposals.submittedByProfileId, currentProfileId),
+    );
+    whereClause = whereClause
+      ? and(whereClause, visibilityFilter)
+      : visibilityFilter;
+  }
+
+  // Get proposals with optimized ordering
+  const orderColumn = proposals[orderBy] ?? proposals.createdAt;
+
+  const orderFn = dir === 'asc' ? asc : desc;
+
+  const [proposalList, countResult] = await Promise.all([
+    db._query.proposals.findMany({
+      where: whereClause,
+      with: {
+        submittedBy: {
+          with: {
+            avatarImage: true,
+          },
+        },
+        profile: true,
+        decisions: true,
+      },
+      limit,
+      offset,
+      orderBy: orderFn(orderColumn),
+    }),
+    // Get count using Drizzle's count function instead of raw SQL
+    db.select({ count: countFn() }).from(proposals).where(whereClause),
+  ]);
+
+  const count = countResult[0]?.count || 0;
+
+  // Get relationship data for all proposal profiles using optimized Drizzle queries
+  const proposalIds = proposalList
+    .map((p: any) => p.profileId)
+    .filter((id: any): id is string => Boolean(id));
+
+  let relationshipData = new Map<
+    string,
+    {
+      likesCount: number;
+      followersCount: number;
+      isLikedByUser: boolean;
+      isFollowedByUser: boolean;
+      commentsCount: number;
+    }
+  >();
+
+  if (proposalIds.length > 0) {
+    // Optimized: Get relationship counts, user relationships, and comment counts in parallel
+    const [relationshipCounts, userRelationships, commentCounts] =
+      await Promise.all([
+        // Get relationship counts for all profile IDs (likes and follows)
+        db
+          .select({
+            targetProfileId: profileRelationships.targetProfileId,
+            relationshipType: profileRelationships.relationshipType,
+            count: countFn(),
+          })
+          .from(profileRelationships)
+          .where(inArray(profileRelationships.targetProfileId, proposalIds))
+          .groupBy(
+            profileRelationships.targetProfileId,
+            profileRelationships.relationshipType,
+          ),
+
+        // Get user's relationships to these profiles
+        db
+          .select({
+            targetProfileId: profileRelationships.targetProfileId,
+            relationshipType: profileRelationships.relationshipType,
+          })
+          .from(profileRelationships)
+          .where(
+            and(
+              eq(profileRelationships.sourceProfileId, currentProfileId),
+              inArray(profileRelationships.targetProfileId, proposalIds),
+            ),
+          ),
+
+        // Get comment counts for all profile IDs
+        db
+          .select({
+            profileId: postsToProfiles.profileId,
+            count: countFn(),
+          })
+          .from(posts)
+          .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
+          .where(inArray(postsToProfiles.profileId, proposalIds))
+          .groupBy(postsToProfiles.profileId),
+      ]);
+
+    // Build the relationship data map efficiently
+    proposalIds.forEach((profileId: string) => {
+      const likesCount =
+        relationshipCounts.find(
+          (rc) =>
+            rc.targetProfileId === profileId &&
+            rc.relationshipType === ProfileRelationshipType.LIKES,
+        )?.count || 0;
+
+      const followersCount =
+        relationshipCounts.find(
+          (rc) =>
+            rc.targetProfileId === profileId &&
+            rc.relationshipType === ProfileRelationshipType.FOLLOWING,
+        )?.count || 0;
+
+      const isLikedByUser = userRelationships.some(
+        (ur) =>
+          ur.targetProfileId === profileId &&
+          ur.relationshipType === ProfileRelationshipType.LIKES,
+      );
+
+      const isFollowedByUser = userRelationships.some(
+        (ur) =>
+          ur.targetProfileId === profileId &&
+          ur.relationshipType === ProfileRelationshipType.FOLLOWING,
+      );
+
+      const commentsCount =
+        commentCounts.find((cc) => cc.profileId === profileId)?.count || 0;
+
+      relationshipData.set(profileId, {
+        likesCount: Number(likesCount),
+        followersCount: Number(followersCount),
+        isLikedByUser,
+        isFollowedByUser,
+        commentsCount: Number(commentsCount),
+      });
     });
+  }
+
+  // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
+  // TODO: improve this with more streamlined types
+  const proposalsWithCounts = proposalList.map((proposal: any) => {
+    const submittedBy = Array.isArray(proposal.submittedBy)
+      ? proposal.submittedBy[0]
+      : proposal.submittedBy;
+    const profile = Array.isArray(proposal.profile)
+      ? proposal.profile[0]
+      : proposal.profile;
+    const decisions = Array.isArray(proposal.decisions)
+      ? proposal.decisions
+      : [];
+
+    const relationshipInfo = proposal.profileId
+      ? relationshipData.get(proposal.profileId)
+      : null;
+
+    // Check if proposal is editable by current user
+    const isOwner = proposal.submittedByProfileId === currentProfileId;
+    const hasAdminPermission = checkPermission(
+      { decisions: permission.ADMIN },
+      orgUser?.roles ?? [],
+    );
+    const isEditable = isOwner || hasAdminPermission;
 
     return {
-      proposals: proposalsWithCounts,
-      total: Number(count),
-      hasMore: offset + limit < Number(count),
-      canManageProposals,
+      id: proposal.id,
+      processInstanceId: proposal.processInstanceId,
+      proposalData: proposal.proposalData,
+      status: proposal.status,
+      visibility: proposal.visibility,
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.updatedAt,
+      profileId: proposal.profileId,
+      submittedBy: submittedBy,
+      profile: profile,
+      decisionCount: decisions.length,
+      likesCount: relationshipInfo?.likesCount || 0,
+      followersCount: relationshipInfo?.followersCount || 0,
+      isLikedByUser: relationshipInfo?.isLikedByUser || false,
+      isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
+      commentsCount: relationshipInfo?.commentsCount || 0,
+      isEditable,
     };
-  } catch (error) {
-    if (error instanceof UnauthorizedError) {
-      throw error;
-    }
-    console.error('Error listing proposals:', error);
-    throw new Error('Failed to list proposals');
-  }
+  });
+
+  return {
+    proposals: proposalsWithCounts,
+    total: Number(count),
+    hasMore: offset + limit < Number(count),
+    canManageProposals,
+  };
 };
