@@ -116,7 +116,7 @@ export function useProcessNavigation(
 
   // Handle section change
   const setSection = useCallback(
-    (newSectionId: SectionId | string) => {
+    (newSectionId: string) => {
       setSectionParam(newSectionId);
     },
     [setSectionParam],
