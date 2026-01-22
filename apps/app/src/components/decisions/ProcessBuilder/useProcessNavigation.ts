@@ -101,7 +101,7 @@ export function useProcessNavigation(
       const allowedSectionIds = navigationConfig.sections?.[newStep.id];
       const firstVisibleSection = allowedSectionIds
         ? newStepSections.find((s) =>
-            allowedSectionIds.includes(s.id as SectionId),
+            allowedSectionIds.some((id) => id === s.id ),
           )
         : newStepSections[0];
 
