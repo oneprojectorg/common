@@ -1,4 +1,4 @@
-import type { Editor, Extensions } from '@tiptap/react';
+import type { Content, Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
 import { useEffect } from 'react';
 
@@ -15,7 +15,8 @@ export function useRichTextEditor({
   editable = true,
 }: {
   extensions?: Extensions;
-  content?: string;
+  /** HTML string or TipTap JSON document */
+  content?: Content;
   editorClassName?: string;
   onUpdate?: (content: string) => void;
   onChange?: (content: string) => void;
@@ -50,7 +51,8 @@ export function useRichTextEditor({
         editor.commands.setContent(content);
       }
     }
-  }, [editor]); // Only depend on editor, not content
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Only run on editor creation, not content changes
+  }, [editor]);
 
   // Notify parent when editor is ready
   useEffect(() => {

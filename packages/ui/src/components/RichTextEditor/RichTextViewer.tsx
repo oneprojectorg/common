@@ -1,6 +1,6 @@
 'use client';
 
-import type { Extensions } from '@tiptap/react';
+import type { Content, Extensions } from '@tiptap/react';
 
 import { RichTextEditorSkeleton } from './RichTextEditorSkeleton';
 import { StyledRichTextContent } from './StyledRichTextContent';
@@ -13,6 +13,8 @@ import { useRichTextEditor } from './useRichTextEditor';
  * Read-only viewer component for displaying rich text content.
  * Use this for displaying content that should not be edited.
  * Links will open on click.
+ *
+ * @param content - Can be HTML string or TipTap JSON document (array of nodes)
  */
 export function RichTextViewer({
   extensions = defaultViewerExtensions,
@@ -21,7 +23,8 @@ export function RichTextViewer({
   editorClassName = '',
 }: {
   extensions?: Extensions;
-  content: string;
+  /** HTML string or TipTap JSON document */
+  content: Content;
   className?: string;
   editorClassName?: string;
 }) {

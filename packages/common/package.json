@@ -11,6 +11,7 @@
     "./realtime": "./src/realtime/index.ts",
     "./client": "./src/client.ts",
     "./src/services/access": "./src/services/access/index.ts",
+    "./proposalDataSchema": "./src/services/decision/proposalDataSchema.ts",
     "./src/*": "./src/*"
   },
   "main": "src/index.ts",

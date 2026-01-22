@@ -101,7 +101,21 @@ export function ProposalView({
     currentProposal.proposalData,
   );
 
-  const proposalContent = description || `<p>${t('No content available')}</p>`;
+  // Use documentContent when available, fall back to legacy description
+  const proposalContent = (() => {
+    if (currentProposal.documentContent) {
+      if (currentProposal.documentContent.type === 'json') {
+        // Return TipTap JSON format for RichTextViewer
+        // Cast to JSONContent since the API returns validated TipTap document structure
+        return {
+          type: 'doc',
+          content: currentProposal.documentContent.content,
+        } as import('@tiptap/react').JSONContent;
+      }
+      return currentProposal.documentContent.content;
+    }
+    return description || `<p>${t('No content available')}</p>`;
+  })();
 
   return (
     <ProposalViewLayout

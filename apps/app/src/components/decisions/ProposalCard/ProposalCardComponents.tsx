@@ -328,6 +328,58 @@ export function ProposalCardStatus({
 }
 
 /**
+ * Recursively extracts plain text from TipTap JSON nodes
+ */
+function extractTextFromTipTapNodes(nodes: unknown[]): string {
+  const textParts: string[] = [];
+
+  for (const node of nodes) {
+    if (typeof node !== 'object' || node === null) {
+      continue;
+    }
+
+    const n = node as Record<string, unknown>;
+
+    // Direct text node
+    if (n.type === 'text' && typeof n.text === 'string') {
+      textParts.push(n.text);
+    }
+
+    // Recurse into content
+    if (Array.isArray(n.content)) {
+      textParts.push(extractTextFromTipTapNodes(n.content));
+    }
+  }
+
+  return textParts.join(' ');
+}
+
+/**
+ * Gets preview text from document content (TipTap JSON or HTML)
+ */
+function getDescriptionPreview(
+  documentContent: Proposal['documentContent'],
+  fallbackDescription?: string,
+): string | null {
+  if (documentContent) {
+    if (documentContent.type === 'json') {
+      const text = extractTextFromTipTapNodes(documentContent.content);
+      return text.trim() || null;
+    }
+    if (documentContent.type === 'html') {
+      return getTextPreview({ content: documentContent.content, maxLines: 3 });
+    }
+  }
+
+  // Fallback to legacy description from proposalData
+  if (fallbackDescription) {
+    return getTextPreview({ content: fallbackDescription, maxLines: 3 });
+  }
+
+  return null;
+}
+
+/**
  * Description text component
  */
 export function ProposalCardDescription({
@@ -337,8 +389,12 @@ export function ProposalCardDescription({
   className?: string;
 }) {
   const { description } = parseProposalData(proposal.proposalData);
+  const previewText = getDescriptionPreview(
+    proposal.documentContent,
+    description,
+  );
 
-  if (!description) {
+  if (!previewText) {
     return null;
   }
 
@@ -349,7 +405,7 @@ export function ProposalCardDescription({
         className,
       )}
     >
-      {getTextPreview({ content: description })}
+      {previewText}
     </p>
   );
 }
