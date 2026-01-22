@@ -1,9 +1,9 @@
-import { SortDir } from '../../utils/db';
 import { and, db, eq, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
+import { SortDir } from '../../utils/db';
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
