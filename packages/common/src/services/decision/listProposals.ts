@@ -16,7 +16,11 @@ import { assertAccess, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
-import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import {
+  getCurrentProfileId,
+  getOrgAccessUser,
+  getProfileAccessUser,
+} from '../access';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -86,6 +90,7 @@ export const listProposals = async ({
     .select({
       id: organizations.id,
       currentStateId: processInstances.currentStateId,
+      instanceProfileId: processInstances.profileId,
     })
     .from(organizations)
     .leftJoin(
@@ -111,6 +116,16 @@ export const listProposals = async ({
     });
 
     assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+
+    // Check instance-level access - user must have access to the instance's profile
+    if (instanceOrg[0].instanceProfileId) {
+      const profileUser = await getProfileAccessUser({
+        user,
+        profileId: instanceOrg[0].instanceProfileId,
+      });
+
+      assertAccess({ profile: permission.READ }, profileUser?.roles ?? []);
+    }
 
     // Check if user can manage proposals (approve/reject)
     canManageProposals = checkPermission(

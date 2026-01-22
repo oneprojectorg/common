@@ -419,43 +419,43 @@ describe.concurrent('listProposals', () => {
     expect(result.hasMore).toBe(false);
   });
 
-  it.fails(
-    'should throw error when user does not have access to instance',
-    async ({ task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+  it('should throw error when user does not have access to instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
 
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
 
-      // Create a proposal
-      await testData.createProposal({
-        callerEmail: setup.userEmail,
+    // Create a proposal
+    await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    // Create a user without access to the instance (member of the org but not the instance)
+    const unauthorizedUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [], // No access to any instance
+    });
+
+    const unauthorizedCaller = await createAuthenticatedCaller(
+      unauthorizedUser.email,
+    );
+
+    await expect(
+      unauthorizedCaller.decision.listProposals({
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'Test Proposal', description: 'A test' },
-      });
-
-      // Create a user without access to the instance (member of the org but not the instance)
-      const unauthorizedUser = await testData.createMemberUser({
-        organization: setup.organization,
-        instanceProfileIds: [], // No access to any instance
-      });
-
-      const unauthorizedCaller = await createAuthenticatedCaller(
-        unauthorizedUser.email,
-      );
-
-      await expect(
-        unauthorizedCaller.decision.listProposals({
-          processInstanceId: instance.instance.id,
-        }),
-      ).rejects.toMatchObject({ cause: { name: 'ForbiddenError' } });
-    },
-  );
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
 });
