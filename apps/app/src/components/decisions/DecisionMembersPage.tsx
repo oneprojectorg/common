@@ -1,20 +1,16 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
 import { SearchField } from '@op/ui/SearchField';
 import { useMemo, useState } from 'react';
-import { LuUserPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionMembersTable } from './DecisionMembersTable';
-import { InviteDecisionMemberModal } from './InviteDecisionMemberModal';
 
 export const DecisionMembersPage = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const [members] = trpc.profile.listUsers.useSuspenseQuery({
     profileId,
@@ -43,31 +39,14 @@ export const DecisionMembersPage = ({ profileId }: { profileId: string }) => {
         {t('Members')}
       </h2>
 
-      <div className="flex items-center justify-between">
-        <SearchField
-          placeholder={t('Search')}
-          value={searchQuery}
-          onChange={setSearchQuery}
-          className="w-[368px]"
-        />
-        <Button
-          color="secondary"
-          variant="icon"
-          size="small"
-          onPress={() => setIsInviteModalOpen(true)}
-        >
-          <LuUserPlus className="size-4" />
-          {t('Invite')}
-        </Button>
-      </div>
+      <SearchField
+        placeholder={t('Search')}
+        value={searchQuery}
+        onChange={setSearchQuery}
+        className="w-[368px]"
+      />
 
       <DecisionMembersTable members={filteredMembers} profileId={profileId} />
-
-      <InviteDecisionMemberModal
-        profileId={profileId}
-        isOpen={isInviteModalOpen}
-        onOpenChange={setIsInviteModalOpen}
-      />
     </div>
   );
 };
