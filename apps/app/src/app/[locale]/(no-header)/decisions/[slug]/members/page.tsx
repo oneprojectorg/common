@@ -1,7 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { Skeleton } from '@op/ui/Skeleton';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 
 import { DecisionMembersHeader } from '@/components/decisions/DecisionMembersHeader';
 import { DecisionMembersPage } from '@/components/decisions/DecisionMembersPage';
@@ -37,9 +35,7 @@ const DecisionMembersContent = async ({ slug }: { slug: string }) => {
         title="Members"
       />
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionMembersPage profileId={profileId} />
-        </Suspense>
+        <DecisionMembersPage profileId={profileId} />
       </div>
     </div>
   );

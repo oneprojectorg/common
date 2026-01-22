@@ -1,6 +1,6 @@
 'use client';
 
-import { cloneElement, ReactElement, ReactNode } from 'react';
+import { ReactElement, ReactNode, cloneElement } from 'react';
 import {
   FallbackProps,
   ErrorBoundary as ReactErrorBoundary,
