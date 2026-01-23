@@ -24,7 +24,7 @@ import {
   composeRenderProps,
   useTableOptions,
 } from 'react-aria-components';
-import { LuChevronDown, LuMinus } from 'react-icons/lu';
+import { LuArrowDown } from 'react-icons/lu';
 import { twJoin, twMerge } from 'tailwind-merge';
 
 import { cx } from '@/lib/primitive';
@@ -145,25 +145,15 @@ const TableColumn = ({
           {typeof props.children === 'function'
             ? props.children(values)
             : props.children}
-          {values.allowsSorting && (
-            <span
+          {values.allowsSorting && values.sortDirection !== undefined && (
+            <LuArrowDown
+              data-slot="icon"
+              aria-hidden
               className={twJoin(
-                'grid size-[1.15rem] flex-none shrink-0 place-content-center rounded bg-secondary text-fg *:data-[slot=icon]:size-3.5 *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:transition-transform *:data-[slot=icon]:duration-200',
-                values.isHovered ? 'bg-secondary-fg/10' : '',
+                'size-3 shrink-0 text-muted-fg transition-transform duration-200',
+                values.sortDirection === 'ascending' ? 'rotate-180' : '',
               )}
-            >
-              {values.sortDirection === undefined ? (
-                <LuMinus data-slot="icon" aria-hidden />
-              ) : (
-                <LuChevronDown
-                  data-slot="icon"
-                  aria-hidden
-                  className={
-                    values.sortDirection === 'ascending' ? 'rotate-180' : ''
-                  }
-                />
-              )}
-            </span>
+            />
           )}
           {isResizable && <ColumnResizer />}
         </div>
