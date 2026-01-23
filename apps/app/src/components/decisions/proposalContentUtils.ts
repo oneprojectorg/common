@@ -44,11 +44,13 @@ export function getProposalContentPreview(
         content: documentContent.content as JSONContent[],
       };
       const text = generateText(doc, defaultViewerExtensions);
-      return text.trim() || null;
+      return text.trim();
     } catch {
       return null;
     }
   }
 
-  return getTextPreview({ content: documentContent.content, maxLines: 3 });
+  return (
+    getTextPreview({ content: documentContent.content, maxLines: 3 }) ?? ''
+  );
 }

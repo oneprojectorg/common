@@ -340,8 +340,12 @@ export function ProposalCardPreview({
 }) {
   const previewText = getProposalContentPreview(proposal.documentContent);
 
-  if (!previewText) {
+  if (previewText === null) {
     return <DocumentNotAvailable className="py-4" />;
+  }
+
+  if (!previewText) {
+    return null;
   }
 
   return (
