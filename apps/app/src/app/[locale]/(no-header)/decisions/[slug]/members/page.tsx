@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { ProfileUsersAccessHeader } from '@/components/decisions/ProfileUsersAccessHeader';
 import { ProfileUsersAccessPage } from '@/components/decisions/ProfileUsersAccessPage';
 
-const DecisionMembersContent = async ({ slug }: { slug: string }) => {
+const ProfileMembersContent = async ({ slug }: { slug: string }) => {
   const client = await createClient();
 
   const decisionProfile = await client.decision.getDecisionBySlug({
@@ -48,7 +48,7 @@ const MembersPage = async ({
 }) => {
   const { slug } = await params;
 
-  return <DecisionMembersContent slug={slug} />;
+  return <ProfileMembersContent slug={slug} />;
 };
 
 export default MembersPage;
