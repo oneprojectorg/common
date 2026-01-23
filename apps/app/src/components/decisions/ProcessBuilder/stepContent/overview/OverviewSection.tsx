@@ -1,5 +1,3 @@
-import { Header2 } from '@op/ui/Header';
-
 import type { SectionProps } from '../../contentRegistry';
 
 export default function OverviewSection({
