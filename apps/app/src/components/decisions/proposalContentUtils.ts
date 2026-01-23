@@ -13,7 +13,7 @@ type DocumentContent = NonNullable<Proposal['documentContent']>;
  * Returns Content for rendering, or null if no content available.
  */
 export function getProposalContent(
-  documentContent: DocumentContent | undefined | null,
+  documentContent?: DocumentContent,
 ): Content | null {
   if (!documentContent) {
     return null;
@@ -33,7 +33,7 @@ export function getProposalContent(
  * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML).
  */
 export function getProposalContentPreview(
-  documentContent: DocumentContent | undefined | null,
+  documentContent?: DocumentContent,
   maxLines = 3,
 ): string | null {
   if (!documentContent) {
