@@ -29,11 +29,7 @@ export function getProposalContent(
   return documentContent.content;
 }
 
-/**
- * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML).
- * For HTML content, maxLines controls truncation. For JSON content, truncation
- * is handled via CSS line-clamp in the rendering component.
- */
+/** Extracts plain text preview from proposal content. */
 export function getProposalContentPreview(
   documentContent?: DocumentContent,
 ): string | null {

@@ -5,9 +5,7 @@ import { LuFileQuestion } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-/**
- * Simple empty state component for when proposal/document content is not available.
- */
+/** Shown when document content failed to load from the collaboration server. */
 export function DocumentNotAvailable({ className }: { className?: string }) {
   const t = useTranslations();
 

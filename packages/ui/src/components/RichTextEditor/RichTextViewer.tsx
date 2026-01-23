@@ -23,7 +23,6 @@ export function RichTextViewer({
   editorClassName = '',
 }: {
   extensions?: Extensions;
-  /** HTML string or TipTap JSON document */
   content: Content;
   className?: string;
   editorClassName?: string;

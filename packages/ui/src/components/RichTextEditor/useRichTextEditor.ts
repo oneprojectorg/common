@@ -15,7 +15,6 @@ export function useRichTextEditor({
   editable = true,
 }: {
   extensions?: Extensions;
-  /** HTML string or TipTap JSON document */
   content?: Content;
   editorClassName?: string;
   onUpdate?: (content: string) => void;
@@ -51,7 +50,7 @@ export function useRichTextEditor({
         editor.commands.setContent(content);
       }
     }
-  }, [editor]);
+  }, [editor]); // Only run when editor is ready, not on content changes
 
   // Notify parent when editor is ready
   useEffect(() => {
