@@ -7,7 +7,6 @@ import { useTranslations } from '@/lib/i18n';
 
 /**
  * Simple empty state component for when proposal/document content is not available.
- * Reusable across different contexts where document content might be missing.
  */
 export function DocumentNotAvailable({ className }: { className?: string }) {
   const t = useTranslations();

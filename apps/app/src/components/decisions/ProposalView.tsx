@@ -99,15 +99,11 @@ export function ProposalView({
   }, []);
 
   // Parse proposal data using shared utility
-  const { title, budget, category, description } = parseProposalData(
+  const { title, budget, category } = parseProposalData(
     currentProposal.proposalData,
   );
 
-  // Use documentContent when available, fall back to legacy description
-  const proposalContent = getProposalContent(
-    currentProposal.documentContent,
-    description,
-  );
+  const proposalContent = getProposalContent(currentProposal.documentContent);
 
   return (
     <ProposalViewLayout

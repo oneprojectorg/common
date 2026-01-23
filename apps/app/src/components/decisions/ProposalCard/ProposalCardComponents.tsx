@@ -338,11 +338,7 @@ export function ProposalCardPreview({
 }: BaseProposalCardProps & {
   className?: string;
 }) {
-  const { description } = parseProposalData(proposal.proposalData);
-  const previewText = getProposalContentPreview(
-    proposal.documentContent,
-    description,
-  );
+  const previewText = getProposalContentPreview(proposal.documentContent);
 
   if (!previewText) {
     return <DocumentNotAvailable className="py-4" />;
