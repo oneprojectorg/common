@@ -28,7 +28,7 @@ Key exports (`client`, `lib`, `server`, `types`) are defined in `package.json`.
 **Depends On:**
 
 - **`@op/core`**: To access shared configuration such as Supabase URL, anon key, and cookie domain settings used in client/server creation.
-- **`@op/eslint-config` (Dev)**: Used for linting configuration during development.
+
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 
 **Depended On By:**
@@ -41,4 +41,4 @@ Key exports (`client`, `lib`, `server`, `types`) are defined in `package.json`.
 ## Development
 
 - **Type Generation**: Run `pnpm typegen` to update `src/types.ts` based on the schema of your local Supabase instance (ensure the local Supabase stack is running via `pnpm start` in `services/db`). This should typically be done after running database migrations in the `@op/db` package.
-- **Lint**: Run `pnpm lint` to lint and type-check the code.
+- **Type Check**: Run `pnpm typecheck` to type-check the code.

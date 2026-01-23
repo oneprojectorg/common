@@ -53,7 +53,6 @@ Backend services and utilities, often consumed by the applications.
 
 Shareable configurations for tooling.
 
-- **[`configs/eslint-config`](./configs/eslint-config/README.md)**: Shared ESLint configurations (`base.js`, `next.js`, etc.) to enforce consistent code style and quality. The `next.js` config is widely used across workspaces.
 - **[`configs/typescript-config`](./configs/typescript-config/README.md)**: Shared TypeScript `tsconfig.json` base files (`base.json`, `nextjs.json`, `react-library.json`, etc.) to ensure consistent compiler options.
 
 ## Development Workflow
@@ -64,7 +63,7 @@ _(Commands below assume usage of the `w:<workspace>` shorthand)_
   - After modifying the database schema (`services/db/schema/tables/*.sql`), run `pnpm w:db generate` to create SQL migrations and extract indexes.
   - Apply migrations by running `pnpm w:db migrate`.
   - Generate Supabase types by running `pnpm w:supabase typegen`.
-- **Linting**: Run `pnpm lint` in the root to lint all workspaces, or `pnpm w:<workspace> lint` (e.g., `pnpm w:app lint`) to lint a specific workspace.
+- **Type Checking**: Run `pnpm typecheck` to type-check all workspaces, or `pnpm w:<workspace> typecheck` (e.g., `pnpm w:app typecheck`) for a specific workspace.
 - **Running Specific Workspaces**: Use `pnpm w:<workspace> <script>` (e.g., `pnpm w:app dev`). Workspace names (`app`, `api`, `ui`, `core`, `hooks`, `db`, `emails`, `supabase`, `trpc`) correspond to the directories.
 - **Adding Dependencies**: Use `pnpm add <package-name> --filter <workspace-name>` (e.g., `pnpm add zod --filter @op/core`). For dev dependencies, use `-D`. (Note: Using `--filter` is recommended when adding dependencies from the root to ensure the `package.json` is updated correctly).
 

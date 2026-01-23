@@ -39,7 +39,7 @@ Key exports (`client`, `schema`, `tables`) are defined in `package.json`.
 **Depends On:**
 
 - **`@op/core`**: For configuration or shared types, specifically `adminEmails` used in `seed.ts`.
-- **`@op/eslint-config` (Dev)**: Used for linting configuration during development.
+
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 
 **Depended On By:**
