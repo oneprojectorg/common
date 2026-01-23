@@ -148,10 +148,10 @@ export const OPURLConfig: TOPURLConfig = (type) => {
   // Falls back to staging if not on a preview domain
   const previewUrl = PREVIEW_URL_SUFFIX
     ? `https://${target}${PREVIEW_URL_SUFFIX}`
-    : `https://${target}-dev.oneproject.tech`;
+    : `https://${target}-staging.oneproject.tech`;
 
   const urls = {
-    STAGING: `https://${target}-dev.oneproject.tech`,
+    STAGING: `https://${target}-staging.oneproject.tech`,
     PRODUCTION: `https://${prodTarget}common.oneproject.org`,
     PREVIEW: previewUrl,
     DEVELOPMENT: `http://localhost:${port}`,
@@ -200,9 +200,6 @@ export const cookieDomains = [
   'api-staging.oneproject.tech',
   'app-staging.oneproject.tech',
   'web-staging.oneproject.tech',
-  'api-dev.oneproject.tech',
-  'app-dev.oneproject.tech',
-  'web-dev.oneproject.tech',
   'common.oneproject.org',
   'api-common.oneproject.org',
 ];
