@@ -35,10 +35,7 @@ const SidebarProvider = ({
   defaultOpen = false,
   isOpen: openProp,
   onOpenChange: setOpenProp,
-  className,
-  style,
   children,
-  ...props
 }: React.ComponentProps<'div'> & {
   defaultOpen?: boolean;
   isOpen?: boolean;
@@ -85,13 +82,7 @@ const SidebarProvider = ({
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      <div
-        data-slot="sidebar-wrapper"
-        className={cn('min-h-svh w-full', className)}
-        {...props}
-      >
-        {children}
-      </div>
+      {children}
     </SidebarContext.Provider>
   );
 };
@@ -101,9 +92,11 @@ const Sidebar = ({
   side = 'left',
   className,
   label,
+  mobileOnly = false,
 }: React.ComponentProps<'div'> & {
   side?: 'left' | 'right';
   label?: string;
+  mobileOnly?: boolean;
 }) => {
   const { isMobile, state, open, setOpen } = useSidebar();
 
@@ -144,12 +137,17 @@ const Sidebar = ({
     );
   }
 
+  // Don't render desktop sidebar when mobileOnly is true
+  if (mobileOnly) {
+    return null;
+  }
+
   return (
     <div
       data-state={state}
       data-side={side}
       data-slot="sidebar"
-      className="group peer relative hidden min-w-fit overflow-hidden bg-white sm:block"
+      className="group peer sticky top-0 hidden min-w-fit overflow-hidden bg-white sm:block"
     >
       <div
         data-slot="sidebar-gap"
