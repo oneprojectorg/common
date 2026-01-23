@@ -209,4 +209,158 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(resultDesc[resultDesc.length - 1]?.email).toBe(adminUser.email);
     });
   });
+
+  describe('search', () => {
+    it('should return all users when no query is provided', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+      });
+
+      expect(result).toHaveLength(3);
+    });
+
+    it('should filter users by name match', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Test data creates names like "Test Admin User" and "Test Member User"
+      // Searching for "Admin" should only return the admin user
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        query: 'Admin',
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.email).toBe(adminUser.email);
+    });
+
+    it('should filter users by email match', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Test data creates emails like "{testId}-admin-{random}@oneproject.org"
+      // Searching for "-member-" should only return member users
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        query: '-member-',
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result.map((u) => u.email)).toContain(memberUsers[0]?.email);
+      expect(result.map((u) => u.email)).toContain(memberUsers[1]?.email);
+    });
+
+    it('should be case-insensitive', async ({ task, onTestFinished }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Search with lowercase should still match "Test Admin User"
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        query: 'admin',
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.email).toBe(adminUser.email);
+    });
+
+    it('should return empty array when no matches found', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        query: 'nonexistent-user-xyz',
+      });
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should reject queries shorter than 2 characters', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Single character query should be rejected with validation error
+      await expect(
+        caller.listUsers({
+          profileId: profile.id,
+          query: 'a',
+        }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    });
+
+    it('should work with sorting parameters', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Search for "member" and sort by email descending
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        query: 'member',
+        orderBy: 'email',
+        dir: 'desc',
+      });
+
+      expect(result).toHaveLength(2);
+      // Verify results are sorted descending by email
+      const emails = result.map((u) => u.email);
+      expect(emails).toEqual([...emails].sort().reverse());
+    });
+  });
 });

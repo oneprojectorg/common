@@ -43,6 +43,9 @@ export const profileUsers = pgTable(
     index('profileUsers_email_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.email})`)
       .concurrently(),
+    index('profileUsers_email_trgm_idx')
+      .using('gin', sql`${table.email} extensions.gin_trgm_ops`)
+      .concurrently(),
     index('profileUsers_profile_idx').on(table.profileId).concurrently(),
     index('profileUsers_auth_user_id_idx').on(table.authUserId).concurrently(),
   ],
