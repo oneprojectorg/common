@@ -10,11 +10,10 @@ type DocumentContent = NonNullable<Proposal['documentContent']>;
 
 /**
  * Extracts content from proposal documentContent for use with RichTextViewer.
- * Returns the appropriate format (JSONContent for TipTap, string for HTML) or null if unavailable.
+ * Returns Content for rendering, or null if no content available.
  *
  * @param documentContent - The proposal's documentContent field
  * @param fallbackDescription - Legacy description from proposalData to use as fallback
- * @returns Content suitable for RichTextViewer, or null if no content available
  */
 export function getProposalContent(
   documentContent: DocumentContent | undefined | null,
@@ -42,12 +41,10 @@ export function getProposalContent(
 
 /**
  * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML).
- * Useful for card previews and summaries.
  *
  * @param documentContent - The proposal's documentContent field
  * @param fallbackDescription - Legacy description from proposalData to use as fallback
  * @param maxLines - Maximum number of lines for HTML preview (default: 3)
- * @returns Plain text preview or null if no content available
  */
 export function getProposalContentPreview(
   documentContent: DocumentContent | undefined | null,

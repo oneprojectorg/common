@@ -19,10 +19,12 @@ export function DocumentNotAvailable({ className }: { className?: string }) {
         className,
       )}
     >
-      <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
-        <LuFileQuestion className="size-5 text-neutral-gray4" />
+      <div className="flex size-8 items-center justify-center rounded-full bg-neutral-gray1">
+        <LuFileQuestion className="size-4 text-neutral-gray4" />
       </div>
-      <p className="text-sm text-neutral-gray4">{t('No content available')}</p>
+      <p className="text-sm text-neutral-gray4">
+        {t('Content could not be loaded')}
+      </p>
     </div>
   );
 }

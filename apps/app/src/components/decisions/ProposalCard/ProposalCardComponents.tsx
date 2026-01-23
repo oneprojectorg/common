@@ -23,6 +23,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
+import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { getProposalContentPreview } from '../proposalContentUtils';
 
 export type Proposal = z.infer<typeof proposalEncoder>;
@@ -344,7 +345,7 @@ export function ProposalCardPreview({
   );
 
   if (!previewText) {
-    return null;
+    return <DocumentNotAvailable className="py-4" />;
   }
 
   return (
