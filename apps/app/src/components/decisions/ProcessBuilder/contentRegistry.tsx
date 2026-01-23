@@ -27,7 +27,7 @@ type ContentRegistry = {
 };
 
 const CONTENT_REGISTRY: ContentRegistry = {
-  overview: {
+  general: {
     overview: OverviewSection,
     phases: PhasesSection,
     proposalCategories: ProposalCategoriesSection,

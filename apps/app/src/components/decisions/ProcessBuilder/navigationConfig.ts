@@ -2,7 +2,7 @@
 // Steps and sections are defined here with `as const` - types are derived from this config
 
 export const STEPS = [
-  { id: 'overview', labelKey: 'Overview' },
+  { id: 'general', labelKey: 'General' },
   { id: 'template', labelKey: 'Proposal Template' },
   { id: 'rubric', labelKey: 'Review Rubric' },
   { id: 'members', labelKey: 'Members' },
@@ -12,7 +12,7 @@ export const STEPS = [
 export type StepId = (typeof STEPS)[number]['id'];
 
 export const SECTIONS_BY_STEP = {
-  overview: [
+  general: [
     { id: 'overview', labelKey: 'Overview' },
     { id: 'phases', labelKey: 'Phases' },
     { id: 'proposalCategories', labelKey: 'Proposal Categories' },
@@ -44,13 +44,13 @@ export interface NavigationConfig {
 // Default navigation config (all steps and sections visible)
 export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
   steps: {
-    overview: true,
+    general: true,
     template: true,
     rubric: true,
     members: true,
   },
   sections: {
-    overview: ['overview', 'phases', 'proposalCategories', 'voting'],
+    general: ['overview', 'phases', 'proposalCategories', 'voting'],
     template: ['formBuilder'],
     rubric: ['criteria', 'settings'],
     members: ['roles', 'members'],
