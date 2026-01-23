@@ -28,7 +28,7 @@ export const ProcessBuilderSidebar = ({
   }
 
   return (
-    <nav className="h-16 shrink-0 overflow-x-auto overflow-y-hidden p-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
+    <nav className="h-12 shrink-0 overflow-x-auto overflow-y-hidden p-0 py-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
       <Tabs
         key={currentStep?.id}
         orientation="vertical"
@@ -37,14 +37,14 @@ export const ProcessBuilderSidebar = ({
       >
         <TabList
           aria-label={t('Section navigation')}
-          className="flex w-full gap-1 border-none pr-4 md:flex-col md:pr-0"
+          className="scrollbar-none flex w-full gap-1 border-none md:flex-col"
         >
           {visibleSections.map((section) => (
             <Tab
               key={section.id}
               id={section.id}
               variant="pill"
-              className="last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:last:mr-0 selected:bg-neutral-offWhite selected:text-neutral-gray4"
+              className="first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:bg-neutral-offWhite selected:text-neutral-gray4"
             >
               {t(section.labelKey)}
             </Tab>
