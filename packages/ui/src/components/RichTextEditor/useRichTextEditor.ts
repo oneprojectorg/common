@@ -51,7 +51,6 @@ export function useRichTextEditor({
         editor.commands.setContent(content);
       }
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Only run on editor creation, not content changes
   }, [editor]);
 
   // Notify parent when editor is ready

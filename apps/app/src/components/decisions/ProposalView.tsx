@@ -12,6 +12,7 @@ import { Header1 } from '@op/ui/Header';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
+import type { JSONContent } from '@tiptap/react';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useRef } from 'react';
@@ -110,7 +111,7 @@ export function ProposalView({
         return {
           type: 'doc',
           content: currentProposal.documentContent.content,
-        } as import('@tiptap/react').JSONContent;
+        } as JSONContent;
       }
       return currentProposal.documentContent.content;
     }

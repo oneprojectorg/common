@@ -14,7 +14,7 @@ import { Chip } from '@op/ui/Chip';
 import { defaultViewerExtensions } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import { generateText } from '@tiptap/core';
+import { type JSONContent, generateText } from '@tiptap/core';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
@@ -330,36 +330,6 @@ export function ProposalCardStatus({
 }
 
 /**
- * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML)
- */
-function getProposalContentPreview(
-  documentContent: Proposal['documentContent'],
-  fallbackDescription?: string,
-): string | null {
-  if (documentContent) {
-    if (documentContent.type === 'json') {
-      const doc = {
-        type: 'doc',
-        content:
-          documentContent.content as import('@tiptap/core').JSONContent[],
-      };
-      const text = generateText(doc, defaultViewerExtensions);
-      return text.trim() || null;
-    }
-    if (documentContent.type === 'html') {
-      return getTextPreview({ content: documentContent.content, maxLines: 3 });
-    }
-  }
-
-  // Fallback to legacy description from proposalData
-  if (fallbackDescription) {
-    return getTextPreview({ content: fallbackDescription, maxLines: 3 });
-  }
-
-  return null;
-}
-
-/**
  * Content preview/excerpt component
  */
 export function ProposalCardPreview({
@@ -388,6 +358,35 @@ export function ProposalCardPreview({
       {previewText}
     </p>
   );
+}
+
+/**
+ * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML)
+ */
+function getProposalContentPreview(
+  documentContent: Proposal['documentContent'],
+  fallbackDescription?: string,
+): string | null {
+  if (documentContent) {
+    if (documentContent.type === 'json') {
+      const doc = {
+        type: 'doc',
+        content: documentContent.content as JSONContent[],
+      };
+      const text = generateText(doc, defaultViewerExtensions);
+      return text.trim() || null;
+    }
+    if (documentContent.type === 'html') {
+      return getTextPreview({ content: documentContent.content, maxLines: 3 });
+    }
+  }
+
+  // Fallback to legacy description from proposalData
+  if (fallbackDescription) {
+    return getTextPreview({ content: fallbackDescription, maxLines: 3 });
+  }
+
+  return null;
 }
 
 /**
