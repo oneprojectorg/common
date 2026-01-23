@@ -139,7 +139,7 @@ const TableColumn = ({
       {(values) => (
         <div
           className={twJoin([
-            'inline-flex items-center gap-2 **:data-[slot=icon]:shrink-0',
+            'inline-flex items-center gap-0.5 **:data-[slot=icon]:shrink-0',
           ])}
         >
           {typeof props.children === 'function'
