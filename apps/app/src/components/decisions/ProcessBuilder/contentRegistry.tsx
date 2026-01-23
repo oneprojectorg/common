@@ -2,7 +2,7 @@
 
 import { type ComponentType } from 'react';
 
-import type { StepId } from './navigation-config';
+import type { StepId } from './navigationConfig';
 import MembersSection from './stepContent/members/MembersSection';
 import RolesSection from './stepContent/members/RolesSection';
 import OverviewSection from './stepContent/overview/OverviewSection';

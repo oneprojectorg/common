@@ -1,4 +1,4 @@
-import type { SectionProps } from '../../content-registry';
+import type { SectionProps } from '../../contentRegistry';
 
 export default function FormBuilderSection({
   decisionId,

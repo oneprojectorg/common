@@ -8,7 +8,7 @@ import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/Pro
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderProvider';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSidebar';
-import { type NavigationConfig } from '@/components/decisions/ProcessBuilder/navigation-config';
+import { type NavigationConfig } from '@/components/decisions/ProcessBuilder/navigationConfig';
 
 const EditDecisionPage = () => {
   const { slug } = useParams<{ slug: string }>();

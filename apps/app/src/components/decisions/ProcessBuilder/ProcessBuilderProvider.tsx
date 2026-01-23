@@ -6,7 +6,7 @@ import { createContext, useContext } from 'react';
 import {
   DEFAULT_NAVIGATION_CONFIG,
   type NavigationConfig,
-} from './navigation-config';
+} from './navigationConfig';
 
 interface ProcessBuilderContextValue {
   navigationConfig: NavigationConfig;

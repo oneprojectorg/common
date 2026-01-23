@@ -1,7 +1,7 @@
 'use client';
 
 import { useProcessBuilderContext } from './ProcessBuilderProvider';
-import { type SectionProps, getContentComponent } from './content-registry';
+import { type SectionProps, getContentComponent } from './contentRegistry';
 import { useProcessNavigation } from './useProcessNavigation';
 
 export function ProcessBuilderContent({

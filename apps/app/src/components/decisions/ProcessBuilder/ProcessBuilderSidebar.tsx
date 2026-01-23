@@ -42,8 +42,7 @@ export const ProcessBuilderSidebar = () => {
               key={section.id}
               id={section.id}
               variant="pill"
-              // TODO: Figure out why focus styles aren't being picked up here
-              className="hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline selected:bg-neutral-offWhite selected:text-neutral-gray4"
+              className="hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid selected:bg-neutral-offWhite selected:text-neutral-gray4"
             >
               {t(section.labelKey)}
             </Tab>

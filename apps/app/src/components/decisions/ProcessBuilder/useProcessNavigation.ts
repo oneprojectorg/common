@@ -9,7 +9,7 @@ import {
   SECTIONS_BY_STEP,
   STEPS,
   type StepId,
-} from './navigation-config';
+} from './navigationConfig';
 
 export function useProcessNavigation(
   navigationConfig: NavigationConfig = DEFAULT_NAVIGATION_CONFIG,
