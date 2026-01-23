@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { EntityType } from '@op/api/encoders';
+import { EntityType, ProcessStatus } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LuPlus, LuUserPlus, LuUsers, LuVote } from 'react-icons/lu';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useTranslations } from '@/lib/i18n';
 
 import { InviteUserModal } from '../InviteUserModal';
@@ -29,23 +30,27 @@ export const CreateMenu = () => {
   const { user } = useUser();
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
+  const createDecisionEnabled = useFeatureFlag('create_decision_process');
 
   const utils = trpc.useUtils();
   const createDecisionInstance =
-    trpc.decision.createInstanceFromTemplate.useMutation({
-      onSuccess: (data) => {
-        router.push(`/decisions/edit/${data.slug}`);
-      },
-    });
+    trpc.decision.createInstanceFromTemplate.useMutation();
+  const updateDecisionInstance =
+    trpc.decision.updateDecisionInstance.useMutation();
 
   const handleCreateDecision = async () => {
     const templatesData = await utils.decision.listProcesses.fetch({});
     const firstTemplate = templatesData?.processes?.[0];
     if (firstTemplate) {
-      createDecisionInstance.mutate({
+      const created = await createDecisionInstance.mutateAsync({
         templateId: firstTemplate.id,
         name: `New ${firstTemplate.name}`,
       });
+      await updateDecisionInstance.mutateAsync({
+        instanceId: created.processInstance.id,
+        status: ProcessStatus.PUBLISHED,
+      });
+      router.push(`/decisions/edit/${created.slug}`);
     }
   };
 
@@ -75,9 +80,11 @@ export const CreateMenu = () => {
                 <LuUserPlus className="size-4" /> {t('Invite member')}
               </MenuItem>
             ) : null}
-            <MenuItem id="create-decision" onAction={handleCreateDecision}>
-              <LuVote className="size-4" /> {t('Decision process')}
-            </MenuItem>
+            {createDecisionEnabled && (
+              <MenuItem id="create-decision" onAction={handleCreateDecision}>
+                <LuVote className="size-4" /> {t('Decision process')}
+              </MenuItem>
+            )}
           </Menu>
         </Popover>
       </MenuTrigger>
