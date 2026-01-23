@@ -1,4 +1,4 @@
-import { and, db, eq, or, sql } from '@op/db/client';
+import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -8,7 +8,6 @@ import {
   type SortDir,
   decodeCursor,
   encodeCursor,
-  getCursorCondition,
 } from '../../utils/db';
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
@@ -19,6 +18,20 @@ import type {
 } from './getProfileUserWithRelations';
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
+
+/**
+ * Builds a subquery to get the first role name (alphabetically) for a profile user.
+ * Used for both ORDER BY and cursor conditions to ensure consistency.
+ * Returns empty string if user has no roles (via COALESCE) to match JS cursor encoding.
+ */
+const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
+  SELECT ar.name
+  FROM "profileUser_to_access_roles" pur
+  INNER JOIN "access_roles" ar ON ar.id = pur.access_role_id
+  WHERE pur.profile_user_id = ${profileUserIdColumn}
+  ORDER BY ar.name
+  LIMIT 1
+), '')`;
 
 /**
  * List all members of a profile with cursor-based pagination
@@ -76,21 +89,46 @@ export const listProfileUsers = async ({
         })()
       : undefined;
 
-  // Determine the column to use for cursor-based pagination
-  // For role sorting, we use email as the cursor column since role values can be duplicated
-  const orderByColumn =
-    orderBy === 'email' ? profileUsers.email : profileUsers.email;
-
   // Build cursor condition for pagination
-  // Always use id as tiebreaker for stable pagination
-  const cursorCondition = cursor
-    ? getCursorCondition({
-        column: orderByColumn,
-        tieBreakerColumn: profileUsers.id,
-        cursor: decodeCursor<{ value: string; id?: string }>(cursor),
-        direction: dir,
-      })
+  // The cursor must match the ORDER BY columns for correct pagination
+  type ProfileUserCursor = { value: string; tiebreaker?: string };
+  const decodedCursor = cursor
+    ? decodeCursor<ProfileUserCursor>(cursor)
     : undefined;
+
+  const compareFn = dir === 'asc' ? gt : lt;
+
+  const buildCursorCondition = () => {
+    if (!decodedCursor) {
+      return undefined;
+    }
+
+    if (orderBy === 'email') {
+      // Email is unique, no tiebreaker needed
+      return compareFn(profileUsers.email, decodedCursor.value);
+    }
+
+    if (orderBy === 'name') {
+      // ORDER BY name, email - compound condition
+      return or(
+        compareFn(profileUsers.name, decodedCursor.value),
+        and(
+          eq(profileUsers.name, decodedCursor.value),
+          compareFn(profileUsers.email, decodedCursor.tiebreaker ?? ''),
+        ),
+      );
+    }
+
+    // orderBy === 'role' - uses shared subquery helper
+    const roleSubquery = buildRoleNameSubquery(profileUsers.id);
+    const compareOp = dir === 'asc' ? sql`>` : sql`<`;
+    return sql`(
+      ${roleSubquery} ${compareOp} ${decodedCursor.value}
+      OR (${roleSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
+    )`;
+  };
+
+  const cursorCondition = buildCursorCondition();
 
   // Combine all conditions
   const baseCondition = eq(profileUsers.profileId, profileId);
@@ -124,16 +162,8 @@ export const listProfileUsers = async ({
       const orderFn = dir === 'desc' ? desc : asc;
 
       if (orderBy === 'role') {
-        // Use a subquery to get the first role name for sorting
-        // Note: Using raw SQL strings because Drizzle's sql template uses outer query aliases
-        const roleNameSubquery = sql`(
-          SELECT ar.name
-          FROM "profileUser_to_access_roles" pur
-          INNER JOIN "access_roles" ar ON ar.id = pur.access_role_id
-          WHERE pur.profile_user_id = ${table.id}
-          ORDER BY ar.name
-          LIMIT 1
-        )`;
+        // Use shared subquery helper for consistency with cursor condition
+        const roleNameSubquery = buildRoleNameSubquery(table.id);
         // Add email as secondary sort for consistent cursor pagination
         return [orderFn(roleNameSubquery), orderFn(table.email)];
       }
@@ -168,14 +198,45 @@ export const listProfileUsers = async ({
   });
 
   // Build next cursor from last item
-  const lastItem = resultItems[resultItems.length - 1];
-  const nextCursor =
-    hasMore && lastItem
-      ? encodeCursor<{ value: string; id?: string }>({
-          value: lastItem.email,
-          id: lastItem.id,
-        })
-      : null;
+  // Cursor value must match the primary ORDER BY column
+  const lastResult = profileUserResults[resultItems.length - 1];
+  const buildNextCursor = (): string | null => {
+    if (!hasMore || !lastResult) {
+      return null;
+    }
+
+    if (orderBy === 'email') {
+      return encodeCursor<ProfileUserCursor>({ value: lastResult.email });
+    }
+
+    if (orderBy === 'name') {
+      return encodeCursor<ProfileUserCursor>({
+        value: lastResult.name ?? '',
+        tiebreaker: lastResult.email,
+      });
+    }
+
+    // orderBy === 'role' - get first role name alphabetically (matching the ORDER BY subquery)
+    // Use simple string comparison to match PostgreSQL's default collation
+    const sortedRoles = [...lastResult.roles].sort((a, b) => {
+      const nameA = a.accessRole?.name ?? '';
+      const nameB = b.accessRole?.name ?? '';
+      if (nameA < nameB) {
+        return -1;
+      }
+      if (nameA > nameB) {
+        return 1;
+      }
+      return 0;
+    });
+    const firstRoleName = sortedRoles[0]?.accessRole?.name ?? '';
+    return encodeCursor<ProfileUserCursor>({
+      value: firstRoleName,
+      tiebreaker: lastResult.email,
+    });
+  };
+
+  const nextCursor = buildNextCursor();
 
   return {
     items,
