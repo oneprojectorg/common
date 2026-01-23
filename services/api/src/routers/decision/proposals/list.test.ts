@@ -411,13 +411,12 @@ describe.concurrent('listProposals', () => {
 
     // Create proposals with different data formats in parallel
     const [newFormatProposal, legacyProposal, caller] = await Promise.all([
-      // New format: uses collaborationDocId
+      // New format: API generates collaborationDocId
       testData.createProposal({
         callerEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: {
           title: 'New Format Proposal',
-          collaborationDocId: 'doc-123',
         },
       }),
       // Legacy format: uses description field (HTML content)
@@ -443,10 +442,10 @@ describe.concurrent('listProposals', () => {
     );
     const legacy = result.proposals.find((p) => p.id === legacyProposal.id);
 
-    // New format proposal should have collaborationDocId
+    // New format proposal should have title and API-generated collaborationDocId
     expect(newFormat?.proposalData).toMatchObject({
       title: 'New Format Proposal',
-      collaborationDocId: 'doc-123',
+      collaborationDocId: expect.any(String),
     });
 
     // Legacy proposal should have description (HTML content)
@@ -580,7 +579,19 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    const collaborationDocId = `proposal-${instance.instance.id}-test-doc`;
+    // Create proposal first to get the API-generated collaborationDocId
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Collab Proposal',
+      },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+
     const mockTipTapContent = {
       type: 'doc',
       content: [
@@ -591,20 +602,10 @@ describe.concurrent('listProposals', () => {
       ],
     };
 
-    // Configure mock to return TipTap content
+    // Configure mock to return TipTap content for the generated docId
     mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
 
-    const [proposal, caller] = await Promise.all([
-      testData.createProposal({
-        callerEmail: setup.userEmail,
-        processInstanceId: instance.instance.id,
-        proposalData: {
-          title: 'Collab Proposal',
-          collaborationDocId,
-        },
-      }),
-      createAuthenticatedCaller(setup.userEmail),
-    ]);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
@@ -633,8 +634,6 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    const collaborationDocId = `proposal-${instance.instance.id}-nonexistent`;
-
     // Mock returns 404 by default for unknown docIds (no explicit setup needed)
 
     const [proposal, caller] = await Promise.all([
@@ -643,7 +642,6 @@ describe.concurrent('listProposals', () => {
         processInstanceId: instance.instance.id,
         proposalData: {
           title: 'Failed Fetch Proposal',
-          collaborationDocId,
         },
       }),
       createAuthenticatedCaller(setup.userEmail),
@@ -674,8 +672,26 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    const docId1 = `proposal-${instance.instance.id}-doc1`;
-    const docId2 = `proposal-${instance.instance.id}-doc2`;
+    // Create proposals first to get API-generated collaborationDocIds
+    const [proposal1, proposal2] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal 1' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal 2' },
+      }),
+    ]);
+
+    const { collaborationDocId: docId1 } = proposal1.proposalData as {
+      collaborationDocId: string;
+    };
+    const { collaborationDocId: docId2 } = proposal2.proposalData as {
+      collaborationDocId: string;
+    };
 
     const mockContent1 = {
       type: 'doc',
@@ -693,19 +709,7 @@ describe.concurrent('listProposals', () => {
     mockCollab.setDocResponse(docId1, mockContent1);
     mockCollab.setDocResponse(docId2, mockContent2);
 
-    const [proposal1, proposal2, caller] = await Promise.all([
-      testData.createProposal({
-        callerEmail: setup.userEmail,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Proposal 1', collaborationDocId: docId1 },
-      }),
-      testData.createProposal({
-        callerEmail: setup.userEmail,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Proposal 2', collaborationDocId: docId2 },
-      }),
-      createAuthenticatedCaller(setup.userEmail),
-    ]);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
@@ -740,34 +744,39 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    const collaborationDocId = `proposal-${instance.instance.id}-mixed`;
+    // Create proposals first (collab and empty both get API-generated docIds)
+    const [collabProposal, legacyProposal, emptyProposal] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Collab' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Legacy', description: '<p>HTML</p>' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Empty' },
+      }),
+    ]);
+
+    const { collaborationDocId } = collabProposal.proposalData as {
+      collaborationDocId: string;
+    };
+
     const mockTipTapContent = {
       type: 'doc',
       content: [
         { type: 'paragraph', content: [{ type: 'text', text: 'TipTap' }] },
       ],
     };
+    // Only set up mock for the collab proposal (empty and legacy won't have valid responses)
     mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
 
-    const [collabProposal, legacyProposal, emptyProposal, caller] =
-      await Promise.all([
-        testData.createProposal({
-          callerEmail: setup.userEmail,
-          processInstanceId: instance.instance.id,
-          proposalData: { title: 'Collab', collaborationDocId },
-        }),
-        testData.createProposal({
-          callerEmail: setup.userEmail,
-          processInstanceId: instance.instance.id,
-          proposalData: { title: 'Legacy', description: '<p>HTML</p>' },
-        }),
-        testData.createProposal({
-          callerEmail: setup.userEmail,
-          processInstanceId: instance.instance.id,
-          proposalData: { title: 'Empty' }, // No content
-        }),
-        createAuthenticatedCaller(setup.userEmail),
-      ]);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
@@ -789,6 +798,7 @@ describe.concurrent('listProposals', () => {
       type: 'html',
       content: '<p>HTML</p>',
     });
+    // Empty proposal has a collaborationDocId but no mock response, so documentContent is undefined
     expect(foundEmpty?.documentContent).toBeUndefined();
   });
 });

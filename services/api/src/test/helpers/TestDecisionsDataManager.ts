@@ -8,6 +8,7 @@ import {
   profileUserToAccessRoles,
   profileUsers,
   profiles,
+  proposals,
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
@@ -530,6 +531,7 @@ export class TestDecisionsDataManager {
 
   /**
    * Creates a proposal via the tRPC router and tracks its profile for cleanup.
+   * If `description` is provided, removes `collaborationDocId` to simulate legacy proposals.
    */
   async createProposal({
     callerEmail,
@@ -555,6 +557,18 @@ export class TestDecisionsDataManager {
     // Track the proposal's profile for cleanup
     if (proposal.profileId) {
       this.createdProfileIds.push(proposal.profileId);
+    }
+
+    // Simulate legacy proposal by removing collaborationDocId when description is provided
+    if (proposalData.description) {
+      const { collaborationDocId: _, ...legacyProposalData } =
+        proposal.proposalData as Record<string, unknown>;
+      const updatedProposalData = { ...legacyProposalData, ...proposalData };
+      await db
+        .update(proposals)
+        .set({ proposalData: updatedProposalData })
+        .where(eq(proposals.id, proposal.id));
+      return { ...proposal, proposalData: updatedProposalData };
     }
 
     return proposal;
