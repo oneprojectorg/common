@@ -3,6 +3,9 @@ import { PgColumn } from 'drizzle-orm/pg-core';
 
 import { CommonError } from './error';
 
+/** Standard sort direction type for database queries */
+export type SortDir = 'asc' | 'desc';
+
 // Cursor utilities
 type GenericCursor = {
   date: Date;

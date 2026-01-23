@@ -107,4 +107,106 @@ describe.concurrent('profile.users.listUsers', () => {
       }),
     ).rejects.toThrow(/not found/i);
   });
+
+  describe('sorting', () => {
+    it('should sort users by name with admin first in asc and last in desc', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const resultAsc = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'name',
+        dir: 'asc',
+      });
+
+      const resultDesc = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'name',
+        dir: 'desc',
+      });
+
+      expect(resultAsc).toHaveLength(3);
+      expect(resultDesc).toHaveLength(3);
+
+      // Test data creates names like "Test Admin User" and "Test Member User"
+      // "Test Admin User" < "Test Member User" alphabetically (A < M after "Test ")
+      // So admin should be first in ASC order and last in DESC order
+      expect(resultAsc[0]?.email).toBe(adminUser.email);
+      expect(resultDesc[resultDesc.length - 1]?.email).toBe(adminUser.email);
+    });
+
+    it('should reverse order when switching between asc and desc for email', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const resultAsc = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'email',
+        dir: 'asc',
+      });
+
+      const resultDesc = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'email',
+        dir: 'desc',
+      });
+
+      expect(resultAsc).toHaveLength(3);
+      expect(resultDesc).toHaveLength(3);
+
+      // Emails are unique, so ascending and descending should be exact reverses
+      const ascEmails = resultAsc.map((u) => u.email);
+      const descEmails = resultDesc.map((u) => u.email);
+      expect(ascEmails).toEqual([...descEmails].reverse());
+    });
+
+    it('should sort users by role with admin first in asc and last in desc', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const resultAsc = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'role',
+        dir: 'asc',
+      });
+
+      const resultDesc = await caller.listUsers({
+        profileId: profile.id,
+        orderBy: 'role',
+        dir: 'desc',
+      });
+
+      expect(resultAsc).toHaveLength(3);
+      expect(resultDesc).toHaveLength(3);
+
+      // "Admin" comes before "Member" alphabetically
+      // So admin should be first in ASC order and last in DESC order
+      expect(resultAsc[0]?.email).toBe(adminUser.email);
+      expect(resultDesc[resultDesc.length - 1]?.email).toBe(adminUser.email);
+    });
+  });
 });
