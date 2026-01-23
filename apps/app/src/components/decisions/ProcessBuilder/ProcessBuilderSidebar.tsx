@@ -27,31 +27,29 @@ export const ProcessBuilderSidebar = () => {
 
   return (
     <Sidebar className="border-r p-8">
-      {visibleSections.length > 0 && (
-        <Tabs
-          key={currentStep?.id}
-          orientation="vertical"
-          selectedKey={currentSection?.id}
-          onSelectionChange={handleSelectionChange}
+      <Tabs
+        key={currentStep?.id}
+        orientation="vertical"
+        selectedKey={currentSection?.id}
+        onSelectionChange={handleSelectionChange}
+      >
+        <TabList
+          aria-label={t('Section navigation')}
+          className="flex w-full flex-col gap-1 border-none"
         >
-          <TabList
-            aria-label={t('Section navigation')}
-            className="flex w-full flex-col gap-1 border-none"
-          >
-            {visibleSections.map((section) => (
-              <Tab
-                key={section.id}
-                id={section.id}
-                variant="pill"
-                // TODO: Figure out why focus styles aren't being picked up here
-                className="hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline selected:bg-neutral-offWhite selected:text-neutral-gray4"
-              >
-                {t(section.labelKey)}
-              </Tab>
-            ))}
-          </TabList>
-        </Tabs>
-      )}
+          {visibleSections.map((section) => (
+            <Tab
+              key={section.id}
+              id={section.id}
+              variant="pill"
+              // TODO: Figure out why focus styles aren't being picked up here
+              className="hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline selected:bg-neutral-offWhite selected:text-neutral-gray4"
+            >
+              {t(section.labelKey)}
+            </Tab>
+          ))}
+        </TabList>
+      </Tabs>
     </Sidebar>
   );
 };

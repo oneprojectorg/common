@@ -8,7 +8,6 @@ import {
   type NavigationConfig,
   SECTIONS_BY_STEP,
   STEPS,
-  type SectionId,
   type StepId,
 } from './navigation-config';
 
