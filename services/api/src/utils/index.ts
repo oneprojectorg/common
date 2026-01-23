@@ -4,7 +4,6 @@ import { z } from 'zod';
 
 /** Standard sort direction schema */
 export const sortDir = z.enum(['asc', 'desc']) satisfies z.ZodType<SortDir>;
-export type { SortDir };
 
 /**
  * Creates a type-safe sortable schema for a given set of columns
@@ -21,17 +20,15 @@ export const createSortable = <T extends readonly [string, ...string[]]>(
   });
 
 /** Generic sortable schema when column types aren't constrained */
-export const sortable = z.object({
+const sortableSchema = z.object({
   orderBy: z.string().optional(),
   dir: sortDir.optional(),
 });
-export type Sortable = z.infer<typeof sortable>;
+export type Sortable = z.infer<typeof sortableSchema>;
 
-export const dbFilter = z.object({
+export const dbFilter = sortableSchema.extend({
   limit: z.number().optional(),
   cursor: z.string().nullish(),
-  orderBy: z.string().optional(),
-  dir: sortDir.optional(),
 });
 
 export function sanitizeS3Filename(filename: string) {
