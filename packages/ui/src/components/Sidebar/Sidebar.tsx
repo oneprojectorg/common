@@ -121,7 +121,7 @@ const Sidebar = ({
           <MotionModalOverlay
             // force open state to ensure exit animation fires
             isOpen
-            className={'fixed inset-0 bg-neutral-black/20 backdrop-blur'}
+            className={'fixed inset-0 z-50 bg-neutral-black/20 backdrop-blur'}
             onOpenChange={setOpen}
             isDismissable
             initial={{ opacity: 0 }}

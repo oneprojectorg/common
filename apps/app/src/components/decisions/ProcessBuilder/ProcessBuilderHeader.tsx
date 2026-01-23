@@ -95,7 +95,7 @@ export const ProcessBuilderHeader = ({
         <UserAvatarMenu className="hidden md:block" />
       </div>
       {hasSteps && (
-        <Sidebar className="z-30">
+        <Sidebar>
           <nav className="flex flex-col gap-2 px-4 py-2">
             <Link href="/" className="flex h-8 items-center gap-2 px-4">
               <LuHouse className="size-4" />
