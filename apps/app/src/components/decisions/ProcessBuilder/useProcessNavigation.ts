@@ -53,7 +53,7 @@ export function useProcessNavigation(
 
     // Filter to only allowed sections
     return allSections.filter((s) =>
-      allowedSectionIds.some((id) => id === s.id ),
+      allowedSectionIds.some((id) => id === s.id),
     );
   }, [currentStep, navigationConfig.sections]);
 
@@ -101,7 +101,7 @@ export function useProcessNavigation(
       const allowedSectionIds = navigationConfig.sections?.[newStep.id];
       const firstVisibleSection = allowedSectionIds
         ? newStepSections.find((s) =>
-            allowedSectionIds.some((id) => id === s.id ),
+            allowedSectionIds.some((id) => id === s.id),
           )
         : newStepSections[0];
 
@@ -123,13 +123,10 @@ export function useProcessNavigation(
   );
 
   return {
-    // Current state
     currentStep,
     currentSection,
-    // Visible items
     visibleSteps,
     visibleSections,
-    // Actions
     setStep,
     setSection,
   };

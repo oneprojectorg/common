@@ -1,8 +1,8 @@
 'use client';
 
+import { Key } from '@op/ui/RAC';
 import { Sidebar } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { Key } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 

@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
+import { Key } from '@op/ui/RAC';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { Key } from 'react-aria-components';
 import { LuChevronRight, LuCircleAlert, LuHouse, LuPlus } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -36,8 +36,8 @@ export const ProcessBuilderHeader = ({
         <LuChevronRight className="size-4" />
         <span>{processName || t('New process')}</span>
       </div>
-      <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
-        {visibleSteps.length > 0 && (
+      {visibleSteps.length > 0 && (
+        <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
           <Tabs
             selectedKey={currentStep?.id}
             onSelectionChange={handleSelectionChange}
@@ -54,8 +54,8 @@ export const ProcessBuilderHeader = ({
               ))}
             </TabList>
           </Tabs>
-        )}
-      </nav>
+        </nav>
+      )}
       <div className="relative z-10 flex gap-4 pr-4 md:pr-8">
         {visibleSteps.length > 0 && (
           <div className="flex gap-2">
