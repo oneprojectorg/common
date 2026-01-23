@@ -45,7 +45,7 @@ const tabListStyles = tv({
     },
     orientation: {
       horizontal: 'flex-row border-b border-offWhite',
-      vertical: '',
+      vertical: 'gap-2',
     },
   },
   defaultVariants: {
@@ -73,7 +73,7 @@ const tabProps = tv({
   variants: {
     variant: {
       default: '',
-      pill: 'border-b-none rounded-sm bg-neutral-offWhite p-3 sm:py-2',
+      pill: 'border-b-none rounded-sm bg-neutral-offWhite p-3 focus-visible:outline-2 focus-visible:outline-solid sm:py-2',
     },
     isSelected: {
       false: '',
