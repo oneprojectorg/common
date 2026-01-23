@@ -69,6 +69,7 @@ export const listProfileUsers = async ({
           FROM "profileUser_to_access_roles" pur
           INNER JOIN "access_roles" ar ON ar.id = pur.access_role_id
           WHERE pur.profile_user_id = ${table.id}
+          ORDER BY ar.name
           LIMIT 1
         )`;
         return [orderFn(roleNameSubquery)];
