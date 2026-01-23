@@ -6,7 +6,7 @@ import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
+import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -49,14 +49,6 @@ export const CreateMenu = () => {
             >
               <LuUsers className="size-4" /> {t('Organization')}
             </MenuItem>
-            {isOrg ? (
-              <MenuItem
-                id="invite-member"
-                onAction={() => setIsInviteModalOpen(true)}
-              >
-                <LuUserPlus className="size-4" /> {t('Invite member')}
-              </MenuItem>
-            ) : null}
             {createDecisionEnabled && (
               <MenuItem
                 id="create-decision"
@@ -65,6 +57,17 @@ export const CreateMenu = () => {
                 <LuMessageCircle className="size-4" />{' '}
                 {t('Decision-making process')}
               </MenuItem>
+            )}
+            {isOrg && (
+              <>
+                <MenuSeparator />
+                <MenuItem
+                  id="invite-member"
+                  onAction={() => setIsInviteModalOpen(true)}
+                >
+                  <LuUserPlus className="size-4" /> {t('Invite member')}
+                </MenuItem>
+              </>
             )}
           </Menu>
         </Popover>
