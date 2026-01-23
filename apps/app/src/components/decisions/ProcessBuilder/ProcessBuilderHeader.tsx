@@ -2,7 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { Key } from '@op/ui/RAC';
-import { Sidebar, SidebarTrigger } from '@op/ui/Sidebar';
+import { Sidebar, SidebarTrigger, useSidebar } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { LuChevronRight, LuCircleAlert, LuHouse, LuPlus } from 'react-icons/lu';
 
@@ -23,9 +23,11 @@ export const ProcessBuilderHeader = ({
   const t = useTranslations();
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
+  const { setOpen } = useSidebar();
 
   const handleSelectionChange = (key: Key) => {
     setStep(String(key));
+    setOpen(false);
   };
 
   const hasSteps = visibleSteps.length > 0;
@@ -34,7 +36,7 @@ export const ProcessBuilderHeader = ({
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
       <div className="relative z-10 flex items-center gap-2 pl-4 md:pl-8">
         {hasSteps ? (
-          <SidebarTrigger />
+          <SidebarTrigger className="size-4" />
         ) : (
           <>
             <Link href="/" className="flex items-center gap-2 text-primary">
