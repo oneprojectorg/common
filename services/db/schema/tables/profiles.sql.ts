@@ -63,6 +63,9 @@ export const profiles = pgTable(
     index().on(table.avatarImageId),
     index().on(table.updatedAt).concurrently(),
     index('profiles_search_gin_index').using('gin', table.search),
+    index('profiles_name_trgm_idx')
+      .using('gin', sql`${table.name} extensions.gin_trgm_ops`)
+      .concurrently(),
   ],
 );
 
