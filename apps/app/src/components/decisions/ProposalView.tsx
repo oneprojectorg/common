@@ -12,7 +12,6 @@ import { Header1 } from '@op/ui/Header';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import type { JSONContent } from '@tiptap/react';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useRef } from 'react';
@@ -24,7 +23,9 @@ import { useTranslations } from '@/lib/i18n';
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
+import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalViewLayout } from './ProposalViewLayout';
+import { getProposalContent } from './proposalContentUtils';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -103,20 +104,10 @@ export function ProposalView({
   );
 
   // Use documentContent when available, fall back to legacy description
-  const proposalContent = (() => {
-    if (currentProposal.documentContent) {
-      if (currentProposal.documentContent.type === 'json') {
-        // Return TipTap JSON format for RichTextViewer
-        // Cast to JSONContent since the API returns validated TipTap document structure
-        return {
-          type: 'doc',
-          content: currentProposal.documentContent.content,
-        } as JSONContent;
-      }
-      return currentProposal.documentContent.content;
-    }
-    return description || `<p>${t('No content available')}</p>`;
-  })();
+  const proposalContent = getProposalContent(
+    currentProposal.documentContent,
+    description,
+  );
 
   return (
     <ProposalViewLayout
@@ -228,11 +219,15 @@ export function ProposalView({
           </div>
 
           {/* Proposal Content */}
-          <RichTextViewer
-            extensions={getViewerExtensions()}
-            content={proposalContent}
-            editorClassName="p-0"
-          />
+          {proposalContent ? (
+            <RichTextViewer
+              extensions={getViewerExtensions()}
+              content={proposalContent}
+              editorClassName="p-0"
+            />
+          ) : (
+            <DocumentNotAvailable />
+          )}
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>

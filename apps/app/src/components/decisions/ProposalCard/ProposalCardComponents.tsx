@@ -8,13 +8,11 @@ import {
   type proposalEncoder,
 } from '@op/api/encoders';
 import { parseProposalData } from '@op/common/client';
-import { getTextPreview, isNullish, match } from '@op/core';
+import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
-import { defaultViewerExtensions } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import { type JSONContent, generateText } from '@tiptap/core';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
@@ -25,6 +23,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
+import { getProposalContentPreview } from '../proposalContentUtils';
 
 export type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -358,35 +357,6 @@ export function ProposalCardPreview({
       {previewText}
     </p>
   );
-}
-
-/**
- * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML)
- */
-function getProposalContentPreview(
-  documentContent: Proposal['documentContent'],
-  fallbackDescription?: string,
-): string | null {
-  if (documentContent) {
-    if (documentContent.type === 'json') {
-      const doc = {
-        type: 'doc',
-        content: documentContent.content as JSONContent[],
-      };
-      const text = generateText(doc, defaultViewerExtensions);
-      return text.trim() || null;
-    }
-    if (documentContent.type === 'html') {
-      return getTextPreview({ content: documentContent.content, maxLines: 3 });
-    }
-  }
-
-  // Fallback to legacy description from proposalData
-  if (fallbackDescription) {
-    return getTextPreview({ content: fallbackDescription, maxLines: 3 });
-  }
-
-  return null;
 }
 
 /**
