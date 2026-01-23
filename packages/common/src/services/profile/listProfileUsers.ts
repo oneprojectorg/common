@@ -49,23 +49,20 @@ export const listProfileUsers = async ({
       ? (() => {
           const ilikePattern = `%${query}%`;
 
-          // ILIKE for exact substring matching
-          const emailIlike = sql`${profileUsers.email} ILIKE ${ilikePattern}`;
-          const nameIlike = sql`${profileUsers.authUserId} IN (
-            SELECT u.auth_user_id FROM ${users} u
-            INNER JOIN ${profiles} p ON p.id = u.profile_id
-            WHERE p.name ILIKE ${ilikePattern}
+          // Email: ILIKE for substring + trigram for typo tolerance
+          const emailMatch = sql`(
+            ${profileUsers.email} ILIKE ${ilikePattern}
+            OR ${query} <% ${profileUsers.email}
           )`;
 
-          // Trigram word_similarity for fuzzy matching (typo tolerance)
-          const emailFuzzy = sql`${query} <% ${profileUsers.email}`;
-          const nameFuzzy = sql`${profileUsers.authUserId} IN (
+          // Name: single subquery combining ILIKE and trigram conditions
+          const nameMatch = sql`${profileUsers.authUserId} IN (
             SELECT u.auth_user_id FROM ${users} u
             INNER JOIN ${profiles} p ON p.id = u.profile_id
-            WHERE ${query} <% p.name
+            WHERE p.name ILIKE ${ilikePattern} OR ${query} <% p.name
           )`;
 
-          return or(emailIlike, nameIlike, emailFuzzy, nameFuzzy);
+          return or(emailMatch, nameMatch);
         })()
       : undefined;
 
