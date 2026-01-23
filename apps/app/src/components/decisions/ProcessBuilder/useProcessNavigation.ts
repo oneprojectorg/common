@@ -24,8 +24,7 @@ export function useProcessNavigation(
     () =>
       STEPS.filter((s) => {
         const visibility = navigationConfig.steps?.[s.id];
-        // Default to visible if not specified
-        return visibility !== false;
+        return visibility === true;
       }),
     [navigationConfig.steps],
   );
@@ -45,9 +44,9 @@ export function useProcessNavigation(
     const allSections = SECTIONS_BY_STEP[currentStep.id];
     const allowedSectionIds = navigationConfig.sections?.[currentStep.id];
 
-    // If no section config, show all sections for this step
+    // If no section config, show no sections
     if (!allowedSectionIds) {
-      return [...allSections];
+      return [];
     }
 
     // Filter to only allowed sections

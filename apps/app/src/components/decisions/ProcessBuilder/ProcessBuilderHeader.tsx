@@ -9,16 +9,17 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
-import { useProcessBuilderContext } from './ProcessBuilderProvider';
+import { type NavigationConfig } from './navigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
 export const ProcessBuilderHeader = ({
   processName,
+  navigationConfig,
 }: {
   processName?: string;
+  navigationConfig?: NavigationConfig;
 }) => {
   const t = useTranslations();
-  const { navigationConfig } = useProcessBuilderContext();
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
 
@@ -27,8 +28,8 @@ export const ProcessBuilderHeader = ({
   };
 
   return (
-    <header className="relative flex h-14 w-dvw items-center justify-between border-b">
-      <div className="relative z-10 flex items-center gap-2 pl-4 md:pl-8">
+    <header className="relative sticky top-0 z-30 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
+      <div className="relative z-10 hidden items-center gap-2 pl-4 md:flex md:pl-8">
         <Link href="/" className="flex items-center gap-2 text-primary">
           <LuHouse className="size-4" />
           {t('Home')}

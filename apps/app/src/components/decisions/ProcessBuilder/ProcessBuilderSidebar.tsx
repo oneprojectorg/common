@@ -1,17 +1,19 @@
 'use client';
 
 import { Key } from '@op/ui/RAC';
-import { Sidebar } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useProcessBuilderContext } from './ProcessBuilderProvider';
+import { type NavigationConfig } from './navigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
-export const ProcessBuilderSidebar = () => {
+export const ProcessBuilderSidebar = ({
+  navigationConfig,
+}: {
+  navigationConfig?: NavigationConfig;
+}) => {
   const t = useTranslations();
-  const { navigationConfig } = useProcessBuilderContext();
   const { visibleSections, currentSection, currentStep, setSection } =
     useProcessNavigation(navigationConfig);
 
@@ -26,7 +28,7 @@ export const ProcessBuilderSidebar = () => {
   }
 
   return (
-    <Sidebar className="border-r p-8">
+    <nav className="h-16 shrink-0 overflow-x-auto overflow-y-hidden p-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
       <Tabs
         key={currentStep?.id}
         orientation="vertical"
@@ -35,7 +37,7 @@ export const ProcessBuilderSidebar = () => {
       >
         <TabList
           aria-label={t('Section navigation')}
-          className="flex w-full flex-col gap-1 border-none"
+          className="flex w-full gap-1 border-none pr-4 md:flex-col md:pr-0"
         >
           {visibleSections.map((section) => (
             <Tab
@@ -49,6 +51,6 @@ export const ProcessBuilderSidebar = () => {
           ))}
         </TabList>
       </Tabs>
-    </Sidebar>
+    </nav>
   );
 };

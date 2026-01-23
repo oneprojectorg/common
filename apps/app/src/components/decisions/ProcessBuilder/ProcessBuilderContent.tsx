@@ -1,14 +1,14 @@
 'use client';
 
-import { useProcessBuilderContext } from './ProcessBuilderProvider';
 import { type SectionProps, getContentComponent } from './contentRegistry';
+import { type NavigationConfig } from './navigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
 export function ProcessBuilderContent({
   decisionId,
   decisionName,
-}: SectionProps) {
-  const { navigationConfig } = useProcessBuilderContext();
+  navigationConfig,
+}: SectionProps & { navigationConfig?: NavigationConfig }) {
   const { currentStep, currentSection } =
     useProcessNavigation(navigationConfig);
 

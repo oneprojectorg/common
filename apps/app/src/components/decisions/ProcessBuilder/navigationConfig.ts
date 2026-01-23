@@ -41,5 +41,18 @@ export interface NavigationConfig {
   sections?: Partial<Record<StepId, SectionId[]>>;
 }
 
-// Default navigation config (all visible)
-export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {};
+// Default navigation config (all steps and sections visible)
+export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
+  steps: {
+    overview: true,
+    template: true,
+    rubric: true,
+    members: true,
+  },
+  sections: {
+    overview: ['overview', 'phases', 'proposalCategories', 'voting'],
+    template: ['formBuilder'],
+    rubric: ['criteria', 'settings'],
+    members: ['roles', 'members'],
+  },
+};
