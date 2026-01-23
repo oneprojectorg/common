@@ -316,25 +316,25 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('should ignore queries shorter than 2 characters', async ({
+    it('should reject queries shorter than 2 characters', async ({
       task,
       onTestFinished,
     }) => {
       const testData = new TestProfileUserDataManager(task.id, onTestFinished);
       const { profile, adminUser } = await testData.createProfile({
-        users: { admin: 1, member: 2 },
+        users: { admin: 1 },
       });
 
       const { session } = await createIsolatedSession(adminUser.email);
       const caller = createCaller(await createTestContextWithSession(session));
 
-      // Single character query should be ignored and return all users
-      const result = await caller.listUsers({
-        profileId: profile.id,
-        query: 'a',
-      });
-
-      expect(result).toHaveLength(3);
+      // Single character query should be rejected with validation error
+      await expect(
+        caller.listUsers({
+          profileId: profile.id,
+          query: 'a',
+        }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
     });
 
     it('should work with sorting parameters', async ({

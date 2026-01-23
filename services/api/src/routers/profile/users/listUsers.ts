@@ -13,7 +13,7 @@ export const listUsersRouter = router({
       z
         .object({
           profileId: z.uuid(),
-          query: z.string().optional(),
+          query: z.string().min(2).optional(),
         })
         .merge(profileUserSortable),
     )
