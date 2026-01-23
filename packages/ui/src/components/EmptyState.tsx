@@ -1,9 +1,7 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
-export const ErrorState = ({
+export const EmptyState = ({
   icon,
   children,
 }: {
