@@ -2,8 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
-import { EntityType, ProcessStatus } from '@op/api/encoders';
+import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
@@ -32,28 +31,6 @@ export const CreateMenu = () => {
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
 
-  const utils = trpc.useUtils();
-  const createDecisionInstance =
-    trpc.decision.createInstanceFromTemplate.useMutation();
-  const updateDecisionInstance =
-    trpc.decision.updateDecisionInstance.useMutation();
-
-  const handleCreateDecision = async () => {
-    const templatesData = await utils.decision.listProcesses.fetch({});
-    const firstTemplate = templatesData?.processes?.[0];
-    if (firstTemplate) {
-      const created = await createDecisionInstance.mutateAsync({
-        templateId: firstTemplate.id,
-        name: `New ${firstTemplate.name}`,
-      });
-      await updateDecisionInstance.mutateAsync({
-        instanceId: created.processInstance.id,
-        status: ProcessStatus.PUBLISHED,
-      });
-      router.push(`/decisions/edit/${created.slug}`);
-    }
-  };
-
   return (
     <>
       <MenuTrigger>
@@ -81,7 +58,10 @@ export const CreateMenu = () => {
               </MenuItem>
             ) : null}
             {createDecisionEnabled && (
-              <MenuItem id="create-decision" onAction={handleCreateDecision}>
+              <MenuItem
+                id="create-decision"
+                onAction={() => router.push('/decisions/create')}
+              >
                 <LuMessageCircle className="size-4" />{' '}
                 {t('Decision-making process')}
               </MenuItem>
