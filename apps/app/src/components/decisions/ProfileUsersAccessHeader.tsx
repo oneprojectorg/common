@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import { Header1 } from '@op/ui/Header';
 import { LuArrowLeft } from 'react-icons/lu';
 
@@ -17,7 +19,7 @@ export const ProfileUsersAccessHeader = ({
     label?: string;
     href: string;
   };
-  title: string;
+  title: ReactNode;
 }) => {
   const t = useTranslations();
   return (
@@ -36,7 +38,7 @@ export const ProfileUsersAccessHeader = ({
 
       <div className="flex justify-center text-center">
         <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
-          {t(title)}
+          {title}
         </Header1>
       </div>
 
