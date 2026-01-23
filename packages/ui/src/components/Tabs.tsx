@@ -45,7 +45,7 @@ const tabListStyles = tv({
     },
     orientation: {
       horizontal: 'flex-row border-b border-offWhite',
-      vertical: 'gap-2',
+      vertical: 'flex-col gap-2 border-none',
     },
   },
   defaultVariants: {
@@ -62,7 +62,12 @@ export const TabList = <T extends object>(
     <RACTabList
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        tabListStyles({ ...renderProps, variant: props.variant, className }),
+        tabListStyles({
+          ...renderProps,
+          variant: props.variant,
+          orientation: props.orientation,
+          className,
+        }),
       )}
     />
   );
@@ -76,7 +81,7 @@ const tabProps = tv({
       pill: 'border-b-none rounded-sm bg-neutral-offWhite p-3 focus-visible:outline-2 focus-visible:outline-solid sm:py-2',
     },
     isSelected: {
-      false: '',
+      false: 'border-b border-transparent',
       true: 'border-b border-charcoal text-charcoal',
     },
     isDisabled: {

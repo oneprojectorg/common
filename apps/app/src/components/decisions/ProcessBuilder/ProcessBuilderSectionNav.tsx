@@ -37,14 +37,14 @@ export const ProcessBuilderSidebar = ({
       >
         <TabList
           aria-label={t('Section navigation')}
-          className="scrollbar-none flex w-full gap-1 border-none md:flex-col"
+          className="scrollbar-none flex w-full gap-4 border-none md:flex-col md:gap-1"
         >
           {visibleSections.map((section) => (
             <Tab
               key={section.id}
               id={section.id}
               variant="pill"
-              className="first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:bg-neutral-offWhite selected:text-neutral-gray4"
+              className="first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:text-charcoal md:selected:bg-neutral-offWhite"
             >
               {t(section.labelKey)}
             </Tab>
