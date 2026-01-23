@@ -1,11 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
+import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-
-import { EmptyProposalsState } from './EmptyProposalsState';
 import {
   ProposalCard,
   ProposalCardContent,
@@ -18,14 +18,14 @@ import {
 const NoProposalsFound = () => {
   const t = useTranslations();
   return (
-    <EmptyProposalsState>
+    <EmptyState icon={<LuLeaf className="size-6" />}>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('No results yet for this decision.')}
       </Header3>
       <p className="text-base text-neutral-charcoal">
         {t('Results are still being worked on.')}
       </p>
-    </EmptyProposalsState>
+    </EmptyState>
   );
 };
 

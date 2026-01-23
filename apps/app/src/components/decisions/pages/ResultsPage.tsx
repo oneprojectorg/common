@@ -11,11 +11,13 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { EmptyState } from '@op/ui/EmptyState';
+import { LuLeaf } from 'react-icons/lu';
+
 import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
-import { EmptyProposalsState } from '../EmptyProposalsState';
 import { MyBallot, NoVoteFound } from '../MyBallot';
 import { ProposalListSkeleton } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
@@ -146,14 +148,14 @@ function ResultsPageContent({
               <APIErrorBoundary
                 fallbacks={{
                   404: (
-                    <EmptyProposalsState>
+                    <EmptyState icon={<LuLeaf className="size-6" />}>
                       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
                         {t('Results are still being processed.')}
                       </Header3>
                       <p className="text-base text-neutral-charcoal">
                         {t('Check back again shortly for the results.')}
                       </p>
-                    </EmptyProposalsState>
+                    </EmptyState>
                   ),
                 }}
               >

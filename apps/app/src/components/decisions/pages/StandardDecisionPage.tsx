@@ -8,9 +8,11 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
+import { EmptyState } from '@op/ui/EmptyState';
+import { LuLeaf } from 'react-icons/lu';
+
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
-import { EmptyProposalsState } from '../EmptyProposalsState';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
@@ -135,14 +137,14 @@ export function StandardDecisionPage({
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <div className="lg:col-span-3">
             {proposals.length === 0 ? (
-              <EmptyProposalsState>
+              <EmptyState icon={<LuLeaf className="size-6" />}>
                 <Header3 className="font-serif !text-title-base font-light text-neutral-black">
                   {t('No proposals yet')}
                 </Header3>
                 <p className="text-base text-neutral-charcoal">
                   {t('You could be the first one to submit a proposal')}
                 </p>
-              </EmptyProposalsState>
+              </EmptyState>
             ) : (
               <Suspense fallback={<ProposalListSkeleton />}>
                 <ProposalsList
