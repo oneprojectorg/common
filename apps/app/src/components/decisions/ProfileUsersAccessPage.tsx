@@ -1,7 +1,7 @@
 'use client';
 
-import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
+import type { SortDir } from '@op/common';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
@@ -12,9 +12,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProfileUsersAccessTable } from './ProfileUsersAccessTable';
 
-type ListUsersInput = RouterInput['profile']['listUsers'];
-type SortColumn = NonNullable<ListUsersInput['orderBy']>;
-type SortDirection = NonNullable<ListUsersInput['dir']>;
+// Sort columns supported by profile.listUsers endpoint
+type SortColumn = 'name' | 'email' | 'role';
 
 const ITEMS_PER_PAGE = 25;
 
@@ -45,11 +44,11 @@ export const ProfileUsersAccessPage = ({
 
   // Convert React Aria sort descriptor to API format
   const orderBy = sortDescriptor.column as SortColumn;
-  const dir: SortDirection =
+  const dir: SortDir =
     sortDescriptor.direction === 'ascending' ? 'asc' : 'desc';
 
   // Build query input - only include query if >= 2 chars (API requirement)
-  const queryInput: ListUsersInput = {
+  const queryInput = {
     profileId,
     cursor,
     limit: ITEMS_PER_PAGE,
