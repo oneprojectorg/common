@@ -1,13 +1,12 @@
 'use client';
 
-import { generateProposalCollabDocId } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
   ProposalStatus,
   type proposalEncoder,
 } from '@op/api/encoders';
-import { parseProposalData } from '@op/common/client';
+import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -96,23 +95,15 @@ export function ProposalEditor({
   const isDraft =
     isEditMode && existingProposal?.status === ProposalStatus.DRAFT;
 
-  // Generate or use existing collaboration document ID
-  const collabDocId = useMemo(() => {
-    const existingDocId = (
-      existingProposal?.proposalData as Record<string, unknown>
-    )?.collaborationDocId as string | undefined;
-
-    if (isEditMode && existingDocId) {
-      return existingDocId;
+  const collaborationDocId = useMemo(() => {
+    const { collaborationDocId: existingId } = parseProposalData(
+      existingProposal?.proposalData,
+    );
+    if (existingId) {
+      return existingId;
     }
-    // Generate new docId for new proposals or legacy proposals without one
-    return generateProposalCollabDocId(instance.id, existingProposal?.id);
-  }, [
-    instance.id,
-    isEditMode,
-    existingProposal?.id,
-    existingProposal?.proposalData,
-  ]);
+    return `proposal-${instance.id}-${existingProposal?.id ?? crypto.randomUUID()}`;
+  }, [existingProposal?.proposalData, existingProposal?.id, instance.id]);
 
   // Editor extensions - memoized with collaborative flag
   const editorExtensions = useMemo(
@@ -319,22 +310,20 @@ export function ProposalEditor({
     setIsSubmitting(true);
 
     try {
-      const proposalData: Record<string, unknown> = {
-        title,
-        collaborationDocId: collabDocId,
-      };
-
-      if (categories && categories.length > 0) {
-        proposalData.category = selectedCategory;
-      }
-
-      if (budget !== null) {
-        proposalData.budget = budget;
-      }
-
       if (!existingProposal) {
         throw new Error('No proposal to update');
       }
+
+      const proposalData: ProposalDataInput = {
+        ...parseProposalData(existingProposal.proposalData),
+        collaborationDocId,
+        title,
+        category:
+          categories && categories.length > 0
+            ? (selectedCategory ?? undefined)
+            : undefined,
+        budget: budget ?? undefined,
+      };
 
       // Update existing proposal
       await updateProposalMutation.mutateAsync({
@@ -361,7 +350,7 @@ export function ProposalEditor({
     budget,
     budgetCapAmount,
     selectedCategory,
-    collabDocId,
+    collaborationDocId,
     categories,
     existingProposal,
     isDraft,
@@ -445,7 +434,7 @@ export function ProposalEditor({
 
           {/* Rich Text Editor with Collaboration */}
           <CollaborativeEditor
-            docId={collabDocId}
+            docId={collaborationDocId}
             extensions={editorExtensions}
             onEditorReady={handleEditorReady}
             placeholder={t('Write your proposal here...')}
