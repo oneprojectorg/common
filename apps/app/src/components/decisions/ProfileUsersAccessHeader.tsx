@@ -1,8 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
-
 import { Header1 } from '@op/ui/Header';
+import type { ReactNode } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

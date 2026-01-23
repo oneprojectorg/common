@@ -1,9 +1,9 @@
 import { createClient } from '@op/api/serverClient';
 import { notFound } from 'next/navigation';
 
+import { TranslatedText } from '@/components/TranslatedText';
 import { ProfileUsersAccessHeader } from '@/components/decisions/ProfileUsersAccessHeader';
 import { ProfileUsersAccessPage } from '@/components/decisions/ProfileUsersAccessPage';
-import { TranslatedText } from '@/components/TranslatedText';
 
 const ProfileMembersContent = async ({ slug }: { slug: string }) => {
   const client = await createClient();
