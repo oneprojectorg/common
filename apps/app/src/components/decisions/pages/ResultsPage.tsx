@@ -13,6 +13,9 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { EmptyState } from '@op/ui/EmptyState';
+import { LuLeaf } from 'react-icons/lu';
+
 import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,

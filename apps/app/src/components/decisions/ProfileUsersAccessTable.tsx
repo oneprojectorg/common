@@ -16,11 +16,11 @@ import {
 } from '@op/ui/ui/table';
 import { useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
-import { LuCircleAlert } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { EmptyState } from '@op/ui/EmptyState';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 // Infer the ProfileUser type from the encoder
@@ -214,23 +214,6 @@ const ProfileUsersAccessTableContent = ({
   );
 };
 
-const MembersLoadError = ({ onRetry }: { onRetry: () => void }) => {
-  const t = useTranslations();
-  return (
-    <div className="flex min-h-40 w-full flex-col items-center justify-center py-6">
-      <div className="flex flex-col items-center justify-center gap-3 text-neutral-gray4">
-        <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
-          <LuCircleAlert />
-        </div>
-        <span>{t('Members could not be loaded')}</span>
-        <Button onPress={onRetry} color="secondary" size="small">
-          {t('Try again')}
-        </Button>
-      </div>
-    </div>
-  );
-};
-
 // Exported component with loading and error states
 export const ProfileUsersAccessTable = ({
   profileUsers,
@@ -249,8 +232,17 @@ export const ProfileUsersAccessTable = ({
   isError: boolean;
   onRetry: () => void;
 }) => {
+  const t = useTranslations();
+
   if (isError) {
-    return <MembersLoadError onRetry={onRetry} />;
+    return (
+      <EmptyState>
+        <span>{t('Members could not be loaded')}</span>
+        <Button onPress={onRetry} color="secondary" size="small">
+          {t('Try again')}
+        </Button>
+      </EmptyState>
+    );
   }
 
   return (

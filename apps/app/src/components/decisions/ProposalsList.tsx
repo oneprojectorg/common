@@ -13,6 +13,7 @@ import { Modal } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { EmptyState } from '@op/ui/EmptyState';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
