@@ -10,10 +10,10 @@ import { useTranslations } from '@/lib/i18n';
 import { EmptyProposalsState } from './EmptyProposalsState';
 import {
   ProposalCardContent,
-  ProposalCardDescription,
   ProposalCardFooter,
   ProposalCardHeader,
   ProposalCardMeta,
+  ProposalCardPreview,
 } from './ProposalCard';
 import { VotingProposalCard } from './VotingProposalCard';
 
@@ -92,7 +92,7 @@ export const MyBallot = ({
 
               <ProposalCardMeta proposal={proposal} />
 
-              <ProposalCardDescription proposal={proposal} />
+              <ProposalCardPreview proposal={proposal} />
 
               <div className="border-neutral-silver h-0 w-full border-b" />
 

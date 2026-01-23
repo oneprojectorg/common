@@ -11,8 +11,10 @@ import { parseProposalData } from '@op/common/client';
 import { getTextPreview, isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
+import { defaultViewerExtensions } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
+import { generateText } from '@tiptap/core';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
@@ -328,42 +330,20 @@ export function ProposalCardStatus({
 }
 
 /**
- * Recursively extracts plain text from TipTap JSON nodes
+ * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML)
  */
-function extractTextFromTipTapNodes(nodes: unknown[]): string {
-  const textParts: string[] = [];
-
-  for (const node of nodes) {
-    if (typeof node !== 'object' || node === null) {
-      continue;
-    }
-
-    const n = node as Record<string, unknown>;
-
-    // Direct text node
-    if (n.type === 'text' && typeof n.text === 'string') {
-      textParts.push(n.text);
-    }
-
-    // Recurse into content
-    if (Array.isArray(n.content)) {
-      textParts.push(extractTextFromTipTapNodes(n.content));
-    }
-  }
-
-  return textParts.join(' ');
-}
-
-/**
- * Gets preview text from document content (TipTap JSON or HTML)
- */
-function getDescriptionPreview(
+function getProposalContentPreview(
   documentContent: Proposal['documentContent'],
   fallbackDescription?: string,
 ): string | null {
   if (documentContent) {
     if (documentContent.type === 'json') {
-      const text = extractTextFromTipTapNodes(documentContent.content);
+      const doc = {
+        type: 'doc',
+        content:
+          documentContent.content as import('@tiptap/core').JSONContent[],
+      };
+      const text = generateText(doc, defaultViewerExtensions);
       return text.trim() || null;
     }
     if (documentContent.type === 'html') {
@@ -380,16 +360,16 @@ function getDescriptionPreview(
 }
 
 /**
- * Description text component
+ * Content preview/excerpt component
  */
-export function ProposalCardDescription({
+export function ProposalCardPreview({
   proposal,
   className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
   const { description } = parseProposalData(proposal.proposalData);
-  const previewText = getDescriptionPreview(
+  const previewText = getProposalContentPreview(
     proposal.documentContent,
     description,
   );

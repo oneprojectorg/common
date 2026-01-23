@@ -25,13 +25,13 @@ import {
   ProposalCard,
   ProposalCardActions,
   ProposalCardContent,
-  ProposalCardDescription,
   ProposalCardFooter,
   ProposalCardHeader,
   ProposalCardMenu,
   ProposalCardMeta,
   ProposalCardMetrics,
   ProposalCardOwnerActions,
+  ProposalCardPreview,
 } from './ProposalCard';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
@@ -261,7 +261,7 @@ const VotingProposalsList = ({
                     }
                   />
                   <ProposalCardMeta withLink={false} proposal={proposal} />
-                  <ProposalCardDescription proposal={proposal} />
+                  <ProposalCardPreview proposal={proposal} />
                 </ProposalCardContent>
                 <ProposalCardFooter>
                   <ButtonLink
@@ -291,7 +291,7 @@ const VotingProposalsList = ({
                       }
                     />
                     <ProposalCardMeta proposal={proposal} />
-                    <ProposalCardDescription proposal={proposal} />
+                    <ProposalCardPreview proposal={proposal} />
                   </ProposalCardContent>
                 </div>
                 <ProposalCardContent>
@@ -389,7 +389,7 @@ const ViewProposalsList = ({
                   }
                 />
                 <ProposalCardMeta proposal={proposal} />
-                <ProposalCardDescription proposal={proposal} />
+                <ProposalCardPreview proposal={proposal} />
               </ProposalCardContent>
             </div>
             <ProposalCardContent>
