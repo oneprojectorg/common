@@ -452,5 +452,10 @@
   "Form Builder": "Form Builder",
   "Criteria": "Criteria",
   "Settings": "Settings",
-  "Roles & permissions": "Roles & permissions"
+  "Roles & permissions": "Roles & permissions",
+  "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 step} other {# steps}} remaining",
+  "Process steps": "Process steps",
+  "New process": "New process",
+  "Launch": "Launch",
+  "Process": "Process"
 }

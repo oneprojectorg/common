@@ -64,7 +64,14 @@ export const ProcessBuilderHeader = ({
               color="warn"
             >
               <LuCircleAlert className="size-4 shrink-0" />
-              <span className="hidden md:block">{t('3 steps remaining')}</span>
+              <span className="hidden md:block">
+                {t(
+                  '{stepCount, plural, =1 {1 step} other {# steps}} remaining',
+                  {
+                    stepCount: 3,
+                  },
+                )}
+              </span>
             </Button>
             <Button className="h-8 rounded-sm">
               <LuPlus className="size-4" />

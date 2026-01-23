@@ -452,5 +452,10 @@
   "Form Builder": "Construtor de formulário",
   "Criteria": "Critérios",
   "Settings": "Configurações",
-  "Roles & permissions": "Funções e permissões"
+  "Roles & permissions": "Funções e permissões",
+  "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 passo restante} other {# passos restantes}}",
+  "Process steps": "Passos do processo",
+  "New process": "Novo processo",
+  "Launch": "Lançar",
+  "Process": "Processo"
 }
