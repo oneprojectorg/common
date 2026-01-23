@@ -6,7 +6,7 @@ import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
-import { parseProposalData } from '@op/common/proposal-data';
+import { parseProposalData } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
 import { RichTextViewer } from '@op/ui/RichTextEditor';

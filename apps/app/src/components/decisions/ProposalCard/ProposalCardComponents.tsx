@@ -7,7 +7,7 @@ import {
   Visibility,
   type proposalEncoder,
 } from '@op/api/encoders';
-import { parseProposalData } from '@op/common/proposal-data';
+import { parseProposalData } from '@op/common/client';
 import { getTextPreview, isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';

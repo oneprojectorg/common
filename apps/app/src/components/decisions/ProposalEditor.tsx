@@ -7,7 +7,7 @@ import {
   ProposalStatus,
   type proposalEncoder,
 } from '@op/api/encoders';
-import { parseProposalData } from '@op/common/proposal-data';
+import { parseProposalData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';

@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
-import { parseProposalData } from '@op/common/proposal-data';
+import { parseProposalData } from '@op/common/client';
 import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
