@@ -11,7 +11,7 @@ import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { LuPlus, LuUserPlus, LuUsers, LuVote } from 'react-icons/lu';
+import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -82,7 +82,8 @@ export const CreateMenu = () => {
             ) : null}
             {createDecisionEnabled && (
               <MenuItem id="create-decision" onAction={handleCreateDecision}>
-                <LuVote className="size-4" /> {t('Decision process')}
+                <LuMessageCircle className="size-4" />{' '}
+                {t('Decision-making process')}
               </MenuItem>
             )}
           </Menu>
