@@ -439,5 +439,8 @@
   "How do you want to structure your decision-making process?": "Como você deseja estruturar seu processo de tomada de decisão?",
   "No templates found": "Nenhum modelo encontrado",
   "Members could not be loaded": "Não foi possível carregar os membros",
-  "Try again": "Tentar novamente"
+  "Try again": "Tentar novamente",
+  "Role updated successfully": "Função atualizada com sucesso",
+  "Failed to update role": "Falha ao atualizar a função",
+  "Members list": "Lista de membros"
 }

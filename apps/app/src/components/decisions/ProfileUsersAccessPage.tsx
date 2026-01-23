@@ -38,6 +38,7 @@ export const ProfileUsersAccessPage = ({
     useCursorPagination(ITEMS_PER_PAGE);
 
   // Reset pagination when search or sort changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset is intentionally excluded to avoid infinite loop
   useEffect(() => {
     reset();
   }, [debouncedQuery, sortDescriptor.column, sortDescriptor.direction]);
@@ -81,7 +82,7 @@ export const ProfileUsersAccessPage = ({
         placeholder={t('Search')}
         value={searchQuery}
         onChange={setSearchQuery}
-        className="w-[368px]"
+        className="w-full max-w-96"
       />
 
       <ProfileUsersAccessTable

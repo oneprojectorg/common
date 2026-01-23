@@ -170,7 +170,7 @@ const ProfileUsersAccessTableContent = ({
             const displayName =
               profileUser.profile?.name ||
               profileUser.name ||
-              profileUser.email.split('@')[0];
+              (profileUser.email?.split('@')?.[0] ?? 'Unknown');
             const currentRole = profileUser.roles[0];
             const status = getProfileUserStatus(profileUser);
 
