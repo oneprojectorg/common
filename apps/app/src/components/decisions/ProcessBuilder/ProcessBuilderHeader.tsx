@@ -2,6 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { Key } from '@op/ui/RAC';
+import { Sidebar, SidebarTrigger } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { LuChevronRight, LuCircleAlert, LuHouse, LuPlus } from 'react-icons/lu';
 
@@ -27,17 +28,25 @@ export const ProcessBuilderHeader = ({
     setStep(String(key));
   };
 
+  const hasSteps = visibleSteps.length > 0;
+
   return (
-    <header className="relative sticky top-0 z-30 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
-      <div className="relative z-10 hidden items-center gap-2 pl-4 md:flex md:pl-8">
-        <Link href="/" className="flex items-center gap-2 text-primary">
-          <LuHouse className="size-4" />
-          {t('Home')}
-        </Link>
-        <LuChevronRight className="size-4" />
+    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
+      <div className="relative z-10 flex items-center gap-2 pl-4 md:pl-8">
+        {hasSteps ? (
+          <SidebarTrigger />
+        ) : (
+          <>
+            <Link href="/" className="flex items-center gap-2 text-primary">
+              <LuHouse className="size-4" />
+              {t('Home')}
+            </Link>
+            <LuChevronRight className="size-4" />
+          </>
+        )}
         <span>{processName || t('New process')}</span>
       </div>
-      {visibleSteps.length > 0 && (
+      {hasSteps && (
         <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
           <Tabs
             selectedKey={currentStep?.id}
@@ -58,7 +67,7 @@ export const ProcessBuilderHeader = ({
         </nav>
       )}
       <div className="relative z-10 flex gap-4 pr-4 md:pr-8">
-        {visibleSteps.length > 0 && (
+        {hasSteps && (
           <div className="flex gap-2">
             <Button
               className="flex aspect-square h-8 gap-2 rounded-sm md:aspect-auto"
@@ -83,6 +92,39 @@ export const ProcessBuilderHeader = ({
         )}
         <UserAvatarMenu className="hidden md:block" />
       </div>
+      {hasSteps && (
+        <Sidebar className="z-30">
+          <nav className="flex flex-col gap-2 px-4 py-2">
+            <Link href="/" className="flex h-8 items-center gap-2 px-4">
+              <LuHouse className="size-4" />
+              {t('Home')}
+            </Link>
+            <hr />
+
+            <Tabs
+              selectedKey={currentStep?.id}
+              onSelectionChange={handleSelectionChange}
+              className="h-full"
+            >
+              <TabList
+                aria-label={t('Process steps')}
+                className="w-full flex-col gap-1 border-none"
+              >
+                {visibleSteps.map((step) => (
+                  <Tab
+                    key={step.id}
+                    id={step.id}
+                    variant="pill"
+                    className="h-8 bg-transparent selected:bg-neutral-offWhite"
+                  >
+                    {t(step.labelKey)}
+                  </Tab>
+                ))}
+              </TabList>
+            </Tabs>
+          </nav>
+        </Sidebar>
+      )}
     </header>
   );
 };
