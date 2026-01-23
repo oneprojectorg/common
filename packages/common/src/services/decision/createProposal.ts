@@ -21,13 +21,14 @@ import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
+import type { ProposalDataInput } from './proposalDataSchema';
 import type { DecisionSchemaDefinition } from './schemas/types';
-import type { InstanceData, ProposalData } from './types';
+import type { InstanceData } from './types';
 import { checkProposalsAllowed } from './utils/proposal';
 
 export interface CreateProposalInput {
   processInstanceId: string;
-  proposalData: ProposalData;
+  proposalData: ProposalDataInput;
   attachmentIds?: string[];
 }
 

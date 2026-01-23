@@ -538,7 +538,11 @@ export class TestDecisionsDataManager {
   }: {
     callerEmail: string;
     processInstanceId: string;
-    proposalData: { title: string; description: string };
+    proposalData: {
+      title: string;
+      description?: string;
+      collaborationDocId?: string;
+    };
   }) {
     this.ensureCleanupRegistered();
 

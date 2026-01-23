@@ -156,12 +156,6 @@ export interface RuleCondition {
   field?: string; // For custom field rules
 }
 
-// Proposal Data Structure
-export interface ProposalData {
-  // Proposal content should match the proposalTemplate schema
-  [key: string]: unknown;
-}
-
 // Decision Data Structure
 export interface DecisionData {
   // Decision content should match the decisionDefinition schema

@@ -1,7 +1,7 @@
 import { and, asc, db, desc, eq, ilike, inArray, or, sql } from '@op/db/client';
+import type { ProposalStatus } from '@op/db/schema';
 import {
   ProfileRelationshipType,
-  ProposalStatus,
   Visibility,
   organizations,
   posts,
@@ -11,7 +11,7 @@ import {
   proposalCategories,
   proposals,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { assertAccess, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
@@ -21,6 +21,8 @@ import {
   getOrgAccessUser,
   getProfileAccessUser,
 } from '../access';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { parseProposalData } from './proposalDataSchema';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -212,11 +214,11 @@ export const listProposals = async ({
   const count = countResult[0]?.count || 0;
 
   // Get relationship data for all proposal profiles using optimized Drizzle queries
-  const proposalIds = proposalList
+  const profileIds = proposalList
     .map((p: any) => p.profileId)
     .filter((id: any): id is string => Boolean(id));
 
-  let relationshipData = new Map<
+  const relationshipData = new Map<
     string,
     {
       likesCount: number;
@@ -227,52 +229,67 @@ export const listProposals = async ({
     }
   >();
 
-  if (proposalIds.length > 0) {
-    // Optimized: Get relationship counts, user relationships, and comment counts in parallel
-    const [relationshipCounts, userRelationships, commentCounts] =
-      await Promise.all([
-        // Get relationship counts for all profile IDs (likes and follows)
-        db
-          .select({
-            targetProfileId: profileRelationships.targetProfileId,
-            relationshipType: profileRelationships.relationshipType,
-            count: countFn(),
-          })
-          .from(profileRelationships)
-          .where(inArray(profileRelationships.targetProfileId, proposalIds))
-          .groupBy(
-            profileRelationships.targetProfileId,
-            profileRelationships.relationshipType,
-          ),
-
-        // Get user's relationships to these profiles
-        db
-          .select({
-            targetProfileId: profileRelationships.targetProfileId,
-            relationshipType: profileRelationships.relationshipType,
-          })
-          .from(profileRelationships)
-          .where(
-            and(
-              eq(profileRelationships.sourceProfileId, currentProfileId),
-              inArray(profileRelationships.targetProfileId, proposalIds),
+  // Fetch relationship data and document contents in parallel
+  const [relationshipResults, documentContentMap] = await Promise.all([
+    // Get relationship data if there are profile IDs
+    profileIds.length > 0
+      ? Promise.all([
+          // Get relationship counts for all profile IDs (likes and follows)
+          db
+            .select({
+              targetProfileId: profileRelationships.targetProfileId,
+              relationshipType: profileRelationships.relationshipType,
+              count: countFn(),
+            })
+            .from(profileRelationships)
+            .where(inArray(profileRelationships.targetProfileId, profileIds))
+            .groupBy(
+              profileRelationships.targetProfileId,
+              profileRelationships.relationshipType,
             ),
-          ),
 
-        // Get comment counts for all profile IDs
-        db
-          .select({
-            profileId: postsToProfiles.profileId,
-            count: countFn(),
-          })
-          .from(posts)
-          .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-          .where(inArray(postsToProfiles.profileId, proposalIds))
-          .groupBy(postsToProfiles.profileId),
-      ]);
+          // Get user's relationships to these profiles
+          db
+            .select({
+              targetProfileId: profileRelationships.targetProfileId,
+              relationshipType: profileRelationships.relationshipType,
+            })
+            .from(profileRelationships)
+            .where(
+              and(
+                eq(profileRelationships.sourceProfileId, currentProfileId),
+                inArray(profileRelationships.targetProfileId, profileIds),
+              ),
+            ),
 
-    // Build the relationship data map efficiently
-    proposalIds.forEach((profileId: string) => {
+          // Get comment counts for all profile IDs
+          db
+            .select({
+              profileId: postsToProfiles.profileId,
+              count: countFn(),
+            })
+            .from(posts)
+            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
+            .where(inArray(postsToProfiles.profileId, profileIds))
+            .groupBy(postsToProfiles.profileId),
+        ])
+      : Promise.resolve(null),
+
+    // Get document contents for all proposals
+    getProposalDocumentsContent(
+      proposalList.map((p: any) => ({
+        id: p.id,
+        proposalData: p.proposalData,
+      })),
+    ),
+  ]);
+
+  // Build the relationship data map if we have results
+  if (relationshipResults) {
+    const [relationshipCounts, userRelationships, commentCounts] =
+      relationshipResults;
+
+    for (const profileId of profileIds) {
       const likesCount =
         relationshipCounts.find(
           (rc) =>
@@ -309,7 +326,7 @@ export const listProposals = async ({
         isFollowedByUser,
         commentsCount: Number(commentsCount),
       });
-    });
+    }
   }
 
   // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
@@ -340,7 +357,7 @@ export const listProposals = async ({
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
-      proposalData: proposal.proposalData,
+      proposalData: parseProposalData(proposal.proposalData),
       status: proposal.status,
       visibility: proposal.visibility,
       createdAt: proposal.createdAt,
@@ -355,6 +372,7 @@ export const listProposals = async ({
       isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
       commentsCount: relationshipInfo?.commentsCount || 0,
       isEditable,
+      documentContent: documentContentMap.get(proposal.id),
     };
   });
 

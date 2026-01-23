@@ -31,6 +31,7 @@ export * from './getResultsStats';
 export * from './selectionPipeline';
 
 // Proposal management
+export * from './proposalDataSchema';
 export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';
@@ -41,6 +42,7 @@ export * from './getProcessCategories';
 export * from './exportProposals';
 export * from './getExportStatus';
 export * from './exports';
+export * from './getProposalDocumentsContent';
 
 // Voting management
 export * from './voting';

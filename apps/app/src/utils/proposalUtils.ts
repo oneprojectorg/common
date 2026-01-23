@@ -1,38 +1,3 @@
-import { z } from 'zod';
-
-import { formatCurrency, formatDate } from './formatting';
-
-// Define the expected structure of proposalData with better type safety
-export const proposalDataSchema = z
-  .looseObject({
-    title: z.string().optional(),
-    description: z.string().optional(), // Schema expects 'description'
-    content: z.string().optional(), // Keep for backward compatibility
-    category: z.string().optional(),
-    budget: z.number().optional(),
-    attachmentIds: z.array(z.string()).optional().prefault([]),
-  }) // Allow additional fields
-  .transform((data) => {
-    // Handle backward compatibility: if content exists but not description, use content as description
-    if (data.content && !data.description) {
-      data.description = data.content;
-    }
-    return data;
-  });
-
-export type ProposalData = z.infer<typeof proposalDataSchema>;
-
-/**
- * Safely parse proposal data with fallback to unknown structure
- */
-export function parseProposalData(proposalData: unknown): ProposalData {
-  const result = proposalDataSchema.safeParse(proposalData);
-  return result.success ? result.data : (proposalData as any) || {};
-}
-
-// Re-export formatting utilities for backward compatibility
-export { formatCurrency, formatDate };
-
 /**
  * Extract unique submitters from proposals for display components like FacePile
  */

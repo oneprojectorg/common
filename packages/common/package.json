@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
     "./realtime": "./src/realtime/index.ts",
+    "./client": "./src/client.ts",
     "./src/services/access": "./src/services/access/index.ts",
     "./src/*": "./src/*"
   },
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@op/cache": "workspace:*",
+    "@op/collab": "workspace:*",
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",

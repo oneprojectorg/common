@@ -1,3 +1,4 @@
+import { mockCollab } from '@op/collab/testing';
 import { Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -392,6 +393,69 @@ describe.concurrent('listProposals', () => {
     expect(page2.hasMore).toBe(false);
   });
 
+  it('should return parsed proposalData with correct structure for new and legacy proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create proposals with different data formats in parallel
+    const [newFormatProposal, legacyProposal, caller] = await Promise.all([
+      // New format: uses collaborationDocId
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'New Format Proposal',
+          collaborationDocId: 'doc-123',
+        },
+      }),
+      // Legacy format: uses description field (HTML content)
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Legacy Proposal',
+          description: '<p>HTML content from legacy editor</p>',
+        },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(2);
+
+    const newFormat = result.proposals.find(
+      (p) => p.id === newFormatProposal.id,
+    );
+    const legacy = result.proposals.find((p) => p.id === legacyProposal.id);
+
+    // New format proposal should have collaborationDocId
+    expect(newFormat?.proposalData).toMatchObject({
+      title: 'New Format Proposal',
+      collaborationDocId: 'doc-123',
+    });
+
+    // Legacy proposal should have description (HTML content)
+    expect(legacy?.proposalData).toMatchObject({
+      title: 'Legacy Proposal',
+      description: '<p>HTML content from legacy editor</p>',
+    });
+  });
+
   it('should return empty list for instance with no proposals', async ({
     task,
     onTestFinished,
@@ -457,5 +521,274 @@ describe.concurrent('listProposals', () => {
         processInstanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
+  it('should return html documentContent for legacy proposals with description', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const htmlDescription = '<p>This is <strong>rich</strong> content</p>';
+
+    const [proposal, caller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Legacy Proposal',
+          description: htmlDescription,
+        },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    expect(foundProposal?.documentContent).toEqual({
+      type: 'html',
+      content: htmlDescription,
+    });
+  });
+
+  it('should return json documentContent when collaborationDocId exists and TipTap returns content', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const collaborationDocId = `proposal-${instance.instance.id}-test-doc`;
+    const mockTipTapContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Hello from TipTap' }],
+        },
+      ],
+    };
+
+    // Configure mock to return TipTap content
+    mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
+
+    const [proposal, caller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Collab Proposal',
+          collaborationDocId,
+        },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    expect(foundProposal?.documentContent).toEqual({
+      type: 'json',
+      content: mockTipTapContent.content,
+    });
+  });
+
+  it('should return undefined documentContent when TipTap fetch fails', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const collaborationDocId = `proposal-${instance.instance.id}-nonexistent`;
+
+    // Mock returns 404 by default for unknown docIds (no explicit setup needed)
+
+    const [proposal, caller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Failed Fetch Proposal',
+          collaborationDocId,
+        },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    // When TipTap fetch fails, documentContent should be undefined
+    expect(foundProposal?.documentContent).toBeUndefined();
+  });
+
+  it('should fetch multiple TipTap documents in parallel', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const docId1 = `proposal-${instance.instance.id}-doc1`;
+    const docId2 = `proposal-${instance.instance.id}-doc2`;
+
+    const mockContent1 = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Doc 1' }] },
+      ],
+    };
+    const mockContent2 = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Doc 2' }] },
+      ],
+    };
+
+    mockCollab.setDocResponse(docId1, mockContent1);
+    mockCollab.setDocResponse(docId2, mockContent2);
+
+    const [proposal1, proposal2, caller] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal 1', collaborationDocId: docId1 },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal 2', collaborationDocId: docId2 },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const found1 = result.proposals.find((p) => p.id === proposal1.id);
+    const found2 = result.proposals.find((p) => p.id === proposal2.id);
+
+    expect(found1?.documentContent).toEqual({
+      type: 'json',
+      content: mockContent1.content,
+    });
+    expect(found2?.documentContent).toEqual({
+      type: 'json',
+      content: mockContent2.content,
+    });
+  });
+
+  it('should handle mixed proposal types (collab, legacy, empty)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const collaborationDocId = `proposal-${instance.instance.id}-mixed`;
+    const mockTipTapContent = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'TipTap' }] },
+      ],
+    };
+    mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
+
+    const [collabProposal, legacyProposal, emptyProposal, caller] =
+      await Promise.all([
+        testData.createProposal({
+          callerEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Collab', collaborationDocId },
+        }),
+        testData.createProposal({
+          callerEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Legacy', description: '<p>HTML</p>' },
+        }),
+        testData.createProposal({
+          callerEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Empty' }, // No content
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+      ]);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const foundCollab = result.proposals.find(
+      (p) => p.id === collabProposal.id,
+    );
+    const foundLegacy = result.proposals.find(
+      (p) => p.id === legacyProposal.id,
+    );
+    const foundEmpty = result.proposals.find((p) => p.id === emptyProposal.id);
+
+    expect(foundCollab?.documentContent).toEqual({
+      type: 'json',
+      content: mockTipTapContent.content,
+    });
+    expect(foundLegacy?.documentContent).toEqual({
+      type: 'html',
+      content: '<p>HTML</p>',
+    });
+    expect(foundEmpty?.documentContent).toBeUndefined();
   });
 });
