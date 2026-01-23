@@ -31,23 +31,28 @@ export function getProposalContent(
 
 /**
  * Extracts plain text preview from proposal content (TipTap JSON or legacy HTML).
+ * For HTML content, maxLines controls truncation. For JSON content, truncation
+ * is handled via CSS line-clamp in the rendering component.
  */
 export function getProposalContentPreview(
   documentContent?: DocumentContent,
-  maxLines = 3,
 ): string | null {
   if (!documentContent) {
     return null;
   }
 
   if (documentContent.type === 'json') {
-    const doc = {
-      type: 'doc',
-      content: documentContent.content as JSONContent[],
-    };
-    const text = generateText(doc, defaultViewerExtensions);
-    return text.trim() || null;
+    try {
+      const doc = {
+        type: 'doc',
+        content: documentContent.content as JSONContent[],
+      };
+      const text = generateText(doc, defaultViewerExtensions);
+      return text.trim() || null;
+    } catch {
+      return null;
+    }
   }
 
-  return getTextPreview({ content: documentContent.content, maxLines });
+  return getTextPreview({ content: documentContent.content, maxLines: 3 });
 }
