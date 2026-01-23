@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -35,6 +35,15 @@ export const getOrganizationUsers = async ({
         with: {
           accessRole: true,
         },
+        // Correlated subquery to sort by role name. Drizzle's relational queries
+        // don't support ordering nested relations by a joined table's column directly.
+        // Performance is acceptable here: roles per user are few (1-3), and the
+        // subquery hits the primary key index on access_roles.
+        orderBy: (table, { asc }) => [
+          asc(
+            sql`(SELECT name FROM access_roles WHERE id = ${table.accessRoleId})`,
+          ),
+        ],
       },
       serviceUser: {
         with: {
