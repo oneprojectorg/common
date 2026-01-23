@@ -3,17 +3,16 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
+import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
-import { EmptyState } from '@op/ui/EmptyState';
-import { LuLeaf } from 'react-icons/lu';
-
 import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,

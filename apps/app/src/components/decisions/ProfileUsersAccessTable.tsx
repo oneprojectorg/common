@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { profileUserEncoder } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -20,7 +21,6 @@ import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { EmptyState } from '@op/ui/EmptyState';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 // Infer the ProfileUser type from the encoder

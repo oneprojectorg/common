@@ -6,6 +6,7 @@ import { Header3 } from '@op/ui/Header';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
 import {
   ProposalCard,
   ProposalCardContent,
