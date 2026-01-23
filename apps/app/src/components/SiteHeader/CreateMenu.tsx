@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType, ProcessStatus } from '@op/api/encoders';
@@ -12,7 +13,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LuPlus, LuUserPlus, LuUsers, LuVote } from 'react-icons/lu';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useTranslations } from '@/lib/i18n';
 
 import { InviteUserModal } from '../InviteUserModal';
