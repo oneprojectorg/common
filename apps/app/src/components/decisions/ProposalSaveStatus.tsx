@@ -22,22 +22,13 @@ export function ProposalSaveStatus({
   const relativeTime = useRelativeTime(lastSavedAt ?? new Date());
 
   const getStatusText = () => {
-    switch (saveStatus) {
-      case 'saving':
-        return t('Saving...');
-      case 'error':
-        return t('Error saving');
-      case 'saved':
-        if (lastSavedAt) {
-          return `${t('Saved')} ${relativeTime}`;
-        }
-        return t('Saved');
-      default:
-        if (lastSavedAt) {
-          return `${t('Saved')} ${relativeTime}`;
-        }
-        return null;
+    if (saveStatus === 'error') {
+      return t('Error saving');
     }
+    if (lastSavedAt) {
+      return `${t('Saved')} ${relativeTime}`;
+    }
+    return null;
   };
 
   const statusText = getStatusText();

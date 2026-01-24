@@ -109,20 +109,6 @@ export function useTiptapCollab({
     };
   }, [docId, enabled, ydoc, handleStatelessMessage]);
 
-  // Track document changes to show "saving" status
-  useEffect(() => {
-    const handleUpdate = () => {
-      if (status === 'connected') {
-        setSaveStatus('saving');
-      }
-    };
-
-    ydoc.on('update', handleUpdate);
-    return () => {
-      ydoc.off('update', handleUpdate);
-    };
-  }, [ydoc, status]);
-
   return {
     ydoc,
     provider,
