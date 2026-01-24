@@ -1,3 +1,4 @@
+import { Channels } from '@op/common';
 import { and, count, db, desc, eq, inArray } from '@op/db/client';
 import { pollVotes, polls, users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
@@ -141,6 +142,11 @@ export const listByTargetRouter = router({
           userId: user.id,
           count: pollsWithCounts.length,
         });
+
+        // Register realtime channel for proposal polls
+        if (targetType === 'proposal') {
+          ctx.registerQueryChannels([Channels.proposalPolls(targetId)]);
+        }
 
         return { polls: pollsWithCounts };
       } catch (error) {
