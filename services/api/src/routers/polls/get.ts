@@ -1,7 +1,7 @@
 // TODO: Re-enable when permission checks are restored
 // import { getProfileAccessUser } from '@op/common';
-import { count, db, eq, sql } from '@op/db/client';
-import { pollVotes, polls } from '@op/db/schema';
+import { db, eq, sql } from '@op/db/client';
+import { objectsInStorage, pollVotes, polls, users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 // import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
@@ -13,9 +13,17 @@ const getPollInputSchema = z.object({
   pollId: z.string().uuid(),
 });
 
+const voterSchema = z.object({
+  userId: z.string().uuid(),
+  name: z.string().nullable(),
+  email: z.string(),
+  avatarImageName: z.string().nullable(),
+});
+
 const pollOptionWithCountSchema = z.object({
   text: z.string(),
   voteCount: z.number(),
+  voters: z.array(voterSchema),
 });
 
 const getPollOutputSchema = z.object({
@@ -78,22 +86,50 @@ export const getRouter = router({
       // assertAccess({ profile: permission.READ }, profileUser.roles);
 
       try {
-        // Get vote counts grouped by option index
-        const voteCounts = await db
+        // Get all votes with voter info
+        const votes = await db
           .select({
             optionIndex: pollVotes.optionIndex,
-            count: count(),
+            userId: pollVotes.userId,
+            userName: users.name,
+            avatarImageName: objectsInStorage.name,
           })
           .from(pollVotes)
-          .where(eq(pollVotes.pollId, pollId))
-          .groupBy(pollVotes.optionIndex);
+          .innerJoin(users, eq(pollVotes.userId, users.id))
+          .leftJoin(
+            objectsInStorage,
+            eq(users.avatarImageId, objectsInStorage.id),
+          )
+          .where(eq(pollVotes.pollId, pollId));
 
-        // Create a map of option index to count
+        // Build vote counts and voters per option
         const voteCountMap = new Map<number, number>();
+        const votersMap = new Map<
+          number,
+          Array<{
+            userId: string;
+            name: string | null;
+            avatarImageName: string | null;
+          }>
+        >();
         let totalVotes = 0;
-        for (const vc of voteCounts) {
-          voteCountMap.set(vc.optionIndex, vc.count);
-          totalVotes += vc.count;
+
+        for (const vote of votes) {
+          // Increment count
+          voteCountMap.set(
+            vote.optionIndex,
+            (voteCountMap.get(vote.optionIndex) ?? 0) + 1,
+          );
+          totalVotes += 1;
+
+          // Add voter
+          const voters = votersMap.get(vote.optionIndex) ?? [];
+          voters.push({
+            userId: vote.userId,
+            name: vote.userName,
+            avatarImageName: vote.avatarImageName,
+          });
+          votersMap.set(vote.optionIndex, voters);
         }
 
         // Get current user's vote
@@ -105,10 +141,11 @@ export const getRouter = router({
           )
           .limit(1);
 
-        // Transform options with vote counts
+        // Transform options with vote counts and voters
         const optionsWithCounts = poll.options.map((option, index) => ({
           text: option.text,
           voteCount: voteCountMap.get(index) ?? 0,
+          voters: votersMap.get(index) ?? [],
         }));
 
         logger.info('Poll retrieved', {

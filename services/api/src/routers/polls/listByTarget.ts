@@ -1,6 +1,6 @@
 import { Channels } from '@op/common';
-import { and, count, db, desc, eq, inArray } from '@op/db/client';
-import { pollVotes, polls, users } from '@op/db/schema';
+import { and, db, desc, eq, inArray } from '@op/db/client';
+import { objectsInStorage, pollVotes, polls, users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -13,9 +13,16 @@ const listByTargetInputSchema = z.object({
   targetId: z.string().uuid(),
 });
 
+const voterSchema = z.object({
+  userId: z.string().uuid(),
+  name: z.string().nullable(),
+  avatarImageName: z.string().nullable(),
+});
+
 const pollOptionWithCountSchema = z.object({
   text: z.string(),
   voteCount: z.number(),
+  voters: z.array(voterSchema),
 });
 
 const pollSummarySchema = z.object({
@@ -60,17 +67,23 @@ export const listByTargetRouter = router({
           return { polls: [] };
         }
 
-        // Get vote counts for all polls in one query
+        // Get all votes with voter info for all polls in one query
         const pollIds = targetPolls.map((p) => p.id);
-        const voteCounts = await db
+        const votes = await db
           .select({
             pollId: pollVotes.pollId,
             optionIndex: pollVotes.optionIndex,
-            count: count(),
+            oduserId: pollVotes.userId,
+            userName: users.name,
+            avatarImageName: objectsInStorage.name,
           })
           .from(pollVotes)
-          .where(inArray(pollVotes.pollId, pollIds))
-          .groupBy(pollVotes.pollId, pollVotes.optionIndex);
+          .innerJoin(users, eq(pollVotes.userId, users.id))
+          .leftJoin(
+            objectsInStorage,
+            eq(users.avatarImageId, objectsInStorage.id),
+          )
+          .where(inArray(pollVotes.pollId, pollIds));
 
         // Look up the user record by authUserId (ctx.user.id is the Supabase auth user ID)
         const [dbUser] = await db
@@ -78,41 +91,55 @@ export const listByTargetRouter = router({
           .from(users)
           .where(eq(users.authUserId, user.id));
 
-        // Get current user's votes for all polls (only if user exists)
-        const userVotes = dbUser
-          ? await db
-              .select({
-                pollId: pollVotes.pollId,
-                optionIndex: pollVotes.optionIndex,
-              })
-              .from(pollVotes)
-              .where(
-                and(
-                  inArray(pollVotes.pollId, pollIds),
-                  eq(pollVotes.userId, dbUser.id),
-                ),
-              )
-          : [];
-
-        // Build maps for quick lookup
+        // Build maps for vote counts, voters, and user votes
+        type Voter = {
+          userId: string;
+          name: string | null;
+          avatarImageName: string | null;
+        };
         const voteCountMap = new Map<string, Map<number, number>>();
-        for (const vc of voteCounts) {
-          let pollCounts = voteCountMap.get(vc.pollId);
-          if (!pollCounts) {
-            pollCounts = new Map();
-            voteCountMap.set(vc.pollId, pollCounts);
-          }
-          pollCounts.set(vc.optionIndex, vc.count);
-        }
-
+        const votersMap = new Map<string, Map<number, Voter[]>>();
         const userVoteMap = new Map<string, number>();
-        for (const uv of userVotes) {
-          userVoteMap.set(uv.pollId, uv.optionIndex);
+
+        for (const vote of votes) {
+          // Initialize poll maps if needed
+          if (!voteCountMap.has(vote.pollId)) {
+            voteCountMap.set(vote.pollId, new Map());
+            votersMap.set(vote.pollId, new Map());
+          }
+
+          const pollCounts = voteCountMap.get(vote.pollId);
+          const pollVoters = votersMap.get(vote.pollId);
+
+          if (!pollCounts || !pollVoters) {
+            continue;
+          }
+
+          // Increment count
+          pollCounts.set(
+            vote.optionIndex,
+            (pollCounts.get(vote.optionIndex) ?? 0) + 1,
+          );
+
+          // Add voter
+          const voters = pollVoters.get(vote.optionIndex) ?? [];
+          voters.push({
+            userId: vote.oduserId,
+            name: vote.userName,
+            avatarImageName: vote.avatarImageName,
+          });
+          pollVoters.set(vote.optionIndex, voters);
+
+          // Track current user's vote
+          if (dbUser && vote.oduserId === dbUser.id) {
+            userVoteMap.set(vote.pollId, vote.optionIndex);
+          }
         }
 
-        // Transform polls with counts
+        // Transform polls with counts and voters
         const pollsWithCounts = targetPolls.map((poll) => {
           const pollVoteCounts = voteCountMap.get(poll.id) ?? new Map();
+          const pollVoters = votersMap.get(poll.id) ?? new Map();
           let totalVotes = 0;
 
           const optionsWithCounts = poll.options.map((option, index) => {
@@ -121,6 +148,7 @@ export const listByTargetRouter = router({
             return {
               text: option.text,
               voteCount,
+              voters: pollVoters.get(index) ?? [],
             };
           });
 

@@ -1,10 +1,14 @@
 'use client';
 
 import { usePollSubscription } from '@/hooks/usePollSubscription';
+import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { Avatar } from '@op/ui/Avatar';
+import { FacePile } from '@op/ui/FacePile';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { cn } from '@op/ui/utils';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useState } from 'react';
 
 /**
@@ -145,28 +149,52 @@ export function PollParticipateDialog({
                     </span>
                   </div>
 
-                  {/* Percentage + count */}
-                  <div className="flex items-baseline gap-1.5">
-                    <span
-                      className={cn(
-                        'text-base font-bold tabular-nums transition-colors',
-                        percentage > 50
-                          ? 'text-white'
-                          : 'text-neutral-charcoal',
-                      )}
-                    >
-                      {percentage}%
-                    </span>
-                    <span
-                      className={cn(
-                        'text-xs tabular-nums transition-colors',
-                        percentage > 50
-                          ? 'text-white/70'
-                          : 'text-neutral-charcoal/60',
-                      )}
-                    >
-                      ({option.voteCount})
-                    </span>
+                  {/* Voters + Percentage */}
+                  <div className="flex items-center gap-2">
+                    {option.voters.length > 0 && (
+                      <FacePile
+                        className="gap-0"
+                        items={option.voters.slice(0, 5).map((voter) => (
+                          <Avatar
+                            key={voter.userId}
+                            placeholder={voter.name || '?'}
+                            className="size-6 border border-white text-xs"
+                          >
+                            {voter.avatarImageName ? (
+                              <Image
+                                src={getPublicUrl(voter.avatarImageName) ?? ''}
+                                alt={voter.name || ''}
+                                width={24}
+                                height={24}
+                                className="aspect-square object-cover"
+                              />
+                            ) : null}
+                          </Avatar>
+                        ))}
+                      />
+                    )}
+                    <div className="flex items-baseline gap-1.5">
+                      <span
+                        className={cn(
+                          'text-base font-bold tabular-nums transition-colors',
+                          percentage > 50
+                            ? 'text-white'
+                            : 'text-neutral-charcoal',
+                        )}
+                      >
+                        {percentage}%
+                      </span>
+                      <span
+                        className={cn(
+                          'text-xs tabular-nums transition-colors',
+                          percentage > 50
+                            ? 'text-white/70'
+                            : 'text-neutral-charcoal/60',
+                        )}
+                      >
+                        ({option.voteCount})
+                      </span>
+                    </div>
                   </div>
                 </div>
 
