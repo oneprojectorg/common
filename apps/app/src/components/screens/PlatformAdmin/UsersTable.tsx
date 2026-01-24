@@ -1,6 +1,7 @@
 'use client';
 
 import type { RouterInput } from '@op/api/client';
+import { syncUsersToCollection } from '@op/api/collections';
 import { trpcClient, trpcOptions } from '@op/api/trpcTanstackQuery';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Menu, MenuItem } from '@op/ui/Menu';
@@ -176,7 +177,7 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
   // Reset pagination when search query changes
   useEffect(() => {
     reset();
-  }, [searchQuery]);
+  }, [reset, searchQuery]);
 
   const queryInput: ListAllUsersInput = {
     cursor,
@@ -189,6 +190,11 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
   );
 
   const { items: users, next, hasMore, total } = data;
+
+  // Sync users to TanStack DB collection for optimistic updates
+  useEffect(() => {
+    syncUsersToCollection(users, { replace: true });
+  }, [users]);
 
   const onNext = () => {
     if (hasMore && next) {

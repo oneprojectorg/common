@@ -3,6 +3,7 @@
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
+import { useUser } from '@op/api/collections';
 import { trpcOptions } from '@op/api/trpcTanstackQuery';
 import { useRelativeTime } from '@op/hooks';
 import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
@@ -28,12 +29,18 @@ type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
 type User = ListAllUsersOutput['items'][number];
 type OrganizationUsers = User['organizationUsers'];
 
-export const UsersRow = ({ user }: { user: User }) => {
+export const UsersRow = ({ user: initialUser }: { user: User }) => {
   const format = useFormatter();
   const t = useTranslations();
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
+
+  // Subscribe to user changes from the collection for optimistic updates
+  // Falls back to the initial user data if not yet in collection
+  const collectionUser = useUser(initialUser.id);
+  const user = collectionUser ?? initialUser;
+
   const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
   const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
   const lastSignInAt = user.authUser?.lastSignInAt

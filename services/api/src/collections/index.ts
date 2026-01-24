@@ -5,4 +5,12 @@
  * in the platform admin screens.
  */
 
-export { usersCollection, type CommonUser } from './users';
+export {
+  usersCollection,
+  syncUsersToCollection,
+  updateUserInCollection,
+  removeUserFromCollection,
+  type CommonUser,
+} from './users';
+
+export { useUser } from './useUser';
