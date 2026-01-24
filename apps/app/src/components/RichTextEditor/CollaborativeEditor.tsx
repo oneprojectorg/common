@@ -11,12 +11,14 @@ import {
   useRichTextEditor,
 } from '@op/ui/RichTextEditor';
 import Snapshot from '@tiptap-pro/extension-snapshot';
+import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
 import type { Editor, Extensions } from '@tiptap/react';
 import { forwardRef, useEffect, useImperativeHandle, useMemo } from 'react';
+import type { Doc } from 'yjs';
 
-/** Autoversioning interval in seconds (creates snapshot every 30s if document changed) */
-const AUTOVERSION_INTERVAL_SECONDS = 3;
+// How often to create a snapshot in version history
+const AUTOVERSION_INTERVAL_SECONDS = 900; // 15 minutes
 
 export interface CollaborativeEditorRef {
   editor: Editor | null;
@@ -82,18 +84,14 @@ export const CollaborativeEditor = forwardRef<
   },
 );
 
-interface CollaborativeEditorInnerProps {
-  ydoc: import('yjs').Doc;
-  provider: import('@tiptap-pro/provider').TiptapCollabProvider;
+interface CollaborativeEditorInnerProps
+  extends Omit<CollaborativeEditorProps, 'docId'> {
+  ydoc: Doc;
+  provider: TiptapCollabProvider;
   status: CollabStatus;
   isSynced: boolean;
   saveStatus: SaveStatus;
   lastSavedAt: Date | null;
-  extensions?: Extensions;
-  placeholder?: string;
-  onEditorReady?: (editor: Editor) => void;
-  className?: string;
-  editorClassName?: string;
 }
 
 /** Inner component that renders after provider is ready */
@@ -121,12 +119,7 @@ const CollaborativeEditorInner = forwardRef<
       () => [
         ...extensions,
         Collaboration.configure({ document: ydoc }),
-        Snapshot.configure({
-          provider,
-          onUpdate: (payload) => {
-            console.log('[Snapshot] onUpdate:', payload);
-          },
-        }),
+        Snapshot.configure({ provider }),
       ],
       [extensions, ydoc, provider],
     );
@@ -143,15 +136,10 @@ const CollaborativeEditorInner = forwardRef<
         return;
       }
 
-      // Configure autoversioning interval on the ydoc
       const configMap = ydoc.getMap<number>('__tiptapcollab__config');
       configMap.set('intervalSeconds', AUTOVERSION_INTERVAL_SECONDS);
 
-      // Enable autoversioning
-      if (editor.commands.toggleVersioning) {
-        console.log('[CollaborativeEditor] Enabling autoversioning');
-        editor.commands.toggleVersioning();
-      }
+      editor.commands.toggleVersioning();
     }, [editor, status, ydoc]);
 
     useImperativeHandle(
