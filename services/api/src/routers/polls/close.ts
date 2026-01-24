@@ -1,6 +1,7 @@
-import { getProfileAccessUser } from '@op/common';
+import { Channels, getProfileAccessUser } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { PollStatus, polls } from '@op/db/schema';
+import { realtime } from '@op/realtime/server';
 import { TRPCError } from '@trpc/server';
 import { type NormalizedRole, assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
@@ -112,6 +113,11 @@ export const closeRouter = router({
           userId: user.id,
           isCreator,
           isAdmin,
+        });
+
+        // Broadcast invalidation to poll subscribers
+        await realtime.publish(Channels.poll(pollId), {
+          mutationId: ctx.requestId,
         });
 
         return closeOutputSchema.parse({

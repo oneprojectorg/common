@@ -25,6 +25,12 @@ export const Channels = {
     type: 'source' | 'target';
     orgId: string;
   }) => `orgRelationshipRequest:${type}:${orgId}` as const,
+
+  /**
+   * Channel for poll live updates (votes, close events)
+   * @param pollId - The poll ID to subscribe to
+   */
+  poll: (pollId: string) => `poll:${pollId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -36,6 +42,7 @@ export type ProfileJoinRequestChannel = ReturnType<
 export type OrgRelationshipRequestChannel = ReturnType<
   typeof Channels.orgRelationshipRequest
 >;
+export type PollChannel = ReturnType<typeof Channels.poll>;
 
 /**
  * Union of all valid channel types
@@ -45,4 +52,5 @@ export type ChannelName =
   | OrgChannel
   | UserChannel
   | ProfileJoinRequestChannel
-  | OrgRelationshipRequestChannel;
+  | OrgRelationshipRequestChannel
+  | PollChannel;

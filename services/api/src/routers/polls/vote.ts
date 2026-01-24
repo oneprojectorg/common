@@ -1,6 +1,7 @@
-import { getProfileAccessUser } from '@op/common';
+import { Channels, getProfileAccessUser } from '@op/common';
 import { and, db, eq } from '@op/db/client';
 import { PollStatus, pollVotes, polls } from '@op/db/schema';
+import { realtime } from '@op/realtime/server';
 import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
@@ -90,6 +91,8 @@ export const voteRouter = router({
           )
           .limit(1);
 
+        let isNewVote = false;
+
         if (existingVote) {
           // Update existing vote
           await db
@@ -103,31 +106,32 @@ export const voteRouter = router({
             oldOptionIndex: existingVote.optionIndex,
             newOptionIndex: optionIndex,
           });
-
-          return {
+        } else {
+          // Create new vote
+          await db.insert(pollVotes).values({
             pollId,
+            userId: user.id,
             optionIndex,
-            isNewVote: false,
-          };
+          });
+
+          isNewVote = true;
+
+          logger.info('Poll vote created', {
+            pollId,
+            userId: user.id,
+            optionIndex,
+          });
         }
 
-        // Create new vote
-        await db.insert(pollVotes).values({
-          pollId,
-          userId: user.id,
-          optionIndex,
-        });
-
-        logger.info('Poll vote created', {
-          pollId,
-          userId: user.id,
-          optionIndex,
+        // Broadcast invalidation to poll subscribers
+        await realtime.publish(Channels.poll(pollId), {
+          mutationId: ctx.requestId,
         });
 
         return {
           pollId,
           optionIndex,
-          isNewVote: true,
+          isNewVote,
         };
       } catch (error) {
         logger.error('Failed to submit poll vote', {
