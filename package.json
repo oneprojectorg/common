@@ -14,7 +14,7 @@
     "deps:clean": "tsx scripts/depCheck.ts --clean && pnpm prettier --write **/package.json --write",
     "deps:override": "tsx scripts/depCheck.ts --multiuse && pnpm prettier --write **/package.json --write",
     "deps:viz": "node ./scripts/visualize-deps.mjs",
-    "dev": "turbo dev",
+    "dev": "turbo dev --ui=tui",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:changes": "git diff --name-only --diff-filter=ACM | xargs pnpx prettier --write",
     "format:check": "turbo format:check",
