@@ -189,3 +189,12 @@ export {
   profileModulesRelations,
 } from './tables/modules.sql';
 export type { Module, ProfileModule } from './tables/modules.sql';
+
+// Polling tables
+export {
+  polls,
+  PollStatus,
+  pollStatusEnum,
+  pollVotes,
+} from './tables/polls.sql';
+export type { Poll, PollOption, PollVote } from './tables/polls.sql';

@@ -55,4 +55,44 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.objectsInStorage.id,
     }),
   },
+
+  /**
+   * Poll relations
+   *
+   * profileId and createdById are NOT NULL.
+   */
+  polls: {
+    profile: r.one.profiles({
+      from: r.polls.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    createdBy: r.one.users({
+      from: r.polls.createdById,
+      to: r.users.id,
+      optional: false,
+    }),
+    votes: r.many.pollVotes({
+      from: r.polls.id,
+      to: r.pollVotes.pollId,
+    }),
+  },
+
+  /**
+   * Poll vote relations
+   *
+   * pollId and userId are NOT NULL.
+   */
+  pollVotes: {
+    poll: r.one.polls({
+      from: r.pollVotes.pollId,
+      to: r.polls.id,
+      optional: false,
+    }),
+    user: r.one.users({
+      from: r.pollVotes.userId,
+      to: r.users.id,
+      optional: false,
+    }),
+  },
 }));
