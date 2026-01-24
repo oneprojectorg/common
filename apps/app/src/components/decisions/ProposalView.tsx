@@ -23,6 +23,7 @@ import { useTranslations } from '@/lib/i18n';
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
+import { PollSection } from '../polls/PollSection';
 import { ProposalViewLayout } from './ProposalViewLayout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -218,6 +219,11 @@ export function ProposalView({
             content={proposalContent}
             editorClassName="p-0"
           />
+
+          {/* Polls Section */}
+          <div className="mt-8 border-t pt-8">
+            <PollSection targetType="proposal" targetId={currentProposal.id} />
+          </div>
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>

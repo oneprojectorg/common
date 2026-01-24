@@ -1,8 +1,6 @@
-import { getProfileAccessUser } from '@op/common';
 import { and, count, db, desc, eq, sql } from '@op/db/client';
 import { pollVotes, polls } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -12,8 +10,6 @@ const listByTargetInputSchema = z.object({
   targetType: z.string().min(1).max(100),
   /** ID of the entity */
   targetId: z.string().uuid(),
-  /** Profile (org) ID to filter by */
-  profileId: z.string().uuid(),
 });
 
 const pollOptionWithCountSchema = z.object({
@@ -41,29 +37,13 @@ export const listByTargetRouter = router({
   /**
    * List all polls attached to a specific entity.
    * Returns polls with vote counts per option.
-   * Requires read access to the profile (org).
    */
   listByTarget: commonAuthedProcedure()
     .input(listByTargetInputSchema)
     .output(listByTargetOutputSchema)
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
-      const { targetType, targetId, profileId } = input;
-
-      // Check user has access to the profile
-      const profileUser = await getProfileAccessUser({
-        user,
-        profileId,
-      });
-
-      if (!profileUser) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have access to this organization',
-        });
-      }
-
-      assertAccess({ profile: permission.READ }, profileUser.roles);
+      const { targetType, targetId } = input;
 
       try {
         // Get all polls for this target
@@ -71,11 +51,7 @@ export const listByTargetRouter = router({
           .select()
           .from(polls)
           .where(
-            and(
-              eq(polls.targetType, targetType),
-              eq(polls.targetId, targetId),
-              eq(polls.profileId, profileId),
-            ),
+            and(eq(polls.targetType, targetType), eq(polls.targetId, targetId)),
           )
           .orderBy(desc(polls.createdAt));
 
@@ -151,7 +127,6 @@ export const listByTargetRouter = router({
         logger.info('Polls listed by target', {
           targetType,
           targetId,
-          profileId,
           userId: user.id,
           count: pollsWithCounts.length,
         });
@@ -165,7 +140,6 @@ export const listByTargetRouter = router({
         logger.error('Failed to list polls by target', {
           targetType,
           targetId,
-          profileId,
           userId: user.id,
           error,
         });

@@ -1,6 +1,5 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { useTranslations } from 'next-intl';
@@ -40,19 +39,11 @@ function PollSectionContent({
   targetId: string;
 }) {
   const t = useTranslations();
-  const { user } = useUser();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const profileId = user.currentOrganization?.id;
-
-  if (!profileId) {
-    return null;
-  }
 
   const [data] = trpc.polls.listByTarget.useSuspenseQuery({
     targetType,
     targetId,
-    profileId,
   });
 
   const polls = data?.polls ?? [];

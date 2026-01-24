@@ -26,14 +26,14 @@ CREATE TABLE "polls" (
 );
 --> statement-breakpoint
 ALTER TABLE "polls" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "poll_votes_id_index" ON "poll_votes" ("id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "poll_votes_poll_id_index" ON "poll_votes" ("poll_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "poll_votes_user_id_index" ON "poll_votes" ("user_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "polls_id_index" ON "polls" ("id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "polls_profile_id_index" ON "polls" ("profile_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "polls_created_by_id_index" ON "polls" ("created_by_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "polls_status_index" ON "polls" ("status");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "polls_target_idx" ON "polls" ("target_type","target_id");--> statement-breakpoint
+CREATE INDEX "poll_votes_id_index" ON "poll_votes" ("id");--> statement-breakpoint
+CREATE INDEX "poll_votes_poll_id_index" ON "poll_votes" ("poll_id");--> statement-breakpoint
+CREATE INDEX "poll_votes_user_id_index" ON "poll_votes" ("user_id");--> statement-breakpoint
+CREATE INDEX "polls_id_index" ON "polls" ("id");--> statement-breakpoint
+CREATE INDEX "polls_profile_id_index" ON "polls" ("profile_id");--> statement-breakpoint
+CREATE INDEX "polls_created_by_id_index" ON "polls" ("created_by_id");--> statement-breakpoint
+CREATE INDEX "polls_status_index" ON "polls" ("status");--> statement-breakpoint
+CREATE INDEX "polls_target_idx" ON "polls" ("target_type","target_id");--> statement-breakpoint
 ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_poll_id_polls_id_fkey" FOREIGN KEY ("poll_id") REFERENCES "polls"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "polls" ADD CONSTRAINT "polls_profile_id_profiles_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint

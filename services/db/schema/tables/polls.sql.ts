@@ -79,13 +79,11 @@ export const polls = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.id).concurrently(),
-    index().on(table.profileId).concurrently(),
-    index().on(table.createdById).concurrently(),
-    index().on(table.status).concurrently(),
-    index('polls_target_idx')
-      .on(table.targetType, table.targetId)
-      .concurrently(),
+    index().on(table.id),
+    index().on(table.profileId),
+    index().on(table.createdById),
+    index().on(table.status),
+    index('polls_target_idx').on(table.targetType, table.targetId),
   ],
 );
 
@@ -121,9 +119,9 @@ export const pollVotes = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.id).concurrently(),
-    index().on(table.pollId).concurrently(),
-    index().on(table.userId).concurrently(),
+    index().on(table.id),
+    index().on(table.pollId),
+    index().on(table.userId),
     unique('poll_votes_poll_user_unique').on(table.pollId, table.userId),
   ],
 );
