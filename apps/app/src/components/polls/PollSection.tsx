@@ -9,7 +9,8 @@ import {
   NotificationPanelList,
 } from '@op/ui/NotificationPanel';
 import { useTranslations } from 'next-intl';
-import { Suspense, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
 import { CreatePollDialog } from './CreatePollDialog';
@@ -53,10 +54,13 @@ function PollSectionContent({
   targetId: string;
 }) {
   const t = useTranslations();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [participatingPollId, setParticipatingPollId] = useState<string | null>(
-    null,
-  );
+
+  // Get pollId from URL query params
+  const pollIdFromUrl = searchParams.get('pollId');
 
   const [data] = trpc.polls.listByTarget.useSuspenseQuery({
     targetType,
@@ -64,6 +68,27 @@ function PollSectionContent({
   });
 
   const polls = data?.polls ?? [];
+
+  // Update URL when opening/closing poll modal
+  const setParticipatingPollId = useCallback(
+    (pollId: string | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (pollId) {
+        params.set('pollId', pollId);
+      } else {
+        params.delete('pollId');
+      }
+      const newUrl = params.toString() ? `${pathname}?${params}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  // Determine if the poll from URL actually exists in this target's polls
+  const participatingPollId =
+    pollIdFromUrl && polls.some((p) => p.id === pollIdFromUrl)
+      ? pollIdFromUrl
+      : null;
 
   if (polls.length === 0) {
     return (

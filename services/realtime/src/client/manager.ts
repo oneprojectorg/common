@@ -116,7 +116,11 @@ export class RealtimeManager {
 
     // Create subscription if it doesn't exist
     if (!this.subscriptions.has(channel)) {
-      const sub = this.centrifuge.newSubscription(channel);
+      // Try to get existing subscription first (handles race conditions/StrictMode)
+      let sub = this.centrifuge.getSubscription(channel);
+      if (!sub) {
+        sub = this.centrifuge.newSubscription(channel);
+      }
 
       sub.on('publication', (ctx: PublicationContext) => {
         // Validate the message with Zod schema
