@@ -4,14 +4,13 @@ import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { useUser } from '@op/api/collections';
-import { trpcOptions } from '@op/api/trpcTanstackQuery';
 import { useRelativeTime } from '@op/hooks';
 import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
-import { Select, SelectItem } from '@op/ui/Select';
+// TODO: Select causes infinite loop with useUser - needs investigation
+// import { Select, SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
-import { useQueryClient } from '@tanstack/react-query';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
@@ -32,7 +31,6 @@ type OrganizationUsers = User['organizationUsers'];
 export const UsersRow = ({ user: initialUser }: { user: User }) => {
   const format = useFormatter();
   const t = useTranslations();
-  const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
 
@@ -152,9 +150,8 @@ export const UsersRow = ({ user: initialUser }: { user: User }) => {
           isOpen={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           onSuccess={() => {
-            queryClient.invalidateQueries(
-              trpcOptions.platform.admin.listAllUsers.queryFilter(),
-            );
+            // Don't invalidate the query - the TanStack DB collection handles
+            // optimistic updates and will be synced when the query naturally refetches
           }}
         />
       ) : null}
@@ -172,9 +169,9 @@ const UserRolesAndOrganizations = ({
 }: {
   organizationUsers: OrganizationUsers;
 }) => {
-  const [selectedOrgUserId, setSelectedOrgUserId] = useState<
-    string | undefined
-  >(organizationUsers?.[0]?.id);
+  const [selectedOrgUserId] = useState<string | undefined>(
+    organizationUsers?.[0]?.id,
+  );
 
   if (!organizationUsers || organizationUsers.length === 0) {
     return (
@@ -216,17 +213,8 @@ const UserRolesAndOrganizations = ({
         {roleNames}
       </div>
       <div className="flex items-center text-sm font-normal text-neutral-black">
-        <Select
-          className="w-full"
-          defaultSelectedKey={selectedOrgUserId}
-          onSelectionChange={(key) => setSelectedOrgUserId(String(key))}
-        >
-          {organizationUsers.map(({ id: orgUserId, organization }) => (
-            <SelectItem key={orgUserId} id={orgUserId}>
-              {organization?.profile?.name ?? 'Unknown Organization'}
-            </SelectItem>
-          ))}
-        </Select>
+        {/* TODO: Select causes infinite loop with useUser - needs investigation */}
+        {selectedOrgUser.organization?.profile?.name ?? 'Unknown Organization'}
       </div>
     </>
   );

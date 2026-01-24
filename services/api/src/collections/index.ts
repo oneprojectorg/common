@@ -10,6 +10,7 @@ export {
   syncUsersToCollection,
   updateUserInCollection,
   removeUserFromCollection,
+  ensureSyncInitialized,
   type CommonUser,
 } from './users';
 

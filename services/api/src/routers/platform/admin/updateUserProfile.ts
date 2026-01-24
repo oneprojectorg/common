@@ -1,5 +1,5 @@
 import { updateUserProfile } from '@op/common';
-import { createSBServiceClient } from '@op/supabase/server';
+import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders';
@@ -17,7 +17,7 @@ export const updateUserProfileRouter = router({
     .use(withAuthenticatedPlatformAdmin)
     .input(
       z.object({
-        authUserId: z.string(),
+        authUserId: z.string().uuid(),
         data: updateUserProfileDataSchema,
       }),
     )
@@ -26,19 +26,11 @@ export const updateUserProfileRouter = router({
       const { authUserId, data } = input;
 
       try {
-        // Get the target user by userId (authUserId in Supabase)
-        const supabase = createSBServiceClient();
-        const { data: targetUserData, error } =
-          await supabase.auth.admin.getUserById(authUserId);
-
-        if (error || !targetUserData?.user) {
-          throw new Error('User not found');
-        }
-
-        // Use the shared service function with the target user
+        // The updateUserProfile function only needs user.id to look up by authUserId
+        // We don't need to fetch from Supabase auth - just pass the authUserId directly
         const result = await updateUserProfile({
           input: data,
-          user: targetUserData.user,
+          user: { id: authUserId } as User,
         });
 
         return userEncoder.parse(result);

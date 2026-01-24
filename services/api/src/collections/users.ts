@@ -15,6 +15,9 @@ type SyncPrimitives = {
 /** Captured sync primitives for external use */
 let syncPrimitives: SyncPrimitives | null = null;
 
+/** Track last synced users to prevent redundant syncs */
+let lastSyncedUsersHash: string | null = null;
+
 /**
  * Users collection for platform admin user management.
  * Provides optimistic updates for user data with tRPC sync.
@@ -37,8 +40,6 @@ let syncPrimitives: SyncPrimitives | null = null;
 export const usersCollection = createCollection<CommonUser, string>({
   id: 'users',
   getKey: (user) => user.id,
-  // Start sync immediately so sync primitives are captured before any data operations
-  startSync: true,
   sync: {
     /**
      * Sync function - captures sync primitives for external use.
@@ -58,6 +59,33 @@ export const usersCollection = createCollection<CommonUser, string>({
     },
   },
 });
+
+/** Track if sync has been initialized */
+let syncInitialized = false;
+
+/**
+ * Ensures the collection sync is initialized.
+ * Safe to call multiple times - only initializes once.
+ * Should be called before any sync operations.
+ */
+export function ensureSyncInitialized(): void {
+  if (syncInitialized || typeof window === 'undefined') {
+    return;
+  }
+  syncInitialized = true;
+  usersCollection.startSyncImmediate();
+}
+
+/**
+ * Creates a simple hash of user IDs and updated timestamps to detect changes.
+ * This prevents redundant sync operations when the same data is passed multiple times.
+ */
+function createUsersHash(users: CommonUser[]): string {
+  return users
+    .map((u) => `${u.id}:${u.updatedAt ?? ''}`)
+    .sort()
+    .join('|');
+}
 
 /**
  * Syncs users data to the collection.
@@ -81,10 +109,20 @@ export function syncUsersToCollection(
   users: CommonUser[],
   options?: { replace?: boolean },
 ): void {
+  // Initialize sync on first use (client-side only)
+  ensureSyncInitialized();
+
   if (!syncPrimitives) {
     console.warn('usersCollection sync not initialized yet');
     return;
   }
+
+  // Skip sync if data hasn't changed (prevents infinite loops from useEffect)
+  const newHash = createUsersHash(users);
+  if (newHash === lastSyncedUsersHash) {
+    return;
+  }
+  lastSyncedUsersHash = newHash;
 
   const { begin, write, commit, truncate } = syncPrimitives;
   const shouldReplace = options?.replace ?? true;
@@ -116,6 +154,8 @@ export function syncUsersToCollection(
  * @param user - The user data to update
  */
 export function updateUserInCollection(user: CommonUser): void {
+  ensureSyncInitialized();
+
   if (!syncPrimitives) {
     console.warn('usersCollection sync not initialized yet');
     return;
@@ -137,6 +177,8 @@ export function updateUserInCollection(user: CommonUser): void {
  * @param userId - The ID of the user to remove
  */
 export function removeUserFromCollection(userId: string): void {
+  ensureSyncInitialized();
+
   if (!syncPrimitives) {
     console.warn('usersCollection sync not initialized yet');
     return;

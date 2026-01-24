@@ -3,10 +3,9 @@
 import type { RouterInput } from '@op/api/client';
 import { syncUsersToCollection } from '@op/api/collections';
 import { trpcClient, trpcOptions } from '@op/api/trpcTanstackQuery';
-import { useCursorPagination, useDebounce } from '@op/hooks';
+import { useDebounce } from '@op/hooks';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
-import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -163,25 +162,7 @@ const UsersTableHeader = () => {
 
 /** Renders users table with live data */
 const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
-  const t = useTranslations();
-  const {
-    cursor,
-    currentPage,
-    limit,
-    handleNext,
-    handlePrevious,
-    canGoPrevious,
-    reset,
-  } = useCursorPagination(10);
-
-  // Reset pagination when search query changes
-  useEffect(() => {
-    reset();
-  }, [reset, searchQuery]);
-
   const queryInput: ListAllUsersInput = {
-    cursor,
-    limit,
     query: searchQuery || undefined,
   };
 
@@ -189,39 +170,19 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     trpcOptions.platform.admin.listAllUsers.queryOptions(queryInput),
   );
 
-  const { items: users, next, hasMore, total } = data;
+  const { items: users } = data;
 
   // Sync users to TanStack DB collection for optimistic updates
   useEffect(() => {
     syncUsersToCollection(users, { replace: true });
   }, [users]);
 
-  const onNext = () => {
-    if (hasMore && next) {
-      handleNext(next);
-    }
-  };
-
   return (
-    <>
-      <div className="divide-y divide-neutral-gray1">
-        {users.map((user) => (
-          <UsersRow key={user.id} user={user} />
-        ))}
-      </div>
-      <div className="mt-4">
-        <Pagination
-          range={{
-            totalItems: total,
-            itemsPerPage: limit,
-            page: currentPage,
-            label: t('platformAdmin_paginationUsers'),
-          }}
-          next={hasMore ? onNext : undefined}
-          previous={canGoPrevious ? handlePrevious : undefined}
-        />
-      </div>
-    </>
+    <div className="divide-y divide-neutral-gray1">
+      {users.map((user) => (
+        <UsersRow key={user.id} user={user} />
+      ))}
+    </div>
   );
 };
 

@@ -1,4 +1,4 @@
-import { usersCollection } from '@op/api/collections';
+import { updateUserInCollection, usersCollection } from '@op/api/collections';
 import type { Profile } from '@op/api/encoders';
 import { trpcClient } from '@op/api/trpcTanstackQuery';
 import { toast } from '@op/ui/Toast';
@@ -19,8 +19,8 @@ import type { User } from '../types';
  * Uses TanStack DB transactions to:
  * 1. Apply optimistic update to collection immediately
  * 2. Send mutation to server
- * 3. On success: commit (automatic)
- * 4. On error: rollback + show error toast
+ * 3. On success: sync server response to collection
+ * 4. On error: rollback automatically
  */
 export const UpdateProfileForm = ({
   userId,
@@ -57,8 +57,14 @@ export const UpdateProfileForm = ({
     // Create a transaction for optimistic updates
     const tx = createTransaction({
       mutationFn: async () => {
-        // Send the mutation to the server
-        await trpcClient.platform.admin.updateUserProfile.mutate(mutationData);
+        const result =
+          await trpcClient.platform.admin.updateUserProfile.mutate(
+            mutationData,
+          );
+        // Sync the server response back to the collection
+        // This ensures the collection has the actual persisted data
+        updateUserInCollection(result);
+        return result;
       },
     });
 
@@ -84,7 +90,6 @@ export const UpdateProfileForm = ({
       onSuccess();
     } catch (error) {
       // Transaction automatically rolls back on error
-      // Show error toast to user
       toast.error({
         message: t('platformAdmin_updateProfile_error'),
       });

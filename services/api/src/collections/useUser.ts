@@ -4,7 +4,7 @@ import { eq } from '@tanstack/db';
 import { useCallback, useSyncExternalStore } from 'react';
 
 import type { CommonUser } from '../encoders/users';
-import { usersCollection } from './users';
+import { ensureSyncInitialized, usersCollection } from './users';
 
 /**
  * React hook that subscribes to a specific user from the users collection.
@@ -26,6 +26,9 @@ import { usersCollection } from './users';
  * ```
  */
 export function useUser(userId: string): CommonUser | undefined {
+  // Ensure sync is initialized on client-side
+  ensureSyncInitialized();
+
   // Subscribe to collection changes for this specific user
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
@@ -50,8 +53,9 @@ export function useUser(userId: string): CommonUser | undefined {
     return usersCollection.get(userId);
   }, [userId]);
 
-  // Server snapshot - same as client for this use case
-  const getServerSnapshot = getSnapshot;
+  // Server snapshot - return undefined during SSR to avoid hydration issues
+  // The component will fall back to initialUser prop on server
+  const getServerSnapshot = useCallback(() => undefined, []);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
