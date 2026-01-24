@@ -458,5 +458,8 @@
   "Validation error": "Validation error",
   "Please enter a question": "Please enter a question",
   "Please provide at least {count} options": "Please provide at least {count} options",
-  "Creating...": "Creating..."
+  "Creating...": "Creating...",
+  "Polls": "Polls",
+  "Add Poll": "Add Poll",
+  "No polls yet. Create one to get feedback.": "No polls yet. Create one to get feedback."
 }

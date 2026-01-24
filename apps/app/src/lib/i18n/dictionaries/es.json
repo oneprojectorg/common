@@ -457,5 +457,8 @@
   "Validation error": "Error de validación",
   "Please enter a question": "Por favor ingresa una pregunta",
   "Please provide at least {count} options": "Por favor proporciona al menos {count} opciones",
-  "Creating...": "Creando..."
+  "Creating...": "Creando...",
+  "Polls": "Encuestas",
+  "Add Poll": "Agregar Encuesta",
+  "No polls yet. Create one to get feedback.": "Aún no hay encuestas. Crea una para obtener retroalimentación."
 }

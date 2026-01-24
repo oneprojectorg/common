@@ -458,5 +458,8 @@
   "Validation error": "বৈধতা ত্রুটি",
   "Please enter a question": "অনুগ্রহ করে একটি প্রশ্ন লিখুন",
   "Please provide at least {count} options": "অনুগ্রহ করে কমপক্ষে {count}টি বিকল্প প্রদান করুন",
-  "Creating...": "তৈরি হচ্ছে..."
+  "Creating...": "তৈরি হচ্ছে...",
+  "Polls": "পোল",
+  "Add Poll": "পোল যোগ করুন",
+  "No polls yet. Create one to get feedback.": "এখনও কোনো পোল নেই। মতামত পেতে একটি তৈরি করুন।"
 }
