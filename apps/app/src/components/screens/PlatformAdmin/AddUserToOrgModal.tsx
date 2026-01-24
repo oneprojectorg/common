@@ -1,7 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { trpcOptions } from '@op/api/trpcTanstackQuery';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
@@ -12,10 +12,15 @@ import { ProfileItem } from '@op/ui/ProfileItem';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import Image from 'next/image';
 import {
-  FormEvent,
-  ReactNode,
+  type FormEvent,
+  type ReactNode,
   Suspense,
   useMemo,
   useState,
@@ -63,12 +68,14 @@ const AddUserToOrgModalContent = ({
   onOpenChange: (isOpen: boolean) => void;
 }) => {
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [isSubmitting, startTransition] = useTransition();
 
-  const addUserToOrg = trpc.platform.admin.addUsersToOrganization.useMutation();
+  const addUserToOrg = useMutation(
+    trpcOptions.platform.admin.addUsersToOrganization.mutationOptions(),
+  );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -98,7 +105,9 @@ const AddUserToOrgModalContent = ({
           message: t('platformAdmin_addUserToOrg_successMessage'),
         });
 
-        utils.platform.admin.listAllUsers.invalidate();
+        queryClient.invalidateQueries(
+          trpcOptions.platform.admin.listAllUsers.queryFilter(),
+        );
 
         // Reset form
         setSelectedOrgId('');
@@ -263,13 +272,17 @@ const OrganizationAndRoleSelection = ({
 }) => {
   const t = useTranslations();
 
-  const [[organizationsData, rolesData]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({
+  // Use separate queries instead of useSuspenseQueries to avoid reference instability
+  const { data: organizationsData } = useSuspenseQuery(
+    trpcOptions.organization.list.queryOptions({
       // TODO: because we lack a proper search/filter UI at this point, we set a high limit here. To be changed.
       limit: 500,
     }),
-    t.organization.getRoles(),
-  ]);
+  );
+
+  const { data: rolesData } = useSuspenseQuery(
+    trpcOptions.organization.getRoles.queryOptions(),
+  );
 
   // Find Member role and set as default
   const memberRole = rolesData.roles.find((role) => role.name === 'Member');

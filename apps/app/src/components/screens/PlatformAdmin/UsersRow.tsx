@@ -3,13 +3,14 @@
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
-import { trpc } from '@op/api/client';
+import { trpcOptions } from '@op/api/trpcTanstackQuery';
 import { useRelativeTime } from '@op/hooks';
 import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
+import { useQueryClient } from '@tanstack/react-query';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
@@ -30,7 +31,7 @@ type OrganizationUsers = User['organizationUsers'];
 export const UsersRow = ({ user }: { user: User }) => {
   const format = useFormatter();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
   const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
@@ -143,7 +144,9 @@ export const UsersRow = ({ user }: { user: User }) => {
           isOpen={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           onSuccess={() => {
-            utils.platform.admin.listAllUsers.invalidate();
+            queryClient.invalidateQueries(
+              trpcOptions.platform.admin.listAllUsers.queryFilter(),
+            );
           }}
         />
       ) : null}

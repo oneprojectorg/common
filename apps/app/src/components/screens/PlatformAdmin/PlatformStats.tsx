@@ -1,8 +1,9 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { trpcOptions } from '@op/api/trpcTanstackQuery';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -19,7 +20,9 @@ export const PlatformStats = () => {
 /** Renders platform statistics grid with live data */
 const PlatformStatsWithData = () => {
   const t = useTranslations();
-  const [stats] = trpc.platform.getStats.useSuspenseQuery();
+  const { data: stats } = useSuspenseQuery(
+    trpcOptions.platform.getStats.queryOptions(),
+  );
 
   const statItems = [
     { label: t('platformAdmin_totalUsers'), value: stats.totalUsers },

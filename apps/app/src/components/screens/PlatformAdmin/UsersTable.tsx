@@ -1,7 +1,7 @@
 'use client';
 
 import type { RouterInput } from '@op/api/client';
-import { trpc } from '@op/api/client';
+import { trpcClient, trpcOptions } from '@op/api/trpcTanstackQuery';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -10,6 +10,7 @@ import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   Suspense,
   useCallback,
@@ -60,7 +61,6 @@ const exportUsersToCSV = (
 /** Main users table component with suspense boundary */
 export const UsersTable = () => {
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isExporting, startExportTransition] = useTransition();
@@ -68,8 +68,8 @@ export const UsersTable = () => {
   const handleExportAllUsers = useCallback(() => {
     startExportTransition(async () => {
       try {
-        // Fetch all users without limit
-        const result = await utils.platform.admin.listAllUsers.fetch({});
+        // Fetch all users without limit using vanilla client
+        const result = await trpcClient.platform.admin.listAllUsers.query({});
 
         if (result.items.length === 0) {
           return;
@@ -87,7 +87,7 @@ export const UsersTable = () => {
         toast.error({ message: t('platformAdmin_exportError') });
       }
     });
-  }, [utils, t]);
+  }, [t]);
 
   return (
     <div className="mt-8">
@@ -184,7 +184,9 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     query: searchQuery || undefined,
   };
 
-  const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
+  const { data } = useSuspenseQuery(
+    trpcOptions.platform.admin.listAllUsers.queryOptions(queryInput),
+  );
 
   const { items: users, next, hasMore, total } = data;
 
