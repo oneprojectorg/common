@@ -24,7 +24,7 @@ import {
   composeRenderProps,
   useTableOptions,
 } from 'react-aria-components';
-import { LuChevronDown, LuMinus } from 'react-icons/lu';
+import { LuArrowDown } from 'react-icons/lu';
 import { twJoin, twMerge } from 'tailwind-merge';
 
 import { cx } from '@/lib/primitive';
@@ -123,47 +123,41 @@ const TableColumn = ({
     <Column
       data-slot="table-column"
       {...props}
-      className={cx(
-        [
-          'text-left font-medium text-muted-fg',
-          'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
-          'px-4 py-(--gutter-y)',
-          'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
-          !bleed && 'sm:first:pl-1 sm:last:pr-1',
-          grid && 'border-l first:border-l-0',
-          isResizable && 'truncate overflow-hidden',
-        ],
+      className={composeRenderProps(
         className,
+        (className, { isHovered, allowsSorting }) =>
+          twMerge(
+            'h-8 text-left text-sm font-normal',
+            allowsSorting && isHovered ? 'text-neutral-gray3' : 'text-muted-fg',
+            'allows-sorting:active:text-neutral-charcoal',
+            'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
+            'px-4 py-(--gutter-y)',
+            'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
+            !bleed && 'sm:first:pl-1 sm:last:pr-1',
+            grid && 'border-l first:border-l-0',
+            isResizable && 'truncate overflow-hidden',
+            className,
+          ),
       )}
     >
       {(values) => (
         <div
           className={twJoin([
-            'inline-flex items-center gap-2 **:data-[slot=icon]:shrink-0',
+            'inline-flex items-center gap-0.5 **:data-[slot=icon]:shrink-0',
           ])}
         >
           {typeof props.children === 'function'
             ? props.children(values)
             : props.children}
-          {values.allowsSorting && (
-            <span
+          {values.allowsSorting && values.sortDirection !== undefined && (
+            <LuArrowDown
+              data-slot="icon"
+              aria-hidden
               className={twJoin(
-                'grid size-[1.15rem] flex-none shrink-0 place-content-center rounded bg-secondary text-fg *:data-[slot=icon]:size-3.5 *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:transition-transform *:data-[slot=icon]:duration-200',
-                values.isHovered ? 'bg-secondary-fg/10' : '',
+                'size-3 shrink-0 transition-transform duration-200',
+                values.sortDirection === 'ascending' ? 'rotate-180' : '',
               )}
-            >
-              {values.sortDirection === undefined ? (
-                <LuMinus data-slot="icon" aria-hidden />
-              ) : (
-                <LuChevronDown
-                  data-slot="icon"
-                  aria-hidden
-                  className={
-                    values.sortDirection === 'ascending' ? 'rotate-180' : ''
-                  }
-                />
-              )}
-            </span>
+            />
           )}
           {isResizable && <ColumnResizer />}
         </div>
@@ -254,7 +248,7 @@ const TableRow = <T extends object>({
           },
         ) =>
           twMerge(
-            'group relative cursor-default text-muted-fg outline outline-transparent',
+            'group relative min-h-12 cursor-default text-black outline outline-transparent',
             isFocusVisible &&
               'bg-primary/5 ring-3 ring-ring/20 outline-primary hover:bg-primary/10',
             isDragging &&
