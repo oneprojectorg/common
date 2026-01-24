@@ -2,9 +2,11 @@
 
 import { usePollSubscription } from '@/hooks/usePollSubscription';
 import { trpc } from '@op/api/client';
+import { Confetti } from '@op/ui/Confetti';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 /**
  * Vibrant color palette for poll options (Mentimeter-inspired)
@@ -30,10 +32,12 @@ export function PollCard({ pollId }: { pollId: string }) {
   const utils = trpc.useUtils();
 
   const [poll] = trpc.polls.get.useSuspenseQuery({ pollId });
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const voteMutation = trpc.polls.vote.useMutation({
     onSuccess: () => {
       utils.polls.get.invalidate({ pollId });
+      setShowConfetti(true);
     },
   });
 
@@ -52,6 +56,7 @@ export function PollCard({ pollId }: { pollId: string }) {
 
   return (
     <Surface className="rounded-lg shadow-sm">
+      {showConfetti && <Confetti />}
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-teal to-primary-tealBlack px-4 py-2.5">
         <div className="flex items-start justify-between gap-3">

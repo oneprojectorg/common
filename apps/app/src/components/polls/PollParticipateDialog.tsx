@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { cn } from '@op/ui/utils';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 /**
  * Vibrant color palette for poll options (Mentimeter-inspired)
@@ -37,10 +38,12 @@ export function PollParticipateDialog({
   const utils = trpc.useUtils();
 
   const [poll] = trpc.polls.get.useSuspenseQuery({ pollId });
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const voteMutation = trpc.polls.vote.useMutation({
     onSuccess: () => {
       utils.polls.get.invalidate({ pollId });
+      setShowConfetti(true);
     },
   });
 
@@ -58,7 +61,12 @@ export function PollParticipateDialog({
   const hasVoted = poll.userVote !== null;
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      isDismissable
+      confetti={showConfetti}
+    >
       <ModalHeader>{poll.question}</ModalHeader>
       <ModalBody className="p-0">
         {/* Status badge */}
