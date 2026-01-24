@@ -37,6 +37,8 @@ let syncPrimitives: SyncPrimitives | null = null;
 export const usersCollection = createCollection<CommonUser, string>({
   id: 'users',
   getKey: (user) => user.id,
+  // Start sync immediately so sync primitives are captured before any data operations
+  startSync: true,
   sync: {
     /**
      * Sync function - captures sync primitives for external use.
