@@ -222,7 +222,11 @@ export function ProposalView({
 
           {/* Polls Section */}
           <div className="mt-8 border-t pt-8">
-            <PollSection targetType="proposal" targetId={currentProposal.id} />
+            <PollSection
+              profileId={currentProposal.profileId}
+              targetType="proposal"
+              targetId={currentProposal.id}
+            />
           </div>
 
           {/* Comments Section */}

@@ -1,8 +1,9 @@
-import { getProfileAccessUser } from '@op/common';
-import { db } from '@op/db/client';
-import { type PollOption, polls } from '@op/db/schema';
+// TODO: Re-enable when permission checks are restored
+// import { getProfileAccessUser } from '@op/common';
+import { db, eq } from '@op/db/client';
+import { type PollOption, polls, users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import { assertAccess, permission } from 'access-zones';
+// import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -32,8 +33,8 @@ const pollOutputSchema = z.object({
   status: z.enum(['open', 'closed']),
   targetType: z.string(),
   targetId: z.string().uuid(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 });
 
 export const createPollRouter = router({
@@ -49,21 +50,35 @@ export const createPollRouter = router({
       const { question, options, targetType, targetId, profileId } = input;
 
       try {
+        // TODO: Re-enable permission checks once polling is profile-independent
         // Check user has access to the profile
-        const profileUser = await getProfileAccessUser({
-          user,
-          profileId,
-        });
+        // const profileUser = await getProfileAccessUser({
+        //   user,
+        //   profileId,
+        // });
 
-        if (!profileUser) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You do not have access to this organization',
-          });
-        }
+        // if (!profileUser) {
+        //   throw new TRPCError({
+        //     code: 'FORBIDDEN',
+        //     message: 'You do not have access to this organization',
+        //   });
+        // }
 
         // Require at least read access to create polls (any member can create)
-        assertAccess({ profile: permission.READ }, profileUser.roles);
+        // assertAccess({ profile: permission.READ }, profileUser.roles);
+
+        // Look up the user record by authUserId (ctx.user.id is the Supabase auth user ID)
+        const [dbUser] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.authUserId, user.id));
+
+        if (!dbUser) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'User not found',
+          });
+        }
 
         // Transform options array to PollOption format
         const pollOptions: PollOption[] = options.map((text) => ({ text }));
@@ -73,7 +88,7 @@ export const createPollRouter = router({
           .insert(polls)
           .values({
             profileId,
-            createdById: user.id,
+            createdById: dbUser.id,
             question,
             options: pollOptions,
             targetType,

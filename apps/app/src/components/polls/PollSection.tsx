@@ -11,30 +11,38 @@ import { PollCard } from './PollCard';
 
 /**
  * PollSection displays all polls for a given target entity.
- * Features:
- * - Fetches polls via listByTarget procedure
- * - Renders PollCards for each poll
- * - "Add Poll" button to open CreatePollDialog
- * - Empty state when no polls exist
+ *
+ * @param profileId - The profile (organization) ID the polls belong to.
+ *                    Required for creating new polls.
+ * @param targetType - The type of entity (e.g., "proposal")
+ * @param targetId - The ID of the target entity
  */
 export function PollSection({
+  profileId,
   targetType,
   targetId,
 }: {
+  profileId: string;
   targetType: string;
   targetId: string;
 }) {
   return (
     <Suspense fallback={<PollSectionSkeleton />}>
-      <PollSectionContent targetType={targetType} targetId={targetId} />
+      <PollSectionContent
+        profileId={profileId}
+        targetType={targetType}
+        targetId={targetId}
+      />
     </Suspense>
   );
 }
 
 function PollSectionContent({
+  profileId,
   targetType,
   targetId,
 }: {
+  profileId: string;
   targetType: string;
   targetId: string;
 }) {
@@ -80,6 +88,7 @@ function PollSectionContent({
       )}
 
       <CreatePollDialog
+        profileId={profileId}
         targetType={targetType}
         targetId={targetId}
         isOpen={isDialogOpen}

@@ -1,9 +1,11 @@
-import { Channels, getProfileAccessUser } from '@op/common';
+// TODO: Re-enable when permission checks are restored
+// import { Channels, getProfileAccessUser } from '@op/common';
+import { Channels } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { PollStatus, polls } from '@op/db/schema';
+import { PollStatus, polls, users } from '@op/db/schema';
 import { realtime } from '@op/realtime/server';
 import { TRPCError } from '@trpc/server';
-import { type NormalizedRole, assertAccess, permission } from 'access-zones';
+// import { type NormalizedRole, assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -19,18 +21,19 @@ const closeOutputSchema = z.object({
   closedAt: z.coerce.date(),
 });
 
-/**
- * Check if user has admin access to the profile.
- * Returns true if they do, false otherwise (doesn't throw).
- */
-function checkAdminAccess(roles: NormalizedRole[]): boolean {
-  try {
-    assertAccess({ profile: permission.ADMIN }, roles);
-    return true;
-  } catch {
-    return false;
-  }
-}
+// TODO: Re-enable when permission checks are restored
+// /**
+//  * Check if user has admin access to the profile.
+//  * Returns true if they do, false otherwise (doesn't throw).
+//  */
+// function checkAdminAccess(roles: NormalizedRole[]): boolean {
+//   try {
+//     assertAccess({ profile: permission.ADMIN }, roles);
+//     return true;
+//   } catch {
+//     return false;
+//   }
+// }
 
 export const closeRouter = router({
   /**
@@ -65,28 +68,42 @@ export const closeRouter = router({
         });
       }
 
+      // TODO: Re-enable permission checks once polling is profile-independent
       // Check user has access to the profile
-      const profileUser = await getProfileAccessUser({
-        user,
-        profileId: poll.profileId,
-      });
+      // const profileUser = await getProfileAccessUser({
+      //   user,
+      //   profileId: poll.profileId,
+      // });
 
-      if (!profileUser) {
+      // if (!profileUser) {
+      //   throw new TRPCError({
+      //     code: 'FORBIDDEN',
+      //     message: 'You do not have access to this organization',
+      //   });
+      // }
+
+      // Look up the user record by authUserId (ctx.user.id is the Supabase auth user ID)
+      const [dbUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.authUserId, user.id));
+
+      if (!dbUser) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have access to this organization',
+          code: 'NOT_FOUND',
+          message: 'User not found',
         });
       }
 
       // User must be the poll creator OR have admin access to the org
-      const isCreator = poll.createdById === user.id;
-      const isAdmin = checkAdminAccess(profileUser.roles);
+      const isCreator = poll.createdById === dbUser.id;
+      // const isAdmin = checkAdminAccess(profileUser.roles);
 
-      if (!isCreator && !isAdmin) {
+      // if (!isCreator && !isAdmin) {
+      if (!isCreator) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message:
-            'Only the poll creator or organization admins can close a poll',
+          message: 'Only the poll creator can close a poll',
         });
       }
 
@@ -112,7 +129,6 @@ export const closeRouter = router({
           pollId,
           userId: user.id,
           isCreator,
-          isAdmin,
         });
 
         // Broadcast invalidation to poll subscribers

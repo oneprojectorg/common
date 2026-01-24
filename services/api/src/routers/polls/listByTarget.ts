@@ -1,5 +1,5 @@
-import { and, count, db, desc, eq, sql } from '@op/db/client';
-import { pollVotes, polls } from '@op/db/schema';
+import { and, count, db, desc, eq, inArray } from '@op/db/client';
+import { pollVotes, polls, users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -68,19 +68,30 @@ export const listByTargetRouter = router({
             count: count(),
           })
           .from(pollVotes)
-          .where(sql`${pollVotes.pollId} = ANY(${pollIds})`)
+          .where(inArray(pollVotes.pollId, pollIds))
           .groupBy(pollVotes.pollId, pollVotes.optionIndex);
 
-        // Get current user's votes for all polls
-        const userVotes = await db
-          .select({
-            pollId: pollVotes.pollId,
-            optionIndex: pollVotes.optionIndex,
-          })
-          .from(pollVotes)
-          .where(
-            sql`${pollVotes.pollId} = ANY(${pollIds}) AND ${pollVotes.userId} = ${user.id}`,
-          );
+        // Look up the user record by authUserId (ctx.user.id is the Supabase auth user ID)
+        const [dbUser] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.authUserId, user.id));
+
+        // Get current user's votes for all polls (only if user exists)
+        const userVotes = dbUser
+          ? await db
+              .select({
+                pollId: pollVotes.pollId,
+                optionIndex: pollVotes.optionIndex,
+              })
+              .from(pollVotes)
+              .where(
+                and(
+                  inArray(pollVotes.pollId, pollIds),
+                  eq(pollVotes.userId, dbUser.id),
+                ),
+              )
+          : [];
 
         // Build maps for quick lookup
         const voteCountMap = new Map<string, Map<number, number>>();

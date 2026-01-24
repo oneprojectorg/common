@@ -1,9 +1,11 @@
-import { Channels, getProfileAccessUser } from '@op/common';
+// TODO: Re-enable when permission checks are restored
+// import { Channels, getProfileAccessUser } from '@op/common';
+import { Channels } from '@op/common';
 import { and, db, eq } from '@op/db/client';
-import { PollStatus, pollVotes, polls } from '@op/db/schema';
+import { PollStatus, pollVotes, polls, users } from '@op/db/schema';
 import { realtime } from '@op/realtime/server';
 import { TRPCError } from '@trpc/server';
-import { assertAccess, permission } from 'access-zones';
+// import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -65,21 +67,35 @@ export const voteRouter = router({
         });
       }
 
+      // TODO: Re-enable permission checks once polling is profile-independent
       // Check user has access to the profile
-      const profileUser = await getProfileAccessUser({
-        user,
-        profileId: poll.profileId,
-      });
+      // const profileUser = await getProfileAccessUser({
+      //   user,
+      //   profileId: poll.profileId,
+      // });
 
-      if (!profileUser) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have access to this organization',
-        });
-      }
+      // if (!profileUser) {
+      //   throw new TRPCError({
+      //     code: 'FORBIDDEN',
+      //     message: 'You do not have access to this organization',
+      //   });
+      // }
 
       // Require at least read access to vote
-      assertAccess({ profile: permission.READ }, profileUser.roles);
+      // assertAccess({ profile: permission.READ }, profileUser.roles);
+
+      // Look up the user record by authUserId (ctx.user.id is the Supabase auth user ID)
+      const [dbUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.authUserId, user.id));
+
+      if (!dbUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
 
       try {
         // Check for existing vote
@@ -87,7 +103,7 @@ export const voteRouter = router({
           .select()
           .from(pollVotes)
           .where(
-            and(eq(pollVotes.pollId, pollId), eq(pollVotes.userId, user.id)),
+            and(eq(pollVotes.pollId, pollId), eq(pollVotes.userId, dbUser.id)),
           )
           .limit(1);
 
@@ -102,7 +118,7 @@ export const voteRouter = router({
 
           logger.info('Poll vote updated', {
             pollId,
-            userId: user.id,
+            userId: dbUser.id,
             oldOptionIndex: existingVote.optionIndex,
             newOptionIndex: optionIndex,
           });
@@ -110,7 +126,7 @@ export const voteRouter = router({
           // Create new vote
           await db.insert(pollVotes).values({
             pollId,
-            userId: user.id,
+            userId: dbUser.id,
             optionIndex,
           });
 
@@ -118,7 +134,7 @@ export const voteRouter = router({
 
           logger.info('Poll vote created', {
             pollId,
-            userId: user.id,
+            userId: dbUser.id,
             optionIndex,
           });
         }

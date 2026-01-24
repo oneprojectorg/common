@@ -1,6 +1,5 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -16,19 +15,22 @@ const MAX_OPTIONS = 10;
 
 /**
  * CreatePollDialog provides a modal form for creating new polls.
- * Features:
- * - Question input field
- * - Dynamic option list with add/remove capability
- * - Validation for minimum 2 options, maximum 10
- * - Calls polls.create mutation on submit
+ *
+ * @param profileId - The profile (organization) ID the poll belongs to.
+ *                    This should come from the target entity (e.g., proposal.profileId),
+ *                    NOT from user.currentOrganization.
+ * @param targetType - The type of entity this poll is attached to (e.g., "proposal")
+ * @param targetId - The ID of the target entity
  */
 export function CreatePollDialog({
+  profileId,
   targetType,
   targetId,
   children,
   isOpen: controlledIsOpen,
   onOpenChange: controlledOnOpenChange,
 }: {
+  profileId: string;
   targetType: string;
   targetId: string;
   children?: React.ReactNode;
@@ -36,7 +38,6 @@ export function CreatePollDialog({
   onOpenChange?: (isOpen: boolean) => void;
 }) {
   const t = useTranslations();
-  const { user } = useUser();
   const utils = trpc.useUtils();
   const optionsLabelId = useId();
 
@@ -46,8 +47,6 @@ export function CreatePollDialog({
 
   const isOpen = controlledIsOpen ?? internalIsOpen;
   const setIsOpen = controlledOnOpenChange ?? setInternalIsOpen;
-
-  const profileId = user.currentOrganization?.id;
 
   const createMutation = trpc.polls.create.useMutation({
     onSuccess: () => {
@@ -91,14 +90,6 @@ export function CreatePollDialog({
   };
 
   const handleSubmit = () => {
-    if (!profileId) {
-      toast.error({
-        title: t('Error'),
-        message: t('No organization selected'),
-      });
-      return;
-    }
-
     const trimmedQuestion = question.trim();
     const trimmedOptions = options
       .map((o) => o.trim())

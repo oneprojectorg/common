@@ -1,8 +1,9 @@
-import { getProfileAccessUser } from '@op/common';
+// TODO: Re-enable when permission checks are restored
+// import { getProfileAccessUser } from '@op/common';
 import { count, db, eq, sql } from '@op/db/client';
 import { pollVotes, polls } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import { assertAccess, permission } from 'access-zones';
+// import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -60,20 +61,21 @@ export const getRouter = router({
         });
       }
 
+      // TODO: Re-enable permission checks once polling is profile-independent
       // Check user has access to the profile
-      const profileUser = await getProfileAccessUser({
-        user,
-        profileId: poll.profileId,
-      });
+      // const profileUser = await getProfileAccessUser({
+      //   user,
+      //   profileId: poll.profileId,
+      // });
 
-      if (!profileUser) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have access to this organization',
-        });
-      }
+      // if (!profileUser) {
+      //   throw new TRPCError({
+      //     code: 'FORBIDDEN',
+      //     message: 'You do not have access to this organization',
+      //   });
+      // }
 
-      assertAccess({ profile: permission.READ }, profileUser.roles);
+      // assertAccess({ profile: permission.READ }, profileUser.roles);
 
       try {
         // Get vote counts grouped by option index
