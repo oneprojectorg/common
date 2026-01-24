@@ -1,5 +1,6 @@
 'use client';
 
+import type { SaveStatus } from '@/hooks/useTiptapCollab';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
@@ -22,6 +23,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   CollaborativeEditor,
+  type CollaborativeEditorRef,
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
@@ -86,10 +88,13 @@ export function ProposalEditor({
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Refs
   const budgetInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
+  const editorRef = useRef<CollaborativeEditorRef>(null);
 
   // Check if editing a draft (should show info modal and use submitProposal)
   const isDraft =
@@ -261,6 +266,18 @@ export function ProposalEditor({
     }
   }, [showBudgetInput]);
 
+  // Sync save status from CollaborativeEditor ref
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const ref = editorRef.current;
+      if (ref) {
+        setSaveStatus(ref.saveStatus);
+        setLastSavedAt(ref.lastSavedAt);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
   }, []);
@@ -366,6 +383,8 @@ export function ProposalEditor({
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
       isDraft={isDraft}
+      saveStatus={saveStatus}
+      lastSavedAt={lastSavedAt}
     >
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
@@ -434,6 +453,7 @@ export function ProposalEditor({
 
           {/* Rich Text Editor with Collaboration */}
           <CollaborativeEditor
+            ref={editorRef}
             docId={collaborationDocId}
             extensions={editorExtensions}
             onEditorReady={handleEditorReady}

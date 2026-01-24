@@ -442,5 +442,8 @@
   "Try again": "Tentar novamente",
   "Role updated successfully": "Função atualizada com sucesso",
   "Failed to update role": "Falha ao atualizar a função",
-  "Members list": "Lista de membros"
+  "Members list": "Lista de membros",
+  "Saving...": "Salvando...",
+  "Error saving": "Erro ao salvar",
+  "Saved": "Salvo"
 }

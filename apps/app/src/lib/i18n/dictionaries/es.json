@@ -441,5 +441,7 @@
   "Try again": "Intentar de nuevo",
   "Role updated successfully": "Rol actualizado exitosamente",
   "Failed to update role": "Error al actualizar el rol",
-  "Members list": "Lista de miembros"
+  "Members list": "Lista de miembros",
+  "Error saving": "Error al guardar",
+  "Saved": "Guardado"
 }
