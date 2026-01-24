@@ -2,12 +2,18 @@
 
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
+import {
+  NotificationPanel,
+  NotificationPanelActions,
+  NotificationPanelItem,
+  NotificationPanelList,
+} from '@op/ui/NotificationPanel';
 import { useTranslations } from 'next-intl';
 import { Suspense, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
 import { CreatePollDialog } from './CreatePollDialog';
-import { PollCard } from './PollCard';
+import { PollParticipateDialog } from './PollParticipateDialog';
 
 /**
  * PollSection displays all polls for a given target entity.
@@ -47,7 +53,10 @@ function PollSectionContent({
   targetId: string;
 }) {
   const t = useTranslations();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [participatingPollId, setParticipatingPollId] = useState<string | null>(
+    null,
+  );
 
   const [data] = trpc.polls.listByTarget.useSuspenseQuery({
     targetType,
@@ -56,45 +65,128 @@ function PollSectionContent({
 
   const polls = data?.polls ?? [];
 
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-charcoal">
-          {t('Polls')}
-        </h2>
-        <Button
-          color="secondary"
-          surface="outline"
-          size="small"
-          onPress={() => setIsDialogOpen(true)}
-        >
-          <LuPlus className="mr-1 h-3 w-3" />
-          {t('Add Poll')}
-        </Button>
-      </div>
+  if (polls.length === 0) {
+    return (
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-neutral-charcoal">
+            {t('Polls')}
+          </h2>
+          <Button
+            color="secondary"
+            surface="outline"
+            size="small"
+            onPress={() => setIsCreateDialogOpen(true)}
+          >
+            <LuPlus className="mr-1 h-3 w-3" />
+            {t('Add Poll')}
+          </Button>
+        </div>
 
-      {polls.length === 0 ? (
         <div className="rounded border border-dashed border-neutral-gray2 bg-neutral-50 py-6 text-center">
           <p className="text-xs text-neutral-gray3">
             {t('No polls yet. Create one to get feedback.')}
           </p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {polls.map((poll) => (
-            <PollCard key={poll.id} pollId={poll.id} />
-          ))}
+
+        <CreatePollDialog
+          profileId={profileId}
+          targetType={targetType}
+          targetId={targetId}
+          isOpen={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+        />
+      </section>
+    );
+  }
+
+  return (
+    <>
+      <NotificationPanel>
+        <div className="flex items-center justify-between p-3">
+          <h2 className="flex items-center gap-1 text-sm font-semibold text-neutral-charcoal">
+            {t('Polls')}
+            <span className="flex size-4 items-center justify-center rounded-full bg-functional-red text-xs text-neutral-offWhite">
+              {polls.length}
+            </span>
+          </h2>
+          <Button
+            color="secondary"
+            surface="outline"
+            size="small"
+            onPress={() => setIsCreateDialogOpen(true)}
+          >
+            <LuPlus className="mr-1 h-3 w-3" />
+            {t('Add Poll')}
+          </Button>
         </div>
-      )}
+        <NotificationPanelList>
+          {polls.map((poll) => (
+            <PollNotificationItem
+              key={poll.id}
+              poll={poll}
+              onParticipate={() => setParticipatingPollId(poll.id)}
+            />
+          ))}
+        </NotificationPanelList>
+      </NotificationPanel>
 
       <CreatePollDialog
         profileId={profileId}
         targetType={targetType}
         targetId={targetId}
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
       />
-    </section>
+
+      {participatingPollId && (
+        <Suspense fallback={null}>
+          <PollParticipateDialog
+            pollId={participatingPollId}
+            isOpen={!!participatingPollId}
+            onOpenChange={(open) => {
+              if (!open) {
+                setParticipatingPollId(null);
+              }
+            }}
+          />
+        </Suspense>
+      )}
+    </>
+  );
+}
+
+function PollNotificationItem({
+  poll,
+  onParticipate,
+}: {
+  poll: { id: string; question: string; totalVotes: number; status: string };
+  onParticipate: () => void;
+}) {
+  const t = useTranslations();
+  const isPollClosed = poll.status === 'closed';
+
+  return (
+    <NotificationPanelItem>
+      <div className="flex flex-col">
+        <span className="font-semibold text-neutral-black">
+          {poll.question}
+        </span>
+        <span className="text-neutral-charcoal">
+          {poll.totalVotes} {poll.totalVotes === 1 ? t('vote') : t('votes')}
+          {isPollClosed && (
+            <span className="ml-2 rounded-full bg-neutral-gray2 px-1.5 py-0.5 text-xs text-neutral-charcoal">
+              {t('Closed')}
+            </span>
+          )}
+        </span>
+      </div>
+      <NotificationPanelActions>
+        <Button size="small" onPress={onParticipate}>
+          {isPollClosed ? t('View Results') : t('Participate')}
+        </Button>
+      </NotificationPanelActions>
+    </NotificationPanelItem>
   );
 }
 

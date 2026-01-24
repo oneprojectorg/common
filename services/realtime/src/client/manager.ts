@@ -80,7 +80,7 @@ export class RealtimeManager {
     });
 
     this.centrifuge.on('error', (ctx: ErrorContext) => {
-      console.error('[Realtime] Error:', ctx);
+      console.error('[Realtime] Error:', ctx.error?.message ?? ctx);
     });
 
     this.centrifuge.connect();
