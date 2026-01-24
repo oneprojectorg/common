@@ -146,7 +146,7 @@ export const createProposal = async ({
       }
 
       const proposalId = crypto.randomUUID();
-      const collaborationDocId = `proposal-${data.processInstanceId}-${proposalId}`;
+      const collaborationDocId = `proposal-${proposalId}`;
 
       const [proposal] = await tx
         .insert(proposals)
