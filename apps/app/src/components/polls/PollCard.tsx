@@ -2,6 +2,7 @@
 
 import { usePollSubscription } from '@/hooks/usePollSubscription';
 import { trpc } from '@op/api/client';
+import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import { useTranslations } from 'next-intl';
 
@@ -50,13 +51,13 @@ export function PollCard({ pollId }: { pollId: string }) {
   const hasVoted = poll.userVote !== null;
 
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow-lg">
+    <Surface className="rounded-lg shadow-sm">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-teal to-primary-tealBlack px-6 py-4">
-        <div className="flex items-start justify-between gap-4">
-          <h3 className="text-xl font-semibold text-white">{poll.question}</h3>
+      <div className="bg-gradient-to-r from-primary-teal to-primary-tealBlack px-4 py-2.5">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-sm font-semibold text-white">{poll.question}</h3>
           {isPollClosed && (
-            <span className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
+            <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
               {t('Closed')}
             </span>
           )}
@@ -64,7 +65,7 @@ export function PollCard({ pollId }: { pollId: string }) {
       </div>
 
       {/* Options */}
-      <div className="space-y-3 p-6">
+      <div className="space-y-2 p-3">
         {poll.options.map((option, index) => {
           const percentage =
             poll.totalVotes > 0
@@ -80,11 +81,11 @@ export function PollCard({ pollId }: { pollId: string }) {
               onClick={() => handleVote(index)}
               disabled={isPollClosed || voteMutation.isPending}
               className={cn(
-                'group relative w-full overflow-hidden rounded-lg text-left transition-all duration-200',
+                'group relative w-full overflow-hidden rounded text-left transition-all duration-200',
                 !isPollClosed &&
-                  'cursor-pointer hover:scale-[1.01] hover:shadow-md',
+                  'cursor-pointer hover:scale-[1.005] hover:shadow-sm',
                 isPollClosed && 'cursor-default',
-                isSelected && 'ring-2 ring-primary-teal ring-offset-2',
+                isSelected && 'ring-1 ring-primary-teal ring-offset-1',
               )}
             >
               {/* Background bar (animated) */}
@@ -98,12 +99,12 @@ export function PollCard({ pollId }: { pollId: string }) {
               />
 
               {/* Content overlay */}
-              <div className="relative flex min-h-[56px] items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-3">
+              <div className="relative flex min-h-[36px] items-center justify-between px-3 py-1.5">
+                <div className="flex items-center gap-2">
                   {isSelected && (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-primary-teal shadow-sm">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-primary-teal shadow-sm">
                       <svg
-                        className="h-4 w-4"
+                        className="h-2.5 w-2.5"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -120,7 +121,7 @@ export function PollCard({ pollId }: { pollId: string }) {
                   )}
                   <span
                     className={cn(
-                      'font-medium transition-colors',
+                      'text-sm font-medium transition-colors',
                       percentage > 50 ? 'text-white' : 'text-neutral-charcoal',
                     )}
                   >
@@ -129,10 +130,10 @@ export function PollCard({ pollId }: { pollId: string }) {
                 </div>
 
                 {/* Percentage + count */}
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-baseline gap-1.5">
                   <span
                     className={cn(
-                      'text-2xl font-bold tabular-nums transition-colors',
+                      'text-base font-bold tabular-nums transition-colors',
                       percentage > 50 ? 'text-white' : 'text-neutral-charcoal',
                     )}
                   >
@@ -140,7 +141,7 @@ export function PollCard({ pollId }: { pollId: string }) {
                   </span>
                   <span
                     className={cn(
-                      'text-sm tabular-nums transition-colors',
+                      'text-xs tabular-nums transition-colors',
                       percentage > 50
                         ? 'text-white/70'
                         : 'text-neutral-charcoal/60',
@@ -163,14 +164,14 @@ export function PollCard({ pollId }: { pollId: string }) {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-neutral-gray1 bg-neutral-50 px-6 py-3">
-        <span className="text-sm text-neutral-charcoal/70">
+      <div className="flex items-center justify-between border-t border-neutral-gray1 bg-neutral-50 px-3 py-2">
+        <span className="text-xs text-neutral-charcoal/70">
           {poll.totalVotes} {poll.totalVotes === 1 ? t('vote') : t('votes')}
         </span>
         {hasVoted && !isPollClosed && (
-          <span className="flex items-center gap-1.5 text-sm font-medium text-primary-teal">
+          <span className="flex items-center gap-1 text-xs font-medium text-primary-teal">
             <svg
-              className="h-4 w-4"
+              className="h-3 w-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -187,6 +188,6 @@ export function PollCard({ pollId }: { pollId: string }) {
           </span>
         )}
       </div>
-    </div>
+    </Surface>
   );
 }

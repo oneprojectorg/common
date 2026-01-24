@@ -136,6 +136,13 @@ export const closeRouter = router({
           mutationId: ctx.requestId,
         });
 
+        // Broadcast to proposal polls channel if target is a proposal
+        if (poll.targetType === 'proposal') {
+          await realtime.publish(Channels.proposalPolls(poll.targetId), {
+            mutationId: ctx.requestId,
+          });
+        }
+
         return closeOutputSchema.parse({
           id: updatedPoll.id,
           status: updatedPoll.status,

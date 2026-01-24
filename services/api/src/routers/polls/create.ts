@@ -1,7 +1,9 @@
 // TODO: Re-enable when permission checks are restored
 // import { getProfileAccessUser } from '@op/common';
+import { Channels } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { type PollOption, polls, users } from '@op/db/schema';
+import { realtime } from '@op/realtime/server';
 import { TRPCError } from '@trpc/server';
 // import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
@@ -110,6 +112,13 @@ export const createPollRouter = router({
           targetId,
           userId: user.id,
         });
+
+        // Broadcast to proposal polls channel if target is a proposal
+        if (targetType === 'proposal') {
+          await realtime.publish(Channels.proposalPolls(targetId), {
+            mutationId: ctx.requestId,
+          });
+        }
 
         return pollOutputSchema.parse(poll);
       } catch (error) {

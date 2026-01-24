@@ -57,9 +57,9 @@ function PollSectionContent({
   const polls = data?.polls ?? [];
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-neutral-charcoal">
+        <h2 className="text-sm font-semibold text-neutral-charcoal">
           {t('Polls')}
         </h2>
         <Button
@@ -68,19 +68,19 @@ function PollSectionContent({
           size="small"
           onPress={() => setIsDialogOpen(true)}
         >
-          <LuPlus className="mr-1 h-4 w-4" />
+          <LuPlus className="mr-1 h-3 w-3" />
           {t('Add Poll')}
         </Button>
       </div>
 
       {polls.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-gray2 bg-neutral-50 py-8 text-center">
-          <p className="text-sm text-neutral-gray3">
+        <div className="rounded border border-dashed border-neutral-gray2 bg-neutral-50 py-6 text-center">
+          <p className="text-xs text-neutral-gray3">
             {t('No polls yet. Create one to get feedback.')}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {polls.map((poll) => (
             <PollCard key={poll.id} pollId={poll.id} />
           ))}
@@ -100,12 +100,12 @@ function PollSectionContent({
 
 function PollSectionSkeleton() {
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="h-6 w-16 animate-pulse rounded bg-neutral-gray1" />
-        <div className="h-8 w-24 animate-pulse rounded bg-neutral-gray1" />
+        <div className="h-4 w-12 animate-pulse rounded bg-neutral-gray1" />
+        <div className="h-6 w-20 animate-pulse rounded bg-neutral-gray1" />
       </div>
-      <div className="h-48 animate-pulse rounded-xl bg-neutral-gray1" />
+      <div className="h-32 animate-pulse rounded-lg bg-neutral-gray1" />
     </section>
   );
 }
