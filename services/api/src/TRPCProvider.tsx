@@ -9,7 +9,8 @@ import {
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import React, { createContext, useState } from 'react';
+import { createContext, useState } from 'react';
+import type React from 'react';
 
 import { createLinks } from './links';
 import type { AppRouter } from './routers';
@@ -107,3 +108,11 @@ export const skipBatch = {
     },
   },
 };
+
+/**
+ * TanStack DB Collections
+ *
+ * Re-exported from collections module for convenience.
+ * These collections provide optimistic updates for platform admin screens.
+ */
+export { usersCollection, type CommonUser } from './collections';
