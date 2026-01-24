@@ -123,17 +123,21 @@ const TableColumn = ({
     <Column
       data-slot="table-column"
       {...props}
-      className={cx(
-        [
-          'text-left font-medium text-muted-fg',
-          'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
-          'px-4 py-(--gutter-y)',
-          'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
-          !bleed && 'sm:first:pl-1 sm:last:pr-1',
-          grid && 'border-l first:border-l-0',
-          isResizable && 'truncate overflow-hidden',
-        ],
+      className={composeRenderProps(
         className,
+        (className, { isHovered, allowsSorting }) =>
+          twMerge(
+            'text-left font-medium',
+            allowsSorting && isHovered ? 'text-neutral-gray3' : 'text-muted-fg',
+            'allows-sorting:active:text-neutral-charcoal',
+            'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
+            'px-4 py-(--gutter-y)',
+            'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
+            !bleed && 'sm:first:pl-1 sm:last:pr-1',
+            grid && 'border-l first:border-l-0',
+            isResizable && 'truncate overflow-hidden',
+            className,
+          ),
       )}
     >
       {(values) => (
@@ -150,7 +154,7 @@ const TableColumn = ({
               data-slot="icon"
               aria-hidden
               className={twJoin(
-                'size-3 shrink-0 text-muted-fg transition-transform duration-200',
+                'size-3 shrink-0 transition-transform duration-200',
                 values.sortDirection === 'ascending' ? 'rotate-180' : '',
               )}
             />
