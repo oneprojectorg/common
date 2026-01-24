@@ -127,7 +127,7 @@ const TableColumn = ({
         className,
         (className, { isHovered, allowsSorting }) =>
           twMerge(
-            'text-left font-medium',
+            'h-8 text-left text-sm font-normal',
             allowsSorting && isHovered ? 'text-neutral-gray3' : 'text-muted-fg',
             'allows-sorting:active:text-neutral-charcoal',
             'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
@@ -248,7 +248,7 @@ const TableRow = <T extends object>({
           },
         ) =>
           twMerge(
-            'group relative cursor-default text-muted-fg outline outline-transparent',
+            'group relative min-h-12 cursor-default text-black outline outline-transparent',
             isFocusVisible &&
               'bg-primary/5 ring-3 ring-ring/20 outline-primary hover:bg-primary/10',
             isDragging &&
