@@ -5,6 +5,7 @@ import { decisionRouter } from './decision';
 import individualRouter from './individual';
 import { organizationRouter } from './organization';
 import { platformRouter } from './platform';
+import { pollsRouter } from './polls';
 import { postsRouter } from './posts';
 import profileRouter from './profile';
 import { realtimeRouter } from './realtime';
@@ -18,6 +19,7 @@ export const appRouter = router({
   taxonomy: taxonomyRouter,
   content: contentRouter,
   posts: postsRouter,
+  polls: pollsRouter,
   decision: decisionRouter,
   platform: platformRouter,
   realtime: realtimeRouter,
