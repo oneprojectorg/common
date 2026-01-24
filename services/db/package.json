@@ -5,6 +5,7 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
+    ".": "./index.ts",
     "./client": "./client.ts",
     "./schema": "./schema/index.ts",
     "./tables": "./tables.ts",
