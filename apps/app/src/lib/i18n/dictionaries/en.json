@@ -399,6 +399,7 @@
   "platformAdmin_addUserToOrg_errorSelectBoth": "Please select both an organization and a role",
   "platformAdmin_addUserToOrg_selectOrganization": "Select Organization",
   "platformAdmin_addUserToOrg_selectRole": "Select Role",
+  "platformAdmin_updateProfile_error": "Failed to update profile",
   "No more updates.": "No more updates.",
   "Join requests": "Requests",
   "{name} wants to join your organization": "{name} wants to join your organization",

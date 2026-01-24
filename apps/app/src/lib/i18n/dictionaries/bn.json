@@ -398,6 +398,7 @@
   "Actions": "কাজ",
   "View analytics": "বিশ্লেষণ দেখুন",
   "Edit profile": "প্রোফাইল সম্পাদনা করুন",
+  "platformAdmin_updateProfile_error": "Failed to update profile",
   "Remove User": "ব্যবহারকারী সরান",
   "Search users by email": "ইমেইল দিয়ে ব্যবহারকারী অনুসন্ধান করুন",
   "Join requests": "অনুরোধ",

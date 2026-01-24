@@ -139,6 +139,7 @@ export const UsersRow = ({ user }: { user: User }) => {
       </div>
       {user.profile ? (
         <UpdateProfileModal
+          userId={user.id}
           authUserId={user.authUserId}
           profile={user.profile}
           isOpen={isEditModalOpen}

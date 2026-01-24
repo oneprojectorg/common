@@ -1,6 +1,11 @@
+import { usersCollection } from '@op/api/collections';
 import type { Profile } from '@op/api/encoders';
-import { trpcOptions } from '@op/api/trpcTanstackQuery';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { trpcClient } from '@op/api/trpcTanstackQuery';
+import { toast } from '@op/ui/Toast';
+import { createTransaction } from '@tanstack/db';
+import { useState } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import {
   BaseUpdateProfileForm,
@@ -9,24 +14,36 @@ import {
 
 import type { User } from '../types';
 
+/**
+ * Form for updating a user's profile with optimistic updates.
+ * Uses TanStack DB transactions to:
+ * 1. Apply optimistic update to collection immediately
+ * 2. Send mutation to server
+ * 3. On success: commit (automatic)
+ * 4. On error: rollback + show error toast
+ */
 export const UpdateProfileForm = ({
+  userId,
   authUserId,
   profile,
   onSuccess,
   className,
 }: {
+  /** The user's internal ID (collection key for optimistic updates) */
+  userId: User['id'];
+  /** The user's auth ID (for the mutation) */
   authUserId: User['authUserId'];
   profile: Profile;
   onSuccess: () => void;
   className?: string;
 }) => {
-  const queryClient = useQueryClient();
-  const updateProfile = useMutation(
-    trpcOptions.platform.admin.updateUserProfile.mutationOptions(),
-  );
+  const t = useTranslations();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (value: FormFields) => {
-    await updateProfile.mutateAsync({
+    setIsSubmitting(true);
+
+    const mutationData = {
       authUserId,
       data: {
         name: value.fullName,
@@ -35,16 +52,50 @@ export const UpdateProfileForm = ({
         website: value.website || undefined,
         focusAreas: value.focusAreas || undefined,
       },
+    };
+
+    // Create a transaction for optimistic updates
+    const tx = createTransaction({
+      mutationFn: async () => {
+        // Send the mutation to the server
+        await trpcClient.platform.admin.updateUserProfile.mutate(mutationData);
+      },
     });
-    queryClient.invalidateQueries(
-      trpcOptions.platform.admin.listAllUsers.queryFilter(),
-    );
+
+    // Apply optimistic update within the transaction
+    tx.mutate(() => {
+      usersCollection.update(userId, (draft) => {
+        if (draft.profile) {
+          draft.profile.name = value.fullName;
+          draft.profile.bio = value.title;
+          if (value.email !== undefined) {
+            draft.profile.email = value.email || null;
+          }
+          if (value.website !== undefined) {
+            draft.profile.website = value.website || null;
+          }
+        }
+      });
+    });
+
+    try {
+      // Wait for the transaction to be persisted
+      await tx.isPersisted.promise;
+      onSuccess();
+    } catch (error) {
+      // Transaction automatically rolls back on error
+      // Show error toast to user
+      toast.error({
+        message: t('platformAdmin_updateProfile_error'),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleImageUploadSuccess = () => {
-    queryClient.invalidateQueries(
-      trpcOptions.platform.admin.listAllUsers.queryFilter(),
-    );
+    // Image upload is handled separately, no optimistic update needed
+    // The server will update the image and we'll refetch
   };
 
   return (
@@ -55,7 +106,7 @@ export const UpdateProfileForm = ({
       formId="platform-admin-update-profile-form"
       onSubmit={handleSubmit}
       onImageUploadSuccess={handleImageUploadSuccess}
-      isSubmitting={updateProfile.isPending}
+      isSubmitting={isSubmitting}
     />
   );
 };

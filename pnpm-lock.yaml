@@ -500,6 +500,9 @@ importers:
       '@svgr/plugin-jsx':
         specifier: ^8.1.0
         version: 8.1.0(@svgr/core@8.1.0(typescript@5.7.3))
+      '@tanstack/db':
+        specifier: ^0.5.23
+        version: 0.5.23(typescript@5.7.3)
       '@tanstack/react-form':
         specifier: ^1.6.2
         version: 1.6.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
