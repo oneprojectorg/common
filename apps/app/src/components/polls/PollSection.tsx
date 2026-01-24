@@ -207,7 +207,11 @@ function PollNotificationItem({
         </span>
       </div>
       <NotificationPanelActions>
-        <Button size="small" onPress={onParticipate}>
+        <Button
+          size="small"
+          color={isPollClosed ? 'secondary' : 'primary'}
+          onPress={onParticipate}
+        >
           {isPollClosed ? t('View Results') : t('Participate')}
         </Button>
       </NotificationPanelActions>
