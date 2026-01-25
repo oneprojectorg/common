@@ -1,9 +1,26 @@
 import { clsx } from 'clsx';
 import type { ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
+
+const customTwMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      text: [
+        'title-xxl',
+        'title-xl',
+        'title-lg',
+        'title-md',
+        'title-base',
+        'title-sm',
+        'title-xs',
+        'title-xxs',
+      ],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return customTwMerge(clsx(inputs));
 }
 
 export const GRADIENTS = [
