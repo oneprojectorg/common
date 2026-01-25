@@ -16,6 +16,7 @@
     "@op/typescript-config": "workspace:*",
     "@playwright/test": "^1.52.0",
     "@supabase/supabase-js": "^2.49.3",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "catalog:"
   }
 }
