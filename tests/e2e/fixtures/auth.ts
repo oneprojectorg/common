@@ -1,7 +1,22 @@
 import type { Page } from '@playwright/test';
-import { createClient } from '@supabase/supabase-js';
 
 import { type E2ETestDataManager, test as testDataTest } from './test-data';
+
+/**
+ * Get Supabase project ID from the URL environment variable.
+ * Extracts the project ID from URLs like: https://[project-id].supabase.co
+ */
+function getSupabaseProjectId(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
+  }
+  const match = url.match(/https:\/\/([^.]+)\.supabase\.co/);
+  if (!match?.[1]) {
+    throw new Error(`Could not extract project ID from URL: ${url}`);
+  }
+  return match[1];
+}
 
 interface AuthenticatedUser {
   email: string;
@@ -9,83 +24,17 @@ interface AuthenticatedUser {
   authUserId: string;
 }
 
-/**
- * Creates a Supabase admin client for auth operations.
- */
-function createSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error(
-      'Missing required environment variables for auth operations',
-    );
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-}
-
-/**
- * Generates an OTP for a user using Supabase Admin API.
- * Returns the raw OTP token that can be used to verify.
- */
-async function generateOtpForUser(email: string): Promise<string> {
-  const supabaseAdmin = createSupabaseAdmin();
-
-  // Generate a magic link which contains the OTP
-  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'magiclink',
-    email,
-  });
-
-  if (error || !data.properties?.email_otp) {
-    throw new Error(`Failed to generate OTP: ${error?.message}`);
-  }
-
-  return data.properties.email_otp;
-}
-
-/**
- * Authenticates by performing a real login through the UI with OTP.
- *
- * Flow:
- * 1. Go to login page and enter email
- * 2. Click sign in (this triggers account.login which sends an OTP via signInWithOtp)
- * 3. Wait for OTP input to appear
- * 4. Generate a NEW OTP using admin API (this replaces the one sent by email)
- * 5. Enter the OTP and submit
- */
-async function loginViaUI(page: Page, user: { email: string }): Promise<void> {
-  await page.goto('/login');
-
-  // Fill in the email
-  await page.getByRole('textbox', { name: /email/i }).fill(user.email);
-
-  // Click sign in to request OTP (this triggers account.login which calls signInWithOtp)
-  await page.getByRole('button', { name: /sign in/i }).click();
-
-  // Wait for the OTP input to appear (indicated by "Email sent!" text)
-  await page.waitForSelector('input[aria-label="Code"]', { timeout: 15000 });
-
-  // NOW generate a fresh OTP - this will be valid because it's created after
-  // the login request. The admin generateLink creates a new valid token.
-  const otp = await generateOtpForUser(user.email);
-
-  // Fill in the OTP
-  await page.getByRole('textbox', { name: /code/i }).fill(otp);
-
-  // Click login button to verify OTP
-  await page.getByRole('button', { name: /login/i }).click();
-
-  // Wait for redirect away from login page
-  await page.waitForURL((url) => !url.pathname.includes('/login'), {
-    timeout: 15000,
-  });
+interface SupabaseSession {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  expires_at?: number;
+  token_type: string;
+  user: {
+    id: string;
+    email: string;
+    [key: string]: unknown;
+  };
 }
 
 interface AuthFixtures {
@@ -95,10 +44,60 @@ interface AuthFixtures {
 }
 
 /**
+ * Signs in a user via Supabase REST API (password auth) and returns the session.
+ * This bypasses the UI entirely for fast, reliable authentication.
+ */
+async function signInViaApi(user: {
+  email: string;
+  password: string;
+}): Promise<SupabaseSession> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    );
+  }
+
+  const response = await fetch(
+    `${supabaseUrl}/auth/v1/token?grant_type=password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: supabaseAnonKey,
+      },
+      body: JSON.stringify({
+        email: user.email,
+        password: user.password,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `Failed to sign in via API: ${response.status} - ${errorBody}`,
+    );
+  }
+
+  const session = (await response.json()) as SupabaseSession;
+  return session;
+}
+
+/**
  * Extended test fixture that provides:
  * - testData: Test data manager for creating organizations and users
  * - authenticatedPage: A page with an authenticated user session
  * - authenticatedUser: The user credentials used for authentication
+ *
+ * Authentication works by:
+ * 1. Getting a valid session via Supabase password auth API
+ * 2. Injecting the session into localStorage before page load
+ * 3. The useAuthUser hook (in E2E mode) reads from localStorage
+ *
+ * This requires NEXT_PUBLIC_E2E_TEST=true to be set (done in playwright.config.ts)
  *
  * @example
  * ```ts
@@ -124,9 +123,54 @@ export const test = testDataTest.extend<
     });
   },
 
-  authenticatedPage: async ({ page, authenticatedUser }, use) => {
-    // Login through the actual UI with OTP
-    await loginViaUI(page, authenticatedUser);
+  authenticatedPage: async ({ context, page, authenticatedUser }, use) => {
+    // Get a valid session via Supabase API
+    const session = await signInViaApi(authenticatedUser);
+
+    const storageKey = `sb-${getSupabaseProjectId()}-auth-token`;
+
+    // Build the cookie value in the format Supabase @supabase/ssr expects:
+    // 1. Base64URL encode the JSON session
+    // 2. Prefix with "base64-"
+    // 3. Chunk if > 3180 chars (cookie size limit)
+    const sessionJson = JSON.stringify(session);
+    const base64Encoded = Buffer.from(sessionJson)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    const base64Value = `base64-${base64Encoded}`;
+
+    // Chunk the cookie value (max ~3180 chars per cookie to stay under 4KB limit)
+    const CHUNK_SIZE = 3180;
+    const chunks: string[] = [];
+    for (let i = 0; i < base64Value.length; i += CHUNK_SIZE) {
+      chunks.push(base64Value.slice(i, i + CHUNK_SIZE));
+    }
+
+    // Add cookies to the browser context - these will be sent with all requests
+    // Using context.addCookies ensures they're sent at the browser level, not just in headers
+    const cookiesToAdd = chunks.map((chunk, i) => ({
+      name: chunks.length === 1 ? storageKey : `${storageKey}.${i}`,
+      value: chunk,
+      domain: 'localhost',
+      path: '/',
+    }));
+
+    await context.addCookies(cookiesToAdd);
+
+    // Also inject into localStorage for client-side auth
+    await context.addInitScript(
+      (args: { storageKey: string; sessionJson: string }) => {
+        window.localStorage.setItem(args.storageKey, args.sessionJson);
+        console.log('[E2E Auth] Session injected into localStorage');
+      },
+      { storageKey, sessionJson: JSON.stringify(session) },
+    );
+
+    // Navigate to home page (via /en/ to skip middleware locale redirect)
+    await page.goto('/en/');
+    await page.waitForLoadState('networkidle');
 
     await use(page);
   },

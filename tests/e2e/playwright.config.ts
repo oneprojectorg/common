@@ -34,12 +34,23 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server before starting the tests */
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3100',
-    reuseExistingServer: !process.env.CI,
-    cwd: path.resolve(__dirname, '../..'),
-    timeout: 120 * 1000,
-  },
+  /* Run local dev servers before starting the tests */
+  webServer: [
+    {
+      // Start the API server
+      command: 'pnpm -C ./apps/api dev',
+      url: 'http://localhost:3300',
+      reuseExistingServer: !process.env.CI,
+      cwd: path.resolve(__dirname, '../..'),
+      timeout: 120 * 1000,
+    },
+    {
+      // Start the app with E2E test mode enabled
+      command: 'NEXT_PUBLIC_E2E_TEST=true pnpm w:app dev',
+      url: 'http://localhost:3100',
+      reuseExistingServer: !process.env.CI,
+      cwd: path.resolve(__dirname, '../..'),
+      timeout: 120 * 1000,
+    },
+  ],
 });
