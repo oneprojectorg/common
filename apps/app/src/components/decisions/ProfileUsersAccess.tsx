@@ -20,11 +20,7 @@ type SortColumn = 'name' | 'email' | 'role';
 
 const ITEMS_PER_PAGE = 25;
 
-export const ProfileUsersAccessPage = ({
-  profileId,
-}: {
-  profileId: string;
-}) => {
+export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [searchQuery, setSearchQuery] = useState('');
