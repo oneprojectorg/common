@@ -4,16 +4,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { E2ETestDataManager } from './test-data';
+import { E2ETestDataManager, type GeneratedUser } from './test-data';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-interface AuthenticatedUser {
-  email: string;
-  password: string;
-  authUserId: string;
-}
+type AuthenticatedUser = Pick<
+  GeneratedUser,
+  'email' | 'password' | 'authUserId'
+>;
 
 interface SupabaseSession {
   access_token: string;

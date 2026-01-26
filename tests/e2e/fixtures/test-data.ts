@@ -39,11 +39,6 @@ async function getRoleIdByName(roleName: 'Admin' | 'Member'): Promise<string> {
   return role.id;
 }
 
-interface SeedUserInput {
-  email: string;
-  role: 'Admin' | 'Member';
-}
-
 interface GenerateTestOrganizationOptions {
   users?: {
     admin?: number;
@@ -53,7 +48,7 @@ interface GenerateTestOrganizationOptions {
   emailDomain?: string;
 }
 
-interface GeneratedUser {
+export interface GeneratedUser {
   authUserId: string;
   email: string;
   password: string;
@@ -259,10 +254,10 @@ export class E2ETestDataManager {
   /**
    * Generates an email/role pair for test users.
    */
-  generateUserWithRole(
+  private generateUserWithRole(
     role: 'Admin' | 'Member',
     emailDomain = 'oneproject.org',
-  ): SeedUserInput {
+  ): { email: string; role: 'Admin' | 'Member' } {
     const randomSuffix = randomUUID().slice(0, 6);
     return {
       email: `e2e-${this.testId}-${role.toLowerCase()}-${randomSuffix}@${emailDomain}`,
