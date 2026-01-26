@@ -1,13 +1,7 @@
 'use client';
 
 import { formatCurrency, formatDateRange } from '@/utils/formatting';
-
-interface ProcessPhase {
-  id: string;
-  name: string;
-  startDate?: string;
-  endDate?: string;
-}
+import { type ProcessPhase } from '@op/api/encoders';
 
 interface DecisionStatsProps {
   currentPhase?: ProcessPhase;
@@ -32,10 +26,12 @@ export function DecisionStats({
         <p className="mt-1 text-lg font-medium text-neutral-charcoal">
           {currentPhase?.name || 'Proposal Submissions'}
         </p>
-        {(currentPhase?.startDate || currentPhase?.endDate) && (
+        {(currentPhase?.phase?.startDate || currentPhase?.phase?.endDate) && (
           <p className="mt-1 text-sm text-neutral-gray3">
-            {formatDateRange(currentPhase.startDate, currentPhase.endDate) ||
-              'Timeline not set'}
+            {formatDateRange(
+              currentPhase.phase?.startDate,
+              currentPhase.phase?.endDate,
+            ) || 'Timeline not set'}
           </p>
         )}
       </div>
