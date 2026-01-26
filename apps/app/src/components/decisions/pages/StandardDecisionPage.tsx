@@ -10,9 +10,6 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { EmptyState } from '@op/ui/EmptyState';
-import { LuLeaf } from 'react-icons/lu';
-
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
