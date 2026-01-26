@@ -4,6 +4,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: e2e-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     name: E2E Tests
@@ -27,8 +31,8 @@ jobs:
       # Resend (email - stub)
       RESEND_PASSWORD: re_test_key_for_ci
       # Google OAuth (stub values - not used in E2E tests)
-      SUPABASE_AUTH_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
-      SUPABASE_AUTH_GOOGLE_CLIENT_SECRET: test-client-secret
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
       # Centrifugo (realtime - stub values for tests)
       CENTRIFUGO_API_URL: http://localhost:8000/api
       CENTRIFUGO_API_KEY: test_api_key
