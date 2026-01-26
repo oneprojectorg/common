@@ -7,4 +7,4 @@
  */
 
 export { test, expect, TEST_USER_DEFAULT_PASSWORD } from './auth';
-export { createOrganization, createTestUser } from './test-data';
+export { createOrganization, createUser } from './test-data';

@@ -70,13 +70,13 @@ export interface CreateOrganizationResult {
   };
 }
 
-export interface CreateTestUserOptions {
+export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
 }
 
-export interface CreateTestUserResult {
+export interface CreateUserResult {
   user: {
     id: string;
     email: string;
@@ -88,12 +88,12 @@ export interface CreateTestUserResult {
 // ============================================================================
 
 /**
- * Creates a test user via Supabase admin API.
+ * Creates a user via Supabase admin API.
  * This bypasses email confirmation and creates a ready-to-use user.
  */
-export async function createTestUser(
-  opts: CreateTestUserOptions,
-): Promise<CreateTestUserResult> {
+export async function createUser(
+  opts: CreateUserOptions,
+): Promise<CreateUserResult> {
   const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -190,7 +190,7 @@ export async function createOrganization(
   ): Promise<GeneratedUser> => {
     const email = generateTestEmail(testId, role, emailDomain);
 
-    const { user: authUser } = await createTestUser({
+    const { user: authUser } = await createUser({
       supabaseAdmin,
       email,
     });

@@ -7,12 +7,12 @@
 export {
   addUserToOrganization,
   createOrganization,
-  createTestUser,
+  createUser,
   generateTestEmail,
   TEST_USER_DEFAULT_PASSWORD,
   type CreateOrganizationOptions,
   type CreateOrganizationResult,
-  type CreateTestUserOptions,
-  type CreateTestUserResult,
+  type CreateUserOptions,
+  type CreateUserResult,
   type GeneratedUser,
 } from '@op/test';
