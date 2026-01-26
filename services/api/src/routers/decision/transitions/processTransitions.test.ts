@@ -365,7 +365,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(currentPhaseId).toBe('results');
     });
 
-    it('should not process transitions when instance is already in final phase', async ({
+    it('should have no pending transitions for instance in final phase', async ({
       task,
       onTestFinished,
     }) => {
@@ -731,7 +731,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
     });
   });
 
-  describe('error handling', () => {
+  describe('result structure', () => {
     it('should return correct processed/failed counts', async ({
       task,
       onTestFinished,
@@ -882,6 +882,134 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       expect(transition).toBeDefined();
       expect(transition!.completedAt).not.toBeNull();
+    });
+
+    it('should not process transitions for completed instances', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Completed Status Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create a COMPLETED instance with a due transition
+      const instance = await createInstanceWithDueTransition(
+        testData,
+        setup,
+        caller,
+        {
+          name: 'Completed Instance Test',
+          currentPhaseId: 'submission',
+          fromStateId: 'submission',
+          toStateId: 'review',
+          scheduledDate: createPastDate(1),
+          status: ProcessStatus.COMPLETED, // Explicitly set to completed
+        },
+      );
+
+      // Process transitions - completed instance should be skipped
+      await processDecisionsTransitions();
+
+      // Verify the instance state has NOT changed
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('submission');
+
+      // Verify the transition is still pending (not completed)
+      const [transition] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transition).toBeDefined();
+      expect(transition!.completedAt).toBeNull();
+    });
+
+    it('should not process transitions for cancelled instances', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Cancelled Status Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create a CANCELLED instance with a due transition
+      const instance = await createInstanceWithDueTransition(
+        testData,
+        setup,
+        caller,
+        {
+          name: 'Cancelled Instance Test',
+          currentPhaseId: 'submission',
+          fromStateId: 'submission',
+          toStateId: 'review',
+          scheduledDate: createPastDate(1),
+          status: ProcessStatus.CANCELLED, // Explicitly set to cancelled
+        },
+      );
+
+      // Process transitions - cancelled instance should be skipped
+      await processDecisionsTransitions();
+
+      // Verify the instance state has NOT changed
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('submission');
+
+      // Verify the transition is still pending (not completed)
+      const [transition] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transition).toBeDefined();
+      expect(transition!.completedAt).toBeNull();
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should return zeros when no transitions are due', async () => {
+      // Call processDecisionsTransitions without any test data setup
+      // Note: Other concurrent tests may have due transitions, so we can't
+      // guarantee processed=0, but we can verify the result structure
+      const result = await processDecisionsTransitions();
+
+      expect(typeof result.processed).toBe('number');
+      expect(typeof result.failed).toBe('number');
+      expect(Array.isArray(result.errors)).toBe(true);
+      expect(result.failed).toBe(0);
     });
   });
 });
