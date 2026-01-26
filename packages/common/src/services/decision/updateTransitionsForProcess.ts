@@ -5,6 +5,7 @@ import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { ScheduledTransition } from './types';
 
 export interface UpdateTransitionsInput {
   processInstance: ProcessInstance;
@@ -62,15 +63,14 @@ export async function updateTransitionsForProcess({
 
     // Build expected transitions for phases with date-based advancement
     // A transition is created FROM a phase (when it ends) TO the next phase
-    const expectedTransitions: Array<{
-      fromStateId: string;
-      toStateId: string;
-      scheduledDate: string;
-    }> = [];
+    const expectedTransitions: ScheduledTransition[] = [];
 
     phases.forEach((currentPhase, index) => {
       const nextPhase = phases[index + 1];
-      if (!nextPhase) return; // Skip last phase (no next phase to transition to)
+      // Skip last phase (no next phase to transition to)
+      if (!nextPhase) {
+        return;
+      }
 
       // Only create transition if current phase uses date-based advancement
       if (currentPhase.rules?.advancement?.method !== 'date') {
@@ -88,6 +88,7 @@ export async function updateTransitionsForProcess({
 
       // DB columns are named fromStateId/toStateId but store phase IDs
       expectedTransitions.push({
+        processInstanceId: processInstance.id,
         fromStateId: currentPhase.phaseId,
         toStateId: nextPhase.phaseId,
         scheduledDate: new Date(scheduledDate).toISOString(),
@@ -146,7 +147,7 @@ export async function updateTransitionsForProcess({
           } else {
             // Create new transition for this phase
             await dbClient.insert(decisionProcessTransitions).values({
-              processInstanceId: processInstance.id,
+              processInstanceId: expected.processInstanceId,
               fromStateId: expected.fromStateId,
               toStateId: expected.toStateId,
               scheduledDate: expected.scheduledDate,

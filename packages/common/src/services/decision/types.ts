@@ -184,3 +184,11 @@ export interface DecisionData {
   // Decision content should match the decisionDefinition schema
   [key: string]: unknown;
 }
+
+/** A scheduled phase transition (fromStateId/toStateId store phase IDs) */
+export interface ScheduledTransition {
+  processInstanceId: string;
+  fromStateId: string;
+  toStateId: string;
+  scheduledDate: string;
+}
