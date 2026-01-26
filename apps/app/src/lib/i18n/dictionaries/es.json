@@ -436,5 +436,10 @@
   "User avatar": "Avatar del usuario",
   "Done": "Listo",
   "How do you want to structure your decision-making process?": "¿Cómo quieres estructurar tu proceso de toma de decisiones?",
-  "No templates found": "No se encontraron plantillas"
+  "No templates found": "No se encontraron plantillas",
+  "Members could not be loaded": "No se pudieron cargar los miembros",
+  "Try again": "Intentar de nuevo",
+  "Role updated successfully": "Rol actualizado exitosamente",
+  "Failed to update role": "Error al actualizar el rol",
+  "Members list": "Lista de miembros"
 }

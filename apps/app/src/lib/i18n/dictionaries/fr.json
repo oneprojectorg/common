@@ -437,5 +437,10 @@
   "User avatar": "Avatar de l'utilisateur",
   "Done": "Terminé",
   "How do you want to structure your decision-making process?": "Comment souhaitez-vous structurer votre processus de prise de décision ?",
-  "No templates found": "Aucun modèle trouvé"
+  "No templates found": "Aucun modèle trouvé",
+  "Members could not be loaded": "Les membres n'ont pas pu être chargés",
+  "Try again": "Réessayer",
+  "Role updated successfully": "Rôle mis à jour avec succès",
+  "Failed to update role": "Échec de la mise à jour du rôle",
+  "Members list": "Liste des membres"
 }

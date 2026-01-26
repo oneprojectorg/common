@@ -146,7 +146,7 @@ function ResultsPageContent({
             <DecisionResultsTabPanel id="funded">
               <APIErrorBoundary
                 fallbacks={{
-                  404: (
+                  404: () => (
                     <EmptyState icon={<LuLeaf className="size-6" />}>
                       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
                         {t('Results are still being processed.')}
@@ -169,7 +169,7 @@ function ResultsPageContent({
             <DecisionResultsTabPanel id="ballot">
               <APIErrorBoundary
                 fallbacks={{
-                  default: <NoVoteFound />,
+                  default: () => <NoVoteFound />,
                 }}
               >
                 <div className="lg:col-span-3">
