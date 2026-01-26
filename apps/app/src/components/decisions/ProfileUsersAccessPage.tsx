@@ -83,7 +83,7 @@ export const ProfileUsersAccessPage = ({
         placeholder={t('Search')}
         value={searchQuery}
         onChange={setSearchQuery}
-        className="w-full max-w-96"
+        className="w-full sm:max-w-96"
       />
 
       <ProfileUsersAccessTable

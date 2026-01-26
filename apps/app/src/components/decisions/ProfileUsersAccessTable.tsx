@@ -156,7 +156,7 @@ const MobileProfileUserCard = ({
   const status = getProfileUserStatus();
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
       <div className="flex gap-4">
         <ProfileAvatar
           profile={profileUser.profile}
@@ -165,10 +165,10 @@ const MobileProfileUserCard = ({
         />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
-            <span className="text-sm text-neutral-black">{displayName}</span>
-            <span className="text-xs text-neutral-gray4">{status}</span>
+            <span className="text-base text-neutral-black">{displayName}</span>
+            <span className="text-sm text-neutral-gray4">{status}</span>
           </div>
-          <span className="truncate text-sm text-neutral-black">
+          <span className="truncate text-base text-neutral-black">
             {profileUser.email}
           </span>
         </div>
@@ -263,17 +263,17 @@ const ProfileUsersAccessTableContent = ({
                       <div className="flex items-center gap-2">
                         <ProfileAvatar profile={profileUser.profile} />
                         <div className="flex flex-col">
-                          <span className="text-sm text-neutral-black">
+                          <span className="text-base text-neutral-black">
                             {displayName}
                           </span>
-                          <span className="text-xs text-neutral-gray4">
+                          <span className="text-sm text-neutral-gray4">
                             {status}
                           </span>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-neutral-black">
+                      <span className="text-base text-neutral-black">
                         {profileUser.email}
                       </span>
                     </TableCell>
