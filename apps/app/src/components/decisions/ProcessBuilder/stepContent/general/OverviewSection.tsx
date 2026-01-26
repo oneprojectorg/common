@@ -44,11 +44,18 @@ function AutoSaveHandler({
   decisionId: string;
   setInstanceData: (
     id: string,
-    data: { name?: string; description?: string; config?: Record<string, unknown> }
+    data: {
+      name?: string;
+      description?: string;
+      config?: Record<string, unknown>;
+    },
   ) => void;
-  setSaveStatus: (id: string, status: 'idle' | 'saving' | 'saved' | 'error') => void;
+  setSaveStatus: (
+    id: string,
+    status: 'idle' | 'saving' | 'saved' | 'error',
+  ) => void;
 }) {
-  const [debouncedValues] = useDebounce(values, 500);
+  const [debouncedValues] = useDebounce(values, 1000);
   const isInitialMount = useRef(true);
   const previousValues = useRef<string | null>(null);
 
@@ -142,7 +149,7 @@ export default function OverviewSection({
   const instanceData = useProcessBuilderStore((s) => s.instances[decisionId]);
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const saveStatus = useProcessBuilderStore(
-    (s) => s.saveStatus[decisionId] ?? 'idle'
+    (s) => s.saveStatus[decisionId] ?? 'idle',
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
 
@@ -185,7 +192,6 @@ export default function OverviewSection({
       console.log('Form submitted:', value);
     },
   });
-
 
   return (
     <div className="size-full">
