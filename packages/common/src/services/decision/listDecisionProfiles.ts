@@ -9,6 +9,7 @@ import {
 import { User } from '@op/supabase/lib';
 
 import {
+  type PaginatedResult,
   constructTextSearch,
   decodeCursor,
   encodeCursor,
@@ -58,12 +59,6 @@ type DecisionProfileItem = Omit<
   };
 };
 
-type ListDecisionProfilesResult = {
-  items: DecisionProfileItem[];
-  next: string | null;
-  hasMore: boolean;
-};
-
 export const listDecisionProfiles = async ({
   user,
   search,
@@ -82,7 +77,7 @@ export const listDecisionProfiles = async ({
   dir?: 'asc' | 'desc';
   cursor?: string | null;
   ownerProfileId?: string | null;
-}): Promise<ListDecisionProfilesResult> => {
+}): Promise<PaginatedResult<DecisionProfileItem>> => {
   // Get the column to order by
   const orderByColumn =
     orderBy === 'name'

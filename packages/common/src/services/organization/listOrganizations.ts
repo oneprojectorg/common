@@ -79,7 +79,7 @@ export const listOrganizations = async ({
     });
 
     const hasMore = result.length > limit;
-    const items = hasMore ? result.slice(0, limit) : result;
+    const items = result.slice(0, limit);
     const lastItem = items[items.length - 1];
 
     const orderByValue =

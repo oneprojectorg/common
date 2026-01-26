@@ -14,13 +14,21 @@ export const listUsersRouter = router({
         .object({
           profileId: z.uuid(),
           query: z.string().min(2).optional(),
+          cursor: z.string().nullish(),
+          limit: z.number().min(1).max(100).optional(),
         })
         .merge(profileUserSortable),
     )
-    .output(z.array(profileUserEncoder))
+    .output(
+      z.object({
+        items: z.array(profileUserEncoder),
+        next: z.string().nullable(),
+        hasMore: z.boolean(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { profileId, orderBy, dir, query } = input;
+      const { profileId, orderBy, dir, query, cursor, limit } = input;
 
       return listProfileUsers({
         profileId,
@@ -28,6 +36,8 @@ export const listUsersRouter = router({
         orderBy,
         dir,
         query,
+        cursor,
+        limit,
       });
     }),
 });

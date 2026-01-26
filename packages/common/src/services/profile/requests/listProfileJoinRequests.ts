@@ -3,7 +3,12 @@ import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
-import { decodeCursor, encodeCursor, getCursorCondition } from '../../../utils';
+import {
+  type PaginatedResult,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../../utils';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
 import { JoinProfileRequestWithProfiles } from './types';
 
@@ -30,11 +35,7 @@ export const listProfileJoinRequests = async ({
   cursor?: string | null;
   limit?: number;
   dir?: 'asc' | 'desc';
-}): Promise<{
-  items: JoinProfileRequestWithProfiles[];
-  next: string | null;
-  hasMore: boolean;
-}> => {
+}): Promise<PaginatedResult<JoinProfileRequestWithProfiles>> => {
   // Build cursor condition for pagination
   const cursorCondition = cursor
     ? getCursorCondition({

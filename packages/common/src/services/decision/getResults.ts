@@ -11,12 +11,25 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { NotFoundError, decodeCursor, encodeCursor } from '../../utils';
+import {
+  NotFoundError,
+  type PaginatedResult,
+  decodeCursor,
+  encodeCursor,
+} from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { listProposals } from './listProposals';
 
 // Uses selectionRank with id as tiebreaker for stable ordering
 type SelectionCursor = { selectionRank: number | null; id: string };
+
+type ResultProposalItem = Awaited<
+  ReturnType<typeof listProposals>
+>['proposals'][number] & {
+  selectionRank: number | null;
+  voteCount: number;
+  allocated: string | null;
+};
 
 export const getLatestResultWithProposals = async ({
   processInstanceId,
@@ -28,17 +41,7 @@ export const getLatestResultWithProposals = async ({
   user: User;
   limit?: number;
   cursor?: string | null;
-}): Promise<{
-  items: Array<
-    Awaited<ReturnType<typeof listProposals>>['proposals'][number] & {
-      selectionRank: number | null;
-      voteCount: number;
-      allocated: string | null;
-    }
-  >;
-  next: string | null;
-  hasMore: boolean;
-} | null> => {
+}): Promise<PaginatedResult<ResultProposalItem> | null> => {
   const instanceWithOrg = await db
     .select({
       instanceId: processInstances.id,
