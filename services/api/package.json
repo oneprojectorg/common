@@ -10,8 +10,7 @@
     "./server": "./src/TRPCProvider.server.ts",
     "./serverClient": "./src/serverClient.ts",
     "./ssrCookies": "./src/ssrCookies.ts",
-    "./encoders": "./src/encoders/index.ts",
-    "./test/helpers/TestOrganizationDataManager": "./src/test/helpers/TestOrganizationDataManager.ts"
+    "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
