@@ -17,10 +17,8 @@ const ProfileMembersContent = async ({ slug }: { slug: string }) => {
   }
 
   const profileId = decisionProfile.id;
-  const ownerSlug = decisionProfile.processInstance.owner?.slug;
-  const decisionName =
-    decisionProfile.processInstance.process?.name ||
-    decisionProfile.processInstance.name;
+  const ownerSlug = decisionProfile.processInstance.owner?.slug; // will exist for all new processes
+  const decisionName = decisionProfile.processInstance.name;
 
   if (!ownerSlug) {
     notFound();

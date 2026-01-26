@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { profileUserEncoder } from '@op/api/encoders';
+import type { ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -18,23 +18,66 @@ import {
 import { useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';
-import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
-// Infer the ProfileUser type from the encoder
-type ProfileUser = z.infer<typeof profileUserEncoder>;
+// Exported component with loading and error states
+export const ProfileUsersAccessTable = ({
+  profileUsers,
+  profileId,
+  sortDescriptor,
+  onSortChange,
+  isLoading,
+  isError,
+  onRetry,
+  roles,
+}: {
+  profileUsers: ProfileUser[];
+  profileId: string;
+  sortDescriptor: SortDescriptor;
+  onSortChange: (descriptor: SortDescriptor) => void;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+  roles: { id: string; name: string }[];
+}) => {
+  const t = useTranslations();
 
-const getProfileUserStatus = (profileUser: ProfileUser): string => {
-  // Check for status field if available, otherwise derive from data
-  if ('status' in profileUser && typeof profileUser.status === 'string') {
-    // Capitalize first letter
+  if (isError) {
     return (
-      profileUser.status.charAt(0).toUpperCase() + profileUser.status.slice(1)
+      <EmptyState>
+        <span>{t('Members could not be loaded')}</span>
+        <Button onPress={onRetry} color="secondary" size="small">
+          {t('Try again')}
+        </Button>
+      </EmptyState>
     );
   }
+
+  if (profileUsers.length === 0 && !isLoading) {
+    return (
+      <EmptyState icon={<LuUsers className="size-6" />}>
+        <span>{t('No members found')}</span>
+      </EmptyState>
+    );
+  }
+
+  return (
+    <ProfileUsersAccessTableContent
+      profileUsers={profileUsers}
+      profileId={profileId}
+      sortDescriptor={sortDescriptor}
+      onSortChange={onSortChange}
+      isLoading={isLoading}
+      roles={roles}
+    />
+  );
+};
+
+const getProfileUserStatus = (): string => {
+  // TODO: We need this logic in the backend
   // Default to "Active" for existing profile users
   return 'Active';
 };
@@ -162,7 +205,7 @@ const ProfileUsersAccessTableContent = ({
               profileUser.name ||
               (profileUser.email?.split('@')?.[0] ?? 'Unknown');
             const currentRole = profileUser.roles[0];
-            const status = getProfileUserStatus(profileUser);
+            const status = getProfileUserStatus();
 
             return (
               <TableRow key={profileUser.id} id={profileUser.id}>
@@ -201,58 +244,5 @@ const ProfileUsersAccessTableContent = ({
         </TableBody>
       </Table>
     </div>
-  );
-};
-
-// Exported component with loading and error states
-export const ProfileUsersAccessTable = ({
-  profileUsers,
-  profileId,
-  sortDescriptor,
-  onSortChange,
-  isLoading,
-  isError,
-  onRetry,
-  roles,
-}: {
-  profileUsers: ProfileUser[];
-  profileId: string;
-  sortDescriptor: SortDescriptor;
-  onSortChange: (descriptor: SortDescriptor) => void;
-  isLoading: boolean;
-  isError: boolean;
-  onRetry: () => void;
-  roles: { id: string; name: string }[];
-}) => {
-  const t = useTranslations();
-
-  if (isError) {
-    return (
-      <EmptyState>
-        <span>{t('Members could not be loaded')}</span>
-        <Button onPress={onRetry} color="secondary" size="small">
-          {t('Try again')}
-        </Button>
-      </EmptyState>
-    );
-  }
-
-  if (profileUsers.length === 0 && !isLoading) {
-    return (
-      <EmptyState icon={<LuUsers className="size-6" />}>
-        <span>{t('No members found')}</span>
-      </EmptyState>
-    );
-  }
-
-  return (
-    <ProfileUsersAccessTableContent
-      profileUsers={profileUsers}
-      profileId={profileId}
-      sortDescriptor={sortDescriptor}
-      onSortChange={onSortChange}
-      isLoading={isLoading}
-      roles={roles}
-    />
   );
 };

@@ -46,7 +46,7 @@ export const ProfileUsersAccessPage = ({
   const dir: SortDir =
     sortDescriptor.direction === 'ascending' ? 'asc' : 'desc';
 
-  // Build query input - only include query if >= 2 chars (API requirement)
+  // Build query input - only include query if >= 2 chars
   const queryInput = {
     profileId,
     cursor,
@@ -56,7 +56,7 @@ export const ProfileUsersAccessPage = ({
     query: debouncedQuery.length >= 2 ? debouncedQuery : undefined,
   };
 
-  // Use regular query - cache handles exact query matches, loading shown for uncached queries
+  // Use regular query - cache handles exact query matches, loading shown for uncached queries. We don't use a Suspense due to not wanting to suspend the entire table
   const { data, isPending, isError, refetch } =
     trpc.profile.listUsers.useQuery(queryInput);
 
@@ -64,9 +64,8 @@ export const ProfileUsersAccessPage = ({
   const { data: rolesData, isPending: rolesPending } =
     trpc.organization.getRoles.useQuery();
 
-  const profileUsers = data?.items ?? [];
-  const next = data?.next;
-  const roles = rolesData?.roles ?? [];
+  const { items: profileUsers = [], next } = data ?? {};
+  const { roles = [] } = rolesData ?? {};
 
   const onNext = () => {
     if (next) {
