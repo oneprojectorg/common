@@ -66,11 +66,10 @@ export const ProfileUsersAccessPage = ({
 
   const profileUsers = data?.items ?? [];
   const next = data?.next;
-  const hasMore = data?.hasMore ?? false;
   const roles = rolesData?.roles ?? [];
 
   const onNext = () => {
-    if (hasMore && next) {
+    if (next) {
       handleNext(next);
     }
   };
@@ -100,7 +99,7 @@ export const ProfileUsersAccessPage = ({
       />
 
       <Pagination
-        next={hasMore ? onNext : undefined}
+        next={next ? onNext : undefined}
         previous={canGoPrevious ? handlePrevious : undefined}
       />
     </div>
