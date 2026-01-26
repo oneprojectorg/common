@@ -199,7 +199,7 @@ export const listProfileUsers = async ({
 
   // Build next cursor from last item
   // Cursor value must match the primary ORDER BY column
-  const lastResult = profileUserResults[resultItems.length - 1];
+  const lastResult = resultItems[resultItems.length - 1];
   const buildNextCursor = (): string | null => {
     if (!hasMore || !lastResult) {
       return null;
