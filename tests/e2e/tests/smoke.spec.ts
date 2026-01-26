@@ -4,8 +4,7 @@ test.describe('Smoke Tests', () => {
   test('authenticated user sees welcome message on home page', async ({
     authenticatedPage,
   }) => {
-    // authenticatedPage already logged in via UI, now navigate to home
-    // Navigate directly to /en/ to bypass middleware auth check (which can't read our test session)
+    // authenticatedPage is pre-authenticated via storageState
     await authenticatedPage.goto('/en/');
 
     // Verify we're not redirected to login

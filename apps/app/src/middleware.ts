@@ -18,10 +18,6 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 
   event.waitUntil(logger.flush());
 
-  // E2E Test Mode: Skip auth redirects when running Playwright tests
-  // This prevents redirect loops before cookies are established
-  const isE2ETest = process.env.NEXT_PUBLIC_E2E_TEST === 'true';
-
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
   const pathnameIsMissingLocale = i18nConfig.locales.every(
@@ -118,9 +114,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     return response;
   }
 
-  // In E2E test mode, skip auth redirect - tests inject cookies directly
   if (
-    !isE2ETest &&
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !(request.nextUrl.pathname === '/')

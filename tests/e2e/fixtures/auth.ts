@@ -1,22 +1,13 @@
 import type { Page } from '@playwright/test';
+import { test as base } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { type E2ETestDataManager, test as testDataTest } from './test-data';
+import { E2ETestDataManager } from './test-data';
 
-/**
- * Get Supabase project ID from the URL environment variable.
- * Extracts the project ID from URLs like: https://[project-id].supabase.co
- */
-function getSupabaseProjectId(): string {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!url) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
-  }
-  const match = url.match(/https:\/\/([^.]+)\.supabase\.co/);
-  if (!match?.[1]) {
-    throw new Error(`Could not extract project ID from URL: ${url}`);
-  }
-  return match[1];
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface AuthenticatedUser {
   email: string;
@@ -37,15 +28,32 @@ interface SupabaseSession {
   };
 }
 
-interface AuthFixtures {
-  testData: E2ETestDataManager;
+interface WorkerFixtures {
+  workerStorageState: string;
+  workerAuthUser: AuthenticatedUser;
+  workerTestData: E2ETestDataManager;
+}
+
+interface TestFixtures {
   authenticatedPage: Page;
   authenticatedUser: AuthenticatedUser;
+  testData: E2ETestDataManager;
+}
+
+function getSupabaseProjectId(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
+  }
+  const match = url.match(/https:\/\/([^.]+)\.supabase\.co/);
+  if (!match?.[1]) {
+    throw new Error(`Could not extract project ID from URL: ${url}`);
+  }
+  return match[1];
 }
 
 /**
- * Signs in a user via Supabase REST API (password auth) and returns the session.
- * This bypasses the UI entirely for fast, reliable authentication.
+ * Authenticates via Supabase password API and returns session data.
  */
 async function signInViaApi(user: {
   email: string;
@@ -82,96 +90,149 @@ async function signInViaApi(user: {
     );
   }
 
-  const session = (await response.json()) as SupabaseSession;
-  return session;
+  return (await response.json()) as SupabaseSession;
 }
 
 /**
- * Extended test fixture that provides:
- * - testData: Test data manager for creating organizations and users
- * - authenticatedPage: A page with an authenticated user session
- * - authenticatedUser: The user credentials used for authentication
+ * Extended test fixture that provides authenticated browser state using
+ * Playwright's recommended storageState pattern with API-based auth.
  *
- * Authentication works by:
- * 1. Getting a valid session via Supabase password auth API
- * 2. Injecting the session into localStorage before page load
- * 3. The useAuthUser hook (in E2E mode) reads from localStorage
+ * Authentication flow:
+ * 1. Each parallel worker gets a unique test account (created via testData)
+ * 2. Worker authenticates once via Supabase password API
+ * 3. Session cookies are saved to storageState file
+ * 4. All tests in that worker reuse the same authenticated state
+ * 5. Cleanup happens after all tests in the worker complete
  *
- * This requires NEXT_PUBLIC_E2E_TEST=true to be set (done in playwright.config.ts)
- *
- * @example
- * ```ts
- * test('should show dashboard', async ({ authenticatedPage }) => {
- *   await authenticatedPage.goto('/dashboard');
- *   await expect(authenticatedPage.getByText('Dashboard')).toBeVisible();
- * });
- * ```
+ * @see https://playwright.dev/docs/auth#authenticate-with-api-request
  */
-export const test = testDataTest.extend<
-  Omit<AuthFixtures, 'testData'> & { testData: E2ETestDataManager }
->({
-  authenticatedUser: async ({ testData }, use) => {
-    // Create an organization with a single admin user
-    const { adminUser } = await testData.createOrganization({
-      users: { admin: 1, member: 0 },
-    });
+export const test = base.extend<TestFixtures, WorkerFixtures>({
+  // Worker-scoped test data manager for creating the worker's auth account
+  workerTestData: [
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use, workerInfo) => {
+      const testId = `w${workerInfo.workerIndex}`;
+      const manager = new E2ETestDataManager(testId);
 
-    await use({
-      email: adminUser.email,
-      password: adminUser.password,
-      authUserId: adminUser.authUserId,
-    });
+      await use(manager);
+
+      // Cleanup after all tests in this worker
+      await manager.cleanup();
+    },
+    { scope: 'worker' },
+  ],
+
+  // Worker-scoped authenticated user info
+  workerAuthUser: [
+    async ({ workerTestData }, use) => {
+      const { adminUser } = await workerTestData.createOrganization({
+        users: { admin: 1, member: 0 },
+      });
+
+      await use({
+        email: adminUser.email,
+        password: adminUser.password,
+        authUserId: adminUser.authUserId,
+      });
+    },
+    { scope: 'worker' },
+  ],
+
+  // Worker-scoped storage state - authenticates once per worker via API
+  workerStorageState: [
+    async ({ workerAuthUser }, use, workerInfo) => {
+      const id = workerInfo.workerIndex;
+      const authDir = path.join(__dirname, '../playwright/.auth');
+      const fileName = path.join(authDir, `${id}.json`);
+
+      // Ensure auth directory exists
+      if (!fs.existsSync(authDir)) {
+        fs.mkdirSync(authDir, { recursive: true });
+      }
+
+      // Authenticate via Supabase API
+      const session = await signInViaApi(workerAuthUser);
+
+      // Build cookie value in Supabase @supabase/ssr format
+      const storageKey = `sb-${getSupabaseProjectId()}-auth-token`;
+      const sessionJson = JSON.stringify(session);
+      const base64Encoded = Buffer.from(sessionJson)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+      const base64Value = `base64-${base64Encoded}`;
+
+      // Chunk the cookie value (max ~3180 chars per cookie)
+      const CHUNK_SIZE = 3180;
+      const chunks: string[] = [];
+      for (let i = 0; i < base64Value.length; i += CHUNK_SIZE) {
+        chunks.push(base64Value.slice(i, i + CHUNK_SIZE));
+      }
+
+      // Build storage state with cookies
+      const cookies = chunks.map((chunk, i) => ({
+        name: chunks.length === 1 ? storageKey : `${storageKey}.${i}`,
+        value: chunk,
+        domain: 'localhost',
+        path: '/',
+        expires: -1,
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax' as const,
+      }));
+
+      // Save storage state to file
+      const storageState = {
+        cookies,
+        origins: [
+          {
+            origin: 'http://localhost:3100',
+            localStorage: [
+              {
+                name: storageKey,
+                value: sessionJson,
+              },
+            ],
+          },
+        ],
+      };
+
+      fs.writeFileSync(fileName, JSON.stringify(storageState, null, 2));
+
+      await use(fileName);
+
+      // Clean up auth file after worker is done
+      if (fs.existsSync(fileName)) {
+        fs.unlinkSync(fileName);
+      }
+    },
+    { scope: 'worker' },
+  ],
+
+  // Use worker's storage state for all tests
+  storageState: async ({ workerStorageState }, use) => {
+    await use(workerStorageState);
   },
 
-  authenticatedPage: async ({ context, page, authenticatedUser }, use) => {
-    // Get a valid session via Supabase API
-    const session = await signInViaApi(authenticatedUser);
+  // Expose authenticated user info to tests
+  authenticatedUser: async ({ workerAuthUser }, use) => {
+    await use(workerAuthUser);
+  },
 
-    const storageKey = `sb-${getSupabaseProjectId()}-auth-token`;
+  // Test-scoped test data manager for creating additional test data
+  // eslint-disable-next-line no-empty-pattern
+  testData: async ({}, use, testInfo) => {
+    const testId = testInfo.testId.slice(0, 8);
+    const manager = new E2ETestDataManager(testId);
 
-    // Build the cookie value in the format Supabase @supabase/ssr expects:
-    // 1. Base64URL encode the JSON session
-    // 2. Prefix with "base64-"
-    // 3. Chunk if > 3180 chars (cookie size limit)
-    const sessionJson = JSON.stringify(session);
-    const base64Encoded = Buffer.from(sessionJson)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    const base64Value = `base64-${base64Encoded}`;
+    await use(manager);
 
-    // Chunk the cookie value (max ~3180 chars per cookie to stay under 4KB limit)
-    const CHUNK_SIZE = 3180;
-    const chunks: string[] = [];
-    for (let i = 0; i < base64Value.length; i += CHUNK_SIZE) {
-      chunks.push(base64Value.slice(i, i + CHUNK_SIZE));
-    }
+    await manager.cleanup();
+  },
 
-    // Add cookies to the browser context - these will be sent with all requests
-    // Using context.addCookies ensures they're sent at the browser level, not just in headers
-    const cookiesToAdd = chunks.map((chunk, i) => ({
-      name: chunks.length === 1 ? storageKey : `${storageKey}.${i}`,
-      value: chunk,
-      domain: 'localhost',
-      path: '/',
-    }));
-
-    await context.addCookies(cookiesToAdd);
-
-    // Also inject into localStorage for client-side auth
-    await context.addInitScript(
-      (args: { storageKey: string; sessionJson: string }) => {
-        window.localStorage.setItem(args.storageKey, args.sessionJson);
-        console.log('[E2E Auth] Session injected into localStorage');
-      },
-      { storageKey, sessionJson: JSON.stringify(session) },
-    );
-
-    // Navigate to home page (via /en/ to skip middleware locale redirect)
-    await page.goto('/en/');
-    await page.waitForLoadState('networkidle');
-
+  // Page is already authenticated via storageState
+  authenticatedPage: async ({ page }, use) => {
     await use(page);
   },
 });

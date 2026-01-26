@@ -45,8 +45,8 @@ export default defineConfig({
       timeout: 120 * 1000,
     },
     {
-      // Start the app with E2E test mode enabled
-      command: 'NEXT_PUBLIC_E2E_TEST=true pnpm w:app dev',
+      // Start the app
+      command: 'pnpm w:app dev',
       url: 'http://localhost:3100',
       reuseExistingServer: !process.env.CI,
       cwd: path.resolve(__dirname, '../..'),
