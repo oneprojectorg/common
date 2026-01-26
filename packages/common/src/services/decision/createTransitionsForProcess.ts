@@ -4,6 +4,7 @@ import type { ProcessInstance } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { ScheduledTransition } from './types';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
@@ -35,16 +36,14 @@ export async function createTransitionsForProcess({
 
     // Create transitions for phases that use date-based advancement
     // A transition is created FROM a phase (when it ends) TO the next phase
-    const transitionsToCreate: Array<{
-      processInstanceId: string;
-      fromStateId: string;
-      toStateId: string;
-      scheduledDate: string;
-    }> = [];
+    const transitionsToCreate: ScheduledTransition[] = [];
 
     phases.forEach((currentPhase, index) => {
       const nextPhase = phases[index + 1];
-      if (!nextPhase) return; // Skip last phase (no next phase to transition to)
+      // Skip last phase (no next phase to transition to)
+      if (!nextPhase) {
+        return;
+      }
 
       // Only create transition if current phase uses date-based advancement
       if (currentPhase.rules?.advancement?.method !== 'date') {
