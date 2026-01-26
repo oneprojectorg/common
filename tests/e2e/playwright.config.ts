@@ -5,9 +5,15 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load environment variables from the root .env.e2e (for isolated e2e Supabase instance on port 56xxx)
-// This is completely isolated from dev (54xxx) and test (55xxx) instances
-dotenv.config({ path: path.resolve(__dirname, '../../.env.e2e') });
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+
+// Override Supabase ports for E2E isolation (56xxx instead of 54xxx)
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:56321';
+process.env.DATABASE_URL =
+  'postgresql://postgres:postgres@127.0.0.1:56322/postgres';
+process.env.S3_ASSET_ROOT =
+  'http://127.0.0.1:56321/storage/v1/object/public/assets';
 
 /**
  * Playwright configuration for e2e tests.

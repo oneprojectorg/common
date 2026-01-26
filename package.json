@@ -15,7 +15,7 @@
     "deps:override": "tsx scripts/depCheck.ts --multiuse && pnpm prettier --write **/package.json --write",
     "deps:viz": "node ./scripts/visualize-deps.mjs",
     "dev": "turbo dev",
-    "dev:e2e": "dotenv -e .env.e2e -o -- turbo dev",
+    "dev:e2e": "cross-env NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:56321 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:56322/postgres S3_ASSET_ROOT=http://127.0.0.1:56321/storage/v1/object/public/assets turbo dev",
     "dev:test": "dotenv -e .env.test -o -- turbo dev",
     "e2e": "pnpm -C ./tests/e2e e2e",
     "e2e:ui": "pnpm -C ./tests/e2e e2e:ui",
