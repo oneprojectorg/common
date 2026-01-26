@@ -1,10 +1,7 @@
 'use client';
 
-import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
 import type { ProfileUser } from '@op/api/encoders';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -35,6 +32,7 @@ export const ProfileUsersAccessTable = ({
   isError,
   onRetry,
   roles,
+  isMobile,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -44,9 +42,9 @@ export const ProfileUsersAccessTable = ({
   isError: boolean;
   onRetry: () => void;
   roles: { id: string; name: string }[];
+  isMobile: boolean;
 }) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   if (isError) {
     return (
@@ -67,26 +65,26 @@ export const ProfileUsersAccessTable = ({
     );
   }
 
+  if (isMobile) {
+    return (
+      <MobileProfileUsersContent
+        profileUsers={profileUsers}
+        profileId={profileId}
+        isLoading={isLoading}
+        roles={roles}
+      />
+    );
+  }
+
   return (
-    <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
-      {isMobile ? (
-        <MobileProfileUsersContent
-          profileUsers={profileUsers}
-          profileId={profileId}
-          isLoading={isLoading}
-          roles={roles}
-        />
-      ) : (
-        <ProfileUsersAccessTableContent
-          profileUsers={profileUsers}
-          profileId={profileId}
-          sortDescriptor={sortDescriptor}
-          onSortChange={onSortChange}
-          isLoading={isLoading}
-          roles={roles}
-        />
-      )}
-    </ClientOnly>
+    <ProfileUsersAccessTableContent
+      profileUsers={profileUsers}
+      profileId={profileId}
+      sortDescriptor={sortDescriptor}
+      onSortChange={onSortChange}
+      isLoading={isLoading}
+      roles={roles}
+    />
   );
 };
 
