@@ -1,0 +1,21 @@
+{
+  "name": "@op/test",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./test-data": "./src/test-data.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@op/db": "workspace:*",
+    "@supabase/supabase-js": "^2.49.3",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*"
+  }
+}

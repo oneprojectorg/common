@@ -11,8 +11,7 @@
     "./serverClient": "./src/serverClient.ts",
     "./ssrCookies": "./src/ssrCookies.ts",
     "./encoders": "./src/encoders/index.ts",
-    "./test/helpers/TestOrganizationDataManager": "./src/test/helpers/TestOrganizationDataManager.ts",
-    "./test/helpers/test-user-utils": "./src/test/helpers/test-user-utils.ts"
+    "./test/helpers/TestOrganizationDataManager": "./src/test/helpers/TestOrganizationDataManager.ts"
   },
   "scripts": {
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
@@ -66,6 +65,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@op/test": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
     "jsonwebtoken": "^9.0.2",

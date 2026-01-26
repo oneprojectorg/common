@@ -19,6 +19,7 @@
   "devDependencies": {
     "@op/db": "workspace:*",
     "@op/supabase": "workspace:*",
+    "@op/test": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@playwright/test": "^1.52.0",
     "@supabase/supabase-js": "^2.49.3",

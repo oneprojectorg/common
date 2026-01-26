@@ -9,16 +9,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createOrganization } from './test-data';
+import { TEST_USER_DEFAULT_PASSWORD, createOrganization } from './test-data';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/**
- * Default password used for test users.
- * Must be strong enough to pass Supabase's password requirements.
- */
-export const TEST_USER_DEFAULT_PASSWORD = 'Test_Password_123!';
+export { TEST_USER_DEFAULT_PASSWORD };
 
 interface AuthenticatedUser {
   email: string;

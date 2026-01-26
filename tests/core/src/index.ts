@@ -1,8 +1,7 @@
 /**
- * E2E Test Data Utilities
+ * @op/test-core
  *
- * Re-exports shared test data functions from @op/test-core.
- * These are used by E2E fixtures to create test organizations and users.
+ * Shared test utilities that can be used across different test environments.
  */
 export {
   addUserToOrganization,
@@ -15,4 +14,4 @@ export {
   type CreateTestUserOptions,
   type CreateTestUserResult,
   type GeneratedUser,
-} from '@op/test';
+} from './test-data';
