@@ -23,7 +23,9 @@ import { useTranslations } from '@/lib/i18n';
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
+import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalViewLayout } from './ProposalViewLayout';
+import { getProposalContent } from './proposalContentUtils';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -97,11 +99,11 @@ export function ProposalView({
   }, []);
 
   // Parse proposal data using shared utility
-  const { title, budget, category, description } = parseProposalData(
+  const { title, budget, category } = parseProposalData(
     currentProposal.proposalData,
   );
 
-  const proposalContent = description || `<p>${t('No content available')}</p>`;
+  const proposalContent = getProposalContent(currentProposal.documentContent);
 
   return (
     <ProposalViewLayout
@@ -213,11 +215,15 @@ export function ProposalView({
           </div>
 
           {/* Proposal Content */}
-          <RichTextViewer
-            extensions={getViewerExtensions()}
-            content={proposalContent}
-            editorClassName="p-0"
-          />
+          {proposalContent ? (
+            <RichTextViewer
+              extensions={getViewerExtensions()}
+              content={proposalContent}
+              editorClassName="p-0"
+            />
+          ) : (
+            <DocumentNotAvailable />
+          )}
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>

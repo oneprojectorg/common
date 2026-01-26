@@ -1,4 +1,4 @@
-import type { Editor, Extensions } from '@tiptap/react';
+import type { Content, Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
 import { useEffect } from 'react';
 
@@ -15,7 +15,7 @@ export function useRichTextEditor({
   editable = true,
 }: {
   extensions?: Extensions;
-  content?: string;
+  content?: Content;
   editorClassName?: string;
   onUpdate?: (content: string) => void;
   onChange?: (content: string) => void;
@@ -50,7 +50,7 @@ export function useRichTextEditor({
         editor.commands.setContent(content);
       }
     }
-  }, [editor]); // Only depend on editor, not content
+  }, [editor]); // Only run when editor is ready, not on content changes
 
   // Notify parent when editor is ready
   useEffect(() => {

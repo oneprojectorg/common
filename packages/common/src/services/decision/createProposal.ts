@@ -145,11 +145,18 @@ export const createProposal = async ({
         throw new CommonError('Failed to create proposal profile');
       }
 
+      const proposalId = crypto.randomUUID();
+      const collaborationDocId = `proposal-${data.processInstanceId}-${proposalId}`;
+
       const [proposal] = await tx
         .insert(proposals)
         .values({
+          id: proposalId,
           processInstanceId: data.processInstanceId,
-          proposalData: data.proposalData,
+          proposalData: {
+            ...data.proposalData,
+            collaborationDocId,
+          },
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
           status: ProposalStatus.DRAFT,

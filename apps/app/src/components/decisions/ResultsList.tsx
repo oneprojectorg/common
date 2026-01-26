@@ -9,10 +9,10 @@ import { EmptyProposalsState } from './EmptyProposalsState';
 import {
   ProposalCard,
   ProposalCardContent,
-  ProposalCardDescription,
   ProposalCardFooter,
   ProposalCardHeader,
   ProposalCardMeta,
+  ProposalCardPreview,
 } from './ProposalCard';
 
 const NoProposalsFound = () => {
@@ -74,7 +74,7 @@ export const ResultsList = ({
 
                 <ProposalCardMeta proposal={proposal} />
 
-                <ProposalCardDescription proposal={proposal} />
+                <ProposalCardPreview proposal={proposal} />
               </ProposalCardContent>
             </div>
             <ProposalCardContent>

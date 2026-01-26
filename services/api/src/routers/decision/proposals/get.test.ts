@@ -297,7 +297,19 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    const collaborationDocId = `proposal-${instance.instance.id}-test-doc-123`;
+    // Create proposal first to get the API-generated collaborationDocId
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'TipTap Test Proposal',
+      },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+
     const mockTipTapContent = {
       type: 'doc',
       content: [
@@ -309,16 +321,6 @@ describe.concurrent('getProposal', () => {
     };
     mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
 
-    const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: {
-        title: 'TipTap Test Proposal',
-        description: 'Fallback description',
-        collaborationDocId,
-      } as { title: string; description: string },
-    });
-
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.getProposal({
       profileId: proposal.profileId,
@@ -326,7 +328,7 @@ describe.concurrent('getProposal', () => {
 
     expect(result.proposalData).toMatchObject({
       title: 'TipTap Test Proposal',
-      collaborationDocId,
+      collaborationDocId: expect.any(String),
     });
     expect(result.documentContent).toEqual({
       type: 'json',
@@ -350,7 +352,6 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    const collaborationDocId = `proposal-${instance.instance.id}-nonexistent`;
     // 404 is the default behavior when docId not in docResponses
 
     const proposal = await testData.createProposal({
@@ -358,9 +359,7 @@ describe.concurrent('getProposal', () => {
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Missing Doc Proposal',
-        description: 'Has docId but doc does not exist',
-        collaborationDocId,
-      } as { title: string; description: string },
+      },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -370,7 +369,7 @@ describe.concurrent('getProposal', () => {
 
     expect(result.proposalData).toMatchObject({
       title: 'Missing Doc Proposal',
-      collaborationDocId,
+      collaborationDocId: expect.any(String),
     });
     // When TipTap fetch fails, documentContent is undefined (UI handles error state)
     expect(result.documentContent).toBeUndefined();
@@ -392,21 +391,22 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    const collaborationDocId = `proposal-${instance.instance.id}-timeout-doc`;
-
-    const timeoutError = new Error('Request timed out');
-    timeoutError.name = 'TimeoutError';
-    mockCollab.setDocError(collaborationDocId, timeoutError);
-
+    // Create proposal - API generates collaborationDocId
     const proposal = await testData.createProposal({
       callerEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Timeout Test Proposal',
-        description: 'Doc fetch will timeout',
-        collaborationDocId,
-      } as { title: string; description: string },
+      },
     });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+
+    const timeoutError = new Error('Request timed out');
+    timeoutError.name = 'TimeoutError';
+    mockCollab.setDocError(collaborationDocId, timeoutError);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.getProposal({
@@ -415,7 +415,7 @@ describe.concurrent('getProposal', () => {
 
     expect(result.proposalData).toMatchObject({
       title: 'Timeout Test Proposal',
-      collaborationDocId,
+      collaborationDocId: expect.any(String),
     });
     expect(result.documentContent).toBeUndefined();
   });

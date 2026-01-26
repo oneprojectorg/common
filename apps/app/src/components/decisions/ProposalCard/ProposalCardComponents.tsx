@@ -8,7 +8,7 @@ import {
   type proposalEncoder,
 } from '@op/api/encoders';
 import { parseProposalData } from '@op/common/client';
-import { getTextPreview, isNullish, match } from '@op/core';
+import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
@@ -23,6 +23,8 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
+import { DocumentNotAvailable } from '../DocumentNotAvailable';
+import { getProposalContentPreview } from '../proposalContentUtils';
 
 export type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -328,17 +330,21 @@ export function ProposalCardStatus({
 }
 
 /**
- * Description text component
+ * Content preview/excerpt component
  */
-export function ProposalCardDescription({
+export function ProposalCardPreview({
   proposal,
   className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
-  const { description } = parseProposalData(proposal.proposalData);
+  const previewText = getProposalContentPreview(proposal.documentContent);
 
-  if (!description) {
+  if (previewText === null) {
+    return <DocumentNotAvailable className="py-4" />;
+  }
+
+  if (!previewText) {
     return null;
   }
 
@@ -349,7 +355,7 @@ export function ProposalCardDescription({
         className,
       )}
     >
-      {getTextPreview({ content: description })}
+      {previewText}
     </p>
   );
 }
