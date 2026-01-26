@@ -1,7 +1,6 @@
+import type { Option } from '@op/ui/MultiSelectComboBox';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-
-import type { Option } from '@op/ui/MultiSelectComboBox';
 
 // ============ Instance Data Types ============
 
@@ -73,7 +72,7 @@ interface ProcessBuilderState {
   setPhaseData: (
     decisionId: string,
     phaseId: string,
-    data: Partial<PhaseData>
+    data: Partial<PhaseData>,
   ) => void;
   getPhaseData: (decisionId: string, phaseId: string) => PhaseData | undefined;
 
@@ -175,6 +174,6 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
     {
       name: 'process-builder',
       storage: createJSONStorage(() => localStorage),
-    }
-  )
+    },
+  ),
 );
