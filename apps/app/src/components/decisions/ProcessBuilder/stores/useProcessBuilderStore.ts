@@ -3,59 +3,148 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { Option } from '@op/ui/MultiSelectComboBox';
 
-// Matches OverviewFormData in OverviewSection.tsx
-export interface OverviewFormData {
-  steward: string;
-  focusAreas: Option[];
-  aims: string[];
-  processName: string;
-  description: string;
-  budget: number | null;
-  hideBudget: boolean;
-  organizeCategories: boolean;
-  multiPhase: boolean;
-  includeReview: boolean;
-  isPrivate: boolean;
+// ============ Instance Data Types ============
+
+/**
+ * Process-level configuration.
+ * These settings apply to the entire decision process.
+ */
+export interface ProcessConfig {
+  // Process Stewardship
+  steward?: string;
+  focusAreas?: Option[];
+  aims?: string[];
+
+  // Process Details
+  budget?: number | null;
+  hideBudget?: boolean;
+  organizeCategories?: boolean;
+  multiPhase?: boolean;
+  includeReview?: boolean;
+  isPrivate?: boolean;
 }
+
+/**
+ * Phase-specific settings.
+ * The `settings` object is dynamic and defined by the schema.
+ */
+export interface PhaseData {
+  startDate?: string;
+  endDate?: string;
+  // Dynamic settings based on schema (e.g., budget, maxProposalsPerMember, maxVotesPerMember)
+  settings?: Record<string, unknown>;
+}
+
+/**
+ * Complete instance data structure.
+ * Mirrors the database instanceData JSONB structure.
+ */
+export interface InstanceData {
+  // Top-level instance fields (stored separately in DB but tracked here for form state)
+  name?: string;
+  description?: string;
+
+  // Process-level configuration
+  config?: ProcessConfig;
+
+  // Phase-specific data, keyed by phase ID (e.g., 'submission', 'review', 'voting', 'results')
+  phases?: Record<string, PhaseData>;
+}
+
+// ============ Store Types ============
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 interface ProcessBuilderState {
-  // Form data keyed by decisionId for multi-instance support
-  forms: Record<string, Partial<OverviewFormData>>;
+  // Instance data keyed by decisionId
+  instances: Record<string, InstanceData>;
   // Save status keyed by decisionId
   saveStatus: Record<string, SaveStatus>;
 
-  // Actions
-  setFormData: (
+  // Actions for instance data
+  setInstanceData: (decisionId: string, data: Partial<InstanceData>) => void;
+  getInstanceData: (decisionId: string) => InstanceData | undefined;
+
+  // Actions for config (process-level settings)
+  setConfig: (decisionId: string, config: Partial<ProcessConfig>) => void;
+  getConfig: (decisionId: string) => ProcessConfig | undefined;
+
+  // Actions for phase data
+  setPhaseData: (
     decisionId: string,
-    data: Partial<OverviewFormData>
+    phaseId: string,
+    data: Partial<PhaseData>
   ) => void;
-  getFormData: (decisionId: string) => Partial<OverviewFormData> | undefined;
+  getPhaseData: (decisionId: string, phaseId: string) => PhaseData | undefined;
+
+  // Actions for save status
   setSaveStatus: (decisionId: string, status: SaveStatus) => void;
-  clearFormData: (decisionId: string) => void;
+  getSaveStatus: (decisionId: string) => SaveStatus;
+
+  // Cleanup actions
+  clearInstance: (decisionId: string) => void;
   reset: () => void;
 }
 
 export const useProcessBuilderStore = create<ProcessBuilderState>()(
   persist(
     (set, get) => ({
-      forms: {},
+      instances: {},
       saveStatus: {},
 
-      setFormData: (decisionId, data) =>
+      // Instance data actions
+      setInstanceData: (decisionId, data) =>
         set((state) => ({
-          forms: {
-            ...state.forms,
+          instances: {
+            ...state.instances,
             [decisionId]: {
-              ...state.forms[decisionId],
+              ...state.instances[decisionId],
               ...data,
             },
           },
         })),
 
-      getFormData: (decisionId) => get().forms[decisionId],
+      getInstanceData: (decisionId) => get().instances[decisionId],
 
+      // Config actions
+      setConfig: (decisionId, config) =>
+        set((state) => ({
+          instances: {
+            ...state.instances,
+            [decisionId]: {
+              ...state.instances[decisionId],
+              config: {
+                ...state.instances[decisionId]?.config,
+                ...config,
+              },
+            },
+          },
+        })),
+
+      getConfig: (decisionId) => get().instances[decisionId]?.config,
+
+      // Phase data actions
+      setPhaseData: (decisionId, phaseId, data) =>
+        set((state) => ({
+          instances: {
+            ...state.instances,
+            [decisionId]: {
+              ...state.instances[decisionId],
+              phases: {
+                ...state.instances[decisionId]?.phases,
+                [phaseId]: {
+                  ...state.instances[decisionId]?.phases?.[phaseId],
+                  ...data,
+                },
+              },
+            },
+          },
+        })),
+
+      getPhaseData: (decisionId, phaseId) =>
+        get().instances[decisionId]?.phases?.[phaseId],
+
+      // Save status actions
       setSaveStatus: (decisionId, status) =>
         set((state) => ({
           saveStatus: {
@@ -64,24 +153,27 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
           },
         })),
 
-      clearFormData: (decisionId) =>
+      getSaveStatus: (decisionId) => get().saveStatus[decisionId] ?? 'idle',
+
+      // Cleanup actions
+      clearInstance: (decisionId) =>
         set((state) => {
-          const { [decisionId]: _, ...restForms } = state.forms;
+          const { [decisionId]: _, ...restInstances } = state.instances;
           const { [decisionId]: __, ...restStatus } = state.saveStatus;
           return {
-            forms: restForms,
+            instances: restInstances,
             saveStatus: restStatus,
           };
         }),
 
       reset: () =>
         set({
-          forms: {},
+          instances: {},
           saveStatus: {},
         }),
     }),
     {
-      name: 'process-builder-overview',
+      name: 'process-builder',
       storage: createJSONStorage(() => localStorage),
     }
   )
