@@ -68,13 +68,13 @@ export async function updateTransitionsForProcess({
       scheduledDate: string;
     }> = [];
 
-    for (let index = 0; index < phases.length - 1; index++) {
-      const currentPhase = phases[index]!;
-      const nextPhase = phases[index + 1]!;
+    phases.forEach((currentPhase, index) => {
+      const nextPhase = phases[index + 1];
+      if (!nextPhase) return; // Skip last phase (no next phase to transition to)
 
       // Only create transition if current phase uses date-based advancement
       if (currentPhase.rules?.advancement?.method !== 'date') {
-        continue;
+        return;
       }
 
       // Schedule transition when the current phase ends
@@ -92,7 +92,7 @@ export async function updateTransitionsForProcess({
         toStateId: nextPhase.phaseId,
         scheduledDate: new Date(scheduledDate).toISOString(),
       });
-    }
+    });
 
     // Calculate transitions to delete upfront (those not in expected set and not completed)
     // Use composite key (fromStateId:toStateId) to match both fields

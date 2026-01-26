@@ -185,7 +185,7 @@ export const updateDecisionInstance = async ({
 
     // Determine the final status (updated or existing)
     const finalStatus = status ?? existingInstance.status;
-    const wasPublished =
+    const isBeingPublished =
       status === ProcessStatus.PUBLISHED &&
       existingInstance.status === ProcessStatus.DRAFT;
 
@@ -194,7 +194,7 @@ export const updateDecisionInstance = async ({
       await tx
         .delete(decisionProcessTransitions)
         .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
-    } else if (wasPublished) {
+    } else if (isBeingPublished) {
       // When publishing a draft, create transitions for all date-based phases
       await createTransitionsForProcess({ processInstance: updatedInstance });
     } else if (phases && phases.length > 0) {
