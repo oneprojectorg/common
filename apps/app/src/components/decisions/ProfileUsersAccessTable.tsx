@@ -46,6 +46,7 @@ export const ProfileUsersAccessTable = ({
   roles: { id: string; name: string }[];
 }) => {
   const t = useTranslations();
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   if (isError) {
     return (
@@ -67,14 +68,25 @@ export const ProfileUsersAccessTable = ({
   }
 
   return (
-    <ProfileUsersAccessTableContent
-      profileUsers={profileUsers}
-      profileId={profileId}
-      sortDescriptor={sortDescriptor}
-      onSortChange={onSortChange}
-      isLoading={isLoading}
-      roles={roles}
-    />
+    <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
+      {isMobile ? (
+        <MobileProfileUsersContent
+          profileUsers={profileUsers}
+          profileId={profileId}
+          isLoading={isLoading}
+          roles={roles}
+        />
+      ) : (
+        <ProfileUsersAccessTableContent
+          profileUsers={profileUsers}
+          profileId={profileId}
+          sortDescriptor={sortDescriptor}
+          onSortChange={onSortChange}
+          isLoading={isLoading}
+          roles={roles}
+        />
+      )}
+    </ClientOnly>
   );
 };
 
@@ -89,13 +101,13 @@ const ProfileUserRoleSelect = ({
   currentRoleId,
   profileId,
   roles,
-  fullWidth,
+  className = 'sm:w-32',
 }: {
   profileUserId: string;
   currentRoleId?: string;
   profileId: string;
   roles: { id: string; name: string }[];
-  fullWidth?: boolean;
+  className?: string;
 }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -128,7 +140,7 @@ const ProfileUserRoleSelect = ({
       onSelectionChange={(key) => handleRoleChange(key as string)}
       isDisabled={updateRoles.isPending}
       size="small"
-      className={fullWidth ? 'w-full' : 'sm:w-32'}
+      className={className}
     >
       {roles.map((role) => (
         <SelectItem key={role.id} id={role.id}>
@@ -178,13 +190,40 @@ const MobileProfileUserCard = ({
         currentRoleId={currentRole?.id}
         profileId={profileId}
         roles={roles}
-        fullWidth
+        className="w-full"
       />
     </div>
   );
 };
 
-// Inner table content component
+const MobileProfileUsersContent = ({
+  profileUsers,
+  profileId,
+  isLoading,
+  roles,
+}: {
+  profileUsers: ProfileUser[];
+  profileId: string;
+  isLoading: boolean;
+  roles: { id: string; name: string }[];
+}) => {
+  return (
+    <div className="flex flex-col gap-4">
+      {isLoading && <Skeleton className="h-32 w-full" />}
+      {!isLoading &&
+        profileUsers.map((profileUser) => (
+          <MobileProfileUserCard
+            key={profileUser.id}
+            profileUser={profileUser}
+            profileId={profileId}
+            roles={roles}
+          />
+        ))}
+    </div>
+  );
+};
+
+// Desktop table content component
 const ProfileUsersAccessTableContent = ({
   profileUsers,
   profileId,
@@ -202,96 +241,72 @@ const ProfileUsersAccessTableContent = ({
 }) => {
   const t = useTranslations();
 
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
-
   return (
-    <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
-      {isMobile ? (
-        <div className="flex flex-col gap-4">
-          {isLoading && <Skeleton className="h-32 w-full" />}
-          {!isLoading &&
-            profileUsers.map((profileUser) => (
-              <MobileProfileUserCard
-                key={profileUser.id}
-                profileUser={profileUser}
-                profileId={profileId}
-                roles={roles}
-              />
-            ))}
-        </div>
-      ) : (
-        <div className="relative">
-          {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
-              <Skeleton className="h-8 w-full" />
-            </div>
-          )}
-          <Table
-            aria-label={t('Members list')}
-            className="w-full table-fixed"
-            sortDescriptor={sortDescriptor}
-            onSortChange={onSortChange}
-          >
-            <TableHeader>
-              <TableColumn
-                isRowHeader
-                id="name"
-                allowsSorting
-                className="sm:w-52"
-              >
-                {t('Name')}
-              </TableColumn>
-              <TableColumn id="email" allowsSorting className="w-auto">
-                {t('Email')}
-              </TableColumn>
-              <TableColumn id="role" allowsSorting className="sm:w-36">
-                {t('Role')}
-              </TableColumn>
-            </TableHeader>
-            <TableBody>
-              {profileUsers.map((profileUser) => {
-                const displayName =
-                  profileUser.profile?.name ||
-                  profileUser.name ||
-                  (profileUser.email?.split('@')?.[0] ?? 'Unknown');
-                const currentRole = profileUser.roles[0];
-                const status = getProfileUserStatus();
-
-                return (
-                  <TableRow key={profileUser.id} id={profileUser.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <ProfileAvatar profile={profileUser.profile} />
-                        <div className="flex flex-col">
-                          <span className="text-base text-neutral-black">
-                            {displayName}
-                          </span>
-                          <span className="text-sm text-neutral-gray4">
-                            {status}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-base text-neutral-black">
-                        {profileUser.email}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <ProfileUserRoleSelect
-                        profileUserId={profileUser.id}
-                        currentRoleId={currentRole?.id}
-                        profileId={profileId}
-                        roles={roles}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+          <Skeleton className="h-8 w-full" />
         </div>
       )}
-    </ClientOnly>
+      <Table
+        aria-label={t('Members list')}
+        className="w-full table-fixed"
+        sortDescriptor={sortDescriptor}
+        onSortChange={onSortChange}
+      >
+        <TableHeader>
+          <TableColumn isRowHeader id="name" allowsSorting className="sm:w-52">
+            {t('Name')}
+          </TableColumn>
+          <TableColumn id="email" allowsSorting className="w-auto">
+            {t('Email')}
+          </TableColumn>
+          <TableColumn id="role" allowsSorting className="sm:w-36">
+            {t('Role')}
+          </TableColumn>
+        </TableHeader>
+        <TableBody>
+          {profileUsers.map((profileUser) => {
+            const displayName =
+              profileUser.profile?.name ||
+              profileUser.name ||
+              (profileUser.email?.split('@')?.[0] ?? 'Unknown');
+            const currentRole = profileUser.roles[0];
+            const status = getProfileUserStatus();
+
+            return (
+              <TableRow key={profileUser.id} id={profileUser.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <ProfileAvatar profile={profileUser.profile} />
+                    <div className="flex flex-col">
+                      <span className="text-base text-neutral-black">
+                        {displayName}
+                      </span>
+                      <span className="text-sm text-neutral-gray4">
+                        {status}
+                      </span>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-base text-neutral-black">
+                    {profileUser.email}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <ProfileUserRoleSelect
+                    profileUserId={profileUser.id}
+                    currentRoleId={currentRole?.id}
+                    profileId={profileId}
+                    roles={roles}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
