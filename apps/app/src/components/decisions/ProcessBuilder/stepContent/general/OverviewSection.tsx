@@ -1,10 +1,12 @@
 'use client';
 
+import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { NumberField } from '@op/ui/NumberField';
 import { SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { useEffect, useRef } from 'react';
 import { LuCircleHelp, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -12,7 +14,9 @@ import { useTranslations } from '@/lib/i18n';
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 
+import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
+import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 // Form data type
 interface OverviewFormData {
@@ -27,6 +31,59 @@ interface OverviewFormData {
   multiPhase: boolean;
   includeReview: boolean;
   isPrivate: boolean;
+}
+
+// Auto-save component that subscribes to form values
+function AutoSaveHandler({
+  values,
+  decisionId,
+  setFormData,
+  setSaveStatus,
+}: {
+  values: OverviewFormData;
+  decisionId: string;
+  setFormData: (id: string, data: Partial<OverviewFormData>) => void;
+  setSaveStatus: (id: string, status: 'idle' | 'saving' | 'saved' | 'error') => void;
+}) {
+  const [debouncedValues] = useDebounce(values, 500);
+  const isInitialMount = useRef(true);
+  const previousValues = useRef<string | null>(null);
+
+  useEffect(() => {
+    const valuesString = JSON.stringify(debouncedValues);
+
+    // Skip initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      previousValues.current = valuesString;
+      return;
+    }
+
+    // Skip if values haven't changed
+    if (valuesString === previousValues.current) {
+      return;
+    }
+    previousValues.current = valuesString;
+
+    // Update Zustand store (persists to localStorage)
+    setSaveStatus(decisionId, 'saving');
+    setFormData(decisionId, debouncedValues);
+
+    // Mark as saved after a brief delay
+    const timer = setTimeout(() => {
+      setSaveStatus(decisionId, 'saved');
+      // Reset to idle after showing "Saved" briefly
+      setTimeout(() => {
+        setSaveStatus(decisionId, 'idle');
+      }, 2000);
+    }, 100);
+
+    return () => clearTimeout(timer);
+
+    // TODO: Add API mutation here once storage location is decided
+  }, [debouncedValues, decisionId, setFormData, setSaveStatus]);
+
+  return null;
 }
 
 // Toggle row component for consistent styling
@@ -58,10 +115,18 @@ function ToggleRow({
 }
 
 export default function OverviewSection({
-  decisionId: _decisionId,
+  decisionId,
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
+
+  // Zustand store
+  const storedData = useProcessBuilderStore((s) => s.forms[decisionId]);
+  const setFormData = useProcessBuilderStore((s) => s.setFormData);
+  const saveStatus = useProcessBuilderStore(
+    (s) => s.saveStatus[decisionId] ?? 'idle'
+  );
+  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
 
   // Mock options - these would come from API
   const stewardOptions = [
@@ -80,23 +145,24 @@ export default function OverviewSection({
 
   const form = useAppForm({
     defaultValues: {
-      steward: '',
-      focusAreas: [] as Option[],
-      aims: [''],
-      processName: decisionName || '',
-      description: '',
-      budget: 0 as number | null,
-      hideBudget: true as boolean,
-      organizeCategories: true as boolean,
-      multiPhase: true as boolean,
-      includeReview: true as boolean,
-      isPrivate: false as boolean,
+      steward: storedData?.steward ?? '',
+      focusAreas: storedData?.focusAreas ?? ([] as Option[]),
+      aims: storedData?.aims ?? [''],
+      processName: storedData?.processName ?? decisionName ?? '',
+      description: storedData?.description ?? '',
+      budget: storedData?.budget ?? (0 as number | null),
+      hideBudget: storedData?.hideBudget ?? (true as boolean),
+      organizeCategories: storedData?.organizeCategories ?? (true as boolean),
+      multiPhase: storedData?.multiPhase ?? (true as boolean),
+      includeReview: storedData?.includeReview ?? (true as boolean),
+      isPrivate: storedData?.isPrivate ?? (false as boolean),
     } satisfies OverviewFormData,
     onSubmit: async ({ value }) => {
       // TODO: Submit to API
       console.log('Form submitted:', value);
     },
   });
+
 
   return (
     <div className="size-full">
@@ -106,10 +172,26 @@ export default function OverviewSection({
           void form.handleSubmit();
         }}
       >
+        {/* Auto-save handler - subscribes to form values */}
+        <form.Subscribe
+          selector={(state) => state.values}
+          children={(values) => (
+            <AutoSaveHandler
+              values={values as OverviewFormData}
+              decisionId={decisionId}
+              setFormData={setFormData}
+              setSaveStatus={setSaveStatus}
+            />
+          )}
+        />
+
         <div className="mx-auto w-full max-w-160 space-y-8 p-4 md:p-8">
           {/* Process Stewardship Section */}
           <section className="space-y-6">
-            <h2 className="font-serif text-xl">{t('Process Stewardship')}</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-xl">{t('Process Stewardship')}</h2>
+              <SaveStatusIndicator status={saveStatus} />
+            </div>
 
             <form.AppField
               name="steward"
