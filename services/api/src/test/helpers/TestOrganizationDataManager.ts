@@ -180,11 +180,11 @@ export class TestOrganizationDataManager {
   }): Promise<typeof organizationUsers.$inferSelect> {
     this.ensureCleanupRegistered();
 
-    const result = await addUserToOrgCore(opts);
+    const orgUser = await addUserToOrgCore(opts);
 
-    this.createdOrganizationUserIds.push(result.organizationUserId);
+    this.createdOrganizationUserIds.push(orgUser.id);
 
-    return result.orgUser;
+    return orgUser;
   }
 
   /**

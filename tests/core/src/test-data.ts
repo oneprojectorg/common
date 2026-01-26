@@ -1,12 +1,3 @@
-/**
- * Shared Test Data Utilities
- *
- * Pure functions for creating test data that can be reused across
- * different test environments (Vitest, Playwright E2E).
- *
- * These functions are intentionally stateless and take all dependencies
- * as parameters to work with any Supabase client instance.
- */
 import { db } from '@op/db';
 import {
   type Organization,
@@ -21,15 +12,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
-/**
- * Default password used for test users.
- * Must be strong enough to pass Supabase's password requirements.
- */
 export const TEST_USER_DEFAULT_PASSWORD = 'Test_Password_123!';
-
-// ============================================================================
-// Types
-// ============================================================================
 
 export interface GeneratedUser {
   authUserId: string;
@@ -76,24 +59,8 @@ export interface CreateUserOptions {
   password?: string;
 }
 
-export interface CreateUserResult {
-  user: {
-    id: string;
-    email: string;
-  };
-}
-
-// ============================================================================
-// Functions
-// ============================================================================
-
-/**
- * Creates a user via Supabase admin API.
- * This bypasses email confirmation and creates a ready-to-use user.
- */
-export async function createUser(
-  opts: CreateUserOptions,
-): Promise<CreateUserResult> {
+/** Creates a user via Supabase admin API, bypassing email confirmation. */
+export async function createUser(opts: CreateUserOptions) {
   const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -111,16 +78,11 @@ export async function createUser(
   }
 
   return {
-    user: {
-      id: data.user.id,
-      email: data.user.email ?? email,
-    },
+    id: data.user.id,
+    email: data.user.email ?? email,
   };
 }
 
-/**
- * Generates a unique email for a test user.
- */
 export function generateTestEmail(
   testId: string,
   role: 'Admin' | 'Member',
@@ -130,11 +92,7 @@ export function generateTestEmail(
   return `${testId}-${role.toLowerCase()}-${randomSuffix}@${emailDomain}`;
 }
 
-/**
- * Creates a test organization with users.
- *
- * Returns all created IDs for cleanup by the caller.
- */
+/** Creates a test organization with users. Returns created IDs for cleanup. */
 export async function createOrganization(
   opts: CreateOrganizationOptions,
 ): Promise<CreateOrganizationResult> {
@@ -190,7 +148,7 @@ export async function createOrganization(
   ): Promise<GeneratedUser> => {
     const email = generateTestEmail(testId, role, emailDomain);
 
-    const { user: authUser } = await createUser({
+    const authUser = await createUser({
       supabaseAdmin,
       email,
     });
@@ -276,20 +234,12 @@ export async function createOrganization(
   };
 }
 
-/**
- * Adds an existing user to an organization.
- *
- * Returns the organization user ID for cleanup tracking.
- */
 export async function addUserToOrganization(opts: {
   authUserId: string;
   organizationId: string;
   email: string;
   role?: 'Admin' | 'Member';
-}): Promise<{
-  orgUser: typeof organizationUsers.$inferSelect;
-  organizationUserId: string;
-}> {
+}) {
   const { authUserId, organizationId, email, role = 'Member' } = opts;
 
   const [orgUser] = await db
@@ -305,15 +255,11 @@ export async function addUserToOrganization(opts: {
     throw new Error('Failed to add user to organization');
   }
 
-  // Assign role
   const accessRoleId = role === 'Admin' ? ROLES.ADMIN.id : ROLES.MEMBER.id;
   await db.insert(organizationUserToAccessRoles).values({
     organizationUserId: orgUser.id,
     accessRoleId,
   });
 
-  return {
-    orgUser,
-    organizationUserId: orgUser.id,
-  };
+  return orgUser;
 }

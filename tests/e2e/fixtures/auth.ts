@@ -1,3 +1,8 @@
+import {
+  type CreateOrganizationResult,
+  TEST_USER_DEFAULT_PASSWORD,
+  createOrganization,
+} from '@op/test';
 import type { Page } from '@playwright/test';
 import { test as base } from '@playwright/test';
 import {
@@ -8,12 +13,6 @@ import {
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import {
-  type CreateOrganizationResult,
-  TEST_USER_DEFAULT_PASSWORD,
-  createOrganization,
-} from './test-data';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,9 +38,6 @@ interface TestFixtures {
   org: CreateOrganizationResult;
 }
 
-/**
- * Creates a Supabase admin client for E2E tests.
- */
 function createSupabaseAdminClient(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
@@ -60,9 +56,6 @@ function createSupabaseAdminClient(): SupabaseClient {
   });
 }
 
-/**
- * Extracts the project ID used for Supabase cookie naming.
- */
 function getSupabaseProjectId(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) {
@@ -91,9 +84,6 @@ function getSupabaseProjectId(): string {
   return match[1];
 }
 
-/**
- * Authenticates via Supabase password API and returns session data.
- */
 async function signInViaApi(user: {
   email: string;
   password: string;
@@ -133,17 +123,11 @@ async function signInViaApi(user: {
 }
 
 /**
- * Extended test fixture that provides authenticated browser state using
- * Playwright's recommended storageState pattern with API-based auth.
- *
- * Authentication flow:
- * 1. Each parallel worker gets a unique test account
- * 2. Worker authenticates once via Supabase password API
- * 3. Session cookies are saved to storageState file
- * 4. All tests in that worker reuse the same authenticated state
+ * Extended test fixture with authenticated browser state.
+ * Each worker gets a unique test account, authenticates once via API,
+ * and saves session cookies to storageState for all tests to reuse.
  */
 export const test = base.extend<TestFixtures, WorkerFixtures>({
-  // Worker-scoped Supabase admin client
   supabaseAdmin: [
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     async ({}, use) => {
@@ -153,7 +137,6 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  // Worker-scoped organization with admin user
   workerOrg: [
     async ({ supabaseAdmin }, use, workerInfo) => {
       const testId = `w${workerInfo.workerIndex}`;
@@ -168,7 +151,6 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  // Worker-scoped authenticated user (derived from workerOrg)
   workerAuthUser: [
     async ({ workerOrg }, use) => {
       await use({
@@ -180,7 +162,6 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  // Worker-scoped storage state - authenticates once per worker via API
   workerStorageState: [
     async ({ workerAuthUser }, use, workerInfo) => {
       const id = workerInfo.workerIndex;
@@ -245,22 +226,18 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  // Use worker's storage state for all tests
   storageState: async ({ workerStorageState }, use) => {
     await use(workerStorageState);
   },
 
-  // Expose authenticated user info to tests
   authenticatedUser: async ({ workerAuthUser }, use) => {
     await use(workerAuthUser);
   },
 
-  // Expose organization to tests
   org: async ({ workerOrg }, use) => {
     await use(workerOrg);
   },
 
-  // Page is already authenticated via storageState
   authenticatedPage: async ({ page }, use) => {
     await use(page);
   },
