@@ -1,7 +1,7 @@
 'use client';
 
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
@@ -26,7 +26,7 @@ export function useTiptapCollab({
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
-  const providerRef = useRef<TiptapCollabProvider | null>(null);
+  const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
 
   const ydoc = useMemo(() => new Y.Doc(), []);
 
@@ -43,29 +43,33 @@ export function useTiptapCollab({
       return;
     }
 
-    const provider = new TiptapCollabProvider({
+    const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
       token: 'notoken', // TODO: proper JWT auth
       document: ydoc,
-      onConnect: () => setStatus('connected'),
+      onConnect: () => {
+        setStatus('connected');
+      },
       onDisconnect: () => {
         setStatus('disconnected');
         setIsSynced(false);
       },
-      onSynced: () => setIsSynced(true),
+      onSynced: () => {
+        setIsSynced(true);
+      },
     });
 
-    providerRef.current = provider;
+    setProvider(newProvider);
     return () => {
-      provider.destroy();
-      providerRef.current = null;
+      newProvider.destroy();
+      setProvider(null);
     };
   }, [docId, enabled, ydoc]);
 
   return {
     ydoc,
-    provider: providerRef.current,
+    provider,
     status,
     isSynced,
     isConnected: status === 'connected',

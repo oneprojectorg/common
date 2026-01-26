@@ -11,10 +11,14 @@ export const proposalDataSchema = z
     description: z.string().optional(),
     content: z.string().optional(), // backward compatibility
     category: z.string().optional(),
-    budget: z.number().optional(),
+    budget: z
+      .union([z.string(), z.number()])
+      .pipe(z.coerce.number())
+      .optional(),
     attachmentIds: z.array(z.string()).optional().prefault([]),
     collaborationDocId: z.string().optional(),
   })
+
   .transform((data) => {
     // Handle backward compatibility: content → description
     if (data.content && !data.description) {

@@ -6,9 +6,21 @@ import {
   StyledRichTextContent,
   useRichTextEditor,
 } from '@op/ui/RichTextEditor';
+import Snapshot from '@tiptap-pro/extension-snapshot';
+import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
 import type { Editor, Extensions } from '@tiptap/react';
-import { forwardRef, useImperativeHandle, useMemo } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
+import type { Doc } from 'yjs';
+
+// How often to create a snapshot in version history
+const AUTOVERSION_INTERVAL_SECONDS = 900; // 15 minutes
 
 export interface CollaborativeEditorRef {
   editor: Editor | null;
@@ -41,14 +53,67 @@ export const CollaborativeEditor = forwardRef<
     },
     ref,
   ) => {
-    const { ydoc, status, isSynced } = useTiptapCollab({
+    const { ydoc, provider, status, isSynced } = useTiptapCollab({
       docId,
       enabled: true,
     });
 
+    // Wait for provider before rendering the editor inner component
+    // This ensures Snapshot extension is included from the start
+    if (!provider) {
+      return <RichTextEditorSkeleton className={className} />;
+    }
+
+    return (
+      <CollaborativeEditorInner
+        ref={ref}
+        ydoc={ydoc}
+        provider={provider}
+        status={status}
+        isSynced={isSynced}
+        extensions={extensions}
+        placeholder={placeholder}
+        onEditorReady={onEditorReady}
+        className={className}
+        editorClassName={editorClassName}
+      />
+    );
+  },
+);
+
+type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
+  ydoc: Doc;
+  provider: TiptapCollabProvider;
+  status: CollabStatus;
+  isSynced: boolean;
+};
+
+/** Inner component that renders after provider is ready */
+const CollaborativeEditorInner = forwardRef<
+  CollaborativeEditorRef,
+  CollaborativeEditorInnerProps
+>(
+  (
+    {
+      ydoc,
+      provider,
+      status,
+      isSynced,
+      extensions = [],
+      placeholder = 'Start writing...',
+      onEditorReady,
+      className = '',
+      editorClassName = '',
+    },
+    ref,
+  ) => {
     const collaborativeExtensions = useMemo(
-      () => [...extensions, Collaboration.configure({ document: ydoc })],
-      [extensions, ydoc],
+      () => [
+        ...extensions,
+        Collaboration.configure({ document: ydoc }),
+        Snapshot.configure({ provider }),
+      ],
+      [extensions, ydoc, provider],
     );
 
     const editor = useRichTextEditor({
@@ -56,6 +121,22 @@ export const CollaborativeEditor = forwardRef<
       editorClassName,
       onEditorReady,
     });
+
+    // Track whether versioning has been enabled to avoid toggling it off on re-render
+    const versioningEnabledRef = useRef(false);
+
+    // Enable autoversioning when editor is ready and connected
+    useEffect(() => {
+      if (!editor || status !== 'connected' || versioningEnabledRef.current) {
+        return;
+      }
+
+      const configMap = ydoc.getMap<number>('__tiptapcollab__config');
+      configMap.set('intervalSeconds', AUTOVERSION_INTERVAL_SECONDS);
+
+      editor.commands.toggleVersioning();
+      versioningEnabledRef.current = true;
+    }, [editor, status, ydoc]);
 
     useImperativeHandle(
       ref,
@@ -78,5 +159,7 @@ export const CollaborativeEditor = forwardRef<
     );
   },
 );
+
+CollaborativeEditorInner.displayName = 'CollaborativeEditorInner';
 
 CollaborativeEditor.displayName = 'CollaborativeEditor';
