@@ -23,7 +23,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   CollaborativeEditor,
-  type CollaborativeEditorRef,
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
@@ -94,7 +93,6 @@ export function ProposalEditor({
   // Refs
   const budgetInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
-  const editorRef = useRef<CollaborativeEditorRef>(null);
 
   // Check if editing a draft (should show info modal and use submitProposal)
   const isDraft =
@@ -266,17 +264,13 @@ export function ProposalEditor({
     }
   }, [showBudgetInput]);
 
-  // Sync save status from CollaborativeEditor ref
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const ref = editorRef.current;
-      if (ref) {
-        setSaveStatus(ref.saveStatus);
-        setLastSavedAt(ref.lastSavedAt);
-      }
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
+  const handleSaveStatusChange = useCallback(
+    (status: SaveStatus, savedAt: Date | null) => {
+      setSaveStatus(status);
+      setLastSavedAt(savedAt);
+    },
+    [],
+  );
 
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
@@ -453,10 +447,10 @@ export function ProposalEditor({
 
           {/* Rich Text Editor with Collaboration */}
           <CollaborativeEditor
-            ref={editorRef}
             docId={collaborationDocId}
             extensions={editorExtensions}
             onEditorReady={handleEditorReady}
+            onSaveStatusChange={handleSaveStatusChange}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
           />

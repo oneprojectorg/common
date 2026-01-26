@@ -115,8 +115,6 @@ export const getProposal = async ({
       : Promise.resolve({ commentsCount: 0, likesCount: 0, followersCount: 0 }),
 
     // Fetch document content
-    // TODO: wut? used?
-    //
     getProposalDocumentsContent([
       { id: proposal.id, proposalData: proposal.proposalData },
     ]),

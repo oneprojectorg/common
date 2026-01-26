@@ -33,6 +33,7 @@ export interface CollaborativeEditorProps {
   extensions?: Extensions;
   placeholder?: string;
   onEditorReady?: (editor: Editor) => void;
+  onSaveStatusChange?: (status: SaveStatus, lastSavedAt: Date | null) => void;
   className?: string;
   editorClassName?: string;
 }
@@ -48,6 +49,7 @@ export const CollaborativeEditor = forwardRef<
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
+      onSaveStatusChange,
       className = '',
       editorClassName = '',
     },
@@ -77,6 +79,7 @@ export const CollaborativeEditor = forwardRef<
         extensions={extensions}
         placeholder={placeholder}
         onEditorReady={onEditorReady}
+        onSaveStatusChange={onSaveStatusChange}
         className={className}
         editorClassName={editorClassName}
       />
@@ -84,15 +87,14 @@ export const CollaborativeEditor = forwardRef<
   },
 );
 
-interface CollaborativeEditorInnerProps
-  extends Omit<CollaborativeEditorProps, 'docId'> {
+type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
   ydoc: Doc;
   provider: TiptapCollabProvider;
   status: CollabStatus;
   isSynced: boolean;
   saveStatus: SaveStatus;
   lastSavedAt: Date | null;
-}
+};
 
 /** Inner component that renders after provider is ready */
 const CollaborativeEditorInner = forwardRef<
@@ -110,6 +112,7 @@ const CollaborativeEditorInner = forwardRef<
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
+      onSaveStatusChange,
       className = '',
       editorClassName = '',
     },
@@ -141,6 +144,11 @@ const CollaborativeEditorInner = forwardRef<
 
       editor.commands.toggleVersioning();
     }, [editor, status, ydoc]);
+
+    // Notify parent of save status changes
+    useEffect(() => {
+      onSaveStatusChange?.(saveStatus, lastSavedAt);
+    }, [saveStatus, lastSavedAt, onSaveStatusChange]);
 
     useImperativeHandle(
       ref,
