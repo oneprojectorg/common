@@ -1,17 +1,35 @@
-import { db } from '@op/db/client';
+import { db } from '@op/db';
 import {
-  Organization,
+  type Organization,
+  accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
   profiles,
   users,
 } from '@op/db/schema';
-import { ROLES } from '@op/db/seedData/accessControl';
-import { randomUUID } from 'crypto';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { eq, inArray } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
-import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
+import { createTestUser } from './test-user-utils';
+
+// Cache for role IDs looked up by name
+const roleIdCache: Record<string, string> = {};
+
+export interface TestOrganizationDataManagerOptions {
+  /**
+   * Callback to register cleanup. If not provided, cleanup must be called manually.
+   * In Vitest, pass `onTestFinished` from test context.
+   * In Playwright, omit this and call `cleanup()` in fixture teardown.
+   */
+  onTestFinished?: (fn: () => void | Promise<void>) => void;
+  /**
+   * Supabase admin client for auth operations. If not provided, uses the shared
+   * test client from setup.ts (requires Vitest environment).
+   */
+  supabaseAdmin?: SupabaseClient;
+}
 
 interface SeedUserInput {
   email: string;
@@ -48,12 +66,13 @@ interface GenerateTestOrganizationOutput {
  * Test Organization Data Manager
  *
  * Provides a pattern for managing test data lifecycle with automatic cleanup.
- * All test data creation methods automatically register cleanup handlers using vitest's onTestFinished.
+ * Works with both Vitest (automatic cleanup via onTestFinished) and Playwright
+ * (manual cleanup in fixture teardown).
  *
- * @example
+ * @example Vitest usage
  * ```ts
  * it('should do something', async ({ task, onTestFinished }) => {
- *   const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+ *   const testData = new TestOrganizationDataManager(task.id, { onTestFinished });
  *
  *   // Automatically registers cleanup
  *   const { organization, adminUser } = await testData.createOrganization({
@@ -64,23 +83,94 @@ interface GenerateTestOrganizationOutput {
  *   // Cleanup happens automatically after test finishes
  * });
  * ```
+ *
+ * @example Playwright usage
+ * ```ts
+ * const manager = new TestOrganizationDataManager(testId, { supabaseAdmin: myClient });
+ * await use(manager);
+ * await manager.cleanup(); // Manual cleanup in fixture teardown
+ * ```
  */
 export class TestOrganizationDataManager {
   private testId: string;
   private cleanupRegistered = false;
-  private onTestFinishedCallback: (fn: () => void | Promise<void>) => void;
+  private onTestFinishedCallback?: (fn: () => void | Promise<void>) => void;
+  private supabaseAdminOverride: SupabaseClient | undefined;
+  private supabaseAdminResolved: SupabaseClient | null = null;
 
   // Track exact IDs created by this test instance for precise cleanup
   private createdProfileIds: string[] = [];
   private createdAuthUserIds: string[] = [];
   private createdOrganizationUserIds: string[] = [];
 
+  /**
+   * @param testId - Unique identifier for this test instance
+   * @param optionsOrOnTestFinished - Either an options object or the onTestFinished callback (legacy)
+   */
   constructor(
     testId: string,
-    onTestFinished: (fn: () => void | Promise<void>) => void,
+    optionsOrOnTestFinished:
+      | TestOrganizationDataManagerOptions
+      | ((fn: () => void | Promise<void>) => void) = {},
   ) {
     this.testId = testId;
-    this.onTestFinishedCallback = onTestFinished;
+
+    // Support both old signature (callback) and new signature (options object)
+    if (typeof optionsOrOnTestFinished === 'function') {
+      this.onTestFinishedCallback = optionsOrOnTestFinished;
+      // No override - will lazy-load from Vitest setup
+    } else {
+      this.onTestFinishedCallback = optionsOrOnTestFinished.onTestFinished;
+      this.supabaseAdminOverride = optionsOrOnTestFinished.supabaseAdmin;
+    }
+  }
+
+  /**
+   * Gets the Supabase admin client, lazily loading from Vitest setup if needed.
+   * This allows the class to work in both Vitest (lazy load) and Playwright (injected) environments.
+   */
+  private async getSupabaseAdmin(): Promise<SupabaseClient> {
+    if (this.supabaseAdminOverride) {
+      return this.supabaseAdminOverride;
+    }
+
+    if (this.supabaseAdminResolved) {
+      return this.supabaseAdminResolved;
+    }
+
+    // Lazy load from Vitest setup - only works in Vitest environment
+    const { supabaseTestAdminClient } = await import('../supabase-utils');
+    if (!supabaseTestAdminClient) {
+      throw new Error(
+        'Supabase admin client not available. Either pass supabaseAdmin in options or run in Vitest environment.',
+      );
+    }
+    this.supabaseAdminResolved = supabaseTestAdminClient;
+    return supabaseTestAdminClient;
+  }
+
+  /**
+   * Gets the role ID for a given role name, querying the database if not cached.
+   * This allows tests to work with any seeded database without hardcoded IDs.
+   */
+  private async getRoleId(roleName: 'Admin' | 'Member'): Promise<string> {
+    if (roleIdCache[roleName]) {
+      return roleIdCache[roleName];
+    }
+
+    const [role] = await db
+      .select({ id: accessRoles.id })
+      .from(accessRoles)
+      .where(eq(accessRoles.name, roleName));
+
+    if (!role) {
+      throw new Error(
+        `Access role "${roleName}" not found in database. Ensure the database is seeded with access roles.`,
+      );
+    }
+
+    roleIdCache[roleName] = role.id;
+    return role.id;
   }
 
   /**
@@ -111,6 +201,9 @@ export class TestOrganizationDataManager {
     } = opts || {};
 
     const orgNameWithTestId = `${organizationName}-${this.testId}`;
+
+    // Get Supabase client for user creation
+    const supabaseClient = await this.getSupabaseAdmin();
 
     // 1. Create organization profile (minimal - only required fields)
     const [orgProfile] = await db
@@ -149,11 +242,13 @@ export class TestOrganizationDataManager {
     ): Promise<GeneratedUser> => {
       const { email } = this.generateUserWithRole(role, emailDomain);
 
-      // Create auth user via Supabase Admin API
+      // Create auth user via Supabase API
       // This triggers the database trigger which automatically creates:
       // - A row in the users table
       // - A profile for the user
-      const authUser = await createTestUser(email).then((res) => res.user);
+      const authUser = await createTestUser(supabaseClient, email).then(
+        (res) => res.user,
+      );
 
       if (!authUser || !authUser.email) {
         throw new Error(`Failed to create auth user for ${email}`);
@@ -192,8 +287,8 @@ export class TestOrganizationDataManager {
         throw new Error(`Failed to create organization user for ${email}`);
       }
 
-      // Get the role ID from predefined seed data constants
-      const accessRoleId = role === 'Admin' ? ROLES.ADMIN.id : ROLES.MEMBER.id;
+      // Get the role ID by querying the database
+      const accessRoleId = await this.getRoleId(role);
 
       // Assign role to organization user
       await db.insert(organizationUserToAccessRoles).values({
@@ -317,7 +412,7 @@ export class TestOrganizationDataManager {
     }
 
     // Assign role to organization user
-    const accessRoleId = role === 'Admin' ? ROLES.ADMIN.id : ROLES.MEMBER.id;
+    const accessRoleId = await this.getRoleId(role);
     await db.insert(organizationUserToAccessRoles).values({
       organizationUserId: orgUser.id,
       accessRoleId,
@@ -334,9 +429,10 @@ export class TestOrganizationDataManager {
    * Ensures cleanup is only registered once per test.
    *
    * Uses onTestFinished from test context to clean up after each concurrent test completes.
+   * If onTestFinished was not provided (e.g., Playwright), cleanup must be called manually.
    */
   private ensureCleanupRegistered(): void {
-    if (this.cleanupRegistered) {
+    if (this.cleanupRegistered || !this.onTestFinishedCallback) {
       return;
     }
 
@@ -356,12 +452,10 @@ export class TestOrganizationDataManager {
    * - Deleting auth users cascades to users and organizationUsers tables
    *
    * This method is automatically called via onTestFinished when using test data creation methods.
-   * You can also call it manually if needed, but this is not recommended.
+   * In Playwright, call this manually in fixture teardown.
    */
   async cleanup(): Promise<void> {
-    if (!supabaseTestAdminClient) {
-      throw new Error('Supabase admin test client not initialized');
-    }
+    const supabaseClient = await this.getSupabaseAdmin();
 
     // 1. Delete organization users added via addUserToOrganization
     // These need explicit cleanup as they may belong to organizations managed by other test instances
@@ -379,11 +473,11 @@ export class TestOrganizationDataManager {
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 4. Delete auth users by exact IDs (not pattern matching)
+    // 3. Delete auth users by exact IDs (not pattern matching)
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
         this.createdAuthUserIds.map((userId) =>
-          supabaseTestAdminClient.auth.admin.deleteUser(userId),
+          supabaseClient.auth.admin.deleteUser(userId),
         ),
       );
 

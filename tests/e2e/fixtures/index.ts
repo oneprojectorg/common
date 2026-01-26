@@ -7,8 +7,8 @@
  * - authenticatedUser: The user credentials used for authentication
  */
 
-// Re-export from auth.ts which extends test-data.ts
+// Re-export from auth.ts
 export { test, expect } from './auth.js';
 
-// Export types and classes for custom fixtures
-export { E2ETestDataManager } from './test-data.js';
+// Re-export TestOrganizationDataManager for custom fixtures
+export { TestOrganizationDataManager } from '@op/api/test/helpers/TestOrganizationDataManager';

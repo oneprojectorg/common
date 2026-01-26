@@ -2,9 +2,11 @@ import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
 import type { TContext } from '../types';
+import { TEST_USER_DEFAULT_PASSWORD } from './helpers/test-user-utils';
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
 
 export { supabaseTestClient, supabaseTestAdminClient } from './setup';
+export { TEST_USER_DEFAULT_PASSWORD } from './helpers/test-user-utils';
 
 /**
  * Converts a Supabase session into cookies using the actual Supabase SSR logic
@@ -119,7 +121,7 @@ export async function cleanupTestData(tables: string[] = []) {
  */
 export async function createTestUser(
   email: string,
-  password: string = 'testpassword123',
+  password: string = TEST_USER_DEFAULT_PASSWORD,
 ) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
@@ -145,7 +147,7 @@ export async function createTestUser(
  */
 export async function signInTestUser(
   email: string,
-  password: string = 'testpassword123',
+  password: string = TEST_USER_DEFAULT_PASSWORD,
 ) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
@@ -218,7 +220,7 @@ export function createIsolatedTestClient() {
  */
 export async function createIsolatedSession(
   email: string,
-  password: string = 'testpassword123',
+  password: string = TEST_USER_DEFAULT_PASSWORD,
 ) {
   const client = createIsolatedTestClient();
 

@@ -1,42 +1,58 @@
+import { TestOrganizationDataManager } from '@op/api/test/helpers/TestOrganizationDataManager';
+import { TEST_USER_DEFAULT_PASSWORD } from '@op/api/test/helpers/test-user-utils';
 import type { Page } from '@playwright/test';
 import { test as base } from '@playwright/test';
+import {
+  type Session,
+  type SupabaseClient,
+  createClient,
+} from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { E2ETestDataManager, type GeneratedUser } from './test-data';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-type AuthenticatedUser = Pick<
-  GeneratedUser,
-  'email' | 'password' | 'authUserId'
->;
-
-interface SupabaseSession {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  expires_at?: number;
-  token_type: string;
-  user: {
-    id: string;
-    email: string;
-    [key: string]: unknown;
-  };
+interface AuthenticatedUser {
+  email: string;
+  password: string;
+  authUserId: string;
 }
 
 interface WorkerFixtures {
   workerStorageState: string;
   workerAuthUser: AuthenticatedUser;
-  workerTestData: E2ETestDataManager;
+  workerTestData: TestOrganizationDataManager;
+  supabaseAdmin: SupabaseClient;
 }
 
 interface TestFixtures {
   authenticatedPage: Page;
   authenticatedUser: AuthenticatedUser;
-  testData: E2ETestDataManager;
+  testData: TestOrganizationDataManager;
+}
+
+/**
+ * Creates a Supabase admin client for E2E tests.
+ * This is equivalent to what Vitest's setup.ts does, but without the vi.mock() dependencies.
+ */
+function createSupabaseAdminClient(): SupabaseClient {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      'Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE',
+    );
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }
 
 function getSupabaseProjectId(): string {
@@ -57,7 +73,7 @@ function getSupabaseProjectId(): string {
 async function signInViaApi(user: {
   email: string;
   password: string;
-}): Promise<SupabaseSession> {
+}): Promise<Session> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -89,12 +105,15 @@ async function signInViaApi(user: {
     );
   }
 
-  return (await response.json()) as SupabaseSession;
+  return (await response.json()) as Session;
 }
 
 /**
  * Extended test fixture that provides authenticated browser state using
  * Playwright's recommended storageState pattern with API-based auth.
+ *
+ * Uses the same TestOrganizationDataManager as API tests, with an injected
+ * Supabase admin client for E2E environment.
  *
  * Authentication flow:
  * 1. Each parallel worker gets a unique test account (created via testData)
@@ -106,12 +125,23 @@ async function signInViaApi(user: {
  * @see https://playwright.dev/docs/auth#authenticate-with-api-request
  */
 export const test = base.extend<TestFixtures, WorkerFixtures>({
+  // Worker-scoped Supabase admin client
+  supabaseAdmin: [
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use) => {
+      const client = createSupabaseAdminClient();
+      await use(client);
+    },
+    { scope: 'worker' },
+  ],
+
   // Worker-scoped test data manager for creating the worker's auth account
   workerTestData: [
-    // eslint-disable-next-line no-empty-pattern
-    async ({}, use, workerInfo) => {
+    async ({ supabaseAdmin }, use, workerInfo) => {
       const testId = `w${workerInfo.workerIndex}`;
-      const manager = new E2ETestDataManager(testId);
+      const manager = new TestOrganizationDataManager(testId, {
+        supabaseAdmin,
+      });
 
       await use(manager);
 
@@ -130,7 +160,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
       await use({
         email: adminUser.email,
-        password: adminUser.password,
+        password: TEST_USER_DEFAULT_PASSWORD,
         authUserId: adminUser.authUserId,
       });
     },
@@ -220,10 +250,9 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   },
 
   // Test-scoped test data manager for creating additional test data
-  // eslint-disable-next-line no-empty-pattern
-  testData: async ({}, use, testInfo) => {
+  testData: async ({ supabaseAdmin }, use, testInfo) => {
     const testId = testInfo.testId.slice(0, 8);
-    const manager = new E2ETestDataManager(testId);
+    const manager = new TestOrganizationDataManager(testId, { supabaseAdmin });
 
     await use(manager);
 
