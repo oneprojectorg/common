@@ -17,6 +17,7 @@ import {
 } from '@op/ui/ui/table';
 import { useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
+import { LuUsers } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -108,33 +109,22 @@ const ProfileUsersAccessTableContent = ({
   sortDescriptor,
   onSortChange,
   isLoading,
+  roles,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
   sortDescriptor: SortDescriptor;
   onSortChange: (descriptor: SortDescriptor) => void;
   isLoading: boolean;
+  roles: { id: string; name: string }[];
 }) => {
   const t = useTranslations();
   const isHydrated = useIsHydrated();
 
-  // Fetch roles with regular query
-  const {
-    data: rolesData,
-    isPending: rolesPending,
-    isError: rolesError,
-  } = trpc.organization.getRoles.useQuery();
-
   // Don't render table until after hydration due to React Aria SSR limitations
-  if (!isHydrated || rolesPending) {
+  if (!isHydrated) {
     return <Skeleton className="h-64 w-full" />;
   }
-
-  if (rolesError) {
-    return null; // Error handled by parent
-  }
-
-  const roles = rolesData?.roles ?? [];
 
   return (
     <div className="relative">
@@ -223,6 +213,7 @@ export const ProfileUsersAccessTable = ({
   isLoading,
   isError,
   onRetry,
+  roles,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -231,6 +222,7 @@ export const ProfileUsersAccessTable = ({
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  roles: { id: string; name: string }[];
 }) => {
   const t = useTranslations();
 
@@ -245,6 +237,14 @@ export const ProfileUsersAccessTable = ({
     );
   }
 
+  if (profileUsers.length === 0 && !isLoading) {
+    return (
+      <EmptyState icon={<LuUsers className="size-6" />}>
+        <span>{t('No members found')}</span>
+      </EmptyState>
+    );
+  }
+
   return (
     <ProfileUsersAccessTableContent
       profileUsers={profileUsers}
@@ -252,6 +252,7 @@ export const ProfileUsersAccessTable = ({
       sortDescriptor={sortDescriptor}
       onSortChange={onSortChange}
       isLoading={isLoading}
+      roles={roles}
     />
   );
 };

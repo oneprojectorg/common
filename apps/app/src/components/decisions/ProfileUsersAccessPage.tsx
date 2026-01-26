@@ -37,10 +37,9 @@ export const ProfileUsersAccessPage = ({
     useCursorPagination(ITEMS_PER_PAGE);
 
   // Reset pagination when search or sort changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset is intentionally excluded to avoid infinite loop
   useEffect(() => {
     reset();
-  }, [debouncedQuery, sortDescriptor.column, sortDescriptor.direction]);
+  }, [debouncedQuery, sortDescriptor.column, sortDescriptor.direction, reset]);
 
   // Convert React Aria sort descriptor to API format
   const orderBy = sortDescriptor.column as SortColumn;
@@ -61,9 +60,14 @@ export const ProfileUsersAccessPage = ({
   const { data, isPending, isError, refetch } =
     trpc.profile.listUsers.useQuery(queryInput);
 
+  // Fetch roles in parallel to avoid waterfall loading
+  const { data: rolesData, isPending: rolesPending } =
+    trpc.organization.getRoles.useQuery();
+
   const profileUsers = data?.items ?? [];
   const next = data?.next;
   const hasMore = data?.hasMore ?? false;
+  const roles = rolesData?.roles ?? [];
 
   const onNext = () => {
     if (hasMore && next) {
@@ -89,9 +93,10 @@ export const ProfileUsersAccessPage = ({
         profileId={profileId}
         sortDescriptor={sortDescriptor}
         onSortChange={setSortDescriptor}
-        isLoading={isPending}
+        isLoading={isPending || rolesPending}
         isError={isError}
         onRetry={() => void refetch()}
+        roles={roles}
       />
 
       <Pagination

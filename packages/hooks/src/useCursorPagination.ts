@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 /**
  * Custom hook for managing cursor-based pagination state.
@@ -55,10 +55,10 @@ export function useCursorPagination(limit: number) {
    * Reset pagination to the first page.
    * Useful when filters or search queries change.
    */
-  const reset = () => {
+  const reset = useCallback(() => {
     setCursor(null);
     setCursorHistory([null]);
-  };
+  }, []);
 
   return {
     cursor,

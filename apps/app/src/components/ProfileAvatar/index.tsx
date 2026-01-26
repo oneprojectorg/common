@@ -24,9 +24,9 @@ export const ProfileAvatar = ({
     return null;
   }
 
-  const name = profile?.name ?? '';
-  const avatarImage = profile?.avatarImage;
-  const slug = profile?.slug;
+  const name = profile.name ?? '';
+  const avatarImage = profile.avatarImage;
+  const slug = profile.slug;
 
   const avatar = (
     <Avatar
