@@ -12,7 +12,7 @@ interface ProposalSaveStatusProps {
 
 /**
  * Displays the autosave status of the proposal editor.
- * Shows "Saving...", "Saved X ago", or error states.
+ * Shows "Saved X ago" or error states.
  */
 export function ProposalSaveStatus({
   saveStatus,
