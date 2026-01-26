@@ -227,69 +227,69 @@ const ProfileUsersAccessTableContent = ({
             </div>
           )}
           <Table
-          aria-label={t('Members list')}
-          className="w-full table-fixed"
-          sortDescriptor={sortDescriptor}
-          onSortChange={onSortChange}
-        >
-          <TableHeader>
-            <TableColumn
-              isRowHeader
-              id="name"
-              allowsSorting
-              className="sm:w-52"
-            >
-              {t('Name')}
-            </TableColumn>
-            <TableColumn id="email" allowsSorting className="w-auto">
-              {t('Email')}
-            </TableColumn>
-            <TableColumn id="role" allowsSorting className="sm:w-36">
-              {t('Role')}
-            </TableColumn>
-          </TableHeader>
-          <TableBody>
-            {profileUsers.map((profileUser) => {
-              const displayName =
-                profileUser.profile?.name ||
-                profileUser.name ||
-                (profileUser.email?.split('@')?.[0] ?? 'Unknown');
-              const currentRole = profileUser.roles[0];
-              const status = getProfileUserStatus();
+            aria-label={t('Members list')}
+            className="w-full table-fixed"
+            sortDescriptor={sortDescriptor}
+            onSortChange={onSortChange}
+          >
+            <TableHeader>
+              <TableColumn
+                isRowHeader
+                id="name"
+                allowsSorting
+                className="sm:w-52"
+              >
+                {t('Name')}
+              </TableColumn>
+              <TableColumn id="email" allowsSorting className="w-auto">
+                {t('Email')}
+              </TableColumn>
+              <TableColumn id="role" allowsSorting className="sm:w-36">
+                {t('Role')}
+              </TableColumn>
+            </TableHeader>
+            <TableBody>
+              {profileUsers.map((profileUser) => {
+                const displayName =
+                  profileUser.profile?.name ||
+                  profileUser.name ||
+                  (profileUser.email?.split('@')?.[0] ?? 'Unknown');
+                const currentRole = profileUser.roles[0];
+                const status = getProfileUserStatus();
 
-              return (
-                <TableRow key={profileUser.id} id={profileUser.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <ProfileAvatar profile={profileUser.profile} />
-                      <div className="flex flex-col">
-                        <span className="text-sm text-neutral-black">
-                          {displayName}
-                        </span>
-                        <span className="text-xs text-neutral-gray4">
-                          {status}
-                        </span>
+                return (
+                  <TableRow key={profileUser.id} id={profileUser.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <ProfileAvatar profile={profileUser.profile} />
+                        <div className="flex flex-col">
+                          <span className="text-sm text-neutral-black">
+                            {displayName}
+                          </span>
+                          <span className="text-xs text-neutral-gray4">
+                            {status}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-neutral-black">
-                      {profileUser.email}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ProfileUserRoleSelect
-                      profileUserId={profileUser.id}
-                      currentRoleId={currentRole?.id}
-                      profileId={profileId}
-                      roles={roles}
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-neutral-black">
+                        {profileUser.email}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <ProfileUserRoleSelect
+                        profileUserId={profileUser.id}
+                        currentRoleId={currentRole?.id}
+                        profileId={profileId}
+                        roles={roles}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </ClientOnly>
