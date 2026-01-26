@@ -2,11 +2,15 @@ import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
 import type { TContext } from '../types';
-import { TEST_USER_DEFAULT_PASSWORD } from './helpers/test-user-utils';
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
 
 export { supabaseTestClient, supabaseTestAdminClient } from './setup';
-export { TEST_USER_DEFAULT_PASSWORD } from './helpers/test-user-utils';
+
+/**
+ * Default password used for test users.
+ * Must be strong enough to pass Supabase's password requirements.
+ */
+export const TEST_USER_DEFAULT_PASSWORD = 'Test_Password_123!';
 
 /**
  * Converts a Supabase session into cookies using the actual Supabase SSR logic

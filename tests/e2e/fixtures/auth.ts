@@ -1,5 +1,3 @@
-import { TestOrganizationDataManager } from '@op/api/test/helpers/TestOrganizationDataManager';
-import { TEST_USER_DEFAULT_PASSWORD } from '@op/api/test/helpers/test-user-utils';
 import type { Page } from '@playwright/test';
 import { test as base } from '@playwright/test';
 import {
@@ -11,8 +9,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { createOrganization } from './test-data';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+/**
+ * Default password used for test users.
+ * Must be strong enough to pass Supabase's password requirements.
+ */
+export const TEST_USER_DEFAULT_PASSWORD = 'Test_Password_123!';
 
 interface AuthenticatedUser {
   email: string;
@@ -23,19 +29,16 @@ interface AuthenticatedUser {
 interface WorkerFixtures {
   workerStorageState: string;
   workerAuthUser: AuthenticatedUser;
-  workerTestData: TestOrganizationDataManager;
   supabaseAdmin: SupabaseClient;
 }
 
 interface TestFixtures {
   authenticatedPage: Page;
   authenticatedUser: AuthenticatedUser;
-  testData: TestOrganizationDataManager;
 }
 
 /**
  * Creates a Supabase admin client for E2E tests.
- * This is equivalent to what Vitest's setup.ts does, but without the vi.mock() dependencies.
  */
 function createSupabaseAdminClient(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -57,8 +60,6 @@ function createSupabaseAdminClient(): SupabaseClient {
 
 /**
  * Extracts the project ID used for Supabase cookie naming.
- * @supabase/ssr uses the first segment of the hostname for local instances (e.g., "127" from "127.0.0.1").
- * For cloud instances, it extracts from the subdomain.
  */
 function getSupabaseProjectId(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -68,18 +69,19 @@ function getSupabaseProjectId(): string {
 
   const parsed = new URL(url);
 
-  // For local instances, @supabase/ssr uses the first segment before the dot
-  // e.g., "127.0.0.1" -> "127", "localhost" -> "localhost"
   if (
     parsed.hostname === '127.0.0.1' ||
     parsed.hostname.startsWith('127.') ||
     parsed.hostname === 'localhost' ||
     parsed.hostname.endsWith('.local')
   ) {
-    return parsed.hostname.split('.')[0];
+    const segment = parsed.hostname.split('.')[0];
+    if (!segment) {
+      throw new Error(`Could not extract project ID from URL: ${url}`);
+    }
+    return segment;
   }
 
-  // For cloud instances, extract from subdomain (e.g., "abc123" from "abc123.supabase.co")
   const match = parsed.hostname.match(/^([^.]+)\.supabase\.co$/);
   if (!match?.[1]) {
     throw new Error(`Could not extract project ID from URL: ${url}`);
@@ -132,22 +134,15 @@ async function signInViaApi(user: {
  * Extended test fixture that provides authenticated browser state using
  * Playwright's recommended storageState pattern with API-based auth.
  *
- * Uses the same TestOrganizationDataManager as API tests, with an injected
- * Supabase admin client for E2E environment.
- *
  * Authentication flow:
- * 1. Each parallel worker gets a unique test account (created via testData)
+ * 1. Each parallel worker gets a unique test account
  * 2. Worker authenticates once via Supabase password API
  * 3. Session cookies are saved to storageState file
  * 4. All tests in that worker reuse the same authenticated state
- * 5. Cleanup happens after all tests in the worker complete
- *
- * @see https://playwright.dev/docs/auth#authenticate-with-api-request
  */
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   // Worker-scoped Supabase admin client
   supabaseAdmin: [
-    // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
       const client = createSupabaseAdminClient();
       await use(client);
@@ -155,33 +150,20 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  // Worker-scoped test data manager for creating the worker's auth account
-  workerTestData: [
+  // Worker-scoped authenticated user
+  workerAuthUser: [
     async ({ supabaseAdmin }, use, workerInfo) => {
       const testId = `w${workerInfo.workerIndex}`;
-      const manager = new TestOrganizationDataManager(testId, {
+      const result = await createOrganization({
+        testId,
         supabaseAdmin,
-      });
-
-      await use(manager);
-
-      // Cleanup after all tests in this worker
-      await manager.cleanup();
-    },
-    { scope: 'worker' },
-  ],
-
-  // Worker-scoped authenticated user info
-  workerAuthUser: [
-    async ({ workerTestData }, use) => {
-      const { adminUser } = await workerTestData.createOrganization({
         users: { admin: 1, member: 0 },
       });
 
       await use({
-        email: adminUser.email,
+        email: result.adminUser.email,
         password: TEST_USER_DEFAULT_PASSWORD,
-        authUserId: adminUser.authUserId,
+        authUserId: result.adminUser.authUserId,
       });
     },
     { scope: 'worker' },
@@ -194,15 +176,12 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
       const authDir = path.join(__dirname, '../playwright/.auth');
       const fileName = path.join(authDir, `${id}.json`);
 
-      // Ensure auth directory exists
       if (!fs.existsSync(authDir)) {
         fs.mkdirSync(authDir, { recursive: true });
       }
 
-      // Authenticate via Supabase API
       const session = await signInViaApi(workerAuthUser);
 
-      // Build cookie value in Supabase @supabase/ssr format
       const storageKey = `sb-${getSupabaseProjectId()}-auth-token`;
       const sessionJson = JSON.stringify(session);
       const base64Encoded = Buffer.from(sessionJson)
@@ -212,14 +191,12 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         .replace(/=+$/, '');
       const base64Value = `base64-${base64Encoded}`;
 
-      // Chunk the cookie value (max ~3180 chars per cookie)
       const CHUNK_SIZE = 3180;
       const chunks: string[] = [];
       for (let i = 0; i < base64Value.length; i += CHUNK_SIZE) {
         chunks.push(base64Value.slice(i, i + CHUNK_SIZE));
       }
 
-      // Build storage state with cookies
       const cookies = chunks.map((chunk, i) => ({
         name: chunks.length === 1 ? storageKey : `${storageKey}.${i}`,
         value: chunk,
@@ -231,7 +208,6 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         sameSite: 'Lax' as const,
       }));
 
-      // Save storage state to file
       const storageState = {
         cookies,
         origins: [
@@ -251,7 +227,6 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
       await use(fileName);
 
-      // Clean up auth file after worker is done
       if (fs.existsSync(fileName)) {
         fs.unlinkSync(fileName);
       }
@@ -267,16 +242,6 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   // Expose authenticated user info to tests
   authenticatedUser: async ({ workerAuthUser }, use) => {
     await use(workerAuthUser);
-  },
-
-  // Test-scoped test data manager for creating additional test data
-  testData: async ({ supabaseAdmin }, use, testInfo) => {
-    const testId = testInfo.testId.slice(0, 8);
-    const manager = new TestOrganizationDataManager(testId, { supabaseAdmin });
-
-    await use(manager);
-
-    await manager.cleanup();
   },
 
   // Page is already authenticated via storageState
