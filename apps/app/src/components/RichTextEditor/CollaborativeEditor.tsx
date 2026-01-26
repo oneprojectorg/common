@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  type CollabStatus,
-  type SaveStatus,
-  useTiptapCollab,
-} from '@/hooks/useTiptapCollab';
+import { type CollabStatus, useTiptapCollab } from '@/hooks/useTiptapCollab';
 import {
   RichTextEditorSkeleton,
   StyledRichTextContent,
@@ -30,8 +26,6 @@ export interface CollaborativeEditorRef {
   editor: Editor | null;
   collabStatus: CollabStatus;
   isSynced: boolean;
-  saveStatus: SaveStatus;
-  lastSavedAt: Date | null;
 }
 
 export interface CollaborativeEditorProps {
@@ -39,7 +33,6 @@ export interface CollaborativeEditorProps {
   extensions?: Extensions;
   placeholder?: string;
   onEditorReady?: (editor: Editor) => void;
-  onSaveStatusChange?: (status: SaveStatus, lastSavedAt: Date | null) => void;
   className?: string;
   editorClassName?: string;
 }
@@ -55,17 +48,15 @@ export const CollaborativeEditor = forwardRef<
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
-      onSaveStatusChange,
       className = '',
       editorClassName = '',
     },
     ref,
   ) => {
-    const { ydoc, provider, status, isSynced, saveStatus, lastSavedAt } =
-      useTiptapCollab({
-        docId,
-        enabled: true,
-      });
+    const { ydoc, provider, status, isSynced } = useTiptapCollab({
+      docId,
+      enabled: true,
+    });
 
     // Wait for provider before rendering the editor inner component
     // This ensures Snapshot extension is included from the start
@@ -80,12 +71,9 @@ export const CollaborativeEditor = forwardRef<
         provider={provider}
         status={status}
         isSynced={isSynced}
-        saveStatus={saveStatus}
-        lastSavedAt={lastSavedAt}
         extensions={extensions}
         placeholder={placeholder}
         onEditorReady={onEditorReady}
-        onSaveStatusChange={onSaveStatusChange}
         className={className}
         editorClassName={editorClassName}
       />
@@ -98,8 +86,6 @@ type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
   provider: TiptapCollabProvider;
   status: CollabStatus;
   isSynced: boolean;
-  saveStatus: SaveStatus;
-  lastSavedAt: Date | null;
 };
 
 /** Inner component that renders after provider is ready */
@@ -113,12 +99,9 @@ const CollaborativeEditorInner = forwardRef<
       provider,
       status,
       isSynced,
-      saveStatus,
-      lastSavedAt,
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
-      onSaveStatusChange,
       className = '',
       editorClassName = '',
     },
@@ -155,21 +138,14 @@ const CollaborativeEditorInner = forwardRef<
       versioningEnabledRef.current = true;
     }, [editor, status, ydoc]);
 
-    // Notify parent of save status changes
-    useEffect(() => {
-      onSaveStatusChange?.(saveStatus, lastSavedAt);
-    }, [saveStatus, lastSavedAt, onSaveStatusChange]);
-
     useImperativeHandle(
       ref,
       () => ({
         editor,
         collabStatus: status,
         isSynced,
-        saveStatus,
-        lastSavedAt,
       }),
-      [editor, status, isSynced, saveStatus, lastSavedAt],
+      [editor, status, isSynced],
     );
 
     if (!editor) {

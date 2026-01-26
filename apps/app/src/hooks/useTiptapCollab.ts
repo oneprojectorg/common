@@ -1,11 +1,10 @@
 'use client';
 
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
-export type SaveStatus = 'idle' | 'saved' | 'error';
 
 export interface UseTiptapCollabOptions {
   docId: string | null;
@@ -18,8 +17,6 @@ export interface UseTiptapCollabReturn {
   status: CollabStatus;
   isSynced: boolean;
   isConnected: boolean;
-  saveStatus: SaveStatus;
-  lastSavedAt: Date | null;
 }
 
 /** Initialize TipTap Cloud collaboration provider */
@@ -29,29 +26,9 @@ export function useTiptapCollab({
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
 
   const ydoc = useMemo(() => new Y.Doc(), []);
-
-  /**
-   * Handle stateless messages from TipTap Cloud.
-   * - 'saved' action: document was persisted
-   * - 'version.created' action: a new snapshot version was created
-   */
-  const handleStatelessMessage = useCallback((payload: { payload: string }) => {
-    try {
-      const data = JSON.parse(payload.payload);
-      const action = data.action ?? data.event;
-      if (action === 'saved' || action === 'version.created') {
-        setSaveStatus('saved');
-        setLastSavedAt(new Date());
-      }
-    } catch {
-      // Ignore parse errors for non-JSON messages
-    }
-  }, []);
 
   useEffect(() => {
     if (!enabled || !docId) {
@@ -66,19 +43,13 @@ export function useTiptapCollab({
       return;
     }
 
-    const provider = new TiptapCollabProvider({
+    const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
       token: 'notoken', // TODO: proper JWT auth
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
-        // Check if there's an existing last saved timestamp
-        const saved = provider.getLastSaved();
-        if (saved) {
-          setLastSavedAt(saved);
-          setSaveStatus('saved');
-        }
       },
       onDisconnect: () => {
         setStatus('disconnected');
@@ -86,28 +57,15 @@ export function useTiptapCollab({
       },
       onSynced: () => {
         setIsSynced(true);
-        // Update last saved from provider after sync
-        const saved = provider.getLastSaved();
-        if (saved) {
-          setLastSavedAt(saved);
-          setSaveStatus('saved');
-        }
-      },
-      onStateless: handleStatelessMessage,
-      onClose: () => {
-        setSaveStatus('error');
-      },
-      onAuthenticationFailed: () => {
-        setSaveStatus('error');
       },
     });
 
-    setProvider(provider);
+    setProvider(newProvider);
     return () => {
-      provider.destroy();
+      newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, ydoc, handleStatelessMessage]);
+  }, [docId, enabled, ydoc]);
 
   return {
     ydoc,
@@ -115,7 +73,5 @@ export function useTiptapCollab({
     status,
     isSynced,
     isConnected: status === 'connected',
-    saveStatus,
-    lastSavedAt,
   };
 }

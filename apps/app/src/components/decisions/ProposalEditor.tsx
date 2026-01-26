@@ -1,6 +1,5 @@
 'use client';
 
-import type { SaveStatus } from '@/hooks/useTiptapCollab';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
@@ -87,8 +86,6 @@ export function ProposalEditor({
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Refs
   const budgetInputRef = useRef<HTMLInputElement>(null);
@@ -264,14 +261,6 @@ export function ProposalEditor({
     }
   }, [showBudgetInput]);
 
-  const handleSaveStatusChange = useCallback(
-    (status: SaveStatus, savedAt: Date | null) => {
-      setSaveStatus(status);
-      setLastSavedAt(savedAt);
-    },
-    [],
-  );
-
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
   }, []);
@@ -377,8 +366,6 @@ export function ProposalEditor({
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
       isDraft={isDraft}
-      saveStatus={saveStatus}
-      lastSavedAt={lastSavedAt}
     >
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
@@ -450,7 +437,6 @@ export function ProposalEditor({
             docId={collaborationDocId}
             extensions={editorExtensions}
             onEditorReady={handleEditorReady}
-            onSaveStatusChange={handleSaveStatusChange}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
           />
