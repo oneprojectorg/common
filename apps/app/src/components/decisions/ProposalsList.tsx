@@ -7,6 +7,7 @@ import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -14,13 +15,12 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { LuArrowDownToLine } from 'react-icons/lu';
+import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
-import { EmptyProposalsState } from './EmptyProposalsState';
 import {
   ProposalCard,
   ProposalCardActions,
@@ -113,14 +113,14 @@ export const ProposalListSkeleton = () => {
 const NoProposalsFound = () => {
   const t = useTranslations();
   return (
-    <EmptyProposalsState>
+    <EmptyState icon={<LuLeaf className="size-6" />}>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('No proposals found matching the current filters.')}
       </Header3>
       <p className="text-base text-neutral-charcoal">
         {t('Try adjusting your filter selection above.')}
       </p>
-    </EmptyProposalsState>
+    </EmptyState>
   );
 };
 

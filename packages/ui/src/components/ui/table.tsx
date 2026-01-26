@@ -27,9 +27,8 @@ import {
 import { LuArrowDown } from 'react-icons/lu';
 import { twJoin, twMerge } from 'tailwind-merge';
 
-import { cx } from '@/lib/primitive';
-
-import { Checkbox } from '@/components/Checkbox';
+import { cx } from '../../lib/primitive';
+import { Checkbox } from '../Checkbox';
 
 interface TableProps extends Omit<TablePrimitiveProps, 'className'> {
   allowResize?: boolean;

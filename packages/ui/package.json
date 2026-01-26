@@ -21,6 +21,7 @@
     "./DatePicker": "./src/components/DatePicker.tsx",
     "./Dialog": "./src/components/Dialog.tsx",
     "./DropDownButton": "./src/components/DropDownButton.tsx",
+    "./EmptyState": "./src/components/EmptyState.tsx",
     "./Field": "./src/components/Field.tsx",
     "./Form": "./src/components/Form.tsx",
     "./Header": "./src/components/Header.tsx",

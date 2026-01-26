@@ -3,11 +3,12 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Checkbox } from '@op/ui/Checkbox';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
+import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { EmptyProposalsState } from './EmptyProposalsState';
 import {
   ProposalCardContent,
   ProposalCardFooter,
@@ -20,11 +21,11 @@ import { VotingProposalCard } from './VotingProposalCard';
 export const NoVoteFound = () => {
   const t = useTranslations();
   return (
-    <EmptyProposalsState>
+    <EmptyState icon={<LuLeaf className="size-6" />}>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('You did not vote in this process.')}
       </Header3>
-    </EmptyProposalsState>
+    </EmptyState>
   );
 };
 

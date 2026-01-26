@@ -3,9 +3,11 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
+import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
@@ -15,7 +17,6 @@ import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
-import { EmptyProposalsState } from '../EmptyProposalsState';
 import { MyBallot, NoVoteFound } from '../MyBallot';
 import { ProposalListSkeleton } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
@@ -146,14 +147,14 @@ function ResultsPageContent({
               <APIErrorBoundary
                 fallbacks={{
                   404: (
-                    <EmptyProposalsState>
+                    <EmptyState icon={<LuLeaf className="size-6" />}>
                       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
                         {t('Results are still being processed.')}
                       </Header3>
                       <p className="text-base text-neutral-charcoal">
                         {t('Check back again shortly for the results.')}
                       </p>
-                    </EmptyProposalsState>
+                    </EmptyState>
                   ),
                 }}
               >
