@@ -22,7 +22,7 @@ const ITEMS_PER_PAGE = 25;
 
 export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
+  const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
 
@@ -85,7 +85,7 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
           value={searchQuery}
           onChange={setSearchQuery}
           size={isMobile ? 'small' : undefined}
-          className="w-full sm:max-w-96"
+          className="w-full md:max-w-96"
         />
 
         <ProfileUsersAccessTable
