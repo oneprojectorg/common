@@ -37,12 +37,15 @@ interface OverviewFormData {
 function AutoSaveHandler({
   values,
   decisionId,
-  setFormData,
+  setInstanceData,
   setSaveStatus,
 }: {
   values: OverviewFormData;
   decisionId: string;
-  setFormData: (id: string, data: Partial<OverviewFormData>) => void;
+  setInstanceData: (
+    id: string,
+    data: { name?: string; description?: string; config?: Record<string, unknown> }
+  ) => void;
   setSaveStatus: (id: string, status: 'idle' | 'saving' | 'saved' | 'error') => void;
 }) {
   const [debouncedValues] = useDebounce(values, 500);
@@ -66,8 +69,23 @@ function AutoSaveHandler({
     previousValues.current = valuesString;
 
     // Update Zustand store (persists to localStorage)
+    // Map form values to instanceData structure
     setSaveStatus(decisionId, 'saving');
-    setFormData(decisionId, debouncedValues);
+    setInstanceData(decisionId, {
+      name: debouncedValues.processName,
+      description: debouncedValues.description,
+      config: {
+        steward: debouncedValues.steward,
+        focusAreas: debouncedValues.focusAreas,
+        aims: debouncedValues.aims,
+        budget: debouncedValues.budget,
+        hideBudget: debouncedValues.hideBudget,
+        organizeCategories: debouncedValues.organizeCategories,
+        multiPhase: debouncedValues.multiPhase,
+        includeReview: debouncedValues.includeReview,
+        isPrivate: debouncedValues.isPrivate,
+      },
+    });
 
     // Mark as saved after a brief delay
     const timer = setTimeout(() => {
@@ -81,7 +99,7 @@ function AutoSaveHandler({
     return () => clearTimeout(timer);
 
     // TODO: Add API mutation here once storage location is decided
-  }, [debouncedValues, decisionId, setFormData, setSaveStatus]);
+  }, [debouncedValues, decisionId, setInstanceData, setSaveStatus]);
 
   return null;
 }
@@ -120,13 +138,16 @@ export default function OverviewSection({
 }: SectionProps) {
   const t = useTranslations();
 
-  // Zustand store
-  const storedData = useProcessBuilderStore((s) => s.forms[decisionId]);
-  const setFormData = useProcessBuilderStore((s) => s.setFormData);
+  // Zustand store - using new instanceData structure
+  const instanceData = useProcessBuilderStore((s) => s.instances[decisionId]);
+  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const saveStatus = useProcessBuilderStore(
     (s) => s.saveStatus[decisionId] ?? 'idle'
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
+
+  // Extract config for easier access
+  const config = instanceData?.config;
 
   // Mock options - these would come from API
   const stewardOptions = [
@@ -145,17 +166,19 @@ export default function OverviewSection({
 
   const form = useAppForm({
     defaultValues: {
-      steward: storedData?.steward ?? '',
-      focusAreas: storedData?.focusAreas ?? ([] as Option[]),
-      aims: storedData?.aims ?? [''],
-      processName: storedData?.processName ?? decisionName ?? '',
-      description: storedData?.description ?? '',
-      budget: storedData?.budget ?? (0 as number | null),
-      hideBudget: storedData?.hideBudget ?? (true as boolean),
-      organizeCategories: storedData?.organizeCategories ?? (true as boolean),
-      multiPhase: storedData?.multiPhase ?? (true as boolean),
-      includeReview: storedData?.includeReview ?? (true as boolean),
-      isPrivate: storedData?.isPrivate ?? (false as boolean),
+      // Config fields
+      steward: config?.steward ?? '',
+      focusAreas: config?.focusAreas ?? ([] as Option[]),
+      aims: config?.aims ?? [''],
+      budget: config?.budget ?? (0 as number | null),
+      hideBudget: config?.hideBudget ?? (true as boolean),
+      organizeCategories: config?.organizeCategories ?? (true as boolean),
+      multiPhase: config?.multiPhase ?? (true as boolean),
+      includeReview: config?.includeReview ?? (true as boolean),
+      isPrivate: config?.isPrivate ?? (false as boolean),
+      // Instance-level fields
+      processName: instanceData?.name ?? decisionName ?? '',
+      description: instanceData?.description ?? '',
     } satisfies OverviewFormData,
     onSubmit: async ({ value }) => {
       // TODO: Submit to API
@@ -179,7 +202,7 @@ export default function OverviewSection({
             <AutoSaveHandler
               values={values as OverviewFormData}
               decisionId={decisionId}
-              setFormData={setFormData}
+              setInstanceData={setInstanceData}
               setSaveStatus={setSaveStatus}
             />
           )}
