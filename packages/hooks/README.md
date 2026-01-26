@@ -27,7 +27,7 @@ Specific hooks and utilities are made available through the `exports` map in `pa
 **Depends On:**
 
 - **`@op/core`**: For shared configurations or utilities (e.g., `cookieDomains`, `OPURLConfig` used in `src/utils/nukeCookies.ts`).
-- **`@op/eslint-config` (Dev)**: Used for linting configuration during development.
+
 - **`@op/supabase`**: To interact with the Supabase backend client (specifically the browser client) and import Supabase types.
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 
@@ -37,6 +37,6 @@ Specific hooks and utilities are made available through the `exports` map in `pa
 
 ## Development
 
-- Run `pnpm lint` to lint and type-check the code.
+- Run `pnpm typecheck` to type-check the code.
 - Testing might involve using React Testing Library or similar tools, although no specific test script is present in the `package.json`.
 - No specific test setup is currently configured in this package.

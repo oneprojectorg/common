@@ -43,7 +43,7 @@ As a Next.js application using the App Router, it follows standard conventions:
 **Depends On:**
 
 - **`@op/core`**: For shared configuration or types.
-- **`@op/eslint-config` (Dev)**: For linting configuration.
+
 - **`@op/hooks`**: Utilizes shared hooks.
 - **`@op/supabase`**: Uses Supabase client utilities.
 - **`@op/trpc`**: Imports the tRPC provider/client.
@@ -58,7 +58,7 @@ As a Next.js application using the App Router, it follows standard conventions:
 ## Development
 
 - Run `pnpm dev` to start the Next.js development server (on port 3100).
-- Run `pnpm lint` to lint and type-check the code.
+- Run `pnpm typecheck` to type-check the code.
 - Run `pnpm build` to create a production build.
 - Run `pnpm start` to run the production build (on port 3100).
 

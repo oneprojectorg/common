@@ -113,6 +113,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - Follow existing code conventions and patterns in the file being edited
 - Test changes thoroughly before completion
 - Using `any` to fix type errors shuold be avoided
+- Code quality is enforced via **Prettier** (formatting) and **TypeScript** (type checking) only
 
 ### Coding Conventions
 

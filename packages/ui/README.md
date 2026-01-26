@@ -33,7 +33,7 @@ Components and utilities are exported via the `exports` map in `package.json`.
 **Depends On:**
 
 - **`@op/core`**: For shared constants, specifically `commonColors` used in `tailwind.shared.ts`.
-- **`@op/eslint-config` (Dev)**: Used for linting configuration during development.
+
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 
 **Depended On By:**
@@ -44,7 +44,7 @@ Components and utilities are exported via the `exports` map in `package.json`.
 ## Development
 
 - Run `pnpm dev` to start the Storybook server (usually on port 3600).
-- Run `pnpm lint` to lint and type-check the code.
+- Run `pnpm typecheck` to type-check the code.
 - Run `pnpm build` to create a production build of Storybook.
 
 ## Adding Intent UI Components

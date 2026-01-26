@@ -41,7 +41,7 @@ Key exports (`.`, `client` -> `TRPCProvider.tsx`, `vanilla`) are defined in `pac
 
 - **`@op/core`**: Relies on the core package for shared configuration and constants (e.g., `OPURLConfig`, `cookieOptionsDomain`, `adminEmails`, `APP_NAME`).
 - **`@op/db`**: Relies heavily on the database package for schema definitions and the database client (used within procedures/middleware, often via context augmentation not shown in `createContext` directly).
-- **`@op/eslint-config` (Dev)**: Used for linting configuration during development.
+
 - **`@op/supabase`**: Uses the Supabase package for client creation helpers (`@op/supabase/lib`), types (`@op/supabase/types`), and relies on its cookie handling logic for authentication state management.
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 
@@ -56,5 +56,5 @@ Key exports (`.`, `client` -> `TRPCProvider.tsx`, `vanilla`) are defined in `pac
 
 ## Development
 
-- Run `pnpm lint` to lint and type-check the code.
+- Run `pnpm typecheck` to type-check the code.
 - Development typically involves defining routers and procedures here and consuming them in `apps/app`. The tRPC server endpoint itself is hosted within `apps/api`.

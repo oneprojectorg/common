@@ -32,7 +32,7 @@ The `package.json` includes scripts provided by the `react-email` CLI:
 **Depends On:**
 
 - **`@op/core`**: For shared configuration used in sending, specifically `APP_NAME` and `genericEmail` used in `index.tsx`.
-- **`@op/eslint-config` (Dev)**: Used for linting configuration during development.
+
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 
 **Depended On By:**
@@ -42,5 +42,5 @@ The `package.json` includes scripts provided by the `react-email` CLI:
 ## Development
 
 - Run `pnpm dev` to start the React Email development server and preview email templates in the browser.
-- Run `pnpm lint` to lint and type-check the code.
+- Run `pnpm typecheck` to type-check the code.
 - Modify or create new React components in the designated templates directory.

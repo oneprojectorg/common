@@ -22,7 +22,7 @@ The main exports are defined in the `exports` field of `package.json`.
 
 **Depends On:**
 
-- **`@op/eslint-config` (Dev)**: Used for linting configuration during development.
+
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 
 **Depended On By:**
@@ -38,5 +38,5 @@ The main exports are defined in the `exports` field of `package.json`.
 
 ## Development
 
-- Run `pnpm lint` to lint and type-check the code.
+- Run `pnpm typecheck` to type-check the code.
 - There might not be a specific `dev` script if this package primarily exports utilities/config.

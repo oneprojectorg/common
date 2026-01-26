@@ -39,6 +39,6 @@ As a Next.js application using the App Router, the structure includes:
 ## Development
 
 - Run `pnpm dev` to start the Next.js development server (usually on port 3300).
-- Run `pnpm lint` to lint and type-check the code.
+- Run `pnpm typecheck` to type-check the code.
 - Run `pnpm build` to create a production build.
 - Run `pnpm start` to run the production build.
