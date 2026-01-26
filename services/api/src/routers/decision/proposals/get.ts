@@ -34,6 +34,10 @@ export const getProposalRouter = router({
         },
       });
 
+      if (!proposal) {
+        throw new Error('Proposal not found');
+      }
+
       // Fetch permissions
       const isEditable = await getPermissionsOnProposal({
         user,
