@@ -408,6 +408,7 @@
   "Decline": "Rechazar",
   "Accept": "Aceptar",
   "Create": "Crear",
+  "Decision-making process": "Proceso de toma de decisiones",
   "Invite member": "Invitar miembro",
   "Selected emails": "Correos seleccionados",
   "Add emails": "Agregar correos",
@@ -440,7 +441,5 @@
   "Try again": "Intentar de nuevo",
   "Role updated successfully": "Rol actualizado exitosamente",
   "Failed to update role": "Error al actualizar el rol",
-  "Members list": "Lista de miembros",
-  "Error saving": "Error al guardar",
-  "Saved": "Guardado"
+  "Members list": "Lista de miembros"
 }

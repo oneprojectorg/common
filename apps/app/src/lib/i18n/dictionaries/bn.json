@@ -409,6 +409,7 @@
   "Decline": "প্রত্যাখ্যান",
   "Accept": "গ্রহণ করুন",
   "Create": "তৈরি করুন",
+  "Decision-making process": "সিদ্ধান্ত গ্রহণ প্রক্রিয়া",
   "Invite member": "সদস্য আমন্ত্রণ করুন",
   "Selected emails": "নির্বাচিত ইমেইল",
   "Add emails": "ইমেইল যোগ করুন",
@@ -441,7 +442,5 @@
   "Try again": "আবার চেষ্টা করুন",
   "Role updated successfully": "ভূমিকা সফলভাবে আপডেট করা হয়েছে",
   "Failed to update role": "ভূমিকা আপডেট করতে ব্যর্থ",
-  "Members list": "সদস্যদের তালিকা",
-  "Error saving": "সংরক্ষণে ত্রুটি",
-  "Saved": "সংরক্ষিত"
+  "Members list": "সদস্যদের তালিকা"
 }

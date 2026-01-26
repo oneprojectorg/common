@@ -409,6 +409,7 @@
   "Decline": "Decline",
   "Accept": "Accept",
   "Create": "Create",
+  "Decision-making process": "Decision-making process",
   "Invite member": "Invite member",
   "Selected emails": "Selected emails",
   "Add emails": "Add emails",
@@ -441,7 +442,5 @@
   "Try again": "Try again",
   "Role updated successfully": "Role updated successfully",
   "Failed to update role": "Failed to update role",
-  "Members list": "Members list",
-  "Error saving": "Error saving",
-  "Saved": "Saved"
+  "Members list": "Members list"
 }

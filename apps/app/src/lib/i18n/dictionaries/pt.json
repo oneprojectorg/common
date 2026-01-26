@@ -409,6 +409,7 @@
   "Decline": "Recusar",
   "Accept": "Aceitar",
   "Create": "Criar",
+  "Decision-making process": "Processo de tomada de decisão",
   "Invite member": "Convidar membro",
   "Selected emails": "E-mails selecionados",
   "Add emails": "Adicionar e-mails",
@@ -441,7 +442,5 @@
   "Try again": "Tentar novamente",
   "Role updated successfully": "Função atualizada com sucesso",
   "Failed to update role": "Falha ao atualizar a função",
-  "Members list": "Lista de membros",
-  "Error saving": "Erro ao salvar",
-  "Saved": "Salvo"
+  "Members list": "Lista de membros"
 }
