@@ -1,6 +1,6 @@
 import { expect, test } from '../fixtures/index.js';
 
-test.describe('Smoke Tests', () => {
+test.describe('Homepage', () => {
   test('authenticated user sees welcome message on home page', async ({
     authenticatedPage,
   }) => {
