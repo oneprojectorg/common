@@ -358,7 +358,7 @@ export class TestDecisionsDataManager {
 
       // If publishing, create transitions for the instance
       if (status === ProcessStatus.PUBLISHED) {
-        const fullInstance = await db.query.processInstances.findFirst({
+        const fullInstance = await db._query.processInstances.findFirst({
           where: eq(processInstances.id, profile.processInstance.id),
         });
         if (fullInstance) {
@@ -488,7 +488,7 @@ export class TestDecisionsDataManager {
 
       // If publishing, create transitions for the instance
       if (status === ProcessStatus.PUBLISHED) {
-        const fullInstance = await db.query.processInstances.findFirst({
+        const fullInstance = await db._query.processInstances.findFirst({
           where: eq(processInstances.id, instance.id),
         });
         if (fullInstance) {
@@ -498,7 +498,7 @@ export class TestDecisionsDataManager {
     }
 
     // Fetch the profile to get the slug
-    const profile = await db.query.profiles.findFirst({
+    const profile = await db._query.profiles.findFirst({
       where: eq(profiles.id, profileId),
     });
 
