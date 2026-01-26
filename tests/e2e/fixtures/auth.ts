@@ -9,7 +9,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { TEST_USER_DEFAULT_PASSWORD, createOrganization } from './test-data';
+import {
+  type CreateOrganizationResult,
+  TEST_USER_DEFAULT_PASSWORD,
+  createOrganization,
+} from './test-data';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,12 +29,14 @@ interface AuthenticatedUser {
 interface WorkerFixtures {
   workerStorageState: string;
   workerAuthUser: AuthenticatedUser;
+  workerOrg: CreateOrganizationResult;
   supabaseAdmin: SupabaseClient;
 }
 
 interface TestFixtures {
   authenticatedPage: Page;
   authenticatedUser: AuthenticatedUser;
+  org: CreateOrganizationResult;
 }
 
 /**
@@ -139,6 +145,7 @@ async function signInViaApi(user: {
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   // Worker-scoped Supabase admin client
   supabaseAdmin: [
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     async ({}, use) => {
       const client = createSupabaseAdminClient();
       await use(client);
@@ -146,8 +153,8 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  // Worker-scoped authenticated user
-  workerAuthUser: [
+  // Worker-scoped organization with admin user
+  workerOrg: [
     async ({ supabaseAdmin }, use, workerInfo) => {
       const testId = `w${workerInfo.workerIndex}`;
       const result = await createOrganization({
@@ -156,10 +163,18 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         users: { admin: 1, member: 0 },
       });
 
+      await use(result);
+    },
+    { scope: 'worker' },
+  ],
+
+  // Worker-scoped authenticated user (derived from workerOrg)
+  workerAuthUser: [
+    async ({ workerOrg }, use) => {
       await use({
-        email: result.adminUser.email,
+        email: workerOrg.adminUser.email,
         password: TEST_USER_DEFAULT_PASSWORD,
-        authUserId: result.adminUser.authUserId,
+        authUserId: workerOrg.adminUser.authUserId,
       });
     },
     { scope: 'worker' },
@@ -238,6 +253,11 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   // Expose authenticated user info to tests
   authenticatedUser: async ({ workerAuthUser }, use) => {
     await use(workerAuthUser);
+  },
+
+  // Expose organization to tests
+  org: async ({ workerOrg }, use) => {
+    await use(workerOrg);
   },
 
   // Page is already authenticated via storageState
