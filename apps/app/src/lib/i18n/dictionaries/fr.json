@@ -442,5 +442,21 @@
   "Try again": "Réessayer",
   "Role updated successfully": "Rôle mis à jour avec succès",
   "Failed to update role": "Échec de la mise à jour du rôle",
-  "Members list": "Liste des membres"
+  "Members list": "Liste des membres",
+  "Overview": "Aperçu",
+  "Proposal Template": "Modèle de proposition",
+  "Review Rubric": "Grille d'évaluation",
+  "Phases": "Phases",
+  "Proposal Categories": "Catégories de propositions",
+  "Voting": "Vote",
+  "Form Builder": "Constructeur de formulaire",
+  "Criteria": "Critères",
+  "Settings": "Paramètres",
+  "Roles & permissions": "Rôles et permissions",
+  "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 étape restante} other {# étapes restantes}}",
+  "Process steps": "Étapes du processus",
+  "New process": "Nouveau processus",
+  "Launch": "Lancer",
+  "Process": "Processus",
+  "Section navigation": "Navigation des sections"
 }

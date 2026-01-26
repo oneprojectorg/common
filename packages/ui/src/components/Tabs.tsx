@@ -45,7 +45,7 @@ const tabListStyles = tv({
     },
     orientation: {
       horizontal: 'flex-row border-b border-offWhite',
-      vertical: '',
+      vertical: 'flex-col gap-2 border-none',
     },
   },
   defaultVariants: {
@@ -62,7 +62,12 @@ export const TabList = <T extends object>(
     <RACTabList
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        tabListStyles({ ...renderProps, variant: props.variant, className }),
+        tabListStyles({
+          ...renderProps,
+          variant: props.variant,
+          orientation: props.orientation,
+          className,
+        }),
       )}
     />
   );
@@ -72,11 +77,11 @@ const tabProps = tv({
   base: 'flex h-8 cursor-default items-center px-2 py-3 text-base font-normal text-nowrap text-neutral-gray4 outline-hidden transition forced-color-adjust-none focus-visible:bg-neutral-offWhite sm:h-auto sm:bg-transparent',
   variants: {
     variant: {
-      default: '',
-      pill: 'border-b-none rounded-sm bg-neutral-offWhite p-3 sm:py-2',
+      default: 'border-b-none border-transparent',
+      pill: 'rounded-sm border-none border-transparent bg-neutral-offWhite p-3 focus-visible:outline-2 focus-visible:outline-solid sm:py-2',
     },
     isSelected: {
-      false: '',
+      false: 'border-b border-transparent',
       true: 'border-b border-charcoal text-charcoal',
     },
     isDisabled: {
@@ -89,6 +94,11 @@ const tabProps = tv({
       isSelected: true,
       class:
         'border-none bg-neutral-gray1 text-neutral-charcoal sm:bg-neutral-gray1',
+    },
+    {
+      variant: 'pill',
+      isSelected: false,
+      class: 'border-none',
     },
   ],
   defaultVariants: {

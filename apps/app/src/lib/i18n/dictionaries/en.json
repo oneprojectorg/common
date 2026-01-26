@@ -442,5 +442,21 @@
   "Try again": "Try again",
   "Role updated successfully": "Role updated successfully",
   "Failed to update role": "Failed to update role",
-  "Members list": "Members list"
+  "Members list": "Members list",
+  "Overview": "Overview",
+  "Proposal Template": "Proposal Template",
+  "Review Rubric": "Review Rubric",
+  "Phases": "Phases",
+  "Proposal Categories": "Proposal Categories",
+  "Voting": "Voting",
+  "Form Builder": "Form Builder",
+  "Criteria": "Criteria",
+  "Settings": "Settings",
+  "Roles & permissions": "Roles & permissions",
+  "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 step} other {# steps}} remaining",
+  "Process steps": "Process steps",
+  "New process": "New process",
+  "Launch": "Launch",
+  "Process": "Process",
+  "Section navigation": "Section navigation"
 }
