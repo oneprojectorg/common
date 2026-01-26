@@ -1,21 +1,18 @@
 import { db } from '@op/db';
 import {
   type Organization,
-  accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
   profiles,
   users,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import { createTestUser } from './test-user-utils';
-
-// Cache for role IDs looked up by name
-const roleIdCache: Record<string, string> = {};
 
 export interface TestOrganizationDataManagerOptions {
   /**
@@ -150,30 +147,6 @@ export class TestOrganizationDataManager {
   }
 
   /**
-   * Gets the role ID for a given role name, querying the database if not cached.
-   * This allows tests to work with any seeded database without hardcoded IDs.
-   */
-  private async getRoleId(roleName: 'Admin' | 'Member'): Promise<string> {
-    if (roleIdCache[roleName]) {
-      return roleIdCache[roleName];
-    }
-
-    const [role] = await db
-      .select({ id: accessRoles.id })
-      .from(accessRoles)
-      .where(eq(accessRoles.name, roleName));
-
-    if (!role) {
-      throw new Error(
-        `Access role "${roleName}" not found in database. Ensure the database is seeded with access roles.`,
-      );
-    }
-
-    roleIdCache[roleName] = role.id;
-    return role.id;
-  }
-
-  /**
    * Generates a test organization with members of specified roles.
    * Automatically registers cleanup using onTestFinished.
    *
@@ -287,8 +260,8 @@ export class TestOrganizationDataManager {
         throw new Error(`Failed to create organization user for ${email}`);
       }
 
-      // Get the role ID by querying the database
-      const accessRoleId = await this.getRoleId(role);
+      // Get the role ID from predefined seed data constants
+      const accessRoleId = role === 'Admin' ? ROLES.ADMIN.id : ROLES.MEMBER.id;
 
       // Assign role to organization user
       await db.insert(organizationUserToAccessRoles).values({
@@ -412,7 +385,7 @@ export class TestOrganizationDataManager {
     }
 
     // Assign role to organization user
-    const accessRoleId = await this.getRoleId(role);
+    const accessRoleId = role === 'Admin' ? ROLES.ADMIN.id : ROLES.MEMBER.id;
     await db.insert(organizationUserToAccessRoles).values({
       organizationUserId: orgUser.id,
       accessRoleId,

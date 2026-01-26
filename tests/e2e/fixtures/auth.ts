@@ -55,12 +55,32 @@ function createSupabaseAdminClient(): SupabaseClient {
   });
 }
 
+/**
+ * Extracts the project ID used for Supabase cookie naming.
+ * @supabase/ssr uses the first segment of the hostname for local instances (e.g., "127" from "127.0.0.1").
+ * For cloud instances, it extracts from the subdomain.
+ */
 function getSupabaseProjectId(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) {
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
   }
-  const match = url.match(/https:\/\/([^.]+)\.supabase\.co/);
+
+  const parsed = new URL(url);
+
+  // For local instances, @supabase/ssr uses the first segment before the dot
+  // e.g., "127.0.0.1" -> "127", "localhost" -> "localhost"
+  if (
+    parsed.hostname === '127.0.0.1' ||
+    parsed.hostname.startsWith('127.') ||
+    parsed.hostname === 'localhost' ||
+    parsed.hostname.endsWith('.local')
+  ) {
+    return parsed.hostname.split('.')[0];
+  }
+
+  // For cloud instances, extract from subdomain (e.g., "abc123" from "abc123.supabase.co")
+  const match = parsed.hostname.match(/^([^.]+)\.supabase\.co$/);
   if (!match?.[1]) {
     throw new Error(`Could not extract project ID from URL: ${url}`);
   }

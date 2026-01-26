@@ -37,10 +37,16 @@ sql_paths = [ './seed.sql' ]
 enabled = false
 
 [studio]
-enabled = false
+enabled = true
+# Test Studio port (different from dev port 54323)
+port = 55323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
 
 [inbucket]
-enabled = false
+enabled = true
+# Test Inbucket port (different from dev port 54324)
+port = 55324
 
 [storage]
 enabled = true

@@ -5,8 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load environment variables from the root .env.local
-dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+// Load environment variables from the root .env.test (for test Supabase instance)
+// Use .env.local for dev instance: dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 
 /**
  * Playwright configuration for e2e tests.
