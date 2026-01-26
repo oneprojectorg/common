@@ -11,9 +11,6 @@ interface Response {
   error: AuthError | null;
 }
 
-/**
- * Hook that returns the currently authenticated Supabase user.
- */
 const useAuthUser: (
   options?: Omit<UseQueryOptions<Response, Error>, 'queryKey' | 'queryFn'>,
 ) => UseQueryResult<Response, Error> = (options) => {

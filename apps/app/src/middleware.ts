@@ -17,7 +17,6 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   logger.info(...transformMiddlewareRequest(request));
 
   event.waitUntil(logger.flush());
-
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
   const pathnameIsMissingLocale = i18nConfig.locales.every(

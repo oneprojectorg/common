@@ -16,8 +16,6 @@
     "deps:viz": "node ./scripts/visualize-deps.mjs",
     "dev": "turbo dev",
     "e2e": "pnpm -C ./tests/e2e e2e",
-    "e2e:debug": "pnpm -C ./tests/e2e e2e:debug",
-    "e2e:headed": "pnpm -C ./tests/e2e e2e:headed",
     "e2e:ui": "pnpm -C ./tests/e2e e2e:ui",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:changes": "git diff --name-only --diff-filter=ACM | xargs pnpx prettier --write",
