@@ -1,5 +1,6 @@
 'use client';
 
+import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
 import type { ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -19,7 +20,6 @@ import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-import { ClientOnly } from '@/utils/ClientOnly';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
@@ -168,22 +168,13 @@ const ProfileUsersAccessTableContent = ({
           onSortChange={onSortChange}
         >
           <TableHeader>
-            <TableColumn
-              isRowHeader
-              id="name"
-              allowsSorting
-              className="w-[200px]"
-            >
+            <TableColumn isRowHeader id="name" allowsSorting className="w-52">
               {t('Name')}
             </TableColumn>
             <TableColumn id="email" allowsSorting className="w-auto">
               {t('Email')}
             </TableColumn>
-            <TableColumn
-              id="role"
-              allowsSorting
-              className="w-[140px] text-right"
-            >
+            <TableColumn id="role" allowsSorting className="w-36 text-right">
               {t('Role')}
             </TableColumn>
           </TableHeader>
@@ -200,10 +191,7 @@ const ProfileUsersAccessTableContent = ({
                 <TableRow key={profileUser.id} id={profileUser.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <ProfileAvatar
-                        profile={profileUser.profile}
-                        withLink={false}
-                      />
+                      <ProfileAvatar profile={profileUser.profile} />
                       <div className="flex flex-col">
                         <span className="text-sm text-neutral-black">
                           {displayName}
