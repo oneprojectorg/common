@@ -41,11 +41,13 @@ Playwright will automatically start `pnpm dev:e2e` (dev server on port 3100 with
 ### Option 2: Manual dev server (for debugging)
 
 Terminal 1:
+
 ```bash
 pnpm dev:e2e    # Starts app at localhost:3100 with e2e Supabase
 ```
 
 Terminal 2:
+
 ```bash
 pnpm e2e        # Reuses existing server (reuseExistingServer: true in config)
 ```
@@ -68,7 +70,7 @@ pnpm w:e2e supabase:reset    # Reset DB (destructive)
 Tests live in `tests/e2e/tests/*.spec.ts`. Use fixtures from `fixtures/`:
 
 ```typescript
-import { test, expect } from '../fixtures';
+import { expect, test } from '../fixtures';
 
 test('example', async ({ page }) => {
   await page.goto('/');
@@ -79,7 +81,7 @@ test('example', async ({ page }) => {
 ### Auth fixture (if needed)
 
 ```typescript
-import { test, expect } from '../fixtures';
+import { expect, test } from '../fixtures';
 
 test('authenticated test', async ({ authenticatedPage }) => {
   // Already logged in
@@ -89,6 +91,7 @@ test('authenticated test', async ({ authenticatedPage }) => {
 ## Configuration
 
 `playwright.config.ts` sets:
+
 - `baseURL`: `http://localhost:3100`
 - `webServer.command`: `pnpm dev:e2e` (auto-starts dev server)
 - `timeout`: 60s per test
