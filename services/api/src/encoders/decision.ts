@@ -19,6 +19,32 @@ import { baseProfileEncoder } from './profiles';
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
 // ============================================================================
+// ProcessPhase encoder (for frontend UI components)
+// ============================================================================
+
+/** Process phase encoder for UI display (stepper, stats, etc.) */
+export const processPhaseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  phase: z
+    .object({
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      sortOrder: z.number().optional(),
+    })
+    .optional(),
+  type: z.enum(['initial', 'intermediate', 'final']).optional(),
+  config: z
+    .object({
+      allowProposals: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+export type ProcessPhase = z.infer<typeof processPhaseSchema>;
+
+// ============================================================================
 // DecisionSchemaDefinition format encoders
 // ============================================================================
 
@@ -227,7 +253,6 @@ const processSchemaEncoder = z
     proposalTemplate: jsonSchemaEncoder.optional(),
   })
   .passthrough();
-
 
 // Instance Data Encoder that supports both new and legacy field names
 const instanceDataEncoder = z.preprocess(

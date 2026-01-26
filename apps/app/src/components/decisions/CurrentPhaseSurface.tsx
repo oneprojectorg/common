@@ -5,17 +5,11 @@ import {
   formatCurrency,
   formatDateRange,
 } from '@/utils/formatting';
+import { type ProcessPhase } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 
 import { useTranslations } from '@/lib/i18n';
-
-interface ProcessPhase {
-  id: string;
-  name: string;
-  startDate?: string;
-  endDate?: string;
-}
 
 interface CurrentPhaseSurfaceProps {
   currentPhase?: ProcessPhase;
@@ -33,7 +27,7 @@ export function CurrentPhaseSurface({
   const locale = useLocale();
   const t = useTranslations();
 
-  const remainingDays = calculateDaysRemaining(currentPhase?.endDate);
+  const remainingDays = calculateDaysRemaining(currentPhase?.phase?.endDate);
 
   return (
     <Surface variant="filled" className="flex flex-col gap-4 p-4">
@@ -45,11 +39,11 @@ export function CurrentPhaseSurface({
         <div className="text-base font-bold text-neutral-black">
           {currentPhase?.name || t('Proposal Submissions')}
         </div>
-        {(currentPhase?.startDate || currentPhase?.endDate) && (
+        {(currentPhase?.phase?.startDate || currentPhase?.phase?.endDate) && (
           <div className="text-base text-neutral-black">
             {formatDateRange(
-              currentPhase.startDate,
-              currentPhase.endDate,
+              currentPhase.phase?.startDate,
+              currentPhase.phase?.endDate,
               locale,
             )}
           </div>
