@@ -121,21 +121,25 @@ async function createInstanceWithDueTransition(
     status?: ProcessStatus;
   },
 ) {
-  const instance = await testData.createInstanceWithCustomData({
+  // Create instance without status first (avoids triggering createTransitionsForProcess
+  // before we update instanceData with our custom phase dates)
+  const instance = await testData.createInstanceForProcess({
     caller,
     processId: setup.process.id,
     name: options.name,
-    instanceData: createSimpleInstanceData(options.currentPhaseId),
-    status: options.status ?? ProcessStatus.PUBLISHED,
   });
 
-  // Update currentStateId to match currentPhaseId
+  // Update instanceData with custom phase dates and status for test scenarios
   await db
     .update(processInstances)
-    .set({ currentStateId: options.currentPhaseId })
+    .set({
+      instanceData: createSimpleInstanceData(options.currentPhaseId),
+      currentStateId: options.currentPhaseId,
+      status: options.status ?? ProcessStatus.PUBLISHED,
+    })
     .where(eq(processInstances.id, instance.instance.id));
 
-  // Manually insert the transition record
+  // Manually insert the transition record (we control transitions explicitly in tests)
   await db.insert(decisionProcessTransitions).values({
     processInstanceId: instance.instance.id,
     fromStateId: options.fromStateId,
@@ -380,36 +384,41 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       const caller = await createAuthenticatedCaller(setup.userEmail);
 
       // Create instance already in results phase (no transition inserted)
-      const instance = await testData.createInstanceWithCustomData({
+      // Don't pass status to avoid triggering createTransitionsForProcess with default phase data
+      const instance = await testData.createInstanceForProcess({
         caller,
         processId: setup.process.id,
         name: 'Already Final',
-        instanceData: {
-          currentPhaseId: 'results',
-          phases: [
-            {
-              phaseId: 'submission',
-              startDate: createPastDate(21),
-              endDate: createPastDate(14),
-            },
-            {
-              phaseId: 'review',
-              startDate: createPastDate(14),
-              endDate: createPastDate(7),
-            },
-            {
-              phaseId: 'voting',
-              startDate: createPastDate(7),
-              endDate: createPastDate(1),
-            },
-            { phaseId: 'results', startDate: createPastDate(1) },
-          ],
-        },
       });
 
+      // Update instanceData with custom phase dates and status for test scenario
       await db
         .update(processInstances)
-        .set({ currentStateId: 'results' })
+        .set({
+          instanceData: {
+            currentPhaseId: 'results',
+            phases: [
+              {
+                phaseId: 'submission',
+                startDate: createPastDate(21),
+                endDate: createPastDate(14),
+              },
+              {
+                phaseId: 'review',
+                startDate: createPastDate(14),
+                endDate: createPastDate(7),
+              },
+              {
+                phaseId: 'voting',
+                startDate: createPastDate(7),
+                endDate: createPastDate(1),
+              },
+              { phaseId: 'results', startDate: createPastDate(1) },
+            ],
+          },
+          currentStateId: 'results',
+          status: ProcessStatus.PUBLISHED,
+        })
         .where(eq(processInstances.id, instance.instance.id));
 
       await testData.grantProfileAccess(
@@ -456,17 +465,21 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       const caller = await createAuthenticatedCaller(setup.userEmail);
 
       // Create instance with a future transition
-      const instance = await testData.createInstanceWithCustomData({
+      // Don't pass status to avoid triggering createTransitionsForProcess with default phase data
+      const instance = await testData.createInstanceForProcess({
         caller,
         processId: setup.process.id,
         name: 'Future Instance',
-        instanceData: createSimpleInstanceData('submission'),
-        status: ProcessStatus.PUBLISHED, // Must be published for meaningful test
       });
 
+      // Update instanceData with custom phase dates and status for test scenario
       await db
         .update(processInstances)
-        .set({ currentStateId: 'submission' })
+        .set({
+          instanceData: createSimpleInstanceData('submission'),
+          currentStateId: 'submission',
+          status: ProcessStatus.PUBLISHED, // Must be published for meaningful test
+        })
         .where(eq(processInstances.id, instance.instance.id));
 
       // Insert a future transition
@@ -525,17 +538,21 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
 
-      const instance = await testData.createInstanceWithCustomData({
+      // Don't pass status to avoid triggering createTransitionsForProcess with default phase data
+      const instance = await testData.createInstanceForProcess({
         caller,
         processId: setup.process.id,
         name: 'Completed Test',
-        instanceData: createSimpleInstanceData('submission'),
-        status: ProcessStatus.PUBLISHED, // Must be published for meaningful test
       });
 
+      // Update instanceData with custom phase dates and status for test scenario
       await db
         .update(processInstances)
-        .set({ currentStateId: 'submission' })
+        .set({
+          instanceData: createSimpleInstanceData('submission'),
+          currentStateId: 'submission',
+          status: ProcessStatus.PUBLISHED, // Must be published for meaningful test
+        })
         .where(eq(processInstances.id, instance.instance.id));
 
       // Insert an already completed transition
@@ -661,17 +678,21 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       const caller = await createAuthenticatedCaller(setup.userEmail);
 
       // Create instance with TWO due transitions
-      const instance = await testData.createInstanceWithCustomData({
+      // Don't pass status to avoid triggering createTransitionsForProcess with default phase data
+      const instance = await testData.createInstanceForProcess({
         caller,
         processId: setup.process.id,
         name: 'Sequential Test',
-        instanceData: createSimpleInstanceData('submission'),
-        status: ProcessStatus.PUBLISHED,
       });
 
+      // Update instanceData with custom phase dates and status for test scenario
       await db
         .update(processInstances)
-        .set({ currentStateId: 'submission' })
+        .set({
+          instanceData: createSimpleInstanceData('submission'),
+          currentStateId: 'submission',
+          status: ProcessStatus.PUBLISHED,
+        })
         .where(eq(processInstances.id, instance.instance.id));
 
       // Insert two transitions - both past due
