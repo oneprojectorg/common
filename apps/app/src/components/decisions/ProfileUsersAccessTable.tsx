@@ -18,7 +18,7 @@ import {
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
@@ -165,17 +165,26 @@ const MobileProfileUserCard = ({
   const currentRole = profileUser.roles[0];
   const status = getProfileUserStatus();
 
+  const profileSlug = profileUser.profile?.slug;
+
   return (
     <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
       <div className="flex gap-4">
-        <ProfileAvatar
-          profile={profileUser.profile}
-          className="size-10"
-          withLink={false}
-        />
+        <ProfileAvatar profile={profileUser.profile} className="size-10" />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
-            <span className="text-base text-neutral-black">{displayName}</span>
+            {profileSlug ? (
+              <Link
+                href={`/profile/${profileSlug}`}
+                className="text-base text-neutral-black hover:underline"
+              >
+                {displayName}
+              </Link>
+            ) : (
+              <span className="text-base text-neutral-black">
+                {displayName}
+              </span>
+            )}
             <span className="text-sm text-neutral-gray4">{status}</span>
           </div>
           <span className="truncate text-base text-neutral-black">
@@ -271,6 +280,7 @@ const ProfileUsersAccessTableContent = ({
               (profileUser.email?.split('@')?.[0] ?? 'Unknown');
             const currentRole = profileUser.roles[0];
             const status = getProfileUserStatus();
+            const profileSlug = profileUser.profile?.slug;
 
             return (
               <TableRow key={profileUser.id} id={profileUser.id}>
@@ -278,9 +288,18 @@ const ProfileUsersAccessTableContent = ({
                   <div className="flex items-center gap-2">
                     <ProfileAvatar profile={profileUser.profile} />
                     <div className="flex flex-col">
-                      <span className="text-base text-neutral-black">
-                        {displayName}
-                      </span>
+                      {profileSlug ? (
+                        <Link
+                          href={`/profile/${profileSlug}`}
+                          className="text-base text-neutral-black hover:underline"
+                        >
+                          {displayName}
+                        </Link>
+                      ) : (
+                        <span className="text-base text-neutral-black">
+                          {displayName}
+                        </span>
+                      )}
                       <span className="text-sm text-neutral-gray4">
                         {status}
                       </span>
