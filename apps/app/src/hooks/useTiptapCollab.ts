@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type SaveStatus = 'idle' | 'saved' | 'error';
 
 export interface UseTiptapCollabOptions {
   docId: string | null;

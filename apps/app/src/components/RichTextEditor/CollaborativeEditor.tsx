@@ -14,7 +14,13 @@ import Snapshot from '@tiptap-pro/extension-snapshot';
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
 import type { Editor, Extensions } from '@tiptap/react';
-import { forwardRef, useEffect, useImperativeHandle, useMemo } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 import type { Doc } from 'yjs';
 
 // How often to create a snapshot in version history
@@ -133,9 +139,12 @@ const CollaborativeEditorInner = forwardRef<
       onEditorReady,
     });
 
+    // Track whether versioning has been enabled to avoid toggling it off on re-render
+    const versioningEnabledRef = useRef(false);
+
     // Enable autoversioning when editor is ready and connected
     useEffect(() => {
-      if (!editor || status !== 'connected') {
+      if (!editor || status !== 'connected' || versioningEnabledRef.current) {
         return;
       }
 
@@ -143,6 +152,7 @@ const CollaborativeEditorInner = forwardRef<
       configMap.set('intervalSeconds', AUTOVERSION_INTERVAL_SECONDS);
 
       editor.commands.toggleVersioning();
+      versioningEnabledRef.current = true;
     }, [editor, status, ydoc]);
 
     // Notify parent of save status changes
