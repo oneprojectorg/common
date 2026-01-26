@@ -23,6 +23,7 @@ if (!process.env.DB_SEEDING) {
 const allowedDatabaseUrls = [
   'postgresql://postgres:postgres@127.0.0.1:54322/postgres', // Development database
   'postgresql://postgres:postgres@127.0.0.1:55322/postgres', // Test database
+  'postgresql://postgres:postgres@127.0.0.1:56322/postgres', // E2E database
 ];
 
 if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
@@ -30,10 +31,17 @@ if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
 }
 
 // Determine the correct Supabase URL based on the database URL
-const isTestDatabase = process.env.DATABASE_URL?.includes('55322');
-const supabaseUrl = isTestDatabase
-  ? 'http://127.0.0.1:55321' // Test Supabase instance
-  : process.env.NEXT_PUBLIC_SUPABASE_URL!; // Production/dev instance
+function getSupabaseUrl(): string {
+  const dbUrl = process.env.DATABASE_URL ?? '';
+  if (dbUrl.includes('56322')) {
+    return 'http://127.0.0.1:56321'; // E2E Supabase instance
+  }
+  if (dbUrl.includes('55322')) {
+    return 'http://127.0.0.1:55321'; // Test Supabase instance
+  }
+  return process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321'; // Dev instance
+}
+const supabaseUrl = getSupabaseUrl();
 
 const supabase = createServerClient(
   supabaseUrl,

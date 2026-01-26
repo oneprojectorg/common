@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load environment variables from the root .env.test (for test Supabase instance)
-// Use .env.local for dev instance: dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
+// Load environment variables from the root .env.e2e (for isolated e2e Supabase instance on port 56xxx)
+// This is completely isolated from dev (54xxx) and test (55xxx) instances
+dotenv.config({ path: path.resolve(__dirname, '../../.env.e2e') });
 
 /**
  * Playwright configuration for e2e tests.
@@ -35,23 +35,12 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev servers before starting the tests */
-  webServer: [
-    {
-      // Start the API server
-      command: 'pnpm -C ./apps/api dev',
-      url: 'http://localhost:3300',
-      reuseExistingServer: !process.env.CI,
-      cwd: path.resolve(__dirname, '../..'),
-      timeout: 120 * 1000,
-    },
-    {
-      // Start the app
-      command: 'pnpm w:app dev',
-      url: 'http://localhost:3100',
-      reuseExistingServer: !process.env.CI,
-      cwd: path.resolve(__dirname, '../..'),
-      timeout: 120 * 1000,
-    },
-  ],
+  /* Run dev servers with e2e environment before starting the tests */
+  webServer: {
+    command: 'pnpm dev:e2e',
+    url: 'http://localhost:3100',
+    reuseExistingServer: !process.env.CI,
+    cwd: path.resolve(__dirname, '../..'),
+    timeout: 120 * 1000,
+  },
 });

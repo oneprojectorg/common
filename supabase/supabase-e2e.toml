@@ -1,0 +1,158 @@
+# E2E-specific Supabase configuration
+# This runs on different ports (56xxx) to be completely isolated from dev (54xxx) and test (55xxx) instances
+# Use with: .env.e2e
+
+project_id = "common-e2e"
+
+[api]
+enabled = true
+# E2E API port (different from dev 54321 and test 55321)
+port = 56321
+schemas = [
+  "public",
+  "graphql_public"
+]
+extra_search_path = [
+  "public",
+  "extensions"
+]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+# E2E database port (different from dev 54322 and test 55322)
+port = 56322
+shadow_port = 56320
+major_version = 15
+
+[db.pooler]
+enabled = true
+# E2E pooler port (different from dev 54329 and test 55329)
+port = 56329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.seed]
+enabled = true
+sql_paths = [ './seed.sql' ]
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+# E2E Studio port (different from dev 54323 and test 55323)
+port = 56323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[inbucket]
+enabled = true
+# E2E Inbucket port (different from dev 54324 and test 55324)
+port = 56324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[storage.image_transformation]
+enabled = true
+
+[storage.buckets.assets]
+public = true
+
+[storage.buckets.avatars]
+public = true
+objects_path = "./storage/avatars"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3100/"
+additional_redirect_urls = [ "https://127.0.0.1:3000" ]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.email.template.confirmation]
+subject = "Confirm your email"
+content_path = "./supabase/templates/confirm.html"
+
+[auth.email.template.magic_link]
+subject = "Your login code"
+content_path = "./supabase/templates/magiclink.html"
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+template = "Your code is {{ .Code }} ."
+max_frequency = "5s"
+
+[auth.sms.twilio]
+enabled = false
+account_sid = ""
+message_service_sid = ""
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+
+[auth.third_party.firebase]
+enabled = false
+
+[auth.third_party.auth0]
+enabled = false
+
+[auth.third_party.aws_cognito]
+enabled = false
+
+[edge_runtime]
+enabled = false
+policy = "oneshot"
+inspector_port = 8085  # Different from dev 8083 and test 8084
+
+[analytics]
+enabled = false
+port = 56327  # Different from dev 54327 and test 55327
+backend = "postgres"
+
+[experimental]
+orioledb_version = ""
+s3_host = "env(S3_HOST)"
+s3_region = "env(S3_REGION)"
+s3_access_key = "env(S3_ACCESS_KEY)"
+s3_secret_key = "env(S3_SECRET_KEY)"
