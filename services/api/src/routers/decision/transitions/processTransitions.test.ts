@@ -419,7 +419,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       );
 
       // Verify no transitions exist for this instance
-      const transitions = await db.query.decisionProcessTransitions.findMany({
+      const transitions = await db._query.decisionProcessTransitions.findMany({
         where: eq(
           decisionProcessTransitions.processInstanceId,
           instance.instance.id,
@@ -625,13 +625,13 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(currentPhaseId2).toBe('review');
 
       // Verify both transitions were marked completed
-      const transition1 = await db.query.decisionProcessTransitions.findFirst({
+      const transition1 = await db._query.decisionProcessTransitions.findFirst({
         where: eq(
           decisionProcessTransitions.processInstanceId,
           instance1.instance.id,
         ),
       });
-      const transition2 = await db.query.decisionProcessTransitions.findFirst({
+      const transition2 = await db._query.decisionProcessTransitions.findFirst({
         where: eq(
           decisionProcessTransitions.processInstanceId,
           instance2.instance.id,

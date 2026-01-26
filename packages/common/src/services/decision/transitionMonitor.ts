@@ -179,14 +179,14 @@ async function processTransition(transitionId: string): Promise<void> {
   // Note: We rely on foreign key constraints to ensure the process instance exists
   await db.transaction(async (tx) => {
     // Update the process instance to the new state
-    // Use jsonb_set to update only the currentStateId field without reading the entire instanceData
+    // Use jsonb_set to update only the currentPhaseId field without reading the entire instanceData
     await tx
       .update(processInstances)
       .set({
         currentStateId: transition.toStateId,
         instanceData: sql`jsonb_set(
           ${processInstances.instanceData},
-          '{currentStateId}',
+          '{currentPhaseId}',
           to_jsonb(${transition.toStateId}::text)
         )`,
       })
