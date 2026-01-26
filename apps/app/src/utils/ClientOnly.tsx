@@ -3,7 +3,13 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
-export const ClientOnly = ({ children }: { children: ReactNode }) => {
+export const ClientOnly = ({
+  children,
+  fallback = null,
+}: {
+  children: ReactNode;
+  fallback?: ReactNode;
+}) => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -11,7 +17,7 @@ export const ClientOnly = ({ children }: { children: ReactNode }) => {
   }, []);
 
   if (!isMounted) {
-    return <div />;
+    return <>{fallback}</>;
   }
 
   return <>{children}</>;

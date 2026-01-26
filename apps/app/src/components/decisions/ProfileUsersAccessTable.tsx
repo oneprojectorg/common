@@ -15,11 +15,11 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import { useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { ClientOnly } from '@/utils/ClientOnly';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
@@ -135,16 +135,6 @@ const ProfileUserRoleSelect = ({
   );
 };
 
-// Hook to detect client-side hydration (workaround for React Aria Table SSR issue)
-// See: https://github.com/adobe/react-spectrum/issues/4870
-const useIsHydrated = () => {
-  const [isHydrated, setIsHydrated] = useState(false);
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-  return isHydrated;
-};
-
 // Inner table content component
 const ProfileUsersAccessTableContent = ({
   profileUsers,
@@ -162,87 +152,87 @@ const ProfileUsersAccessTableContent = ({
   roles: { id: string; name: string }[];
 }) => {
   const t = useTranslations();
-  const isHydrated = useIsHydrated();
-
-  // Don't render table until after hydration due to React Aria SSR limitations
-  if (!isHydrated) {
-    return <Skeleton className="h-64 w-full" />;
-  }
 
   return (
-    <div className="relative">
-      {isLoading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
-          <Skeleton className="h-8 w-32" />
-        </div>
-      )}
-      <Table
-        aria-label={t('Members list')}
-        className="w-full table-fixed"
-        sortDescriptor={sortDescriptor}
-        onSortChange={onSortChange}
-      >
-        <TableHeader>
-          <TableColumn
-            isRowHeader
-            id="name"
-            allowsSorting
-            className="w-[200px]"
-          >
-            {t('Name')}
-          </TableColumn>
-          <TableColumn id="email" allowsSorting className="w-auto">
-            {t('Email')}
-          </TableColumn>
-          <TableColumn id="role" allowsSorting className="w-[140px] text-right">
-            {t('Role')}
-          </TableColumn>
-        </TableHeader>
-        <TableBody>
-          {profileUsers.map((profileUser) => {
-            const displayName =
-              profileUser.profile?.name ||
-              profileUser.name ||
-              (profileUser.email?.split('@')?.[0] ?? 'Unknown');
-            const currentRole = profileUser.roles[0];
-            const status = getProfileUserStatus();
+    <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
+      <div className="relative">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+            <Skeleton className="h-8 w-32" />
+          </div>
+        )}
+        <Table
+          aria-label={t('Members list')}
+          className="w-full table-fixed"
+          sortDescriptor={sortDescriptor}
+          onSortChange={onSortChange}
+        >
+          <TableHeader>
+            <TableColumn
+              isRowHeader
+              id="name"
+              allowsSorting
+              className="w-[200px]"
+            >
+              {t('Name')}
+            </TableColumn>
+            <TableColumn id="email" allowsSorting className="w-auto">
+              {t('Email')}
+            </TableColumn>
+            <TableColumn
+              id="role"
+              allowsSorting
+              className="w-[140px] text-right"
+            >
+              {t('Role')}
+            </TableColumn>
+          </TableHeader>
+          <TableBody>
+            {profileUsers.map((profileUser) => {
+              const displayName =
+                profileUser.profile?.name ||
+                profileUser.name ||
+                (profileUser.email?.split('@')?.[0] ?? 'Unknown');
+              const currentRole = profileUser.roles[0];
+              const status = getProfileUserStatus();
 
-            return (
-              <TableRow key={profileUser.id} id={profileUser.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <ProfileAvatar
-                      profile={profileUser.profile}
-                      withLink={false}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-sm text-neutral-black">
-                        {displayName}
-                      </span>
-                      <span className="text-xs text-neutral-gray4">
-                        {status}
-                      </span>
+              return (
+                <TableRow key={profileUser.id} id={profileUser.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <ProfileAvatar
+                        profile={profileUser.profile}
+                        withLink={false}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm text-neutral-black">
+                          {displayName}
+                        </span>
+                        <span className="text-xs text-neutral-gray4">
+                          {status}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-neutral-black">
-                    {profileUser.email}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <ProfileUserRoleSelect
-                    profileUserId={profileUser.id}
-                    currentRoleId={currentRole?.id}
-                    profileId={profileId}
-                    roles={roles}
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-neutral-black">
+                      {profileUser.email}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ProfileUserRoleSelect
+                      profileUserId={profileUser.id}
+                      currentRoleId={currentRole?.id}
+                      profileId={profileId}
+                      roles={roles}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </ClientOnly>
   );
 };
