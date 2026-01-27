@@ -38,12 +38,33 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
 
 /**
- * Safely parse proposal data with fallback to empty object.
- * Returns typed ProposalData on success, or the raw input cast to ProposalData on failure.
+ * Safely parse proposal data with fallback.
+ * Returns typed ProposalData on success, or preserves raw input fields on failure.
  */
 export function parseProposalData(proposalData: unknown): ProposalData {
   const result = proposalDataSchema.safeParse(proposalData);
-  return result.success
-    ? result.data
-    : { attachmentIds: [], category: undefined, budget: undefined };
+  if (result.success) {
+    return result.data;
+  }
+
+  // Fallback: preserve raw input fields if it's an object, with safe defaults
+  const raw =
+    proposalData && typeof proposalData === 'object'
+      ? (proposalData as Record<string, unknown>)
+      : {};
+
+  return {
+    ...raw,
+    title: typeof raw.title === 'string' ? raw.title : undefined,
+    description:
+      typeof raw.description === 'string' ? raw.description : undefined,
+    content: typeof raw.content === 'string' ? raw.content : undefined,
+    category: typeof raw.category === 'string' ? raw.category : undefined,
+    budget: typeof raw.budget === 'number' ? raw.budget : undefined,
+    attachmentIds: Array.isArray(raw.attachmentIds) ? raw.attachmentIds : [],
+    collaborationDocId:
+      typeof raw.collaborationDocId === 'string'
+        ? raw.collaborationDocId
+        : undefined,
+  };
 }
