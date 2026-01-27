@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/lib/i18n/routing';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
@@ -11,6 +12,8 @@ export interface ErrorProps {
 }
 
 export default function PageError({ error }: ErrorProps) {
+  const t = useTranslations();
+
   useEffect(() => {
     console.error('Application error:', error);
   }, [error]);
@@ -20,12 +23,12 @@ export default function PageError({ error }: ErrorProps) {
       code: 403,
       description: (
         <p className="text-center">
-          You do not have permission to view this page
+          {t('You do not have permission to view this page')}
         </p>
       ),
       actions: (
         <Button onPress={() => window.history.back()} color="primary">
-          Go back
+          {t('Go back')}
         </Button>
       ),
     }),
@@ -33,14 +36,14 @@ export default function PageError({ error }: ErrorProps) {
       code: 500,
       description: (
         <p className="text-center">
-          Something went wrong on our end. We're working to fix it.
+          {t("Something went wrong on our end. We're working to fix it.")}
           <br />
-          Please try again in a moment
+          {t('Please try again in a moment')}
         </p>
       ),
       actions: (
         <Button onPress={() => window.location.reload()} color="primary">
-          Try again
+          {t('Try again')}
         </Button>
       ),
     }),

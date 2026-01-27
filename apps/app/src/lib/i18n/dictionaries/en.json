@@ -458,5 +458,9 @@
   "New process": "New process",
   "Launch": "Launch",
   "Process": "Process",
-  "Section navigation": "Section navigation"
+  "Section navigation": "Section navigation",
+  "You do not have permission to view this page": "You do not have permission to view this page",
+  "Go back": "Go back",
+  "Something went wrong on our end. We're working to fix it.": "Something went wrong on our end. We're working to fix it.",
+  "Please try again in a moment": "Please try again in a moment"
 }

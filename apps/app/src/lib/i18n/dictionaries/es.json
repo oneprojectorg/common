@@ -457,5 +457,9 @@
   "New process": "Nuevo proceso",
   "Launch": "Lanzar",
   "Process": "Proceso",
-  "Section navigation": "Navegación de secciones"
+  "Section navigation": "Navegación de secciones",
+  "You do not have permission to view this page": "No tienes permiso para ver esta página",
+  "Go back": "Volver",
+  "Something went wrong on our end. We're working to fix it.": "Algo salió mal de nuestro lado. Estamos trabajando para solucionarlo.",
+  "Please try again in a moment": "Por favor, intenta de nuevo en un momento"
 }
