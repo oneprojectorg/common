@@ -163,8 +163,10 @@ const CollaborativeEditorInner = forwardRef<
     // Track if cursor plugin has been registered
     const cursorRegisteredRef = useRef(false);
 
-    // Register cursor plugin lazily after editor mounts
-    // This ensures ySyncPlugin state is established first
+    // NOTE: Using yCursorPlugin directly instead of CollaborationCaret extension
+    // because TipTap doesn't guarantee plugin order - ySyncPlugin state may not
+    // exist when the extension initializes. Lazy registration lets us wait for sync.
+    // See: https://tiptap.dev/docs/editor/extensions/functionality/collaboration-caret
     useEffect(() => {
       if (!editor || !provider.awareness || cursorRegisteredRef.current) {
         return;
