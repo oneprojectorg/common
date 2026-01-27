@@ -33,7 +33,7 @@ export function OTelBrowserProvider({
     initOTelBrowser();
   }, []);
 
-  return <>{children}</>;
+  return children;
 }
 
 function initOTelBrowser() {
@@ -55,7 +55,6 @@ function initOTelBrowser() {
       contextManager: new ZoneContextManager(),
     });
 
-    // No need to propagate trace headers cross-origin since we use a same-origin proxy
     registerInstrumentations({
       instrumentations: [
         getWebAutoInstrumentations({
@@ -71,6 +70,18 @@ function initOTelBrowser() {
           },
         }),
       ],
+    });
+
+    // Flush pending traces when user navigates away or switches tabs
+    // This reduces trace loss from the batch processor
+    window.addEventListener('pagehide', () => {
+      provider.forceFlush();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        provider.forceFlush();
+      }
     });
 
     // eslint-disable-next-line no-console
