@@ -418,6 +418,64 @@ export class TestDecisionsDataManager {
   }
 
   /**
+   * Creates a published instance with custom phase dates via the API.
+   * This uses createInstanceFromTemplate followed by updateDecisionInstance with status: 'published'.
+   * The API automatically creates transitions for date-based phases when publishing.
+   *
+   * Note: createInstanceFromTemplate already grants Admin access to the caller,
+   * so no additional grantProfileAccess call is needed.
+   *
+   * @param caller - The authenticated tRPC caller
+   * @param processId - The process template ID
+   * @param name - Instance name
+   * @param phaseDates - Array of { phaseId, startDate, endDate } for each phase
+   * @returns The created instance with profile information
+   */
+  async createPublishedInstanceWithDueDates({
+    caller,
+    processId,
+    name,
+    phaseDates,
+  }: {
+    caller: Awaited<
+      ReturnType<TestDecisionsDataManager['createAuthenticatedCaller']>
+    >;
+    processId: string;
+    name: string;
+    phaseDates: Array<{
+      phaseId: string;
+      startDate?: string;
+      endDate?: string;
+    }>;
+  }): Promise<CreatedInstance> {
+    this.ensureCleanupRegistered();
+
+    // Create instance with custom phase dates (created as DRAFT)
+    // Note: createInstanceFromTemplate automatically grants Admin access to the caller
+    const profile = await caller.decision.createInstanceFromTemplate({
+      templateId: processId,
+      name: this.generateUniqueName(name),
+      description: `Test instance ${name}`,
+      phases: phaseDates,
+    });
+
+    const profileId = profile.id;
+    this.createdProfileIds.push(profileId);
+
+    // Publish the instance - this triggers createTransitionsForProcess
+    const publishedProfile = await caller.decision.updateDecisionInstance({
+      instanceId: profile.processInstance.id,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    return {
+      instance: publishedProfile.processInstance,
+      profileId,
+      slug: publishedProfile.slug,
+    };
+  }
+
+  /**
    * Creates a member user (non-admin) for an organization with proper setup.
    * This creates:
    * - An auth user via Supabase
