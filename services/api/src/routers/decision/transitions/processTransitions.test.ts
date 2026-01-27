@@ -4,8 +4,8 @@ import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
-  decisionProcessResults,
   decisionProcessResultSelections,
+  decisionProcessResults,
   decisionProcessTransitions,
   decisionProcesses,
   processInstances,
@@ -1859,7 +1859,9 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         .where(eq(proposals.processInstanceId, instance.instance.id));
 
       expect(updatedProposals).toHaveLength(2);
-      expect(updatedProposals.every((p) => p.status === ProposalStatus.SELECTED)).toBe(true);
+      expect(
+        updatedProposals.every((p) => p.status === ProposalStatus.SELECTED),
+      ).toBe(true);
     });
 
     /**
