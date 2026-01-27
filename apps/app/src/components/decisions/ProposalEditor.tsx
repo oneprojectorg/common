@@ -100,15 +100,6 @@ export function ProposalEditor({
   const utils = trpc.useUtils();
   const { user } = useUser();
 
-  // Collaboration user info for cursor display
-  const collabUser = useMemo(
-    () => ({
-      name: user.profile?.name ?? user.name ?? 'Anonymous',
-      color: getUserColor(user.authUserId),
-    }),
-    [user.name],
-  );
-
   // Form state
   const [title, setTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -475,7 +466,10 @@ export function ProposalEditor({
             onProviderReady={setCollabProvider}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
-            user={collabUser}
+            user={{
+              name: user.profile?.name ?? user.name ?? 'Anonymous',
+              color: getUserColor(user.authUserId),
+            }}
           />
         </div>
       </div>
