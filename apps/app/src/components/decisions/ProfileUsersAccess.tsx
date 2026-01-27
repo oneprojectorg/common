@@ -20,13 +20,9 @@ type SortColumn = 'name' | 'email' | 'role';
 
 const ITEMS_PER_PAGE = 25;
 
-export const ProfileUsersAccessPage = ({
-  profileId,
-}: {
-  profileId: string;
-}) => {
+export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
+  const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
 
@@ -89,7 +85,7 @@ export const ProfileUsersAccessPage = ({
           value={searchQuery}
           onChange={setSearchQuery}
           size={isMobile ? 'small' : undefined}
-          className="w-full sm:max-w-96"
+          className="w-full md:max-w-96"
         />
 
         <ProfileUsersAccessTable
