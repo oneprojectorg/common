@@ -1,5 +1,6 @@
 'use client';
 
+import { originUrlMatcher } from '@op/core';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -11,13 +12,12 @@ export function OTelBrowserProvider({ children }: { children: React.ReactNode })
   const initialized = useRef(false);
 
   useEffect(() => {
-    // Only initialize once and only in browser
-    if (initialized.current || typeof window === 'undefined') {
+    // Only initialize once
+    if (initialized.current) {
       return;
     }
     initialized.current = true;
 
-    // Dynamic import to avoid SSR issues with browser-only OTel packages
     void initOTelBrowser();
   }, []);
 
@@ -64,15 +64,20 @@ async function initOTelBrowser() {
     });
 
     // Auto-instrument fetch, XHR, document load, and user interactions
+    // In development (localhost), propagate trace headers to all URLs (no CORS concerns)
+    // In production/staging/preview, only propagate to our own domains to avoid leaking trace IDs
+    const isDevelopment = window.location.hostname === 'localhost';
+    const propagateUrls = isDevelopment ? [/.*/] : [originUrlMatcher];
+
     registerInstrumentations({
       instrumentations: [
         getWebAutoInstrumentations({
           '@opentelemetry/instrumentation-fetch': {
-            propagateTraceHeaderCorsUrls: [/.*/], // Propagate trace headers to all URLs
+            propagateTraceHeaderCorsUrls: propagateUrls,
             clearTimingResources: true,
           },
           '@opentelemetry/instrumentation-xml-http-request': {
-            propagateTraceHeaderCorsUrls: [/.*/],
+            propagateTraceHeaderCorsUrls: propagateUrls,
             clearTimingResources: true,
           },
           '@opentelemetry/instrumentation-document-load': {},
