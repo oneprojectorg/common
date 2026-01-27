@@ -5,14 +5,11 @@ import {
   formatCurrency,
   formatDateRange,
 } from '@/utils/formatting';
-import type { processPhaseSchema } from '@op/api/encoders';
+import { type ProcessPhase } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
-import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
-
-type ProcessPhase = z.infer<typeof processPhaseSchema>;
 
 interface CurrentPhaseSurfaceProps {
   currentPhase?: ProcessPhase;
