@@ -15,9 +15,6 @@ export interface ErrorProps {
 export default function PageError({ error }: ErrorProps) {
   const t = useTranslations();
 
-  useEffect(() => {
-    console.error('Application error:', error);
-  }, [error]);
 
   const errorData = match(error.message, {
     UNAUTHORIZED: () => ({
