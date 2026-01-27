@@ -112,7 +112,10 @@ function AutoSaveHandler({
 }
 
 // Form component - only rendered after Zustand hydration is complete
-export function OverviewSectionForm({ decisionId, decisionName }: SectionProps) {
+export function OverviewSectionForm({
+  decisionId,
+  decisionName,
+}: SectionProps) {
   const t = useTranslations();
 
   // Zustand store - using new instanceData structure
