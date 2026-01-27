@@ -39,7 +39,7 @@ const EditDecisionPage = async ({
         <ProcessBuilderSidebar navigationConfig={navigationConfig} />
         <main className="grow">
           <ProcessBuilderContent
-            decisionId={decisionProfile.id}
+            decisionProfileId={decisionProfile.id}
             decisionName={decisionProfile.name}
             navigationConfig={navigationConfig}
           />
