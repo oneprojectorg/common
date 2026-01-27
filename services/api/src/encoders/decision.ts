@@ -389,7 +389,7 @@ export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
  * - `json`: TipTap document fetched from collaboration service
  * - `html`: Legacy HTML/plain text description from proposalData
  */
-const documentContentEncoder = z.discriminatedUnion('type', [
+export const documentContentEncoder = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('json'),
     content: z.array(z.unknown()),
