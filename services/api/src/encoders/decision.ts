@@ -1,4 +1,4 @@
-import { proposalDataSchema } from '@op/common';
+import { proposalDataSchema } from '@op/common/client';
 import {
   ProcessStatus,
   ProposalStatus,
