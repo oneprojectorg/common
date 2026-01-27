@@ -1,13 +1,13 @@
 'use client';
 
 import { ClientOnly } from '@/utils/ClientOnly';
+import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { useEffect } from 'react';
 
 export interface ErrorProps {
   error: Error & { digest?: string };
-  reset: () => void;
 }
 
 export default function PageError({ error }: ErrorProps) {
@@ -15,22 +15,47 @@ export default function PageError({ error }: ErrorProps) {
     console.error('Application error:', error);
   }, [error]);
 
+  const errorData = match(error.message, {
+    UNAUTHORIZED: () => ({
+      code: 403,
+      description: (
+        <p className="text-center">
+          You do not have permission to view this page
+        </p>
+      ),
+      actions: (
+        <Button onPress={() => window.history.back()} color="primary">
+          Go back
+        </Button>
+      ),
+    }),
+    _: () => ({
+      code: 500,
+      description: (
+        <p className="text-center">
+          Something went wrong on our end. We're working to fix it.
+          <br />
+          Please try again in a moment
+        </p>
+      ),
+      actions: (
+        <Button onPress={() => window.location.reload()} color="primary">
+          Try again
+        </Button>
+      ),
+    }),
+  });
+
   return (
     <ClientOnly>
       <div className="flex size-full flex-col items-center justify-center gap-8">
         <div className="flex flex-col items-center gap-4">
           <Header2 className="font-serif text-[4rem] leading-[110%] font-light">
-            500
+            {errorData.code}
           </Header2>
-          <p className="text-center">
-            Something went wrong on our end. We're working to fix it.
-            <br />
-            Please try again in a moment
-          </p>
+          {errorData.description}
         </div>
-        <Button onPress={() => window.location.reload()} color="primary">
-          Try again
-        </Button>
+        {errorData.actions}
       </div>
     </ClientOnly>
   );

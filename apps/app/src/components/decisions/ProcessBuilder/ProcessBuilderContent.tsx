@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { notFound } from 'next/navigation';
 
 import { type SectionProps, getContentComponent } from './contentRegistry';
 import { type NavigationConfig } from './navigationConfig';
@@ -19,7 +18,7 @@ export function ProcessBuilderContent({
   const isAdmin = access.getPermissionsForProfile(decisionProfileId).admin;
 
   if (!isAdmin) {
-    notFound();
+    throw new Error('UNAUTHORIZED');
   }
 
   const ContentComponent = getContentComponent(
