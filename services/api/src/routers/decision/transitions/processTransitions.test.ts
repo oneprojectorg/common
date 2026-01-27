@@ -1017,7 +1017,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       // Process transitions - both should be processed, state updated to final transition's toStateId
       const result = await processDecisionsTransitions();
 
-      expect(result.failed).toBe(0);
+      // Check that THIS instance's transitions didn't fail
+      // (Other concurrent tests may have failing transitions)
+      const thisInstanceErrors = result.errors.filter(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(thisInstanceErrors).toHaveLength(0);
 
       // Instance should be in 'voting' (the toStateId of the last transition)
       const currentPhaseId = await getInstanceCurrentPhaseId(
@@ -1109,7 +1114,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       // Process transitions
       const result = await processDecisionsTransitions();
 
-      expect(result.failed).toBe(0);
+      // Check that THIS instance's transitions didn't fail
+      // (Other concurrent tests may have failing transitions)
+      const thisInstanceErrors = result.errors.filter(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(thisInstanceErrors).toHaveLength(0);
 
       // Instance should be in 'voting' (the final transition's toStateId)
       // NOT 'review' (which would happen if we updated state after each transition)
@@ -1194,7 +1204,12 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       // Process transitions - current behavior: processes regardless of mismatch
       const result = await processDecisionsTransitions();
 
-      expect(result.failed).toBe(0);
+      // Check that THIS instance's transitions didn't fail
+      // (Other concurrent tests may have failing transitions)
+      const thisInstanceErrors = result.errors.filter(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(thisInstanceErrors).toHaveLength(0);
 
       // Instance remains in 'review' (toStateId matches current state, so no visible change)
       const currentPhaseId = await getInstanceCurrentPhaseId(
