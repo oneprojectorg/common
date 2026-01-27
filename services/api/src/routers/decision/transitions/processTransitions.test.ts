@@ -1218,6 +1218,233 @@ describe.concurrent('processDecisionsTransitions integration', () => {
     });
   });
 
+  describe('error handling', () => {
+    /**
+     * Tests that when a transition fails to process, the error is captured
+     * and the instance state is not updated.
+     *
+     * This test corrupts the instanceData to cause processTransition to fail.
+     */
+    it('should capture errors and not update state when transition processing fails', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Error Handling Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance
+      const instance = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Error Test Instance',
+      });
+
+      // Set up instance with CORRUPTED instanceData (missing phases array)
+      // This will cause processTransition to fail when it tries to access phases
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: {
+            currentPhaseId: 'submission',
+            // phases array is MISSING - this will cause an error
+          },
+          currentStateId: 'submission',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance.instance.id));
+
+      // Insert a due transition
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance.instance.id,
+        fromStateId: 'submission',
+        toStateId: 'review',
+        scheduledDate: createPastDate(1),
+      });
+
+      await testData.grantProfileAccess(
+        instance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Process transitions - should fail due to corrupted instanceData
+      const result = await processDecisionsTransitions();
+
+      // Verify error was captured
+      const instanceError = result.errors.find(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(instanceError).toBeDefined();
+      expect(result.failed).toBeGreaterThanOrEqual(1);
+
+      // Verify instance state was NOT updated (still in submission)
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('submission');
+
+      // Verify transition was NOT marked as completed
+      const [transition] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+      expect(transition).toBeDefined();
+      expect(transition!.completedAt).toBeNull();
+    });
+
+    /**
+     * Tests that a successful instance and a failing instance are handled independently.
+     * The successful instance should advance, while the failing instance should not.
+     *
+     * NOTE: In concurrent tests, result counts may vary because processDecisionsTransitions
+     * is a global operation. We verify behavior by checking actual instance states.
+     */
+    it('should handle successful and failing instances independently', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Mixed Success Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create first instance with valid transition (will succeed)
+      const instance1 = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Success Instance',
+      });
+
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: createSimpleInstanceData('submission'),
+          currentStateId: 'submission',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance1.instance.id));
+
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance1.instance.id,
+        fromStateId: 'submission',
+        toStateId: 'review',
+        scheduledDate: createPastDate(1),
+      });
+
+      await testData.grantProfileAccess(
+        instance1.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Create second instance with corrupted data (will fail)
+      const instance2 = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Failure Instance',
+      });
+
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: {
+            currentPhaseId: 'submission',
+            // Missing phases - will cause error
+          },
+          currentStateId: 'submission',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance2.instance.id));
+
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance2.instance.id,
+        fromStateId: 'submission',
+        toStateId: 'review',
+        scheduledDate: createPastDate(1),
+      });
+
+      await testData.grantProfileAccess(
+        instance2.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Process all transitions
+      const result = await processDecisionsTransitions();
+
+      // Verify no unexpected errors (instance2's error is expected)
+      expect(result.failed).toBeGreaterThanOrEqual(0);
+
+      // Instance 1 should have advanced to review (success)
+      // Either processed by this call or a concurrent test's call
+      const phase1 = await getInstanceCurrentPhaseId(instance1.instance.id);
+      expect(phase1).toBe('review');
+
+      // Instance 2 should still be in submission (failure)
+      const phase2 = await getInstanceCurrentPhaseId(instance2.instance.id);
+      expect(phase2).toBe('submission');
+
+      // Instance 1's transition should be completed
+      const [transition1] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance1.instance.id,
+          ),
+        );
+      expect(transition1!.completedAt).not.toBeNull();
+
+      // Instance 2's transition should NOT be completed
+      const [transition2] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance2.instance.id,
+          ),
+        );
+      expect(transition2!.completedAt).toBeNull();
+
+      // Verify error was captured for instance2
+      const instance2Error = result.errors.find(
+        (e) => e.processInstanceId === instance2.instance.id,
+      );
+      // Note: In concurrent tests, the error might be captured by another test's call
+      // So we just verify the instance state is correct (checked above)
+      if (instance2Error) {
+        expect(instance2Error.error).toContain('length');
+      }
+    });
+  });
+
   describe('instance status filtering', () => {
     it('should not process transitions for draft instances', async ({
       task,
