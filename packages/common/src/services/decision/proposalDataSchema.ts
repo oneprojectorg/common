@@ -10,11 +10,8 @@ export const proposalDataSchema = z
     title: z.string().optional(),
     description: z.string().optional(),
     content: z.string().optional(), // backward compatibility
-    category: z.string().optional(),
-    budget: z
-      .union([z.string(), z.number()])
-      .pipe(z.coerce.number())
-      .optional(),
+    category: z.string().nullish(),
+    budget: z.union([z.string(), z.number()]).pipe(z.coerce.number()).nullish(),
     attachmentIds: z.array(z.string()).optional().prefault([]),
     collaborationDocId: z.string().optional(),
   })
