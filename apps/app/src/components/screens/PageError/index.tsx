@@ -1,11 +1,12 @@
 'use client';
 
-import { useTranslations } from '@/lib/i18n/routing';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { useEffect } from 'react';
+
+import { useTranslations } from '@/lib/i18n/routing';
 
 export interface ErrorProps {
   error: Error & { digest?: string };
