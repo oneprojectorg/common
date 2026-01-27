@@ -19,6 +19,8 @@ interface ProposalEditorLayoutProps {
   isSubmitting: boolean;
   isEditMode?: boolean;
   isDraft?: boolean;
+  /** Optional slot for presence indicators (avatar stack) */
+  presenceSlot?: ReactNode;
 }
 
 export function ProposalEditorLayout({
@@ -29,6 +31,7 @@ export function ProposalEditorLayout({
   isSubmitting,
   isEditMode = false,
   isDraft = false,
+  presenceSlot,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -51,7 +54,8 @@ export function ProposalEditorLayout({
           </span>
         </div>
 
-        <div className="flex items-center justify-end gap-8">
+        <div className="flex items-center justify-end gap-4">
+          {presenceSlot}
           <Button
             color="primary"
             variant="icon"
