@@ -7,20 +7,16 @@ import { z } from 'zod';
  */
 export const proposalDataSchema = z
   .looseObject({
-    title: z.string().optional(),
-    description: z.string().optional(),
-    content: z.string().optional(), // backward compatibility
-    category: z
-      .string()
+    title: z.string().nullish(),
+    description: z.string().nullish(),
+    content: z.string().nullish(), // backward compatibility
+    category: z.string().nullish(),
+    budget: z.union([z.string(), z.number()]).pipe(z.coerce.number()).nullish(),
+    attachmentIds: z
+      .array(z.string())
       .nullish()
-      .transform((v) => v ?? undefined),
-    budget: z
-      .union([z.string(), z.number()])
-      .pipe(z.coerce.number())
-      .nullish()
-      .transform((v) => v ?? undefined),
-    attachmentIds: z.array(z.string()).optional().prefault([]),
-    collaborationDocId: z.string().optional(),
+      .transform((v) => v ?? []),
+    collaborationDocId: z.string().nullish(),
   })
 
   .transform((data) => {
@@ -55,16 +51,12 @@ export function parseProposalData(proposalData: unknown): ProposalData {
 
   return {
     ...raw,
-    title: typeof raw.title === 'string' ? raw.title : undefined,
-    description:
-      typeof raw.description === 'string' ? raw.description : undefined,
-    content: typeof raw.content === 'string' ? raw.content : undefined,
-    category: typeof raw.category === 'string' ? raw.category : undefined,
-    budget: typeof raw.budget === 'number' ? raw.budget : undefined,
-    attachmentIds: Array.isArray(raw.attachmentIds) ? raw.attachmentIds : [],
-    collaborationDocId:
-      typeof raw.collaborationDocId === 'string'
-        ? raw.collaborationDocId
-        : undefined,
+    title: (raw.title as string) ?? undefined,
+    description: (raw.description as string) ?? undefined,
+    content: (raw.content as string) ?? undefined,
+    category: (raw.category as string) ?? undefined,
+    budget: (raw.budget as number) ?? undefined,
+    attachmentIds: (raw.attachmentIds as string[]) ?? [],
+    collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
   };
 }

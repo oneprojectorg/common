@@ -377,7 +377,7 @@ describe.concurrent('getProposal', () => {
     expect(result.documentContent).toBeUndefined();
   });
 
-  it('should handle proposal data with null category and budget', async ({
+  it('should handle legacy proposal data with null fields', async ({
     task,
     onTestFinished,
   }) => {
@@ -398,20 +398,27 @@ describe.concurrent('getProposal', () => {
       callerEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
-        title: 'Null Fields Test',
+        title: 'Legacy Data Test',
       },
     });
 
-    // Update proposal_data directly in DB to simulate legacy data with null values
+    // Simulate legacy data: all optional fields explicitly set to null
+    // This mirrors what we found in the production database
+    const legacyProposalData = {
+      title: 'Legacy Data Test',
+      description: null,
+      content: null,
+      category: null,
+      budget: null,
+      attachmentIds: null,
+      collaborationDocId: null,
+      // Include a custom field to test looseObject passthrough
+      customLegacyField: 'preserved',
+    };
+
     await db
       .update(proposals)
-      .set({
-        proposalData: {
-          title: 'Null Fields Test',
-          category: null,
-          budget: null,
-        },
-      })
+      .set({ proposalData: legacyProposalData })
       .where(eq(proposals.id, proposal.id));
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -421,12 +428,19 @@ describe.concurrent('getProposal', () => {
 
     // Should successfully parse without errors
     expect(result.id).toBe(proposal.id);
-    expect(result.proposalData).toMatchObject({
-      title: 'Null Fields Test',
+
+    // Verify the entire proposalData object
+    // All null values are preserved (via .nullish()), except:
+    // - attachmentIds: null → [] via transform
+    expect(result.proposalData).toEqual({
+      title: 'Legacy Data Test',
+      description: null,
+      content: null,
+      category: null,
+      budget: null,
+      attachmentIds: [],
+      collaborationDocId: null,
+      customLegacyField: 'preserved', // looseObject preserves extra fields
     });
-    // budget: null should not become 0
-    expect(
-      (result.proposalData as Record<string, unknown>).budget,
-    ).toBeUndefined();
   });
 });

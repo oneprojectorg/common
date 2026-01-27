@@ -1,3 +1,4 @@
+import { proposalDataSchema } from '@op/common';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -221,7 +222,7 @@ export const legacyProposalEncoder = createSelectSchema(proposals)
     profileId: true,
   })
   .extend({
-    proposalData: z.unknown(), // Keep as unknown to match database schema
+    proposalData: proposalDataSchema,
     processInstance: legacyProcessInstanceEncoder.optional(),
     submittedBy: baseProfileEncoder.optional(),
     profile: baseProfileEncoder.optional(),

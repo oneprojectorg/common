@@ -1,3 +1,4 @@
+import { proposalDataSchema } from '@op/common';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -412,7 +413,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     profileId: true,
   })
   .extend({
-    proposalData: z.unknown(),
+    proposalData: proposalDataSchema,
     submittedBy: baseProfileEncoder.optional(),
     profile: baseProfileEncoder.optional(),
     decisionCount: z.number().optional(),
