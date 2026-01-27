@@ -1,10 +1,13 @@
 import { type TransactionType, db, eq } from '@op/db/client';
-import { decisionProcesses, decisionProcessTransitions } from '@op/db/schema';
+import { decisionProcessTransitions, decisionProcesses } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { DecisionSchemaDefinition, PhaseDefinition } from './schemas/types';
+import type {
+  DecisionSchemaDefinition,
+  PhaseDefinition,
+} from './schemas/types';
 import type { ScheduledTransition } from './types';
 
 /**

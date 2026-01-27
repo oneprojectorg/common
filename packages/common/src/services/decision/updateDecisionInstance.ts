@@ -196,7 +196,10 @@ export const updateDecisionInstance = async ({
         .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
     } else if (isBeingPublished) {
       // When publishing a draft, create transitions for all date-based phases
-      await createTransitionsForProcess({ processInstance: updatedInstance, tx });
+      await createTransitionsForProcess({
+        processInstance: updatedInstance,
+        tx,
+      });
     } else if (phases && phases.length > 0) {
       // If phases were updated and already published, update the corresponding transitions
       await updateTransitionsForProcess({

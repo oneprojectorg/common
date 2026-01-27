@@ -946,23 +946,202 @@ describe.concurrent('processDecisionsTransitions integration', () => {
     });
   });
 
-  describe('phase mismatch handling', () => {
+  describe('deferred state update behavior', () => {
+    /**
+     * Tests that the instance state is only updated ONCE after all transitions
+     * for that instance are processed, using the toStateId of the LAST transition.
+     *
+     * This is important because:
+     * - Orphaned transitions from earlier phases may still be pending
+     * - Multiple transitions may be due at the same time
+     * - The final state should reflect the most recent scheduled transition
+     */
+    it('should update instance state only once after all transitions are processed', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Deferred State Update Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance starting in 'submission' phase
+      const instance = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Deferred State Test',
+      });
+
+      // Update instanceData to be in 'submission' phase
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: createSimpleInstanceData('submission'),
+          currentStateId: 'submission',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance.instance.id));
+
+      // Insert TWO due transitions that should both be processed
+      // Transition 1: submission -> review (scheduled earlier)
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance.instance.id,
+        fromStateId: 'submission',
+        toStateId: 'review',
+        scheduledDate: createPastDate(7), // Scheduled 7 days ago
+      });
+
+      // Transition 2: review -> voting (scheduled more recently)
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance.instance.id,
+        fromStateId: 'review',
+        toStateId: 'voting',
+        scheduledDate: createPastDate(1), // Scheduled 1 day ago
+      });
+
+      await testData.grantProfileAccess(
+        instance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Process transitions - both should be processed, state updated to final transition's toStateId
+      const result = await processDecisionsTransitions();
+
+      expect(result.failed).toBe(0);
+
+      // Instance should be in 'voting' (the toStateId of the last transition)
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('voting');
+
+      // Both transitions should be marked complete
+      const transitions = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transitions).toHaveLength(2);
+      expect(transitions.every((t) => t.completedAt !== null)).toBe(true);
+    });
+
+    /**
+     * Tests that orphaned transitions from earlier phases are processed correctly
+     * when they exist alongside newer transitions.
+     *
+     * Scenario: An older transition (submission->review) wasn't processed before,
+     * and now both it and a newer transition (review->voting) are due.
+     * The instance should end up in 'voting' (the final transition's toStateId).
+     */
+    it('should handle orphaned transitions from earlier phases correctly', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Orphaned Transition Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance - it's currently in 'review' phase (maybe advanced manually)
+      // but there's still an old orphaned transition from submission->review
+      const instance = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Orphaned Transition Test',
+      });
+
+      // Update instanceData to be in 'review' phase
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: createSimpleInstanceData('review'),
+          currentStateId: 'review',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance.instance.id));
+
+      // Insert orphaned transition from earlier phase (scheduled long ago)
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance.instance.id,
+        fromStateId: 'submission', // Orphaned - instance is already in 'review'
+        toStateId: 'review',
+        scheduledDate: createPastDate(14), // Scheduled 14 days ago
+      });
+
+      // Insert current transition (scheduled more recently)
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance.instance.id,
+        fromStateId: 'review',
+        toStateId: 'voting',
+        scheduledDate: createPastDate(1), // Scheduled 1 day ago
+      });
+
+      await testData.grantProfileAccess(
+        instance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Process transitions
+      const result = await processDecisionsTransitions();
+
+      expect(result.failed).toBe(0);
+
+      // Instance should be in 'voting' (the final transition's toStateId)
+      // NOT 'review' (which would happen if we updated state after each transition)
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('voting');
+
+      // Both transitions should be marked complete
+      const transitions = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transitions).toHaveLength(2);
+      expect(transitions.every((t) => t.completedAt !== null)).toBe(true);
+    });
+
     /**
      * Documents current behavior: the implementation does NOT validate that
      * fromStateId matches the instance's currentStateId before processing.
      *
      * When a mismatched transition is processed:
-     * - The instance state is updated to toStateId (regardless of current state)
      * - The transition is marked as completed
-     *
-     * This test documents this behavior. In the case where fromStateId and
-     * toStateId are the same as currentStateId, no harm is done. But orphaned
-     * transitions from earlier phases could potentially regress the instance state.
-     *
-     * TODO: Consider adding fromStateId validation in processTransition to skip
-     * mismatched transitions and log a warning.
+     * - The instance state is updated to the final transition's toStateId
      */
-    it('should process transition even when currentPhaseId does not match fromStateId (documents current behavior)', async ({
+    it('should process transition even when currentPhaseId does not match fromStateId', async ({
       task,
       onTestFinished,
     }) => {

@@ -20,6 +20,13 @@ type TransitionWithRelations = DecisionProcessTransition & {
   };
 };
 
+/** Result of processing a single transition */
+interface ProcessedTransition {
+  toStateId: string;
+  isTransitioningToFinalState: boolean;
+  processInstanceId: string;
+}
+
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
   failed: number;
@@ -87,12 +94,14 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
     // but process transitions WITHIN each process sequentially to prevent race conditions per process
     await pMap(
       Array.from(transitionsByProcess.entries()),
-      async ([_processInstanceId, transitions]) => {
+      async ([processInstanceId, transitions]) => {
+        let lastSuccessfulTransition: ProcessedTransition | null = null;
+
         // Process this process's transitions sequentially
         for (const transition of transitions) {
           try {
-            await processTransition(transition.id);
-
+            // Process transition (marks completedAt, returns state info)
+            lastSuccessfulTransition = await processTransition(transition.id);
             result.processed++;
           } catch (error) {
             result.failed++;
@@ -107,6 +116,51 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
               `Failed to process transition ${transition.id}:`,
               error,
             );
+
+            // Stop processing this instance's transitions on error
+            break;
+          }
+        }
+
+        // Update instance state to the last successfully processed transition
+        if (lastSuccessfulTransition) {
+          await updateInstanceState(
+            processInstanceId,
+            lastSuccessfulTransition.toStateId,
+          );
+
+          // Trigger results processing if transitioning to final state
+          if (lastSuccessfulTransition.isTransitioningToFinalState) {
+            try {
+              console.log(
+                `Processing results for process instance ${processInstanceId}`,
+              );
+              console.log('RESULT PROCESSING DISABLED');
+              // Disabling for now as none are defined in production yet. We need to migrate current processes first.
+              /*
+              const result = await processResults({
+                processInstanceId,
+              });
+
+              if (!result.success) {
+                console.error(
+                  `Results processing failed for process instance ${processInstanceId}:`,
+                  result.error,
+                );
+              } else {
+                console.log(
+                  `Results processed successfully for process instance ${processInstanceId}. Selected ${result.selectedProposalIds.length} proposals.`,
+                );
+              }
+              */
+            } catch (error) {
+              // Log the error but don't fail the transition
+              // The transition to the results phase has already been completed
+              console.error(
+                `Error processing results for process instance ${processInstanceId}:`,
+                error,
+              );
+            }
           }
         }
       },
@@ -124,10 +178,12 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
 
 /**
  * Processes a single transition by ID.
- * Updates the process instance state to move to the next phase.
- * If transitioning to a final state (results phase), triggers results processing.
+ * Marks the transition as completed and returns info needed for state update.
+ * The actual instance state update happens after all transitions are processed.
  */
-async function processTransition(transitionId: string): Promise<void> {
+async function processTransition(
+  transitionId: string,
+): Promise<ProcessedTransition> {
   // Fetch transition with related process instance and process in a single query
   const transitionResult = await db._query.decisionProcessTransitions.findFirst(
     {
@@ -151,10 +207,6 @@ async function processTransition(transitionId: string): Promise<void> {
   // Type assertion for the nested relations (Drizzle's type inference doesn't handle nested `with` well)
   const transition = transitionResult as TransitionWithRelations;
 
-  if (transition.completedAt) {
-    return;
-  }
-
   const processInstance = transition.processInstance;
   if (!processInstance) {
     throw new CommonError(
@@ -174,66 +226,39 @@ async function processTransition(transitionId: string): Promise<void> {
   const lastPhaseId = phases[phases.length - 1]?.phaseId;
   const isTransitioningToFinalState = transition.toStateId === lastPhaseId;
 
-  // Update both the process instance and transition in a single transaction
-  // to ensure atomicity and prevent partial state updates
-  // Note: We rely on foreign key constraints to ensure the process instance exists
-  await db.transaction(async (tx) => {
-    // Update the process instance to the new state
-    // Use jsonb_set to update only the currentPhaseId field without reading the entire instanceData
-    await tx
-      .update(processInstances)
-      .set({
-        currentStateId: transition.toStateId,
-        instanceData: sql`jsonb_set(
-          ${processInstances.instanceData},
-          '{currentPhaseId}',
-          to_jsonb(${transition.toStateId}::text)
-        )`,
-      })
-      .where(eq(processInstances.id, transition.processInstanceId));
+  // Only mark the transition as completed (state update happens after all transitions)
+  await db
+    .update(decisionProcessTransitions)
+    .set({
+      completedAt: new Date().toISOString(),
+    })
+    .where(eq(decisionProcessTransitions.id, transitionId));
 
-    // Mark the transition as completed
-    await tx
-      .update(decisionProcessTransitions)
-      .set({
-        completedAt: new Date().toISOString(),
-      })
-      .where(eq(decisionProcessTransitions.id, transition.id));
-  });
+  // Return info needed for state update
+  return {
+    toStateId: transition.toStateId,
+    isTransitioningToFinalState,
+    processInstanceId: transition.processInstanceId,
+  };
+}
 
-  // If transitioning to a final state (results phase), process the results
-  // This is done AFTER the transition is marked complete to ensure the state change
-  // is committed even if results processing fails
-  if (isTransitioningToFinalState) {
-    try {
-      console.log(
-        `Processing results for process instance ${transition.processInstanceId}`,
-      );
-      console.log('RESULT PROCESSING DISABLED');
-      // Disabling for now as none are defined in production yet. We need to migrate current processes first.
-      /*
-      const result = await processResults({
-        processInstanceId: transition.processInstanceId,
-      });
-
-      if (!result.success) {
-        console.error(
-          `Results processing failed for process instance ${transition.processInstanceId}:`,
-          result.error,
-        );
-      } else {
-        console.log(
-          `Results processed successfully for process instance ${transition.processInstanceId}. Selected ${result.selectedProposalIds.length} proposals.`,
-        );
-      }
-      */
-    } catch (error) {
-      // Log the error but don't fail the transition
-      // The transition to the results phase has already been completed
-      console.error(
-        `Error processing results for process instance ${transition.processInstanceId}:`,
-        error,
-      );
-    }
-  }
+/**
+ * Updates the process instance state to the specified state.
+ * Called after all transitions for an instance have been processed.
+ */
+async function updateInstanceState(
+  processInstanceId: string,
+  toStateId: string,
+): Promise<void> {
+  await db
+    .update(processInstances)
+    .set({
+      currentStateId: toStateId,
+      instanceData: sql`jsonb_set(
+        ${processInstances.instanceData},
+        '{currentPhaseId}',
+        to_jsonb(${toStateId}::text)
+      )`,
+    })
+    .where(eq(processInstances.id, processInstanceId));
 }
