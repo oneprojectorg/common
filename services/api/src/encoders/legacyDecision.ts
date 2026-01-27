@@ -14,6 +14,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { attachmentWithUrlEncoder } from './attachments';
+import { documentContentEncoder } from './decision';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -243,6 +244,8 @@ export const legacyProposalEncoder = createSelectSchema(proposals)
     voteCount: z.number().optional(),
     // Allocated amount (for results)
     allocated: z.string().nullable().optional(),
+    // Document content (TipTap JSON or legacy HTML)
+    documentContent: documentContentEncoder.optional(),
   });
 
 // Decision Encoder
