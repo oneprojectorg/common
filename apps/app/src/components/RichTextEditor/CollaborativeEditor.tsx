@@ -182,30 +182,47 @@ const CollaborativeEditorInner = forwardRef<
         return;
       }
 
-      // Verify sync plugin is ready before registering cursor
-      const syncState = ySyncPluginKey.getState(editor.state);
-      if (!syncState) {
-        return;
-      }
+      let cancelled = false;
+      let registeredPlugin: ReturnType<typeof yCursorPlugin> | null = null;
+      const cursorPluginKeyPrefix = 'yjs-cursor$';
 
-      // Check if cursor plugin is already registered (handles HMR race conditions)
-      const cursorPluginKey = 'yjs-cursor$';
-      const existingPlugin = editor.state.plugins.find(
-        (p) => p.spec.key && String(p.spec.key).startsWith(cursorPluginKey),
-      );
-      if (existingPlugin) {
-        return;
-      }
+      // Try to register the cursor plugin, retrying if sync state isn't ready yet
+      const attemptRegister = () => {
+        if (cancelled || !editor || editor.isDestroyed) {
+          return;
+        }
 
-      // Create and register cursor plugin with custom rendering
-      const cursorPlugin = yCursorPlugin(provider.awareness, {
-        cursorBuilder: buildCursorElement,
-        selectionBuilder: buildSelectionAttrs,
-      });
-      editor.registerPlugin(cursorPlugin);
+        // Verify sync plugin is ready before registering cursor
+        const syncState = ySyncPluginKey.getState(editor.state);
+        if (!syncState) {
+          // Sync plugin state not ready yet, retry on next frame
+          requestAnimationFrame(attemptRegister);
+          return;
+        }
+
+        // Check if cursor plugin is already registered (handles HMR race conditions)
+        const existingPlugin = editor.state.plugins.find(
+          (p) => p.spec.key && String(p.spec.key).startsWith(cursorPluginKeyPrefix),
+        );
+        if (existingPlugin) {
+          return;
+        }
+
+        // Create and register cursor plugin with custom rendering
+        registeredPlugin = yCursorPlugin(provider.awareness, {
+          cursorBuilder: buildCursorElement,
+          selectionBuilder: buildSelectionAttrs,
+        });
+        editor.registerPlugin(registeredPlugin);
+      };
+
+      attemptRegister();
 
       return () => {
-        editor.unregisterPlugin(cursorPlugin.key);
+        cancelled = true;
+        if (registeredPlugin && editor && !editor.isDestroyed) {
+          editor.unregisterPlugin(registeredPlugin.key);
+        }
       };
     }, [editor, provider]);
 
