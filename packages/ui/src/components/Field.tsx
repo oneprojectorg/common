@@ -102,7 +102,7 @@ export const inputStyles = tv({
       error: 'border-functional-red outline-functional-red',
     },
     size: {
-      small: 'px-4 py-2',
+      small: 'h-8 px-4 py-2',
     },
     hasIcon: {
       true: 'w-full pl-8',

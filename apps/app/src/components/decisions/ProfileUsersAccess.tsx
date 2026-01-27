@@ -1,10 +1,13 @@
 'use client';
 
+import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
 import type { SortDir } from '@op/common';
-import { useCursorPagination, useDebounce } from '@op/hooks';
+import { useCursorPagination, useDebounce, useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
+import { Skeleton } from '@op/ui/Skeleton';
 import { useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 
@@ -17,12 +20,9 @@ type SortColumn = 'name' | 'email' | 'role';
 
 const ITEMS_PER_PAGE = 25;
 
-export const ProfileUsersAccessPage = ({
-  profileId,
-}: {
-  profileId: string;
-}) => {
+export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
+  const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
 
@@ -74,33 +74,37 @@ export const ProfileUsersAccessPage = ({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="font-serif text-title-sm font-light text-neutral-black">
-        {t('Members')}
-      </h2>
+    <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
+      <div className="flex flex-col gap-4">
+        <h2 className="font-serif text-title-sm font-light text-neutral-black">
+          {t('Members')}
+        </h2>
 
-      <SearchField
-        placeholder={t('Search')}
-        value={searchQuery}
-        onChange={setSearchQuery}
-        className="w-full max-w-96"
-      />
+        <SearchField
+          placeholder={t('Search')}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          size={isMobile ? 'small' : undefined}
+          className="w-full md:max-w-96"
+        />
 
-      <ProfileUsersAccessTable
-        profileUsers={profileUsers}
-        profileId={profileId}
-        sortDescriptor={sortDescriptor}
-        onSortChange={setSortDescriptor}
-        isLoading={isPending || rolesPending}
-        isError={isError}
-        onRetry={() => void refetch()}
-        roles={roles}
-      />
+        <ProfileUsersAccessTable
+          profileUsers={profileUsers}
+          profileId={profileId}
+          sortDescriptor={sortDescriptor}
+          onSortChange={setSortDescriptor}
+          isLoading={isPending || rolesPending}
+          isError={isError}
+          onRetry={() => void refetch()}
+          roles={roles}
+          isMobile={isMobile}
+        />
 
-      <Pagination
-        next={next ? onNext : undefined}
-        previous={canGoPrevious ? handlePrevious : undefined}
-      />
-    </div>
+        <Pagination
+          next={next ? onNext : undefined}
+          previous={canGoPrevious ? handlePrevious : undefined}
+        />
+      </div>
+    </ClientOnly>
   );
 };

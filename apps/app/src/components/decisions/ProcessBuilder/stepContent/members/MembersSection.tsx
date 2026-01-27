@@ -1,15 +1,13 @@
+import { ProfileUsersAccess } from '@/components/decisions/ProfileUsersAccess';
+
 import type { SectionProps } from '../../contentRegistry';
 
-export default function MembersSection({
-  decisionId,
-  decisionName,
-}: SectionProps) {
+export default function MembersSection({ decisionId }: SectionProps) {
   return (
-    <div className="p-4 sm:p-8">
-      <h2 className="text-xl font-semibold">Members</h2>
-      <p className="text-neutral-gray4">Decision: {decisionName}</p>
-      <p className="text-neutral-gray4">ID: {decisionId}</p>
-      {/* TODO: Implement members configuration */}
+    <div className="px-24 py-16">
+      <div className="mx-auto max-w-5xl">
+        <ProfileUsersAccess profileId={decisionId} />
+      </div>
     </div>
   );
 }
