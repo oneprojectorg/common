@@ -1,6 +1,5 @@
 'use client';
 
-import { originUrlMatcher } from '@op/core';
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -56,20 +55,14 @@ function initOTelBrowser() {
       contextManager: new ZoneContextManager(),
     });
 
-    // In development, propagate trace headers to all URLs
-    // In production/staging/preview, only propagate to our own domains
-    const isDevelopment = window.location.hostname === 'localhost';
-    const propagateUrls = isDevelopment ? [/.*/] : [originUrlMatcher];
-
+    // No need to propagate trace headers cross-origin since we use a same-origin proxy
     registerInstrumentations({
       instrumentations: [
         getWebAutoInstrumentations({
           '@opentelemetry/instrumentation-fetch': {
-            propagateTraceHeaderCorsUrls: propagateUrls,
             clearTimingResources: true,
           },
           '@opentelemetry/instrumentation-xml-http-request': {
-            propagateTraceHeaderCorsUrls: propagateUrls,
             clearTimingResources: true,
           },
           '@opentelemetry/instrumentation-document-load': {},
