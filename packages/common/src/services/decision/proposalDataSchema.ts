@@ -7,16 +7,16 @@ import { z } from 'zod';
  */
 export const proposalDataSchema = z
   .looseObject({
-    title: z.string().optional(),
-    description: z.string().optional(),
-    content: z.string().optional(), // backward compatibility
-    category: z.string().optional(),
-    budget: z
-      .union([z.string(), z.number()])
-      .pipe(z.coerce.number())
-      .optional(),
-    attachmentIds: z.array(z.string()).optional().prefault([]),
-    collaborationDocId: z.string().optional(),
+    title: z.string().nullish(),
+    description: z.string().nullish(),
+    content: z.string().nullish(), // backward compatibility
+    category: z.string().nullish(),
+    budget: z.union([z.string(), z.number()]).pipe(z.coerce.number()).nullish(),
+    attachmentIds: z
+      .array(z.string())
+      .nullish()
+      .transform((v) => v ?? []),
+    collaborationDocId: z.string().nullish(),
   })
 
   .transform((data) => {
@@ -34,10 +34,29 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
 
 /**
- * Safely parse proposal data with fallback to empty object.
- * Returns typed ProposalData on success, or the raw input cast to ProposalData on failure.
+ * Safely parse proposal data with fallback.
+ * Returns typed ProposalData on success, or preserves raw input fields on failure.
  */
 export function parseProposalData(proposalData: unknown): ProposalData {
   const result = proposalDataSchema.safeParse(proposalData);
-  return result.success ? result.data : { attachmentIds: [] };
+  if (result.success) {
+    return result.data;
+  }
+
+  // Fallback: preserve raw input fields if it's an object, with safe defaults
+  const raw =
+    proposalData && typeof proposalData === 'object'
+      ? (proposalData as Record<string, unknown>)
+      : {};
+
+  return {
+    ...raw,
+    title: (raw.title as string) ?? undefined,
+    description: (raw.description as string) ?? undefined,
+    content: (raw.content as string) ?? undefined,
+    category: (raw.category as string) ?? undefined,
+    budget: (raw.budget as number) ?? undefined,
+    attachmentIds: (raw.attachmentIds as string[]) ?? [],
+    collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
+  };
 }

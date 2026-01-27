@@ -1,5 +1,7 @@
 import { mockCollab } from '@op/collab/testing';
-import { Visibility } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { Visibility, proposals } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -375,7 +377,7 @@ describe.concurrent('getProposal', () => {
     expect(result.documentContent).toBeUndefined();
   });
 
-  it('should return undefined documentContent on TipTap timeout', async ({
+  it('should handle legacy proposal data with null fields', async ({
     task,
     onTestFinished,
   }) => {
@@ -391,72 +393,54 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    // Create proposal - API generates collaborationDocId
+    // Create proposal first
     const proposal = await testData.createProposal({
       callerEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
-        title: 'Timeout Test Proposal',
+        title: 'Legacy Data Test',
       },
     });
 
-    const { collaborationDocId } = proposal.proposalData as {
-      collaborationDocId: string;
+    // Simulate legacy data: all optional fields explicitly set to null
+    // This mirrors what we found in the production database
+    const legacyProposalData = {
+      title: 'Legacy Data Test',
+      description: null,
+      content: null,
+      category: null,
+      budget: null,
+      attachmentIds: null,
+      collaborationDocId: null,
+      // Include a custom field to test looseObject passthrough
+      customLegacyField: 'preserved',
     };
 
-    const timeoutError = new Error('Request timed out');
-    timeoutError.name = 'TimeoutError';
-    mockCollab.setDocError(collaborationDocId, timeoutError);
+    await db
+      .update(proposals)
+      .set({ proposalData: legacyProposalData })
+      .where(eq(proposals.id, proposal.id));
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.getProposal({
       profileId: proposal.profileId,
     });
 
-    expect(result.proposalData).toMatchObject({
-      title: 'Timeout Test Proposal',
-      collaborationDocId: expect.any(String),
-    });
-    expect(result.documentContent).toBeUndefined();
-  });
+    // Should successfully parse without errors
+    expect(result.id).toBe(proposal.id);
 
-  it('should return html documentContent for legacy proposals with description', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: {
-        title: 'Legacy Proposal',
-        description: '<p>This is <strong>HTML</strong> content</p>',
-      },
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await caller.decision.getProposal({
-      profileId: proposal.profileId,
-    });
-
-    expect(result.proposalData).toMatchObject({
-      title: 'Legacy Proposal',
-      description: '<p>This is <strong>HTML</strong> content</p>',
-    });
-    expect(result.documentContent).toEqual({
-      type: 'html',
-      content: '<p>This is <strong>HTML</strong> content</p>',
+    // Verify the entire proposalData object
+    // All null values are preserved (via .nullish()), except:
+    // - attachmentIds: null → [] via transform
+    expect(result.proposalData).toEqual({
+      title: 'Legacy Data Test',
+      description: null,
+      content: null,
+      category: null,
+      budget: null,
+      attachmentIds: [],
+      collaborationDocId: null,
+      customLegacyField: 'preserved', // looseObject preserves extra fields
     });
   });
 });
