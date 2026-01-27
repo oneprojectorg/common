@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
-
 import { OverviewSectionForm } from './OverviewSectionForm';
 import { OverviewSectionSkeleton } from './OverviewSectionSkeleton';
 
