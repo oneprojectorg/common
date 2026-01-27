@@ -3,12 +3,12 @@
 import { type ComponentType } from 'react';
 
 import type { StepId } from './navigationConfig';
+import OverviewSection from './stepContent/general/OverviewSection';
+import PhasesSection from './stepContent/general/PhasesSection';
+import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
+import VotingSection from './stepContent/general/VotingSection';
 import MembersSection from './stepContent/members/MembersSection';
 import RolesSection from './stepContent/members/RolesSection';
-import OverviewSection from './stepContent/overview/OverviewSection';
-import PhasesSection from './stepContent/overview/PhasesSection';
-import ProposalCategoriesSection from './stepContent/overview/ProposalCategoriesSection';
-import VotingSection from './stepContent/overview/VotingSection';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
 import SettingsSection from './stepContent/rubric/SettingsSection';
 import FormBuilderSection from './stepContent/template/FormBuilderSection';
