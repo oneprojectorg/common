@@ -3,10 +3,10 @@
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useState } from 'react';
 
-export interface AwarenessUser {
+import type { CollabUser } from './useTiptapCollab';
+
+export interface AwarenessUser extends CollabUser {
   clientId: number;
-  name: string;
-  color: string;
 }
 
 /**
