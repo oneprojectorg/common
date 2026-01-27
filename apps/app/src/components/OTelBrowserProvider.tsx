@@ -8,7 +8,11 @@ import { useEffect, useRef } from 'react';
  * Captures fetch/XHR calls, user interactions, and page navigations.
  * Traces are sent to /api/otel/traces which proxies them to SigNoz.
  */
-export function OTelBrowserProvider({ children }: { children: React.ReactNode }) {
+export function OTelBrowserProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const initialized = useRef(false);
 
   useEffect(() => {
