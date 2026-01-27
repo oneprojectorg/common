@@ -50,6 +50,7 @@
     "@tiptap/extension-bubble-menu": "catalog:",
     "@tiptap/extension-bullet-list": "catalog:",
     "@tiptap/extension-collaboration": "catalog:",
+    "@tiptap/extension-collaboration-cursor": "catalog:",
     "@tiptap/extension-heading": "catalog:",
     "@tiptap/extension-horizontal-rule": "catalog:",
     "@tiptap/extension-image": "catalog:",
