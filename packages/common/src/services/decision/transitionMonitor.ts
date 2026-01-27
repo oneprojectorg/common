@@ -177,6 +177,12 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
  * Processes a single transition by ID.
  * Marks the transition as completed and returns info needed for state update.
  * The actual instance state update happens after all transitions are processed.
+ *
+ * Note: This function intentionally does not validate that the transition's
+ * fromStateId matches the current instance state. This is because transitions
+ * are processed sequentially within each process instance, and earlier
+ * transitions in the queue may not yet have updated the instance state.
+ * The sequential processing ensures correct state progression.
  */
 async function processTransition(
   transitionId: string,
