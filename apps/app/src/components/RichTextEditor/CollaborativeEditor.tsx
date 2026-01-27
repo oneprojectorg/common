@@ -1,6 +1,10 @@
 'use client';
 
-import { type CollabStatus, useTiptapCollab } from '@/hooks/useTiptapCollab';
+import {
+  type CollabStatus,
+  type CollabUser,
+  useTiptapCollab,
+} from '@/hooks/useTiptapCollab';
 import {
   RichTextEditorSkeleton,
   StyledRichTextContent,
@@ -9,6 +13,7 @@ import {
 import Snapshot from '@tiptap-pro/extension-snapshot';
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import type { Editor, Extensions } from '@tiptap/react';
 import {
   forwardRef,
@@ -35,6 +40,7 @@ export interface CollaborativeEditorProps {
   onEditorReady?: (editor: Editor) => void;
   className?: string;
   editorClassName?: string;
+  user?: CollabUser;
 }
 
 /** Rich text editor with real-time collaboration via TipTap Cloud */
@@ -50,12 +56,14 @@ export const CollaborativeEditor = forwardRef<
       onEditorReady,
       className = '',
       editorClassName = '',
+      user,
     },
     ref,
   ) => {
     const { ydoc, provider, status, isSynced } = useTiptapCollab({
       docId,
       enabled: true,
+      user,
     });
 
     // Wait for provider before rendering the editor inner component
@@ -76,6 +84,7 @@ export const CollaborativeEditor = forwardRef<
         onEditorReady={onEditorReady}
         className={className}
         editorClassName={editorClassName}
+        user={user}
       />
     );
   },
@@ -86,9 +95,13 @@ type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
   provider: TiptapCollabProvider;
   status: CollabStatus;
   isSynced: boolean;
+  user?: CollabUser;
 };
 
 /** Inner component that renders after provider is ready */
+/** Default user for cursor when no user info is provided */
+const DEFAULT_COLLAB_USER: CollabUser = { name: 'Anonymous', color: '#f783ac' };
+
 const CollaborativeEditorInner = forwardRef<
   CollaborativeEditorRef,
   CollaborativeEditorInnerProps
@@ -104,6 +117,7 @@ const CollaborativeEditorInner = forwardRef<
       onEditorReady,
       className = '',
       editorClassName = '',
+      user,
     },
     ref,
   ) => {
@@ -111,9 +125,13 @@ const CollaborativeEditorInner = forwardRef<
       () => [
         ...extensions,
         Collaboration.configure({ document: ydoc }),
+        CollaborationCursor.configure({
+          provider,
+          user: user ?? DEFAULT_COLLAB_USER,
+        }),
         Snapshot.configure({ provider }),
       ],
-      [extensions, ydoc, provider],
+      [extensions, ydoc, provider, user],
     );
 
     const editor = useRichTextEditor({

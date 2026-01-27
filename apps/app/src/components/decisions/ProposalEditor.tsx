@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import { useUser } from '@/utils/UserProvider';
 
 import {
   CollaborativeEditor,
@@ -29,6 +30,25 @@ import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
+
+/** Colors for collaboration cursor indicators */
+const COLLAB_COLORS = [
+  '#f783ac',
+  '#ffa94d',
+  '#69db7c',
+  '#4dabf7',
+  '#da77f2',
+  '#ffd43b',
+];
+
+/** Generate a deterministic color from a user ID string */
+function getUserColor(userId: string): string {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length];
+}
 
 /** Handles tRPC validation errors from mutation responses */
 function handleMutationError(
@@ -76,6 +96,16 @@ export function ProposalEditor({
   const t = useTranslations();
   const posthog = usePostHog();
   const utils = trpc.useUtils();
+  const { user: currentUser } = useUser();
+
+  // Collaboration user info for cursor display
+  const collabUser = useMemo(
+    () => ({
+      name: currentUser.name ?? 'Anonymous',
+      color: getUserColor(currentUser.authUserId),
+    }),
+    [currentUser.name, currentUser.authUserId],
+  );
 
   // Form state
   const [title, setTitle] = useState('');
@@ -439,6 +469,7 @@ export function ProposalEditor({
             onEditorReady={handleEditorReady}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
+            user={collabUser}
           />
         </div>
       </div>
