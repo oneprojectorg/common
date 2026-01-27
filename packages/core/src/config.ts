@@ -54,7 +54,8 @@ const PREVIEW_DEPLOYMENT_URL =
 
 // Check if running on a preview URL (vs custom domain)
 // Uses shared isPreviewDomain from previews.mjs
-export const isOnPreviewAppDomain = isPreviewDomain(PREVIEW_DEPLOYMENT_URL);
+export const isOnPreviewAppDomain =
+  isInPreviewDeployment && isPreviewDomain(PREVIEW_DEPLOYMENT_URL);
 
 // Extract the suffix after the project name for constructing other preview URLs
 // Handles formats like: "app-git-branch-oneproject.vercel.app" -> "-git-branch-oneproject.vercel.app"
