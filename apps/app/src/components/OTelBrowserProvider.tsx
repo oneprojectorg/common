@@ -58,13 +58,6 @@ function initOTelBrowser() {
     registerInstrumentations({
       instrumentations: [
         getWebAutoInstrumentations({
-          '@opentelemetry/instrumentation-fetch': {
-            clearTimingResources: true,
-          },
-          '@opentelemetry/instrumentation-xml-http-request': {
-            clearTimingResources: true,
-          },
-          '@opentelemetry/instrumentation-document-load': {},
           '@opentelemetry/instrumentation-user-interaction': {
             eventNames: ['click', 'submit'],
           },
@@ -83,9 +76,6 @@ function initOTelBrowser() {
         provider.forceFlush();
       }
     });
-
-    // eslint-disable-next-line no-console
-    console.debug('[OTel] Browser tracing initialized');
   } catch (error) {
     // eslint-disable-next-line no-console
     console.warn('[OTel] Failed to initialize browser tracing:', error);
