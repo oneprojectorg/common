@@ -3,9 +3,13 @@ import type { DecisionSchemaDefinition } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalStatus,
+  decisionProcessResults,
+  decisionProcessResultSelections,
   decisionProcessTransitions,
   decisionProcesses,
   processInstances,
+  proposals,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -1630,6 +1634,385 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       expect(transition).toBeDefined();
       expect(transition!.completedAt).toBeNull();
+    });
+  });
+
+  describe('results processing on final phase transition', () => {
+    /**
+     * Tests that when transitioning to the final (results) phase,
+     * the processResults function is called and creates a result record.
+     */
+    it('should create a result record when transitioning to final phase', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Results Processing Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance in 'voting' phase with transition to 'results' (final phase)
+      const instance = await createInstanceWithDueTransition(
+        testData,
+        setup,
+        caller,
+        {
+          name: 'Results Test Instance',
+          currentPhaseId: 'voting',
+          fromStateId: 'voting',
+          toStateId: 'results', // Final phase
+          scheduledDate: createPastDate(1),
+        },
+      );
+
+      // Process transitions - should transition to results and trigger processResults
+      const result = await processDecisionsTransitions();
+
+      // Check that THIS instance's transitions didn't fail
+      const thisInstanceErrors = result.errors.filter(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(thisInstanceErrors).toHaveLength(0);
+
+      // Verify instance advanced to results (final phase)
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('results');
+
+      // Verify a result record was created for this instance
+      const [resultRecord] = await db
+        .select()
+        .from(decisionProcessResults)
+        .where(
+          eq(decisionProcessResults.processInstanceId, instance.instance.id),
+        );
+
+      expect(resultRecord).toBeDefined();
+      expect(resultRecord!.processInstanceId).toBe(instance.instance.id);
+      expect(resultRecord!.success).toBe(true);
+      expect(resultRecord!.selectedCount).toBe(0); // No proposals
+      expect(resultRecord!.voterCount).toBe(0); // No voters
+    });
+
+    /**
+     * Tests that when transitioning to the final phase with proposals,
+     * the proposals are selected based on the pipeline and marked as SELECTED.
+     */
+    it('should select proposals and mark them as SELECTED when transitioning to final phase', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Results With Proposals Test',
+        instanceCount: 0,
+      });
+
+      // Create schema with proposal submission enabled in earlier phases
+      const schemaWithProposals: DecisionSchemaDefinition = {
+        id: 'test-results-schema',
+        version: '1.0.0',
+        name: 'Results Test Process',
+        phases: [
+          {
+            id: 'submission',
+            name: 'Submission',
+            rules: {
+              advancement: { method: 'date' },
+              proposals: { submit: true },
+            },
+          },
+          {
+            id: 'review',
+            name: 'Review',
+            rules: { advancement: { method: 'date' } },
+          },
+          {
+            id: 'voting',
+            name: 'Voting',
+            rules: { advancement: { method: 'date' } },
+          },
+          { id: 'results', name: 'Results', rules: {} },
+        ],
+      };
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: schemaWithProposals })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance in 'voting' phase
+      const instance = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Proposals Test Instance',
+      });
+
+      // Update instanceData to be in 'voting' phase
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: createSimpleInstanceData('voting'),
+          currentStateId: 'voting',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance.instance.id));
+
+      // Create some proposals for this instance
+      const proposal1 = await testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Test Proposal 1',
+          description: 'First test proposal',
+        },
+      });
+
+      const proposal2 = await testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: {
+          title: 'Test Proposal 2',
+          description: 'Second test proposal',
+        },
+      });
+
+      // Set proposal status to 'approved' so the default pipeline will select them
+      // (The default pipeline filters for status='approved')
+      await db
+        .update(proposals)
+        .set({ status: ProposalStatus.APPROVED })
+        .where(eq(proposals.processInstanceId, instance.instance.id));
+
+      // Insert transition to results phase
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance.instance.id,
+        fromStateId: 'voting',
+        toStateId: 'results',
+        scheduledDate: createPastDate(1),
+      });
+
+      await testData.grantProfileAccess(
+        instance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Process transitions - should transition to results and process proposals
+      const result = await processDecisionsTransitions();
+
+      // Check that THIS instance's transitions didn't fail
+      const thisInstanceErrors = result.errors.filter(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(thisInstanceErrors).toHaveLength(0);
+
+      // Verify instance advanced to results
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('results');
+
+      // Verify a result record was created
+      const [resultRecord] = await db
+        .select()
+        .from(decisionProcessResults)
+        .where(
+          eq(decisionProcessResults.processInstanceId, instance.instance.id),
+        );
+
+      expect(resultRecord).toBeDefined();
+      expect(resultRecord!.success).toBe(true);
+      // Default pipeline selects all proposals
+      expect(resultRecord!.selectedCount).toBe(2);
+
+      // Verify selections were recorded
+      const selections = await db
+        .select()
+        .from(decisionProcessResultSelections)
+        .where(
+          eq(decisionProcessResultSelections.processResultId, resultRecord!.id),
+        );
+
+      expect(selections).toHaveLength(2);
+      const selectedProposalIds = selections.map((s) => s.proposalId);
+      expect(selectedProposalIds).toContain(proposal1.id);
+      expect(selectedProposalIds).toContain(proposal2.id);
+
+      // Verify proposals were marked as SELECTED
+      const updatedProposals = await db
+        .select()
+        .from(proposals)
+        .where(eq(proposals.processInstanceId, instance.instance.id));
+
+      expect(updatedProposals).toHaveLength(2);
+      expect(updatedProposals.every((p) => p.status === ProposalStatus.SELECTED)).toBe(true);
+    });
+
+    /**
+     * Tests that results processing errors don't fail the transition.
+     * The transition should still complete even if results processing fails.
+     */
+    it('should complete transition even if results processing encounters an error', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Results Error Test',
+        instanceCount: 0,
+      });
+
+      // Create schema with an invalid selection pipeline that will fail
+      // Note: We use a plain object here because DecisionSchemaDefinition doesn't
+      // include selectionPipeline, but the database stores it as JSONB
+      const schemaWithBadPipeline = {
+        id: 'test-bad-pipeline-schema',
+        version: '1.0.0',
+        name: 'Bad Pipeline Test Process',
+        phases: [
+          {
+            id: 'submission',
+            name: 'Submission',
+            rules: { advancement: { method: 'date' } },
+          },
+          {
+            id: 'voting',
+            name: 'Voting',
+            rules: { advancement: { method: 'date' } },
+          },
+          { id: 'results', name: 'Results', rules: {} },
+        ],
+        // Invalid pipeline that should cause an error (not an array of blocks)
+        selectionPipeline: {
+          invalid: 'this-will-fail',
+        },
+      };
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: schemaWithBadPipeline })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance in 'voting' phase with transition to 'results'
+      const instance = await createInstanceWithDueTransition(
+        testData,
+        setup,
+        caller,
+        {
+          name: 'Error Test Instance',
+          currentPhaseId: 'voting',
+          fromStateId: 'voting',
+          toStateId: 'results',
+          scheduledDate: createPastDate(1),
+        },
+      );
+
+      // Process transitions
+      const result = await processDecisionsTransitions();
+
+      // Check that THIS instance's transition didn't fail
+      // (results processing error is caught and logged, but transition completes)
+      const thisInstanceErrors = result.errors.filter(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(thisInstanceErrors).toHaveLength(0);
+
+      // Verify instance still advanced to results despite pipeline error
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('results');
+
+      // Verify a result record was created (with success=false due to pipeline error)
+      const [resultRecord] = await db
+        .select()
+        .from(decisionProcessResults)
+        .where(
+          eq(decisionProcessResults.processInstanceId, instance.instance.id),
+        );
+
+      expect(resultRecord).toBeDefined();
+      // The result may show success=false if pipeline failed, or success=true with 0 selections
+      // Either way, the transition completed
+      expect(resultRecord!.processInstanceId).toBe(instance.instance.id);
+    });
+
+    /**
+     * Tests that results are NOT processed when transitioning to a non-final phase.
+     */
+    it('should not create result record when transitioning to non-final phase', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Non-Final Transition Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance with transition to 'review' (not final phase)
+      const instance = await createInstanceWithDueTransition(
+        testData,
+        setup,
+        caller,
+        {
+          name: 'Non-Final Test Instance',
+          currentPhaseId: 'submission',
+          fromStateId: 'submission',
+          toStateId: 'review', // Not final phase
+          scheduledDate: createPastDate(1),
+        },
+      );
+
+      // Process transitions
+      const result = await processDecisionsTransitions();
+
+      // Check that THIS instance's transitions didn't fail
+      const thisInstanceErrors = result.errors.filter(
+        (e) => e.processInstanceId === instance.instance.id,
+      );
+      expect(thisInstanceErrors).toHaveLength(0);
+
+      // Verify instance advanced to review
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('review');
+
+      // Verify NO result record was created (not final phase)
+      const resultRecords = await db
+        .select()
+        .from(decisionProcessResults)
+        .where(
+          eq(decisionProcessResults.processInstanceId, instance.instance.id),
+        );
+
+      expect(resultRecords).toHaveLength(0);
     });
   });
 });
