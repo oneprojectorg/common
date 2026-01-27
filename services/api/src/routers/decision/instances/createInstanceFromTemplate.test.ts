@@ -102,7 +102,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(instanceData.currentPhaseId).toBe('submission');
   });
 
-  it('should create transitions for phases with date-based advancement', async ({
+  it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({
     task,
     onTestFinished,
   }) => {
@@ -152,37 +152,18 @@ describe.concurrent('createInstanceFromTemplate', () => {
     testData.trackProfileForCleanup(result.id);
 
     expect(result.processInstance.id).toBeDefined();
+    expect(result.processInstance.status).toBe('draft');
 
-    // Verify transitions were created
+    // Verify NO transitions were created for DRAFT instance
+    // Transitions are only created when the instance is published
     const transitions = await db._query.decisionProcessTransitions.findMany({
       where: eq(
         decisionProcessTransitions.processInstanceId,
         result.processInstance.id,
       ),
-      orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
     });
 
-    // The simple template has 4 phases with date-based advancement
-    // Each phase that has a date-based advancement gets a transition created
-    expect(transitions.length).toBeGreaterThanOrEqual(3);
-
-    // Verify transition details - check that key transitions exist
-    const submissionToReview = transitions.find(
-      (t) => t.fromStateId === 'submission' && t.toStateId === 'review',
-    );
-    const reviewToVoting = transitions.find(
-      (t) => t.fromStateId === 'review' && t.toStateId === 'voting',
-    );
-    const votingToResults = transitions.find(
-      (t) => t.fromStateId === 'voting' && t.toStateId === 'results',
-    );
-
-    expect(submissionToReview).toBeDefined();
-    expect(submissionToReview!.completedAt).toBeNull();
-
-    expect(reviewToVoting).toBeDefined();
-
-    expect(votingToResults).toBeDefined();
+    expect(transitions.length).toBe(0);
   });
 
   it('should accept phase settings', async ({ task, onTestFinished }) => {
