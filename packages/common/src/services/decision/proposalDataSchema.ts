@@ -10,8 +10,15 @@ export const proposalDataSchema = z
     title: z.string().optional(),
     description: z.string().optional(),
     content: z.string().optional(), // backward compatibility
-    category: z.string().nullish(),
-    budget: z.union([z.string(), z.number()]).pipe(z.coerce.number()).nullish(),
+    category: z
+      .string()
+      .nullish()
+      .transform((v) => v ?? undefined),
+    budget: z
+      .union([z.string(), z.number()])
+      .pipe(z.coerce.number())
+      .nullish()
+      .transform((v) => v ?? undefined),
     attachmentIds: z.array(z.string()).optional().prefault([]),
     collaborationDocId: z.string().optional(),
   })
@@ -36,5 +43,7 @@ export type ProposalDataInput = z.input<typeof proposalDataSchema>;
  */
 export function parseProposalData(proposalData: unknown): ProposalData {
   const result = proposalDataSchema.safeParse(proposalData);
-  return result.success ? result.data : { attachmentIds: [] };
+  return result.success
+    ? result.data
+    : { attachmentIds: [], category: undefined, budget: undefined };
 }

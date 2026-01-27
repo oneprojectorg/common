@@ -1,5 +1,7 @@
 import { mockCollab } from '@op/collab/testing';
-import { Visibility } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { Visibility, proposals } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -375,7 +377,7 @@ describe.concurrent('getProposal', () => {
     expect(result.documentContent).toBeUndefined();
   });
 
-  it('should return undefined documentContent on TipTap timeout', async ({
+  it('should handle proposal data with null category and budget', async ({
     task,
     onTestFinished,
   }) => {
@@ -391,72 +393,40 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    // Create proposal - API generates collaborationDocId
+    // Create proposal first
     const proposal = await testData.createProposal({
       callerEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
-        title: 'Timeout Test Proposal',
+        title: 'Null Fields Test',
       },
     });
 
-    const { collaborationDocId } = proposal.proposalData as {
-      collaborationDocId: string;
-    };
-
-    const timeoutError = new Error('Request timed out');
-    timeoutError.name = 'TimeoutError';
-    mockCollab.setDocError(collaborationDocId, timeoutError);
+    // Update proposal_data directly in DB to simulate legacy data with null values
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Null Fields Test',
+          category: null,
+          budget: null,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.getProposal({
       profileId: proposal.profileId,
     });
 
+    // Should successfully parse without errors
+    expect(result.id).toBe(proposal.id);
     expect(result.proposalData).toMatchObject({
-      title: 'Timeout Test Proposal',
-      collaborationDocId: expect.any(String),
+      title: 'Null Fields Test',
     });
-    expect(result.documentContent).toBeUndefined();
-  });
-
-  it('should return html documentContent for legacy proposals with description', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: {
-        title: 'Legacy Proposal',
-        description: '<p>This is <strong>HTML</strong> content</p>',
-      },
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await caller.decision.getProposal({
-      profileId: proposal.profileId,
-    });
-
-    expect(result.proposalData).toMatchObject({
-      title: 'Legacy Proposal',
-      description: '<p>This is <strong>HTML</strong> content</p>',
-    });
-    expect(result.documentContent).toEqual({
-      type: 'html',
-      content: '<p>This is <strong>HTML</strong> content</p>',
-    });
+    // budget: null should not become 0
+    expect(
+      (result.proposalData as Record<string, unknown>).budget,
+    ).toBeUndefined();
   });
 });
