@@ -1,6 +1,16 @@
 'use client';
 
 import { originUrlMatcher } from '@op/core';
+import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
+import { ZoneContextManager } from '@opentelemetry/context-zone';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  BatchSpanProcessor,
+  WebTracerProvider,
+} from '@opentelemetry/sdk-trace-web';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -16,43 +26,23 @@ export function OTelBrowserProvider({
   const initialized = useRef(false);
 
   useEffect(() => {
-    // Only initialize once
     if (initialized.current) {
       return;
     }
     initialized.current = true;
 
-    void initOTelBrowser();
+    initOTelBrowser();
   }, []);
 
   return <>{children}</>;
 }
 
-async function initOTelBrowser() {
+function initOTelBrowser() {
   try {
-    const [
-      { WebTracerProvider, BatchSpanProcessor },
-      { OTLPTraceExporter },
-      { resourceFromAttributes },
-      { ATTR_SERVICE_NAME },
-      { ZoneContextManager },
-      { registerInstrumentations },
-      { getWebAutoInstrumentations },
-    ] = await Promise.all([
-      import('@opentelemetry/sdk-trace-web'),
-      import('@opentelemetry/exporter-trace-otlp-http'),
-      import('@opentelemetry/resources'),
-      import('@opentelemetry/semantic-conventions'),
-      import('@opentelemetry/context-zone'),
-      import('@opentelemetry/instrumentation'),
-      import('@opentelemetry/auto-instrumentations-web'),
-    ]);
-
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'common-browser',
     });
 
-    // Send traces to our API route which proxies to SigNoz
     const exporter = new OTLPTraceExporter({
       url: '/api/otel/traces',
     });
@@ -62,14 +52,12 @@ async function initOTelBrowser() {
       spanProcessors: [new BatchSpanProcessor(exporter)],
     });
 
-    // Use ZoneContextManager for proper async context propagation
     provider.register({
       contextManager: new ZoneContextManager(),
     });
 
-    // Auto-instrument fetch, XHR, document load, and user interactions
-    // In development (localhost), propagate trace headers to all URLs (no CORS concerns)
-    // In production/staging/preview, only propagate to our own domains to avoid leaking trace IDs
+    // In development, propagate trace headers to all URLs
+    // In production/staging/preview, only propagate to our own domains
     const isDevelopment = window.location.hostname === 'localhost';
     const propagateUrls = isDevelopment ? [/.*/] : [originUrlMatcher];
 
@@ -95,7 +83,6 @@ async function initOTelBrowser() {
     // eslint-disable-next-line no-console
     console.debug('[OTel] Browser tracing initialized');
   } catch (error) {
-    // Fail silently - tracing should not break the app
     // eslint-disable-next-line no-console
     console.warn('[OTel] Failed to initialize browser tracing:', error);
   }
