@@ -62,6 +62,31 @@ const createDecisionSchema = (): DecisionSchemaDefinition => ({
   ],
 });
 
+// Schema with all manual advancement phases (no automatic transitions)
+const createManualAdvancementSchema = (): DecisionSchemaDefinition => ({
+  id: 'test-manual-schema',
+  version: '1.0.0',
+  name: 'Manual Advancement Test Process',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: { advancement: { method: 'manual' } },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: { advancement: { method: 'manual' } },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: { advancement: { method: 'manual' } },
+    },
+    { id: 'results', name: 'Results', rules: {} },
+  ],
+});
+
 // Simple instance data (rules get stripped by API validation anyway)
 const createSimpleInstanceData = (currentPhaseId: string) => ({
   currentPhaseId,
@@ -345,16 +370,15 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       });
 
       // Find the submission->review transition
-      const dueTransition = await db._query.decisionProcessTransitions.findFirst(
-        {
+      const dueTransition =
+        await db._query.decisionProcessTransitions.findFirst({
           where: (t, { and, eq }) =>
             and(
               eq(t.processInstanceId, instance.instance.id),
               eq(t.fromStateId, 'submission'),
               eq(t.toStateId, 'review'),
             ),
-        },
-      );
+        });
 
       expect(dueTransition).toBeDefined();
 
@@ -412,85 +436,6 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(result.failed).toBe(0);
 
       // Verify instance advanced to results (final phase)
-      const currentPhaseId = await getInstanceCurrentPhaseId(
-        instance.instance.id,
-      );
-      expect(currentPhaseId).toBe('results');
-    });
-
-    it('should have no pending transitions for instance in final phase', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-      const setup = await testData.createDecisionSetup({
-        processName: 'No Final Transitions',
-        instanceCount: 0,
-      });
-
-      await db
-        .update(decisionProcesses)
-        .set({ processSchema: createDecisionSchema() })
-        .where(eq(decisionProcesses.id, setup.process.id));
-
-      const caller = await createAuthenticatedCaller(setup.userEmail);
-
-      // Create instance already in results phase (no transition inserted)
-      // Don't pass status to avoid triggering createTransitionsForProcess with default phase data
-      const instance = await testData.createInstanceForProcess({
-        caller,
-        processId: setup.process.id,
-        name: 'Already Final',
-      });
-
-      // Update instanceData with custom phase dates and status for test scenario
-      await db
-        .update(processInstances)
-        .set({
-          instanceData: {
-            currentPhaseId: 'results',
-            phases: [
-              {
-                phaseId: 'submission',
-                startDate: createPastDate(21),
-                endDate: createPastDate(14),
-              },
-              {
-                phaseId: 'review',
-                startDate: createPastDate(14),
-                endDate: createPastDate(7),
-              },
-              {
-                phaseId: 'voting',
-                startDate: createPastDate(7),
-                endDate: createPastDate(1),
-              },
-              { phaseId: 'results', startDate: createPastDate(1) },
-            ],
-          },
-          currentStateId: 'results',
-          status: ProcessStatus.PUBLISHED,
-        })
-        .where(eq(processInstances.id, instance.instance.id));
-
-      await testData.grantProfileAccess(
-        instance.profileId,
-        setup.user.id,
-        setup.userEmail,
-      );
-
-      // Verify no transitions exist for this instance
-      const transitions = await db._query.decisionProcessTransitions.findMany({
-        where: eq(
-          decisionProcessTransitions.processInstanceId,
-          instance.instance.id,
-        ),
-      });
-
-      expect(transitions).toHaveLength(0);
-
-      // Verify instance remains in results phase
       const currentPhaseId = await getInstanceCurrentPhaseId(
         instance.instance.id,
       );
@@ -608,13 +553,15 @@ describe.concurrent('processDecisionsTransitions integration', () => {
         })
         .where(eq(processInstances.id, instance.instance.id));
 
+      const originalCompletedAt = createPastDate(1);
+
       // Insert an already completed transition
       await db.insert(decisionProcessTransitions).values({
         processInstanceId: instance.instance.id,
         fromStateId: 'submission',
         toStateId: 'review',
         scheduledDate: createPastDate(1),
-        completedAt: createPastDate(1), // Already completed
+        completedAt: originalCompletedAt, // Already completed
       });
 
       await testData.grantProfileAccess(
@@ -628,6 +575,27 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       // This instance's transition should not contribute to the processed count
       expect(result.failed).toBe(0);
+
+      // Verify instance state has NOT changed (still in submission phase)
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('submission');
+
+      // Verify completedAt timestamp wasn't modified (transition wasn't re-processed)
+      const [transitionAfter] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+      expect(transitionAfter).toBeDefined();
+      expect(new Date(transitionAfter!.completedAt!).toISOString()).toBe(
+        originalCompletedAt,
+      );
     });
   });
 
@@ -779,7 +747,7 @@ describe.concurrent('processDecisionsTransitions integration', () => {
   });
 
   describe('result structure', () => {
-    it('should return correct processed/failed counts', async ({
+    it('should return result object with correct structure', async ({
       task,
       onTestFinished,
     }) => {
@@ -829,6 +797,245 @@ describe.concurrent('processDecisionsTransitions integration', () => {
       expect(typeof result.failed).toBe('number');
       expect(Array.isArray(result.errors)).toBe(true);
       // Note: Can't guarantee processed count due to concurrent tests potentially processing first
+    });
+  });
+
+  describe('transition creation rules', () => {
+    it('should not create transitions for manual advancement phases', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Manual Advancement Test',
+        instanceCount: 0,
+      });
+
+      // Use schema with all manual advancement phases
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createManualAdvancementSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Publish instance via API - this should trigger createTransitionsForProcess
+      // but since all phases use method: 'manual', no transitions should be created
+      const instance = await testData.createPublishedInstanceWithDueDates({
+        caller,
+        processId: setup.process.id,
+        name: 'Manual Advancement Instance',
+        phaseDates: [
+          {
+            phaseId: 'submission',
+            startDate: createPastDate(14),
+            endDate: createPastDate(1), // Would be "due" if it were date-based
+          },
+          {
+            phaseId: 'review',
+            startDate: createPastDate(1),
+            endDate: createFutureDate(7),
+          },
+          {
+            phaseId: 'voting',
+            startDate: createFutureDate(7),
+            endDate: createFutureDate(14),
+          },
+          { phaseId: 'results', startDate: createFutureDate(14) },
+        ],
+      });
+
+      // Verify NO transitions were created for this instance
+      const transitions = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transitions).toHaveLength(0);
+
+      // Verify instance remains in submission phase (not advanced)
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('submission');
+    });
+
+    it('should have no pending transitions for instance in final phase', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'No Final Transitions',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance already in results phase (no transition inserted)
+      // Don't pass status to avoid triggering createTransitionsForProcess with default phase data
+      const instance = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Already Final',
+      });
+
+      // Update instanceData with custom phase dates and status for test scenario
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: {
+            currentPhaseId: 'results',
+            phases: [
+              {
+                phaseId: 'submission',
+                startDate: createPastDate(21),
+                endDate: createPastDate(14),
+              },
+              {
+                phaseId: 'review',
+                startDate: createPastDate(14),
+                endDate: createPastDate(7),
+              },
+              {
+                phaseId: 'voting',
+                startDate: createPastDate(7),
+                endDate: createPastDate(1),
+              },
+              { phaseId: 'results', startDate: createPastDate(1) },
+            ],
+          },
+          currentStateId: 'results',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance.instance.id));
+
+      await testData.grantProfileAccess(
+        instance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Verify no transitions exist for this instance
+      const transitions = await db._query.decisionProcessTransitions.findMany({
+        where: eq(
+          decisionProcessTransitions.processInstanceId,
+          instance.instance.id,
+        ),
+      });
+
+      expect(transitions).toHaveLength(0);
+
+      // Verify instance remains in results phase
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('results');
+    });
+  });
+
+  describe('phase mismatch handling', () => {
+    /**
+     * Documents current behavior: the implementation does NOT validate that
+     * fromStateId matches the instance's currentStateId before processing.
+     *
+     * When a mismatched transition is processed:
+     * - The instance state is updated to toStateId (regardless of current state)
+     * - The transition is marked as completed
+     *
+     * This test documents this behavior. In the case where fromStateId and
+     * toStateId are the same as currentStateId, no harm is done. But orphaned
+     * transitions from earlier phases could potentially regress the instance state.
+     *
+     * TODO: Consider adding fromStateId validation in processTransition to skip
+     * mismatched transitions and log a warning.
+     */
+    it('should process transition even when currentPhaseId does not match fromStateId (documents current behavior)', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        processName: 'Phase Mismatch Test',
+        instanceCount: 0,
+      });
+
+      await db
+        .update(decisionProcesses)
+        .set({ processSchema: createDecisionSchema() })
+        .where(eq(decisionProcesses.id, setup.process.id));
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      // Create instance in 'review' phase
+      const instance = await testData.createInstanceForProcess({
+        caller,
+        processId: setup.process.id,
+        name: 'Phase Mismatch Test',
+      });
+
+      // Update instanceData to be in 'review' phase
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: createSimpleInstanceData('review'),
+          currentStateId: 'review',
+          status: ProcessStatus.PUBLISHED,
+        })
+        .where(eq(processInstances.id, instance.instance.id));
+
+      // Insert a mismatched transition: fromStateId='submission' but instance is in 'review'
+      // In this case, toStateId also happens to be 'review', so the end state is the same
+      await db.insert(decisionProcessTransitions).values({
+        processInstanceId: instance.instance.id,
+        fromStateId: 'submission', // Mismatched - instance is actually in 'review'
+        toStateId: 'review',
+        scheduledDate: createPastDate(1), // Due
+      });
+
+      await testData.grantProfileAccess(
+        instance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Process transitions - current behavior: processes regardless of mismatch
+      const result = await processDecisionsTransitions();
+
+      expect(result.failed).toBe(0);
+
+      // Instance remains in 'review' (toStateId matches current state, so no visible change)
+      const currentPhaseId = await getInstanceCurrentPhaseId(
+        instance.instance.id,
+      );
+      expect(currentPhaseId).toBe('review');
+
+      // Current behavior: transition IS processed and marked complete
+      const [transition] = await db
+        .select()
+        .from(decisionProcessTransitions)
+        .where(
+          eq(
+            decisionProcessTransitions.processInstanceId,
+            instance.instance.id,
+          ),
+        );
+
+      expect(transition).toBeDefined();
+      expect(transition!.completedAt).not.toBeNull();
     });
   });
 
@@ -888,71 +1095,6 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       expect(transition).toBeDefined();
       expect(transition!.completedAt).toBeNull();
-    });
-
-    it('should process transitions when instance is published', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-      const setup = await testData.createDecisionSetup({
-        processName: 'Published Status Test',
-        instanceCount: 0,
-      });
-
-      await db
-        .update(decisionProcesses)
-        .set({ processSchema: createDecisionSchema() })
-        .where(eq(decisionProcesses.id, setup.process.id));
-
-      const caller = await createAuthenticatedCaller(setup.userEmail);
-
-      // Create a PUBLISHED instance with a due transition via API
-      const instance = await testData.createPublishedInstanceWithDueDates({
-        caller,
-        processId: setup.process.id,
-        name: 'Published Instance Test',
-        phaseDates: [
-          {
-            phaseId: 'submission',
-            startDate: createPastDate(14),
-            endDate: createPastDate(1), // Due yesterday
-          },
-          {
-            phaseId: 'review',
-            startDate: createPastDate(1),
-            endDate: createFutureDate(7),
-          },
-          {
-            phaseId: 'voting',
-            startDate: createFutureDate(7),
-            endDate: createFutureDate(14),
-          },
-          { phaseId: 'results', startDate: createFutureDate(14) },
-        ],
-      });
-
-      // Process transitions - published instance should be processed
-      await processDecisionsTransitions();
-
-      // Verify the instance state HAS changed
-      const currentPhaseId = await getInstanceCurrentPhaseId(
-        instance.instance.id,
-      );
-      expect(currentPhaseId).toBe('review');
-
-      // Verify the submission->review transition is completed
-      const transition = await db._query.decisionProcessTransitions.findFirst({
-        where: (t, { and, eq }) =>
-          and(
-            eq(t.processInstanceId, instance.instance.id),
-            eq(t.fromStateId, 'submission'),
-          ),
-      });
-
-      expect(transition).toBeDefined();
-      expect(transition!.completedAt).not.toBeNull();
     });
 
     it('should not process transitions for completed instances', async ({
@@ -1067,20 +1209,6 @@ describe.concurrent('processDecisionsTransitions integration', () => {
 
       expect(transition).toBeDefined();
       expect(transition!.completedAt).toBeNull();
-    });
-  });
-
-  describe('edge cases', () => {
-    it('should return zeros when no transitions are due', async () => {
-      // Call processDecisionsTransitions without any test data setup
-      // Note: Other concurrent tests may have due transitions, so we can't
-      // guarantee processed=0, but we can verify the result structure
-      const result = await processDecisionsTransitions();
-
-      expect(typeof result.processed).toBe('number');
-      expect(typeof result.failed).toBe('number');
-      expect(Array.isArray(result.errors)).toBe(true);
-      expect(result.failed).toBe(0);
     });
   });
 });
