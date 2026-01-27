@@ -15,7 +15,6 @@ export interface ErrorProps {
 export default function PageError({ error }: ErrorProps) {
   const t = useTranslations();
 
-
   const errorData = match(error.message, {
     UNAUTHORIZED: () => ({
       code: 403,
