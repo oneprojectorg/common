@@ -10,7 +10,7 @@ import {
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
-// import { processResults } from './processResults';
+import { processResults } from './processResults';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 /** Transition with nested process instance and process relations */
@@ -135,9 +135,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
               console.log(
                 `Processing results for process instance ${processInstanceId}`,
               );
-              console.log('RESULT PROCESSING DISABLED');
-              // Disabling for now as none are defined in production yet. We need to migrate current processes first.
-              /*
+
               const result = await processResults({
                 processInstanceId,
               });
@@ -152,7 +150,6 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
                   `Results processed successfully for process instance ${processInstanceId}. Selected ${result.selectedProposalIds.length} proposals.`,
                 );
               }
-              */
             } catch (error) {
               // Log the error but don't fail the transition
               // The transition to the results phase has already been completed
