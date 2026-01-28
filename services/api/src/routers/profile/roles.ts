@@ -3,20 +3,29 @@ import { z } from 'zod';
 
 import { roleEncoder } from '../../encoders/roles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { createPaginatedOutput, createSortable, paginationSchema } from '../../utils';
+
+const roleSortableSchema = createSortable(['name'] as const);
 
 const inputSchema = z
   .object({
     slug: z.string().optional(),
   })
-  .optional();
+  .merge(paginationSchema)
+  .merge(roleSortableSchema);
 
 export const rolesRouter = router({
   listRoles: commonAuthedProcedure()
     .input(inputSchema)
-    .output(z.array(roleEncoder))
+    .output(createPaginatedOutput(roleEncoder))
     .query(async ({ input }) => {
-      const result = await getRoles({ profileSlug: input?.slug });
+      const { slug, cursor, limit, dir } = input;
 
-      return result.map((role) => roleEncoder.parse(role));
+      return getRoles({
+        profileSlug: slug,
+        cursor,
+        limit,
+        dir,
+      });
     }),
 });

@@ -26,6 +26,31 @@ const sortableSchema = z.object({
 });
 export type Sortable = z.infer<typeof sortableSchema>;
 
+/**
+ * Standard cursor pagination schema for tRPC endpoint inputs
+ * @example
+ * const inputSchema = z.object({ profileId: z.string() }).merge(paginationSchema);
+ * // Results in: { profileId: string, cursor?: string | null, limit: number }
+ */
+export const paginationSchema = z.object({
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).default(25),
+});
+export type Pagination = z.infer<typeof paginationSchema>;
+
+/**
+ * Creates a paginated output schema for tRPC endpoints
+ * @example
+ * const outputSchema = createPaginatedOutput(userEncoder);
+ * // Results in: { items: User[], next: string | null, hasMore: boolean }
+ */
+export const createPaginatedOutput = <T extends z.ZodTypeAny>(itemSchema: T) =>
+  z.object({
+    items: z.array(itemSchema),
+    next: z.string().nullable(),
+    hasMore: z.boolean(),
+  });
+
 export const dbFilter = sortableSchema.extend({
   limit: z.number().optional(),
   cursor: z.string().nullish(),
