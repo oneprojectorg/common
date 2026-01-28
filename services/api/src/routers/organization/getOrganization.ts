@@ -7,6 +7,7 @@ import {
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { Profile } from '../../encoders';
 import {
   organizationsTermsEncoder,
   organizationsWithProfileEncoder,
@@ -43,9 +44,12 @@ export const getOrganizationRouter = router({
           ...result,
           profile: {
             ...result.profile,
-            modules: result.profile.modules?.map((profileModule: any) => ({
-              slug: profileModule.module.slug,
-            })),
+            // type assertion to be fixed with Drizzle RQB v2
+            modules: (result.profile as Profile).modules?.map(
+              (profileModule: any) => ({
+                slug: profileModule.module.slug,
+              }),
+            ),
           },
         };
 

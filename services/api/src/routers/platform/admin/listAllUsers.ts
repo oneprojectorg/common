@@ -108,7 +108,7 @@ export const listAllUsersRouter = router({
               .select({ value: count() })
               .from(users)
               .where(searchCondition);
-            return result;
+            return result ?? { value: 0 };
           },
           options: {
             ttl: 1 * 60 * 1000, // 1 min
