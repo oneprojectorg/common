@@ -8,6 +8,7 @@
     "build": "next build",
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
     "dev": "next dev -p 3100",
+    "dev:e2e": "next dev -p 4100",
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\" \"!.next\"",
     "start": "next start -p 3100",
     "typecheck": "tsgo --noEmit"

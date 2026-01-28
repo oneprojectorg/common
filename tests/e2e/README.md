@@ -36,14 +36,14 @@ pnpm e2e        # headless
 pnpm e2e:ui     # Playwright UI mode
 ```
 
-Playwright will automatically start `pnpm dev:e2e` (dev server on port 3100 with e2e env vars) and wait for it.
+Playwright will automatically start `pnpm dev:e2e` (dev server on port 4100 with e2e env vars) and wait for it.
 
 ### Option 2: Manual dev server (for debugging)
 
 Terminal 1:
 
 ```bash
-pnpm dev:e2e    # Starts app at localhost:3100 with e2e Supabase
+pnpm dev:e2e    # Starts app at localhost:4100 with e2e Supabase
 ```
 
 Terminal 2:
@@ -92,7 +92,7 @@ test('authenticated test', async ({ authenticatedPage }) => {
 
 `playwright.config.ts` sets:
 
-- `baseURL`: `http://localhost:3100`
+- `baseURL`: `http://localhost:4100`
 - `webServer.command`: `pnpm dev:e2e` (auto-starts dev server)
 - `timeout`: 60s per test
 - `retries`: 2 in CI, 0 locally

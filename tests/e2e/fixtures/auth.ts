@@ -204,7 +204,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         cookies,
         origins: [
           {
-            origin: 'http://localhost:3100',
+            origin: 'http://localhost:4100',
             localStorage: [
               {
                 name: storageKey,
