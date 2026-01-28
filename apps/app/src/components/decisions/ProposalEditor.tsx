@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
@@ -19,7 +20,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
-import { useUser } from '@/utils/UserProvider';
 
 import {
   CollaborativeEditor,
@@ -47,7 +47,7 @@ function getUserColor(userId: string): string {
   for (let i = 0; i < userId.length; i++) {
     hash = userId.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length];
+  return COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length] ?? '#f783ac';
 }
 
 /** Handles tRPC validation errors from mutation responses */

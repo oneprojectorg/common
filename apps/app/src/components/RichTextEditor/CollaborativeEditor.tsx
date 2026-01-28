@@ -84,23 +84,20 @@ export const CollaborativeEditor = forwardRef<
         onEditorReady={onEditorReady}
         className={className}
         editorClassName={editorClassName}
-        user={user}
       />
     );
   },
 );
 
-type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
+type CollaborativeEditorInnerProps = Omit<
+  CollaborativeEditorProps,
+  'docId' | 'user'
+> & {
   ydoc: Doc;
   provider: TiptapCollabProvider;
   status: CollabStatus;
   isSynced: boolean;
-  user?: CollabUser;
 };
-
-/** Inner component that renders after provider is ready */
-/** Default user for cursor when no user info is provided */
-const DEFAULT_COLLAB_USER: CollabUser = { name: 'Anonymous', color: '#f783ac' };
 
 /** Builds the cursor caret element shown at other users' cursor positions */
 function buildCursorElement(user: {
@@ -143,7 +140,6 @@ const CollaborativeEditorInner = forwardRef<
       onEditorReady,
       className = '',
       editorClassName = '',
-      user,
     },
     ref,
   ) => {
@@ -170,65 +166,33 @@ const CollaborativeEditorInner = forwardRef<
     // Register cursor plugin lazily after editor mounts
     // This ensures ySyncPlugin state is established first
     useEffect(() => {
-      console.log('[Cursor] Effect running', {
-        hasEditor: !!editor,
-        hasAwareness: !!provider.awareness,
-        alreadyRegistered: cursorRegisteredRef.current,
-      });
-
       if (!editor || !provider.awareness || cursorRegisteredRef.current) {
         return;
       }
 
       // Verify sync plugin is ready before registering cursor
       const syncState = ySyncPluginKey.getState(editor.state);
-      console.log('[Cursor] Sync state:', syncState);
-
       if (!syncState) {
         // Sync plugin not ready yet, try again on next tick
-        console.log('[Cursor] Sync not ready, will retry');
         const timer = setTimeout(() => {
           cursorRegisteredRef.current = false;
         }, 0);
         return () => clearTimeout(timer);
       }
 
-      const awareness = provider.awareness;
-      console.log(
-        '[Cursor] Awareness states:',
-        Array.from(awareness.getStates().entries()),
-      );
-
-      // Set user awareness
-      const currentUser = user ?? DEFAULT_COLLAB_USER;
-      awareness.setLocalStateField('user', currentUser);
-      console.log('[Cursor] Set local user:', currentUser);
-
       // Create and register cursor plugin with custom rendering
-      const cursorPlugin = yCursorPlugin(awareness, {
+      const cursorPlugin = yCursorPlugin(provider.awareness, {
         cursorBuilder: buildCursorElement,
         selectionBuilder: buildSelectionAttrs,
       });
       editor.registerPlugin(cursorPlugin);
       cursorRegisteredRef.current = true;
-      console.log('[Cursor] Plugin registered successfully');
-
-      // Log awareness changes
-      const onAwarenessChange = () => {
-        console.log(
-          '[Cursor] Awareness changed:',
-          Array.from(awareness.getStates().entries()),
-        );
-      };
-      awareness.on('change', onAwarenessChange);
 
       return () => {
-        console.log('[Cursor] Cleaning up plugin');
-        awareness.off('change', onAwarenessChange);
         editor.unregisterPlugin(cursorPlugin.key);
         cursorRegisteredRef.current = false;
       };
-    }, [editor, provider, user]);
+    }, [editor, provider]);
 
     // Track whether versioning has been enabled to avoid toggling it off on re-render
     const versioningEnabledRef = useRef(false);
