@@ -57,10 +57,6 @@ export function useTiptapCollab({
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
-        // Set awareness with user info for cursor collaboration
-        if (user) {
-          newProvider.setAwarenessField('user', user);
-        }
       },
       onDisconnect: () => {
         setStatus('disconnected');
@@ -76,7 +72,14 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, ydoc, user]);
+  }, [docId, enabled, ydoc]);
+
+  // Update awareness when user info changes
+  useEffect(() => {
+    if (provider && user && status === 'connected') {
+      provider.setAwarenessField('user', user);
+    }
+  }, [provider, user, status]);
 
   return {
     ydoc,

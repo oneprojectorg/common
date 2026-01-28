@@ -176,15 +176,12 @@ const CollaborativeEditorInner = forwardRef<
       onEditorReady,
     });
 
-    // Track if cursor plugin has been registered
-    const cursorRegisteredRef = useRef(false);
-
     // NOTE: Using yCursorPlugin directly instead of CollaborationCaret extension
     // because TipTap doesn't guarantee plugin order - ySyncPlugin state may not
     // exist when the extension initializes. Lazy registration lets us wait for sync.
     // See: https://tiptap.dev/docs/editor/extensions/functionality/collaboration-caret
     useEffect(() => {
-      if (!editor || !provider.awareness || cursorRegisteredRef.current) {
+      if (!editor || !provider.awareness) {
         return;
       }
 
@@ -194,17 +191,24 @@ const CollaborativeEditorInner = forwardRef<
         return;
       }
 
+      // Check if cursor plugin is already registered (handles HMR race conditions)
+      const cursorPluginKey = 'yjs-cursor$';
+      const existingPlugin = editor.state.plugins.find(
+        (p) => p.spec.key && String(p.spec.key).startsWith(cursorPluginKey),
+      );
+      if (existingPlugin) {
+        return;
+      }
+
       // Create and register cursor plugin with custom rendering
       const cursorPlugin = yCursorPlugin(provider.awareness, {
         cursorBuilder: buildCursorElement,
         selectionBuilder: buildSelectionAttrs,
       });
       editor.registerPlugin(cursorPlugin);
-      cursorRegisteredRef.current = true;
 
       return () => {
         editor.unregisterPlugin(cursorPlugin.key);
-        cursorRegisteredRef.current = false;
       };
     }, [editor, provider]);
 
