@@ -66,6 +66,7 @@
     "@tiptap/react": "catalog:",
     "@tiptap/starter-kit": "catalog:",
     "@tiptap/suggestion": "catalog:",
+    "@tiptap/y-tiptap": "^3.0.2",
     "@vercel/otel": "^2.1.0",
     "access-zones": "catalog:",
     "ajv-errors": "^3.0.0",
