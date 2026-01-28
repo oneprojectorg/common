@@ -36,45 +36,29 @@ export const getRoles = async (params?: {
 
   // Build cursor condition for pagination
   const decodedCursor = cursor ? decodeCursor<RoleCursor>(cursor) : undefined;
+  const compareFn = dir === 'asc' ? gt : lt;
 
-  const buildCursorCondition = () => {
-    if (!decodedCursor) {
-      return undefined;
-    }
-
-    const compareFn = dir === 'asc' ? gt : lt;
-
-    // ORDER BY name, id - compound condition for consistent pagination
-    return or(
-      compareFn(accessRoles.name, decodedCursor.value),
-      and(
-        eq(accessRoles.name, decodedCursor.value),
-        compareFn(accessRoles.id, decodedCursor.id),
-      ),
-    );
-  };
-
-  const cursorCondition = buildCursorCondition();
-
-  // Build where clause
-  const profileCondition = profileId
-    ? eq(accessRoles.profileId, profileId)
+  // ORDER BY name, id - compound condition for consistent pagination
+  const cursorCondition = decodedCursor
+    ? or(
+        compareFn(accessRoles.name, decodedCursor.value),
+        and(
+          eq(accessRoles.name, decodedCursor.value),
+          compareFn(accessRoles.id, decodedCursor.id),
+        ),
+      )
     : undefined;
 
-  // Combine conditions - handle null profileId case with raw SQL
-  const whereClause = profileId
-    ? cursorCondition
-      ? and(profileCondition, cursorCondition)
-      : profileCondition
-    : cursorCondition;
-
   const roles = await db._query.accessRoles.findMany({
-    where: (table, { isNull }) =>
-      profileId
-        ? whereClause
-        : cursorCondition
-          ? and(isNull(table.profileId), cursorCondition)
-          : isNull(table.profileId),
+    where: (table, { isNull }) => {
+      const profileCondition = profileId
+        ? eq(table.profileId, profileId)
+        : isNull(table.profileId);
+
+      return cursorCondition
+        ? and(profileCondition, cursorCondition)
+        : profileCondition;
+    },
     orderBy: (table, { asc, desc }) => {
       const orderFn = dir === 'desc' ? desc : asc;
       return [orderFn(table.name), orderFn(table.id)];
