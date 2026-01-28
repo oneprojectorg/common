@@ -3,7 +3,11 @@ import { z } from 'zod';
 
 import { roleEncoder } from '../../encoders/roles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { createPaginatedOutput, createSortable, paginationSchema } from '../../utils';
+import {
+  createPaginatedOutput,
+  createSortable,
+  paginationSchema,
+} from '../../utils';
 
 const roleSortableSchema = createSortable(['name'] as const);
 

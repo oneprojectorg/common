@@ -103,6 +103,5 @@ export const getRoles = async (params?: {
   return {
     items,
     next: nextCursor,
-    hasMore,
   };
 };

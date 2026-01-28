@@ -42,13 +42,12 @@ export type Pagination = z.infer<typeof paginationSchema>;
  * Creates a paginated output schema for tRPC endpoints
  * @example
  * const outputSchema = createPaginatedOutput(userEncoder);
- * // Results in: { items: User[], next: string | null, hasMore: boolean }
+ * // Results in: { items: User[], next: string | null }
  */
 export const createPaginatedOutput = <T extends z.ZodTypeAny>(itemSchema: T) =>
   z.object({
     items: z.array(itemSchema),
     next: z.string().nullable(),
-    hasMore: z.boolean(),
   });
 
 export const dbFilter = sortableSchema.extend({
