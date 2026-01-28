@@ -42,7 +42,8 @@ export interface CollaborativeEditorProps {
   onProviderReady?: (provider: TiptapCollabProvider) => void;
   className?: string;
   editorClassName?: string;
-  user?: CollabUser;
+  /** User's display name for the collaboration cursor */
+  userName?: string;
 }
 
 /** Rich text editor with real-time collaboration via TipTap Cloud */
@@ -59,14 +60,14 @@ export const CollaborativeEditor = forwardRef<
       onProviderReady,
       className = '',
       editorClassName = '',
-      user,
+      userName,
     },
     ref,
   ) => {
-    const { ydoc, provider, status, isSynced } = useTiptapCollab({
+    const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
       docId,
       enabled: true,
-      user,
+      userName,
     });
 
     // Notify parent when provider becomes available
@@ -105,11 +106,8 @@ type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
   provider: TiptapCollabProvider;
   status: CollabStatus;
   isSynced: boolean;
-};
-
-const DEFAULT_USER: CollabUser = {
-  name: 'Anonymous',
-  color: '#f783ac',
+  /** User object with assigned color from the hook */
+  user: CollabUser;
 };
 
 const CollaborativeEditorInner = forwardRef<
@@ -138,7 +136,7 @@ const CollaborativeEditorInner = forwardRef<
         Collaboration.configure({ document: ydoc }),
         CollaborationCaret.configure({
           provider,
-          user: user ?? DEFAULT_USER,
+          user,
         }),
         Snapshot.configure({ provider }),
       ],
