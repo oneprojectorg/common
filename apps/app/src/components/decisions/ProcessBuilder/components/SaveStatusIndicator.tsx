@@ -7,7 +7,17 @@ import { useTranslations } from '@/lib/i18n';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-export function SaveStatusIndicator({ status }: { status: SaveStatus }) {
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+export function SaveStatusIndicator({
+  status,
+  savedAt,
+}: {
+  status: SaveStatus;
+  savedAt?: Date;
+}) {
   const t = useTranslations();
 
   if (status === 'idle') {
@@ -25,7 +35,11 @@ export function SaveStatusIndicator({ status }: { status: SaveStatus }) {
       {status === 'saved' && (
         <>
           <LuCheck className="size-4 text-functional-green" />
-          <span className="text-neutral-gray4">{t('Saved')}</span>
+          <span className="text-neutral-gray4">
+            {savedAt
+              ? t('Saved at {time}', { time: formatTime(savedAt) })
+              : t('Saved')}
+          </span>
         </>
       )}
       {status === 'error' && (

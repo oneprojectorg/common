@@ -41,6 +41,7 @@ function AutoSaveHandler({
   decisionId,
   setInstanceData,
   setSaveStatus,
+  markSaved,
 }: {
   values: OverviewFormData;
   decisionId: string;
@@ -56,6 +57,7 @@ function AutoSaveHandler({
     id: string,
     status: 'idle' | 'saving' | 'saved' | 'error',
   ) => void;
+  markSaved: (id: string) => void;
 }) {
   const [debouncedValues] = useDebounce(values, AUTOSAVE_DEBOUNCE_MS);
   const isInitialMount = useRef(true);
@@ -78,7 +80,6 @@ function AutoSaveHandler({
     previousValues.current = valuesString;
 
     // Update Zustand store (persists to localStorage)
-    // Map form values to instanceData structure
     setSaveStatus(decisionId, 'saving');
     setInstanceData(decisionId, {
       name: debouncedValues.processName,
@@ -96,19 +97,11 @@ function AutoSaveHandler({
       },
     });
 
-    // Mark as saved after a brief delay
-    const timer = setTimeout(() => {
-      setSaveStatus(decisionId, 'saved');
-      // Reset to idle after showing "Saved" briefly
-      setTimeout(() => {
-        setSaveStatus(decisionId, 'idle');
-      }, 2000);
-    }, 100);
-
-    return () => clearTimeout(timer);
+    // Mark as saved with timestamp
+    markSaved(decisionId);
 
     // TODO: Add API mutation here once storage location is decided
-  }, [debouncedValues, decisionId, setInstanceData, setSaveStatus]);
+  }, [debouncedValues, decisionId, setInstanceData, setSaveStatus, markSaved]);
 
   return null;
 }
@@ -123,10 +116,9 @@ export function OverviewSectionForm({
   // Zustand store - using new instanceData structure
   const instanceData = useProcessBuilderStore((s) => s.instances[decisionId]);
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const saveStatus = useProcessBuilderStore(
-    (s) => s.saveStatus[decisionId] ?? 'idle',
-  );
+  const saveState = useProcessBuilderStore((s) => s.getSaveState(decisionId));
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
+  const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
   // Extract config for easier access
   const config = instanceData?.config;
@@ -150,18 +142,18 @@ export function OverviewSectionForm({
     defaultValues: {
       // Config fields
       steward: config?.steward ?? '',
-      focusAreas: config?.focusAreas ?? ([] as Option[]),
+      focusAreas: config?.focusAreas ?? [],
       aims: config?.aims ?? [''],
-      budget: config?.budget ?? (0 as number | null),
-      hideBudget: config?.hideBudget ?? (true as boolean),
-      organizeCategories: config?.organizeCategories ?? (true as boolean),
-      multiPhase: config?.multiPhase ?? (true as boolean),
-      includeReview: config?.includeReview ?? (true as boolean),
-      isPrivate: config?.isPrivate ?? (false as boolean),
+      budget: (config?.budget ?? null) as number | null,
+      hideBudget: config?.hideBudget ?? true,
+      organizeCategories: config?.organizeCategories ?? true,
+      multiPhase: config?.multiPhase ?? true,
+      includeReview: config?.includeReview ?? true,
+      isPrivate: config?.isPrivate ?? false,
       // Instance-level fields
       processName: instanceData?.name ?? decisionName ?? '',
       description: instanceData?.description ?? '',
-    } satisfies OverviewFormData,
+    },
     onSubmit: async ({ value }) => {
       // TODO: Submit to API
       console.log('Form submitted:', value);
@@ -185,6 +177,7 @@ export function OverviewSectionForm({
               decisionId={decisionId}
               setInstanceData={setInstanceData}
               setSaveStatus={setSaveStatus}
+              markSaved={markSaved}
             />
           )}
         />
@@ -194,7 +187,10 @@ export function OverviewSectionForm({
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-xl">{t('Process Stewardship')}</h2>
-              <SaveStatusIndicator status={saveStatus} />
+              <SaveStatusIndicator
+                status={saveState.status}
+                savedAt={saveState.savedAt}
+              />
             </div>
 
             <form.AppField

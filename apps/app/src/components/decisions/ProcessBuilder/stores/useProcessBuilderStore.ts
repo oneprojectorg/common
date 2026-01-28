@@ -30,7 +30,6 @@
  * - `instances[decisionId]` - Form data (name, description, config, phases)
  * - `saveStatus[decisionId]` - UI save indicator state
  */
-
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -85,13 +84,18 @@ export interface InstanceData {
 
 // ============ Store Types ============
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+interface SaveState {
+  status: SaveStatus;
+  savedAt?: Date;
+}
 
 interface ProcessBuilderState {
   // Instance data keyed by decisionId
   instances: Record<string, InstanceData>;
-  // Save status keyed by decisionId
-  saveStatus: Record<string, SaveStatus>;
+  // Save state keyed by decisionId
+  saveStates: Record<string, SaveState>;
 
   // Actions for instance data
   setInstanceData: (decisionId: string, data: Partial<InstanceData>) => void;
@@ -109,20 +113,23 @@ interface ProcessBuilderState {
   ) => void;
   getPhaseData: (decisionId: string, phaseId: string) => PhaseData | undefined;
 
-  // Actions for save status
+  // Actions for save state
   setSaveStatus: (decisionId: string, status: SaveStatus) => void;
-  getSaveStatus: (decisionId: string) => SaveStatus;
+  markSaved: (decisionId: string) => void;
+  getSaveState: (decisionId: string) => SaveState;
 
   // Cleanup actions
   clearInstance: (decisionId: string) => void;
   reset: () => void;
 }
 
+const DEFAULT_SAVE_STATE: SaveState = { status: 'idle' };
+
 export const useProcessBuilderStore = create<ProcessBuilderState>()(
   persist(
     (set, get) => ({
       instances: {},
-      saveStatus: {},
+      saveStates: {},
 
       // Instance data actions
       setInstanceData: (decisionId, data) =>
@@ -176,32 +183,47 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
       getPhaseData: (decisionId, phaseId) =>
         get().instances[decisionId]?.phases?.[phaseId],
 
-      // Save status actions
+      // Save state actions
       setSaveStatus: (decisionId, status) =>
         set((state) => ({
-          saveStatus: {
-            ...state.saveStatus,
-            [decisionId]: status,
+          saveStates: {
+            ...state.saveStates,
+            [decisionId]: {
+              ...state.saveStates[decisionId],
+              status,
+            },
           },
         })),
 
-      getSaveStatus: (decisionId) => get().saveStatus[decisionId] ?? 'idle',
+      markSaved: (decisionId) =>
+        set((state) => ({
+          saveStates: {
+            ...state.saveStates,
+            [decisionId]: {
+              status: 'saved',
+              savedAt: new Date(),
+            },
+          },
+        })),
+
+      getSaveState: (decisionId) =>
+        get().saveStates[decisionId] ?? DEFAULT_SAVE_STATE,
 
       // Cleanup actions
       clearInstance: (decisionId) =>
         set((state) => {
           const { [decisionId]: _, ...restInstances } = state.instances;
-          const { [decisionId]: __, ...restStatus } = state.saveStatus;
+          const { [decisionId]: __, ...restSaveStates } = state.saveStates;
           return {
             instances: restInstances,
-            saveStatus: restStatus,
+            saveStates: restSaveStates,
           };
         }),
 
       reset: () =>
         set({
           instances: {},
-          saveStatus: {},
+          saveStates: {},
         }),
     }),
     {
