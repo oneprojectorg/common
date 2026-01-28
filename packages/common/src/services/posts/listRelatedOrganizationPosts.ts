@@ -8,7 +8,6 @@ import {
   getRelatedOrganizations,
 } from '../';
 import {
-  type PaginatedResult,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -104,10 +103,7 @@ export const listAllRelatedOrganizationPosts = async (
     profileId,
   });
 
-  return {
-    items: itemsWithReactionsAndComments,
-    next: nextCursor,
-  } satisfies PaginatedResult<(typeof itemsWithReactionsAndComments)[number]>;
+  return { items: itemsWithReactionsAndComments, next: nextCursor };
 };
 
 export const listRelatedOrganizationPosts = async (

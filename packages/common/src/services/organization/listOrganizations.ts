@@ -3,7 +3,6 @@ import { locations, organizations } from '@op/db/schema';
 
 import {
   NotFoundError,
-  type PaginatedResult,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
@@ -92,9 +91,7 @@ export const listOrganizations = async ({
         ? encodeCursor<{ value: Date }>({ value: cursorValue })
         : null;
 
-    return { items, next: nextCursor } satisfies PaginatedResult<
-      (typeof items)[number]
-    >;
+    return { items, next: nextCursor };
   } catch (error) {
     console.error(error);
     throw error;

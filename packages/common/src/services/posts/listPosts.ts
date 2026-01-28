@@ -8,7 +8,6 @@ import {
 
 import {
   NotFoundError,
-  type PaginatedResult,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -120,10 +119,7 @@ export const listPosts = async ({
         profileId: actorProfileId,
       });
 
-    return {
-      items: itemsWithReactionsAndComments,
-      next: nextCursor,
-    } satisfies PaginatedResult<(typeof itemsWithReactionsAndComments)[number]>;
+    return { items: itemsWithReactionsAndComments, next: nextCursor };
   } catch (e) {
     console.error(e);
     throw e;
