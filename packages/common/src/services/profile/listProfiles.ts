@@ -4,6 +4,7 @@ import { type EntityType, locations, profiles } from '@op/db/schema';
 
 import {
   NotFoundError,
+  type PaginatedResult,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
@@ -123,7 +124,9 @@ export const listProfiles = async ({
           })
         : null;
 
-    return { items, next: nextCursor, hasMore };
+    return { items, next: nextCursor } satisfies PaginatedResult<
+      (typeof items)[number]
+    >;
   } catch (error) {
     console.error('Error in listProfiles:', error);
     throw error;

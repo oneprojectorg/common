@@ -8,6 +8,7 @@ import {
 
 import {
   NotFoundError,
+  type PaginatedResult,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -122,8 +123,7 @@ export const listPosts = async ({
     return {
       items: itemsWithReactionsAndComments,
       next: nextCursor,
-      hasMore,
-    };
+    } satisfies PaginatedResult<(typeof itemsWithReactionsAndComments)[number]>;
   } catch (e) {
     console.error(e);
     throw e;

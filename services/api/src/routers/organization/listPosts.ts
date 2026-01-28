@@ -21,13 +21,12 @@ export const listOrganizationPostsRouter = router({
       z.object({
         items: z.array(postsToOrganizationsEncoder),
         next: z.string().nullish(),
-        hasMore: z.boolean(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const { slug, limit = 20, cursor } = input;
 
-      const { items, next, hasMore } = await listPosts({
+      const { items, next } = await listPosts({
         authUserId: ctx.user.id,
         slug,
         limit,
@@ -43,7 +42,6 @@ export const listOrganizationPostsRouter = router({
           post: postsEncoder.parse(postToOrg.post),
         })),
         next,
-        hasMore,
       };
     }),
 });

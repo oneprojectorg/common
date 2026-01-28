@@ -8,6 +8,7 @@ import {
   getRelatedOrganizations,
 } from '../';
 import {
+  type PaginatedResult,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -106,8 +107,7 @@ export const listAllRelatedOrganizationPosts = async (
   return {
     items: itemsWithReactionsAndComments,
     next: nextCursor,
-    hasMore,
-  };
+  } satisfies PaginatedResult<(typeof itemsWithReactionsAndComments)[number]>;
 };
 
 export const listRelatedOrganizationPosts = async (
