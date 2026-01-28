@@ -11,6 +11,7 @@ import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { IconProvider } from '../components/IconProvider';
+import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
 
@@ -84,11 +85,13 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >
-          <PostHogProvider>
-            <NuqsAdapter>
-              <IconProvider>{children}</IconProvider>
-            </NuqsAdapter>
-          </PostHogProvider>
+          <OTelBrowserProvider>
+            <PostHogProvider>
+              <NuqsAdapter>
+                <IconProvider>{children}</IconProvider>
+              </NuqsAdapter>
+            </PostHogProvider>
+          </OTelBrowserProvider>
           <ReactQueryDevtools initialIsOpen={false} />
           <Toast />
         </body>
