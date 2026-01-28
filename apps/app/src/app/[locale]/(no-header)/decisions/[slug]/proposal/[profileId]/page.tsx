@@ -7,6 +7,8 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProposalView } from '@/components/decisions/ProposalView';
 
+const LEGACY_ORG_SLUGS = ['people-powered', 'cowop', 'one-project'];
+
 function ProposalViewPageContent({
   profileId,
   slug,
@@ -14,15 +16,22 @@ function ProposalViewPageContent({
   profileId: string;
   slug: string;
 }) {
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
-  });
+  const [[proposal, decisionProfile]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getProposal({ profileId }),
+    t.decision.getDecisionBySlug({ slug }),
+  ]);
 
   if (!proposal) {
     notFound();
   }
 
-  const backHref = `/decisions/${slug}`;
+  const ownerSlug = decisionProfile?.processInstance?.owner?.slug;
+  const instanceId = decisionProfile?.processInstance?.id;
+
+  const backHref =
+    ownerSlug && LEGACY_ORG_SLUGS.includes(ownerSlug) && instanceId
+      ? `/profile/${ownerSlug}/decisions/${instanceId}/`
+      : `/decisions/${slug}`;
 
   return <ProposalView proposal={proposal} backHref={backHref} />;
 }
