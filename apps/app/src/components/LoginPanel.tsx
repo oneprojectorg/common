@@ -16,7 +16,7 @@ import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
 import { create } from 'zustand';
-import GoogleIcon from '~icons/logos/google-icon.jsx';
+import GoogleIcon from '~icons/logos/google-icon';
 
 import { CommonLogo } from './CommonLogo';
 
