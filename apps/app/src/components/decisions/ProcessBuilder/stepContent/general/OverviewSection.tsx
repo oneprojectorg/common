@@ -11,28 +11,17 @@ import { OverviewSectionSkeleton } from './OverviewSectionSkeleton';
 export default function OverviewSection(props: SectionProps) {
   const [hasHydrated, setHasHydrated] = useState(false);
 
-  // Handle hydration detection - wait for Zustand to load from localStorage
+  // Manually trigger hydration and wait for completion
+  // Using skipHydration: true in the store gives us full control over timing
   useEffect(() => {
-    // Check if already hydrated
-    if (useProcessBuilderStore.persist.hasHydrated?.()) {
-      setHasHydrated(true);
-      return;
-    }
-
-    // Set up hydration listener
     const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
       setHasHydrated(true);
     });
 
-    // Fallback: assume hydrated after a short delay if callback doesn't fire
-    const fallbackTimeout = setTimeout(() => {
-      setHasHydrated(true);
-    }, 100);
+    // Manually trigger rehydration from localStorage
+    void useProcessBuilderStore.persist.rehydrate();
 
-    return () => {
-      unsubscribe();
-      clearTimeout(fallbackTimeout);
-    };
+    return unsubscribe;
   }, []);
 
   // Show skeleton until Zustand has hydrated from localStorage

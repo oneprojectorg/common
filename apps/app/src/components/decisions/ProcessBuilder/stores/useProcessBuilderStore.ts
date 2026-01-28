@@ -174,6 +174,7 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
     {
       name: 'process-builder',
       storage: createJSONStorage(() => localStorage),
+      skipHydration: true,
     },
   ),
 );
