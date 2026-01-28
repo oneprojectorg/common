@@ -92,7 +92,7 @@ export const EntireItemDraggable = () => {
               isDragging ? 'shadow-lg' : 'shadow-sm'
             }`}
           >
-            <div className="flex-1">
+            <div className="flex-1 text-left">
               <h3>{task.title}</h3>
             </div>
             <span
