@@ -458,5 +458,9 @@
   "New process": "নতুন প্রক্রিয়া",
   "Launch": "চালু করুন",
   "Process": "প্রক্রিয়া",
-  "Section navigation": "বিভাগ নেভিগেশন"
+  "Section navigation": "বিভাগ নেভিগেশন",
+  "You do not have permission to view this page": "আপনার এই পৃষ্ঠা দেখার অনুমতি নেই",
+  "Go back": "ফিরে যান",
+  "Something went wrong on our end. We're working to fix it.": "আমাদের দিক থেকে কিছু ভুল হয়েছে। আমরা এটি ঠিক করার জন্য কাজ করছি।",
+  "Please try again in a moment": "অনুগ্রহ করে কিছুক্ষণ পরে আবার চেষ্টা করুন"
 }

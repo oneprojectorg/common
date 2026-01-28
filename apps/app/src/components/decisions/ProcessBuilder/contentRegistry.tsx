@@ -15,7 +15,7 @@ import FormBuilderSection from './stepContent/template/FormBuilderSection';
 
 // Props that all section components receive
 export interface SectionProps {
-  decisionId: string;
+  decisionProfileId: string;
   decisionName: string;
 }
 
