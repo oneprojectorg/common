@@ -191,11 +191,7 @@ const CollaborativeEditorInner = forwardRef<
       // Verify sync plugin is ready before registering cursor
       const syncState = ySyncPluginKey.getState(editor.state);
       if (!syncState) {
-        // Sync plugin not ready yet, try again on next tick
-        const timer = setTimeout(() => {
-          cursorRegisteredRef.current = false;
-        }, 0);
-        return () => clearTimeout(timer);
+        return;
       }
 
       // Create and register cursor plugin with custom rendering
