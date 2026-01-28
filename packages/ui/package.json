@@ -64,7 +64,8 @@
     "./utils/formatting": "./src/utils/formatting.ts",
     "./lib/primitive": "./src/lib/primitive.ts",
     "./hooks/use-media-query": "./src/hooks/use-media-query.ts",
-    "./ui/table": "./src/components/ui/table.tsx"
+    "./ui/table": "./src/components/ui/table.tsx",
+    "./Reorderable": "./src/components/Reorderable/index.ts"
   },
   "module": "./src/index.ts",
   "scripts": {
