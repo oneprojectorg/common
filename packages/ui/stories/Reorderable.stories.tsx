@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { DragHandle, Reorderable } from '../src/components/Reorderable';
+import { cn } from '../src/lib/utils';
 
 export default {
   title: 'Reorderable',
@@ -26,9 +27,9 @@ const initialTasks: Task[] = [
 ];
 
 const priorityColors = {
-  low: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-red-100 text-red-800',
+  low: 'bg-green-50 text-green-800',
+  medium: 'bg-yellow-50 text-yellow-800',
+  high: 'bg-red-50 text-red-800',
 };
 
 export const WithDragHandle = () => {
@@ -52,10 +53,13 @@ export const WithDragHandle = () => {
           >
             <DragHandle />
             <div className="flex-1">
-              <div className="font-medium">{task.title}</div>
+              <h3>{task.title}</h3>
             </div>
             <span
-              className={`rounded-full px-2 py-1 text-xs font-medium ${priorityColors[task.priority]}`}
+              className={cn(
+                `rounded px-2 py-0.5 text-xs font-medium`,
+                priorityColors[task.priority],
+              )}
             >
               {task.priority}
             </span>
@@ -89,10 +93,10 @@ export const EntireItemDraggable = () => {
             }`}
           >
             <div className="flex-1">
-              <div className="font-medium">{task.title}</div>
+              <h3>{task.title}</h3>
             </div>
             <span
-              className={`rounded-full px-2 py-1 text-xs font-medium ${priorityColors[task.priority]}`}
+              className={`rounded px-2 py-0.5 text-xs font-medium ${priorityColors[task.priority]}`}
             >
               {task.priority}
             </span>
@@ -132,10 +136,10 @@ export const CustomDragPreview = () => {
           >
             <DragHandle />
             <div className="flex-1">
-              <div className="font-medium">{task.title}</div>
+              <h3>{task.title}</h3>
             </div>
             <span
-              className={`rounded-full px-2 py-1 text-xs font-medium ${priorityColors[task.priority]}`}
+              className={`rounded px-2 py-0.5 text-xs font-medium ${priorityColors[task.priority]}`}
             >
               {task.priority}
             </span>
