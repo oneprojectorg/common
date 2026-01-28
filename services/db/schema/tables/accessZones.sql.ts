@@ -3,6 +3,7 @@ import { index, integer, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { accessRoles } from './access.sql';
+import { profiles } from './profiles.sql';
 
 /**
  * Access Zones table - defines permission zones/areas in the application
@@ -50,8 +51,12 @@ export const accessRolePermissionsOnAccessZones = pgTable(
   ],
 );
 
-export const accessRolesRelations = relations(accessRoles, ({ many }) => ({
+export const accessRolesRelations = relations(accessRoles, ({ many, one }) => ({
   zonePermissions: many(accessRolePermissionsOnAccessZones),
+  profile: one(profiles, {
+    fields: [accessRoles.profileId],
+    references: [profiles.id],
+  }),
 }));
 
 export const accessRolePermissionsOnAccessZonesRelations = relations(
