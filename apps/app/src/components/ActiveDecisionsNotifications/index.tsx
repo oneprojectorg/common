@@ -57,7 +57,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
                 <ButtonLink
                   size="small"
                   className="w-full sm:w-auto"
-                  href={`/profile/${decision.slug}/decisions/${instance?.id}`}
+                  href={`/decisions/${decision.slug}`}
                   onPress={() => setNavigatingId(decision.id)}
                 >
                   {isNavigating ? <LoadingSpinner /> : 'Participate'}
