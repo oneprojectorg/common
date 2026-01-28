@@ -36,7 +36,6 @@ export function CollaborativePresence({
         <Avatar
           key={user.clientId}
           placeholder={user.name}
-          backgroundColor={user.color}
           size="sm"
           className="border-2 border-white"
         />
