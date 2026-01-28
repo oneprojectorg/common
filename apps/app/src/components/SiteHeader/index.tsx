@@ -384,7 +384,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
       className={cn('relative', className)}
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
-      <Avatar placeholder={user.currentProfile?.name}>
+      <Avatar placeholder={user.currentProfile?.name} size="sm">
         {user.currentProfile?.avatarImage?.name ? (
           <Image
             src={getPublicUrl(user.currentProfile?.avatarImage.name) ?? ''}

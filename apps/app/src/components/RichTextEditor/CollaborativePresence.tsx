@@ -1,6 +1,7 @@
 'use client';
 
 import { useAwarenessUsers } from '@/hooks/useAwarenessUsers';
+import { Avatar } from '@op/ui/Avatar';
 import { cn } from '@op/ui/utils';
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 
@@ -32,19 +33,20 @@ export function CollaborativePresence({
   return (
     <div className={cn('flex items-center -space-x-2', className)}>
       {visibleUsers.map((user) => (
-        <div
+        <Avatar
           key={user.clientId}
-          className="flex size-7 items-center justify-center rounded-full border-2 border-white text-xs font-medium text-white shadow"
-          style={{ backgroundColor: user.color }}
-          title={user.name}
-        >
-          {user.name.charAt(0).toUpperCase()}
-        </div>
+          placeholder={user.name}
+          backgroundColor={user.color}
+          size="sm"
+          className="border-2 border-white"
+        />
       ))}
       {overflowCount > 0 && (
-        <div className="flex size-7 items-center justify-center rounded-full border-2 border-white bg-neutral-charcoal text-xs text-white">
-          +{overflowCount}
-        </div>
+        <Avatar
+          placeholder={`+${overflowCount}`}
+          size="sm"
+          className="border-2 border-white bg-neutral-charcoal"
+        />
       )}
     </div>
   );
