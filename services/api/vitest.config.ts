@@ -25,7 +25,8 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
-    // Set actual process.env values - works in globalSetup and setupFiles
+    maxWorkers: 10,
+    pool: 'threads',
     env: TEST_ENV,
   },
   resolve: {
