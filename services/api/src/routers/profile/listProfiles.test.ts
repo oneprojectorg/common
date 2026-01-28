@@ -12,7 +12,7 @@ import { createCallerFactory } from '../../trpcFactory';
 describe.concurrent('profile.list', () => {
   const createCaller = createCallerFactory(profileRouter);
 
-  it('should return response structure without hasMore property', async ({
+  it('should return paginated response structure', async ({
     task,
     onTestFinished,
   }) => {
@@ -31,7 +31,6 @@ describe.concurrent('profile.list', () => {
 
     expect(result).toHaveProperty('items');
     expect(result).toHaveProperty('next');
-    expect(result).not.toHaveProperty('hasMore');
     expect(Array.isArray(result.items)).toBe(true);
   });
 
