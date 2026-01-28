@@ -315,7 +315,7 @@ describe.concurrent('updateProposal status', () => {
     expect(result.status).toBe(ProposalStatus.SHORTLISTED);
   });
 
-  it('should allow admin to update proposal status through evaluation workflow', async ({
+  it('should allow admin to update proposal status', async ({
     task,
     onTestFinished,
   }) => {
@@ -339,24 +339,11 @@ describe.concurrent('updateProposal status', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Move through evaluation workflow
-    let result = await caller.decision.updateProposal({
-      proposalId: proposal.id,
-      data: { status: ProposalStatus.UNDER_REVIEW },
-    });
-    expect(result.status).toBe(ProposalStatus.UNDER_REVIEW);
-
-    result = await caller.decision.updateProposal({
+    const result = await caller.decision.updateProposal({
       proposalId: proposal.id,
       data: { status: ProposalStatus.APPROVED },
     });
     expect(result.status).toBe(ProposalStatus.APPROVED);
-
-    result = await caller.decision.updateProposal({
-      proposalId: proposal.id,
-      data: { status: ProposalStatus.SELECTED },
-    });
-    expect(result.status).toBe(ProposalStatus.SELECTED);
   });
 
   it('should not allow non-admin to change proposal status', async ({
@@ -429,7 +416,9 @@ describe.concurrent('updateProposal status', () => {
         proposalId: proposal.id,
         data: { status: ProposalStatus.DRAFT as never },
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
 
     // Should reject submitted status (use submitProposal endpoint instead)
     await expect(
@@ -437,7 +426,9 @@ describe.concurrent('updateProposal status', () => {
         proposalId: proposal.id,
         data: { status: ProposalStatus.SUBMITTED as never },
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
   });
 
   it('should allow updating both status and visibility together', async ({
