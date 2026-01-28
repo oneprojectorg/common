@@ -18,6 +18,8 @@ import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
+const AUTOSAVE_DEBOUNCE_MS = 1000;
+
 // Form data type
 interface OverviewFormData {
   steward: string;
@@ -55,7 +57,7 @@ function AutoSaveHandler({
     status: 'idle' | 'saving' | 'saved' | 'error',
   ) => void;
 }) {
-  const [debouncedValues] = useDebounce(values, 1000);
+  const [debouncedValues] = useDebounce(values, AUTOSAVE_DEBOUNCE_MS);
   const isInitialMount = useRef(true);
   const previousValues = useRef<string | null>(null);
 
