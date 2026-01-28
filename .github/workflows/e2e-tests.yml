@@ -102,6 +102,21 @@ jobs:
         with:
           version: 2.71.0 # Pinned: v2.71.1+ breaks auth.admin.deleteUser() in test cleanup
 
+      - name: Cache Supabase Docker images
+        uses: actions/cache@v4
+        id: supabase-docker-cache
+        with:
+          path: /tmp/supabase-docker-images
+          key: supabase-docker-2.71.0-v1
+
+      - name: Load cached Docker images
+        if: steps.supabase-docker-cache.outputs.cache-hit == 'true'
+        run: |
+          for image in /tmp/supabase-docker-images/*.tar; do
+            docker load -i "$image" &
+          done
+          wait
+
       - name: Use E2E Supabase config
         run: cp supabase/supabase-e2e.toml supabase/config.toml
 
@@ -110,6 +125,15 @@ jobs:
           echo "Starting Supabase with E2E config (ports 56xxx)..."
           supabase start
           echo "Supabase E2E instance started successfully"
+
+      - name: Save Docker images to cache
+        if: steps.supabase-docker-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/supabase-docker-images
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgres|kong|gotrue|postgrest|realtime|storage|pgbouncer|deno|logflare' | while read img; do
+            filename=$(echo "$img" | tr '/:' '_').tar
+            docker save -o "/tmp/supabase-docker-images/${filename}" "$img"
+          done
 
       - name: Check Supabase status
         run: supabase status
