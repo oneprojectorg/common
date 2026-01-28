@@ -96,15 +96,15 @@ export function ProposalEditor({
   const t = useTranslations();
   const posthog = usePostHog();
   const utils = trpc.useUtils();
-  const { user: currentUser } = useUser();
+  const { user } = useUser();
 
   // Collaboration user info for cursor display
   const collabUser = useMemo(
     () => ({
-      name: currentUser.name ?? 'Anonymous',
-      color: getUserColor(currentUser.authUserId),
+      name: user.profile?.name ?? user.name ?? 'Anonymous',
+      color: getUserColor(user.authUserId),
     }),
-    [currentUser.name, currentUser.authUserId],
+    [user.name],
   );
 
   // Form state
