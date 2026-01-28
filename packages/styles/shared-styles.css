@@ -646,20 +646,13 @@
  * ============================================ */
 
 @layer components {
-  /* Collaboration cursor caret */
-  .collaboration-cursor__caret {
+  /* Collaboration cursor caret - border-color set inline by tiptap */
+  .collaboration-carets__caret {
     @apply pointer-events-none relative -mx-px border-r border-l break-normal;
-    border-color: var(--cursor-color);
   }
 
-  /* Collaboration cursor name label */
-  .collaboration-cursor__label {
+  /* Collaboration cursor name label - background-color set inline by tiptap */
+  .collaboration-carets__label {
     @apply absolute -top-5 -left-px rounded-t rounded-br px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white select-none;
-    background-color: var(--cursor-color);
-  }
-
-  /* Collaboration cursor selection highlight */
-  .collaboration-cursor__selection {
-    background-color: color-mix(in srgb, var(--cursor-color) 40%, transparent);
   }
 }
