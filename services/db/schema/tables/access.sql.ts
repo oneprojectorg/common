@@ -26,7 +26,9 @@ export const accessRoles = pgTable(
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index('access_roles_profile_id_idx').on(table.profileId).concurrently(),
-    unique('access_roles_name_profile_unique').on(table.name, table.profileId),
+    unique('access_roles_name_profile_unique')
+      .on(table.name, table.profileId)
+      .nullsNotDistinct(),
   ],
 );
 
