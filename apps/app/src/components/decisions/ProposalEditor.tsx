@@ -13,6 +13,7 @@ import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
+import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
@@ -23,6 +24,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   CollaborativeEditor,
+  CollaborativePresence,
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
@@ -114,6 +116,8 @@ export function ProposalEditor({
   const [showBudgetInput, setShowBudgetInput] = useState(false);
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  const [collabProvider, setCollabProvider] =
+    useState<TiptapCollabProvider | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -396,6 +400,7 @@ export function ProposalEditor({
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
       isDraft={isDraft}
+      presenceSlot={<CollaborativePresence provider={collabProvider} />}
     >
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
@@ -467,6 +472,7 @@ export function ProposalEditor({
             docId={collaborationDocId}
             extensions={editorExtensions}
             onEditorReady={handleEditorReady}
+            onProviderReady={setCollabProvider}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
             user={collabUser}
