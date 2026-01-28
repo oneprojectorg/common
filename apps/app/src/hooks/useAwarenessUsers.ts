@@ -38,10 +38,8 @@ export function useAwarenessUsers(
         }
 
         // Only include users with valid user data
-        const user = state.user as
-          | { name?: string; color?: string }
-          | undefined;
-        if (user?.name) {
+        const user = state.user;
+        if (isValidUser(user)) {
           connectedUsers.push({
             clientId,
             name: user.name,
@@ -65,4 +63,13 @@ export function useAwarenessUsers(
   }, [provider]);
 
   return users;
+}
+
+function isValidUser(user: unknown): user is CollabUser {
+  return (
+    typeof user === 'object' &&
+    user !== null &&
+    'name' in user &&
+    typeof user.name === 'string'
+  );
 }
