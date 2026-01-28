@@ -571,6 +571,27 @@ export const updateProposalInputSchema = createProposalInputSchema
   .partial()
   .extend({
     visibility: z.enum(Visibility).optional(),
+    /**
+     * Evaluation status for the proposal. This update endpoint handles evaluation
+     * status changes (shortlisted, approved, rejected, etc.) - not submission state.
+     *
+     * NOTE: To be looked at again - draft/submitted represent the submission lifecycle
+     * (whether a proposal has been finalized by its author), while the statuses below
+     * represent how the proposal has been evaluated by reviewers/admins. These are
+     * conceptually different and may warrant separate fields in the future.
+     *
+     * Use submitProposal endpoint for draft→submitted transition.
+     */
+    status: z
+      .enum([
+        ProposalStatus.SHORTLISTED,
+        ProposalStatus.UNDER_REVIEW,
+        ProposalStatus.APPROVED,
+        ProposalStatus.REJECTED,
+        ProposalStatus.DUPLICATE,
+        ProposalStatus.SELECTED,
+      ])
+      .optional(),
   });
 
 export const submitDecisionInputSchema = z.object({

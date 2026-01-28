@@ -1,4 +1,4 @@
-import { Visibility } from '@op/db/schema';
+import { ProposalStatus, Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -278,5 +278,192 @@ describe.concurrent('updateProposal visibility', () => {
 
     expect(result.proposals).toHaveLength(2);
     expect(result.canManageProposals).toBe(true);
+  });
+});
+
+describe.concurrent('updateProposal status', () => {
+  it('should allow admin to update proposal status to evaluation statuses', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Admin should be able to update status to SHORTLISTED
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { status: ProposalStatus.SHORTLISTED },
+    });
+
+    expect(result.status).toBe(ProposalStatus.SHORTLISTED);
+  });
+
+  it('should allow admin to update proposal status', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { status: ProposalStatus.APPROVED },
+    });
+    expect(result.status).toBe(ProposalStatus.APPROVED);
+  });
+
+  it('should not allow non-admin to change proposal status', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const nonAdminCaller = await createAuthenticatedCaller(memberUser.email);
+
+    // Non-admin should NOT be able to change status
+    await expect(
+      nonAdminCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { status: ProposalStatus.SHORTLISTED },
+      }),
+    ).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    });
+  });
+
+  it('should reject invalid status values like draft or submitted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Should reject draft status (use submitProposal endpoint instead)
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { status: ProposalStatus.DRAFT as never },
+      }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+
+    // Should reject submitted status (use submitProposal endpoint instead)
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { status: ProposalStatus.SUBMITTED as never },
+      }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+  });
+
+  it('should allow updating both status and visibility together', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        status: ProposalStatus.REJECTED,
+        visibility: Visibility.HIDDEN,
+      },
+    });
+
+    expect(result.status).toBe(ProposalStatus.REJECTED);
+    expect(result.visibility).toBe(Visibility.HIDDEN);
   });
 });
