@@ -44,7 +44,6 @@ export function CollaborativePresence({
         <Avatar
           placeholder={`+${overflowCount}`}
           size="sm"
-          showFullText
           className="border-2 border-white bg-neutral-charcoal"
         />
       )}

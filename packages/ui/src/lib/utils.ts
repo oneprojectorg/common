@@ -6,20 +6,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Avatar gradient classes and their corresponding hex colors.
- * The hex color approximates the dominant visual color of each gradient
- * at small avatar sizes, used for cursor colors to match avatar appearance.
- */
-export const AVATAR_COLORS = [
-  { gradient: 'bg-gradient', hex: '#1fa88f' }, // teal-green (dominant at center)
-  { gradient: 'bg-redTeal', hex: '#e86a4a' }, // coral-red (dominant color)
-  { gradient: 'bg-blueGreen', hex: '#1a7ab8' }, // blue (dominant at center)
-  { gradient: 'bg-orangePurple', hex: '#8b2db0' }, // purple-magenta (dominant)
+export const GRADIENT_COLORS = [
+  { gradient: 'bg-gradient', hex: '#1fa88f' },
+  { gradient: 'bg-redTeal', hex: '#e86a4a' },
+  { gradient: 'bg-blueGreen', hex: '#1a7ab8' },
+  { gradient: 'bg-orangePurple', hex: '#8b2db0' },
 ] as const;
 
-/** @deprecated Use AVATAR_COLORS instead */
-export const GRADIENTS = AVATAR_COLORS.map((c) => c.gradient);
+export const GRADIENTS = GRADIENT_COLORS.map((c) => c.gradient);
 
 const getNumberFromHashedString = (name: string): number => {
   let hash = 0;
@@ -38,11 +32,10 @@ const getNumberFromHashedString = (name: string): number => {
  */
 export const getAvatarColorForString = (name: string) => {
   const hash = getNumberFromHashedString(name);
-  const index = Math.abs(hash) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[index] ?? AVATAR_COLORS[0];
+  const index = Math.abs(hash) % GRADIENT_COLORS.length;
+  return GRADIENT_COLORS[index] ?? GRADIENT_COLORS[0];
 };
 
-/** @deprecated Use getAvatarColorForString instead */
 export const getGradientForString = (name: string) => {
   return getAvatarColorForString(name).gradient;
 };
