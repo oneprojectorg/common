@@ -490,5 +490,9 @@
   "Include proposal review phase": "প্রস্তাব পর্যালোচনা পর্যায় অন্তর্ভুক্ত করুন",
   "Add a review stage where designated reviewers evaluate proposals before voting": "একটি পর্যালোচনা পর্যায় যোগ করুন যেখানে মনোনীত পর্যালোচকরা ভোট দেওয়ার আগে প্রস্তাবগুলি মূল্যায়ন করে",
   "Keep this process private": "এই প্রক্রিয়াটি ব্যক্তিগত রাখুন",
-  "Only invited members can view and participate in this process": "শুধুমাত্র আমন্ত্রিত সদস্যরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন"
+  "Only invited members can view and participate in this process": "শুধুমাত্র আমন্ত্রিত সদস্যরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন",
+  "Saving...": "সংরক্ষণ হচ্ছে...",
+  "Saved": "সংরক্ষিত",
+  "Saved at {time}": "{time} এ সংরক্ষিত",
+  "Failed to save": "সংরক্ষণ ব্যর্থ হয়েছে"
 }

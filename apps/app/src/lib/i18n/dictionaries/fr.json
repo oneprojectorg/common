@@ -490,5 +490,9 @@
   "Include proposal review phase": "Inclure une phase d'évaluation des propositions",
   "Add a review stage where designated reviewers evaluate proposals before voting": "Ajoutez une étape d'évaluation où des évaluateurs désignés examinent les propositions avant le vote",
   "Keep this process private": "Garder ce processus privé",
-  "Only invited members can view and participate in this process": "Seuls les membres invités peuvent voir et participer à ce processus"
+  "Only invited members can view and participate in this process": "Seuls les membres invités peuvent voir et participer à ce processus",
+  "Saving...": "Enregistrement...",
+  "Saved": "Enregistré",
+  "Saved at {time}": "Enregistré à {time}",
+  "Failed to save": "Échec de l'enregistrement"
 }
