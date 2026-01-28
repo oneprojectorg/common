@@ -6,9 +6,15 @@ import * as Y from 'yjs';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
+export interface CollabUser {
+  name: string;
+  color: string;
+}
+
 export interface UseTiptapCollabOptions {
   docId: string | null;
   enabled?: boolean;
+  user?: CollabUser;
 }
 
 export interface UseTiptapCollabReturn {
@@ -23,6 +29,7 @@ export interface UseTiptapCollabReturn {
 export function useTiptapCollab({
   docId,
   enabled = true,
+  user,
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
@@ -50,6 +57,10 @@ export function useTiptapCollab({
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
+        // Set awareness with user info for cursor collaboration
+        if (user) {
+          newProvider.setAwarenessField('user', user);
+        }
       },
       onDisconnect: () => {
         setStatus('disconnected');
@@ -65,7 +76,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, ydoc]);
+  }, [docId, enabled, ydoc, user]);
 
   return {
     ydoc,
