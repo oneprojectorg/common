@@ -31,7 +31,7 @@ export const getProposalRouter = router({
             user,
           }),
         options: {
-          skipCache: (result) => result.status === ProposalStatus.DRAFT,
+          skipCacheWrite: (result) => result.status === ProposalStatus.DRAFT,
         },
       });
 

@@ -92,7 +92,7 @@ const MEMCACHE_EXPIRE = 2 * 60 * 1000;
  * @param options.skipMemCache - Skip in-memory cache layer
  * @param options.storeNulls - Cache null results to avoid repeated DB lookups
  * @param options.ttl - Time-to-live in milliseconds
- * @param options.skipCache - Predicate to conditionally skip caching based on result.
+ * @param options.skipCacheWrite - Predicate to conditionally skip caching based on result.
  *                            When returns true, the result is NOT stored in cache.
  *                            Useful for skipping cache on draft/incomplete data.
  */
@@ -111,7 +111,7 @@ export const cache = async <T>({
     skipMemCache?: boolean;
     storeNulls?: boolean;
     ttl?: number;
-    skipCache?: (result: Awaited<T>) => boolean;
+    skipCacheWrite?: (result: Awaited<T>) => boolean;
   };
 }): Promise<Awaited<T>> => {
   const cacheKey = getCacheKey(type, appKey, params);
@@ -146,7 +146,7 @@ export const cache = async <T>({
   const newData = await fetch();
   cacheMetrics.recordMiss(type);
 
-  const shouldSkipCache = options.skipCache?.(newData) ?? false;
+  const shouldSkipCache = options.skipCacheWrite?.(newData) ?? false;
 
   if (newData && !shouldSkipCache) {
     memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
