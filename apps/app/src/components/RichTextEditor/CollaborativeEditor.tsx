@@ -111,10 +111,7 @@ type CollaborativeEditorInnerProps = Omit<
 
 const DEFAULT_CURSOR_COLOR = '#f783ac';
 
-interface CursorUser {
-  name?: string;
-  color?: string;
-}
+type CursorUser = Partial<CollabUser>;
 
 /** Builds the cursor caret element shown at other users' cursor positions */
 function buildCursorElement(user: CursorUser): HTMLElement {
