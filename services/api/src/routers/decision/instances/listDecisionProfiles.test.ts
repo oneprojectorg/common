@@ -38,7 +38,7 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     expect(result.items).toHaveLength(2);
-    expect(result.hasMore).toBe(false);
+    expect(result.next).toBeNull();
 
     // Verify profiles have process instance data
     result.items.forEach((profile) => {
@@ -226,7 +226,6 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     expect(firstPage.items).toHaveLength(2);
-    expect(firstPage.hasMore).toBe(true);
     expect(firstPage.next).toBeDefined();
 
     // Get second page
@@ -236,7 +235,7 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     expect(secondPage.items).toHaveLength(1);
-    expect(secondPage.hasMore).toBe(false);
+    expect(secondPage.next).toBeNull();
     expect(secondPage.items[0]?.id).not.toBe(firstPage.items[0]?.id);
     expect(secondPage.items[0]?.id).not.toBe(firstPage.items[1]?.id);
   });
@@ -283,7 +282,7 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     expect(result.items).toHaveLength(0);
-    expect(result.hasMore).toBe(false);
+    expect(result.next).toBeNull();
   });
 
   it('should only show profiles the user has access to', async ({

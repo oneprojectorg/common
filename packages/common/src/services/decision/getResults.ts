@@ -132,7 +132,6 @@ export const getLatestResultWithProposals = async ({
     return {
       items: [],
       next: null,
-      hasMore: false,
     };
   }
 
@@ -228,6 +227,5 @@ export const getLatestResultWithProposals = async ({
   return {
     items: proposalsWithRankAndVotes,
     next: nextCursor,
-    hasMore,
   };
 };

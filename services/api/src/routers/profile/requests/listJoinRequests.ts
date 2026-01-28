@@ -22,13 +22,12 @@ export const listJoinRequestsRouter = router({
       z.object({
         items: z.array(joinProfileRequestEncoder),
         next: z.string().nullish(),
-        hasMore: z.boolean(),
       }),
     )
     .query(async ({ input, ctx }) => {
       const { limit = 10, cursor, dir } = input;
 
-      const { items, next, hasMore } = await listProfileJoinRequests({
+      const { items, next } = await listProfileJoinRequests({
         user: ctx.user,
         targetProfileId: input.targetProfileId,
         status: input.status,
@@ -47,7 +46,6 @@ export const listJoinRequestsRouter = router({
       return {
         items: items.map((item) => joinProfileRequestEncoder.parse(item)),
         next,
-        hasMore,
       };
     }),
 });

@@ -86,6 +86,5 @@ export const listProfileJoinRequests = async ({
     // TODO: Re-check if this is still needed after upgrading to Drizzle v1
     items: items as JoinProfileRequestWithProfiles[],
     next: nextCursor,
-    hasMore,
   };
 };
