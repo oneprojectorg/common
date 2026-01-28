@@ -39,7 +39,7 @@ export const baseProfileEncoder = createSelectSchema(profiles)
 
 // Minimal organization encoder for profile listing context
 // Only includes fields actually fetched by listProfiles - does NOT include
-// strategies or receivingFundsTerms which are not fetched
+// strategies, receivingFundsTerms, or nested profile (already at top level)
 const organizationMinimalEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
@@ -51,7 +51,6 @@ const organizationMinimalEncoder = createSelectSchema(organizations)
     domain: true,
   })
   .extend({
-    profile: baseProfileEncoder.optional(),
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).optional().default([]),
     whereWeWork: z.array(locationEncoder).optional().default([]),

@@ -60,12 +60,6 @@ export const listProfiles = async ({
           with: {
             projects: true,
             links: true,
-            profile: {
-              with: {
-                headerImage: true,
-                avatarImage: true,
-              },
-            },
             whereWeWork: {
               with: {
                 location: {
