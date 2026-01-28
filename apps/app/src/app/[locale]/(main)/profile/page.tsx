@@ -34,7 +34,7 @@ const ProfileListingPage = async () => {
         <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
         <AllOrganizations
-          initialData={{ items: [], hasMore: false, next: null }}
+          initialData={{ items: [], next: null }}
           types={[EntityType.USER]}
           limit={20}
         />

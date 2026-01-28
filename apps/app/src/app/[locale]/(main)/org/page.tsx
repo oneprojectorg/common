@@ -29,10 +29,7 @@ const OrgListingPage = async () => {
       <ListPageLayout>
         <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
-        <AllOrganizations
-          initialData={{ items: [], hasMore: false, next: null }}
-          limit={20}
-        />
+        <AllOrganizations initialData={{ items: [], next: null }} limit={20} />
       </ListPageLayout>
     );
   }

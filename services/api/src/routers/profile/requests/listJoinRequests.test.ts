@@ -31,7 +31,6 @@ describe.concurrent('profile.listJoinRequests', () => {
 
     expect(result).toEqual({
       items: [],
-      hasMore: false,
       next: null,
     });
   });
@@ -84,7 +83,6 @@ describe.concurrent('profile.listJoinRequests', () => {
           targetProfile: expect.objectContaining({ id: targetProfile.id }),
         }),
       ]),
-      hasMore: false,
       next: null,
     });
     expect(result.items).toHaveLength(2);
@@ -135,7 +133,6 @@ describe.concurrent('profile.listJoinRequests', () => {
 
     expect(firstPage).toMatchObject({
       items: expect.any(Array),
-      hasMore: true,
       next: expect.any(String),
     });
     expect(firstPage.items).toHaveLength(2);
@@ -149,7 +146,6 @@ describe.concurrent('profile.listJoinRequests', () => {
 
     expect(secondPage).toMatchObject({
       items: expect.any(Array),
-      hasMore: false,
       next: null,
     });
     expect(secondPage.items).toHaveLength(1);
@@ -270,7 +266,6 @@ describe.concurrent('profile.listJoinRequests', () => {
           targetProfile: expect.objectContaining({ id: targetProfile.id }),
         }),
       ]),
-      hasMore: false,
       next: null,
     });
     expect(result.items).toHaveLength(3);

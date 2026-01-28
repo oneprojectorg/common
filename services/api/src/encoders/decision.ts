@@ -180,7 +180,6 @@ export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
 export const decisionProfileWithSchemaListEncoder = z.object({
   items: z.array(decisionProfileWithSchemaEncoder),
   next: z.string().nullish(),
-  hasMore: z.boolean(),
 });
 
 /** Decision profile filter schema */
@@ -482,7 +481,6 @@ export const processInstanceListEncoder = z.object({
 export const instanceResultsEncoder = z.object({
   items: z.array(proposalEncoder),
   next: z.string().nullish(),
-  hasMore: z.boolean(),
 });
 
 export const decisionListEncoder = z.object({
@@ -671,7 +669,6 @@ export const decisionProfileEncoder = baseProfileEncoder.extend({
 export const decisionProfileListEncoder = z.object({
   items: z.array(decisionProfileEncoder),
   next: z.string().nullish(),
-  hasMore: z.boolean(),
 });
 
 // Decision Profile Filter Schema

@@ -299,7 +299,6 @@ export const legacyProposalListEncoder = z.object({
 export const legacyInstanceResultsEncoder = z.object({
   items: z.array(legacyProposalEncoder),
   next: z.string().nullish(),
-  hasMore: z.boolean(),
 });
 
 export const legacyDecisionListEncoder = z.object({
@@ -428,7 +427,6 @@ export const legacyDecisionProfileEncoder = baseProfileEncoder.extend({
 export const legacyDecisionProfileListEncoder = z.object({
   items: z.array(legacyDecisionProfileEncoder),
   next: z.string().nullish(),
-  hasMore: z.boolean(),
 });
 
 // Decision Profile Filter Schema

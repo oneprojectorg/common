@@ -207,5 +207,5 @@ export const listDecisionProfiles = async ({
         })
       : null;
 
-  return { items, next: nextCursor, hasMore };
+  return { items, next: nextCursor };
 };

@@ -241,6 +241,5 @@ export const listProfileUsers = async ({
   return {
     items,
     next: nextCursor,
-    hasMore,
   };
 };

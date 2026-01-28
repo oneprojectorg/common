@@ -28,13 +28,12 @@ export const getProfileRouter = router({
       z.object({
         items: z.array(universalProfileSchema),
         next: z.string().nullish(),
-        hasMore: z.boolean(),
       }),
     )
     .query(async ({ input }) => {
       const { limit = 10, cursor, orderBy, dir, types } = input ?? {};
       try {
-        const { items, next, hasMore } = await listProfiles({
+        const { items, next } = await listProfiles({
           cursor,
           limit,
           orderBy,
@@ -45,7 +44,6 @@ export const getProfileRouter = router({
         return {
           items: items.map((profile) => universalProfileSchema.parse(profile)),
           next,
-          hasMore,
         };
       } catch (error: unknown) {
         console.log(error);

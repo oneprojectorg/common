@@ -91,7 +91,7 @@ export const listOrganizations = async ({
         ? encodeCursor<{ value: Date }>({ value: cursorValue })
         : null;
 
-    return { items, next: nextCursor, hasMore };
+    return { items, next: nextCursor };
   } catch (error) {
     console.error(error);
     throw error;

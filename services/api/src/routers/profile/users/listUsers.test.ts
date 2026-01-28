@@ -387,7 +387,6 @@ describe.concurrent('profile.users.listUsers', () => {
       });
 
       expect(result.items).toHaveLength(2);
-      expect(result.hasMore).toBe(true);
       expect(result.next).toBeTruthy();
     });
 
@@ -409,7 +408,6 @@ describe.concurrent('profile.users.listUsers', () => {
       });
 
       expect(result.items).toHaveLength(3);
-      expect(result.hasMore).toBe(false);
       expect(result.next).toBeNull();
     });
 
@@ -527,7 +525,7 @@ describe.concurrent('profile.users.listUsers', () => {
 
       // With only 3 users (less than default limit), all should be returned
       expect(result.items).toHaveLength(3);
-      expect(result.hasMore).toBe(false);
+      expect(result.next).toBeNull();
     });
 
     it('should throw error for invalid cursor', async ({

@@ -119,11 +119,7 @@ export const listPosts = async ({
         profileId: actorProfileId,
       });
 
-    return {
-      items: itemsWithReactionsAndComments,
-      next: nextCursor,
-      hasMore,
-    };
+    return { items: itemsWithReactionsAndComments, next: nextCursor };
   } catch (e) {
     console.error(e);
     throw e;

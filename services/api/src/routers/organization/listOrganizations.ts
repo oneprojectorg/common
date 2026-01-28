@@ -19,13 +19,12 @@ export const listOrganizationsRouter = router({
       z.object({
         items: z.array(organizationsWithProfileEncoder),
         next: z.string().nullish(),
-        hasMore: z.boolean(),
       }),
     )
     .query(async ({ input }) => {
       const { limit = 10, cursor, orderBy, dir } = input ?? {};
 
-      const { items, next, hasMore } = await listOrganizations({
+      const { items, next } = await listOrganizations({
         cursor,
         limit,
         orderBy,
@@ -35,7 +34,6 @@ export const listOrganizationsRouter = router({
       return {
         items: items.map((org) => organizationsWithProfileEncoder.parse(org)),
         next,
-        hasMore,
       };
     }),
 });

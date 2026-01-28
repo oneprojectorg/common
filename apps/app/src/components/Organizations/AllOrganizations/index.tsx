@@ -12,7 +12,6 @@ import { ProfileSummaryList } from '@/components/ProfileList';
 type ProfileListResponse = {
   items: Array<any>;
   next?: string | null;
-  hasMore: boolean;
 };
 
 export const AllOrganizationsSuspense = ({

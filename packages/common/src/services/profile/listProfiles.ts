@@ -60,12 +60,6 @@ export const listProfiles = async ({
           with: {
             projects: true,
             links: true,
-            profile: {
-              with: {
-                headerImage: true,
-                avatarImage: true,
-              },
-            },
             whereWeWork: {
               with: {
                 location: {
@@ -123,7 +117,7 @@ export const listProfiles = async ({
           })
         : null;
 
-    return { items, next: nextCursor, hasMore };
+    return { items, next: nextCursor };
   } catch (error) {
     console.error('Error in listProfiles:', error);
     throw error;

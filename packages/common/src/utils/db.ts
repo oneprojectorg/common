@@ -10,7 +10,6 @@ export type SortDir = 'asc' | 'desc';
 export type PaginatedResult<T> = {
   items: T[];
   next: string | null;
-  hasMore: boolean;
 };
 
 // Cursor utilities
