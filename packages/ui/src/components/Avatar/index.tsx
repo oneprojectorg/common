@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 
 import { cn, getGradientForString } from '../../lib/utils';
@@ -9,21 +9,18 @@ export interface AvatarProps {
   /** Name or text to use for generating initial and gradient */
   placeholder?: string;
   className?: string;
-  /** Custom background color (overrides gradient) */
-  backgroundColor?: string;
   /** Size variant */
   size?: 'sm' | 'md';
 }
 
 /**
- * Avatar component with support for images, initials, and custom colors.
- * Used for profile icons and presence indicators.
+ * Avatar component with support for images, initials, and gradient backgrounds.
+ * Gradient is deterministically derived from placeholder text.
  */
 export const Avatar = ({
   children,
   placeholder,
   className,
-  backgroundColor,
   size = 'md',
 }: AvatarProps) => {
   const gradientBg = useMemo(
@@ -38,10 +35,6 @@ export const Avatar = ({
     md: 'size-8 text-sm',
   };
 
-  const style: CSSProperties | undefined = backgroundColor
-    ? { backgroundColor }
-    : undefined;
-
   return (
     <div
       className={cn(
@@ -54,9 +47,8 @@ export const Avatar = ({
         <div
           className={cn(
             'flex size-full items-center justify-center font-medium text-white',
-            !backgroundColor && gradientBg,
+            gradientBg,
           )}
-          style={style}
         >
           {placeholder?.slice(0, 1).toUpperCase() ?? ''}
         </div>
