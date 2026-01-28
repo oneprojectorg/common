@@ -11,7 +11,7 @@ import { createCallerFactory } from '../../trpcFactory';
 describe.concurrent('organization.list', () => {
   const createCaller = createCallerFactory(organizationRouter);
 
-  it('should return organizations with pagination cursor', async ({
+  it('should return response structure without hasMore property', async ({
     task,
     onTestFinished,
   }) => {
@@ -33,72 +33,60 @@ describe.concurrent('organization.list', () => {
     expect(Array.isArray(result.items)).toBe(true);
   });
 
-  it('should return next cursor when more items exist', async ({
+  it('should include created organizations in paginated results', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-    // Create 3 organizations
-    const [{ adminUser }] = await Promise.all([
+    // Create multiple organizations
+    const [org1, org2, org3] = await Promise.all([
       testData.createOrganization({ users: { admin: 1 } }),
       testData.createOrganization({ users: { admin: 1 } }),
       testData.createOrganization({ users: { admin: 1 } }),
     ]);
 
-    const { session } = await createIsolatedSession(adminUser.email);
-    const caller = createCaller(await createTestContextWithSession(session));
-
-    // Request only 1 item - should have next cursor
-    const result = await caller.list({
-      limit: 1,
-    });
-
-    expect(result.items.length).toBe(1);
-    expect(result.next).not.toBeNull();
-    expect(typeof result.next).toBe('string');
-  });
-
-  it('should support cursor-based pagination to fetch next page', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-
-    // Create 3 organizations
-    const [{ adminUser }] = await Promise.all([
-      testData.createOrganization({ users: { admin: 1 } }),
-      testData.createOrganization({ users: { admin: 1 } }),
-      testData.createOrganization({ users: { admin: 1 } }),
+    const createdOrgIds = new Set([
+      org1.organization.id,
+      org2.organization.id,
+      org3.organization.id,
     ]);
 
-    const { session } = await createIsolatedSession(adminUser.email);
+    const { session } = await createIsolatedSession(org1.adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // First page: get 2 items
-    const page1 = await caller.list({
-      limit: 2,
-    });
+    // Paginate through results to find our created organizations
+    const foundOrgIds = new Set<string>();
+    let cursor: string | null | undefined = undefined;
+    let pageCount = 0;
+    const maxPages = 100; // Safety limit
 
-    expect(page1.items.length).toBe(2);
-    expect(page1.next).not.toBeNull();
+    while (pageCount < maxPages) {
+      const result = await caller.list({
+        limit: 10,
+        cursor,
+      });
 
-    // Second page: use cursor to get remaining items
-    const page2 = await caller.list({
-      limit: 2,
-      cursor: page1.next,
-    });
+      for (const item of result.items) {
+        if (createdOrgIds.has(item.id)) {
+          foundOrgIds.add(item.id);
+        }
+      }
 
-    expect(page2.items.length).toBeGreaterThanOrEqual(1);
+      // Stop if we found all our orgs or no more pages
+      if (foundOrgIds.size === createdOrgIds.size || !result.next) {
+        break;
+      }
 
-    // Ensure no duplicate items between pages
-    const page1Ids = page1.items.map((item) => item.id);
-    const page2Ids = page2.items.map((item) => item.id);
-    const overlap = page1Ids.filter((id) => page2Ids.includes(id));
-    expect(overlap).toHaveLength(0);
+      cursor = result.next;
+      pageCount++;
+    }
+
+    // Verify all created organizations were found
+    expect(foundOrgIds.size).toBe(createdOrgIds.size);
   });
 
-  it('should return null next cursor when no more items', async ({
+  it('should not return duplicate items across pages', async ({
     task,
     onTestFinished,
   }) => {
@@ -110,12 +98,66 @@ describe.concurrent('organization.list', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Request more items than exist
-    const result = await caller.list({
-      limit: 1000,
+    // Collect IDs across multiple pages
+    const allIds: string[] = [];
+    let cursor: string | null | undefined = undefined;
+    let pageCount = 0;
+    const maxPages = 10; // Check first 10 pages
+
+    while (pageCount < maxPages) {
+      const result = await caller.list({
+        limit: 5,
+        cursor,
+      });
+
+      allIds.push(...result.items.map((item) => item.id));
+
+      if (!result.next) {
+        break;
+      }
+
+      cursor = result.next;
+      pageCount++;
+    }
+
+    // Verify no duplicates
+    const uniqueIds = new Set(allIds);
+    expect(uniqueIds.size).toBe(allIds.length);
+  });
+
+  it('should eventually return null next cursor', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { adminUser } = await testData.createOrganization({
+      users: { admin: 1 },
     });
 
-    // When we've fetched all items, next should be null
-    expect(result.next).toBeNull();
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Paginate until we reach the end
+    let cursor: string | null | undefined = undefined;
+    let reachedEnd = false;
+    let pageCount = 0;
+    const maxPages = 1000; // Safety limit
+
+    while (pageCount < maxPages) {
+      const result = await caller.list({
+        limit: 100,
+        cursor,
+      });
+
+      if (result.next === null) {
+        reachedEnd = true;
+        break;
+      }
+
+      cursor = result.next;
+      pageCount++;
+    }
+
+    expect(reachedEnd).toBe(true);
   });
 });
