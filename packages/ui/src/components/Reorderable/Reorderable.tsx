@@ -17,7 +17,8 @@ import type {
 
 const reorderableStyles = tv({
   slots: {
-    container: 'flex flex-col outline-none [&_.react-aria-DropIndicator]:h-0 [&_.react-aria-DropIndicator]:w-full [&_.react-aria-DropIndicator]:outline-2 [&_.react-aria-DropIndicator]:outline-primary-teal [&_.react-aria-DropIndicator[data-drop-target]]:outline',
+    container:
+      'flex flex-col outline-none [&_.react-aria-DropIndicator]:h-0 [&_.react-aria-DropIndicator]:w-full [&_.react-aria-DropIndicator]:outline-2 [&_.react-aria-DropIndicator]:outline-primary-teal [&_.react-aria-DropIndicator[data-drop-target]]:outline',
     item: 'relative transition-all duration-200 outline-none',
   },
   variants: {
