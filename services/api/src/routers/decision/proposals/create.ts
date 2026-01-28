@@ -7,16 +7,16 @@ import {
 import { TRPCError } from '@trpc/server';
 
 import {
-  legacyCreateProposalInputSchema,
-  legacyProposalEncoder,
-} from '../../../encoders/legacyDecision';
+  createProposalInputSchema,
+  proposalEncoder,
+} from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const createProposalRouter = router({
   /** Creates a new proposal in draft status. Use submitProposal to transition to submitted. */
   createProposal: commonAuthedProcedure()
-    .input(legacyCreateProposalInputSchema)
-    .output(legacyProposalEncoder)
+    .input(createProposalInputSchema)
+    .output(proposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
@@ -26,7 +26,7 @@ export const createProposalRouter = router({
           authUserId: user.id,
         });
 
-        return legacyProposalEncoder.parse(proposal);
+        return proposalEncoder.parse(proposal);
       } catch (error: unknown) {
         logger.error('Failed to create proposal', {
           userId: user.id,
