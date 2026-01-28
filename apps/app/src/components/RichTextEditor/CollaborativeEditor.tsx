@@ -38,6 +38,8 @@ export interface CollaborativeEditorProps {
   extensions?: Extensions;
   placeholder?: string;
   onEditorReady?: (editor: Editor) => void;
+  /** Called when the collaboration provider is ready */
+  onProviderReady?: (provider: TiptapCollabProvider) => void;
   className?: string;
   editorClassName?: string;
   user?: CollabUser;
@@ -54,6 +56,7 @@ export const CollaborativeEditor = forwardRef<
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
+      onProviderReady,
       className = '',
       editorClassName = '',
       user,
@@ -65,6 +68,13 @@ export const CollaborativeEditor = forwardRef<
       enabled: true,
       user,
     });
+
+    // Notify parent when provider becomes available
+    useEffect(() => {
+      if (provider && onProviderReady) {
+        onProviderReady(provider);
+      }
+    }, [provider, onProviderReady]);
 
     // Wait for provider before rendering the editor inner component
     // This ensures Snapshot extension is included from the start
