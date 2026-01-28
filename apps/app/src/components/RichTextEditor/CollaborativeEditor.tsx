@@ -13,8 +13,8 @@ import {
 import Snapshot from '@tiptap-pro/extension-snapshot';
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import type { Editor, Extensions } from '@tiptap/react';
-import { yCursorPlugin, ySyncPluginKey } from '@tiptap/y-tiptap';
 import {
   forwardRef,
   useEffect,
@@ -156,12 +156,16 @@ const CollaborativeEditorInner = forwardRef<
     },
     ref,
   ) => {
-    // Build extensions WITHOUT cursor - we'll add the cursor plugin lazily
-    // to avoid race condition where cursor plugin init runs before sync plugin state exists
+    // Build collaborative extensions with cursor support
     const collaborativeExtensions = useMemo(
       () => [
         ...extensions,
         Collaboration.configure({ document: ydoc }),
+        CollaborationCursor.configure({
+          provider,
+          render: buildCursorElement,
+          selectionRender: buildSelectionAttrs,
+        }),
         Snapshot.configure({ provider }),
       ],
       [extensions, ydoc, provider],
@@ -172,42 +176,6 @@ const CollaborativeEditorInner = forwardRef<
       editorClassName,
       onEditorReady,
     });
-
-    // NOTE: Using yCursorPlugin directly instead of CollaborationCaret extension
-    // because TipTap doesn't guarantee plugin order - ySyncPlugin state may not
-    // exist when the extension initializes. Lazy registration lets us wait for sync.
-    // See: https://tiptap.dev/docs/editor/extensions/functionality/collaboration-caret
-    useEffect(() => {
-      if (!editor || !provider.awareness) {
-        return;
-      }
-
-      // Verify sync plugin is ready before registering cursor
-      const syncState = ySyncPluginKey.getState(editor.state);
-      if (!syncState) {
-        return;
-      }
-
-      // Check if cursor plugin is already registered (handles HMR race conditions)
-      const cursorPluginKey = 'yjs-cursor$';
-      const existingPlugin = editor.state.plugins.find(
-        (p) => p.spec.key && String(p.spec.key).startsWith(cursorPluginKey),
-      );
-      if (existingPlugin) {
-        return;
-      }
-
-      // Create and register cursor plugin with custom rendering
-      const cursorPlugin = yCursorPlugin(provider.awareness, {
-        cursorBuilder: buildCursorElement,
-        selectionBuilder: buildSelectionAttrs,
-      });
-      editor.registerPlugin(cursorPlugin);
-
-      return () => {
-        editor.unregisterPlugin(cursorPlugin.key);
-      };
-    }, [editor, provider]);
 
     // Track whether versioning has been enabled to avoid toggling it off on re-render
     const versioningEnabledRef = useRef(false);
