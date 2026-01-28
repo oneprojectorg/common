@@ -1,3 +1,36 @@
+/**
+ * Process Builder Store
+ *
+ * Manages form state for the Process Builder with localStorage persistence.
+ * This store acts as a client-side cache for in-progress form data, allowing
+ * users to navigate away and return without losing their work.
+ *
+ * ## Data Flow
+ * 1. Form components read initial values from this store (after hydration)
+ * 2. Auto-save writes debounced form values back to this store
+ * 3. Store persists to localStorage automatically via Zustand middleware
+ * 4. On form submission, data is sent to the API (TODO: not yet implemented)
+ *
+ * ## Hydration
+ * This store uses `skipHydration: true` to prevent race conditions in SSR.
+ * Components must manually trigger hydration:
+ *
+ * ```tsx
+ * useEffect(() => {
+ *   const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
+ *     setHasHydrated(true);
+ *   });
+ *   void useProcessBuilderStore.persist.rehydrate();
+ *   return unsubscribe;
+ * }, []);
+ * ```
+ *
+ * ## Structure
+ * Data is keyed by `decisionId` to support multiple concurrent drafts:
+ * - `instances[decisionId]` - Form data (name, description, config, phases)
+ * - `saveStatus[decisionId]` - UI save indicator state
+ */
+
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
