@@ -99,28 +99,34 @@ type CollaborativeEditorInnerProps = Omit<
   isSynced: boolean;
 };
 
-/** Builds the cursor caret element shown at other users' cursor positions */
-function buildCursorElement(user: {
+const DEFAULT_CURSOR_COLOR = '#f783ac';
+
+interface CursorUser {
   name?: string;
   color?: string;
-}): HTMLElement {
+}
+
+/** Builds the cursor caret element shown at other users' cursor positions */
+function buildCursorElement(user: CursorUser): HTMLElement {
   const cursor = document.createElement('span');
-  cursor.classList.add('collaboration-cursor__caret');
-  cursor.setAttribute('style', `border-color: ${user.color ?? '#f783ac'}`);
+  cursor.className = 'collaboration-cursor__caret';
+  cursor.style.setProperty(
+    '--cursor-color',
+    user.color ?? DEFAULT_CURSOR_COLOR,
+  );
 
   const label = document.createElement('div');
-  label.classList.add('collaboration-cursor__label');
-  label.setAttribute('style', `background-color: ${user.color ?? '#f783ac'}`);
-  label.appendChild(document.createTextNode(user.name ?? 'Anonymous'));
+  label.className = 'collaboration-cursor__label';
+  label.textContent = user.name ?? 'Anonymous';
   cursor.appendChild(label);
 
   return cursor;
 }
 
 /** Builds selection highlight attributes for other users' selections */
-function buildSelectionAttrs(user: { color?: string }) {
+function buildSelectionAttrs(user: CursorUser) {
   return {
-    style: `background-color: ${user.color ?? '#f783ac'}70`,
+    style: `--cursor-color: ${user.color ?? DEFAULT_CURSOR_COLOR}`,
     class: 'collaboration-cursor__selection',
   };
 }

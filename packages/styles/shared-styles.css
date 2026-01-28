@@ -648,28 +648,18 @@
 @layer components {
   /* Collaboration cursor caret */
   .collaboration-cursor__caret {
-    border-left: 1px solid;
-    border-right: 1px solid;
-    margin-left: -1px;
-    margin-right: -1px;
-    pointer-events: none;
-    position: relative;
-    word-break: normal;
+    @apply pointer-events-none relative -mx-px border-r border-l break-normal;
+    border-color: var(--cursor-color);
   }
 
   /* Collaboration cursor name label */
   .collaboration-cursor__label {
-    border-radius: 3px 3px 3px 0;
-    color: white;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: 600;
-    left: -1px;
-    line-height: normal;
-    padding: 0.1rem 0.3rem;
-    position: absolute;
-    top: -1.4em;
-    user-select: none;
-    white-space: nowrap;
+    @apply absolute -top-5 -left-px rounded-t rounded-br px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white select-none;
+    background-color: var(--cursor-color);
+  }
+
+  /* Collaboration cursor selection highlight */
+  .collaboration-cursor__selection {
+    background-color: color-mix(in srgb, var(--cursor-color) 40%, transparent);
   }
 }
