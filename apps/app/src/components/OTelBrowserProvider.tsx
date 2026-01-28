@@ -15,7 +15,7 @@ import { useEffect, useRef } from 'react';
 /**
  * Client-side OpenTelemetry provider that initializes browser tracing.
  * Captures fetch/XHR calls, user interactions, and page navigations.
- * Traces are sent to /api/otel/traces which proxies them to SigNoz.
+ * Traces are sent to /api/otel/traces which proxies them to the OTel provider.
  */
 export function OTelBrowserProvider({
   children,
