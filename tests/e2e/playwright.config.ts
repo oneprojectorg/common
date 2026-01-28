@@ -29,7 +29,7 @@ export default defineConfig({
   timeout: 60_000, // 60 seconds per test
 
   use: {
-    baseURL: 'http://localhost:3100',
+    baseURL: 'http://localhost:4100',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -44,7 +44,7 @@ export default defineConfig({
   /* Run dev servers with e2e environment before starting the tests */
   webServer: {
     command: 'pnpm dev:e2e',
-    url: 'http://localhost:3100',
+    url: 'http://localhost:4100',
     reuseExistingServer: !process.env.CI,
     cwd: path.resolve(__dirname, '../..'),
     timeout: 120 * 1000,
