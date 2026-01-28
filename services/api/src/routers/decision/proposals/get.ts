@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import { getPermissionsOnProposal, getProposal } from '@op/common';
+import { ProposalStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -30,7 +31,9 @@ export const getProposalRouter = router({
             user,
           }),
         options: {
-          skipMemCache: true, // We need these to be editable and then immediately accessible
+          skipCache(result) {
+            return result.status === ProposalStatus.DRAFT;
+          },
         },
       });
 
