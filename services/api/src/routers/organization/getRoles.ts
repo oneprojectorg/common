@@ -17,6 +17,7 @@ export const getRolesRouter = router({
   getRoles: commonAuthedProcedure()
     .output(outputSchema)
     .query(async () => {
-      return await getRoles();
+      const result = await getRoles();
+      return { roles: result.items };
     }),
 });

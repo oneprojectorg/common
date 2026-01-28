@@ -62,10 +62,10 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
 
   // Fetch roles in parallel to avoid waterfall loading
   const { data: rolesData, isPending: rolesPending } =
-    trpc.organization.getRoles.useQuery();
+    trpc.profile.listRoles.useQuery({});
 
   const { items: profileUsers = [], next } = data ?? {};
-  const { roles = [] } = rolesData ?? {};
+  const roles = rolesData?.items ?? [];
 
   const onNext = () => {
     if (next) {
