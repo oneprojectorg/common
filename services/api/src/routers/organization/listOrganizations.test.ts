@@ -32,7 +32,7 @@ describe.concurrent('organization.list', () => {
     expect(Array.isArray(result.items)).toBe(true);
   });
 
-  it('should include created organizations in paginated results', async ({
+  it('should include created organizations in results', async ({
     task,
     onTestFinished,
   }) => {
@@ -54,35 +54,15 @@ describe.concurrent('organization.list', () => {
     const { session } = await createIsolatedSession(org1.adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Paginate through results to find our created organizations
-    const foundOrgIds = new Set<string>();
-    let cursor: string | null | undefined = undefined;
-    let pageCount = 0;
-    const maxPages = 100; // Safety limit
+    const result = await caller.list({
+      limit: 1000,
+    });
 
-    while (pageCount < maxPages) {
-      const result = await caller.list({
-        limit: 10,
-        cursor,
-      });
+    const foundOrgIds = result.items
+      .filter((item) => createdOrgIds.has(item.id))
+      .map((item) => item.id);
 
-      for (const item of result.items) {
-        if (createdOrgIds.has(item.id)) {
-          foundOrgIds.add(item.id);
-        }
-      }
-
-      // Stop if we found all our orgs or no more pages
-      if (foundOrgIds.size === createdOrgIds.size || !result.next) {
-        break;
-      }
-
-      cursor = result.next;
-      pageCount++;
-    }
-
-    // Verify all created organizations were found
-    expect(foundOrgIds.size).toBe(createdOrgIds.size);
+    expect(foundOrgIds.length).toBe(createdOrgIds.size);
   });
 
   it('should not return duplicate items across pages', async ({

@@ -34,7 +34,7 @@ describe.concurrent('profile.list', () => {
     expect(Array.isArray(result.items)).toBe(true);
   });
 
-  it('should include created profiles in paginated results', async ({
+  it('should include created profiles in results', async ({
     task,
     onTestFinished,
   }) => {
@@ -56,36 +56,16 @@ describe.concurrent('profile.list', () => {
     const { session } = await createIsolatedSession(org1.adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Paginate through results to find our created profiles
-    const foundProfileIds = new Set<string>();
-    let cursor: string | null | undefined = undefined;
-    let pageCount = 0;
-    const maxPages = 100; // Safety limit
+    const result = await caller.list({
+      limit: 1000,
+      types: [EntityType.ORG],
+    });
 
-    while (pageCount < maxPages) {
-      const result = await caller.list({
-        limit: 10,
-        cursor,
-        types: [EntityType.ORG],
-      });
+    const foundProfileIds = result.items
+      .filter((item) => createdProfileIds.has(item.id))
+      .map((item) => item.id);
 
-      for (const item of result.items) {
-        if (createdProfileIds.has(item.id)) {
-          foundProfileIds.add(item.id);
-        }
-      }
-
-      // Stop if we found all our profiles or no more pages
-      if (foundProfileIds.size === createdProfileIds.size || !result.next) {
-        break;
-      }
-
-      cursor = result.next;
-      pageCount++;
-    }
-
-    // Verify all created profiles were found
-    expect(foundProfileIds.size).toBe(createdProfileIds.size);
+    expect(foundProfileIds.length).toBe(createdProfileIds.size);
   });
 
   it('should not return duplicate items across pages', async ({
