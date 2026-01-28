@@ -11,6 +11,8 @@ export interface AvatarProps {
   className?: string;
   /** Size variant */
   size?: 'sm' | 'md';
+  /** Show full placeholder text instead of just the first character */
+  showFullText?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export const Avatar = ({
   placeholder,
   className,
   size = 'md',
+  showFullText = false,
 }: AvatarProps) => {
   const gradientBg = useMemo(
     () => getGradientForString(placeholder || 'Common'),
@@ -50,7 +53,9 @@ export const Avatar = ({
             gradientBg,
           )}
         >
-          {placeholder?.slice(0, 1).toUpperCase() ?? ''}
+          {showFullText
+            ? placeholder
+            : (placeholder?.slice(0, 1).toUpperCase() ?? '')}
         </div>
       ) : (
         children

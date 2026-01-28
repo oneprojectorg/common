@@ -11,11 +11,10 @@ export interface AwarenessUser extends CollabUser {
 
 /**
  * Subscribe to awareness changes and return list of connected users.
- * Filters out the local user (your own clientId) by default.
+ * Filters out the local user (your own clientId).
  */
 export function useAwarenessUsers(
   provider: TiptapCollabProvider | null,
-  { includeLocal = false }: { includeLocal?: boolean } = {},
 ): AwarenessUser[] {
   const [users, setUsers] = useState<AwarenessUser[]>([]);
 
@@ -33,8 +32,8 @@ export function useAwarenessUsers(
       const connectedUsers: AwarenessUser[] = [];
 
       states.forEach((state, clientId) => {
-        // Skip local user unless explicitly included
-        if (!includeLocal && clientId === localClientId) {
+        // Skip local user
+        if (clientId === localClientId) {
           return;
         }
 
@@ -63,7 +62,7 @@ export function useAwarenessUsers(
     return () => {
       provider.off('awarenessChange', updateUsers);
     };
-  }, [provider, includeLocal]);
+  }, [provider]);
 
   return users;
 }

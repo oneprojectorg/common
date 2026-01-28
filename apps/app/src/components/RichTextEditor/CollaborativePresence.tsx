@@ -21,7 +21,7 @@ export function CollaborativePresence({
   maxVisible = 3,
   className,
 }: CollaborativePresenceProps) {
-  const users = useAwarenessUsers(provider, { includeLocal: true });
+  const users = useAwarenessUsers(provider);
 
   if (users.length === 0) {
     return null;
@@ -44,6 +44,7 @@ export function CollaborativePresence({
         <Avatar
           placeholder={`+${overflowCount}`}
           size="sm"
+          showFullText
           className="border-2 border-white bg-neutral-charcoal"
         />
       )}
