@@ -107,6 +107,11 @@ Use `pnpm w:<workspace>` shortcuts:
   - **Do not** prefix your branch with your name or initials
 - **NEVER commit, push, or pull** - these actions are always manual
 
+### File Search Scope
+
+- **NEVER search outside the current worktree** - all searches should stay within the current working directory
+- The working directory is the root of the monorepo; do not traverse to parent directories or other projects
+
 ### Code Quality Standards
 
 - Run type checking with `pnpm typecheck` or `pnpm w:app typecheck` after making changes
