@@ -148,4 +148,7 @@ export async function teardown() {
     .delete(schema.accessZones)
     .where(inArray(schema.accessZones.id, accessZoneIds));
   console.log('✅ Deseeding completed');
+
+  // Close the database connection to allow the process to exit
+  await db.$client.end();
 }
