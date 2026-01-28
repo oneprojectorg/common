@@ -13,7 +13,7 @@ import {
 import Snapshot from '@tiptap-pro/extension-snapshot';
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import type { Editor, Extensions } from '@tiptap/react';
 import {
   forwardRef,
@@ -94,49 +94,23 @@ export const CollaborativeEditor = forwardRef<
         onEditorReady={onEditorReady}
         className={className}
         editorClassName={editorClassName}
+        user={user}
       />
     );
   },
 );
 
-type CollaborativeEditorInnerProps = Omit<
-  CollaborativeEditorProps,
-  'docId' | 'user'
-> & {
+type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
   ydoc: Doc;
   provider: TiptapCollabProvider;
   status: CollabStatus;
   isSynced: boolean;
 };
 
-const DEFAULT_CURSOR_COLOR = '#f783ac';
-
-type CursorUser = Partial<CollabUser>;
-
-/** Builds the cursor caret element shown at other users' cursor positions */
-function buildCursorElement(user: CursorUser): HTMLElement {
-  const cursor = document.createElement('span');
-  cursor.className = 'collaboration-cursor__caret';
-  cursor.style.setProperty(
-    '--cursor-color',
-    user.color ?? DEFAULT_CURSOR_COLOR,
-  );
-
-  const label = document.createElement('div');
-  label.className = 'collaboration-cursor__label';
-  label.textContent = user.name ?? 'Anonymous';
-  cursor.appendChild(label);
-
-  return cursor;
-}
-
-/** Builds selection highlight attributes for other users' selections */
-function buildSelectionAttrs(user: CursorUser) {
-  return {
-    style: `--cursor-color: ${user.color ?? DEFAULT_CURSOR_COLOR}`,
-    class: 'collaboration-cursor__selection',
-  };
-}
+const DEFAULT_USER: CollabUser = {
+  name: 'Anonymous',
+  color: '#f783ac',
+};
 
 const CollaborativeEditorInner = forwardRef<
   CollaborativeEditorRef,
@@ -153,6 +127,7 @@ const CollaborativeEditorInner = forwardRef<
       onEditorReady,
       className = '',
       editorClassName = '',
+      user,
     },
     ref,
   ) => {
@@ -161,14 +136,13 @@ const CollaborativeEditorInner = forwardRef<
       () => [
         ...extensions,
         Collaboration.configure({ document: ydoc }),
-        CollaborationCursor.configure({
+        CollaborationCaret.configure({
           provider,
-          render: buildCursorElement,
-          selectionRender: buildSelectionAttrs,
+          user: user ?? DEFAULT_USER,
         }),
         Snapshot.configure({ provider }),
       ],
-      [extensions, ydoc, provider],
+      [extensions, ydoc, provider, user],
     );
 
     const editor = useRichTextEditor({
