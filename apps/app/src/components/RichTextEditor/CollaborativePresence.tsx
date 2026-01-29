@@ -2,7 +2,7 @@
 
 import { useAwarenessUsers } from '@/hooks/useAwarenessUsers';
 import { Avatar } from '@op/ui/Avatar';
-import { cn } from '@op/ui/utils';
+import { FacePile } from '@op/ui/FacePile';
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 
 interface CollaborativePresenceProps {
@@ -30,23 +30,25 @@ export function CollaborativePresence({
   const visibleUsers = users.slice(0, maxVisible);
   const overflowCount = users.length - maxVisible;
 
-  return (
-    <div className={cn('flex items-center -space-x-2', className)}>
-      {visibleUsers.map((user) => (
-        <Avatar
-          key={user.clientId}
-          placeholder={user.name}
-          size="sm"
-          className="border-2 border-white"
-        />
-      ))}
-      {overflowCount > 0 && (
-        <Avatar
-          placeholder={`+${overflowCount}`}
-          size="sm"
-          className="border-2 border-white bg-neutral-charcoal"
-        />
-      )}
-    </div>
-  );
+  const avatarItems = visibleUsers.map((user) => (
+    <Avatar
+      key={user.clientId}
+      placeholder={user.name}
+      size="sm"
+      className="border-2 border-white"
+    />
+  ));
+
+  if (overflowCount > 0) {
+    avatarItems.push(
+      <Avatar
+        key="overflow"
+        placeholder={`+${overflowCount}`}
+        size="sm"
+        className="border-2 border-white bg-neutral-charcoal"
+      />,
+    );
+  }
+
+  return <FacePile items={avatarItems} className={className} />;
 }

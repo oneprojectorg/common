@@ -447,7 +447,7 @@ export function ProposalEditor({
             onProviderReady={setCollabProvider}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
-            userName={user.profile?.name ?? user.name ?? 'Anonymous'}
+            userName={user.profile?.name}
           />
         </div>
       </div>

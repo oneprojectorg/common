@@ -67,7 +67,7 @@ export const CollaborativeEditor = forwardRef<
     const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
       docId,
       enabled: true,
-      userName,
+      userName: userName ?? 'Anonymous',
     });
 
     // Notify parent when provider becomes available
