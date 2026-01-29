@@ -50,15 +50,28 @@ jobs:
           BRANCH_NAME="test-ci"
 
           # 1. List branches and find by name
+          echo "Fetching branches for project: $SUPABASE_PROJECT_ID"
           BRANCHES=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/branches")
 
-          BRANCH_ID=$(echo "$BRANCHES" | jq -r --arg name "$BRANCH_NAME" '.[] | select(.name == $name) | .id')
-          BRANCH_REF=$(echo "$BRANCHES" | jq -r --arg name "$BRANCH_NAME" '.[] | select(.name == $name) | .project_ref')
+          # Debug: show raw response structure
+          echo "API Response type: $(echo "$BRANCHES" | jq -r 'type')"
+          echo "API Response keys: $(echo "$BRANCHES" | jq -r 'if type == "object" then keys else "is array" end')"
+
+          # Handle both array and object with branches key
+          if echo "$BRANCHES" | jq -e '.branches' > /dev/null 2>&1; then
+            BRANCHES_ARRAY=$(echo "$BRANCHES" | jq '.branches')
+          else
+            BRANCHES_ARRAY="$BRANCHES"
+          fi
+
+          BRANCH_ID=$(echo "$BRANCHES_ARRAY" | jq -r --arg name "$BRANCH_NAME" '.[] | select(.name == $name) | .id')
+          BRANCH_REF=$(echo "$BRANCHES_ARRAY" | jq -r --arg name "$BRANCH_NAME" '.[] | select(.name == $name) | .project_ref')
 
           if [ -z "$BRANCH_ID" ] || [ "$BRANCH_ID" = "null" ]; then
-            echo "Branch '$BRANCH_NAME' not found. Available branches:"
-            echo "$BRANCHES" | jq -r '.[].name'
+            echo "Branch '$BRANCH_NAME' not found."
+            echo "Available branches:"
+            echo "$BRANCHES_ARRAY" | jq -r '.[] | .name // "unnamed"' 2>/dev/null || echo "$BRANCHES"
             exit 1
           fi
 
