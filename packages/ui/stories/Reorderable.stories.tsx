@@ -32,12 +32,21 @@ const priorityColors = {
   high: 'bg-red-50 text-red-800',
 };
 
+/**
+ * With a drag handle for keyboard and screen reader accessibility.
+ * Mouse users can drag the entire item, but keyboard users use the
+ * handle to initiate drag via Enter key.
+ */
 export const WithDragHandle = () => {
   const [tasks, setTasks] = useState(initialTasks);
 
   return (
     <div className="w-[400px]">
-      <h3 className="mb-4 text-lg font-semibold">Drag Handle Example</h3>
+      <h3 className="mb-4 text-lg font-semibold">With Drag Handle</h3>
+      <p className="mb-4 text-sm text-neutral-gray3">
+        The drag handle provides keyboard and screen reader accessibility.
+        Mouse users can drag the entire row.
+      </p>
       <Reorderable
         items={tasks}
         onChange={setTasks}
@@ -73,12 +82,20 @@ export const WithDragHandle = () => {
   );
 };
 
-export const EntireItemDraggable = () => {
+/**
+ * Without a visible drag handle. The entire item acts as the drag target
+ * for both mouse and keyboard users.
+ */
+export const WithoutDragHandle = () => {
   const [tasks, setTasks] = useState(initialTasks);
 
   return (
     <div className="w-[400px]">
-      <h3 className="mb-4 text-lg font-semibold">Entire Item Draggable</h3>
+      <h3 className="mb-4 text-lg font-semibold">Without Drag Handle</h3>
+      <p className="mb-4 text-sm text-neutral-gray3">
+        The entire item is the drag target. Press Enter on an item to start
+        dragging with keyboard.
+      </p>
       <Reorderable
         items={tasks}
         onChange={setTasks}
@@ -110,12 +127,19 @@ export const EntireItemDraggable = () => {
   );
 };
 
+/**
+ * Customize the drag preview shown while dragging.
+ */
 export const CustomDragPreview = () => {
   const [tasks, setTasks] = useState(initialTasks);
 
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">Custom Drag Preview</h3>
+      <p className="mb-4 text-sm text-neutral-gray3">
+        A custom preview is shown while dragging instead of the default item
+        clone.
+      </p>
       <Reorderable
         items={tasks}
         onChange={setTasks}
