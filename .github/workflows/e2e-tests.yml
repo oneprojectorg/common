@@ -70,8 +70,10 @@ jobs:
 
           if [ -z "$BRANCH_ID" ] || [ "$BRANCH_ID" = "null" ]; then
             echo "Branch '$BRANCH_NAME' not found."
-            echo "Available branches:"
-            echo "$BRANCHES_ARRAY" | jq -r '.[] | .name // "unnamed"' 2>/dev/null || echo "$BRANCHES"
+            echo "Array length: $(echo "$BRANCHES_ARRAY" | jq 'length')"
+            echo "First item keys: $(echo "$BRANCHES_ARRAY" | jq -r '.[0] | keys' 2>/dev/null || echo 'empty')"
+            echo "Full response (first 500 chars):"
+            echo "$BRANCHES" | head -c 500
             exit 1
           fi
 
