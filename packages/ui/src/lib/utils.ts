@@ -6,13 +6,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const GRADIENTS = [
-  'bg-gradient',
-  // 'bg-tealGreen',
-  'bg-redTeal',
-  'bg-blueGreen',
-  'bg-orangePurple',
-];
+export const GRADIENT_COLORS = [
+  { gradient: 'bg-gradient', hex: '#1fa88f' },
+  { gradient: 'bg-redTeal', hex: '#e86a4a' },
+  { gradient: 'bg-blueGreen', hex: '#1a7ab8' },
+  { gradient: 'bg-orangePurple', hex: '#8b2db0' },
+] as const;
+
+export const GRADIENTS = GRADIENT_COLORS.map((c) => c.gradient);
 
 const getNumberFromHashedString = (name: string): number => {
   let hash = 0;
@@ -25,9 +26,18 @@ const getNumberFromHashedString = (name: string): number => {
   return hash as number;
 };
 
-export const getGradientForString = (name: string) => {
+/**
+ * Get a deterministic avatar color for a name.
+ * Returns both the Tailwind gradient class and a hex color for cursors.
+ */
+export const getAvatarColorForString = (name: string) => {
   const hash = getNumberFromHashedString(name);
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
+  const index = Math.abs(hash) % GRADIENT_COLORS.length;
+  return GRADIENT_COLORS[index] ?? GRADIENT_COLORS[0];
+};
+
+export const getGradientForString = (name: string) => {
+  return getAvatarColorForString(name).gradient;
 };
 
 export * from 'tailwind-variants';

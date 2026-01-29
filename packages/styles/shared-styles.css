@@ -639,3 +639,20 @@
 @utility animate-sweep {
   animation: sweep 2s ease-in-out infinite;
 }
+
+/* ============================================
+ * Tiptap Collaboration Cursor Styles
+ * Renders other users' cursor positions and selections
+ * ============================================ */
+
+@layer components {
+  /* Collaboration cursor caret - border-color set inline by tiptap */
+  .collaboration-carets__caret {
+    @apply pointer-events-none relative -mx-px border-r border-l break-normal;
+  }
+
+  /* Collaboration cursor name label - background-color set inline by tiptap */
+  .collaboration-carets__label {
+    @apply absolute -top-5 -left-px rounded-t rounded-br px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white select-none;
+  }
+}
