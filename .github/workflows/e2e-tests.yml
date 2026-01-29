@@ -49,8 +49,15 @@ jobs:
         run: |
           BRANCH_NAME="test-ci"
 
+          # Debug: List all projects to verify token and find correct ref
+          echo "Listing all projects to verify token..."
+          PROJECTS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects")
+          echo "Projects found: $(echo "$PROJECTS" | jq -r '.[] | "\(.name) -> ref: \(.id)"' 2>/dev/null || echo "$PROJECTS" | head -c 300)"
+
           # 1. List branches and find by name
-          echo "Fetching branches for project: $SUPABASE_PROJECT_ID"
+          echo ""
+          echo "Fetching branches for project ref: $SUPABASE_PROJECT_ID"
           BRANCHES=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/branches")
 
