@@ -8,11 +8,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
-// Override Supabase ports for E2E isolation (56xxx instead of 54xxx)
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:56321';
-process.env.DATABASE_URL =
+// Set Supabase ports for E2E isolation (56xxx instead of 54xxx) - only if not already set (e.g., in CI)
+process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'http://127.0.0.1:56321';
+process.env.DATABASE_URL ??=
   'postgresql://postgres:postgres@127.0.0.1:56322/postgres';
-process.env.S3_ASSET_ROOT =
+process.env.S3_ASSET_ROOT ??=
   'http://127.0.0.1:56321/storage/v1/object/public/assets';
 
 /**
@@ -43,7 +43,8 @@ export default defineConfig({
 
   /* Run dev servers with e2e environment before starting the tests */
   webServer: {
-    command: 'pnpm dev:e2e',
+    // In CI, use turbo dev directly (env vars set by workflow); locally use dev:e2e with hardcoded ports
+    command: process.env.CI ? 'pnpm turbo dev' : 'pnpm dev:e2e',
     url: 'http://localhost:3100',
     reuseExistingServer: !process.env.CI,
     cwd: path.resolve(__dirname, '../..'),
