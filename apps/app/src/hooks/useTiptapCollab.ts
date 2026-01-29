@@ -1,14 +1,22 @@
 'use client';
 
+import { getAvatarColorForString } from '@op/ui/utils';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
+export interface CollabUser {
+  name: string;
+  color: string;
+}
+
 export interface UseTiptapCollabOptions {
   docId: string | null;
   enabled?: boolean;
+  /** User's display name for the collaboration cursor */
+  userName?: string;
 }
 
 export interface UseTiptapCollabReturn {
@@ -17,18 +25,27 @@ export interface UseTiptapCollabReturn {
   status: CollabStatus;
   isSynced: boolean;
   isConnected: boolean;
+  /** User object with assigned color for this session */
+  user: CollabUser;
 }
 
 /** Initialize TipTap Cloud collaboration provider */
 export function useTiptapCollab({
   docId,
   enabled = true,
+  userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
 
   const ydoc = useMemo(() => new Y.Doc(), []);
+
+  // Derive color from username - matches Avatar gradient
+  const user = useMemo<CollabUser>(() => {
+    const { hex } = getAvatarColorForString(userName);
+    return { name: userName, color: hex };
+  }, [userName]);
 
   useEffect(() => {
     if (!enabled || !docId) {
@@ -67,11 +84,19 @@ export function useTiptapCollab({
     };
   }, [docId, enabled, ydoc]);
 
+  // Update awareness when user info changes
+  useEffect(() => {
+    if (provider && status === 'connected') {
+      provider.setAwarenessField('user', user);
+    }
+  }, [provider, user, status]);
+
   return {
     ydoc,
     provider,
     status,
     isSynced,
     isConnected: status === 'connected',
+    user,
   };
 }
