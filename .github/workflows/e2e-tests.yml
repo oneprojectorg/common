@@ -186,7 +186,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase-branch.outputs.api_url }}
           SUPABASE_SERVICE_ROLE: ${{ steps.supabase-branch.outputs.service_role_key }}
           DATABASE_URL: ${{ steps.supabase-branch.outputs.database_url }}
-        run: pnpm w:db seed:e2e
+          DB_SEEDING: 'true'
+        run: pnpm -C ./services/db exec tsx ./seed-test.ts
 
       - name: Run E2E tests
         env:
