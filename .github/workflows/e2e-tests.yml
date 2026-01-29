@@ -46,6 +46,7 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_POOLER_HOST: ${{ secrets.SUPABASE_POOLER_HOST }}
         run: |
           BRANCH_NAME="test-ci"
 
@@ -95,6 +96,10 @@ jobs:
           DB_USER=$(echo "$BRANCH_DETAILS" | jq -r '.db_user')
           DB_PASS=$(echo "$BRANCH_DETAILS" | jq -r '.db_pass')
 
+          # Debug: show all branch details keys to find pooler info
+          echo "Branch details keys: $(echo "$BRANCH_DETAILS" | jq 'keys')"
+          echo "DB Host: $DB_HOST"
+
           # 3. Get API keys
           API_KEYS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$BRANCH_REF/api-keys")
@@ -106,6 +111,12 @@ jobs:
           echo "::add-mask::$DB_PASS"
           echo "::add-mask::$ANON_KEY"
           echo "::add-mask::$SERVICE_ROLE_KEY"
+          echo "::add-mask::$DATABASE_URL"
+
+          # Construct pooler DATABASE_URL for IPv4 connectivity (GitHub Actions doesn't support IPv6)
+          # Pooler format: postgresql://postgres.[ref]:[password]@[pooler-host]:6543/postgres
+          POOLER_HOST="${SUPABASE_POOLER_HOST:-aws-0-us-east-1.pooler.supabase.com}"
+          DATABASE_URL="postgresql://postgres.${BRANCH_REF}:${DB_PASS}@${POOLER_HOST}:6543/postgres"
 
           echo "api_url=https://$BRANCH_REF.supabase.co" >> $GITHUB_OUTPUT
           echo "db_host=$DB_HOST" >> $GITHUB_OUTPUT
@@ -114,8 +125,10 @@ jobs:
           echo "db_password=$DB_PASS" >> $GITHUB_OUTPUT
           echo "anon_key=$ANON_KEY" >> $GITHUB_OUTPUT
           echo "service_role_key=$SERVICE_ROLE_KEY" >> $GITHUB_OUTPUT
+          echo "database_url=$DATABASE_URL" >> $GITHUB_OUTPUT
 
           echo "Successfully retrieved credentials for branch '$BRANCH_NAME'"
+          echo "Using pooler host: $POOLER_HOST"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -166,19 +179,13 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm -C ./tests/e2e exec playwright install-deps chromium
 
-      - name: Run database migrations
-        env:
-          DB_MIGRATING: 'true'
-          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase-branch.outputs.api_url }}
-          SUPABASE_SERVICE_ROLE: ${{ steps.supabase-branch.outputs.service_role_key }}
-          DATABASE_URL: postgresql://${{ steps.supabase-branch.outputs.db_user }}:${{ steps.supabase-branch.outputs.db_password }}@${{ steps.supabase-branch.outputs.db_host }}:${{ steps.supabase-branch.outputs.db_port }}/postgres
-        run: pnpm w:db migrate
+      # Migrations skipped - Supabase branch inherits schema from parent
 
       - name: Seed test database
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase-branch.outputs.api_url }}
           SUPABASE_SERVICE_ROLE: ${{ steps.supabase-branch.outputs.service_role_key }}
-          DATABASE_URL: postgresql://${{ steps.supabase-branch.outputs.db_user }}:${{ steps.supabase-branch.outputs.db_password }}@${{ steps.supabase-branch.outputs.db_host }}:${{ steps.supabase-branch.outputs.db_port }}/postgres
+          DATABASE_URL: ${{ steps.supabase-branch.outputs.database_url }}
         run: pnpm w:db seed:e2e
 
       - name: Run E2E tests
@@ -188,7 +195,7 @@ jobs:
           SUPABASE_URL: ${{ steps.supabase-branch.outputs.api_url }}
           SUPABASE_ANON_KEY: ${{ steps.supabase-branch.outputs.anon_key }}
           SUPABASE_SERVICE_ROLE: ${{ steps.supabase-branch.outputs.service_role_key }}
-          DATABASE_URL: postgresql://${{ steps.supabase-branch.outputs.db_user }}:${{ steps.supabase-branch.outputs.db_password }}@${{ steps.supabase-branch.outputs.db_host }}:${{ steps.supabase-branch.outputs.db_port }}/postgres
+          DATABASE_URL: ${{ steps.supabase-branch.outputs.database_url }}
           S3_ASSET_ROOT: ${{ steps.supabase-branch.outputs.api_url }}/storage/v1/object/public/assets
         run: pnpm e2e
 
