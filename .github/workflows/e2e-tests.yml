@@ -42,14 +42,58 @@ jobs:
           fetch-depth: 0
 
       - name: Get Supabase branch credentials
-        uses: 0xbigboss/supabase-branch-gh-action@v1
         id: supabase-branch
-        with:
-          supabase-access-token: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          supabase-project-id: ${{ secrets.SUPABASE_PROJECT_ID }}
-          git-branch: test-ci
-          wait-for-migrations: true
-          timeout: 120
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          BRANCH_NAME="test-ci"
+
+          # 1. List branches and find by name
+          BRANCHES=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/branches")
+
+          BRANCH_ID=$(echo "$BRANCHES" | jq -r --arg name "$BRANCH_NAME" '.[] | select(.name == $name) | .id')
+          BRANCH_REF=$(echo "$BRANCHES" | jq -r --arg name "$BRANCH_NAME" '.[] | select(.name == $name) | .project_ref')
+
+          if [ -z "$BRANCH_ID" ] || [ "$BRANCH_ID" = "null" ]; then
+            echo "Branch '$BRANCH_NAME' not found. Available branches:"
+            echo "$BRANCHES" | jq -r '.[].name'
+            exit 1
+          fi
+
+          echo "Found branch: $BRANCH_NAME (ID: $BRANCH_ID, Ref: $BRANCH_REF)"
+
+          # 2. Get branch details (db credentials)
+          BRANCH_DETAILS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/branches/$BRANCH_ID")
+
+          DB_HOST=$(echo "$BRANCH_DETAILS" | jq -r '.db_host')
+          DB_PORT=$(echo "$BRANCH_DETAILS" | jq -r '.db_port // "5432"')
+          DB_USER=$(echo "$BRANCH_DETAILS" | jq -r '.db_user')
+          DB_PASS=$(echo "$BRANCH_DETAILS" | jq -r '.db_pass')
+
+          # 3. Get API keys
+          API_KEYS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$BRANCH_REF/api-keys")
+
+          ANON_KEY=$(echo "$API_KEYS" | jq -r '.[] | select(.name == "anon") | .api_key')
+          SERVICE_ROLE_KEY=$(echo "$API_KEYS" | jq -r '.[] | select(.name == "service_role") | .api_key')
+
+          # Set outputs (mask secrets)
+          echo "::add-mask::$DB_PASS"
+          echo "::add-mask::$ANON_KEY"
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+
+          echo "api_url=https://$BRANCH_REF.supabase.co" >> $GITHUB_OUTPUT
+          echo "db_host=$DB_HOST" >> $GITHUB_OUTPUT
+          echo "db_port=$DB_PORT" >> $GITHUB_OUTPUT
+          echo "db_user=$DB_USER" >> $GITHUB_OUTPUT
+          echo "db_password=$DB_PASS" >> $GITHUB_OUTPUT
+          echo "anon_key=$ANON_KEY" >> $GITHUB_OUTPUT
+          echo "service_role_key=$SERVICE_ROLE_KEY" >> $GITHUB_OUTPUT
+
+          echo "Successfully retrieved credentials for branch '$BRANCH_NAME'"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
