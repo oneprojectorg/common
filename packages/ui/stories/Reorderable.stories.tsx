@@ -44,8 +44,8 @@ export const WithDragHandle = () => {
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">With Drag Handle</h3>
       <p className="mb-4 text-sm text-neutral-gray3">
-        The drag handle provides keyboard and screen reader accessibility.
-        Mouse users can drag the entire row.
+        The drag handle provides keyboard and screen reader accessibility. Mouse
+        users can drag the entire row.
       </p>
       <Reorderable
         items={tasks}
