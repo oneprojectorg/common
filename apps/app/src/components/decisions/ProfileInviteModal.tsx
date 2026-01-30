@@ -12,7 +12,15 @@ import { SearchField } from '@op/ui/SearchField';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
-import { Key, useEffect, useMemo, useState, useTransition } from 'react';
+import {
+  Key,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -42,6 +50,20 @@ export const ProfileInviteModal = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startTransition] = useTransition();
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+
+  // Update dropdown position when search query changes
+  useEffect(() => {
+    if (debouncedQuery.length >= 2 && searchContainerRef.current) {
+      const rect = searchContainerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [debouncedQuery]);
 
   // Fetch global roles and profile-specific roles in parallel
   const { data: globalRolesData, isPending: globalRolesPending } =
@@ -212,17 +234,27 @@ export const ProfileInviteModal = ({
         )}
 
         {/* Search Input */}
-        <div className="relative">
+        <div ref={searchContainerRef}>
           <SearchField
             placeholder={t('Find orgs and individuals or invite by email...')}
             value={searchQuery}
             onChange={setSearchQuery}
             className="w-full"
           />
+        </div>
 
-          {/* Search Results Dropdown */}
-          {debouncedQuery.length >= 2 && (
-            <div className="absolute top-full left-0 z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-neutral-gray2 bg-white shadow-lg">
+        {/* Search Results Dropdown - rendered via portal to escape modal overflow */}
+        {debouncedQuery.length >= 2 &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div
+              className="fixed z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-neutral-gray2 bg-white shadow-lg"
+              style={{
+                top: dropdownPosition.top,
+                left: dropdownPosition.left,
+                width: dropdownPosition.width,
+              }}
+            >
               {isSearching ? (
                 <div className="flex items-center justify-center p-4">
                   <LoadingSpinner className="size-4" />
@@ -233,7 +265,7 @@ export const ProfileInviteModal = ({
                     key={result.id}
                     type="button"
                     onClick={() => handleSelectItem(result)}
-                    className="hover:bg-neutral-gray0 flex w-full items-center gap-3 px-4 py-3"
+                    className="flex w-full items-center gap-3 px-4 py-3 hover:bg-neutral-gray0"
                   >
                     <Avatar
                       placeholder={result.name}
@@ -265,9 +297,9 @@ export const ProfileInviteModal = ({
                   {t('No result')}
                 </div>
               )}
-            </div>
+            </div>,
+            document.body,
           )}
-        </div>
 
         {/* Selected Items */}
         {selectedItems.length > 0 && (
