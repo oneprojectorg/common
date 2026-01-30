@@ -385,7 +385,7 @@ export function ProposalEditor({
             onChange={setTitle}
             inputProps={{
               placeholder: 'Untitled Proposal',
-              className: 'border-0 p-0 font-serif text-title-lg',
+              className: 'border-0 p-0 font-serif !text-title-lg',
             }}
           />
 
