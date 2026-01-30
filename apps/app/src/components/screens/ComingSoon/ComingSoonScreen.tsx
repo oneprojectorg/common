@@ -4,7 +4,10 @@ import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 
-import { AnimatedGradientBackground } from './AnimatedGradientBackground';
+import {
+  AnimatedGradientBackground,
+  AnimatedGradientText,
+} from './AnimatedGradientBackground';
 import { WaitlistSignup } from './WaitlistSignup';
 
 export const ComingSoonScreen = () => {
@@ -33,20 +36,22 @@ export const ComingSoonScreen = () => {
               <span>
                 Helping people decide together how to use their resources—{' '}
               </span>
-              <span className="bg-blueGreen bg-clip-text font-serif text-title-md text-transparent sm:text-3xl">
-                simply, intuitively, and effectively.
+              <span className="font-serif text-title-md sm:text-3xl">
+                <AnimatedGradientText>
+                  simply, intuitively, and effectively.
+                </AnimatedGradientText>
               </span>
             </h1>
           </FadeInWrapper>
 
           <FadeInWrapper>
-            <div className="relative grid w-full items-center p-16">
+            <div className="relative right-1/2 left-1/2 -mr-[50vw] -ml-[50vw] grid w-screen items-center p-[4vmin]">
               <AnimatedGradientBackground />
 
               <img
                 src="/coming-soon-mockup.png"
                 alt="Screenshot of the Common platform"
-                className="relative shadow"
+                className="relative mx-auto w-5xl max-w-full shadow"
               />
             </div>
           </FadeInWrapper>
