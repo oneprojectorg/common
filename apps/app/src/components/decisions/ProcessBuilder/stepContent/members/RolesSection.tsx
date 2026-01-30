@@ -113,7 +113,7 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
           </TableRow>
         ))}
         {profileRoles.map((role) => (
-          <TableRow key={role.id}>
+          <TableRow key={role.id} className="group">
             <TableCell className="font-medium">{role.name}</TableCell>
             {PERMISSION_COLUMNS.map((col) => (
               <TableCell key={col.key} className="text-center">
@@ -131,7 +131,7 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
             <TableCell>
               <Button
                 color="ghost"
-                className="text-functional-red hover:bg-functional-red/10"
+                className="text-neutral-black opacity-0 group-hover:opacity-100"
                 onPress={() => deleteRoleMutation.mutate({ roleId: role.id })}
                 isDisabled={deleteRoleMutation.isPending}
                 aria-label={`${t('Delete role')} ${role.name}`}
