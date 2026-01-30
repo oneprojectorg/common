@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@op/ui/ui/table';
 import { Suspense, useState } from 'react';
-import { LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -136,7 +136,7 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
                 isDisabled={deleteRoleMutation.isPending}
                 aria-label={`${t('Delete role')} ${role.name}`}
               >
-                <LuTrash2 className="size-4" />
+                <LuX className="size-4" />
               </Button>
             </TableCell>
           </TableRow>
