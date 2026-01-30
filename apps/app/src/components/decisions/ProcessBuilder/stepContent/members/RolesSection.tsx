@@ -5,7 +5,9 @@ import type { RoleWithPermissions } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
+import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { OptionMenu } from '@op/ui/OptionMenu';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import {
@@ -17,7 +19,7 @@ import {
   TableRow,
 } from '@op/ui/ui/table';
 import { Suspense, useState } from 'react';
-import { LuPlus, LuX } from 'react-icons/lu';
+import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -129,15 +131,23 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
               </TableCell>
             ))}
             <TableCell>
-              <Button
-                color="ghost"
-                className="text-neutral-black opacity-0 [[data-slot=table-row]:hover_&]:opacity-100"
-                onPress={() => deleteRoleMutation.mutate({ roleId: role.id })}
-                isDisabled={deleteRoleMutation.isPending}
-                aria-label={`${t('Delete role')} ${role.name}`}
-              >
-                <LuX className="size-4" />
-              </Button>
+              <div className="opacity-0 [[data-slot=table-row]:hover_&]:opacity-100">
+                <OptionMenu>
+                  <Menu className="min-w-28 p-2">
+                    <MenuItem
+                      key="delete"
+                      onAction={() =>
+                        deleteRoleMutation.mutate({ roleId: role.id })
+                      }
+                      isDisabled={deleteRoleMutation.isPending}
+                      className="text-functional-red"
+                    >
+                      <LuTrash2 className="size-4" />
+                      {t('Delete')}
+                    </MenuItem>
+                  </Menu>
+                </OptionMenu>
+              </div>
             </TableCell>
           </TableRow>
         ))}
