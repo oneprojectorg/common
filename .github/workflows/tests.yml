@@ -96,12 +96,12 @@ jobs:
             exit 1
           fi
 
-          # 3. Get project details (for region)
-          PROJECT_DETAILS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            "https://api.supabase.com/v1/projects/$BRANCH_REF")
+          # 3. Get parent project details (for region - branches inherit parent's region)
+          PARENT_PROJECT_DETAILS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID")
 
-          REGION=$(echo "$PROJECT_DETAILS" | jq -r '.region')
-          echo "Branch project region: $REGION"
+          REGION=$(echo "$PARENT_PROJECT_DETAILS" | jq -r '.region')
+          echo "Parent project region: $REGION"
 
           # 4. Get API keys
           API_KEYS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
