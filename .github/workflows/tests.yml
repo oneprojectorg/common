@@ -184,7 +184,54 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Migrations skipped - Supabase branch inherits schema from parent
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ steps.supabase-branch.outputs.database_url }}
+        run: |
+          # TRIPLE SAFETY CHECK before running migrations
+          BRANCH_NAME="${{ github.head_ref }}"
+          BRANCH_REF="${{ steps.supabase-branch.outputs.branch_ref }}"
+          MAIN_PROJECT_ID="${{ secrets.SUPABASE_PROJECT_ID }}"
+
+          echo "=== MIGRATION SAFETY CHECKS ==="
+          echo "Branch name: $BRANCH_NAME"
+          echo "Branch ref: $BRANCH_REF"
+          echo "Main project ID: [MASKED]"
+
+          # Check 1: Must be a PR (head_ref must exist)
+          if [ -z "$BRANCH_NAME" ]; then
+            echo "::error::MIGRATION SAFETY FAILURE: Not running on a PR. Refusing to run migrations."
+            exit 1
+          fi
+
+          # Check 2: Branch name cannot be dev/main/master
+          if [ "$BRANCH_NAME" = "dev" ] || [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
+            echo "::error::MIGRATION SAFETY FAILURE: Branch is '$BRANCH_NAME'. Refusing to run migrations on protected branch."
+            exit 1
+          fi
+
+          # Check 3: Branch ref must not match main project
+          if [ "$BRANCH_REF" = "$MAIN_PROJECT_ID" ]; then
+            echo "::error::MIGRATION SAFETY FAILURE: Branch ref matches main project. Refusing to run migrations."
+            exit 1
+          fi
+
+          # Check 4: DATABASE_URL must contain the branch ref (not main project)
+          if echo "$DATABASE_URL" | grep -q "$MAIN_PROJECT_ID"; then
+            echo "::error::MIGRATION SAFETY FAILURE: DATABASE_URL contains main project ID. Refusing to run migrations."
+            exit 1
+          fi
+
+          # Check 5: DATABASE_URL must contain pooler (not direct connection to be extra safe)
+          if ! echo "$DATABASE_URL" | grep -q "pooler.supabase.com"; then
+            echo "::error::MIGRATION SAFETY FAILURE: DATABASE_URL is not using pooler. Refusing to run migrations."
+            exit 1
+          fi
+
+          echo "=== ALL SAFETY CHECKS PASSED ==="
+          echo "Running migrations on branch database: $BRANCH_REF"
+
+          pnpm w:db migrate
 
       - name: Run tests
         env:
