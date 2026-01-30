@@ -117,7 +117,14 @@ jobs:
             exit 1
           fi
 
-          # 3. Get API keys
+          # 3. Get project details (for region)
+          PROJECT_DETAILS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$BRANCH_REF")
+
+          REGION=$(echo "$PROJECT_DETAILS" | jq -r '.region')
+          echo "Branch project region: $REGION"
+
+          # 4. Get API keys
           API_KEYS=$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$BRANCH_REF/api-keys")
 
@@ -136,7 +143,15 @@ jobs:
 
           # Construct pooler DATABASE_URL for IPv4 connectivity (GitHub Actions doesn't support IPv6)
           # Direct db_host resolves to IPv6 which fails on GHA runners
-          POOLER_HOST="${SUPABASE_POOLER_HOST:-aws-0-us-east-1.pooler.supabase.com}"
+          # Pooler host format: aws-0-{region}.pooler.supabase.com
+          if [ -n "$SUPABASE_POOLER_HOST" ]; then
+            POOLER_HOST="$SUPABASE_POOLER_HOST"
+          elif [ -n "$REGION" ] && [ "$REGION" != "null" ]; then
+            POOLER_HOST="aws-0-${REGION}.pooler.supabase.com"
+          else
+            echo "::error::Could not determine pooler host - region not found and SUPABASE_POOLER_HOST not set"
+            exit 1
+          fi
           DATABASE_URL="postgresql://postgres.${BRANCH_REF}:${DB_PASS}@${POOLER_HOST}:6543/postgres"
           echo "Using pooler host: $POOLER_HOST"
           echo "::add-mask::$DATABASE_URL"
