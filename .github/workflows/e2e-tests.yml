@@ -143,6 +143,7 @@ jobs:
 
           # Construct pooler DATABASE_URL for IPv4 connectivity (GitHub Actions doesn't support IPv6)
           # Direct db_host resolves to IPv6 which fails on GHA runners
+          # Using SESSION MODE (port 5432) with username postgres.{ref}
           # Pooler host format: aws-0-{region}.pooler.supabase.com
           if [ -n "$SUPABASE_POOLER_HOST" ]; then
             POOLER_HOST="$SUPABASE_POOLER_HOST"
@@ -152,7 +153,7 @@ jobs:
             echo "::error::Could not determine pooler host - region not found and SUPABASE_POOLER_HOST not set"
             exit 1
           fi
-          DATABASE_URL="postgresql://postgres.${BRANCH_REF}:${DB_PASS}@${POOLER_HOST}:6543/postgres"
+          DATABASE_URL="postgresql://postgres.${BRANCH_REF}:${DB_PASS}@${POOLER_HOST}:5432/postgres"
           echo "Using pooler host: $POOLER_HOST"
           echo "::add-mask::$DATABASE_URL"
 
