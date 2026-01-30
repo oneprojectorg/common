@@ -154,20 +154,18 @@ function RolesTable({
                 </TableCell>
               ))}
               <TableCell>
-                <div className="opacity-0 [[data-slot=table-row]:hover_&]:opacity-100">
-                  <OptionMenu>
-                    <Menu className="min-w-28 p-2">
-                      <MenuItem
-                        key="delete"
-                        onAction={() => setRoleToDelete(role)}
-                        className="text-functional-red"
-                      >
-                        <LuTrash2 className="size-4" />
-                        {t('Delete')}
-                      </MenuItem>
-                    </Menu>
-                  </OptionMenu>
-                </div>
+                <OptionMenu variant="outline" className="rounded-md">
+                  <Menu className="min-w-28 p-2">
+                    <MenuItem
+                      key="delete"
+                      onAction={() => setRoleToDelete(role)}
+                      className="text-functional-red"
+                    >
+                      <LuTrash2 className="size-4" />
+                      {t('Delete')}
+                    </MenuItem>
+                  </Menu>
+                </OptionMenu>
               </TableCell>
             </TableRow>
           ))}
