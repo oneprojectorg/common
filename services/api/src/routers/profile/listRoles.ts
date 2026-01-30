@@ -7,8 +7,6 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-const DECISIONS_ZONE_NAME = 'decisions';
-
 import { roleEncoder, roleWithPermissionsEncoder } from '../../encoders/roles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import {
@@ -16,6 +14,8 @@ import {
   createSortable,
   paginationSchema,
 } from '../../utils';
+
+const DECISIONS_ZONE_NAME = 'decisions';
 
 const roleSortableSchema = createSortable(['name'] as const);
 
