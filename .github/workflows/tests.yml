@@ -123,14 +123,20 @@ jobs:
           # Construct pooler DATABASE_URL for IPv4 connectivity (GitHub Actions doesn't support IPv6)
           # Direct db_host resolves to IPv6 which fails on GHA runners
           # Using SESSION MODE (port 5432) with username postgres.{ref}
-          # Pooler host format: aws-0-{region}.pooler.supabase.com
+          # Pooler host can be aws-0 or aws-1 depending on the project
+          # Try to get it from project settings, fall back to trying both
+          POOLER_HOST=$(echo "$PARENT_PROJECT_DETAILS" | jq -r '.db_pooler_host // empty')
+
           if [ -n "$SUPABASE_POOLER_HOST" ]; then
             POOLER_HOST="$SUPABASE_POOLER_HOST"
-          elif [ -n "$REGION" ] && [ "$REGION" != "null" ]; then
-            POOLER_HOST="aws-0-${REGION}.pooler.supabase.com"
-          else
-            echo "::error::Could not determine pooler host - region not found and SUPABASE_POOLER_HOST not set"
-            exit 1
+          elif [ -z "$POOLER_HOST" ] || [ "$POOLER_HOST" = "null" ]; then
+            # Fallback: construct from region, trying aws-1 first (newer projects)
+            if [ -n "$REGION" ] && [ "$REGION" != "null" ]; then
+              POOLER_HOST="aws-1-${REGION}.pooler.supabase.com"
+            else
+              echo "::error::Could not determine pooler host - region not found and SUPABASE_POOLER_HOST not set"
+              exit 1
+            fi
           fi
           DATABASE_URL="postgresql://postgres.${BRANCH_REF}:${DB_PASS}@${POOLER_HOST}:5432/postgres"
           echo "Using pooler host: $POOLER_HOST (session mode, port 5432)"
