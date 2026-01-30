@@ -30,12 +30,12 @@ export const ComingSoonScreen = () => {
           Log in
         </ButtonLink>
       </header>
-      <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 text-center sm:my-20">
-        <section className="flex flex-col items-center gap-14">
+      <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 text-center sm:my-24 sm:gap-32">
+        <section className="flex flex-col items-center gap-12 sm:gap-24">
           <FadeInWrapper>
-            <h1 className="flex flex-col gap-6 text-center sm:text-lg">
+            <h1 className="font-serif text-title-md text-neutral-charcoal sm:text-3xl">
               <span>
-                Helping people decide together how to use their resources—{' '}
+                Helping people decide together how to use their resources —{' '}
               </span>
               <span className="font-serif text-title-md sm:text-3xl">
                 <AnimatedGradientText>
@@ -98,7 +98,7 @@ export const ComingSoonScreen = () => {
         <FadeInWrapper>
           <section className="flex flex-col items-center gap-6 p-6">
             <h2 className="font-serif text-title-md">Get early access</h2>
-            <div>
+            <div className="sm:text-lg">
               <p>
                 We’re getting ready to welcome more organizations to Common.
               </p>
