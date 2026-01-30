@@ -496,5 +496,12 @@
   "Saving...": "Saving...",
   "Saved": "Saved",
   "Saved at {time}": "Saved at {time}",
-  "Failed to save": "Failed to save"
+  "Failed to save": "Failed to save",
+  "Invite": "Invite",
+  "Invite members to your decision-making process": "Invite members to your decision-making process",
+  "Find orgs and individuals or invite by email...": "Find orgs and individuals or invite by email...",
+  "{count} people": "{count} people",
+  "Invite sent successfully": "Invite sent successfully",
+  "Selected members": "Selected members",
+  "No email addresses to invite": "No email addresses to invite"
 }

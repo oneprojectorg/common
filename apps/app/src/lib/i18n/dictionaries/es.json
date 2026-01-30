@@ -495,5 +495,12 @@
   "Saving...": "Guardando...",
   "Saved": "Guardado",
   "Saved at {time}": "Guardado a las {time}",
-  "Failed to save": "Error al guardar"
+  "Failed to save": "Error al guardar",
+  "Invite": "Invitar",
+  "Invite members to your decision-making process": "Invitar miembros a tu proceso de toma de decisiones",
+  "Find orgs and individuals or invite by email...": "Buscar organizaciones e individuos o invitar por correo...",
+  "{count} people": "{count} personas",
+  "Invite sent successfully": "Invitación enviada exitosamente",
+  "Selected members": "Miembros seleccionados",
+  "No email addresses to invite": "No hay direcciones de correo para invitar"
 }

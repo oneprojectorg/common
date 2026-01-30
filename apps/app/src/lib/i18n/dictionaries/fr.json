@@ -496,5 +496,12 @@
   "Saving...": "Enregistrement...",
   "Saved": "Enregistré",
   "Saved at {time}": "Enregistré à {time}",
-  "Failed to save": "Échec de l'enregistrement"
+  "Failed to save": "Échec de l'enregistrement",
+  "Invite": "Inviter",
+  "Invite members to your decision-making process": "Inviter des membres à votre processus de prise de décision",
+  "Find orgs and individuals or invite by email...": "Rechercher des organisations et des individus ou inviter par courriel...",
+  "{count} people": "{count} personnes",
+  "Invite sent successfully": "Invitation envoyée avec succès",
+  "Selected members": "Membres sélectionnés",
+  "No email addresses to invite": "Aucune adresse courriel à inviter"
 }

@@ -496,5 +496,12 @@
   "Saving...": "সংরক্ষণ হচ্ছে...",
   "Saved": "সংরক্ষিত",
   "Saved at {time}": "{time} এ সংরক্ষিত",
-  "Failed to save": "সংরক্ষণ ব্যর্থ হয়েছে"
+  "Failed to save": "সংরক্ষণ ব্যর্থ হয়েছে",
+  "Invite": "আমন্ত্রণ করুন",
+  "Invite members to your decision-making process": "আপনার সিদ্ধান্ত গ্রহণ প্রক্রিয়ায় সদস্যদের আমন্ত্রণ করুন",
+  "Find orgs and individuals or invite by email...": "সংস্থা এবং ব্যক্তি খুঁজুন বা ইমেইলে আমন্ত্রণ করুন...",
+  "{count} people": "{count} জন",
+  "Invite sent successfully": "আমন্ত্রণ সফলভাবে পাঠানো হয়েছে",
+  "Selected members": "নির্বাচিত সদস্যরা",
+  "No email addresses to invite": "আমন্ত্রণ করার জন্য কোনো ইমেইল ঠিকানা নেই"
 }
