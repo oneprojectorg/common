@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import type { RoleWithPermissions } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
+import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
@@ -162,37 +163,39 @@ function AddRoleDialog({
   };
 
   return (
-    <Modal
-      isDismissable
-      isOpen={isOpen}
-      onOpenChange={(open) => !open && onClose()}
-    >
-      <ModalHeader>{t('Add role')}</ModalHeader>
-      <ModalBody>
-        <TextField
-          label={t('Role name')}
-          value={roleName}
-          onChange={setRoleName}
-          autoFocus
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSubmit();
-            }
-          }}
-        />
-      </ModalBody>
-      <ModalFooter>
-        <Button color="secondary" onPress={onClose}>
-          {t('Cancel')}
-        </Button>
-        <Button
-          onPress={handleSubmit}
-          isDisabled={!roleName.trim() || createRole.isPending}
-        >
-          {t('Save')}
-        </Button>
-      </ModalFooter>
-    </Modal>
+    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Modal
+        isDismissable
+        isOpen={isOpen}
+        onOpenChange={(open) => !open && onClose()}
+      >
+        <ModalHeader>{t('Add role')}</ModalHeader>
+        <ModalBody>
+          <TextField
+            label={t('Role name')}
+            value={roleName}
+            onChange={setRoleName}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSubmit();
+              }
+            }}
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onPress={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            onPress={handleSubmit}
+            isDisabled={!roleName.trim() || createRole.isPending}
+          >
+            {t('Save')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </DialogTrigger>
   );
 }
 
