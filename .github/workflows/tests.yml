@@ -25,6 +25,7 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_POOLER_HOST: ${{ secrets.SUPABASE_POOLER_HOST }}
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
 
@@ -114,7 +115,9 @@ jobs:
 
           # Construct pooler DATABASE_URL for IPv4 connectivity (GitHub Actions doesn't support IPv6)
           # Direct db_host resolves to IPv6 which fails on GHA runners
-          DATABASE_URL="postgresql://postgres.${BRANCH_REF}:${DB_PASS}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+          POOLER_HOST="${SUPABASE_POOLER_HOST:-aws-0-us-east-1.pooler.supabase.com}"
+          DATABASE_URL="postgresql://postgres.${BRANCH_REF}:${DB_PASS}@${POOLER_HOST}:6543/postgres"
+          echo "Using pooler host: $POOLER_HOST"
           echo "::add-mask::$DATABASE_URL"
 
           # Set outputs
