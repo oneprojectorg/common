@@ -23,10 +23,27 @@ export async function setup() {
   const isRemoteSupabase = databaseUrl.includes('pooler.supabase.com');
 
   if (isRemoteSupabase) {
-    // Skip migrations - Supabase branching already applied them
+    // Run migrations against remote Supabase branch
+    // Branch databases start empty - they don't inherit schema from parent
     console.log(
-      '⏭️  Skipping migrations - using remote Supabase branch (schema inherited from parent)',
+      '🔄 Running Drizzle migrations against remote Supabase branch...',
     );
+    try {
+      execSync('cross-env DB_MIGRATING=true tsx ./migrate.ts', {
+        cwd: path.resolve(projectRoot, 'services/db'),
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          DB_MIGRATING: 'true',
+        },
+      });
+      console.log('✅ Drizzle migrations completed successfully');
+    } catch (error: any) {
+      console.warn('⚠️  Migration warning:', error.message);
+      console.warn(
+        '   Tests will continue, but some may fail if schema is outdated',
+      );
+    }
 
     // Run seed directly with the remote DATABASE_URL
     console.log('🌱 Running database seed against remote branch...');
