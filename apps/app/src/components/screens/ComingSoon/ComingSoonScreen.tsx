@@ -156,7 +156,7 @@ const FadeInWrapper = ({ children }: { children: React.ReactNode }) => {
       variants={fadeInVariants}
       initial="offscreen"
       whileInView="onscreen"
-      viewport={{ amount: 0.5 }}
+      viewport={{ amount: 0.7, once: true }}
     >
       {children}
     </motion.div>
