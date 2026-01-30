@@ -26,7 +26,7 @@ const validator = z.object({
 });
 
 const overlayStyles = tv({
-  base: 'absolute top-0 left-0 isolate z-20 h-(--page-height) w-full bg-white/[50%] text-center backdrop-blur-[3px]',
+  base: 'absolute top-0 left-0 isolate z-20 h-(--page-height) w-full bg-black/10 text-center backdrop-blur-[3px]',
   variants: {
     isEntering: {
       true: 'animate-in duration-200 ease-out fade-in',
@@ -38,7 +38,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'max-h-[calc(var(--visual-viewport-height)*.9)] w-full max-w-[min(90vw,450px)] rounded-2xl border border-black/10 bg-white bg-clip-padding text-left align-middle font-sans text-neutral-700 shadow-2xl dark:border-white/10 dark:bg-neutral-800/70 dark:text-neutral-300 dark:backdrop-blur-2xl dark:backdrop-saturate-200 forced-colors:bg-[Canvas]',
+  base: 'max-h-[calc(var(--visual-viewport-height)*.9)] w-full max-w-[min(90vw,450px)] rounded-2xl border border-black/10 bg-white bg-clip-padding text-left align-middle font-sans text-neutral-700 shadow dark:border-white/10 dark:bg-neutral-800/70 dark:text-neutral-300 dark:backdrop-blur-2xl dark:backdrop-saturate-200 forced-colors:bg-[Canvas]',
   variants: {
     isEntering: {
       true: 'animate-in duration-200 ease-out zoom-in-105',
@@ -221,9 +221,9 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
 const WaitlistSignupSuccess = () => (
   <>
-    <div className="relative p-6 pt-10">
+    <div className="relative px-6 pt-16">
       <Heading
-        className="w-full bg-blueGreen bg-clip-text text-center font-serif text-xl font-extralight tracking-tight text-transparent italic sm:text-2xl"
+        className="w-full text-center font-serif text-xl font-extralight tracking-tight sm:text-2xl"
         slot="title"
       >
         You're on the list!
