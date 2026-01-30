@@ -10,7 +10,6 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { SearchField } from '@op/ui/SearchField';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import { Key, useEffect, useMemo, useState, useTransition } from 'react';
@@ -194,14 +193,14 @@ export const ProfileInviteModal = ({
             selectedKey={selectedRoleId}
             onSelectionChange={handleTabChange}
           >
-            <TabList variant="pill">
+            <TabList>
               {roles.map((role) => {
                 const countForRole = selectedItems.length;
                 return (
-                  <Tab key={role.id} id={role.id} variant="pill">
+                  <Tab key={role.id} id={role.id}>
                     {role.name}
                     {countForRole > 0 && selectedRoleId === role.id ? (
-                      <span className="ml-1.5 rounded-full bg-neutral-charcoal px-1.5 py-0.5 text-xs text-white">
+                      <span className="ml-1.5 min-w-4 rounded-full bg-teal-500 px-1.5 py-0.5 text-xs text-white">
                         {countForRole}
                       </span>
                     ) : null}
@@ -276,14 +275,13 @@ export const ProfileInviteModal = ({
             <div className="mb-2 text-sm font-medium text-neutral-charcoal">
               {t('Selected members')}
             </div>
-            <TagGroup
-              aria-label={t('Selected members')}
-              onRemove={handleRemoveItem}
-              tagListProps={{ className: 'gap-2' }}
-            >
+            <div className="flex flex-wrap gap-2">
               {selectedItems.map((item) => (
-                <Tag key={item.id} id={item.id} className="gap-2 pr-1">
-                  <Avatar placeholder={item.name} className="size-5 shrink-0">
+                <div
+                  key={item.id}
+                  className="flex h-14 items-center gap-3 rounded-lg border border-neutral-gray2 bg-white px-3"
+                >
+                  <Avatar placeholder={item.name} className="size-6 shrink-0">
                     {item.avatarUrl ? (
                       <Image
                         src={item.avatarUrl}
@@ -293,24 +291,33 @@ export const ProfileInviteModal = ({
                       />
                     ) : null}
                   </Avatar>
-                  <span className="text-sm">{item.name}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-neutral-charcoal">
+                      {item.name}
+                    </span>
+                    {item.type === 'org' && (
+                      <span className="text-xs text-neutral-gray4">
+                        {t('Organization')}
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveItem(new Set([item.id]))}
-                    className="ml-1 rounded-full p-0.5 hover:bg-neutral-gray2"
+                    className="ml-1 rounded-full p-1 hover:bg-neutral-gray1"
                     aria-label={`Remove ${item.name}`}
                   >
-                    <LuX className="size-3" />
+                    <LuX className="size-4" />
                   </button>
-                </Tag>
+                </div>
               ))}
-            </TagGroup>
+            </div>
           </div>
         )}
       </ModalBody>
 
       <ModalFooter className="flex items-center justify-between">
-        <div className="text-sm text-neutral-gray4">
+        <div className="text-sm text-neutral-black">
           {totalPeople > 0 ? t('{count} people', { count: totalPeople }) : null}
         </div>
         <Button
