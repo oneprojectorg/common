@@ -3,6 +3,7 @@ import { LogoLoop } from '@op/ui/LogoLoop';
 import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
+import Image from 'next/image';
 
 import {
   AnimatedGradientBackground,
@@ -48,10 +49,13 @@ export const ComingSoonScreen = () => {
             <div className="relative right-1/2 left-1/2 -mr-[50vw] -ml-[50vw] grid w-screen items-center p-[4vmin]">
               <AnimatedGradientBackground />
 
-              <img
+              <Image
                 src="/coming-soon-mockup.png"
                 alt="Screenshot of the Common platform"
+                width={1568}
+                height={1041}
                 className="relative mx-auto w-5xl max-w-full shadow"
+                priority
               />
             </div>
           </FadeInWrapper>
@@ -152,7 +156,7 @@ const FadeInWrapper = ({ children }: { children: React.ReactNode }) => {
       variants={fadeInVariants}
       initial="offscreen"
       whileInView="onscreen"
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ amount: 0.5 }}
     >
       {children}
     </motion.div>
