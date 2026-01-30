@@ -203,12 +203,16 @@ function RolesSectionContent({ decisionProfileId }: SectionProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-title-small font-serif">
+        <h2 className="font-serif text-title-sm font-light text-neutral-black">
           {t('Roles & permissions')}
         </h2>
-        <Button color="ghost" onPress={() => setIsAddDialogOpen(true)}>
+        <Button
+          color="ghost"
+          className="text-primary-teal hover:text-primary-tealBlack"
+          onPress={() => setIsAddDialogOpen(true)}
+        >
           <LuPlus className="size-4" />
           {t('Add role')}
         </Button>
