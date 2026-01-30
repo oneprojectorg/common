@@ -469,6 +469,8 @@ export const ProposalsList = ({
   // Mobile detection for bottom sheet filters
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
+  const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
 
   // Initialize state from URL search params
   const [selectedCategory, setSelectedCategory] = useState<string>(
@@ -703,46 +705,150 @@ export const ProposalsList = ({
               )}
             </Select>
           )}
-          <Select
-            selectedKey={selectedCategory}
-            size="small"
-            className="min-w-36"
-            onSelectionChange={(key) => {
-              const category = String(key);
-              setSelectedCategory(category);
-              updateURLParams({ category });
-            }}
-            aria-label={t('Filter proposals by category')}
-          >
-            <SelectItem
-              id="all-categories"
-              aria-label={t('Show all categories')}
-            >
-              {t('All categories')}
-            </SelectItem>
-            {categories.map((category) => (
-              <SelectItem
-                key={category.id}
-                id={category.id}
-                aria-label={`Filter by ${category.name} category`}
+          {isMobile ? (
+            <>
+              <Button
+                color="secondary"
+                size="small"
+                className="min-w-36 justify-between"
+                onPress={() => setIsCategorySheetOpen(true)}
               >
-                {category.name}
+                {selectedCategory === 'all-categories'
+                  ? t('All categories')
+                  : (categories.find((c) => c.id === selectedCategory)?.name ??
+                    t('All categories'))}
+                <LuChevronDown className="size-4" />
+              </Button>
+              <Modal
+                isOpen={isCategorySheetOpen}
+                onOpenChange={setIsCategorySheetOpen}
+                isDismissable={true}
+                isKeyboardDismissDisabled={false}
+                overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
+                className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+              >
+                <ModalBody className="pb-safe p-0">
+                  <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
+                    <MenuItem
+                      id="all-categories"
+                      selected={selectedCategory === 'all-categories'}
+                      onAction={() => {
+                        setSelectedCategory('all-categories');
+                        updateURLParams({ category: 'all-categories' });
+                        setIsCategorySheetOpen(false);
+                      }}
+                    >
+                      {t('All categories')}
+                    </MenuItem>
+                    {categories.map((category) => (
+                      <MenuItem
+                        key={category.id}
+                        id={category.id}
+                        selected={selectedCategory === category.id}
+                        onAction={() => {
+                          setSelectedCategory(category.id);
+                          updateURLParams({ category: category.id });
+                          setIsCategorySheetOpen(false);
+                        }}
+                      >
+                        {category.name}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </ModalBody>
+              </Modal>
+            </>
+          ) : (
+            <Select
+              selectedKey={selectedCategory}
+              size="small"
+              className="min-w-36"
+              onSelectionChange={(key) => {
+                const category = String(key);
+                setSelectedCategory(category);
+                updateURLParams({ category });
+              }}
+              aria-label={t('Filter proposals by category')}
+            >
+              <SelectItem
+                id="all-categories"
+                aria-label={t('Show all categories')}
+              >
+                {t('All categories')}
               </SelectItem>
-            ))}
-          </Select>
-          <Select
-            selectedKey={sortOrder}
-            size="small"
-            className="min-w-32"
-            onSelectionChange={(key) => {
-              const sort = String(key);
-              setSortOrder(sort);
-              updateURLParams({ sort });
-            }}
-          >
-            <SelectItem id="newest">{t('Newest First')}</SelectItem>
-            <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
-          </Select>
+              {categories.map((category) => (
+                <SelectItem
+                  key={category.id}
+                  id={category.id}
+                  aria-label={`Filter by ${category.name} category`}
+                >
+                  {category.name}
+                </SelectItem>
+              ))}
+            </Select>
+          )}
+          {isMobile ? (
+            <>
+              <Button
+                color="secondary"
+                size="small"
+                className="min-w-32 justify-between"
+                onPress={() => setIsSortSheetOpen(true)}
+              >
+                {sortOrder === 'newest' ? t('Newest First') : t('Oldest First')}
+                <LuChevronDown className="size-4" />
+              </Button>
+              <Modal
+                isOpen={isSortSheetOpen}
+                onOpenChange={setIsSortSheetOpen}
+                isDismissable={true}
+                isKeyboardDismissDisabled={false}
+                overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
+                className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+              >
+                <ModalBody className="pb-safe p-0">
+                  <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
+                    <MenuItem
+                      id="newest"
+                      selected={sortOrder === 'newest'}
+                      onAction={() => {
+                        setSortOrder('newest');
+                        updateURLParams({ sort: 'newest' });
+                        setIsSortSheetOpen(false);
+                      }}
+                    >
+                      {t('Newest First')}
+                    </MenuItem>
+                    <MenuItem
+                      id="oldest"
+                      selected={sortOrder === 'oldest'}
+                      onAction={() => {
+                        setSortOrder('oldest');
+                        updateURLParams({ sort: 'oldest' });
+                        setIsSortSheetOpen(false);
+                      }}
+                    >
+                      {t('Oldest First')}
+                    </MenuItem>
+                  </Menu>
+                </ModalBody>
+              </Modal>
+            </>
+          ) : (
+            <Select
+              selectedKey={sortOrder}
+              size="small"
+              className="min-w-32"
+              onSelectionChange={(key) => {
+                const sort = String(key);
+                setSortOrder(sort);
+                updateURLParams({ sort });
+              }}
+            >
+              <SelectItem id="newest">{t('Newest First')}</SelectItem>
+              <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
+            </Select>
+          )}
           {canManageProposals ? (
             isDownloadReady && downloadUrl ? (
               <ButtonLink
