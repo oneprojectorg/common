@@ -26,9 +26,9 @@ const allowedDatabaseUrls = [
   'postgresql://postgres:postgres@127.0.0.1:56322/postgres', // E2E database
 ];
 
-// Allow Supabase branch URLs in CI (format: postgresql://postgres:...@db.[ref].supabase.co...)
+// Allow Supabase branch pooler URLs in CI (format: postgresql://postgres.[ref]:...@...pooler.supabase.com...)
 const isSupabaseBranchUrl =
-  process.env.DATABASE_URL?.includes('.supabase.co') ?? false;
+  process.env.DATABASE_URL?.includes('pooler.supabase.com') ?? false;
 
 if (
   !isSupabaseBranchUrl &&
@@ -41,7 +41,7 @@ if (
 function getSupabaseUrl(): string {
   const dbUrl = process.env.DATABASE_URL ?? '';
   // For Supabase branch URLs, use the NEXT_PUBLIC_SUPABASE_URL env var
-  if (dbUrl.includes('.supabase.co')) {
+  if (dbUrl.includes('pooler.supabase.com')) {
     return process.env.NEXT_PUBLIC_SUPABASE_URL!;
   }
   if (dbUrl.includes('56322')) {
