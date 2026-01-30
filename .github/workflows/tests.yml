@@ -151,11 +151,6 @@ jobs:
 
           echo "Successfully retrieved credentials for branch '$BRANCH_NAME'"
 
-      - name: Wait for Supabase branch to be fully provisioned
-        run: |
-          echo "Waiting 30 seconds for Supabase branch pooler to be ready..."
-          sleep 30
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
