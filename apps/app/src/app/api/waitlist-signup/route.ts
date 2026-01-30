@@ -13,8 +13,6 @@ export async function POST(req: NextRequest) {
 
   const { firstName, lastName, email, organizationName } = body;
 
-  console.log({ firstName, lastName, email, organizationName });
-
   if (!email) {
     return Response.json({ error: 'Email is required' }, { status: 400 });
   }
@@ -41,6 +39,11 @@ export async function POST(req: NextRequest) {
       {
         email_address: email,
         status: 'subscribed',
+        merge_fields: {
+          FNAME: firstName,
+          LNAME: lastName,
+          ORG: organizationName,
+        },
         tags: ['Common Waitlist'], // Ensures this lands in the right segment in Mailchimp
       },
     );

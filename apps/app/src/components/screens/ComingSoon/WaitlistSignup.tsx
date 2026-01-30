@@ -57,7 +57,7 @@ export const WaitlistSignup = () => {
         <div className="sticky top-0 left-0 box-border flex h-(--visual-viewport-height) w-full items-center justify-center">
           <Modal isDismissable className={modalStyles}>
             <Dialog className="relative max-h-[inherit] overflow-auto">
-              {isSubmitted ? (
+              {!isSubmitted ? (
                 <WaitlistSignupSuccess />
               ) : (
                 <WaitlistSignupForm onSuccess={() => setIsSubmitted(true)} />
@@ -116,7 +116,10 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         >
           Common
         </Heading>
-        <IconButton className="absolute top-3 right-3 size-8" slot="close">
+        <IconButton
+          className="absolute top-3 left-3 size-8 text-neutral-gray3"
+          slot="close"
+        >
           <LuX className="size-6" />
         </IconButton>
       </div>
@@ -217,14 +220,27 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
 };
 
 const WaitlistSignupSuccess = () => (
-  <div className="flex w-max animate-in items-center rounded bg-white/85 p-4 sm:h-16 sm:rounded-xl sm:px-6 sm:py-4">
-    <h2 className="w-max bg-orangePurple bg-clip-text text-transparent sm:text-xl">
-      You're on the list!
-    </h2>
-    <p>
-      We can’t wait to see you on Common, as an early collaborator in creating
-      an economy that works for everyone.
-    </p>
-    <p>We'll be in touch soon!</p>
-  </div>
+  <>
+    <div className="relative p-6 pt-10">
+      <Heading
+        className="w-full bg-blueGreen bg-clip-text text-center font-serif text-xl font-extralight tracking-tight text-transparent italic sm:text-2xl"
+        slot="title"
+      >
+        You're on the list!
+      </Heading>
+      <IconButton
+        className="absolute top-3 left-3 size-8 text-neutral-gray3"
+        slot="close"
+      >
+        <LuX className="size-6" />
+      </IconButton>
+    </div>
+    <div className="flex flex-col gap-6 p-8 text-center">
+      <p>
+        We can’t wait to see you on Common, as an early collaborator in creating
+        an economy that works for everyone.
+      </p>
+      <p>We'll be in touch soon!</p>
+    </div>
+  </>
 );
