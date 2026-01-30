@@ -13,12 +13,42 @@ import { drizzle } from 'drizzle-orm/postgres-js';
  * This ensures migrations and seeding happen only once per test run
  */
 export async function setup() {
-  console.log('🔄 Running Drizzle migrations...');
-
   const { execSync } = await import('child_process');
   const path = await import('path');
 
   const projectRoot = path.resolve(process.cwd(), '../..');
+  const databaseUrl = process.env.DATABASE_URL ?? '';
+
+  // Check if we're running against a remote Supabase branch (CI with pooler)
+  const isRemoteSupabase = databaseUrl.includes('pooler.supabase.com');
+
+  if (isRemoteSupabase) {
+    // Skip migrations - Supabase branching already applied them
+    console.log(
+      '⏭️  Skipping migrations - using remote Supabase branch (schema inherited from parent)',
+    );
+
+    // Run seed directly with the remote DATABASE_URL
+    console.log('🌱 Running database seed against remote branch...');
+    try {
+      execSync('cross-env DB_SEEDING=true tsx ./seed-test.ts', {
+        cwd: path.resolve(projectRoot, 'services/db'),
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          DB_SEEDING: 'true',
+        },
+      });
+      console.log('✅ Database seed completed successfully');
+    } catch (seedError: any) {
+      console.warn('⚠️  Seeding warning:', seedError.message.split('\n')[0]);
+      console.warn('   Tests will continue without seed data');
+    }
+    return;
+  }
+
+  // Local development: run migrations and seed with hardcoded local URLs
+  console.log('🔄 Running Drizzle migrations...');
   const migrationCommand = 'pnpm w:db migrate:test';
 
   try {
