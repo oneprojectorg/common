@@ -57,7 +57,7 @@ export const WaitlistSignup = () => {
         <div className="sticky top-0 left-0 box-border flex h-(--visual-viewport-height) w-full items-center justify-center">
           <Modal isDismissable className={modalStyles}>
             <Dialog className="relative max-h-[inherit] overflow-auto">
-              {!isSubmitted ? (
+              {isSubmitted ? (
                 <WaitlistSignupSuccess />
               ) : (
                 <WaitlistSignupForm onSuccess={() => setIsSubmitted(true)} />
@@ -235,12 +235,15 @@ const WaitlistSignupSuccess = () => (
         <LuX className="size-6" />
       </IconButton>
     </div>
-    <div className="flex flex-col gap-6 p-8 text-center">
+    <div className="flex flex-col items-center gap-6 p-8 text-center">
       <p>
         We can’t wait to see you on Common, as an early collaborator in creating
         an economy that works for everyone.
       </p>
       <p>We'll be in touch soon!</p>
+      <Button color="secondary" className="w-9/10" slot="close">
+        Done
+      </Button>
     </div>
   </>
 );
