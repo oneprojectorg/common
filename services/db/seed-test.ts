@@ -26,13 +26,24 @@ const allowedDatabaseUrls = [
   'postgresql://postgres:postgres@127.0.0.1:56322/postgres', // E2E database
 ];
 
-if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
+// Allow Supabase branch URLs in CI (format: postgresql://postgres:...@db.[ref].supabase.co...)
+const isSupabaseBranchUrl =
+  process.env.DATABASE_URL?.includes('.supabase.co') ?? false;
+
+if (
+  !isSupabaseBranchUrl &&
+  !allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')
+) {
   throw new Error('You are truncating in production');
 }
 
 // Determine the correct Supabase URL based on the database URL
 function getSupabaseUrl(): string {
   const dbUrl = process.env.DATABASE_URL ?? '';
+  // For Supabase branch URLs, use the NEXT_PUBLIC_SUPABASE_URL env var
+  if (dbUrl.includes('.supabase.co')) {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  }
   if (dbUrl.includes('56322')) {
     return 'http://127.0.0.1:56321'; // E2E Supabase instance
   }
