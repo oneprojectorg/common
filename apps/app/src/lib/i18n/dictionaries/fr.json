@@ -521,5 +521,9 @@
   "Role name": "Nom du rôle",
   "Save": "Enregistrer",
   "Delete role": "Supprimer le rôle",
-  "No roles configured": "Aucun rôle configuré"
+  "No roles configured": "Aucun rôle configuré",
+  "Remove {name}": "Supprimer {name}",
+  "Are you sure you want to remove {roleName} from \"{processName}\"?": "Êtes-vous sûr de vouloir supprimer {roleName} de \"{processName}\" ?",
+  "Removing...": "Suppression...",
+  "Remove": "Supprimer"
 }

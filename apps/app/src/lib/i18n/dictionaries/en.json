@@ -521,5 +521,9 @@
   "Role name": "Role name",
   "Save": "Save",
   "Delete role": "Delete role",
-  "No roles configured": "No roles configured"
+  "No roles configured": "No roles configured",
+  "Remove {name}": "Remove {name}",
+  "Are you sure you want to remove {roleName} from \"{processName}\"?": "Are you sure you want to remove {roleName} from \"{processName}\"?",
+  "Removing...": "Removing...",
+  "Remove": "Remove"
 }

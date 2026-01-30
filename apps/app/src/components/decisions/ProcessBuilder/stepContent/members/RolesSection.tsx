@@ -33,9 +33,18 @@ const PERMISSION_COLUMNS = [
   { key: 'delete', label: 'Delete', mask: 1 },
 ] as const;
 
-function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
+function RolesTable({
+  decisionProfileId,
+  decisionName,
+}: {
+  decisionProfileId: string;
+  decisionName: string;
+}) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const [roleToDelete, setRoleToDelete] = useState<RoleWithPermissions | null>(
+    null,
+  );
 
   const [rolesData] = trpc.profile.listRolesWithPermissions.useSuspenseQuery({
     profileId: decisionProfileId,
@@ -84,75 +93,125 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
     );
   }
 
+  const handleDeleteConfirm = async () => {
+    if (!roleToDelete) {
+      return;
+    }
+
+    try {
+      await deleteRoleMutation.mutateAsync({ roleId: roleToDelete.id });
+      setRoleToDelete(null);
+    } catch {
+      // Error is handled by onError callback
+    }
+  };
+
   return (
-    <Table aria-label={t('Roles & permissions')}>
-      <TableHeader>
-        <TableColumn isRowHeader>{t('Role')}</TableColumn>
-        {PERMISSION_COLUMNS.map((col) => (
-          <TableColumn key={col.key} className="text-center">
-            {t(col.label)}
-          </TableColumn>
-        ))}
-        <TableColumn className="w-12" />
-      </TableHeader>
-      <TableBody>
-        {globalRoles.map((role) => (
-          <TableRow key={role.id} className="opacity-50">
-            <TableCell className="font-medium">{role.name}</TableCell>
-            {PERMISSION_COLUMNS.map((col) => (
-              <TableCell key={col.key} className="text-center">
-                <div className="flex justify-center">
-                  <Checkbox
-                    size="small"
-                    isSelected={(role.permission & col.mask) !== 0}
-                    isDisabled
-                    aria-label={`${col.label} permission for ${role.name}`}
-                  />
+    <>
+      <Table aria-label={t('Roles & permissions')}>
+        <TableHeader>
+          <TableColumn isRowHeader>{t('Role')}</TableColumn>
+          {PERMISSION_COLUMNS.map((col) => (
+            <TableColumn key={col.key} className="text-center">
+              {t(col.label)}
+            </TableColumn>
+          ))}
+          <TableColumn className="w-12" />
+        </TableHeader>
+        <TableBody>
+          {globalRoles.map((role) => (
+            <TableRow key={role.id} className="opacity-50">
+              <TableCell className="font-medium">{role.name}</TableCell>
+              {PERMISSION_COLUMNS.map((col) => (
+                <TableCell key={col.key} className="text-center">
+                  <div className="flex justify-center">
+                    <Checkbox
+                      size="small"
+                      isSelected={(role.permission & col.mask) !== 0}
+                      isDisabled
+                      aria-label={`${col.label} permission for ${role.name}`}
+                    />
+                  </div>
+                </TableCell>
+              ))}
+              <TableCell />
+            </TableRow>
+          ))}
+          {profileRoles.map((role) => (
+            <TableRow key={role.id}>
+              <TableCell className="font-medium">{role.name}</TableCell>
+              {PERMISSION_COLUMNS.map((col) => (
+                <TableCell key={col.key} className="text-center">
+                  <div className="flex justify-center">
+                    <Checkbox
+                      size="small"
+                      isSelected={(role.permission & col.mask) !== 0}
+                      isDisabled={updatePermission.isPending}
+                      onChange={() => togglePermission(role, col.mask)}
+                      aria-label={`${col.label} permission for ${role.name}`}
+                    />
+                  </div>
+                </TableCell>
+              ))}
+              <TableCell>
+                <div className="opacity-0 [[data-slot=table-row]:hover_&]:opacity-100">
+                  <OptionMenu>
+                    <Menu className="min-w-28 p-2">
+                      <MenuItem
+                        key="delete"
+                        onAction={() => setRoleToDelete(role)}
+                        className="text-functional-red"
+                      >
+                        <LuTrash2 className="size-4" />
+                        {t('Delete')}
+                      </MenuItem>
+                    </Menu>
+                  </OptionMenu>
                 </div>
               </TableCell>
-            ))}
-            <TableCell />
-          </TableRow>
-        ))}
-        {profileRoles.map((role) => (
-          <TableRow key={role.id}>
-            <TableCell className="font-medium">{role.name}</TableCell>
-            {PERMISSION_COLUMNS.map((col) => (
-              <TableCell key={col.key} className="text-center">
-                <div className="flex justify-center">
-                  <Checkbox
-                    size="small"
-                    isSelected={(role.permission & col.mask) !== 0}
-                    isDisabled={updatePermission.isPending}
-                    onChange={() => togglePermission(role, col.mask)}
-                    aria-label={`${col.label} permission for ${role.name}`}
-                  />
-                </div>
-              </TableCell>
-            ))}
-            <TableCell>
-              <div className="opacity-0 [[data-slot=table-row]:hover_&]:opacity-100">
-                <OptionMenu>
-                  <Menu className="min-w-28 p-2">
-                    <MenuItem
-                      key="delete"
-                      onAction={() =>
-                        deleteRoleMutation.mutate({ roleId: role.id })
-                      }
-                      isDisabled={deleteRoleMutation.isPending}
-                      className="text-functional-red"
-                    >
-                      <LuTrash2 className="size-4" />
-                      {t('Delete')}
-                    </MenuItem>
-                  </Menu>
-                </OptionMenu>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <DialogTrigger
+        isOpen={roleToDelete !== null}
+        onOpenChange={(open) => !open && setRoleToDelete(null)}
+      >
+        <Modal
+          isDismissable
+          isOpen={roleToDelete !== null}
+          onOpenChange={(open) => !open && setRoleToDelete(null)}
+        >
+          <ModalHeader>
+            {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
+          </ModalHeader>
+          <ModalBody>
+            <p>
+              {t(
+                'Are you sure you want to remove {roleName} from "{processName}"?',
+                {
+                  roleName: roleToDelete?.name ?? '',
+                  processName: decisionName,
+                },
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="secondary" onPress={() => setRoleToDelete(null)}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="destructive"
+              onPress={handleDeleteConfirm}
+              isDisabled={deleteRoleMutation.isPending}
+            >
+              {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
+            </Button>
+          </ModalFooter>
+        </Modal>
+      </DialogTrigger>
+    </>
   );
 }
 
@@ -228,7 +287,10 @@ function AddRoleDialog({
   );
 }
 
-function RolesSectionContent({ decisionProfileId }: SectionProps) {
+function RolesSectionContent({
+  decisionProfileId,
+  decisionName,
+}: SectionProps) {
   const t = useTranslations();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
@@ -253,7 +315,10 @@ function RolesSectionContent({ decisionProfileId }: SectionProps) {
           <div className="h-48 animate-pulse rounded-lg bg-neutral-gray1" />
         }
       >
-        <RolesTable decisionProfileId={decisionProfileId} />
+        <RolesTable
+          decisionProfileId={decisionProfileId}
+          decisionName={decisionName}
+        />
       </Suspense>
 
       <AddRoleDialog

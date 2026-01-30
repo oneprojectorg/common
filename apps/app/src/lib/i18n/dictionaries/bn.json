@@ -521,5 +521,9 @@
   "Role name": "ভূমিকার নাম",
   "Save": "সংরক্ষণ করুন",
   "Delete role": "ভূমিকা মুছুন",
-  "No roles configured": "কোনো ভূমিকা কনফিগার করা হয়নি"
+  "No roles configured": "কোনো ভূমিকা কনফিগার করা হয়নি",
+  "Remove {name}": "{name} সরান",
+  "Are you sure you want to remove {roleName} from \"{processName}\"?": "আপনি কি নিশ্চিত যে আপনি \"{processName}\" থেকে {roleName} সরাতে চান?",
+  "Removing...": "সরানো হচ্ছে...",
+  "Remove": "সরান"
 }
