@@ -97,17 +97,19 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
       </TableHeader>
       <TableBody>
         {roles.map((role) => (
-          <TableRow key={role.id}>
+          <TableRow key={role.id} className={role.isGlobal ? 'opacity-50' : ''}>
             <TableCell className="font-medium">{role.name}</TableCell>
             {PERMISSION_COLUMNS.map((col) => (
               <TableCell key={col.key} className="text-center">
-                <Checkbox
-                  size="small"
-                  isSelected={(role.permission & col.mask) !== 0}
-                  isDisabled={role.isGlobal || updatePermission.isPending}
-                  onChange={() => togglePermission(role, col.mask)}
-                  aria-label={`${col.label} permission for ${role.name}`}
-                />
+                <div className="flex justify-center">
+                  <Checkbox
+                    size="small"
+                    isSelected={(role.permission & col.mask) !== 0}
+                    isDisabled={role.isGlobal || updatePermission.isPending}
+                    onChange={() => togglePermission(role, col.mask)}
+                    aria-label={`${col.label} permission for ${role.name}`}
+                  />
+                </div>
               </TableCell>
             ))}
             <TableCell>
