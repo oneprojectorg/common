@@ -4,13 +4,7 @@ import { trpc } from '@op/api/client';
 import type { RoleWithPermissions } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-} from '@op/ui/Dialog';
-import { Modal } from '@op/ui/Modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import {
@@ -168,34 +162,36 @@ function AddRoleDialog({
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog>
-        <DialogHeader>{t('Add role')}</DialogHeader>
-        <DialogContent>
-          <TextField
-            label={t('Role name')}
-            value={roleName}
-            onChange={setRoleName}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSubmit();
-              }
-            }}
-          />
-        </DialogContent>
-        <DialogFooter>
-          <Button color="secondary" onPress={onClose}>
-            {t('Cancel')}
-          </Button>
-          <Button
-            onPress={handleSubmit}
-            isDisabled={!roleName.trim() || createRole.isPending}
-          >
-            {t('Save')}
-          </Button>
-        </DialogFooter>
-      </Dialog>
+    <Modal
+      isDismissable
+      isOpen={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+    >
+      <ModalHeader>{t('Add role')}</ModalHeader>
+      <ModalBody>
+        <TextField
+          label={t('Role name')}
+          value={roleName}
+          onChange={setRoleName}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSubmit();
+            }
+          }}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button color="secondary" onPress={onClose}>
+          {t('Cancel')}
+        </Button>
+        <Button
+          onPress={handleSubmit}
+          isDisabled={!roleName.trim() || createRole.isPending}
+        >
+          {t('Save')}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 }
