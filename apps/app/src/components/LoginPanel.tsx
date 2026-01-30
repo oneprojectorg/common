@@ -364,7 +364,7 @@ export const LoginPanel = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center gap-4">
                   <ButtonLink
-                    href={`${OPURLConfig('APP').ENV_URL}`}
+                    href={`${OPURLConfig('APP').ENV_URL}/login`}
                     color="gradient"
                     className="flex w-full items-center justify-center"
                   >
