@@ -4,18 +4,20 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { match } from '@op/core';
+import { useMediaQuery } from '@op/hooks';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
-import { Modal } from '@op/ui/Modal';
+import { Menu, MenuItem } from '@op/ui/Menu';
+import { Modal, ModalBody } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
+import { LuArrowDownToLine, LuChevronDown, LuLeaf } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -464,6 +466,10 @@ export const ProposalsList = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Mobile detection for bottom sheet filters
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+
   // Initialize state from URL search params
   const [selectedCategory, setSelectedCategory] = useState<string>(
     searchParams.get('category') || 'all-categories',
@@ -597,28 +603,106 @@ export const ProposalsList = ({
           </span>
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          <Select
-            size="small"
-            className="min-w-36"
-            selectedKey={proposalFilter}
-            onSelectionChange={(key) => {
-              const newKey = key as ProposalFilter;
-              // If selecting "My proposals" but no current profile, fallback to "all"
-              if (newKey === 'my' && !currentProfileId) {
-                return;
-              }
-              setProposalFilter(newKey);
-            }}
-          >
-            <SelectItem id="all">{t('All proposals')}</SelectItem>
-            <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
-            <SelectItem id="my" isDisabled={!currentProfileId}>
-              {t('My proposals')}
-            </SelectItem>
-            {hasVoted && (
-              <SelectItem id="my-ballot">{t('My ballot')}</SelectItem>
-            )}
-          </Select>
+          {isMobile ? (
+            <>
+              <Button
+                color="secondary"
+                size="small"
+                className="min-w-36 justify-between"
+                onPress={() => setIsFilterSheetOpen(true)}
+              >
+                {proposalFilter === 'my-ballot'
+                  ? t('My ballot')
+                  : proposalFilter === 'my'
+                    ? t('My proposals')
+                    : proposalFilter === 'shortlisted'
+                      ? t('Shortlisted')
+                      : t('All proposals')}
+                <LuChevronDown className="size-4" />
+              </Button>
+              <Modal
+                isOpen={isFilterSheetOpen}
+                onOpenChange={setIsFilterSheetOpen}
+                isDismissable={true}
+                isKeyboardDismissDisabled={false}
+                overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
+                className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+              >
+                <ModalBody className="pb-safe p-0">
+                  <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
+                    <MenuItem
+                      id="all"
+                      selected={proposalFilter === 'all'}
+                      onAction={() => {
+                        setProposalFilter('all');
+                        setIsFilterSheetOpen(false);
+                      }}
+                    >
+                      {t('All proposals')}
+                    </MenuItem>
+                    <MenuItem
+                      id="my"
+                      selected={proposalFilter === 'my'}
+                      isDisabled={!currentProfileId}
+                      onAction={() => {
+                        if (currentProfileId) {
+                          setProposalFilter('my');
+                          setIsFilterSheetOpen(false);
+                        }
+                      }}
+                    >
+                      {t('My proposals')}
+                    </MenuItem>
+                    <MenuItem
+                      id="shortlisted"
+                      selected={proposalFilter === 'shortlisted'}
+                      onAction={() => {
+                        setProposalFilter('shortlisted');
+                        setIsFilterSheetOpen(false);
+                      }}
+                    >
+                      {t('Shortlisted proposals')}
+                    </MenuItem>
+                    {hasVoted && (
+                      <MenuItem
+                        id="my-ballot"
+                        selected={proposalFilter === 'my-ballot'}
+                        onAction={() => {
+                          setProposalFilter('my-ballot');
+                          setIsFilterSheetOpen(false);
+                        }}
+                      >
+                        {t('My ballot')}
+                      </MenuItem>
+                    )}
+                  </Menu>
+                </ModalBody>
+              </Modal>
+            </>
+          ) : (
+            <Select
+              size="small"
+              className="min-w-36"
+              selectedKey={proposalFilter}
+              onSelectionChange={(key) => {
+                const newKey = key as ProposalFilter;
+                // If selecting "My proposals" but no current profile, fallback to "all"
+                if (newKey === 'my' && !currentProfileId) {
+                  return;
+                }
+                setProposalFilter(newKey);
+              }}
+            >
+              <SelectItem id="all">{t('All proposals')}</SelectItem>
+              <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
+              <SelectItem id="my" isDisabled={!currentProfileId}>
+                {t('My proposals')}
+              </SelectItem>
+              {hasVoted && (
+                <SelectItem id="my-ballot">{t('My ballot')}</SelectItem>
+              )}
+            </Select>
+          )}
           <Select
             selectedKey={selectedCategory}
             size="small"
