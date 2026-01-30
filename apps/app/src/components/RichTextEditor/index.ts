@@ -5,6 +5,18 @@ export {
   type CollaborativeEditorRef,
 } from './CollaborativeEditor';
 
+// Multi-editor collaboration with fragments (one doc, multiple editors)
+export {
+  CollaborativeEditorsProvider,
+  type CollaborativeEditorsProviderProps,
+  useCollaborativeEditors,
+} from './CollaborativeEditorsProvider';
+export {
+  FragmentEditor,
+  type FragmentEditorProps,
+  type FragmentEditorRef,
+} from './FragmentEditor';
+
 // Collaborative presence indicator (avatar stack)
 export { CollaborativePresence } from './CollaborativePresence';
 

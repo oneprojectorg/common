@@ -23,8 +23,9 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import {
-  CollaborativeEditor,
+  CollaborativeEditorsProvider,
   CollaborativePresence,
+  FragmentEditor,
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
@@ -87,7 +88,10 @@ export function ProposalEditor({
   const [budget, setBudget] = useState<number | null>(null);
   const [showBudgetInput, setShowBudgetInput] = useState(false);
 
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  // Track both editors and the currently focused one for the toolbar
+  const [editor1, setEditor1] = useState<Editor | null>(null);
+  const [editor2, setEditor2] = useState<Editor | null>(null);
+  const [focusedEditor, setFocusedEditor] = useState<Editor | null>(null);
   const [collabProvider, setCollabProvider] =
     useState<TiptapCollabProvider | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -267,9 +271,29 @@ export function ProposalEditor({
     }
   }, [showBudgetInput]);
 
-  const handleEditorReady = useCallback((editor: Editor) => {
-    setEditorInstance(editor);
+  const handleEditor1Ready = useCallback((editor: Editor) => {
+    setEditor1(editor);
+    // Set initial focused editor to editor1
+    if (!focusedEditor) {
+      setFocusedEditor(editor);
+    }
+  }, [focusedEditor]);
+
+  const handleEditor2Ready = useCallback((editor: Editor) => {
+    setEditor2(editor);
   }, []);
+
+  const handleEditor1Focus = useCallback(() => {
+    if (editor1) {
+      setFocusedEditor(editor1);
+    }
+  }, [editor1]);
+
+  const handleEditor2Focus = useCallback(() => {
+    if (editor2) {
+      setFocusedEditor(editor2);
+    }
+  }, [editor2]);
 
   const handleCloseInfoModal = useCallback(() => {
     setShowInfoModal(false);
@@ -283,12 +307,11 @@ export function ProposalEditor({
       missingFields.push(t('Title'));
     }
 
-    // Check for empty content in the editor
-    if (editorInstance) {
-      const isEmpty = editorInstance.isEmpty;
-      if (isEmpty) {
-        missingFields.push(t('Description'));
-      }
+    // Check for empty content in both editors
+    const editor1Empty = editor1 ? editor1.isEmpty : true;
+    const editor2Empty = editor2 ? editor2.isEmpty : true;
+    if (editor1Empty && editor2Empty) {
+      missingFields.push(t('Description'));
     }
 
     if (isBudgetRequired && budget === null) {
@@ -351,7 +374,8 @@ export function ProposalEditor({
   }, [
     t,
     title,
-    editorInstance,
+    editor1,
+    editor2,
     isBudgetRequired,
     budget,
     budgetCapAmount,
@@ -374,83 +398,104 @@ export function ProposalEditor({
       isDraft={isDraft}
       presenceSlot={<CollaborativePresence provider={collabProvider} />}
     >
-      <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+      <CollaborativeEditorsProvider
+        docId={collaborationDocId}
+        userName={user.profile?.name}
+        onProviderReady={setCollabProvider}
+      >
+        <div className="flex flex-1 flex-col gap-12">
+          {focusedEditor && <RichTextEditorToolbar editor={focusedEditor} />}
 
-        <div className="mx-auto flex max-w-4xl flex-col gap-4">
-          {/* Title */}
-          <TextField
-            type="text"
-            value={title}
-            onChange={setTitle}
-            inputProps={{
-              placeholder: 'Untitled Proposal',
-              className: 'border-0 p-0 font-serif text-title-lg',
-            }}
-          />
+          <div className="mx-auto flex max-w-4xl flex-col gap-4">
+            {/* Title */}
+            <TextField
+              type="text"
+              value={title}
+              onChange={setTitle}
+              inputProps={{
+                placeholder: 'Untitled Proposal',
+                className: 'border-0 p-0 font-serif text-title-lg',
+              }}
+            />
 
-          {/* Category and Budget */}
-          <div className="flex gap-6">
-            {categories && categories.length > 0 && (
-              <Select
-                variant="pill"
-                size="medium"
-                placeholder={t('Select category')}
-                selectedKey={selectedCategory}
-                onSelectionChange={(key) => setSelectedCategory(key as string)}
-                className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-                popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
-              >
-                {categories.map((category) => (
-                  <SelectItem
-                    className="min-w-fit"
-                    key={category.id}
-                    id={category.name}
-                  >
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </Select>
-            )}
+            {/* Category and Budget */}
+            <div className="flex gap-6">
+              {categories && categories.length > 0 && (
+                <Select
+                  variant="pill"
+                  size="medium"
+                  placeholder={t('Select category')}
+                  selectedKey={selectedCategory}
+                  onSelectionChange={(key) => setSelectedCategory(key as string)}
+                  className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+                  popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
+                >
+                  {categories.map((category) => (
+                    <SelectItem
+                      className="min-w-fit"
+                      key={category.id}
+                      id={category.name}
+                    >
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
 
-            {!showBudgetInput && (
-              <Button
-                variant="pill"
-                color="pill"
-                onPress={() => setShowBudgetInput(true)}
-              >
-                Add budget
-              </Button>
-            )}
+              {!showBudgetInput && (
+                <Button
+                  variant="pill"
+                  color="pill"
+                  onPress={() => setShowBudgetInput(true)}
+                >
+                  Add budget
+                </Button>
+              )}
 
-            {showBudgetInput && (
-              <NumberField
-                ref={budgetInputRef}
-                value={budget}
-                onChange={setBudget}
-                prefixText="$"
-                inputProps={{
-                  placeholder: budgetCapAmount
-                    ? `Max ${budgetCapAmount.toLocaleString()}`
-                    : 'Enter amount',
-                }}
-                fieldClassName="w-auto"
+              {showBudgetInput && (
+                <NumberField
+                  ref={budgetInputRef}
+                  value={budget}
+                  onChange={setBudget}
+                  prefixText="$"
+                  inputProps={{
+                    placeholder: budgetCapAmount
+                      ? `Max ${budgetCapAmount.toLocaleString()}`
+                      : 'Enter amount',
+                  }}
+                  fieldClassName="w-auto"
+                />
+              )}
+            </div>
+
+            {/* Editor 1: Summary/Introduction */}
+            <div onFocus={handleEditor1Focus}>
+              <FragmentEditor
+                fragment="summary"
+                extensions={editorExtensions}
+                onEditorReady={handleEditor1Ready}
+                placeholder={t('Write your proposal summary here...')}
+                editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[10rem] px-0 py-4"
+                enableVersioning
               />
-            )}
-          </div>
+            </div>
 
-          {/* Rich Text Editor with Collaboration */}
-          <CollaborativeEditor
-            docId={collaborationDocId}
-            extensions={editorExtensions}
-            onEditorReady={handleEditorReady}
-            onProviderReady={setCollabProvider}
-            placeholder={t('Write your proposal here...')}
-            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
-            userName={user.profile?.name}
-          />
+            {/* Divider */}
+            <hr className="border-neutral-line" />
+
+            {/* Editor 2: Detailed Content */}
+            <div onFocus={handleEditor2Focus}>
+              <FragmentEditor
+                fragment="content"
+                extensions={editorExtensions}
+                onEditorReady={handleEditor2Ready}
+                placeholder={t('Write the detailed proposal content here...')}
+                editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[30rem] px-0 py-4"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </CollaborativeEditorsProvider>
 
       {/* Proposal Info Modal */}
       {proposalInfoTitle && proposalInfoContent && (

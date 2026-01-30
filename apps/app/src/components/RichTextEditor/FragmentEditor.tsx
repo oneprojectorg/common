@@ -1,17 +1,11 @@
 'use client';
 
 import {
-  type CollabStatus,
-  type CollabUser,
-  useTiptapCollab,
-} from '@/hooks/useTiptapCollab';
-import {
   RichTextEditorSkeleton,
   StyledRichTextContent,
   useRichTextEditor,
 } from '@op/ui/RichTextEditor';
 import Snapshot from '@tiptap-pro/extension-snapshot';
-import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import type { Editor, Extensions } from '@tiptap/react';
@@ -22,120 +16,105 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import type { Doc } from 'yjs';
+
+import type { CollabStatus } from '@/hooks/useTiptapCollab';
+
+import { useCollaborativeEditors } from './CollaborativeEditorsProvider';
 
 // How often to create a snapshot in version history
 const AUTOVERSION_INTERVAL_SECONDS = 900; // 15 minutes
 
-export interface CollaborativeEditorRef {
+export interface FragmentEditorRef {
   editor: Editor | null;
   collabStatus: CollabStatus;
   isSynced: boolean;
 }
 
-export interface CollaborativeEditorProps {
-  docId: string;
+export interface FragmentEditorProps {
+  /** Yjs fragment name for this editor */
+  fragment: string;
   extensions?: Extensions;
   placeholder?: string;
   onEditorReady?: (editor: Editor) => void;
-  /** Called when the collaboration provider is ready */
-  onProviderReady?: (provider: TiptapCollabProvider) => void;
   className?: string;
   editorClassName?: string;
-  /** User's display name for the collaboration cursor */
-  userName?: string;
   /**
-   * Yjs fragment name for this editor. Multiple editors can share the same
-   * Yjs document by using different fragment names. Defaults to 'default'.
+   * Whether this editor should manage versioning for the shared document.
+   * Only one editor in a multi-editor setup should have this enabled.
+   * Defaults to false.
    */
-  fragment?: string;
+  enableVersioning?: boolean;
 }
 
-/** Rich text editor with real-time collaboration via TipTap Cloud */
-export const CollaborativeEditor = forwardRef<
-  CollaborativeEditorRef,
-  CollaborativeEditorProps
->(
+/**
+ * A collaborative editor that uses a specific fragment from a shared Yjs document.
+ * Must be used within a CollaborativeEditorsProvider.
+ */
+export const FragmentEditor = forwardRef<FragmentEditorRef, FragmentEditorProps>(
   (
     {
-      docId,
+      fragment,
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
-      onProviderReady,
       className = '',
       editorClassName = '',
-      userName,
-      fragment = 'default',
+      enableVersioning = false,
     },
     ref,
   ) => {
-    const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
-      docId,
-      enabled: true,
-      userName: userName ?? 'Anonymous',
-    });
+    const { ydoc, provider, status, isSynced, user } = useCollaborativeEditors();
 
-    // Notify parent when provider becomes available
-    useEffect(() => {
-      if (provider && onProviderReady) {
-        onProviderReady(provider);
-      }
-    }, [provider, onProviderReady]);
-
-    // Wait for provider before rendering the editor inner component
-    // This ensures Snapshot extension is included from the start
+    // Wait for provider before rendering the editor
     if (!provider) {
       return <RichTextEditorSkeleton className={className} />;
     }
 
     return (
-      <CollaborativeEditorInner
+      <FragmentEditorInner
         ref={ref}
-        ydoc={ydoc}
-        provider={provider}
-        status={status}
-        isSynced={isSynced}
+        fragment={fragment}
         extensions={extensions}
         placeholder={placeholder}
         onEditorReady={onEditorReady}
         className={className}
         editorClassName={editorClassName}
+        enableVersioning={enableVersioning}
+        ydoc={ydoc}
+        provider={provider}
+        status={status}
+        isSynced={isSynced}
         user={user}
-        fragment={fragment}
       />
     );
   },
 );
 
-type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
-  ydoc: Doc;
-  provider: TiptapCollabProvider;
-  status: CollabStatus;
-  isSynced: boolean;
-  /** User object with assigned color from the hook */
-  user: CollabUser;
-  /** Yjs fragment name for this editor */
-  fragment: string;
-};
+FragmentEditor.displayName = 'FragmentEditor';
 
-const CollaborativeEditorInner = forwardRef<
-  CollaborativeEditorRef,
-  CollaborativeEditorInnerProps
->(
+interface FragmentEditorInnerProps extends FragmentEditorProps {
+  ydoc: ReturnType<typeof useCollaborativeEditors>['ydoc'];
+  provider: NonNullable<ReturnType<typeof useCollaborativeEditors>['provider']>;
+  status: ReturnType<typeof useCollaborativeEditors>['status'];
+  isSynced: ReturnType<typeof useCollaborativeEditors>['isSynced'];
+  user: ReturnType<typeof useCollaborativeEditors>['user'];
+}
+
+const FragmentEditorInner = forwardRef<FragmentEditorRef, FragmentEditorInnerProps>(
   (
     {
-      ydoc,
-      provider,
-      status,
-      isSynced,
+      fragment,
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
       className = '',
       editorClassName = '',
+      enableVersioning = false,
+      ydoc,
+      provider,
+      status,
+      isSynced,
       user,
-      fragment,
     },
     ref,
   ) => {
@@ -148,9 +127,9 @@ const CollaborativeEditorInner = forwardRef<
           provider,
           user,
         }),
-        Snapshot.configure({ provider }),
+        ...(enableVersioning ? [Snapshot.configure({ provider })] : []),
       ],
-      [extensions, ydoc, provider, user, fragment],
+      [extensions, ydoc, provider, user, fragment, enableVersioning],
     );
 
     const editor = useRichTextEditor({
@@ -162,9 +141,14 @@ const CollaborativeEditorInner = forwardRef<
     // Track whether versioning has been enabled to avoid toggling it off on re-render
     const versioningEnabledRef = useRef(false);
 
-    // Enable autoversioning when editor is ready and connected
+    // Enable autoversioning when editor is ready and connected (only if this editor manages versioning)
     useEffect(() => {
-      if (!editor || status !== 'connected' || versioningEnabledRef.current) {
+      if (
+        !enableVersioning ||
+        !editor ||
+        status !== 'connected' ||
+        versioningEnabledRef.current
+      ) {
         return;
       }
 
@@ -173,7 +157,7 @@ const CollaborativeEditorInner = forwardRef<
 
       editor.commands.toggleVersioning();
       versioningEnabledRef.current = true;
-    }, [editor, status, ydoc]);
+    }, [editor, status, ydoc, enableVersioning]);
 
     useImperativeHandle(
       ref,
@@ -197,6 +181,4 @@ const CollaborativeEditorInner = forwardRef<
   },
 );
 
-CollaborativeEditorInner.displayName = 'CollaborativeEditorInner';
-
-CollaborativeEditor.displayName = 'CollaborativeEditor';
+FragmentEditorInner.displayName = 'FragmentEditorInner';
