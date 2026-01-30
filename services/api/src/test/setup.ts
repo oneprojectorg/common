@@ -37,7 +37,7 @@ vi.mock('@op/logging', () => ({
 // These values are defined in vitest.config.ts and injected via process.env
 const TEST_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const TEST_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const TEST_SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_ANON_KEY!;
+const TEST_SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE!;
 
 let testSupabase: SupabaseClient;
 let testSupabaseAdmin: SupabaseClient;
