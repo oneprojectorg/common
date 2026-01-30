@@ -35,9 +35,12 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const [roles] = trpc.profile.listRolesWithPermissions.useSuspenseQuery({
+  const [rolesData] = trpc.profile.listRolesWithPermissions.useSuspenseQuery({
     profileId: decisionProfileId,
   });
+
+  const globalRoles = rolesData.filter((role) => role.isGlobal);
+  const profileRoles = rolesData.filter((role) => !role.isGlobal);
 
   const updatePermission = trpc.profile.updateRolePermission.useMutation({
     onSuccess: () => {
@@ -71,7 +74,7 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
     });
   };
 
-  if (roles.length === 0) {
+  if (globalRoles.length === 0 && profileRoles.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-neutral-gray2 p-8 text-center text-neutral-gray4">
         {t('No roles configured')}
@@ -91,8 +94,8 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
         <TableColumn className="w-12" />
       </TableHeader>
       <TableBody>
-        {roles.map((role) => (
-          <TableRow key={role.id} className={role.isGlobal ? 'opacity-50' : ''}>
+        {globalRoles.map((role) => (
+          <TableRow key={role.id} className="opacity-50">
             <TableCell className="font-medium">{role.name}</TableCell>
             {PERMISSION_COLUMNS.map((col) => (
               <TableCell key={col.key} className="text-center">
@@ -100,7 +103,25 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
                   <Checkbox
                     size="small"
                     isSelected={(role.permission & col.mask) !== 0}
-                    isDisabled={role.isGlobal || updatePermission.isPending}
+                    isDisabled
+                    aria-label={`${col.label} permission for ${role.name}`}
+                  />
+                </div>
+              </TableCell>
+            ))}
+            <TableCell />
+          </TableRow>
+        ))}
+        {profileRoles.map((role) => (
+          <TableRow key={role.id}>
+            <TableCell className="font-medium">{role.name}</TableCell>
+            {PERMISSION_COLUMNS.map((col) => (
+              <TableCell key={col.key} className="text-center">
+                <div className="flex justify-center">
+                  <Checkbox
+                    size="small"
+                    isSelected={(role.permission & col.mask) !== 0}
+                    isDisabled={updatePermission.isPending}
                     onChange={() => togglePermission(role, col.mask)}
                     aria-label={`${col.label} permission for ${role.name}`}
                   />
@@ -108,17 +129,15 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
               </TableCell>
             ))}
             <TableCell>
-              {!role.isGlobal && (
-                <Button
-                  color="ghost"
-                  className="text-functional-red hover:bg-functional-red/10"
-                  onPress={() => deleteRoleMutation.mutate({ roleId: role.id })}
-                  isDisabled={deleteRoleMutation.isPending}
-                  aria-label={`${t('Delete role')} ${role.name}`}
-                >
-                  <LuTrash2 className="size-4" />
-                </Button>
-              )}
+              <Button
+                color="ghost"
+                className="text-functional-red hover:bg-functional-red/10"
+                onPress={() => deleteRoleMutation.mutate({ roleId: role.id })}
+                isDisabled={deleteRoleMutation.isPending}
+                aria-label={`${t('Delete role')} ${role.name}`}
+              >
+                <LuTrash2 className="size-4" />
+              </Button>
             </TableCell>
           </TableRow>
         ))}
