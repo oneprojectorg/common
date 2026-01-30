@@ -44,10 +44,20 @@ export const ProfileInviteModal = ({
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startTransition] = useTransition();
 
-  // Fetch roles for tabs
-  const { data: rolesData, isPending: rolesPending } =
+  // Fetch global roles and profile-specific roles in parallel
+  const { data: globalRolesData, isPending: globalRolesPending } =
     trpc.profile.listRoles.useQuery({});
-  const roles = rolesData?.items ?? [];
+  const { data: profileRolesData, isPending: profileRolesPending } =
+    trpc.profile.listRoles.useQuery({ profileId });
+
+  const rolesPending = globalRolesPending || profileRolesPending;
+
+  // Combine global and profile-specific roles
+  const roles = useMemo(() => {
+    const globalRoles = globalRolesData?.items ?? [];
+    const profileRoles = profileRolesData?.items ?? [];
+    return [...globalRoles, ...profileRoles];
+  }, [globalRolesData, profileRolesData]);
 
   // Set default role when roles load
   useEffect(() => {

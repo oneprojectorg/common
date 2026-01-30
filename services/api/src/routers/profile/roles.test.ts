@@ -15,7 +15,7 @@ import { createCallerFactory } from '../../trpcFactory';
 describe.concurrent('profile.listRoles', () => {
   const createCaller = createCallerFactory(profileRouter);
 
-  it('should return global roles when no slug provided', async ({
+  it('should return global roles when no profileId provided', async ({
     task,
     onTestFinished,
   }) => {
@@ -43,7 +43,7 @@ describe.concurrent('profile.listRoles', () => {
     expect(memberRole).toBeDefined();
   });
 
-  it('should return profile-specific roles when slug provided', async ({
+  it('should return profile-specific roles when profileId provided', async ({
     task,
     onTestFinished,
   }) => {
@@ -73,7 +73,7 @@ describe.concurrent('profile.listRoles', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.listRoles({
-      slug: profile.slug,
+      profileId: profile.id,
       limit: 100,
     });
 
@@ -102,7 +102,7 @@ describe.concurrent('profile.listRoles', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.listRoles({
-      slug: profile.slug,
+      profileId: profile.id,
       limit: 100,
     });
 
@@ -142,7 +142,7 @@ describe.concurrent('profile.listRoles', () => {
 
     // First page with limit 2
     const firstPage = await caller.listRoles({
-      slug: profile.slug,
+      profileId: profile.id,
       limit: 2,
     });
 
@@ -151,7 +151,7 @@ describe.concurrent('profile.listRoles', () => {
 
     // Second page using cursor
     const secondPage = await caller.listRoles({
-      slug: profile.slug,
+      profileId: profile.id,
       limit: 2,
       cursor: firstPage.next,
     });
@@ -171,23 +171,4 @@ describe.concurrent('profile.listRoles', () => {
     expect(allIds.length).toBe(4);
   });
 
-  it('should throw error for invalid slug', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
-    const { adminUser } = await testData.createProfile({
-      users: { admin: 1 },
-    });
-
-    const { session } = await createIsolatedSession(adminUser.email);
-    const caller = createCaller(await createTestContextWithSession(session));
-
-    await expect(
-      caller.listRoles({
-        slug: 'non-existent-profile-slug',
-        limit: 10,
-      }),
-    ).rejects.toThrow(/not found/i);
-  });
 });

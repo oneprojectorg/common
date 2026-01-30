@@ -7,7 +7,6 @@ import {
   decodeCursor,
   encodeCursor,
 } from '../../utils/db';
-import { assertProfileBySlug } from '../assert';
 
 interface Role {
   id: string;
@@ -19,20 +18,16 @@ type RoleCursor = { value: string; id: string };
 
 /**
  * Get roles for a profile or global roles with cursor-based pagination.
- * - If profileSlug is provided: returns only roles specific to that profile
- * - If no profileSlug: returns only global roles (profileId IS NULL)
+ * - If profileId is provided: returns only roles specific to that profile
+ * - If no profileId: returns only global roles (profileId IS NULL)
  */
 export const getRoles = async (params?: {
-  profileSlug?: string;
+  profileId?: string;
   cursor?: string | null;
   limit?: number;
   dir?: SortDir;
 }): Promise<PaginatedResult<Role>> => {
-  const { profileSlug, cursor, limit = 25, dir = 'asc' } = params ?? {};
-
-  const profileId = profileSlug
-    ? (await assertProfileBySlug(profileSlug)).id
-    : null;
+  const { profileId = null, cursor, limit = 25, dir = 'asc' } = params ?? {};
 
   // Build cursor condition for pagination
   const decodedCursor = cursor ? decodeCursor<RoleCursor>(cursor) : undefined;
