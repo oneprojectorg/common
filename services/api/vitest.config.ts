@@ -34,6 +34,11 @@ const TEST_ENV = {
   TIPTAP_SECRET: 'test-tiptap-secret',
 };
 
+// Check if running against remote Supabase (CI with rate limits)
+const isRemoteSupabase = process.env.DATABASE_URL?.includes(
+  'pooler.supabase.com',
+);
+
 export default defineConfig({
   test: {
     environment: 'node',
@@ -41,7 +46,8 @@ export default defineConfig({
     globalSetup: ['./src/test/globalSetup.ts'],
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30_000,
-    maxWorkers: '75%',
+    // Reduce parallelism when running against remote Supabase to avoid Auth rate limits
+    maxWorkers: isRemoteSupabase ? 2 : '75%',
     pool: 'threads',
     env: TEST_ENV,
   },
