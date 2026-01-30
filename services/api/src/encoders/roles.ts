@@ -9,3 +9,13 @@ export const roleEncoder = createSelectSchema(accessRoles).pick({
 });
 
 export type Role = z.infer<typeof roleEncoder>;
+
+export const roleWithPermissionsEncoder = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  isGlobal: z.boolean(),
+  permission: z.number().int().min(0).max(31),
+});
+
+export type RoleWithPermissions = z.infer<typeof roleWithPermissionsEncoder>;

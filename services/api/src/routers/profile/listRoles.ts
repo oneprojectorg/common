@@ -1,7 +1,14 @@
-import { getRoles } from '@op/common';
+import {
+  createRole,
+  deleteRole,
+  getRoles,
+  getRolesWithPermissions,
+  updateRolePermissions,
+} from '@op/common';
+import { ZONES } from '@op/db/seedData/accessControl';
 import { z } from 'zod';
 
-import { roleEncoder } from '../../encoders/roles';
+import { roleEncoder, roleWithPermissionsEncoder } from '../../encoders/roles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import {
   createPaginatedOutput,
@@ -31,5 +38,64 @@ export const listRolesRouter = router({
         limit,
         dir,
       });
+    }),
+
+  listRolesWithPermissions: commonAuthedProcedure()
+    .input(z.object({ profileId: z.string().uuid() }))
+    .output(z.array(roleWithPermissionsEncoder))
+    .query(async ({ input }) => {
+      return getRolesWithPermissions({
+        profileId: input.profileId,
+        zoneId: ZONES.DECISIONS.id,
+      });
+    }),
+
+  createRole: commonAuthedProcedure()
+    .input(
+      z.object({
+        profileId: z.string().uuid(),
+        name: z.string().min(1).max(255),
+        permission: z.number().int().min(0).max(31),
+      }),
+    )
+    .output(roleWithPermissionsEncoder)
+    .mutation(async ({ input }) => {
+      const role = await createRole(
+        input.name,
+        { decisions: input.permission },
+        undefined,
+        input.profileId,
+      );
+
+      return {
+        id: role.id,
+        name: role.name,
+        description: role.description,
+        isGlobal: false,
+        permission: input.permission,
+      };
+    }),
+
+  updateRolePermission: commonAuthedProcedure()
+    .input(
+      z.object({
+        roleId: z.string().uuid(),
+        permission: z.number().int().min(0).max(31),
+      }),
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input }) => {
+      return updateRolePermissions(
+        input.roleId,
+        ZONES.DECISIONS.id,
+        input.permission,
+      );
+    }),
+
+  deleteRole: commonAuthedProcedure()
+    .input(z.object({ roleId: z.string().uuid() }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input }) => {
+      return deleteRole(input.roleId);
     }),
 });

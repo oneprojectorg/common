@@ -84,3 +84,42 @@ export const getRoles = async (params?: {
     next: nextCursor,
   };
 };
+
+interface RoleWithPermissions {
+  id: string;
+  name: string;
+  description: string | null;
+  isGlobal: boolean;
+  permission: number;
+}
+
+/**
+ * Get roles with their permission bitfield for a specific profile and zone.
+ * Returns both profile-specific roles and global roles.
+ */
+export const getRolesWithPermissions = async (params: {
+  profileId: string;
+  zoneId: string;
+}): Promise<RoleWithPermissions[]> => {
+  const { profileId, zoneId } = params;
+
+  // Get all roles that are either global or specific to this profile
+  const roles = await db._query.accessRoles.findMany({
+    where: (table, { or, eq, isNull }) =>
+      or(eq(table.profileId, profileId), isNull(table.profileId)),
+    orderBy: (table, { asc }) => [asc(table.name)],
+    with: {
+      zonePermissions: {
+        where: (permTable, { eq }) => eq(permTable.accessZoneId, zoneId),
+      },
+    },
+  });
+
+  return roles.map((role) => ({
+    id: role.id,
+    name: role.name,
+    description: role.description,
+    isGlobal: !role.profileId,
+    permission: role.zonePermissions[0]?.permission ?? 0,
+  }));
+};

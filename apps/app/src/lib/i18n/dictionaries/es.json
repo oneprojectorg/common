@@ -508,5 +508,17 @@
   "Selected members": "Miembros seleccionados",
   "No email addresses to invite": "No hay direcciones de correo para invitar",
   "Remove {name}": "Eliminar {name}",
-  "Select a role": "Seleccionar un rol"
+  "Select a role": "Seleccionar un rol",
+  "Add role": "Agregar rol",
+  "Admin": "Admin",
+  "Read": "Leer",
+  "Update": "Actualizar",
+  "Role created successfully": "Rol creado exitosamente",
+  "Role deleted successfully": "Rol eliminado exitosamente",
+  "Failed to create role": "Error al crear el rol",
+  "Failed to delete role": "Error al eliminar el rol",
+  "Role name": "Nombre del rol",
+  "Save": "Guardar",
+  "Delete role": "Eliminar rol",
+  "No roles configured": "No hay roles configurados"
 }
