@@ -103,32 +103,33 @@ export const getRolesWithPermissions = async (params: {
 }): Promise<RoleWithPermissions[]> => {
   const { profileId, zoneName } = params;
 
-  // Look up the zone by name
-  const zone = await db._query.accessZones.findFirst({
-    where: (table, { eq }) => eq(table.name, zoneName),
-  });
-
-  if (!zone) {
-    return [];
-  }
-
   // Get all roles that are either global or specific to this profile
+  // Include all zone permissions with their zone info (same pattern as getOrgAccessUser/getProfileAccessUser)
   const roles = await db._query.accessRoles.findMany({
     where: (table, { or, eq, isNull }) =>
       or(eq(table.profileId, profileId), isNull(table.profileId)),
     orderBy: (table, { asc }) => [asc(table.name)],
     with: {
       zonePermissions: {
-        where: (permTable, { eq }) => eq(permTable.accessZoneId, zone.id),
+        with: {
+          accessZone: true,
+        },
       },
     },
   });
 
-  return roles.map((role) => ({
-    id: role.id,
-    name: role.name,
-    description: role.description,
-    isGlobal: !role.profileId,
-    permission: role.zonePermissions[0]?.permission ?? 0,
-  }));
+  return roles.map((role) => {
+    // Find the permission for the requested zone
+    const zonePermission = role.zonePermissions.find(
+      (zp) => zp.accessZone.name === zoneName,
+    );
+
+    return {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      isGlobal: !role.profileId,
+      permission: zonePermission?.permission ?? 0,
+    };
+  });
 };
