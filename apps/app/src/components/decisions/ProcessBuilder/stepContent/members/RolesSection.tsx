@@ -47,7 +47,8 @@ function RolesTable({ decisionProfileId }: { decisionProfileId: string }) {
       toast.success({ message: t('Role updated successfully') });
       utils.profile.listRolesWithPermissions.invalidate();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Failed to update role:', error);
       toast.error({ message: t('Failed to update role') });
     },
   });

@@ -86,11 +86,16 @@ export const listRolesRouter = router({
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input }) => {
-      return updateRolePermissions(
-        input.roleId,
-        DECISIONS_ZONE_NAME,
-        input.permission,
-      );
+      try {
+        return await updateRolePermissions(
+          input.roleId,
+          DECISIONS_ZONE_NAME,
+          input.permission,
+        );
+      } catch (error) {
+        console.error('updateRolePermission error:', error);
+        throw error;
+      }
     }),
 
   deleteRole: commonAuthedProcedure()
