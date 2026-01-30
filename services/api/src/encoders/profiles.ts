@@ -1,9 +1,12 @@
-import { profileUsers, profiles } from '@op/db/schema';
+import { organizations, profileUsers, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { individualsEncoder } from './individuals';
+import { linksEncoder } from './links';
+import { locationEncoder } from './locations';
 import { type organizationsEncoder } from './organizations';
+import { projectEncoder } from './projects';
 import { accessRoleMinimalEncoder, storageItemMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 
@@ -34,8 +37,34 @@ export const baseProfileEncoder = createSelectSchema(profiles)
       .optional(),
   });
 
-// Profile encoder with organization reference
+// Minimal organization encoder for profile listing context
+// Only includes fields actually fetched by listProfiles - does NOT include
+// strategies, receivingFundsTerms, or nested profile (already at top level)
+const organizationMinimalEncoder = createSelectSchema(organizations)
+  .pick({
+    id: true,
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+    acceptingApplications: true,
+    networkOrganization: true,
+    orgType: true,
+    domain: true,
+  })
+  .extend({
+    projects: z.array(projectEncoder).optional(),
+    links: z.array(linksEncoder).optional().default([]),
+    whereWeWork: z.array(locationEncoder).optional().default([]),
+    headerImage: storageItemEncoder.nullish(),
+    avatarImage: storageItemEncoder.nullish(),
+  });
+
+// Profile encoder with minimal organization reference for list operations
 export const profileEncoder = baseProfileEncoder.extend({
+  organization: organizationMinimalEncoder.nullish(),
+});
+
+// Profile encoder with full organization reference for detail operations
+export const profileWithFullOrgEncoder = baseProfileEncoder.extend({
   organization: z
     .lazy<
       typeof organizationsEncoder

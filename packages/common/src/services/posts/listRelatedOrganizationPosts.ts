@@ -103,11 +103,7 @@ export const listAllRelatedOrganizationPosts = async (
     profileId,
   });
 
-  return {
-    items: itemsWithReactionsAndComments,
-    next: nextCursor,
-    hasMore,
-  };
+  return { items: itemsWithReactionsAndComments, next: nextCursor };
 };
 
 export const listRelatedOrganizationPosts = async (

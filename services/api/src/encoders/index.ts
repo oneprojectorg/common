@@ -6,6 +6,7 @@ export * from './modules';
 export * from './organizations';
 export * from './individuals';
 export * from './projects';
+export * from './roles';
 export * from './users';
 export * from './posts';
 export * from './taxonomyTerms';

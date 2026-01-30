@@ -23,7 +23,6 @@ export const listUsersRouter = router({
       z.object({
         items: z.array(profileUserEncoder),
         next: z.string().nullable(),
-        hasMore: z.boolean(),
       }),
     )
     .query(async ({ ctx, input }) => {

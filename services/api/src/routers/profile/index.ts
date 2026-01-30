@@ -9,6 +9,7 @@ import {
   listJoinRequestsRouter,
   updateJoinRequestRouter,
 } from './requests';
+import { rolesRouter } from './roles';
 import { searchProfilesRouter } from './searchProfiles';
 import { usersRouter } from './users';
 
@@ -18,6 +19,7 @@ const profileRouter = mergeRouters(
   profileRelationshipRouter,
   inviteProfileUserRouter,
   usersRouter,
+  rolesRouter,
   createJoinRequestRouter,
   deleteJoinRequestRouter,
   getJoinRequestRouter,

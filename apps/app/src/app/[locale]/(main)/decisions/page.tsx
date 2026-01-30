@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 const DecisionsListingPage = async () => {
   let decisions: DecisionProfileList = {
     items: [],
-    hasMore: false,
     next: null,
   };
 
