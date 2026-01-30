@@ -8,19 +8,11 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Popover } from '@op/ui/Popover';
 import { SearchField } from '@op/ui/SearchField';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
-import {
-  Key,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from 'react';
+import { Key, useEffect, useMemo, useState, useTransition } from 'react';
 import { ListBox, ListBoxItem } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 
@@ -51,7 +43,6 @@ export const ProfileInviteModal = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startTransition] = useTransition();
-  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch global roles and profile-specific roles in parallel
   const { data: globalRolesData, isPending: globalRolesPending } =
@@ -222,7 +213,7 @@ export const ProfileInviteModal = ({
         )}
 
         {/* Search Input */}
-        <div ref={searchContainerRef}>
+        <div>
           <SearchField
             placeholder={t('Find orgs and individuals or invite by email...')}
             value={searchQuery}
@@ -232,64 +223,66 @@ export const ProfileInviteModal = ({
         </div>
 
         {/* Search Results Dropdown */}
-        <Popover
-          triggerRef={searchContainerRef}
-          isOpen={debouncedQuery.length >= 2}
-          placement="bottom start"
-          className="max-h-60 w-[var(--trigger-width)] overflow-y-auto border border-neutral-gray2 bg-white shadow-lg"
-        >
-          {isSearching ? (
-            <div className="flex items-center justify-center p-4">
-              <LoadingSpinner className="size-4" />
-            </div>
-          ) : filteredResults.length > 0 ? (
-            <ListBox
-              aria-label={t('Search results')}
-              items={filteredResults}
-              onAction={(key) => {
-                const result = filteredResults.find((r) => r.id === key);
-                if (result) {
-                  handleSelectItem(result);
-                }
-              }}
-              className="outline-none"
-            >
-              {(result) => (
-                <ListBoxItem
-                  key={result.id}
-                  id={result.id}
-                  textValue={result.name}
-                  className="hover:bg-neutral-gray0 focus:bg-neutral-gray0 flex cursor-pointer items-center gap-3 px-4 py-3 outline-none"
+        {debouncedQuery.length >= 2 && (
+          <div className="relative -mt-4">
+            <div className="absolute top-0 right-0 left-0 z-[9999999] max-h-60 overflow-y-auto rounded-md border border-neutral-gray2 bg-white shadow-lg">
+              {isSearching ? (
+                <div className="flex items-center justify-center p-4">
+                  <LoadingSpinner className="size-4" />
+                </div>
+              ) : filteredResults.length > 0 ? (
+                <ListBox
+                  aria-label={t('Search results')}
+                  items={filteredResults}
+                  onAction={(key) => {
+                    const result = filteredResults.find((r) => r.id === key);
+                    if (result) {
+                      handleSelectItem(result);
+                    }
+                  }}
+                  className="outline-none"
                 >
-                  <Avatar placeholder={result.name} className="size-8 shrink-0">
-                    {result.avatarImage?.name ? (
-                      <Image
-                        src={getPublicUrl(result.avatarImage.name) ?? ''}
-                        alt={result.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : null}
-                  </Avatar>
-                  <div className="flex flex-col items-start text-left">
-                    <span className="text-sm font-medium text-neutral-charcoal">
-                      {result.name}
-                    </span>
-                    <span className="text-xs text-neutral-gray4">
-                      {result.entityType === EntityType.ORG
-                        ? t('Organization')
-                        : t('Individual')}
-                    </span>
-                  </div>
-                </ListBoxItem>
+                  {(result) => (
+                    <ListBoxItem
+                      key={result.id}
+                      id={result.id}
+                      textValue={result.name}
+                      className="hover:bg-neutral-gray0 focus:bg-neutral-gray0 flex cursor-pointer items-center gap-3 px-4 py-3 outline-none"
+                    >
+                      <Avatar
+                        placeholder={result.name}
+                        className="size-8 shrink-0"
+                      >
+                        {result.avatarImage?.name ? (
+                          <Image
+                            src={getPublicUrl(result.avatarImage.name) ?? ''}
+                            alt={result.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : null}
+                      </Avatar>
+                      <div className="flex flex-col items-start text-left">
+                        <span className="text-sm font-medium text-neutral-charcoal">
+                          {result.name}
+                        </span>
+                        <span className="text-xs text-neutral-gray4">
+                          {result.entityType === EntityType.ORG
+                            ? t('Organization')
+                            : t('Individual')}
+                        </span>
+                      </div>
+                    </ListBoxItem>
+                  )}
+                </ListBox>
+              ) : (
+                <div className="p-4 text-center text-sm text-neutral-gray4">
+                  {t('No result')}
+                </div>
               )}
-            </ListBox>
-          ) : (
-            <div className="p-4 text-center text-sm text-neutral-gray4">
-              {t('No result')}
             </div>
-          )}
-        </Popover>
+          </div>
+        )}
 
         {/* Selected Items */}
         {selectedItems.length > 0 && (
