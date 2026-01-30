@@ -170,5 +170,4 @@ describe.concurrent('profile.listRoles', () => {
     const allIds = [...firstPageIds, ...secondPageIds];
     expect(allIds.length).toBe(4);
   });
-
 });
