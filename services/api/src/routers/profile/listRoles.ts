@@ -5,8 +5,9 @@ import {
   getRolesWithPermissions,
   updateRolePermissions,
 } from '@op/common';
-import { ZONES } from '@op/db/seedData/accessControl';
 import { z } from 'zod';
+
+const DECISIONS_ZONE_NAME = 'decisions';
 
 import { roleEncoder, roleWithPermissionsEncoder } from '../../encoders/roles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -46,7 +47,7 @@ export const listRolesRouter = router({
     .query(async ({ input }) => {
       return getRolesWithPermissions({
         profileId: input.profileId,
-        zoneId: ZONES.DECISIONS.id,
+        zoneName: DECISIONS_ZONE_NAME,
       });
     }),
 
@@ -87,7 +88,7 @@ export const listRolesRouter = router({
     .mutation(async ({ input }) => {
       return updateRolePermissions(
         input.roleId,
-        ZONES.DECISIONS.id,
+        DECISIONS_ZONE_NAME,
         input.permission,
       );
     }),

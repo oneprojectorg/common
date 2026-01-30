@@ -58,9 +58,18 @@ export async function createRole(
  */
 export async function updateRolePermissions(
   roleId: string,
-  zoneId: string,
+  zoneName: string,
   permission: number,
 ) {
+  // Look up the zone by name
+  const zone = await db._query.accessZones.findFirst({
+    where: (table, { eq }) => eq(table.name, zoneName),
+  });
+
+  if (!zone) {
+    throw new CommonError(`Zone "${zoneName}" not found`);
+  }
+
   // First check if the role is a global role (profileId IS NULL)
   const role = await db._query.accessRoles.findFirst({
     where: (table, { eq }) => eq(table.id, roleId),
@@ -78,7 +87,7 @@ export async function updateRolePermissions(
   const existing = await db._query.accessRolePermissionsOnAccessZones.findFirst(
     {
       where: (table, { eq, and }) =>
-        and(eq(table.accessRoleId, roleId), eq(table.accessZoneId, zoneId)),
+        and(eq(table.accessRoleId, roleId), eq(table.accessZoneId, zone.id)),
     },
   );
 
@@ -90,7 +99,7 @@ export async function updateRolePermissions(
   } else {
     await db.insert(accessRolePermissionsOnAccessZones).values({
       accessRoleId: roleId,
-      accessZoneId: zoneId,
+      accessZoneId: zone.id,
       permission,
     });
   }

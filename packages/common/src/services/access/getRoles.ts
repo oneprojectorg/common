@@ -99,9 +99,18 @@ interface RoleWithPermissions {
  */
 export const getRolesWithPermissions = async (params: {
   profileId: string;
-  zoneId: string;
+  zoneName: string;
 }): Promise<RoleWithPermissions[]> => {
-  const { profileId, zoneId } = params;
+  const { profileId, zoneName } = params;
+
+  // Look up the zone by name
+  const zone = await db._query.accessZones.findFirst({
+    where: (table, { eq }) => eq(table.name, zoneName),
+  });
+
+  if (!zone) {
+    return [];
+  }
 
   // Get all roles that are either global or specific to this profile
   const roles = await db._query.accessRoles.findMany({
@@ -110,7 +119,7 @@ export const getRolesWithPermissions = async (params: {
     orderBy: (table, { asc }) => [asc(table.name)],
     with: {
       zonePermissions: {
-        where: (permTable, { eq }) => eq(permTable.accessZoneId, zoneId),
+        where: (permTable, { eq }) => eq(permTable.accessZoneId, zone.id),
       },
     },
   });
