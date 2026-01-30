@@ -31,7 +31,7 @@ export const ComingSoonScreen = () => {
         </ButtonLink>
       </header>
       <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 text-center sm:my-20">
-        <section className="flex flex-col items-center gap-12">
+        <section className="flex flex-col items-center gap-14">
           <FadeInWrapper>
             <h1 className="flex flex-col gap-6 text-center sm:text-lg">
               <span>
@@ -46,7 +46,7 @@ export const ComingSoonScreen = () => {
           </FadeInWrapper>
 
           <FadeInWrapper>
-            <div className="relative right-1/2 left-1/2 -mr-[50vw] -ml-[50vw] grid w-screen items-center p-[4vmin]">
+            <div className="relative grid items-center p-[3vw]">
               <AnimatedGradientBackground />
 
               <Image
@@ -54,7 +54,7 @@ export const ComingSoonScreen = () => {
                 alt="Screenshot of the Common platform"
                 width={1568}
                 height={1041}
-                className="relative mx-auto w-5xl max-w-full shadow"
+                className="relative mx-auto w-7xl max-w-[85vw] shadow"
                 priority
               />
             </div>
