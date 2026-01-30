@@ -47,8 +47,10 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30_000,
     // Reduce parallelism when running against remote Supabase to avoid Auth rate limits
-    // With 1 worker, tests within a file still run sequentially, avoiding burst limits
+    // maxWorkers controls file parallelism, maxConcurrency controls test parallelism within files
     maxWorkers: isRemoteSupabase ? 1 : '75%',
+    // Limit concurrent tests to avoid burst rate limits on describe.concurrent
+    maxConcurrency: isRemoteSupabase ? 2 : 10,
     pool: 'threads',
     env: TEST_ENV,
   },
