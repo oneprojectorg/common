@@ -8,6 +8,7 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { ProfileItem } from '@op/ui/ProfileItem';
 import { SearchField } from '@op/ui/SearchField';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
@@ -244,24 +245,29 @@ export const ProfileInviteModal = ({
                       key={result.id}
                       id={result.id}
                       textValue={result.name}
-                      className="hover:bg-neutral-gray0 focus:bg-neutral-gray0 flex cursor-pointer items-center gap-3 px-4 py-3 outline-none"
+                      className="hover:bg-neutral-gray0 focus:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
                     >
-                      <Avatar
-                        placeholder={result.name}
-                        className="size-8 shrink-0"
-                      >
-                        {result.avatarImage?.name ? (
-                          <Image
-                            src={getPublicUrl(result.avatarImage.name) ?? ''}
-                            alt={result.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : null}
-                      </Avatar>
-                      <span className="text-sm font-medium text-neutral-charcoal">
-                        {result.name}
-                      </span>
+                      <ProfileItem
+                        size="small"
+                        avatar={
+                          <Avatar
+                            placeholder={result.name}
+                            className="size-8 shrink-0"
+                          >
+                            {result.avatarImage?.name ? (
+                              <Image
+                                src={
+                                  getPublicUrl(result.avatarImage.name) ?? ''
+                                }
+                                alt={result.name}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : null}
+                          </Avatar>
+                        }
+                        title={result.name}
+                      />
                     </ListBoxItem>
                   )}
                 </ListBox>
@@ -284,21 +290,27 @@ export const ProfileInviteModal = ({
               {selectedItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex h-14 items-center gap-3 rounded-lg border border-neutral-gray2 bg-white px-3"
+                  className="flex h-14 items-center rounded-lg border border-neutral-gray2 bg-white px-3"
                 >
-                  <Avatar placeholder={item.name} className="size-6 shrink-0">
-                    {item.avatarUrl ? (
-                      <Image
-                        src={item.avatarUrl}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : null}
-                  </Avatar>
-                  <span className="text-sm font-medium text-neutral-charcoal">
-                    {item.name}
-                  </span>
+                  <ProfileItem
+                    size="small"
+                    avatar={
+                      <Avatar
+                        placeholder={item.name}
+                        className="size-6 shrink-0"
+                      >
+                        {item.avatarUrl ? (
+                          <Image
+                            src={item.avatarUrl}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : null}
+                      </Avatar>
+                    }
+                    title={item.name}
+                  />
                   <button
                     type="button"
                     onClick={() => handleRemoveItem(new Set([item.id]))}

@@ -1,8 +1,29 @@
 import { ReactNode } from 'react';
+import { VariantProps, tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
 
-type ProfileItemProps = {
+const profileItemStyles = tv({
+  slots: {
+    root: 'flex gap-3',
+    title: '',
+  },
+  variants: {
+    size: {
+      default: {
+        title: 'leading-base font-semibold text-neutral-black',
+      },
+      small: {
+        title: 'text-sm font-medium text-neutral-charcoal',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'default',
+  },
+});
+
+type ProfileItemProps = VariantProps<typeof profileItemStyles> & {
   avatar: ReactNode;
   title: string;
   description?: string;
@@ -19,13 +40,15 @@ export const ProfileItem = ({
   description,
   className,
   children,
+  size,
 }: ProfileItemProps) => {
   const hasAdditionalContent = description || children;
+  const styles = profileItemStyles({ size });
 
   return (
     <div
       className={cn(
-        'flex gap-3',
+        styles.root(),
         hasAdditionalContent ? 'items-start' : 'items-center',
         className,
       )}
@@ -33,9 +56,7 @@ export const ProfileItem = ({
       {avatar}
 
       <div className="min-w-0 flex-1">
-        <div className="leading-base font-semibold text-neutral-black">
-          {title}
-        </div>
+        <div className={styles.title()}>{title}</div>
 
         {description ? (
           <div className="mt-2 text-neutral-charcoal">{description}</div>
