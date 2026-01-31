@@ -32,7 +32,6 @@ interface SelectedItem {
   id: string;
   profileId: string;
   name: string;
-  type: 'org' | 'individual';
   email?: string;
   avatarUrl?: string;
 }
@@ -72,10 +71,10 @@ export const ProfileInviteModal = ({
     }
   }, [debouncedQuery]);
 
-  // Search profiles (orgs and individuals)
+  // Search for individuals
   const { data: searchResults, isFetching: isSearching } =
     trpc.profile.search.useQuery(
-      { q: debouncedQuery, types: [EntityType.ORG, EntityType.INDIVIDUAL] },
+      { q: debouncedQuery, types: [EntityType.INDIVIDUAL] },
       {
         enabled: debouncedQuery.length >= 2,
         staleTime: 30_000,
@@ -109,10 +108,9 @@ export const ProfileInviteModal = ({
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     const newItem: SelectedItem = {
-      id: `${result.entityType}-${result.id}`,
+      id: result.id,
       profileId: result.id,
       name: result.name,
-      type: result.entityType === EntityType.ORG ? 'org' : 'individual',
       email: result.user?.email ?? undefined,
       avatarUrl: result.avatarImage?.name
         ? getPublicUrl(result.avatarImage.name)
@@ -200,7 +198,7 @@ export const ProfileInviteModal = ({
         {/* Search Input */}
         <div ref={searchContainerRef}>
           <SearchField
-            placeholder={t('Find orgs and individuals or invite by email...')}
+            placeholder={t('Search for people to invite...')}
             value={searchQuery}
             onChange={setSearchQuery}
             className="w-full"
@@ -261,16 +259,9 @@ export const ProfileInviteModal = ({
                           />
                         ) : null}
                       </Avatar>
-                      <div className="flex flex-col items-start text-left">
-                        <span className="text-sm font-medium text-neutral-charcoal">
-                          {result.name}
-                        </span>
-                        <span className="text-xs text-neutral-gray4">
-                          {result.entityType === EntityType.ORG
-                            ? t('Organization')
-                            : t('Individual')}
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium text-neutral-charcoal">
+                        {result.name}
+                      </span>
                     </ListBoxItem>
                   )}
                 </ListBox>
@@ -305,16 +296,9 @@ export const ProfileInviteModal = ({
                       />
                     ) : null}
                   </Avatar>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-neutral-charcoal">
-                      {item.name}
-                    </span>
-                    {item.type === 'org' && (
-                      <span className="text-xs text-neutral-gray4">
-                        {t('Organization')}
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-sm font-medium text-neutral-charcoal">
+                    {item.name}
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleRemoveItem(new Set([item.id]))}

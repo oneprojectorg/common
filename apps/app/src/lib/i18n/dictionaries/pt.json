@@ -499,7 +499,7 @@
   "Failed to save": "Falha ao salvar",
   "Invite": "Convidar",
   "Invite members to your decision-making process": "Convide membros para seu processo de tomada de decisão",
-  "Find orgs and individuals or invite by email...": "Buscar organizações e indivíduos ou convidar por e-mail...",
+  "Search for people to invite...": "Buscar pessoas para convidar...",
   "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {1 pessoa} other {# pessoas}}",
   "Invite sent successfully": "Convite enviado com sucesso",
   "Selected members": "Membros selecionados",
