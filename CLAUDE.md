@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
 - **Type checking**: `pnpm typecheck` (runs type checking across all workspaces via Turbo) or `pnpm w:app typecheck` (for main app only)
 - **Format checking**: `pnpm format:check` (verifies code formatting - required by CI)
-- **Format fixes**: `pnpm format` (always do this changed files when you are done making changes)
+- **Format fixes**: `pnpm format` (always do this on changed files when you are done making changes)
 - Never run database migrations
 - NEVER run `pnpm format` (auto-fix) - only use `pnpm format:check` to verify
 - Almost always prefer suspense queries over a query with useEffect
