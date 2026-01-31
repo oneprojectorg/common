@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
+import type { Permission } from 'access-zones';
 import { Suspense, useState } from 'react';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -25,14 +26,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
 
-const PERMISSION_KEYS = [
-  'admin',
-  'create',
-  'read',
-  'update',
-  'delete',
-] as const;
-type PermissionKey = (typeof PERMISSION_KEYS)[number];
+type PermissionKey = keyof Permission;
 
 const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
   { key: 'admin', label: 'Admin' },
