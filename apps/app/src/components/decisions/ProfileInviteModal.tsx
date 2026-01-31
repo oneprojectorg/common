@@ -14,6 +14,7 @@ import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   Key,
+  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -34,6 +35,70 @@ interface SelectedItem {
   email?: string;
   avatarUrl?: string;
 }
+
+const RoleSelector = ({
+  profileId,
+  selectedRoleId,
+  onSelectionChange,
+  selectedCount,
+  onRolesLoaded,
+}: {
+  profileId: string;
+  selectedRoleId: string;
+  onSelectionChange: (key: Key) => void;
+  selectedCount: number;
+  onRolesLoaded: (firstRoleId: string) => void;
+}) => {
+  const [[globalRolesData, profileRolesData]] = trpc.useSuspenseQueries((t) => [
+    t.profile.listRoles({}),
+    t.profile.listRoles({ profileId }),
+  ]);
+
+  const roles = useMemo(() => {
+    const globalRoles = globalRolesData.items ?? [];
+    const profileRoles = profileRolesData.items ?? [];
+    return [...globalRoles, ...profileRoles];
+  }, [globalRolesData, profileRolesData]);
+
+  // Set default role on mount if none selected
+  const firstRoleId = roles[0]?.id;
+  useEffect(() => {
+    if (firstRoleId && !selectedRoleId) {
+      onRolesLoaded(firstRoleId);
+    }
+    // Only run on mount - onRolesLoaded is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <Tabs selectedKey={selectedRoleId} onSelectionChange={onSelectionChange}>
+      <TabList>
+        {roles.map((role) => (
+          <Tab key={role.id} id={role.id}>
+            {role.name}
+            {selectedCount > 0 && selectedRoleId === role.id ? (
+              <span className="ml-1.5 min-w-4 rounded-full bg-teal-500 px-1.5 py-0.5 text-xs text-white">
+                {selectedCount}
+              </span>
+            ) : null}
+          </Tab>
+        ))}
+      </TabList>
+    </Tabs>
+  );
+};
+
+const RoleSelectorSkeleton = () => {
+  const t = useTranslations();
+  return (
+    <div className="flex h-8 items-center">
+      <LoadingSpinner className="size-4" />
+      <span className="ml-2 text-sm text-neutral-gray4">
+        {t('Loading roles...')}
+      </span>
+    </div>
+  );
+};
 
 export const ProfileInviteModal = ({
   profileId,
@@ -69,29 +134,6 @@ export const ProfileInviteModal = ({
       });
     }
   }, [debouncedQuery]);
-
-  // Fetch global roles and profile-specific roles in parallel
-  const { data: globalRolesData, isPending: globalRolesPending } =
-    trpc.profile.listRoles.useQuery({});
-  const { data: profileRolesData, isPending: profileRolesPending } =
-    trpc.profile.listRoles.useQuery({ profileId });
-
-  const rolesPending = globalRolesPending || profileRolesPending;
-
-  // Combine global and profile-specific roles
-  const roles = useMemo(() => {
-    const globalRoles = globalRolesData?.items ?? [];
-    const profileRoles = profileRolesData?.items ?? [];
-    return [...globalRoles, ...profileRoles];
-  }, [globalRolesData, profileRolesData]);
-
-  // Set default role when roles load
-  useEffect(() => {
-    const firstRole = roles[0];
-    if (firstRole && !selectedRoleId) {
-      setSelectedRoleId(firstRole.id);
-    }
-  }, [roles, selectedRoleId]);
 
   // Search profiles (orgs and individuals)
   const { data: searchResults, isFetching: isSearching } =
@@ -208,35 +250,15 @@ export const ProfileInviteModal = ({
 
       <ModalBody className="space-y-4">
         {/* Role Tabs */}
-        {rolesPending ? (
-          <div className="flex h-8 items-center">
-            <LoadingSpinner className="size-4" />
-            <span className="ml-2 text-sm text-neutral-gray4">
-              {t('Loading roles...')}
-            </span>
-          </div>
-        ) : (
-          <Tabs
-            selectedKey={selectedRoleId}
+        <Suspense fallback={<RoleSelectorSkeleton />}>
+          <RoleSelector
+            profileId={profileId}
+            selectedRoleId={selectedRoleId}
             onSelectionChange={handleTabChange}
-          >
-            <TabList>
-              {roles.map((role) => {
-                const countForRole = selectedItems.length;
-                return (
-                  <Tab key={role.id} id={role.id}>
-                    {role.name}
-                    {countForRole > 0 && selectedRoleId === role.id ? (
-                      <span className="ml-1.5 min-w-4 rounded-full bg-teal-500 px-1.5 py-0.5 text-xs text-white">
-                        {countForRole}
-                      </span>
-                    ) : null}
-                  </Tab>
-                );
-              })}
-            </TabList>
-          </Tabs>
-        )}
+            selectedCount={selectedItems.length}
+            onRolesLoaded={setSelectedRoleId}
+          />
+        </Suspense>
 
         {/* Search Input */}
         <div ref={searchContainerRef}>
