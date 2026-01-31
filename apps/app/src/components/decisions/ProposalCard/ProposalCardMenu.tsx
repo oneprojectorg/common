@@ -6,6 +6,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import { parseProposalData } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { IconButton } from '@op/ui/IconButton';
@@ -32,7 +33,7 @@ export function ProposalCardMenu({
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isMenuSheetOpen, setIsMenuSheetOpen] = useState(false);
 
   const updateStatusMutation = trpc.decision.updateProposal.useMutation({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -24,7 +25,7 @@ const localeDisplayNames: Record<string, string> = {
 };
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const i18nRouter = useI18nRouter();
   const pathname = usePathname();
   const params = useParams();

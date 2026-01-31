@@ -6,7 +6,8 @@ import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
-import { useAuthLogout } from '@op/hooks';
+import { useAuthLogout, useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
@@ -41,22 +42,6 @@ import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal';
 import { CreateMenu } from './CreateMenu';
-
-const useMediaQuery = (query: string) => {
-  const [matches, setMatches] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
-    const listener = () => setMatches(media.matches);
-    media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
-  }, [matches, query]);
-
-  return matches;
-};
 
 const ProfileMenuItem = ({
   profile,
@@ -343,7 +328,7 @@ const AvatarMenuContent = ({
 
 export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const { user } = useUser();
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOrgDeletionOpen, setIsOrgDeletionOpen] = useState(false);

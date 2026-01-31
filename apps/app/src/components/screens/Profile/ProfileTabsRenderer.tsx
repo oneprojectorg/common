@@ -2,6 +2,7 @@
 
 import type { Organization, Profile } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { TabPanel } from '@op/ui/Tabs';
 
 import type { SchemaType } from '@/components/Profile/CreateDecisionProcessModal/schemas/schemaLoader';
@@ -49,7 +50,7 @@ export const ProfileTabsRenderer = ({
   decisionsEnabled: boolean;
   schema: SchemaType;
 }) => {
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   if (isMobile) {
     return (
@@ -113,7 +114,7 @@ export const IndividualProfileTabsRenderer = ({
   profile: Profile;
   initialTab?: string;
 }) => {
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   if (isMobile) {
     return (

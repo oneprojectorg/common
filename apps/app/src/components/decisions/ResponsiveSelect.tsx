@@ -1,6 +1,7 @@
 'use client';
 
 import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
@@ -49,7 +50,7 @@ export function ResponsiveSelect<T extends string>({
   size = 'small',
   renderSelectedLabel,
 }: ResponsiveSelectProps<T>) {
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isOpen, setIsOpen] = useState(false);
 
   const selectedItem = items.find((item) => item.id === selectedKey);
