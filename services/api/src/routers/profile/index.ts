@@ -1,6 +1,7 @@
 import { mergeRouters } from '../../trpcFactory';
 import { getProfileRouter } from './getProfile';
 import { inviteProfileUserRouter } from './invite';
+import { rolesRouter } from './listRoles';
 import { profileRelationshipRouter } from './relationships';
 import {
   createJoinRequestRouter,
@@ -9,7 +10,6 @@ import {
   listJoinRequestsRouter,
   updateJoinRequestRouter,
 } from './requests';
-import { rolesRouter } from './roles';
 import { searchProfilesRouter } from './searchProfiles';
 import { usersRouter } from './users';
 

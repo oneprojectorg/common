@@ -9,7 +9,6 @@ import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { SearchField } from '@op/ui/SearchField';
-import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
@@ -27,6 +26,8 @@ import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { RoleSelector, RoleSelectorSkeleton } from './RoleSelector';
+
 interface SelectedItem {
   id: string;
   profileId: string;
@@ -35,70 +36,6 @@ interface SelectedItem {
   email?: string;
   avatarUrl?: string;
 }
-
-const RoleSelector = ({
-  profileId,
-  selectedRoleId,
-  onSelectionChange,
-  selectedCount,
-  onRolesLoaded,
-}: {
-  profileId: string;
-  selectedRoleId: string;
-  onSelectionChange: (key: Key) => void;
-  selectedCount: number;
-  onRolesLoaded: (firstRoleId: string) => void;
-}) => {
-  const [[globalRolesData, profileRolesData]] = trpc.useSuspenseQueries((t) => [
-    t.profile.listRoles({}),
-    t.profile.listRoles({ profileId }),
-  ]);
-
-  const roles = useMemo(() => {
-    const globalRoles = globalRolesData.items ?? [];
-    const profileRoles = profileRolesData.items ?? [];
-    return [...globalRoles, ...profileRoles];
-  }, [globalRolesData, profileRolesData]);
-
-  // Set default role on mount if none selected
-  const firstRoleId = roles[0]?.id;
-  useEffect(() => {
-    if (firstRoleId && !selectedRoleId) {
-      onRolesLoaded(firstRoleId);
-    }
-    // Only run on mount - onRolesLoaded is stable
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <Tabs selectedKey={selectedRoleId} onSelectionChange={onSelectionChange}>
-      <TabList>
-        {roles.map((role) => (
-          <Tab key={role.id} id={role.id}>
-            {role.name}
-            {selectedCount > 0 && selectedRoleId === role.id ? (
-              <span className="ml-1.5 min-w-4 rounded-full bg-teal-500 px-1.5 py-0.5 text-xs text-white">
-                {selectedCount}
-              </span>
-            ) : null}
-          </Tab>
-        ))}
-      </TabList>
-    </Tabs>
-  );
-};
-
-const RoleSelectorSkeleton = () => {
-  const t = useTranslations();
-  return (
-    <div className="flex h-8 items-center">
-      <LoadingSpinner className="size-4" />
-      <span className="ml-2 text-sm text-neutral-gray4">
-        {t('Loading roles...')}
-      </span>
-    </div>
-  );
-};
 
 export const ProfileInviteModal = ({
   profileId,
