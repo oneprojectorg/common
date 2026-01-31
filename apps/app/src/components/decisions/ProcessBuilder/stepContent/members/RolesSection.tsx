@@ -83,6 +83,7 @@ function RolesSectionContent({
         <RolesTable
           decisionProfileId={decisionProfileId}
           decisionName={decisionName}
+          zoneName="decisions"
         />
       </Suspense>
 
@@ -98,30 +99,76 @@ function RolesSectionContent({
 function RolesTable({
   decisionProfileId,
   decisionName,
+  zoneName,
 }: {
   decisionProfileId: string;
   decisionName: string;
+  zoneName: string;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
   const [[{ items: globalRoles }, { items: profileRoles }]] =
-    trpc.useSuspenseQueries((t) => [
-      t.profile.listRoles({ zoneName: 'decisions' }),
-      t.profile.listRoles({
+    trpc.useSuspenseQueries((q) => [
+      q.profile.listRoles({ zoneName }),
+      q.profile.listRoles({
         profileId: decisionProfileId,
-        zoneName: 'decisions',
+        zoneName,
       }),
     ]);
 
   const updatePermission = trpc.profile.updateRolePermission.useMutation({
+    onMutate: async ({ roleId, permissions }) => {
+      // Cancel outgoing refetches
+      await utils.profile.listRoles.cancel({
+        profileId: decisionProfileId,
+        zoneName,
+      });
+
+      // Snapshot the previous value
+      const previousData = utils.profile.listRoles.getData({
+        profileId: decisionProfileId,
+        zoneName,
+      });
+
+      // Optimistically update the cache
+      utils.profile.listRoles.setData(
+        { profileId: decisionProfileId, zoneName },
+        (old) => {
+          if (!old) {
+            return old;
+          }
+          return {
+            ...old,
+            items: old.items.map((role) =>
+              role.id === roleId ? { ...role, permissions } : role,
+            ),
+          };
+        },
+      );
+
+      return { previousData };
+    },
+    onError: (_error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        utils.profile.listRoles.setData(
+          { profileId: decisionProfileId, zoneName },
+          context.previousData,
+        );
+      }
+      toast.error({ message: t('Failed to update role') });
+    },
     onSuccess: () => {
       toast.success({ message: t('Role updated successfully') });
-      utils.profile.listRoles.invalidate();
     },
-    onError: () => {
-      toast.error({ message: t('Failed to update role') });
+    onSettled: () => {
+      // Always refetch after error or success to ensure sync
+      utils.profile.listRoles.invalidate({
+        profileId: decisionProfileId,
+        zoneName,
+      });
     },
   });
 
@@ -214,7 +261,6 @@ function RolesTable({
                     <Checkbox
                       size="small"
                       isSelected={role.permissions?.[key] ?? false}
-                      isDisabled={updatePermission.isPending}
                       onChange={() => togglePermission(role, key)}
                       aria-label={`${label} permission for ${role.name}`}
                     />
