@@ -12,8 +12,16 @@ import { SearchField } from '@op/ui/SearchField';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
-import { Key, useEffect, useMemo, useState, useTransition } from 'react';
+import {
+  Key,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { ListBox, ListBoxItem } from 'react-aria-components';
+import { createPortal } from 'react-dom';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -43,6 +51,24 @@ export const ProfileInviteModal = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startTransition] = useTransition();
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
+
+  // Update dropdown position when search query changes
+  useEffect(() => {
+    if (debouncedQuery.length >= 2 && searchContainerRef.current) {
+      const rect = searchContainerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [debouncedQuery]);
 
   // Fetch global roles and profile-specific roles in parallel
   const { data: globalRolesData, isPending: globalRolesPending } =
@@ -213,7 +239,7 @@ export const ProfileInviteModal = ({
         )}
 
         {/* Search Input */}
-        <div>
+        <div ref={searchContainerRef}>
           <SearchField
             placeholder={t('Find orgs and individuals or invite by email...')}
             value={searchQuery}
@@ -222,10 +248,24 @@ export const ProfileInviteModal = ({
           />
         </div>
 
-        {/* Search Results Dropdown */}
-        {debouncedQuery.length >= 2 && (
-          <div className="relative -mt-4">
-            <div className="absolute top-0 right-0 left-0 z-[9999999] max-h-60 overflow-y-auto rounded-md border border-neutral-gray2 bg-white shadow-lg">
+        {/* Search Results Dropdown - rendered via portal to escape modal overflow */}
+        {debouncedQuery.length >= 2 &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div
+              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-md border border-neutral-gray2 bg-white shadow-lg"
+              style={{
+                top: dropdownPosition.top,
+                left: dropdownPosition.left,
+                width: dropdownPosition.width,
+              }}
+              // Mark as top-layer overlay so React Aria doesn't treat clicks as "outside"
+              data-react-aria-top-layer="true"
+              // Prevent clicks from bubbling to modal overlay and dismissing it
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
               {isSearching ? (
                 <div className="flex items-center justify-center p-4">
                   <LoadingSpinner className="size-4" />
@@ -280,9 +320,9 @@ export const ProfileInviteModal = ({
                   {t('No result')}
                 </div>
               )}
-            </div>
-          </div>
-        )}
+            </div>,
+            document.body,
+          )}
 
         {/* Selected Items */}
         {selectedItems.length > 0 && (
