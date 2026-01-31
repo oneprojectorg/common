@@ -9,7 +9,7 @@ import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
+import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
@@ -201,75 +201,95 @@ export function ProposalCardMenu({
     deleteProposalMutation.isPending ||
     updateVisibilityMutation.isPending;
 
-  const menuContent = (
-    <>
-      {/* Admin actions (shortlist, reject, hide) - not for drafts */}
-      {canManage && proposal.status !== ProposalStatus.DRAFT && (
-        <>
-          <MenuItem
-            key="approve"
-            onAction={() => {
-              handleApprove();
-              setIsMenuSheetOpen(false);
-            }}
-            className="min-w-48 py-2"
-            isDisabled={
-              isLoading || proposal.status === ProposalStatus.APPROVED
-            }
-          >
-            <LuCheck className="size-4" />
-            {t('Shortlist for voting')}
-          </MenuItem>
-          <MenuItem
-            key="reject"
-            onAction={() => {
-              handleReject();
-              setIsMenuSheetOpen(false);
-            }}
-            className="min-w-48 py-2"
-            isDisabled={
-              isLoading || proposal.status === ProposalStatus.REJECTED
-            }
-          >
-            <LuX className="size-4" />
-            {t('Reject from shortlist')}
-          </MenuItem>
-          <MenuSeparator />
-          <MenuItem
-            key="visibility"
-            onAction={() => {
-              handleToggleVisibility();
-              setIsMenuSheetOpen(false);
-            }}
-            className="min-w-48 py-2"
-            isDisabled={isLoading}
-          >
-            {isHidden ? (
-              <LuEye className="size-4" />
-            ) : (
-              <LuEyeOff className="size-4" />
-            )}
-            {isHidden ? t('Unhide proposal') : t('Hide proposal')}
-          </MenuItem>
-        </>
-      )}
-      {/* Delete action for own proposals (including drafts) */}
-      {proposal.isEditable && (
+  const getMenuItems = (forMobile: boolean) => {
+    const items: Array<{
+      key: string;
+      icon: React.ReactNode;
+      label: string;
+      onAction: () => void;
+      isDisabled?: boolean;
+      isDestructive?: boolean;
+    }> = [];
+
+    // Admin actions (shortlist, reject, hide) - not for drafts
+    if (canManage && proposal.status !== ProposalStatus.DRAFT) {
+      items.push({
+        key: 'approve',
+        icon: <LuCheck className="size-5" />,
+        label: t('Shortlist for voting'),
+        onAction: () => {
+          handleApprove();
+          setIsMenuSheetOpen(false);
+        },
+        isDisabled: isLoading || proposal.status === ProposalStatus.APPROVED,
+      });
+      items.push({
+        key: 'reject',
+        icon: <LuX className="size-5" />,
+        label: t('Reject from shortlist'),
+        onAction: () => {
+          handleReject();
+          setIsMenuSheetOpen(false);
+        },
+        isDisabled: isLoading || proposal.status === ProposalStatus.REJECTED,
+      });
+      items.push({
+        key: 'visibility',
+        icon: isHidden ? (
+          <LuEye className="size-5" />
+        ) : (
+          <LuEyeOff className="size-5" />
+        ),
+        label: isHidden ? t('Unhide proposal') : t('Hide proposal'),
+        onAction: () => {
+          handleToggleVisibility();
+          setIsMenuSheetOpen(false);
+        },
+        isDisabled: isLoading,
+      });
+    }
+
+    // Delete action for own proposals (including drafts)
+    if (proposal.isEditable) {
+      items.push({
+        key: 'delete',
+        icon: <Trash2 className="size-5" />,
+        label: t('Delete'),
+        onAction: () => {
+          setIsMenuSheetOpen(false);
+          setIsDeleteModalOpen(true);
+        },
+        isDisabled: isLoading,
+        isDestructive: true,
+      });
+    }
+
+    if (forMobile) {
+      return items.map((item, index) => (
         <MenuItem
-          key="delete"
-          onAction={() => {
-            setIsMenuSheetOpen(false);
-            setIsDeleteModalOpen(true);
-          }}
-          className="py-2 text-functional-red"
-          isDisabled={isLoading}
+          key={item.key}
+          onAction={item.onAction}
+          className={`rounded-none px-6 py-4 ${item.isDestructive ? 'text-functional-red' : ''} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
+          isDisabled={item.isDisabled}
         >
-          <Trash2 className="size-4" />
-          {t('Delete')}
+          {item.icon}
+          {item.label}
         </MenuItem>
-      )}
-    </>
-  );
+      ));
+    }
+
+    return items.map((item) => (
+      <MenuItem
+        key={item.key}
+        onAction={item.onAction}
+        className={`min-w-48 py-2 ${item.isDestructive ? 'text-functional-red' : ''}`}
+        isDisabled={item.isDisabled}
+      >
+        {item.icon}
+        {item.label}
+      </MenuItem>
+    ));
+  };
 
   const menuTriggerButton = (
     <IconButton
@@ -296,8 +316,8 @@ export function ProposalCardMenu({
             className="m-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
           >
             <ModalBody className="pb-safe p-0">
-              <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
-                {menuContent}
+              <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
+                {getMenuItems(true)}
               </Menu>
             </ModalBody>
           </Modal>
@@ -306,7 +326,7 @@ export function ProposalCardMenu({
         <MenuTrigger>
           {menuTriggerButton}
           <Popover placement="bottom end">
-            <Menu className="p-2">{menuContent}</Menu>
+            <Menu className="p-2">{getMenuItems(false)}</Menu>
           </Popover>
         </MenuTrigger>
       )}
