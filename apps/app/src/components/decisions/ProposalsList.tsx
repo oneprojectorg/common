@@ -4,20 +4,17 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { match } from '@op/core';
-import { useMediaQuery } from '@op/hooks';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
-import { Menu, MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
+import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { LuArrowDownToLine, LuChevronDown, LuLeaf } from 'react-icons/lu';
+import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -35,6 +32,7 @@ import {
   ProposalCardOwnerActions,
   ProposalCardPreview,
 } from './ProposalCard';
+import { ResponsiveSelect } from './ResponsiveSelect';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
@@ -466,12 +464,6 @@ export const ProposalsList = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Mobile detection for bottom sheet filters
-  const isMobile = useMediaQuery('(max-width: 640px)');
-  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
-  const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
-  const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
-
   // Initialize state from URL search params
   const [selectedCategory, setSelectedCategory] = useState<string>(
     searchParams.get('category') || 'all-categories',
@@ -605,250 +597,63 @@ export const ProposalsList = ({
           </span>
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          {isMobile ? (
-            <>
-              <Button
-                color="secondary"
-                size="small"
-                className="min-w-36 justify-between"
-                onPress={() => setIsFilterSheetOpen(true)}
-              >
-                {proposalFilter === 'my-ballot'
-                  ? t('My ballot')
-                  : proposalFilter === 'my'
-                    ? t('My proposals')
-                    : proposalFilter === 'shortlisted'
-                      ? t('Shortlisted')
-                      : t('All proposals')}
-                <LuChevronDown className="size-4" />
-              </Button>
-              <Modal
-                isOpen={isFilterSheetOpen}
-                onOpenChange={setIsFilterSheetOpen}
-                isDismissable={true}
-                isKeyboardDismissDisabled={false}
-                overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-                className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
-              >
-                <ModalBody className="pb-safe p-0">
-                  <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
-                    <MenuItem
-                      id="all"
-                      selected={proposalFilter === 'all'}
-                      onAction={() => {
-                        setProposalFilter('all');
-                        setIsFilterSheetOpen(false);
-                      }}
-                    >
-                      {t('All proposals')}
-                    </MenuItem>
-                    <MenuItem
-                      id="my"
-                      selected={proposalFilter === 'my'}
-                      isDisabled={!currentProfileId}
-                      onAction={() => {
-                        if (currentProfileId) {
-                          setProposalFilter('my');
-                          setIsFilterSheetOpen(false);
-                        }
-                      }}
-                    >
-                      {t('My proposals')}
-                    </MenuItem>
-                    <MenuItem
-                      id="shortlisted"
-                      selected={proposalFilter === 'shortlisted'}
-                      onAction={() => {
-                        setProposalFilter('shortlisted');
-                        setIsFilterSheetOpen(false);
-                      }}
-                    >
-                      {t('Shortlisted proposals')}
-                    </MenuItem>
-                    {hasVoted && (
-                      <MenuItem
-                        id="my-ballot"
-                        selected={proposalFilter === 'my-ballot'}
-                        onAction={() => {
-                          setProposalFilter('my-ballot');
-                          setIsFilterSheetOpen(false);
-                        }}
-                      >
-                        {t('My ballot')}
-                      </MenuItem>
-                    )}
-                  </Menu>
-                </ModalBody>
-              </Modal>
-            </>
-          ) : (
-            <Select
-              size="small"
-              className="min-w-36"
-              selectedKey={proposalFilter}
-              onSelectionChange={(key) => {
-                const newKey = key as ProposalFilter;
-                // If selecting "My proposals" but no current profile, fallback to "all"
-                if (newKey === 'my' && !currentProfileId) {
-                  return;
-                }
-                setProposalFilter(newKey);
-              }}
-            >
-              <SelectItem id="all">{t('All proposals')}</SelectItem>
-              <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
-              <SelectItem id="my" isDisabled={!currentProfileId}>
-                {t('My proposals')}
-              </SelectItem>
-              {hasVoted && (
-                <SelectItem id="my-ballot">{t('My ballot')}</SelectItem>
-              )}
-            </Select>
-          )}
-          {isMobile ? (
-            <>
-              <Button
-                color="secondary"
-                size="small"
-                className="min-w-36 justify-between"
-                onPress={() => setIsCategorySheetOpen(true)}
-              >
-                {selectedCategory === 'all-categories'
-                  ? t('All categories')
-                  : (categories.find((c) => c.id === selectedCategory)?.name ??
-                    t('All categories'))}
-                <LuChevronDown className="size-4" />
-              </Button>
-              <Modal
-                isOpen={isCategorySheetOpen}
-                onOpenChange={setIsCategorySheetOpen}
-                isDismissable={true}
-                isKeyboardDismissDisabled={false}
-                overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-                className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
-              >
-                <ModalBody className="pb-safe p-0">
-                  <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
-                    <MenuItem
-                      id="all-categories"
-                      selected={selectedCategory === 'all-categories'}
-                      onAction={() => {
-                        setSelectedCategory('all-categories');
-                        updateURLParams({ category: 'all-categories' });
-                        setIsCategorySheetOpen(false);
-                      }}
-                    >
-                      {t('All categories')}
-                    </MenuItem>
-                    {categories.map((category) => (
-                      <MenuItem
-                        key={category.id}
-                        id={category.id}
-                        selected={selectedCategory === category.id}
-                        onAction={() => {
-                          setSelectedCategory(category.id);
-                          updateURLParams({ category: category.id });
-                          setIsCategorySheetOpen(false);
-                        }}
-                      >
-                        {category.name}
-                      </MenuItem>
-                    ))}
-                  </Menu>
-                </ModalBody>
-              </Modal>
-            </>
-          ) : (
-            <Select
-              selectedKey={selectedCategory}
-              size="small"
-              className="min-w-36"
-              onSelectionChange={(key) => {
-                const category = String(key);
-                setSelectedCategory(category);
-                updateURLParams({ category });
-              }}
-              aria-label={t('Filter proposals by category')}
-            >
-              <SelectItem
-                id="all-categories"
-                aria-label={t('Show all categories')}
-              >
-                {t('All categories')}
-              </SelectItem>
-              {categories.map((category) => (
-                <SelectItem
-                  key={category.id}
-                  id={category.id}
-                  aria-label={`Filter by ${category.name} category`}
-                >
-                  {category.name}
-                </SelectItem>
-              ))}
-            </Select>
-          )}
-          {isMobile ? (
-            <>
-              <Button
-                color="secondary"
-                size="small"
-                className="min-w-32 justify-between"
-                onPress={() => setIsSortSheetOpen(true)}
-              >
-                {sortOrder === 'newest' ? t('Newest First') : t('Oldest First')}
-                <LuChevronDown className="size-4" />
-              </Button>
-              <Modal
-                isOpen={isSortSheetOpen}
-                onOpenChange={setIsSortSheetOpen}
-                isDismissable={true}
-                isKeyboardDismissDisabled={false}
-                overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-                className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
-              >
-                <ModalBody className="pb-safe p-0">
-                  <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
-                    <MenuItem
-                      id="newest"
-                      selected={sortOrder === 'newest'}
-                      onAction={() => {
-                        setSortOrder('newest');
-                        updateURLParams({ sort: 'newest' });
-                        setIsSortSheetOpen(false);
-                      }}
-                    >
-                      {t('Newest First')}
-                    </MenuItem>
-                    <MenuItem
-                      id="oldest"
-                      selected={sortOrder === 'oldest'}
-                      onAction={() => {
-                        setSortOrder('oldest');
-                        updateURLParams({ sort: 'oldest' });
-                        setIsSortSheetOpen(false);
-                      }}
-                    >
-                      {t('Oldest First')}
-                    </MenuItem>
-                  </Menu>
-                </ModalBody>
-              </Modal>
-            </>
-          ) : (
-            <Select
-              selectedKey={sortOrder}
-              size="small"
-              className="min-w-32"
-              onSelectionChange={(key) => {
-                const sort = String(key);
-                setSortOrder(sort);
-                updateURLParams({ sort });
-              }}
-            >
-              <SelectItem id="newest">{t('Newest First')}</SelectItem>
-              <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
-            </Select>
-          )}
+          <ResponsiveSelect
+            selectedKey={proposalFilter}
+            onSelectionChange={(key) => {
+              // If selecting "My proposals" but no current profile, ignore
+              if (key === 'my' && !currentProfileId) {
+                return;
+              }
+              setProposalFilter(key);
+            }}
+            items={[
+              { id: 'all' as ProposalFilter, label: t('All proposals') },
+              {
+                id: 'my' as ProposalFilter,
+                label: t('My proposals'),
+                isDisabled: !currentProfileId,
+              },
+              {
+                id: 'shortlisted' as ProposalFilter,
+                label: t('Shortlisted proposals'),
+              },
+              ...(hasVoted
+                ? [
+                    {
+                      id: 'my-ballot' as ProposalFilter,
+                      label: t('My ballot'),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          <ResponsiveSelect
+            selectedKey={selectedCategory}
+            onSelectionChange={(category) => {
+              setSelectedCategory(category);
+              updateURLParams({ category });
+            }}
+            aria-label={t('Filter proposals by category')}
+            items={[
+              { id: 'all-categories', label: t('All categories') },
+              ...categories.map((category) => ({
+                id: category.id,
+                label: category.name,
+              })),
+            ]}
+          />
+          <ResponsiveSelect
+            selectedKey={sortOrder}
+            onSelectionChange={(sort) => {
+              setSortOrder(sort);
+              updateURLParams({ sort });
+            }}
+            className="min-w-32"
+            items={[
+              { id: 'newest', label: t('Newest First') },
+              { id: 'oldest', label: t('Oldest First') },
+            ]}
+          />
           {canManageProposals ? (
             isDownloadReady && downloadUrl ? (
               <ButtonLink
