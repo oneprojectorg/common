@@ -13,14 +13,15 @@ import { WaitlistSignup } from './WaitlistSignup';
 
 export const ComingSoonScreen = () => {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 2, delay: 0.25 }}
-    >
+    <>
       <div className="pointer-events-none absolute top-0 z-10 h-50 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
       <div className="pointer-events-none absolute bottom-0 z-10 h-50 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
-      <header className="sticky top-0 z-20 flex items-center justify-between p-4 md:px-8 md:py-6">
+      <motion.header
+        transition={{ duration: 1 }}
+        animate={{ opacity: 1 }}
+        initial={{ opacity: 0 }}
+        className="sticky top-0 z-20 flex items-center justify-between p-4 md:px-8 md:py-6"
+      >
         <img src="/logo-common.svg" alt="Common" className="h-4" />
         <ButtonLink
           href="/login"
@@ -29,13 +30,18 @@ export const ComingSoonScreen = () => {
         >
           Log in
         </ButtonLink>
-      </header>
+      </motion.header>
+
       <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 text-center sm:my-24 sm:gap-32">
         <section className="flex flex-col items-center gap-12 sm:gap-24">
-          <FadeInWrapper>
-            <h1 className="font-serif text-title-md text-neutral-charcoal sm:text-3xl">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 2, delay: 0.25 }}
+          >
+            <h1 className="flex flex-col font-serif text-title-md text-balance text-neutral-charcoal sm:text-3xl">
               <span>
-                Helping people decide together how to use their resources —{' '}
+                Helping people decide together how to use their resources
               </span>
               <span className="font-serif text-title-md sm:text-3xl">
                 <AnimatedGradientText>
@@ -43,12 +49,20 @@ export const ComingSoonScreen = () => {
                 </AnimatedGradientText>
               </span>
             </h1>
-          </FadeInWrapper>
-
-          <FadeInWrapper>
-            <div className="relative grid items-center p-[3vw]">
-              <AnimatedGradientBackground />
-
+          </motion.div>
+          <motion.div
+            className="relative grid items-center p-[3vw]"
+            initial={{ opacity: 0, scale: 0.96, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 2, delay: 0.75 }}
+          >
+            <AnimatedGradientBackground />
+            <motion.div
+              className="relative grid items-center p-[3vw]"
+              initial={{ opacity: 0, scale: 0.96, y: 60 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 2, delay: 1.125 }}
+            >
               <Image
                 src="/coming-soon-mockup.png"
                 alt="Screenshot of the Common platform"
@@ -57,10 +71,10 @@ export const ComingSoonScreen = () => {
                 className="relative mx-auto w-7xl max-w-[85vw] shadow"
                 priority
               />
-            </div>
-          </FadeInWrapper>
+            </motion.div>
+          </motion.div>
           <FadeInWrapper>
-            <p className="flex flex-col space-y-4 sm:block sm:max-w-144 sm:text-lg">
+            <p className="flex flex-col space-y-4 text-balance sm:block sm:max-w-144 sm:text-lg">
               <span>
                 Built for{' '}
                 <FancyWord className="bg-redPurple">communities</FancyWord>{' '}
@@ -108,16 +122,14 @@ export const ComingSoonScreen = () => {
           </section>
         </FadeInWrapper>
       </main>
-      <FadeInWrapper>
-        <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-neutral-gray4 sm:mt-0 sm:flex-row sm:gap-4">
-          <p>Beautifully designed</p>
-          <p>•</p>
-          <p>Easy to set up</p>
-          <p>•</p>
-          <p>No training required</p>
-        </footer>
-      </FadeInWrapper>
-    </motion.div>
+      <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-neutral-gray4 sm:mt-0 sm:flex-row sm:gap-4">
+        <p>Beautifully designed</p>
+        <p>•</p>
+        <p>Easy to set up</p>
+        <p>•</p>
+        <p>No training required</p>
+      </footer>
+    </>
   );
 };
 
@@ -156,7 +168,7 @@ const FadeInWrapper = ({ children }: { children: React.ReactNode }) => {
       variants={fadeInVariants}
       initial="offscreen"
       whileInView="onscreen"
-      viewport={{ amount: 0.7, once: true }}
+      viewport={{ amount: 0.4 }}
     >
       {children}
     </motion.div>
