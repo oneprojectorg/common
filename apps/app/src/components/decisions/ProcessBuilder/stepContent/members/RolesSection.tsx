@@ -36,6 +36,65 @@ const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
   { key: 'delete', label: 'Delete' },
 ];
 
+export default function RolesSection({
+  decisionProfileId,
+  decisionName,
+}: SectionProps) {
+  return (
+    <div className="px-24 py-16">
+      <div className="mx-auto max-w-5xl">
+        <RolesSectionContent
+          decisionProfileId={decisionProfileId}
+          decisionName={decisionName}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RolesSectionContent({
+  decisionProfileId,
+  decisionName,
+}: SectionProps) {
+  const t = useTranslations();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-title-sm font-light text-neutral-black">
+          {t('Roles & permissions')}
+        </h2>
+        <Button
+          color="ghost"
+          className="text-primary-teal hover:text-primary-tealBlack"
+          onPress={() => setIsAddDialogOpen(true)}
+        >
+          <LuPlus className="size-4" />
+          {t('Add role')}
+        </Button>
+      </div>
+
+      <Suspense
+        fallback={
+          <div className="h-48 animate-pulse rounded-lg bg-neutral-gray1" />
+        }
+      >
+        <RolesTable
+          decisionProfileId={decisionProfileId}
+          decisionName={decisionName}
+        />
+      </Suspense>
+
+      <AddRoleDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        profileId={decisionProfileId}
+      />
+    </div>
+  );
+}
+
 function RolesTable({
   decisionProfileId,
   decisionName,
@@ -297,64 +356,5 @@ function AddRoleDialog({
         </ModalFooter>
       </Modal>
     </DialogTrigger>
-  );
-}
-
-function RolesSectionContent({
-  decisionProfileId,
-  decisionName,
-}: SectionProps) {
-  const t = useTranslations();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-serif text-title-sm font-light text-neutral-black">
-          {t('Roles & permissions')}
-        </h2>
-        <Button
-          color="ghost"
-          className="text-primary-teal hover:text-primary-tealBlack"
-          onPress={() => setIsAddDialogOpen(true)}
-        >
-          <LuPlus className="size-4" />
-          {t('Add role')}
-        </Button>
-      </div>
-
-      <Suspense
-        fallback={
-          <div className="h-48 animate-pulse rounded-lg bg-neutral-gray1" />
-        }
-      >
-        <RolesTable
-          decisionProfileId={decisionProfileId}
-          decisionName={decisionName}
-        />
-      </Suspense>
-
-      <AddRoleDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        profileId={decisionProfileId}
-      />
-    </div>
-  );
-}
-
-export default function RolesSection({
-  decisionProfileId,
-  decisionName,
-}: SectionProps) {
-  return (
-    <div className="px-24 py-16">
-      <div className="mx-auto max-w-5xl">
-        <RolesSectionContent
-          decisionProfileId={decisionProfileId}
-          decisionName={decisionName}
-        />
-      </div>
-    </div>
   );
 }
