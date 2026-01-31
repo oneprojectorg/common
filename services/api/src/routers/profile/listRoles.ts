@@ -18,7 +18,7 @@ const inputSchema = z
   .merge(paginationSchema)
   .merge(roleSortableSchema);
 
-export const rolesRouter = router({
+export const listRolesRouter = router({
   listRoles: commonAuthedProcedure()
     .input(inputSchema)
     .output(createPaginatedOutput(roleEncoder))
