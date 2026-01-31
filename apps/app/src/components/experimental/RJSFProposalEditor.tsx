@@ -5,7 +5,8 @@ import { Button } from '@op/ui/Button';
 import { RichTextEditorSkeleton } from '@op/ui/RichTextEditor';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
-import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils';
+import type { UiSchema } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -17,12 +18,18 @@ import {
   type CollaborativeFormContext,
   CollaborativeRichTextWidget,
 } from './CollaborativeRichTextWidget';
+import { CollaborativeTextWidget } from './CollaborativeTextWidget';
 import { CustomTemplates } from './RJSFTemplates';
+import { generateUiSchema, mergeUiSchema } from './generateUiSchema';
 
 /**
  * Hardcoded proposal schema with summary and description fields.
- * Summary: plain text field
- * Description: collaborative rich text field
+ *
+ * Convention:
+ * - `format: "richtext"` signals a rich text field → CollaborativeRichText widget
+ * - Plain string fields → CollaborativeText widget
+ *
+ * The uiSchema is auto-generated from this schema via generateUiSchema().
  */
 const PROPOSAL_SCHEMA: RJSFSchema = {
   type: 'object',
@@ -37,6 +44,7 @@ const PROPOSAL_SCHEMA: RJSFSchema = {
     },
     description: {
       type: 'string',
+      format: 'richtext', // <-- This signals rich text widget
       title: 'Description',
       description:
         'Full description of your proposal (rich text, collaborative)',
@@ -44,16 +52,17 @@ const PROPOSAL_SCHEMA: RJSFSchema = {
   },
 };
 
-const PROPOSAL_UI_SCHEMA: UiSchema = {
+/**
+ * Manual uiSchema overrides - merged with auto-generated schema.
+ * Use this for placeholders, custom classNames, etc.
+ */
+const PROPOSAL_UI_OVERRIDES: UiSchema = {
   summary: {
-    'ui:widget': 'TextareaWidget',
     'ui:placeholder': 'Enter a brief summary of your proposal...',
   },
   description: {
-    'ui:widget': 'CollaborativeRichText',
     'ui:placeholder': 'Write your full proposal description here...',
     'ui:options': {
-      field: 'description', // Yjs fragment name
       className: 'min-h-72',
     },
   },
@@ -106,10 +115,21 @@ export function RJSFProposalEditor({
     return { ydoc, provider, userName };
   }, [ydoc, provider, userName]);
 
-  // Custom widgets registry - merge base widgets with our collaborative one
+  // Generate uiSchema from JSON Schema with collaborative widgets
+  const uiSchema = useMemo(
+    () =>
+      mergeUiSchema(
+        generateUiSchema(PROPOSAL_SCHEMA, { collaborative: true }),
+        PROPOSAL_UI_OVERRIDES,
+      ),
+    [],
+  );
+
+  // Custom widgets registry - merge base widgets with our collaborative ones
   const widgets = useMemo(
     () => ({
       ...BaseCustomWidgets,
+      CollaborativeText: CollaborativeTextWidget,
       CollaborativeRichText: CollaborativeRichTextWidget,
     }),
     [],
@@ -202,7 +222,7 @@ export function RJSFProposalEditor({
       {/* RJSF Form */}
       <Form<Partial<ProposalFormData>>
         schema={PROPOSAL_SCHEMA}
-        uiSchema={PROPOSAL_UI_SCHEMA}
+        uiSchema={uiSchema}
         formData={formData}
         formContext={formContext ?? undefined}
         onChange={handleChange}
