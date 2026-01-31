@@ -60,14 +60,14 @@ export const listRolesRouter = router({
       }),
     )
     .output(roleEncoder.required({ permissions: true }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const bitfield = toBitField(input.permissions);
-      const role = await createRole(
-        input.name,
-        { decisions: bitfield },
-        undefined,
-        input.profileId,
-      );
+      const role = await createRole({
+        name: input.name,
+        permissions: { decisions: bitfield },
+        profileId: input.profileId,
+        user: ctx.user,
+      });
 
       return {
         id: role.id,
@@ -85,15 +85,23 @@ export const listRolesRouter = router({
       }),
     )
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const bitfield = toBitField(input.permissions);
-      return updateRolePermissions(input.roleId, DECISIONS_ZONE_NAME, bitfield);
+      return updateRolePermissions({
+        roleId: input.roleId,
+        zoneName: DECISIONS_ZONE_NAME,
+        permission: bitfield,
+        user: ctx.user,
+      });
     }),
 
   deleteRole: commonAuthedProcedure()
     .input(z.object({ roleId: z.string().uuid() }))
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
-      return deleteRole(input.roleId);
+    .mutation(async ({ ctx, input }) => {
+      return deleteRole({
+        roleId: input.roleId,
+        user: ctx.user,
+      });
     }),
 });
