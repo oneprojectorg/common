@@ -2,12 +2,12 @@ import {
   createRole,
   deleteRole,
   getRoles,
-  getRolesWithPermissions,
   updateRolePermissions,
 } from '@op/common';
+import { toBitField } from 'access-zones';
 import { z } from 'zod';
 
-import { roleEncoder, roleWithPermissionsEncoder } from '../../encoders/roles';
+import { roleEncoder } from '../../encoders/roles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import {
   createPaginatedOutput,
@@ -17,11 +17,20 @@ import {
 
 const DECISIONS_ZONE_NAME = 'decisions';
 
+const permissionsInputSchema = z.object({
+  admin: z.boolean(),
+  create: z.boolean(),
+  read: z.boolean(),
+  update: z.boolean(),
+  delete: z.boolean(),
+});
+
 const roleSortableSchema = createSortable(['name'] as const);
 
 const inputSchema = z
   .object({
     profileId: z.string().uuid().optional(),
+    zoneName: z.string().optional(),
   })
   .merge(paginationSchema)
   .merge(roleSortableSchema);
@@ -31,23 +40,14 @@ export const listRolesRouter = router({
     .input(inputSchema)
     .output(createPaginatedOutput(roleEncoder))
     .query(async ({ input }) => {
-      const { profileId, cursor, limit, dir } = input;
+      const { profileId, zoneName, cursor, limit, dir } = input;
 
       return getRoles({
         profileId,
+        zoneName,
         cursor,
         limit,
         dir,
-      });
-    }),
-
-  listRolesWithPermissions: commonAuthedProcedure()
-    .input(z.object({ profileId: z.string().uuid() }))
-    .output(z.array(roleWithPermissionsEncoder))
-    .query(async ({ input }) => {
-      return getRolesWithPermissions({
-        profileId: input.profileId,
-        zoneName: DECISIONS_ZONE_NAME,
       });
     }),
 
@@ -56,14 +56,15 @@ export const listRolesRouter = router({
       z.object({
         profileId: z.string().uuid(),
         name: z.string().min(1).max(255),
-        permission: z.number().int().min(0).max(31),
+        permissions: permissionsInputSchema,
       }),
     )
-    .output(roleWithPermissionsEncoder)
+    .output(roleEncoder.required({ permissions: true }))
     .mutation(async ({ input }) => {
+      const bitfield = toBitField(input.permissions);
       const role = await createRole(
         input.name,
-        { decisions: input.permission },
+        { decisions: bitfield },
         undefined,
         input.profileId,
       );
@@ -72,8 +73,7 @@ export const listRolesRouter = router({
         id: role.id,
         name: role.name,
         description: role.description,
-        isGlobal: false,
-        permission: input.permission,
+        permissions: input.permissions,
       };
     }),
 
@@ -81,16 +81,13 @@ export const listRolesRouter = router({
     .input(
       z.object({
         roleId: z.string().uuid(),
-        permission: z.number().int().min(0).max(31),
+        permissions: permissionsInputSchema,
       }),
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input }) => {
-      return updateRolePermissions(
-        input.roleId,
-        DECISIONS_ZONE_NAME,
-        input.permission,
-      );
+      const bitfield = toBitField(input.permissions);
+      return updateRolePermissions(input.roleId, DECISIONS_ZONE_NAME, bitfield);
     }),
 
   deleteRole: commonAuthedProcedure()

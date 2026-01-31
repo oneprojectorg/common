@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { RoleWithPermissions } from '@op/api/encoders';
+import type { Role } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -25,13 +25,22 @@ import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
 
-const PERMISSION_COLUMNS = [
-  { key: 'admin', label: 'Admin', mask: 16 },
-  { key: 'create', label: 'Create', mask: 8 },
-  { key: 'read', label: 'Read', mask: 4 },
-  { key: 'update', label: 'Update', mask: 2 },
-  { key: 'delete', label: 'Delete', mask: 1 },
+const PERMISSION_KEYS = [
+  'admin',
+  'create',
+  'read',
+  'update',
+  'delete',
 ] as const;
+type PermissionKey = (typeof PERMISSION_KEYS)[number];
+
+const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
+  { key: 'admin', label: 'Admin' },
+  { key: 'create', label: 'Create' },
+  { key: 'read', label: 'Read' },
+  { key: 'update', label: 'Update' },
+  { key: 'delete', label: 'Delete' },
+];
 
 function RolesTable({
   decisionProfileId,
@@ -42,21 +51,21 @@ function RolesTable({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const [roleToDelete, setRoleToDelete] = useState<RoleWithPermissions | null>(
-    null,
-  );
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
-  const [rolesData] = trpc.profile.listRolesWithPermissions.useSuspenseQuery({
-    profileId: decisionProfileId,
-  });
-
-  const globalRoles = rolesData.filter((role) => role.isGlobal);
-  const profileRoles = rolesData.filter((role) => !role.isGlobal);
+  const [[{ items: globalRoles }, { items: profileRoles }]] =
+    trpc.useSuspenseQueries((t) => [
+      t.profile.listRoles({ zoneName: 'decisions' }),
+      t.profile.listRoles({
+        profileId: decisionProfileId,
+        zoneName: 'decisions',
+      }),
+    ]);
 
   const updatePermission = trpc.profile.updateRolePermission.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Role updated successfully') });
-      utils.profile.listRolesWithPermissions.invalidate();
+      utils.profile.listRoles.invalidate();
     },
     onError: () => {
       toast.error({ message: t('Failed to update role') });
@@ -66,22 +75,28 @@ function RolesTable({
   const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Role deleted successfully') });
-      utils.profile.listRolesWithPermissions.invalidate();
+      utils.profile.listRoles.invalidate();
     },
     onError: () => {
       toast.error({ message: t('Failed to delete role') });
     },
   });
 
-  const togglePermission = (role: RoleWithPermissions, mask: number) => {
-    const currentlySet = (role.permission & mask) !== 0;
-    const newPermission = currentlySet
-      ? role.permission & ~mask
-      : role.permission | mask;
+  const togglePermission = (role: Role, key: PermissionKey) => {
+    const permissions = role.permissions ?? {
+      admin: false,
+      create: false,
+      read: false,
+      update: false,
+      delete: false,
+    };
 
     updatePermission.mutate({
       roleId: role.id,
-      permission: newPermission,
+      permissions: {
+        ...permissions,
+        [key]: !permissions[key],
+      },
     });
   };
 
@@ -111,9 +126,9 @@ function RolesTable({
       <Table aria-label={t('Roles & permissions')}>
         <TableHeader>
           <TableColumn isRowHeader>{t('Role')}</TableColumn>
-          {PERMISSION_COLUMNS.map((col) => (
-            <TableColumn key={col.key} className="text-center">
-              {t(col.label)}
+          {PERMISSION_COLUMNS.map(({ key, label }) => (
+            <TableColumn key={key} className="text-center">
+              {t(label)}
             </TableColumn>
           ))}
           <TableColumn className="w-12" />
@@ -122,14 +137,14 @@ function RolesTable({
           {globalRoles.map((role) => (
             <TableRow key={role.id} className="opacity-50">
               <TableCell className="font-medium">{role.name}</TableCell>
-              {PERMISSION_COLUMNS.map((col) => (
-                <TableCell key={col.key} className="text-center">
+              {PERMISSION_COLUMNS.map(({ key, label }) => (
+                <TableCell key={key} className="text-center">
                   <div className="flex justify-center">
                     <Checkbox
                       size="small"
-                      isSelected={(role.permission & col.mask) !== 0}
+                      isSelected={role.permissions?.[key] ?? false}
                       isDisabled
-                      aria-label={`${col.label} permission for ${role.name}`}
+                      aria-label={`${label} permission for ${role.name}`}
                     />
                   </div>
                 </TableCell>
@@ -140,15 +155,15 @@ function RolesTable({
           {profileRoles.map((role) => (
             <TableRow key={role.id}>
               <TableCell className="font-medium">{role.name}</TableCell>
-              {PERMISSION_COLUMNS.map((col) => (
-                <TableCell key={col.key} className="text-center">
+              {PERMISSION_COLUMNS.map(({ key, label }) => (
+                <TableCell key={key} className="text-center">
                   <div className="flex justify-center">
                     <Checkbox
                       size="small"
-                      isSelected={(role.permission & col.mask) !== 0}
+                      isSelected={role.permissions?.[key] ?? false}
                       isDisabled={updatePermission.isPending}
-                      onChange={() => togglePermission(role, col.mask)}
-                      aria-label={`${col.label} permission for ${role.name}`}
+                      onChange={() => togglePermission(role, key)}
+                      aria-label={`${label} permission for ${role.name}`}
                     />
                   </div>
                 </TableCell>
@@ -229,7 +244,7 @@ function AddRoleDialog({
   const createRole = trpc.profile.createRole.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Role created successfully') });
-      utils.profile.listRolesWithPermissions.invalidate();
+      utils.profile.listRoles.invalidate();
       setRoleName('');
       onClose();
     },
@@ -243,7 +258,13 @@ function AddRoleDialog({
       createRole.mutate({
         profileId,
         name: roleName.trim(),
-        permission: 0, // Start with no permissions
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
       });
     }
   };

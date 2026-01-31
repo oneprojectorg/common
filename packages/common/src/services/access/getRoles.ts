@@ -1,5 +1,6 @@
 import { and, db, eq, gt, lt, or } from '@op/db/client';
 import { accessRoles } from '@op/db/schema';
+import { type Permission, fromBitField } from 'access-zones';
 
 import {
   type PaginatedResult,
@@ -12,6 +13,7 @@ interface Role {
   id: string;
   name: string;
   description: string | null;
+  permissions?: Permission;
 }
 
 type RoleCursor = { value: string; id: string };
@@ -20,14 +22,22 @@ type RoleCursor = { value: string; id: string };
  * Get roles for a profile or global roles with cursor-based pagination.
  * - If profileId is provided: returns only roles specific to that profile
  * - If no profileId: returns only global roles (profileId IS NULL)
+ * - If zoneName is provided: includes permission bitfield for that zone
  */
 export const getRoles = async (params?: {
   profileId?: string;
+  zoneName?: string;
   cursor?: string | null;
   limit?: number;
   dir?: SortDir;
 }): Promise<PaginatedResult<Role>> => {
-  const { profileId = null, cursor, limit = 25, dir = 'asc' } = params ?? {};
+  const {
+    profileId = null,
+    zoneName,
+    cursor,
+    limit = 25,
+    dir = 'asc',
+  } = params ?? {};
 
   // Build cursor condition for pagination
   const decodedCursor = cursor ? decodeCursor<RoleCursor>(cursor) : undefined;
@@ -59,6 +69,15 @@ export const getRoles = async (params?: {
       return [orderFn(table.name), orderFn(table.id)];
     },
     limit: limit + 1,
+    ...(zoneName && {
+      with: {
+        zonePermissions: {
+          with: {
+            accessZone: true,
+          },
+        },
+      },
+    }),
   });
 
   // Check if there are more results
@@ -66,11 +85,29 @@ export const getRoles = async (params?: {
   const resultItems = roles.slice(0, limit);
 
   // Transform results
-  const items = resultItems.map((role) => ({
-    id: role.id,
-    name: role.name,
-    description: role.description,
-  }));
+  const items = resultItems.map((role) => {
+    const base: Role = {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+    };
+
+    if (zoneName && 'zonePermissions' in role) {
+      const zonePermission = (
+        role as typeof role & {
+          zonePermissions: Array<{
+            permission: number;
+            accessZone: { name: string };
+          }>;
+        }
+      ).zonePermissions.find((zp) => zp.accessZone.name === zoneName);
+
+      const rawPermission = zonePermission?.permission ?? 0;
+      base.permissions = fromBitField(rawPermission);
+    }
+
+    return base;
+  });
 
   // Build next cursor from last item
   const lastItem = resultItems[resultItems.length - 1];
@@ -83,53 +120,4 @@ export const getRoles = async (params?: {
     items,
     next: nextCursor,
   };
-};
-
-interface RoleWithPermissions {
-  id: string;
-  name: string;
-  description: string | null;
-  isGlobal: boolean;
-  permission: number;
-}
-
-/**
- * Get roles with their permission bitfield for a specific profile and zone.
- * Returns both profile-specific roles and global roles.
- */
-export const getRolesWithPermissions = async (params: {
-  profileId: string;
-  zoneName: string;
-}): Promise<RoleWithPermissions[]> => {
-  const { profileId, zoneName } = params;
-
-  // Get all roles that are either global or specific to this profile
-  // Include all zone permissions with their zone info (same pattern as getOrgAccessUser/getProfileAccessUser)
-  const roles = await db._query.accessRoles.findMany({
-    where: (table, { or, eq, isNull }) =>
-      or(eq(table.profileId, profileId), isNull(table.profileId)),
-    orderBy: (table, { asc }) => [asc(table.name)],
-    with: {
-      zonePermissions: {
-        with: {
-          accessZone: true,
-        },
-      },
-    },
-  });
-
-  return roles.map((role) => {
-    // Find the permission for the requested zone
-    const zonePermission = role.zonePermissions.find(
-      (zp) => zp.accessZone.name === zoneName,
-    );
-
-    return {
-      id: role.id,
-      name: role.name,
-      description: role.description,
-      isGlobal: !role.profileId,
-      permission: zonePermission?.permission ?? 0,
-    };
-  });
 };
