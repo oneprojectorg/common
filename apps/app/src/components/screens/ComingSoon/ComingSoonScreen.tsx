@@ -51,14 +51,13 @@ export const ComingSoonScreen = () => {
             </h1>
           </motion.div>
           <motion.div
-            className="relative grid items-center p-[3vw]"
+            className="relative grid items-center p-[4vw]"
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 2, delay: 0.75 }}
           >
             <AnimatedGradientBackground />
             <motion.div
-              className="relative grid items-center p-[3vw]"
               initial={{ opacity: 0, scale: 0.96, y: 60 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 2, delay: 1.125 }}
@@ -68,7 +67,7 @@ export const ComingSoonScreen = () => {
                 alt="Screenshot of the Common platform"
                 width={1568}
                 height={1041}
-                className="relative mx-auto w-7xl max-w-[85vw] shadow"
+                className="relative mx-auto w-7xl max-w-[85vw] shadow sm:max-w-[70vw]"
                 priority
               />
             </motion.div>
