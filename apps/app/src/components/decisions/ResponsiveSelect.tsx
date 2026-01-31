@@ -87,10 +87,8 @@ export function ResponsiveSelect<T extends string>({
                   isDisabled={item.isDisabled}
                   className={`rounded-none px-6 py-4 ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
                   onAction={() => {
-                    if (!item.isDisabled) {
-                      onSelectionChange(item.id);
-                      setIsOpen(false);
-                    }
+                    onSelectionChange(item.id);
+                    setIsOpen(false);
                   }}
                 >
                   {item.label}

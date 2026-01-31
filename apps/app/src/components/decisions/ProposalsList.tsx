@@ -606,6 +606,7 @@ export const ProposalsList = ({
               }
               setProposalFilter(key);
             }}
+            aria-label={t('Filter proposals')}
             items={[
               { id: 'all' as ProposalFilter, label: t('All proposals') },
               {

@@ -201,7 +201,7 @@ export function ProposalCardMenu({
     deleteProposalMutation.isPending ||
     updateVisibilityMutation.isPending;
 
-  const getMenuItems = (forMobile: boolean) => {
+  const getMenuItems = () => {
     const items: Array<{
       key: string;
       icon: React.ReactNode;
@@ -264,6 +264,12 @@ export function ProposalCardMenu({
       });
     }
 
+    return items;
+  };
+
+  const renderMenuItems = (forMobile: boolean) => {
+    const items = getMenuItems();
+
     if (forMobile) {
       return items.map((item, index) => (
         <MenuItem
@@ -317,7 +323,7 @@ export function ProposalCardMenu({
           >
             <ModalBody className="pb-safe p-0">
               <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
-                {getMenuItems(true)}
+                {renderMenuItems(true)}
               </Menu>
             </ModalBody>
           </Modal>
@@ -326,7 +332,7 @@ export function ProposalCardMenu({
         <MenuTrigger>
           {menuTriggerButton}
           <Popover placement="bottom end">
-            <Menu className="p-2">{getMenuItems(false)}</Menu>
+            <Menu className="p-2">{renderMenuItems(false)}</Menu>
           </Popover>
         </MenuTrigger>
       )}
