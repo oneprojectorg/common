@@ -2,13 +2,7 @@ import { accessRoles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-const normalizedPermissionsEncoder = z.object({
-  admin: z.boolean(),
-  create: z.boolean(),
-  read: z.boolean(),
-  update: z.boolean(),
-  delete: z.boolean(),
-});
+import { permissionsSchema } from './shared';
 
 export const roleEncoder = createSelectSchema(accessRoles)
   .pick({
@@ -17,7 +11,7 @@ export const roleEncoder = createSelectSchema(accessRoles)
     description: true,
   })
   .extend({
-    permissions: normalizedPermissionsEncoder.optional(),
+    permissions: permissionsSchema.optional(),
   });
 
 export type Role = z.infer<typeof roleEncoder>;

@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+// Permissions schema for CRUD + admin access
+export const permissionsSchema = z.object({
+  admin: z.boolean(),
+  create: z.boolean(),
+  read: z.boolean(),
+  update: z.boolean(),
+  delete: z.boolean(),
+});
+
+export type Permissions = z.infer<typeof permissionsSchema>;
+
 export const entityTermsEncoder = z.record(
   z.string(),
   z.array(

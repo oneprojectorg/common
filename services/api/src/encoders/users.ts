@@ -9,20 +9,12 @@ import {
   organizationsWithProfileEncoder,
 } from './organizations';
 import { baseProfileEncoder } from './profiles';
-import { accessRoleMinimalEncoder } from './shared';
+import { accessRoleMinimalEncoder, permissionsSchema } from './shared';
 import { storageItemEncoder } from './storageItem';
-
-const permissionSchema = z.object({
-  admin: z.boolean(),
-  create: z.boolean(),
-  read: z.boolean(),
-  update: z.boolean(),
-  delete: z.boolean(),
-});
 
 const zonePermissionsSchema = z.record(
   z.string(),
-  permissionSchema,
+  permissionsSchema,
 ) satisfies z.ZodType<ZonePermissions>;
 
 const accessZoneSchema = z.object({
