@@ -499,8 +499,7 @@
   "Invite": "Invitar",
   "Invite members to your decision-making process": "Invitar miembros a tu proceso de toma de decisiones",
   "Find orgs and individuals or invite by email...": "Buscar organizaciones e individuos o invitar por correo...",
-  "{count} people": "{count} personas",
-  "1 person": "1 persona",
+  "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {1 persona} other {# personas}}",
   "Invite sent successfully": "Invitación enviada exitosamente",
   "Selected members": "Miembros seleccionados",
   "No email addresses to invite": "No hay direcciones de correo para invitar"

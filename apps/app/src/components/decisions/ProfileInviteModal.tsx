@@ -373,11 +373,11 @@ export const ProfileInviteModal = ({
 
       <ModalFooter className="flex items-center justify-between">
         <div className="text-sm text-neutral-black">
-          {totalPeople === 1
-            ? t('1 person')
-            : totalPeople > 1
-              ? t('{count} people', { count: totalPeople })
-              : null}
+          {totalPeople > 0
+            ? t('{count, plural, =1 {1 person} other {# people}}', {
+                count: totalPeople,
+              })
+            : null}
         </div>
         <Button
           color="primary"
