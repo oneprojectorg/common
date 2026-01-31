@@ -649,6 +649,7 @@ export const ProposalsList = ({
               setSortOrder(sort);
               updateURLParams({ sort });
             }}
+            aria-label={t('Sort proposals')}
             className="min-w-32"
             items={[
               { id: 'newest', label: t('Newest First') },
