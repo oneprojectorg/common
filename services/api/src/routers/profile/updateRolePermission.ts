@@ -2,7 +2,7 @@ import { updateRolePermissions } from '@op/common';
 import { toBitField } from 'access-zones';
 import { z } from 'zod';
 
-import { permissionsSchema } from '../../encoders/shared';
+import { permissionsSchema } from '../../encoders/access';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const DECISIONS_ZONE_NAME = 'decisions';

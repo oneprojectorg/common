@@ -9,7 +9,7 @@ import {
   organizationsWithProfileEncoder,
 } from './organizations';
 import { baseProfileEncoder } from './profiles';
-import { accessRoleMinimalEncoder, permissionsSchema } from './shared';
+import { accessRoleMinimalEncoder, permissionsSchema } from './access';
 import { storageItemEncoder } from './storageItem';
 
 const zonePermissionsSchema = z.record(

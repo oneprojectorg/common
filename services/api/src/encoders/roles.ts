@@ -2,7 +2,7 @@ import { accessRoles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { permissionsSchema } from './shared';
+import { permissionsSchema } from './access';
 
 export const roleEncoder = createSelectSchema(accessRoles)
   .pick({

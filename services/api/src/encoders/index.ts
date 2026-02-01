@@ -1,3 +1,4 @@
+export * from './access';
 export * from './attachments';
 export * from './decision';
 export * from './joinProfileRequests';

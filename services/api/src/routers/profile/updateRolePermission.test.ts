@@ -1,7 +1,8 @@
+import { UnauthorizedError } from '@op/common';
 import { db } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { fromBitField } from 'access-zones';
+import { AccessControlException, fromBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -202,7 +203,7 @@ describe.concurrent('profile.updateRolePermission', () => {
           delete: false,
         },
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(AccessControlException);
 
     // Verify no permissions were created (role should have no permissions)
     const decisionsZone = await db._query.accessZones.findFirst({
@@ -325,7 +326,7 @@ describe.concurrent('profile.updateRolePermission', () => {
           delete: true,
         },
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(UnauthorizedError);
 
     // Verify no permissions were created for the role
     const decisionsZone = await db._query.accessZones.findFirst({

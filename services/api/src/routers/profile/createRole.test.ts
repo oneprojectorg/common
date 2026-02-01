@@ -1,8 +1,10 @@
 import { db } from '@op/db/client';
 import { accessRoles } from '@op/db/schema';
-import { fromBitField } from 'access-zones';
+import { AccessControlException, fromBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
+
+import { UnauthorizedError } from '@op/common';
 
 import profileRouter from '.';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
@@ -103,7 +105,7 @@ describe.concurrent('profile.createRole', () => {
           delete: false,
         },
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(AccessControlException);
   });
 
   it('should not allow user without profile access to create a role', async ({
@@ -135,6 +137,6 @@ describe.concurrent('profile.createRole', () => {
           delete: false,
         },
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(UnauthorizedError);
   });
 });

@@ -1,6 +1,8 @@
+import { UnauthorizedError } from '@op/common';
 import { db } from '@op/db/client';
 import { accessRoles } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { AccessControlException } from 'access-zones';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -79,7 +81,7 @@ describe.concurrent('profile.deleteRole', () => {
 
     await expect(
       caller.deleteRole({ roleId: customRole!.id }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(AccessControlException);
 
     // Verify role still exists after failed delete attempt
     const roleStillExists = await db._query.accessRoles.findFirst({
@@ -161,7 +163,7 @@ describe.concurrent('profile.deleteRole', () => {
 
     await expect(
       caller.deleteRole({ roleId: customRole!.id }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(UnauthorizedError);
 
     // Verify role still exists
     const roleStillExists = await db._query.accessRoles.findFirst({

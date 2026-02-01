@@ -7,7 +7,8 @@ import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
 import { type organizationsEncoder } from './organizations';
 import { projectEncoder } from './projects';
-import { accessRoleMinimalEncoder, storageItemMinimalEncoder } from './shared';
+import { accessRoleMinimalEncoder } from './access';
+import { storageItemMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 
 // Base profile encoder without organization reference
