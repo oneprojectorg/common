@@ -56,7 +56,8 @@ describe.concurrent('profile.updateRolePermission', () => {
       },
     });
 
-    expect(result.success).toBe(true);
+    expect(result.id).toBe(customRole!.id);
+    expect(result.name).toBe(customRole!.name);
 
     // Verify permissions were updated in database
     const decisionsZone = await db._query.accessZones.findFirst({

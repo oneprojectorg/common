@@ -356,6 +356,7 @@ function AddRoleDialog({
     if (roleName.trim()) {
       createRole.mutate({
         profileId,
+        zoneName: 'decisions',
         name: roleName.trim(),
         permissions: {
           admin: false,

@@ -29,6 +29,7 @@ describe.concurrent('profile.createRole', () => {
 
     const result = await caller.createRole({
       profileId: profile.id,
+      zoneName: 'decisions',
       name: `Test Role ${task.id}`,
       permissions: {
         admin: false,
@@ -94,6 +95,7 @@ describe.concurrent('profile.createRole', () => {
     await expect(
       caller.createRole({
         profileId: profile.id,
+        zoneName: 'decisions',
         name: `Test Role ${task.id}`,
         permissions: {
           admin: false,
@@ -129,6 +131,7 @@ describe.concurrent('profile.createRole', () => {
     await expect(
       caller.createRole({
         profileId: profile.id,
+        zoneName: 'decisions',
         name: `Test Role ${task.id}`,
         permissions: {
           admin: false,

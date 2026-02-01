@@ -10,24 +10,19 @@ export const createRoleRouter = router({
     .input(
       z.object({
         profileId: z.string().uuid(),
+        zoneName: z.string(),
         name: z.string().min(1).max(255),
         permissions: permissionsSchema,
       }),
     )
     .output(roleEncoder.required({ permissions: true }))
     .mutation(async ({ ctx, input }) => {
-      const role = await createRole({
+      return createRole({
         name: input.name,
-        permissions: { decisions: input.permissions },
+        zoneName: input.zoneName,
+        permissions: input.permissions,
         profileId: input.profileId,
         user: ctx.user,
       });
-
-      return {
-        id: role.id,
-        name: role.name,
-        description: role.description,
-        permissions: input.permissions,
-      };
     }),
 });

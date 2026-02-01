@@ -2,7 +2,6 @@ import { db } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
-  accessZones,
   organizationUserToAccessRoles,
 } from '@op/db/schema';
 import { assertAccess, permission, toBitField } from 'access-zones';
@@ -31,18 +30,29 @@ async function assertProfileAdmin(user: { id: string }, profileId: string) {
 
 export async function createRole({
   name,
+  zoneName,
   permissions,
   description,
   profileId,
   user,
 }: {
   name: string;
-  permissions: Record<string, Permissions>;
+  zoneName: string;
+  permissions: Permissions;
   description?: string;
   profileId: string;
   user: { id: string };
 }) {
   await assertProfileAdmin(user, profileId);
+
+  // Look up the zone by name
+  const zone = await db._query.accessZones.findFirst({
+    where: (table, { eq }) => eq(table.name, zoneName),
+  });
+
+  if (!zone) {
+    throw new CommonError(`Zone "${zoneName}" not found`);
+  }
 
   return await db.transaction(async (tx) => {
     // Create the role
@@ -59,26 +69,19 @@ export async function createRole({
       throw new CommonError('Could not create role');
     }
 
-    // Get all zones
-    const zones = await tx.select().from(accessZones);
-    const zoneMap = new Map(zones.map((z) => [z.name, z.id]));
+    // Create permission entry for the specified zone
+    await tx.insert(accessRolePermissionsOnAccessZones).values({
+      accessRoleId: role.id,
+      accessZoneId: zone.id,
+      permission: toBitField(permissions),
+    });
 
-    // Create permission entries, converting boolean permissions to bitfields
-    const permissionEntries = Object.entries(permissions)
-      .filter(([zoneName]) => zoneMap.has(zoneName))
-      .map(([zoneName, perm]) => ({
-        accessRoleId: role.id,
-        accessZoneId: zoneMap.get(zoneName)!,
-        permission: toBitField(perm),
-      }));
-
-    if (permissionEntries.length > 0) {
-      await tx
-        .insert(accessRolePermissionsOnAccessZones)
-        .values(permissionEntries);
-    }
-
-    return role;
+    return {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      permissions,
+    };
   });
 }
 
@@ -144,7 +147,7 @@ export async function updateRolePermissions({
     });
   }
 
-  return { success: true };
+  return role;
 }
 
 /**

@@ -1,7 +1,10 @@
 import { updateRolePermissions } from '@op/common';
 import { z } from 'zod';
 
-import { permissionsSchema } from '../../encoders/access';
+import {
+  accessRoleMinimalEncoder,
+  permissionsSchema,
+} from '../../encoders/access';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const DECISIONS_ZONE_NAME = 'decisions';
@@ -14,7 +17,7 @@ export const updateRolePermissionRouter = router({
         permissions: permissionsSchema,
       }),
     )
-    .output(z.object({ success: z.boolean() }))
+    .output(accessRoleMinimalEncoder)
     .mutation(async ({ ctx, input }) => {
       return updateRolePermissions({
         roleId: input.roleId,
