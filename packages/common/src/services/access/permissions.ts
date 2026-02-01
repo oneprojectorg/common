@@ -43,12 +43,12 @@ export async function createRole({
   profileId: string;
   user: { id: string };
 }) {
-  await assertProfileAdmin(user, profileId);
-
-  // Look up the zone by name
-  const zone = await db._query.accessZones.findFirst({
-    where: (table, { eq }) => eq(table.name, zoneName),
-  });
+  const [zone] = await Promise.all([
+    db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, zoneName),
+    }),
+    assertProfileAdmin(user, profileId),
+  ]);
 
   if (!zone) {
     throw new CommonError(`Zone "${zoneName}" not found`);
@@ -99,19 +99,18 @@ export async function updateRolePermissions({
   permissions: Permissions;
   user: { id: string };
 }) {
-  // Look up the zone by name
-  const zone = await db._query.accessZones.findFirst({
-    where: (table, { eq }) => eq(table.name, zoneName),
-  });
+  const [zone, role] = await Promise.all([
+    db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, zoneName),
+    }),
+    db._query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.id, roleId),
+    }),
+  ]);
 
   if (!zone) {
     throw new CommonError(`Zone "${zoneName}" not found`);
   }
-
-  // First check if the role is a global role (profileId IS NULL)
-  const role = await db._query.accessRoles.findFirst({
-    where: (table, { eq }) => eq(table.id, roleId),
-  });
 
   if (!role) {
     throw new CommonError('Role not found');
