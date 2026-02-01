@@ -5,6 +5,7 @@ import type { Role } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -20,7 +21,7 @@ import {
 } from '@op/ui/ui/table';
 import type { Permission } from 'access-zones';
 import { Suspense, useState } from 'react';
-import { LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuLeaf, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -176,6 +177,7 @@ function RolesTable({
     onSuccess: () => {
       toast.success({ message: t('Role deleted successfully') });
       utils.profile.listRoles.invalidate();
+      setRoleToDelete(null);
     },
     onError: () => {
       toast.error({ message: t('Failed to delete role') });
@@ -202,23 +204,18 @@ function RolesTable({
 
   if (globalRoles.length === 0 && profileRoles.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-neutral-gray2 p-8 text-center text-neutral-gray4">
-        {t('No roles configured')}
-      </div>
+      <EmptyState icon={<LuLeaf className="size-6" />}>
+        <span>{t('No roles configured')}</span>
+      </EmptyState>
     );
   }
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!roleToDelete) {
       return;
     }
 
-    try {
-      await deleteRoleMutation.mutateAsync({ roleId: roleToDelete.id });
-      setRoleToDelete(null);
-    } catch {
-      // Error is handled by onError callback
-    }
+    deleteRoleMutation.mutate({ roleId: roleToDelete.id });
   };
 
   return (
