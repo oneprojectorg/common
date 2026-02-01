@@ -1,5 +1,9 @@
 import { and, asc, db, desc, eq, gt, isNull, lt, or } from '@op/db/client';
-import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
+import {
+  accessRolePermissionsOnAccessZones,
+  accessRoles,
+  accessZones,
+} from '@op/db/schema';
 import { type Permission, fromBitField } from 'access-zones';
 
 import {
@@ -65,11 +69,6 @@ export const getRoles = async (params?: {
 
   // Use join-based query when zoneName is provided for DB-level filtering
   if (zoneName) {
-    // Look up zone ID first to enable efficient JOIN filtering
-    const zone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, zoneName),
-    });
-
     const rows = await db
       .select({
         id: accessRoles.id,
@@ -82,9 +81,13 @@ export const getRoles = async (params?: {
         accessRolePermissionsOnAccessZones,
         and(
           eq(accessRolePermissionsOnAccessZones.accessRoleId, accessRoles.id),
-          zone
-            ? eq(accessRolePermissionsOnAccessZones.accessZoneId, zone.id)
-            : undefined,
+          eq(
+            accessRolePermissionsOnAccessZones.accessZoneId,
+            db
+              .select({ id: accessZones.id })
+              .from(accessZones)
+              .where(eq(accessZones.name, zoneName)),
+          ),
         ),
       )
       .where(whereCondition)

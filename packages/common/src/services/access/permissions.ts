@@ -4,11 +4,11 @@ import {
   accessRoles,
   organizationUserToAccessRoles,
 } from '@op/db/schema';
-import { assertAccess, permission, toBitField } from 'access-zones';
+import { toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
-import { CommonError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from './index';
+import { CommonError } from '../../utils';
+import { assertProfileAdmin } from '../assert';
 
 export type Permissions = {
   admin: boolean;
@@ -17,16 +17,6 @@ export type Permissions = {
   update: boolean;
   delete: boolean;
 };
-
-async function assertProfileAdmin(user: { id: string }, profileId: string) {
-  const profileUser = await getProfileAccessUser({ user, profileId });
-
-  if (!profileUser) {
-    throw new UnauthorizedError('You are not a member of this profile');
-  }
-
-  assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
-}
 
 export async function createRole({
   name,
