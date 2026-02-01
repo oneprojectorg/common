@@ -122,9 +122,9 @@ describe.concurrent('profile.deleteRole', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
-    await expect(caller.deleteRole({ roleId: nonExistentId })).rejects.toThrow(
-      'Role not found',
-    );
+    await expect(
+      caller.deleteRole({ roleId: nonExistentId }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('should not allow admin from different profile to delete role', async ({

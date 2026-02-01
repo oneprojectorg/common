@@ -7,7 +7,7 @@ import {
 import { toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
-import { CommonError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 
 export type Permissions = {
@@ -41,7 +41,7 @@ export async function createRole({
   ]);
 
   if (!zone) {
-    throw new CommonError(`Zone "${zoneName}" not found`);
+    throw new NotFoundError('Zone', zoneName);
   }
 
   return await db.transaction(async (tx) => {
@@ -99,11 +99,11 @@ export async function updateRolePermissions({
   ]);
 
   if (!zone) {
-    throw new CommonError(`Zone "${zoneName}" not found`);
+    throw new NotFoundError('Zone', zoneName);
   }
 
   if (!role) {
-    throw new CommonError('Role not found');
+    throw new NotFoundError('Role', roleId);
   }
 
   if (!role.profileId) {
@@ -155,7 +155,7 @@ export async function deleteRole({
   });
 
   if (!role) {
-    throw new CommonError('Role not found');
+    throw new NotFoundError('Role', roleId);
   }
 
   if (!role.profileId) {

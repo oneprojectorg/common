@@ -280,7 +280,7 @@ describe.concurrent('profile.updateRolePermission', () => {
           delete: false,
         },
       }),
-    ).rejects.toThrow('Role not found');
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('should not allow admin from different profile to update role permissions', async ({
