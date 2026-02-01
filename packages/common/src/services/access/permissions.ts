@@ -177,7 +177,7 @@ export async function deleteRole({
   // Delete the role (cascade will handle permissions)
   await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
 
-  return { success: true };
+  return { success: true, deletedId: roleId };
 }
 
 export async function assignRoleToUser(
