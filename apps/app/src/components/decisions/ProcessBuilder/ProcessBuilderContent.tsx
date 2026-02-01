@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 
-import { getContentComponent } from './contentRegistry';
+import { type SectionProps, getContentComponent } from './contentRegistry';
 import { type NavigationConfig } from './navigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
@@ -11,11 +11,7 @@ export function ProcessBuilderContent({
   instanceId,
   decisionName,
   navigationConfig,
-}: {
-  decisionProfileId: string;
-  decisionName: string;
-  navigationConfig?: NavigationConfig;
-}) {
+}: SectionProps & { navigationConfig?: NavigationConfig }) {
   const { currentStep, currentSection } =
     useProcessNavigation(navigationConfig);
 
