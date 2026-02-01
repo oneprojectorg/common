@@ -79,9 +79,9 @@ describe.concurrent('profile.deleteRole', () => {
     const { session } = await createIsolatedSession(memberUsers[0]!.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    await expect(
-      caller.deleteRole({ roleId: customRole!.id }),
-    ).rejects.toThrow(AccessControlException);
+    await expect(caller.deleteRole({ roleId: customRole!.id })).rejects.toThrow(
+      AccessControlException,
+    );
 
     // Verify role still exists after failed delete attempt
     const roleStillExists = await db._query.accessRoles.findFirst({
@@ -161,9 +161,9 @@ describe.concurrent('profile.deleteRole', () => {
     const { session } = await createIsolatedSession(adminB.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    await expect(
-      caller.deleteRole({ roleId: customRole!.id }),
-    ).rejects.toThrow(UnauthorizedError);
+    await expect(caller.deleteRole({ roleId: customRole!.id })).rejects.toThrow(
+      UnauthorizedError,
+    );
 
     // Verify role still exists
     const roleStillExists = await db._query.accessRoles.findFirst({

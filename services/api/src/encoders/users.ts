@@ -4,12 +4,12 @@ import { authUsers } from 'drizzle-orm/supabase';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { accessRoleMinimalEncoder, permissionsSchema } from './access';
 import {
   organizationsEncoder,
   organizationsWithProfileEncoder,
 } from './organizations';
 import { baseProfileEncoder } from './profiles';
-import { accessRoleMinimalEncoder, permissionsSchema } from './access';
 import { storageItemEncoder } from './storageItem';
 
 const zonePermissionsSchema = z.record(

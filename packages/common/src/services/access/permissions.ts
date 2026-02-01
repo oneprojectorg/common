@@ -5,11 +5,19 @@ import {
   accessZones,
   organizationUserToAccessRoles,
 } from '@op/db/schema';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess, permission, toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from './index';
+
+export type Permissions = {
+  admin: boolean;
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+};
 
 async function assertProfileAdmin(user: { id: string }, profileId: string) {
   const profileUser = await getProfileAccessUser({ user, profileId });
@@ -29,7 +37,7 @@ export async function createRole({
   user,
 }: {
   name: string;
-  permissions: Record<string, number>;
+  permissions: Record<string, Permissions>;
   description?: string;
   profileId: string;
   user: { id: string };
@@ -55,13 +63,13 @@ export async function createRole({
     const zones = await tx.select().from(accessZones);
     const zoneMap = new Map(zones.map((z) => [z.name, z.id]));
 
-    // Create permission entries
+    // Create permission entries, converting boolean permissions to bitfields
     const permissionEntries = Object.entries(permissions)
       .filter(([zoneName]) => zoneMap.has(zoneName))
       .map(([zoneName, perm]) => ({
         accessRoleId: role.id,
         accessZoneId: zoneMap.get(zoneName)!,
-        permission: perm,
+        permission: toBitField(perm),
       }));
 
     if (permissionEntries.length > 0) {
@@ -80,12 +88,12 @@ export async function createRole({
 export async function updateRolePermissions({
   roleId,
   zoneName,
-  permission: newPermission,
+  permissions,
   user,
 }: {
   roleId: string;
   zoneName: string;
-  permission: number;
+  permissions: Permissions;
   user: { id: string };
 }) {
   // Look up the zone by name
@@ -112,6 +120,9 @@ export async function updateRolePermissions({
 
   await assertProfileAdmin(user, role.profileId);
 
+  // Convert boolean permissions to bitfield
+  const bitfield = toBitField(permissions);
+
   // Upsert the permission entry
   const existing = await db._query.accessRolePermissionsOnAccessZones.findFirst(
     {
@@ -123,13 +134,13 @@ export async function updateRolePermissions({
   if (existing) {
     await db
       .update(accessRolePermissionsOnAccessZones)
-      .set({ permission: newPermission })
+      .set({ permission: bitfield })
       .where(eq(accessRolePermissionsOnAccessZones.id, existing.id));
   } else {
     await db.insert(accessRolePermissionsOnAccessZones).values({
       accessRoleId: roleId,
       accessZoneId: zone.id,
-      permission: newPermission,
+      permission: bitfield,
     });
   }
 

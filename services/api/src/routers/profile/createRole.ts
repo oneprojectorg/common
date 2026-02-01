@@ -1,9 +1,8 @@
 import { createRole } from '@op/common';
-import { toBitField } from 'access-zones';
 import { z } from 'zod';
 
-import { roleEncoder } from '../../encoders/roles';
 import { permissionsSchema } from '../../encoders/access';
+import { roleEncoder } from '../../encoders/roles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 export const createRoleRouter = router({
@@ -17,10 +16,9 @@ export const createRoleRouter = router({
     )
     .output(roleEncoder.required({ permissions: true }))
     .mutation(async ({ ctx, input }) => {
-      const bitfield = toBitField(input.permissions);
       const role = await createRole({
         name: input.name,
-        permissions: { decisions: bitfield },
+        permissions: { decisions: input.permissions },
         profileId: input.profileId,
         user: ctx.user,
       });

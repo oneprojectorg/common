@@ -1,5 +1,4 @@
 import { updateRolePermissions } from '@op/common';
-import { toBitField } from 'access-zones';
 import { z } from 'zod';
 
 import { permissionsSchema } from '../../encoders/access';
@@ -17,11 +16,10 @@ export const updateRolePermissionRouter = router({
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      const bitfield = toBitField(input.permissions);
       return updateRolePermissions({
         roleId: input.roleId,
         zoneName: DECISIONS_ZONE_NAME,
-        permission: bitfield,
+        permissions: input.permissions,
         user: ctx.user,
       });
     }),

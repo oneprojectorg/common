@@ -1,10 +1,9 @@
+import { UnauthorizedError } from '@op/common';
 import { db } from '@op/db/client';
 import { accessRoles } from '@op/db/schema';
 import { AccessControlException, fromBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-
-import { UnauthorizedError } from '@op/common';
 
 import profileRouter from '.';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
