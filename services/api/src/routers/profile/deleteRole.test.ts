@@ -1,8 +1,6 @@
-import { UnauthorizedError } from '@op/common';
 import { db } from '@op/db/client';
 import { accessRoles } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { AccessControlException } from 'access-zones';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -79,8 +77,11 @@ describe.concurrent('profile.deleteRole', () => {
     const { session } = await createIsolatedSession(memberUsers[0]!.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    await expect(caller.deleteRole({ roleId: customRole!.id })).rejects.toThrow(
-      AccessControlException,
+    await expect(
+      caller.deleteRole({ roleId: customRole!.id }),
+    ).rejects.toSatisfy(
+      (error: Error & { cause?: Error }) =>
+        error.cause?.name === 'AccessControlException',
     );
 
     // Verify role still exists after failed delete attempt
@@ -161,8 +162,11 @@ describe.concurrent('profile.deleteRole', () => {
     const { session } = await createIsolatedSession(adminB.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    await expect(caller.deleteRole({ roleId: customRole!.id })).rejects.toThrow(
-      UnauthorizedError,
+    await expect(
+      caller.deleteRole({ roleId: customRole!.id }),
+    ).rejects.toSatisfy(
+      (error: Error & { cause?: Error }) =>
+        error.cause?.name === 'UnauthorizedError',
     );
 
     // Verify role still exists

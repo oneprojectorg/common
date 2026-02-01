@@ -1,7 +1,6 @@
-import { UnauthorizedError } from '@op/common';
 import { db } from '@op/db/client';
 import { accessRoles } from '@op/db/schema';
-import { AccessControlException, fromBitField } from 'access-zones';
+import { fromBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -104,7 +103,10 @@ describe.concurrent('profile.createRole', () => {
           delete: false,
         },
       }),
-    ).rejects.toThrow(AccessControlException);
+    ).rejects.toSatisfy(
+      (error: Error & { cause?: Error }) =>
+        error.cause?.name === 'AccessControlException',
+    );
   });
 
   it('should not allow user without profile access to create a role', async ({
@@ -136,6 +138,9 @@ describe.concurrent('profile.createRole', () => {
           delete: false,
         },
       }),
-    ).rejects.toThrow(UnauthorizedError);
+    ).rejects.toSatisfy(
+      (error: Error & { cause?: Error }) =>
+        error.cause?.name === 'UnauthorizedError',
+    );
   });
 });
