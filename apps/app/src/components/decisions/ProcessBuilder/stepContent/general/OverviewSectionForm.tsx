@@ -1,12 +1,10 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { useDebounce } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import type { Option } from '@op/ui/MultiSelectComboBox';
 import { NumberField } from '@op/ui/NumberField';
 import { SelectItem } from '@op/ui/Select';
 import { useEffect, useRef } from 'react';
-import { LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -23,14 +21,12 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 // Form data type
 interface OverviewFormData {
   steward: string;
-  focusAreas: Option[];
-  aims: string[];
-  processName: string;
+  objective: string;
+  name: string;
   description: string;
   budget: number | null;
   hideBudget: boolean;
-  organizeCategories: boolean;
-  multiPhase: boolean;
+  enableCategories: boolean;
   includeReview: boolean;
   isPrivate: boolean;
 }
@@ -82,16 +78,14 @@ function AutoSaveHandler({
     // Update Zustand store (persists to localStorage)
     setSaveStatus(decisionProfileId, 'saving');
     setInstanceData(decisionProfileId, {
-      name: debouncedValues.processName,
+      name: debouncedValues.name,
       description: debouncedValues.description,
       config: {
         steward: debouncedValues.steward,
-        focusAreas: debouncedValues.focusAreas,
-        aims: debouncedValues.aims,
+        objective: debouncedValues.objective,
         budget: debouncedValues.budget,
         hideBudget: debouncedValues.hideBudget,
-        organizeCategories: debouncedValues.organizeCategories,
-        multiPhase: debouncedValues.multiPhase,
+        enableCategories: debouncedValues.enableCategories,
         includeReview: debouncedValues.includeReview,
         isPrivate: debouncedValues.isPrivate,
       },
@@ -115,9 +109,13 @@ function AutoSaveHandler({
 // Form component - only rendered after Zustand hydration is complete
 export function OverviewSectionForm({
   decisionProfileId,
+  instanceId,
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
+
+  // tRPC mutation
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
   // Zustand store - using new instanceData structure
   const instanceData = useProcessBuilderStore(
@@ -140,33 +138,36 @@ export function OverviewSectionForm({
     { id: 'coalition', label: 'Coalition' },
   ];
 
-  const focusAreaOptions: Option[] = [
-    { id: 'money-finance', label: 'Money & Finance' },
-    { id: 'governance', label: 'Governance' },
-    { id: 'community', label: 'Community' },
-    { id: 'environment', label: 'Environment' },
-    { id: 'technology', label: 'Technology' },
-  ];
-
   const form = useAppForm({
     defaultValues: {
       // Config fields
       steward: config?.steward ?? '',
-      focusAreas: config?.focusAreas ?? [],
-      aims: config?.aims ?? [''],
+      objective: config?.objective ?? '',
       budget: (config?.budget ?? null) as number | null,
       hideBudget: config?.hideBudget ?? true,
-      organizeCategories: config?.organizeCategories ?? true,
-      multiPhase: config?.multiPhase ?? true,
+      enableCategories: config?.enableCategories ?? true,
       includeReview: config?.includeReview ?? true,
       isPrivate: config?.isPrivate ?? false,
       // Instance-level fields
-      processName: instanceData?.name ?? decisionName ?? '',
+      name: instanceData?.name ?? decisionName ?? '',
       description: instanceData?.description ?? '',
     },
-    onSubmit: async ({ value }) => {
-      // TODO: Submit to API
-      console.log('Form submitted:', value);
+    onSubmit: ({ value }) => {
+      setSaveStatus(decisionProfileId, 'saving');
+      updateInstance.mutate(
+        {
+          instanceId,
+          name: value.name,
+          description: value.description,
+          config: {
+            hideBudget: value.hideBudget,
+          },
+        },
+        {
+          onSuccess: () => markSaved(decisionProfileId),
+          onError: () => setSaveStatus(decisionProfileId, 'error'),
+        },
+      );
     },
   });
 
@@ -196,7 +197,9 @@ export function OverviewSectionForm({
           {/* Process Stewardship Section */}
           <section className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="font-serif text-xl">{t('Process Stewardship')}</h2>
+              <h2 className="font-serif text-title-sm">
+                {t('Process Overview')}
+              </h2>
               <SaveStatusIndicator
                 status={saveState.status}
                 savedAt={saveState.savedAt}
@@ -228,112 +231,7 @@ export function OverviewSectionForm({
             />
 
             <form.AppField
-              name="focusAreas"
-              children={(field) => (
-                <div className="space-y-2">
-                  <field.MultiSelectComboBox
-                    label={t('Primary focus areas')}
-                    isRequired
-                    placeholder={t('Search focus areas')}
-                    items={focusAreaOptions}
-                    value={field.state.value}
-                    onChange={field.handleChange}
-                    errorMessage={getFieldErrorMessage(field)}
-                  />
-                  <p className="text-sm text-neutral-gray4">
-                    {t('Select the strategic areas this process advances')}
-                  </p>
-                </div>
-              )}
-            />
-
-            <form.AppField
-              name="aims"
-              children={(field) => {
-                const aims = field.state.value;
-
-                const handleAddAim = () => {
-                  field.handleChange([...aims, '']);
-                };
-
-                const handleAimChange = (index: number, value: string) => {
-                  const newAims = [...aims];
-                  newAims[index] = value;
-                  field.handleChange(newAims);
-                };
-
-                const handleRemoveAim = (index: number) => {
-                  if (aims.length > 1) {
-                    const newAims = aims.filter((_, i) => i !== index);
-                    field.handleChange(newAims);
-                  }
-                };
-
-                return (
-                  <div className="space-y-2">
-                    {aims.map((aim, index) => (
-                      <div key={index} className="flex items-end gap-2">
-                        <div className="flex-1">
-                          <field.TextField
-                            label={
-                              index === 0
-                                ? t('Specific aim (optional)')
-                                : undefined
-                            }
-                            value={aim}
-                            onChange={(value) => handleAimChange(index, value)}
-                            inputProps={{
-                              placeholder: t(
-                                'e.g., Establish and/or support mutual aid infrastructure',
-                              ),
-                            }}
-                          />
-                        </div>
-                        {aims.length > 1 && (
-                          <Button
-                            unstyled
-                            className="mb-2 p-2 text-neutral-gray4 hover:text-neutral-charcoal"
-                            onPress={() => handleRemoveAim(index)}
-                          >
-                            <LuX className="size-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <p className="text-sm text-neutral-gray4">
-                      {t(
-                        'Add a concrete, measurable goal this process works toward',
-                      )}
-                    </p>
-
-                    <Button
-                      color="ghost"
-                      unstyled
-                      className="flex items-center gap-1 text-primary-teal"
-                      onPress={handleAddAim}
-                    >
-                      <LuPlus className="size-4" />
-                      {t('Add another aim')}
-                    </Button>
-                  </div>
-                );
-              }}
-            />
-          </section>
-
-          <hr className="border-neutral-gray1" />
-
-          {/* Process Details Section */}
-          <section className="space-y-6">
-            <div>
-              <h2 className="font-serif text-xl">{t('Process Details')}</h2>
-              <p className="mt-1 text-sm text-neutral-gray4">
-                {t('Define the key details for your decision process.')}
-              </p>
-            </div>
-
-            <form.AppField
-              name="processName"
+              name="name"
               children={(field) => (
                 <field.TextField
                   label={t('Process Name')}
@@ -346,6 +244,33 @@ export function OverviewSectionForm({
                   }}
                   errorMessage={getFieldErrorMessage(field)}
                 />
+              )}
+            />
+
+            <form.AppField
+              name="objective"
+              children={(field) => (
+                <div className="space-y-2">
+                  <field.TextField
+                    useTextArea
+                    label={t(
+                      'Define the objective this process will accomplish',
+                    )}
+                    isRequired
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={field.handleChange}
+                    textareaProps={{
+                      placeholder: t('Add a broad outcome'),
+                    }}
+                    errorMessage={getFieldErrorMessage(field)}
+                  />
+                  <p className="text-sm text-neutral-gray4">
+                    {t(
+                      'This information appears when participants want to learn more about the process',
+                    )}
+                  </p>
+                </div>
               )}
             />
 
@@ -403,13 +328,14 @@ export function OverviewSectionForm({
                     <field.ToggleButton
                       isSelected={field.state.value}
                       onChange={field.handleChange}
+                      size="small"
                     />
                   </ToggleRow>
                 )}
               />
 
               <form.AppField
-                name="organizeCategories"
+                name="enableCategories"
                 children={(field) => (
                   <ToggleRow
                     label={t('Organize proposals into categories')}
@@ -420,23 +346,7 @@ export function OverviewSectionForm({
                     <field.ToggleButton
                       isSelected={field.state.value}
                       onChange={field.handleChange}
-                    />
-                  </ToggleRow>
-                )}
-              />
-
-              <form.AppField
-                name="multiPhase"
-                children={(field) => (
-                  <ToggleRow
-                    label={t('Set up multi-phase timeline')}
-                    tooltip={t(
-                      'Create distinct phases for submission, review, and voting periods',
-                    )}
-                  >
-                    <field.ToggleButton
-                      isSelected={field.state.value}
-                      onChange={field.handleChange}
+                      size="small"
                     />
                   </ToggleRow>
                 )}
@@ -454,6 +364,7 @@ export function OverviewSectionForm({
                     <field.ToggleButton
                       isSelected={field.state.value}
                       onChange={field.handleChange}
+                      size="small"
                     />
                   </ToggleRow>
                 )}
@@ -471,12 +382,14 @@ export function OverviewSectionForm({
                     <field.ToggleButton
                       isSelected={field.state.value}
                       onChange={field.handleChange}
+                      size="small"
                     />
                   </ToggleRow>
                 )}
               />
             </div>
           </section>
+          <form.SubmitButton>Save</form.SubmitButton>
         </div>
       </form>
     </div>

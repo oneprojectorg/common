@@ -44,12 +44,12 @@ export interface ProcessConfig {
   // Process Stewardship
   steward?: string;
   focusAreas?: Option[];
-  aims?: string[];
+  objective?: string;
 
   // Process Details
   budget?: number | null;
   hideBudget?: boolean;
-  organizeCategories?: boolean;
+  enableCategories?: boolean;
   multiPhase?: boolean;
   includeReview?: boolean;
   isPrivate?: boolean;
