@@ -21,6 +21,9 @@ export const SidebarNav = () => {
         <NavLink href="/org" active={pathname.startsWith('/org')}>
           <LuUsers className="size-4" /> {t('Organizations')}
         </NavLink>
+        <NavLink href="/decisions" active={pathname.startsWith('/decisions')}>
+          <LuUsers className="size-4" /> {t('Decisions')}
+        </NavLink>
       </nav>
     </Sidebar>
   );
