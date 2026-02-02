@@ -1,11 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  allowList,
-  profileInvites,
-  profileUserToAccessRoles,
-  profileUsers,
-} from '@op/db/schema';
+import { allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -151,29 +146,28 @@ export const inviteUsersToProfile = async (input: {
           continue;
         }
 
-        // User exists but not in this profile - add them directly
-        await db.transaction(async (tx) => {
-          // Add user to profile
-          const [newProfileUser] = await tx
-            .insert(profileUsers)
-            .values({
-              authUserId: existingUser.authUserId,
-              profileId: requesterProfileId,
-              email: existingUser.email,
-              name: existingUser.name || existingUser.email.split('@')[0],
-            })
-            .returning();
+        // User exists but not in this profile - check for existing pending invite
+        const hasPendingInvite = pendingInviteEmailsSet.has(email);
 
-          // Assign role
-          if (newProfileUser) {
-            await tx.insert(profileUserToAccessRoles).values({
-              profileUserId: newProfileUser.id,
-              accessRoleId: targetRole.id,
-            });
-          }
+        if (hasPendingInvite) {
+          results.failed.push({
+            email,
+            reason: 'User already has a pending invite to this profile',
+          });
+          continue;
+        }
+
+        // Create profile invite record (user already has an account, no need to add to allowList)
+        await db.insert(profileInvites).values({
+          email,
+          profileId: requesterProfileId,
+          profileEntityType: profile.type,
+          accessRoleId: targetRole.id,
+          invitedBy: profileUser.profileId,
+          message: personalMessage,
         });
 
-        // Prepare email for event-based sending (existing user added directly)
+        // Prepare email for event-based sending
         emailsToInvite.push({
           email,
           inviterName: profileUser?.name || user.email || 'A team member',

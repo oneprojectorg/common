@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import {
   allowList,
+  profileInvites,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -8,7 +9,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
 
@@ -69,6 +70,8 @@ export class TestProfileUserDataManager {
   private createdAuthUserIds: string[] = [];
   private createdProfileUserIds: string[] = [];
   private createdAllowListEmails: string[] = [];
+  private createdProfileInviteEmails: { email: string; profileId: string }[] =
+    [];
 
   constructor(
     testId: string,
@@ -268,6 +271,18 @@ export class TestProfileUserDataManager {
   }
 
   /**
+   * Tracks a profile invite for cleanup.
+   * Call this when testing invite flows that create profile_invites records.
+   */
+  trackProfileInvite(email: string, profileId: string): void {
+    this.ensureCleanupRegistered();
+    this.createdProfileInviteEmails.push({
+      email: email.toLowerCase(),
+      profileId,
+    });
+  }
+
+  /**
    * Generates a unique email for test users.
    */
   private generateEmail(
@@ -294,7 +309,7 @@ export class TestProfileUserDataManager {
   }
 
   /**
-   * Cleans up test data by deleting profiles, auth users, profile users, and allowList entries.
+   * Cleans up test data by deleting profiles, auth users, profile users, allowList entries, and profile invites.
    * Uses exact IDs tracked during creation to avoid race conditions with concurrent tests.
    */
   async cleanup(): Promise<void> {
@@ -307,6 +322,20 @@ export class TestProfileUserDataManager {
       await db
         .delete(allowList)
         .where(inArray(allowList.email, this.createdAllowListEmails));
+    }
+
+    // 1.5. Delete profile invites by exact email + profileId combinations
+    if (this.createdProfileInviteEmails.length > 0) {
+      for (const { email, profileId } of this.createdProfileInviteEmails) {
+        await db
+          .delete(profileInvites)
+          .where(
+            and(
+              eq(profileInvites.email, email),
+              eq(profileInvites.profileId, profileId),
+            ),
+          );
+      }
     }
 
     // 2. Delete profile users by exact IDs

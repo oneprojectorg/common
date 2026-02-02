@@ -1,7 +1,6 @@
 import { addProfileUser } from '@op/common';
 import { z } from 'zod';
 
-import { profileUserEncoder } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const addUserRouter = router({
@@ -17,16 +16,10 @@ export const addUserRouter = router({
       }),
     )
     .output(
-      z.discriminatedUnion('invited', [
-        z.object({
-          profileUser: profileUserEncoder,
-          invited: z.literal(false),
-        }),
-        z.object({
-          email: z.string(),
-          invited: z.literal(true),
-        }),
-      ]),
+      z.object({
+        email: z.string(),
+        invited: z.literal(true),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;

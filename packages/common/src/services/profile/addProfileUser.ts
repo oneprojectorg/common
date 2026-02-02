@@ -1,11 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  allowList,
-  profileInvites,
-  profileUserToAccessRoles,
-  profileUsers,
-} from '@op/db/schema';
+import { allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
@@ -14,7 +9,6 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
-import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
  * Add a member to a profile with one or more roles
@@ -93,42 +87,47 @@ export const addProfileUser = async ({
     throw new CommonError('User is already a member of this profile');
   }
 
-  // If user exists in the system, add them directly and return early (no invite email needed)
+  // If user exists in the system, check for pending invite then create one
+  // (user already has an account, no need to add to allowList)
   if (existingUser) {
-    let newProfileUserId: string | undefined;
-
-    await db.transaction(async (tx) => {
-      const [newProfileUser] = await tx
-        .insert(profileUsers)
-        .values({
-          authUserId: existingUser.authUserId,
-          profileId,
-          email: existingUser.email,
-          name: existingUser.name || existingUser.email.split('@')[0],
-        })
-        .returning();
-
-      if (newProfileUser) {
-        newProfileUserId = newProfileUser.id;
-        await tx.insert(profileUserToAccessRoles).values(
-          roleIdsToAssignDeduped.map((accessRoleId) => ({
-            profileUserId: newProfileUser.id,
-            accessRoleId,
-          })),
-        );
-      }
-    });
-
-    // Fetch the newly created profile user with full relations
-    if (newProfileUserId) {
-      const profileUser = await getProfileUserWithRelations(newProfileUserId);
-      if (profileUser) {
-        return { profileUser, invited: false as const };
-      }
+    if (existingPendingInvite) {
+      throw new CommonError(
+        'User already has a pending invite to this profile',
+      );
     }
 
-    // Fallback (shouldn't happen)
-    throw new CommonError('Failed to create profile user');
+    // Create profile invite record (using first role for the invite)
+    const primaryRoleId = roleIdsToAssignDeduped[0]!;
+    await db.insert(profileInvites).values({
+      email: normalizedEmail,
+      profileId,
+      profileEntityType: profile.type,
+      accessRoleId: primaryRoleId,
+      invitedBy: currentProfileUser.profileId,
+      message: personalMessage,
+    });
+
+    // Send invite email via event
+    waitUntil(
+      event.send({
+        name: Events.profileInviteSent.name,
+        data: {
+          senderProfileId: currentProfileUser.profileId,
+          invitations: [
+            {
+              email: normalizedEmail,
+              inviterName:
+                currentProfileUser.name || currentUser.email || 'A team member',
+              profileName: profile.name,
+              inviteUrl: OPURLConfig('APP').ENV_URL,
+              personalMessage,
+            },
+          ],
+        },
+      }),
+    );
+
+    return { email: normalizedEmail, invited: true as const };
   }
 
   // Check for existing pending invite
