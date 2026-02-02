@@ -14,7 +14,7 @@ export const instancesRouter = mergeRouters(
   createInstanceRouter,
   createInstanceFromTemplateRouter,
   updateInstanceRouter,
-updateDecisionInstanceRouter,
+  updateDecisionInstanceRouter,
   deleteInstanceRouter,
   listInstancesRouter,
   getInstanceRouter,

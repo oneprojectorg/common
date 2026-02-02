@@ -35,7 +35,7 @@ export const RadioGroup = (props: RadioGroupProps) => {
         {props.label}
         {props.isRequired && <span className="text-functional-red"> *</span>}
       </Label>
-      <div className="flex gap-2 group-orientation-horizontal:gap-4 group-orientation-vertical:flex-col">
+      <div className="group-orientation-horizontal:gap-4 group-orientation-vertical:flex-col flex gap-2">
         {props.children}
       </div>
       {props.description && <Description>{props.description}</Description>}
@@ -50,11 +50,11 @@ const styles = tv({
   variants: {
     isSelected: {
       false:
-        'border border-neutral-gray3 group-pressed:border group-pressed:border-neutral-gray3',
-      true: 'border-[0.31rem] border-primary-tealBlack outline outline-1 -outline-offset-1 outline-primary-teal group-pressed:border group-pressed:border-primary-tealBlack',
+        'group-pressed:border group-pressed:border-neutral-gray3 border border-neutral-gray3',
+      true: 'group-pressed:border group-pressed:border-primary-tealBlack border-[0.31rem] border-primary-tealBlack outline outline-1 -outline-offset-1 outline-primary-teal',
     },
     isInvalid: {
-      true: 'border-red-600 group-pressed:border-red-700',
+      true: 'group-pressed:border-red-700 border-red-600',
     },
     isDisabled: {
       true: 'border border-neutral-gray3',

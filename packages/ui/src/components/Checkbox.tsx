@@ -66,7 +66,7 @@ const boxStyles = tv({
       true: 'border-none bg-teal text-neutral-offWhite',
     },
     isInvalid: {
-      true: '[--color:var(--color-red-600)] group-pressed:[--color:var(--color-red-700)]',
+      true: 'group-pressed:[--color:var(--color-red-700)] [--color:var(--color-red-600)]',
     },
     isDisabled: {
       true: '[--color:var(--color-neutral-700)]',

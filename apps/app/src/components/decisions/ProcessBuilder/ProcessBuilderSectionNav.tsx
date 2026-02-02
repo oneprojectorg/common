@@ -44,7 +44,7 @@ export const ProcessBuilderSidebar = ({
               key={section.id}
               id={section.id}
               variant="pill"
-              className="first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:text-charcoal md:selected:bg-neutral-offWhite"
+              className="selected:text-charcoal md:selected:bg-neutral-offWhite first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0"
             >
               {t(section.labelKey)}
             </Tab>

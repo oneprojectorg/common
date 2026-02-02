@@ -165,7 +165,7 @@ const MobileSidebar = ({
                 key={step.id}
                 id={step.id}
                 variant="pill"
-                className="h-8 bg-transparent selected:bg-neutral-offWhite"
+                className="selected:bg-neutral-offWhite h-8 bg-transparent"
               >
                 {t(step.labelKey)}
               </Tab>

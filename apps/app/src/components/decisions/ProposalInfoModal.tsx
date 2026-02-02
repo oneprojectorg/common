@@ -37,7 +37,7 @@ export function ProposalInfoModal({
 
           <ModalBody className="flex-1 overflow-y-auto">
             <div
-              className="prose max-w-none prose-gray"
+              className="prose prose-gray max-w-none"
               dangerouslySetInnerHTML={{
                 __html: translatedContent
                   ? he.decode(t('INFOTRANSLATION'))

@@ -17,11 +17,11 @@ import { Button } from './Button';
 import { Confetti } from './Confetti';
 
 const overlayStyles = tv({
-  base: 'fixed! inset-0! z-[99999] flex items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm entering:animate-in entering:duration-300 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-300 exiting:ease-in exiting:fade-out',
+  base: 'entering:animate-in entering:duration-300 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-300 exiting:ease-in exiting:fade-out fixed! inset-0! z-[99999] flex items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm',
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out',
+  base: 'entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md',
 });
 
 type ModalContextType = {

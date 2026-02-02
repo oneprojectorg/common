@@ -13,9 +13,9 @@ const dropdownButtonStyle = tv({
   variants: {
     color: {
       primary:
-        'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
+        'pressed:bg-primary-tealBlack pressed:text-neutral-gray2 bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack',
       secondary:
-        'border-primary-teal bg-white text-primary-teal hover:bg-neutral-50 pressed:bg-white',
+        'pressed:bg-white border-primary-teal bg-white text-primary-teal hover:bg-neutral-50',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',
