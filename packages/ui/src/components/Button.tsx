@@ -17,21 +17,21 @@ const buttonStyle = tv({
     },
     color: {
       primary:
-        'pressed:bg-primary-tealBlack pressed:text-neutral-gray2 bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack',
+        'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
       secondary:
-        'pressed:bg-white border border-offWhite bg-white text-teal hover:bg-neutral-50',
+        'border border-offWhite bg-white text-teal hover:bg-neutral-50 pressed:bg-white',
       gradient: '',
       unverified:
-        'pressed:bg-white border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50',
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
       verified:
-        'pressed:bg-white border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50',
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
       neutral:
-        'pressed:bg-white border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50',
-      warn: 'pressed:bg-yellow-100/80 bg-yellow-50 text-yellow-700 shadow-light hover:bg-yellow-100/75 hover:text-yellow-800',
+        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
+      warn: 'bg-yellow-50 text-yellow-700 shadow-light hover:bg-yellow-100/75 hover:text-yellow-800 pressed:bg-yellow-100/80',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
       ghost:
-        'pressed:text-darkGray pressed:shadow-none border-0 bg-transparent text-midGray shadow-none hover:text-darkGray',
+        'border-0 bg-transparent text-midGray shadow-none hover:text-darkGray pressed:text-darkGray pressed:shadow-none',
       pill: '',
     },
     size: {
@@ -50,7 +50,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-noned pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
+        'appearance-noned outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
 
     isDisabled: {

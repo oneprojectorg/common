@@ -96,7 +96,7 @@ const ColumnResizer = ({ className, ...props }: ColumnResizerProps) => (
   <ColumnResizerPrimitive
     {...props}
     className={cx(
-      '&[data-resizable-direction=left]:cursor-e-resize &[data-resizable-direction=right]:cursor-w-resize resizable-both:cursor-ew-resize absolute top-0 right-0 bottom-0 grid w-px touch-none place-content-center px-1 [&[data-resizing]>div]:bg-primary',
+      '&[data-resizable-direction=left]:cursor-e-resize &[data-resizable-direction=right]:cursor-w-resize absolute top-0 right-0 bottom-0 grid w-px touch-none place-content-center px-1 resizable-both:cursor-ew-resize [&[data-resizing]>div]:bg-primary',
       className,
     )}
   >
@@ -129,7 +129,7 @@ const TableColumn = ({
             'h-8 text-left text-sm font-normal',
             allowsSorting && isHovered ? 'text-neutral-gray3' : 'text-muted-fg',
             'allows-sorting:active:text-neutral-charcoal',
-            'allows-sorting:cursor-default dragging:cursor-grabbing relative outline-hidden',
+            'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
             'px-4 py-(--gutter-y)',
             'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
             !bleed && 'sm:first:pl-1 sm:last:pr-1',
@@ -259,7 +259,7 @@ const TableRow = <T extends object>({
               'hover:bg-(--table-selected-bg) hover:text-fg',
             (props.href || props.onAction || selectionMode === 'multiple') &&
               isFocusVisibleWithin &&
-              'selected:bg-(--table-selected-bg)/50 bg-(--table-selected-bg)/50 text-fg',
+              'bg-(--table-selected-bg)/50 text-fg selected:bg-(--table-selected-bg)/50',
             isDisabled && 'opacity-50',
             className,
           ),

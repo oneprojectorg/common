@@ -13,10 +13,10 @@ const iconButtonStyle = tv({
       large: 'h-10 w-10 rounded-lg',
     },
     variant: {
-      ghost: 'pressed:bg-neutral-gray2 bg-white/80 hover:bg-neutral-gray1',
-      solid: 'pressed:bg-neutral-gray3 bg-neutral-gray1 hover:bg-neutral-gray2',
+      ghost: 'bg-white/80 hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
+      solid: 'bg-neutral-gray1 hover:bg-neutral-gray2 pressed:bg-neutral-gray3',
       outline:
-        'pressed:bg-neutral-gray2 border bg-transparent hover:bg-neutral-gray1',
+        'border bg-transparent hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',

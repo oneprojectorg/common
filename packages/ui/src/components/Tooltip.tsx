@@ -40,10 +40,10 @@ const styles = tv({
   base: 'group relative z-0 rounded-md bg-charcoal px-3 py-2 font-sans text-sm text-offWhite will-change-transform',
   variants: {
     isEntering: {
-      true: 'placement-left:slide-in-from-right-1 placement-right:slide-in-from-left-1 placement-top:slide-in-from-bottom-1 placement-bottom:slide-in-from-top-1 animate-in ease-out animation-duration-200 fade-in',
+      true: 'animate-in ease-out animation-duration-200 fade-in placement-left:slide-in-from-right-1 placement-right:slide-in-from-left-1 placement-top:slide-in-from-bottom-1 placement-bottom:slide-in-from-top-1',
     },
     isExiting: {
-      true: 'placement-left:slide-out-to-right-1 placement-right:slide-out-to-left-1 placement-top:slide-out-to-bottom-1 placement-bottom:slide-out-to-top-1 animate-out ease-in animation-duration-150 fade-out',
+      true: 'animate-out ease-in animation-duration-150 fade-out placement-left:slide-out-to-right-1 placement-right:slide-out-to-left-1 placement-top:slide-out-to-bottom-1 placement-bottom:slide-out-to-top-1',
     },
   },
 });
@@ -60,12 +60,12 @@ const Tooltip = ({ children, ...props }: TooltipProps) => {
         }),
       )}
     >
-      <OverlayArrow className="group-placement-left:-ml-px group-placement-right:-mr-px group-placement-top:-mt-px group-placement-bottom:-mb-px items-center justify-center">
+      <OverlayArrow className="items-center justify-center group-placement-left:-ml-px group-placement-right:-mr-px group-placement-top:-mt-px group-placement-bottom:-mb-px">
         <svg
           width={12}
           height={12}
           viewBox="0 0 12 12"
-          className="group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180 fill-charcoal stroke-charcoal"
+          className="fill-charcoal stroke-charcoal group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180"
           strokeWidth={1}
           style={{
             strokeLinejoin: 'round',
