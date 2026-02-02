@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         merge_fields: {
           FNAME: firstName,
           LNAME: lastName,
-          ORG: organizationName,
+          MMERGE3: organizationName,
         },
         tags: ['Common Waitlist'], // Ensures this lands in the right segment in Mailchimp
       },
