@@ -27,6 +27,7 @@
     "./Header": "./src/components/Header.tsx",
     "./HorizontalList": "./src/components/HorizontalList/index.tsx",
     "./IconButton": "./src/components/IconButton.tsx",
+    "./LogoLoop": "./src/components/LogoLoop.tsx",
     "./Menu": "./src/components/Menu.tsx",
     "./Modal": "./src/components/Modal.tsx",
     "./MultiSelectComboBox": "./src/components/MultiSelectComboBox.tsx",
