@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./test-data": "./src/test-data.ts"
+    "./test-data": "./src/test-data.ts",
+    "./decision-data": "./src/decision-data.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

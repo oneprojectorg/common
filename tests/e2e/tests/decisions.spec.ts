@@ -1,185 +1,13 @@
 import { db } from '@op/db';
+import { decisionProcesses, profiles } from '@op/db/schema';
 import {
-  EntityType,
-  ProcessStatus,
-  decisionProcesses,
-  processInstances,
-  profileUserToAccessRoles,
-  profileUsers,
-  profiles,
-} from '@op/db/schema';
-import { ROLES } from '@op/db/seedData/accessControl';
+  createDecisionInstance,
+  createDecisionProcess,
+  testSimpleVotingSchema,
+} from '@op/test';
 import { eq, inArray } from 'drizzle-orm';
-import { randomUUID } from 'node:crypto';
 
 import { expect, test } from '../fixtures/index.js';
-
-/**
- * A simple voting schema for E2E tests.
- * This mirrors the simpleVoting schema from @op/common but is self-contained
- * to avoid ESM/CJS import issues in the E2E test environment.
- */
-const testSimpleVotingSchema = {
-  id: 'simple',
-  version: '1.0.0',
-  name: 'Simple Voting',
-  description:
-    'Basic approval voting where members vote for multiple proposals.',
-  phases: [
-    {
-      id: 'submission',
-      name: 'Proposal Submission',
-      description: 'Members submit proposals for consideration.',
-      rules: {
-        proposals: { submit: true },
-        voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-01' },
-      },
-    },
-    {
-      id: 'review',
-      name: 'Review & Shortlist',
-      description: 'Reviewers evaluate and shortlist proposals.',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-02' },
-      },
-    },
-    {
-      id: 'voting',
-      name: 'Voting',
-      description: 'Members vote on shortlisted proposals.',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: true },
-        advancement: { method: 'date', endDate: '2026-01-03' },
-      },
-    },
-    {
-      id: 'results',
-      name: 'Results',
-      description: 'View final results and winning proposals.',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-04' },
-      },
-    },
-  ],
-};
-
-/**
- * Helper to create a decision process template for testing.
- */
-async function createDecisionProcess(createdByProfileId: string) {
-  const processName = `E2E Simple Voting ${randomUUID().slice(0, 8)}`;
-
-  const [processRecord] = await db
-    .insert(decisionProcesses)
-    .values({
-      name: processName,
-      description: testSimpleVotingSchema.description,
-      processSchema: testSimpleVotingSchema,
-      createdByProfileId,
-    })
-    .returning();
-
-  if (!processRecord) {
-    throw new Error('Failed to create decision process');
-  }
-
-  return processRecord;
-}
-
-/**
- * Helper to create a decision instance with proper profile access.
- */
-async function createDecisionInstance({
-  processId,
-  ownerProfileId,
-  authUserId,
-  email,
-}: {
-  processId: string;
-  ownerProfileId: string;
-  authUserId: string;
-  email: string;
-}) {
-  const instanceName = `E2E Instance ${randomUUID()}`;
-  const instanceSlug = `e2e-instance-${randomUUID()}`;
-  const firstPhaseId = testSimpleVotingSchema.phases[0]?.id ?? 'submission';
-
-  // 1. Create a profile for the process instance with DECISION type
-  const [instanceProfile] = await db
-    .insert(profiles)
-    .values({
-      name: instanceName,
-      slug: instanceSlug,
-      type: EntityType.DECISION,
-    })
-    .returning();
-
-  if (!instanceProfile) {
-    throw new Error('Failed to create instance profile');
-  }
-
-  // 2. Create the process instance with proper instanceData structure
-  const instanceData = {
-    currentPhaseId: firstPhaseId,
-    phases: testSimpleVotingSchema.phases.map((phase, index) => ({
-      phaseId: phase.id,
-      rules: phase.rules,
-      startDate: new Date(
-        Date.now() + index * 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      endDate: new Date(
-        Date.now() + (index + 1) * 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-    })),
-  };
-
-  const [processInstance] = await db
-    .insert(processInstances)
-    .values({
-      name: instanceName,
-      processId,
-      profileId: instanceProfile.id,
-      instanceData,
-      currentStateId: firstPhaseId,
-      status: ProcessStatus.PUBLISHED,
-      ownerProfileId,
-    })
-    .returning();
-
-  if (!processInstance) {
-    throw new Error('Failed to create process instance');
-  }
-
-  // 3. Grant the user access to the decision profile (Admin role)
-  const [profileUser] = await db
-    .insert(profileUsers)
-    .values({
-      profileId: instanceProfile.id,
-      authUserId,
-      email,
-    })
-    .returning();
-
-  if (profileUser) {
-    await db.insert(profileUserToAccessRoles).values({
-      profileUserId: profileUser.id,
-      accessRoleId: ROLES.ADMIN.id,
-    });
-  }
-
-  return {
-    instance: processInstance,
-    profileId: instanceProfile.id,
-    slug: instanceSlug,
-    name: instanceName,
-  };
-}
 
 test.describe('Decisions', () => {
   test('can navigate to a decision process page', async ({
@@ -192,7 +20,10 @@ test.describe('Decisions', () => {
 
     try {
       // 1. Create a decision process template
-      const process = await createDecisionProcess(org.adminUser.profileId);
+      const process = await createDecisionProcess({
+        createdByProfileId: org.adminUser.profileId,
+        schema: testSimpleVotingSchema,
+      });
       processId = process.id;
 
       // 2. Create a decision instance with access for the authenticated user
@@ -201,6 +32,7 @@ test.describe('Decisions', () => {
         ownerProfileId: org.organizationProfile.id,
         authUserId: org.adminUser.authUserId,
         email: org.adminUser.email,
+        schema: testSimpleVotingSchema,
       });
       createdProfileIds.push(instance.profileId);
 
@@ -247,7 +79,10 @@ test.describe('Decisions', () => {
 
     try {
       // 1. Create a decision process template
-      const process = await createDecisionProcess(org.adminUser.profileId);
+      const process = await createDecisionProcess({
+        createdByProfileId: org.adminUser.profileId,
+        schema: testSimpleVotingSchema,
+      });
       processId = process.id;
 
       // 2. Create a decision instance with access for the authenticated user
@@ -256,6 +91,7 @@ test.describe('Decisions', () => {
         ownerProfileId: org.organizationProfile.id,
         authUserId: org.adminUser.authUserId,
         email: org.adminUser.email,
+        schema: testSimpleVotingSchema,
       });
       createdProfileIds.push(instance.profileId);
 
