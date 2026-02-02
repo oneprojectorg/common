@@ -2,6 +2,7 @@ import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
   allowList,
+  profileInvites,
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
@@ -12,7 +13,6 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
-import { AllowListMetadata } from '../user/validators';
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -47,6 +47,7 @@ export const inviteUsersToProfile = async (input: {
     targetRole,
     existingUsers,
     existingAllowListEntries,
+    existingPendingInvites,
     profileUser,
   ] = await Promise.all([
     // Get the profile details for the invite
@@ -67,6 +68,15 @@ export const inviteUsersToProfile = async (input: {
     // Get all existing allowList entries for these emails
     db._query.allowList.findMany({
       where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+    }),
+    // Get existing pending invites for this profile (acceptedOn is null = pending)
+    db._query.profileInvites.findMany({
+      where: (table, { and, eq, inArray, isNull }) =>
+        and(
+          inArray(table.email, normalizedEmails),
+          eq(table.profileId, requesterProfileId),
+          isNull(table.acceptedOn),
+        ),
     }),
     getProfileAccessUser({
       user,
@@ -116,6 +126,10 @@ export const inviteUsersToProfile = async (input: {
     existingAllowListEntries.map((entry) => entry.email.toLowerCase()),
   );
 
+  const pendingInviteEmailsSet = new Set(
+    existingPendingInvites.map((invite) => invite.email.toLowerCase()),
+  );
+
   // Process each email
   for (const rawEmail of emails) {
     const email = rawEmail.toLowerCase();
@@ -158,29 +172,48 @@ export const inviteUsersToProfile = async (input: {
             });
           }
         });
+
+        // Prepare email for event-based sending (existing user added directly)
+        emailsToInvite.push({
+          email,
+          inviterName: profileUser?.name || user.email || 'A team member',
+          profileName: profile.name,
+          inviteUrl: OPURLConfig('APP').ENV_URL,
+          personalMessage,
+        });
+        continue;
       }
 
-      // Check if email is already in the allowList using the Set
+      // User doesn't exist - check for existing pending invite
+      const hasPendingInvite = pendingInviteEmailsSet.has(email);
+
+      if (hasPendingInvite) {
+        results.failed.push({
+          email,
+          reason: 'User already has a pending invite to this profile',
+        });
+        continue;
+      }
+
+      // Add to allowList for signup authorization (without profile metadata)
       const isInAllowList = allowListEmailsSet.has(email);
-
       if (!isInAllowList) {
-        const metadata: AllowListMetadata = {
-          invitedBy: user.id,
-          invitedAt: new Date().toISOString(),
-          inviteType: 'profile',
-          personalMessage: personalMessage,
-          roleId,
-          profileId: requesterProfileId,
-          inviterProfileName: profile.name,
-        };
-
-        // Add the email to the allowList
         await db.insert(allowList).values({
           email,
           organizationId: null,
-          metadata,
+          metadata: null,
         });
       }
+
+      // Create profile invite record
+      await db.insert(profileInvites).values({
+        email,
+        profileId: requesterProfileId,
+        profileEntityType: profile.type,
+        accessRoleId: targetRole.id,
+        invitedBy: profileUser.profileId,
+        message: personalMessage,
+      });
 
       // Prepare email for event-based sending
       emailsToInvite.push({

@@ -1,5 +1,11 @@
-import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
-import { profileUsers, profiles, users } from '@op/db/schema';
+import { and, db, eq, gt, isNull, lt, or, sql } from '@op/db/client';
+import {
+  type AccessRole,
+  profileInvites,
+  profileUsers,
+  profiles,
+  users,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -12,10 +18,8 @@ import {
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
-import type {
-  ProfileUserQueryResult,
-  ProfileUserWithRelations,
-} from './getProfileUserWithRelations';
+import type { ProfileUserQueryResult } from './getProfileUserWithRelations';
+import type { ProfileMember } from './types';
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
 
@@ -34,7 +38,9 @@ const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
 ), '')`;
 
 /**
- * List all members of a profile with cursor-based pagination
+ * List all members of a profile with cursor-based pagination.
+ * Includes both active members and pending invites.
+ * Pending invites are appended after active members on the last page.
  */
 export const listProfileUsers = async ({
   profileId,
@@ -52,7 +58,7 @@ export const listProfileUsers = async ({
   query?: string;
   cursor?: string | null;
   limit?: number;
-}): Promise<PaginatedResult<ProfileUserWithRelations>> => {
+}): Promise<PaginatedResult<ProfileMember>> => {
   const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
     assertProfile(profileId),
@@ -182,8 +188,8 @@ export const listProfileUsers = async ({
   const hasMore = profileUserResults.length > limit;
   const resultItems = profileUserResults.slice(0, limit);
 
-  // Transform results
-  const items = resultItems.map((result) => {
+  // Transform active members
+  const activeMembers: ProfileMember[] = resultItems.map((result) => {
     const { serviceUser, roles, ...baseProfileUser } =
       result as ProfileUserQueryResult;
     const userProfile = serviceUser?.profile;
@@ -194,8 +200,59 @@ export const listProfileUsers = async ({
       about: userProfile?.bio || baseProfileUser.about,
       profile: userProfile ?? null,
       roles: roles.map((roleJunction) => roleJunction.accessRole),
+      status: 'active' as const,
     };
   });
+
+  // Query pending invites (only on the last page of active members to avoid duplicate fetches)
+  let pendingInvites: ProfileMember[] = [];
+  if (!hasMore) {
+    const inviteResults = await db._query.profileInvites.findMany({
+      where: and(
+        eq(profileInvites.profileId, profileId),
+        isNull(profileInvites.acceptedOn),
+      ),
+      with: {
+        accessRole: true,
+      },
+      orderBy: (table, { asc }) => [asc(table.email)],
+    });
+
+    // Filter by search query if provided
+    const filteredInvites =
+      query && query.length >= 2
+        ? inviteResults.filter((invite) =>
+            invite.email.toLowerCase().includes(query.toLowerCase()),
+          )
+        : inviteResults;
+
+    // Transform pending invites to ProfileMember shape
+    pendingInvites = filteredInvites.map((invite) => {
+      // Cast to AccessRole since we know the relation returns a single object
+      const role = invite.accessRole as AccessRole | null;
+      return {
+        // ProfileUser-like fields with placeholder values for pending invites
+        id: invite.id,
+        authUserId: '', // Not assigned yet
+        email: invite.email,
+        name: invite.email.split('@')[0] ?? null, // Use email prefix as name placeholder
+        about: null,
+        profileId: invite.profileId,
+        createdAt: invite.createdAt ?? null,
+        updatedAt: invite.updatedAt ?? null,
+        deletedAt: null,
+        // Relations
+        profile: null,
+        roles: role ? [role] : [],
+        // Member status
+        status: 'pending' as const,
+        inviteId: invite.id,
+      };
+    });
+  }
+
+  // Combine active members and pending invites
+  const items = [...activeMembers, ...pendingInvites];
 
   // Build next cursor from last item
   // Cursor value must match the primary ORDER BY column

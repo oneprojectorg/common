@@ -9,4 +9,6 @@ export * from './addProfileUser';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
 export * from './getProfileUserWithRelations';
+export * from './deleteProfileInvitation';
+export * from './types';
 export * from './requests';

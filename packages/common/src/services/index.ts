@@ -20,6 +20,7 @@ export {
   addProfileUser,
   updateProfileUserRoles,
   removeProfileUser,
+  deleteProfileInvitation,
 } from './profile';
 export {
   addRelationship as addProfileRelationship,
