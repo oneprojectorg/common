@@ -13,7 +13,7 @@ import { assertOrganizationByProfileId } from '../assert';
 
 export interface DeleteInstanceResult {
   success: boolean;
-  action: 'deleted' | 'archived';
+  action: 'deleted' | 'cancelled';
   instanceId: string;
 }
 
@@ -74,23 +74,23 @@ export const deleteInstance = async ({
     });
 
     if (transitions) {
-      // Transitions exist - archive instead of delete
-      const [archivedInstance] = await db
+      // Transitions exist - cancel instead of delete
+      const [cancelledInstance] = await db
         .update(processInstances)
         .set({
-          status: ProcessStatus.ARCHIVED,
+          status: ProcessStatus.CANCELLED,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(processInstances.id, instanceId))
         .returning();
 
-      if (!archivedInstance) {
-        throw new CommonError('Failed to archive process instance');
+      if (!cancelledInstance) {
+        throw new CommonError('Failed to cancel process instance');
       }
 
       return {
         success: true,
-        action: 'archived',
+        action: 'cancelled',
         instanceId,
       };
     }

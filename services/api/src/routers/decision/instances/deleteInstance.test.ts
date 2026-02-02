@@ -48,7 +48,7 @@ describe.concurrent('deleteInstance', () => {
     expect(deletedInstance).toBeUndefined();
   });
 
-  it('should archive instance when transitions exist', async ({
+  it('should cancel instance when transitions exist', async ({
     task,
     onTestFinished,
   }) => {
@@ -77,16 +77,16 @@ describe.concurrent('deleteInstance', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.action).toBe('archived');
+    expect(result.action).toBe('cancelled');
     expect(result.instanceId).toBe(instance.id);
 
-    // Verify the instance was archived, not deleted
-    const archivedInstance = await db.query.processInstances.findFirst({
+    // Verify the instance was cancelled, not deleted
+    const cancelledInstance = await db.query.processInstances.findFirst({
       where: eq(processInstances.id, instance.id),
     });
 
-    expect(archivedInstance).toBeDefined();
-    expect(archivedInstance!.status).toBe('archived');
+    expect(cancelledInstance).toBeDefined();
+    expect(cancelledInstance!.status).toBe('cancelled');
   });
 
   it('should require authentication', async () => {
