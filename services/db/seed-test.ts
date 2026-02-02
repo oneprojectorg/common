@@ -2,6 +2,7 @@
 import { createServerClient } from '@supabase/ssr';
 import dotenv from 'dotenv';
 import { reset } from 'drizzle-seed';
+import { decisionTemplates } from '@op/common';
 
 import { db } from '.';
 import * as schema from './schema';
@@ -114,6 +115,45 @@ async function seedAccessControl() {
   );
 }
 
+async function seedDecisionTemplates() {
+  console.log('🧩 Seeding decision process templates...');
+
+  const { profiles, decisionProcesses } = schema;
+
+  const [ownerProfile] = await db
+    .insert(profiles)
+    .values({
+      name: 'Decision Template Library',
+      slug: 'decision-template-library',
+    })
+    .returning();
+
+  if (!ownerProfile) {
+    throw new Error('Failed to create decision template owner profile');
+  }
+
+  const templates = Object.values(decisionTemplates);
+
+  if (!templates.length) {
+    console.log('  ⚠ No decision templates found to seed');
+    return;
+  }
+
+  const insertedTemplates = await db
+    .insert(decisionProcesses)
+    .values(
+      templates.map((template) => ({
+        name: template.name,
+        description: template.description,
+        processSchema: template,
+        createdByProfileId: ownerProfile.id,
+      })),
+    )
+    .returning();
+
+  console.log(`  ✓ Inserted ${insertedTemplates.length} decision templates`);
+}
+
 /**
  * Main seed function that orchestrates all seeding operations
  */
@@ -122,6 +162,7 @@ async function seed() {
 
   await wipeDatabase();
   await seedAccessControl();
+  await seedDecisionTemplates();
 
   console.log('\n✅ Database seeding completed successfully!');
 }
