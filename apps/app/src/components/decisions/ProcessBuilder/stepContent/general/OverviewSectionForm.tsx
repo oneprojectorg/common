@@ -38,13 +38,13 @@ interface OverviewFormData {
 // Auto-save component that subscribes to form values
 function AutoSaveHandler({
   values,
-  decisionId,
+  decisionProfileId,
   setInstanceData,
   setSaveStatus,
   markSaved,
 }: {
   values: OverviewFormData;
-  decisionId: string;
+  decisionProfileId: string;
   setInstanceData: (
     id: string,
     data: {
@@ -80,8 +80,8 @@ function AutoSaveHandler({
     previousValues.current = valuesString;
 
     // Update Zustand store (persists to localStorage)
-    setSaveStatus(decisionId, 'saving');
-    setInstanceData(decisionId, {
+    setSaveStatus(decisionProfileId, 'saving');
+    setInstanceData(decisionProfileId, {
       name: debouncedValues.processName,
       description: debouncedValues.description,
       config: {
@@ -98,25 +98,35 @@ function AutoSaveHandler({
     });
 
     // Mark as saved with timestamp
-    markSaved(decisionId);
+    markSaved(decisionProfileId);
 
     // TODO: Add API mutation here once storage location is decided
-  }, [debouncedValues, decisionId, setInstanceData, setSaveStatus, markSaved]);
+  }, [
+    debouncedValues,
+    decisionProfileId,
+    setInstanceData,
+    setSaveStatus,
+    markSaved,
+  ]);
 
   return null;
 }
 
 // Form component - only rendered after Zustand hydration is complete
 export function OverviewSectionForm({
-  decisionId,
+  decisionProfileId,
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
 
   // Zustand store - using new instanceData structure
-  const instanceData = useProcessBuilderStore((s) => s.instances[decisionId]);
+  const instanceData = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId],
+  );
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const saveState = useProcessBuilderStore((s) => s.getSaveState(decisionId));
+  const saveState = useProcessBuilderStore((s) =>
+    s.getSaveState(decisionProfileId),
+  );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
@@ -174,7 +184,7 @@ export function OverviewSectionForm({
           children={(values) => (
             <AutoSaveHandler
               values={values as OverviewFormData}
-              decisionId={decisionId}
+              decisionProfileId={decisionProfileId}
               setInstanceData={setInstanceData}
               setSaveStatus={setSaveStatus}
               markSaved={markSaved}
