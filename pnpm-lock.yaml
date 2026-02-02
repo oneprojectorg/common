@@ -1498,6 +1498,9 @@ importers:
 
   tests/e2e:
     devDependencies:
+      '@op/common':
+        specifier: workspace:^
+        version: link:../../packages/common
       '@op/db':
         specifier: workspace:*
         version: link:../../services/db

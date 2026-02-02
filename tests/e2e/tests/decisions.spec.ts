@@ -15,41 +15,85 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from '../fixtures/index.js';
 
 /**
- * A simple test schema in the DecisionSchemaDefinition format.
- * Mirrors the testDecisionSchema from TestDecisionsDataManager.
+ * A simple voting schema for E2E tests.
+ * This mirrors the simpleVoting schema from @op/common but is self-contained
+ * to avoid ESM/CJS import issues in the E2E test environment.
  */
-const testDecisionSchema = {
-  id: 'test-schema',
+const testSimpleVotingSchema = {
+  id: 'simple',
   version: '1.0.0',
-  name: 'Test Schema',
-  description: 'A simple schema for testing',
+  name: 'Simple Voting',
+  description:
+    'Basic approval voting where members vote for multiple proposals.',
   phases: [
     {
-      id: 'initial',
-      name: 'Initial Phase',
-      description: 'The starting phase',
+      id: 'submission',
+      name: 'Proposal Submission',
+      description: 'Members submit proposals for consideration.',
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'manual' },
+        advancement: { method: 'date', endDate: '2026-01-01' },
       },
     },
     {
-      id: 'final',
-      name: 'Final Phase',
-      description: 'The ending phase',
+      id: 'review',
+      name: 'Review & Shortlist',
+      description: 'Reviewers evaluate and shortlist proposals.',
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'manual' },
+        advancement: { method: 'date', endDate: '2026-01-02' },
+      },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      description: 'Members vote on shortlisted proposals.',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: true },
+        advancement: { method: 'date', endDate: '2026-01-03' },
+      },
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      description: 'View final results and winning proposals.',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'date', endDate: '2026-01-04' },
       },
     },
   ],
 };
 
 /**
+ * Helper to create a decision process template for testing.
+ */
+async function createDecisionProcess(createdByProfileId: string) {
+  const processName = `E2E Simple Voting ${randomUUID().slice(0, 8)}`;
+
+  const [processRecord] = await db
+    .insert(decisionProcesses)
+    .values({
+      name: processName,
+      description: testSimpleVotingSchema.description,
+      processSchema: testSimpleVotingSchema,
+      createdByProfileId,
+    })
+    .returning();
+
+  if (!processRecord) {
+    throw new Error('Failed to create decision process');
+  }
+
+  return processRecord;
+}
+
+/**
  * Helper to create a decision instance with proper profile access.
- * Mirrors TestDecisionsDataManager.createInstanceForProcess but adapted for Playwright.
  */
 async function createDecisionInstance({
   processId,
@@ -64,6 +108,7 @@ async function createDecisionInstance({
 }) {
   const instanceName = `E2E Instance ${randomUUID()}`;
   const instanceSlug = `e2e-instance-${randomUUID()}`;
+  const firstPhaseId = testSimpleVotingSchema.phases[0]?.id ?? 'submission';
 
   // 1. Create a profile for the process instance with DECISION type
   const [instanceProfile] = await db
@@ -80,10 +125,9 @@ async function createDecisionInstance({
   }
 
   // 2. Create the process instance with proper instanceData structure
-  // This must match DecisionInstanceData from schemas/instanceData.ts
   const instanceData = {
-    currentPhaseId: 'initial',
-    phases: testDecisionSchema.phases.map((phase, index) => ({
+    currentPhaseId: firstPhaseId,
+    phases: testSimpleVotingSchema.phases.map((phase, index) => ({
       phaseId: phase.id,
       rules: phase.rules,
       startDate: new Date(
@@ -102,7 +146,7 @@ async function createDecisionInstance({
       processId,
       profileId: instanceProfile.id,
       instanceData,
-      currentStateId: 'initial',
+      currentStateId: firstPhaseId,
       status: ProcessStatus.PUBLISHED,
       ownerProfileId,
     })
@@ -148,25 +192,12 @@ test.describe('Decisions', () => {
 
     try {
       // 1. Create a decision process template
-      const processName = `E2E Test Process ${randomUUID()}`;
-      const [processRecord] = await db
-        .insert(decisionProcesses)
-        .values({
-          name: processName,
-          description: 'E2E test decision process',
-          processSchema: testDecisionSchema,
-          createdByProfileId: org.adminUser.profileId,
-        })
-        .returning();
-
-      if (!processRecord) {
-        throw new Error('Failed to create decision process');
-      }
-      processId = processRecord.id;
+      const process = await createDecisionProcess(org.adminUser.profileId);
+      processId = process.id;
 
       // 2. Create a decision instance with access for the authenticated user
       const instance = await createDecisionInstance({
-        processId,
+        processId: process.id,
         ownerProfileId: org.organizationProfile.id,
         authUserId: org.adminUser.authUserId,
         email: org.adminUser.email,
@@ -186,31 +217,86 @@ test.describe('Decisions', () => {
         new RegExp(`/decisions/${instance.slug}`),
       );
 
-      // 6. Check for error states - if we see a 500 error, retry the navigation
-      const has500Error = await authenticatedPage
-        .getByRole('heading', { name: '500' })
-        .isVisible()
-        .catch(() => false);
-
-      if (has500Error) {
-        // Server may have a stale cache - reload the page
-        await authenticatedPage.reload({ waitUntil: 'networkidle' });
-      }
-
-      // 7. Verify we don't see "Not Found" page
-      const notFoundText = authenticatedPage.getByText(
-        'This page could not be found',
-      );
-      await expect(notFoundText).not.toBeVisible({ timeout: 5000 });
-
-      // 8. Wait for the page to load and verify content
-      // The DecisionHeader displays the process name (instance.process?.name || instance.name)
+      // 6. Wait for the page to load and verify content
+      // The DecisionHeader displays the process name
       await expect(
-        authenticatedPage.getByRole('heading', { name: processName }),
+        authenticatedPage.getByRole('heading', { name: process.name }),
       ).toBeVisible({ timeout: 15000 });
     } finally {
       // Cleanup: delete created resources in reverse order
-      // Profile deletion cascades to process instances and profile users
+      if (createdProfileIds.length > 0) {
+        await db
+          .delete(profiles)
+          .where(inArray(profiles.id, createdProfileIds));
+      }
+      if (processId) {
+        await db
+          .delete(decisionProcesses)
+          .where(eq(decisionProcesses.id, processId));
+      }
+    }
+  });
+
+  test('can submit a proposal from decision page', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    // Track IDs for cleanup
+    const createdProfileIds: string[] = [];
+    let processId: string | undefined;
+
+    try {
+      // 1. Create a decision process template
+      const process = await createDecisionProcess(org.adminUser.profileId);
+      processId = process.id;
+
+      // 2. Create a decision instance with access for the authenticated user
+      const instance = await createDecisionInstance({
+        processId: process.id,
+        ownerProfileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      });
+      createdProfileIds.push(instance.profileId);
+
+      // 3. Give the database a moment to ensure the transaction is committed
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // 4. Navigate to the decision page
+      await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+        waitUntil: 'networkidle',
+      });
+
+      // 5. Wait for the page to load
+      await expect(
+        authenticatedPage.getByRole('heading', { name: process.name }),
+      ).toBeVisible({ timeout: 15000 });
+
+      // 6. Click the "Submit a proposal" button
+      const submitButton = authenticatedPage.getByRole('button', {
+        name: 'Submit a proposal',
+      });
+      await expect(submitButton).toBeVisible({ timeout: 5000 });
+      await submitButton.click();
+
+      // 7. Wait for navigation to the proposal edit page
+      // The URL pattern is /decisions/{slug}/proposal/{profileId}/edit
+      await expect(authenticatedPage).toHaveURL(
+        new RegExp(`/decisions/${instance.slug}/proposal/[^/]+/edit`),
+        { timeout: 15000 },
+      );
+
+      // 8. Verify we're on the proposal editor page
+      // The ProposalEditor shows "Untitled Proposal" heading and has a "Submit Proposal" button
+      await expect(
+        authenticatedPage.getByText('Untitled Proposal'),
+      ).toBeVisible({ timeout: 10000 });
+
+      await expect(
+        authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
+      ).toBeVisible({ timeout: 5000 });
+    } finally {
+      // Cleanup: delete created resources in reverse order
       if (createdProfileIds.length > 0) {
         await db
           .delete(profiles)
