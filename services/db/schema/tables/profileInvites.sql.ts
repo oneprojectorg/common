@@ -9,6 +9,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { accessRoles } from './access.sql';
 import { entityTypeEnum } from './entities.sql';
