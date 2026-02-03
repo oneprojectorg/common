@@ -2,7 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
-import { LuFile, LuX } from 'react-icons/lu';
+import { LuFileText, LuX } from 'react-icons/lu';
 
 export interface AttachmentListItem {
   id: string;
@@ -31,11 +31,10 @@ export function ProposalAttachmentList({
       {files.map((file) => (
         <div
           key={file.id}
-          className="flex items-center gap-4 rounded-xl border border-neutral-gray2 bg-white px-4 py-3"
+          className="flex items-center gap-4 rounded-lg border border-neutral-gray1 bg-white p-4"
         >
-          {/* File icon */}
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-neutral-gray1">
-            <LuFile className="size-5 text-neutral-gray4" />
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-tealWhite">
+            <LuFileText className="size-5 text-neutral-gray4" />
           </div>
 
           {/* File info */}
