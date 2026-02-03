@@ -443,4 +443,67 @@ describe.concurrent('getProposal', () => {
       customLegacyField: 'preserved', // looseObject preserves extra fields
     });
   });
+
+  it('should return proposal with attachments when attachments exist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a proposal
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Proposal With Attachments',
+      },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Upload an attachment to the proposal
+    // Using a minimal valid base64 PNG (1x1 transparent pixel)
+    const minimalPngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+    const uploadResult = await caller.decision.uploadProposalAttachment({
+      file: minimalPngBase64,
+      fileName: 'test-attachment.png',
+      mimeType: 'image/png',
+      proposalId: proposal.id,
+    });
+
+    expect(uploadResult.id).toBeDefined();
+    expect(uploadResult.fileName).toBe('test-attachment.png');
+
+    // Fetch the proposal and verify attachments are included
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.attachments).toBeDefined();
+    expect(result.attachments).toHaveLength(1);
+
+    const [attachment] = result.attachments ?? [];
+    expect(attachment).toBeDefined();
+    expect(attachment?.attachmentId).toBe(uploadResult.id);
+    expect(attachment?.proposalId).toBe(proposal.id);
+    expect(attachment?.attachment).toBeDefined();
+    expect(attachment?.attachment?.fileName).toBe('test-attachment.png');
+    expect(attachment?.attachment?.mimeType).toBe('image/png');
+    // Signed URL should be present
+    expect(attachment?.attachment?.url).toBeDefined();
+    expect(attachment?.attachment?.url).toContain('http');
+  });
 });

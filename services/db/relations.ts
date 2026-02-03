@@ -38,6 +38,45 @@ export const relations = defineRelations(schema, (r) => ({
       alias: 'proposal_profile',
       optional: false,
     }),
+    attachments: r.many.proposalAttachments({
+      from: r.proposals.id,
+      to: r.proposalAttachments.proposalId,
+    }),
+  },
+
+  /**
+   * Proposal Attachment relations (join table)
+   *
+   * Links proposals to their attachments with uploader info.
+   */
+  proposalAttachments: {
+    proposal: r.one.proposals({
+      from: r.proposalAttachments.proposalId,
+      to: r.proposals.id,
+      optional: false,
+    }),
+    attachment: r.one.attachments({
+      from: r.proposalAttachments.attachmentId,
+      to: r.attachments.id,
+      optional: false,
+    }),
+    uploader: r.one.profiles({
+      from: r.proposalAttachments.uploadedBy,
+      to: r.profiles.id,
+      alias: 'proposalAttachment_uploader',
+      optional: false,
+    }),
+  },
+
+  /**
+   * Attachment relations
+   */
+  attachments: {
+    storageObject: r.one.objectsInStorage({
+      from: r.attachments.storageObjectId,
+      to: r.objectsInStorage.id,
+      optional: false,
+    }),
   },
 
   /**

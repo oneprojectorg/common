@@ -1,10 +1,5 @@
 import { and, count, db, eq } from '@op/db/client';
-import type {
-  ObjectsInStorage,
-  ProcessInstance,
-  Profile,
-  Proposal,
-} from '@op/db/schema';
+import type { ProcessInstance, Proposal } from '@op/db/schema';
 import {
   ProfileRelationshipType,
   organizations,
@@ -14,16 +9,14 @@ import {
   profileRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { createServerClient } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import {
-  type ProposalDocumentContent,
-  getProposalDocumentsContent,
-} from './getProposalDocumentsContent';
-import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { parseProposalData } from './proposalDataSchema';
 
 export const getProposal = async ({
   profileId,
@@ -31,18 +24,7 @@ export const getProposal = async ({
 }: {
   profileId: string;
   user: User;
-}): Promise<
-  Omit<Proposal, 'proposalData'> & {
-    proposalData: ProposalData;
-    submittedBy: Profile & { avatarImage: ObjectsInStorage | null };
-    processInstance: ProcessInstance;
-    profile: Profile;
-    commentsCount: number;
-    likesCount: number;
-    followersCount: number;
-    documentContent: ProposalDocumentContent | undefined;
-  }
-> => {
+}) => {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
@@ -61,6 +43,16 @@ export const getProposal = async ({
         },
       },
       profile: true,
+      attachments: {
+        with: {
+          attachment: {
+            with: {
+              storageObject: true,
+            },
+          },
+          uploader: true,
+        },
+      },
     },
   });
 
@@ -123,11 +115,50 @@ export const getProposal = async ({
   // TODO: Add access control - check if user can view this proposal
   // For now, any authenticated user can view any proposal
 
+  // Generate signed URLs for attachments
+  let attachmentsWithUrls = proposal.attachments ?? [];
+
+  if (attachmentsWithUrls.length > 0) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
+
+    if (supabaseUrl && serviceRoleKey) {
+      const supabase = createServerClient(supabaseUrl, serviceRoleKey, {
+        cookieOptions: {},
+        cookies: {
+          getAll: async () => [],
+          setAll: async () => {},
+        },
+      });
+
+      attachmentsWithUrls = await Promise.all(
+        attachmentsWithUrls.map(async (pa) => {
+          const storagePath = pa.attachment?.storageObject?.name;
+          if (!storagePath) {
+            return pa;
+          }
+
+          const { data } = await supabase.storage
+            .from('assets')
+            .createSignedUrl(storagePath, 60 * 60 * 24);
+
+          return {
+            ...pa,
+            attachment: pa.attachment
+              ? { ...pa.attachment, url: data?.signedUrl }
+              : pa.attachment,
+          };
+        }),
+      );
+    }
+  }
+
   return {
     ...proposal,
     proposalData: parseProposalData(proposal.proposalData),
     ...engagementCounts,
     documentContent: documentContentMap.get(proposal.id),
+    attachments: attachmentsWithUrls,
   };
 };
 
