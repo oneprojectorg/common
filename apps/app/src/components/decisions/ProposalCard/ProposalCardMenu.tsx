@@ -5,15 +5,18 @@ import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import { parseProposalData } from '@op/common/client';
 import { match } from '@op/core';
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
-import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
+import { IconButton } from '@op/ui/IconButton';
+import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
+import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { LuCheck, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
+import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,6 +33,8 @@ export function ProposalCardMenu({
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
+  const [isMenuSheetOpen, setIsMenuSheetOpen] = useState(false);
 
   const updateStatusMutation = trpc.decision.updateProposal.useMutation({
     onMutate: async (variables) => {
@@ -197,65 +202,141 @@ export function ProposalCardMenu({
     deleteProposalMutation.isPending ||
     updateVisibilityMutation.isPending;
 
+  const getMenuItems = () => {
+    const items: Array<{
+      key: string;
+      icon: React.ReactNode;
+      label: string;
+      onAction: () => void;
+      isDisabled?: boolean;
+      isDestructive?: boolean;
+    }> = [];
+
+    // Admin actions (shortlist, reject, hide) - not for drafts
+    if (canManage && proposal.status !== ProposalStatus.DRAFT) {
+      items.push({
+        key: 'approve',
+        icon: <LuCheck className="size-5" />,
+        label: t('Shortlist for voting'),
+        onAction: () => {
+          handleApprove();
+          setIsMenuSheetOpen(false);
+        },
+        isDisabled: isLoading || proposal.status === ProposalStatus.APPROVED,
+      });
+      items.push({
+        key: 'reject',
+        icon: <LuX className="size-5" />,
+        label: t('Reject from shortlist'),
+        onAction: () => {
+          handleReject();
+          setIsMenuSheetOpen(false);
+        },
+        isDisabled: isLoading || proposal.status === ProposalStatus.REJECTED,
+      });
+      items.push({
+        key: 'visibility',
+        icon: isHidden ? (
+          <LuEye className="size-5" />
+        ) : (
+          <LuEyeOff className="size-5" />
+        ),
+        label: isHidden ? t('Unhide proposal') : t('Hide proposal'),
+        onAction: () => {
+          handleToggleVisibility();
+          setIsMenuSheetOpen(false);
+        },
+        isDisabled: isLoading,
+      });
+    }
+
+    // Delete action for own proposals (including drafts)
+    if (proposal.isEditable) {
+      items.push({
+        key: 'delete',
+        icon: <Trash2 className="size-5" />,
+        label: t('Delete'),
+        onAction: () => {
+          setIsMenuSheetOpen(false);
+          setIsDeleteModalOpen(true);
+        },
+        isDisabled: isLoading,
+        isDestructive: true,
+      });
+    }
+
+    return items;
+  };
+
+  const renderMenuItems = (forMobile: boolean) => {
+    const items = getMenuItems();
+
+    if (forMobile) {
+      return items.map((item, index) => (
+        <MenuItem
+          key={item.key}
+          onAction={item.onAction}
+          className={`rounded-none px-6 py-4 ${item.isDestructive ? 'text-functional-red' : ''} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
+          isDisabled={item.isDisabled}
+        >
+          {item.icon}
+          {item.label}
+        </MenuItem>
+      ));
+    }
+
+    return items.map((item) => (
+      <MenuItem
+        key={item.key}
+        onAction={item.onAction}
+        className={`min-w-48 py-2 ${item.isDestructive ? 'text-functional-red' : ''}`}
+        isDisabled={item.isDisabled}
+      >
+        {item.icon}
+        {item.label}
+      </MenuItem>
+    ));
+  };
+
+  const menuTriggerButton = (
+    <IconButton
+      variant="ghost"
+      size="small"
+      className="aspect-square aria-expanded:bg-neutral-gray1"
+      onPress={isMobile ? () => setIsMenuSheetOpen(true) : undefined}
+    >
+      <LuEllipsis className="size-4" />
+    </IconButton>
+  );
+
   return (
     <>
-      <OptionMenu>
-        <Menu className="p-2">
-          {/* Admin actions (shortlist, reject, hide) - not for drafts */}
-          {canManage && proposal.status !== ProposalStatus.DRAFT && (
-            <>
-              <MenuItem
-                key="approve"
-                onAction={handleApprove}
-                className="min-w-48 py-2"
-                isDisabled={
-                  isLoading || proposal.status === ProposalStatus.APPROVED
-                }
-              >
-                <LuCheck className="size-4" />
-                {t('Shortlist for voting')}
-              </MenuItem>
-              <MenuItem
-                key="reject"
-                onAction={handleReject}
-                className="min-w-48 py-2"
-                isDisabled={
-                  isLoading || proposal.status === ProposalStatus.REJECTED
-                }
-              >
-                <LuX className="size-4" />
-                {t('Reject from shortlist')}
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem
-                key="visibility"
-                onAction={handleToggleVisibility}
-                className="min-w-48 py-2"
-                isDisabled={isLoading}
-              >
-                {isHidden ? (
-                  <LuEye className="size-4" />
-                ) : (
-                  <LuEyeOff className="size-4" />
-                )}
-                {isHidden ? t('Unhide proposal') : t('Hide proposal')}
-              </MenuItem>
-            </>
-          )}
-          {/* Delete action for own proposals (including drafts) */}
-          {proposal.isEditable && (
-            <MenuItem
-              key="delete"
-              onAction={() => setIsDeleteModalOpen(true)}
-              className="py-2 text-functional-red"
-              isDisabled={isLoading}
-            >
-              <Trash2 className="size-4" />
-              {t('Delete')}
-            </MenuItem>
-          )}
-        </Menu>
-      </OptionMenu>
+      {isMobile ? (
+        <>
+          {menuTriggerButton}
+          <Modal
+            isOpen={isMenuSheetOpen}
+            onOpenChange={setIsMenuSheetOpen}
+            isDismissable={true}
+            isKeyboardDismissDisabled={false}
+            overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
+            className="m-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+          >
+            <ModalBody className="pb-safe p-0">
+              <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
+                {renderMenuItems(true)}
+              </Menu>
+            </ModalBody>
+          </Modal>
+        </>
+      ) : (
+        <MenuTrigger>
+          {menuTriggerButton}
+          <Popover placement="bottom end">
+            <Menu className="p-2">{renderMenuItems(false)}</Menu>
+          </Popover>
+        </MenuTrigger>
+      )}
       {proposal.isEditable && (
         <DialogTrigger
           isOpen={isDeleteModalOpen}

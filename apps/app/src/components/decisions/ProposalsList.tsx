@@ -10,7 +10,6 @@ import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -33,6 +32,7 @@ import {
   ProposalCardOwnerActions,
   ProposalCardPreview,
 } from './ProposalCard';
+import { ResponsiveSelect } from './ResponsiveSelect';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
@@ -597,68 +597,65 @@ export const ProposalsList = ({
           </span>
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          <Select
-            size="small"
-            className="min-w-36"
+          <ResponsiveSelect
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {
-              const newKey = key as ProposalFilter;
-              // If selecting "My proposals" but no current profile, fallback to "all"
-              if (newKey === 'my' && !currentProfileId) {
+              // If selecting "My proposals" but no current profile, ignore
+              if (key === 'my' && !currentProfileId) {
                 return;
               }
-              setProposalFilter(newKey);
+              setProposalFilter(key);
             }}
-          >
-            <SelectItem id="all">{t('All proposals')}</SelectItem>
-            <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
-            <SelectItem id="my" isDisabled={!currentProfileId}>
-              {t('My proposals')}
-            </SelectItem>
-            {hasVoted && (
-              <SelectItem id="my-ballot">{t('My ballot')}</SelectItem>
-            )}
-          </Select>
-          <Select
+            aria-label={t('Filter proposals')}
+            items={[
+              { id: 'all' as ProposalFilter, label: t('All proposals') },
+              {
+                id: 'my' as ProposalFilter,
+                label: t('My proposals'),
+                isDisabled: !currentProfileId,
+              },
+              {
+                id: 'shortlisted' as ProposalFilter,
+                label: t('Shortlisted proposals'),
+              },
+              ...(hasVoted
+                ? [
+                    {
+                      id: 'my-ballot' as ProposalFilter,
+                      label: t('My ballot'),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          <ResponsiveSelect
             selectedKey={selectedCategory}
-            size="small"
-            className="min-w-36"
-            onSelectionChange={(key) => {
-              const category = String(key);
+            onSelectionChange={(category) => {
               setSelectedCategory(category);
               updateURLParams({ category });
             }}
             aria-label={t('Filter proposals by category')}
-          >
-            <SelectItem
-              id="all-categories"
-              aria-label={t('Show all categories')}
-            >
-              {t('All categories')}
-            </SelectItem>
-            {categories.map((category) => (
-              <SelectItem
-                key={category.id}
-                id={category.id}
-                aria-label={`Filter by ${category.name} category`}
-              >
-                {category.name}
-              </SelectItem>
-            ))}
-          </Select>
-          <Select
+            items={[
+              { id: 'all-categories', label: t('All categories') },
+              ...categories.map((category) => ({
+                id: category.id,
+                label: category.name,
+              })),
+            ]}
+          />
+          <ResponsiveSelect
             selectedKey={sortOrder}
-            size="small"
-            className="min-w-32"
-            onSelectionChange={(key) => {
-              const sort = String(key);
+            onSelectionChange={(sort) => {
               setSortOrder(sort);
               updateURLParams({ sort });
             }}
-          >
-            <SelectItem id="newest">{t('Newest First')}</SelectItem>
-            <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
-          </Select>
+            aria-label={t('Sort proposals')}
+            className="min-w-32"
+            items={[
+              { id: 'newest', label: t('Newest First') },
+              { id: 'oldest', label: t('Oldest First') },
+            ]}
+          />
           {canManageProposals ? (
             isDownloadReady && downloadUrl ? (
               <ButtonLink

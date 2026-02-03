@@ -122,17 +122,29 @@ export const Input = ({
   ref,
   icon,
   size,
+  className,
   ...props
-}: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+}: InputWithVariantsProps & {
+  ref?: React.RefObject<HTMLInputElement>;
+  className?: string;
+}) => {
   if (icon) {
-    return <InputWithIcon icon={icon} ref={ref} size={size} {...props} />;
+    return (
+      <InputWithIcon
+        icon={icon}
+        ref={ref}
+        size={size}
+        className={className}
+        {...props}
+      />
+    );
   }
 
   return (
     <RACInput
       ref={ref}
       {...props}
-      className={inputStyles({ ...props, size } as InputVariantsProps)}
+      className={inputStyles({ ...props, size, className })}
     />
   );
 };
@@ -140,8 +152,12 @@ export const Input = ({
 export const InputWithIcon = ({
   ref,
   size,
+  className,
   ...props
-}: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+}: InputWithVariantsProps & {
+  ref?: React.RefObject<HTMLInputElement>;
+  className?: string;
+}) => {
   return (
     <span className="relative w-full">
       <RACInput
@@ -151,7 +167,8 @@ export const InputWithIcon = ({
           ...props,
           size,
           hasIcon: true,
-        } as InputVariantsProps)}
+          className,
+        })}
       />
       <span className="absolute top-1/2 left-3 -translate-y-1/2">
         {props.icon}
