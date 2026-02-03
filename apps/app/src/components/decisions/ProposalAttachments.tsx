@@ -1,7 +1,9 @@
 'use client';
 
-import { useProposalFileUpload } from '@/hooks/useProposalFileUpload';
+import { trpc } from '@op/api/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
+import { toast } from '@op/ui/Toast';
+import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -19,46 +21,101 @@ const ACCEPTED_TYPES = [
 
 const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.xlsx'];
 
+/** Attachment from the API */
+export interface ProposalAttachment {
+  id: string;
+  fileName: string;
+  fileSize: number | null;
+}
+
 export interface ProposalAttachmentsProps {
-  /** The proposal ID to link attachments to (required for immediate save on drop) */
   proposalId: string;
+  /** Attachments from getProposal */
+  attachments: ProposalAttachment[];
+  /** Called after upload/delete to refetch proposal */
+  onMutate: () => void;
 }
 
 /**
- * Complete attachment section for proposals.
- * Includes file drop zone and attachment list with upload handling.
+ * Attachment section for proposals.
+ * Renders attachments from getProposal and handles upload/delete.
  */
-export function ProposalAttachments({ proposalId }: ProposalAttachmentsProps) {
+export function ProposalAttachments({
+  proposalId,
+  attachments,
+  onMutate,
+}: ProposalAttachmentsProps) {
   const t = useTranslations();
+  const [uploadingFiles, setUploadingFiles] = useState<
+    { id: string; fileName: string; fileSize: number }[]
+  >([]);
 
-  const fileUpload = useProposalFileUpload({
-    proposalId,
-    acceptedTypes: ACCEPTED_TYPES,
-    maxFiles: MAX_FILES,
-    maxSizePerFile: MAX_SIZE_BYTES,
+  const uploadMutation = trpc.decision.uploadProposalAttachment.useMutation({
+    onSuccess: () => {
+      onMutate();
+      setUploadingFiles([]);
+    },
+    onError: (err) => {
+      toast.error({ message: err.message });
+      setUploadingFiles([]);
+    },
   });
 
+  const deleteMutation = trpc.decision.deleteProposalAttachment.useMutation({
+    onSuccess: onMutate,
+    onError: (err) => toast.error({ message: err.message }),
+  });
+
+  const totalCount = attachments.length + uploadingFiles.length;
+  const canAddMore = totalCount < MAX_FILES;
+
   const handleSelectFiles = async (files: File[]) => {
-    const remainingSlots = MAX_FILES - fileUpload.filePreviews.length;
+    const remainingSlots = MAX_FILES - totalCount;
     const filesToUpload = files.slice(0, remainingSlots);
 
     for (const file of filesToUpload) {
-      try {
-        // Attachment is saved to proposal immediately on upload
-        await fileUpload.uploadFile(file);
-      } catch {
-        // Error handling is done in the hook
+      if (file.size > MAX_SIZE_BYTES) {
+        toast.error({ message: `File too large: ${file.name}` });
+        continue;
       }
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        toast.error({ message: `Unsupported file type: ${file.name}` });
+        continue;
+      }
+
+      const tempId = `uploading-${Date.now()}`;
+      setUploadingFiles((prev) => [
+        ...prev,
+        { id: tempId, fileName: file.name, fileSize: file.size },
+      ]);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadMutation.mutate({
+          file: reader.result as string,
+          fileName: file.name,
+          mimeType: file.type,
+          proposalId,
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleRemoveFile = (id: string) => {
-    // Attachment is unlinked from proposal immediately on remove
-    fileUpload.removeFile(id);
+  const handleRemove = (id: string) => {
+    deleteMutation.mutate({ attachmentId: id, proposalId });
   };
 
-  const canAddMore = fileUpload.filePreviews.length < MAX_FILES;
-  const fileCount = fileUpload.filePreviews.length;
+  // Combine existing + uploading for display
+  const allFiles = [
+    ...attachments.map((a) => ({
+      id: a.id,
+      fileName: a.fileName,
+      fileSize: a.fileSize ?? 0,
+      uploading: false,
+    })),
+    ...uploadingFiles.map((f) => ({ ...f, uploading: true })),
+  ];
 
   return (
     <div className="flex flex-col gap-4">
@@ -73,13 +130,8 @@ export function ProposalAttachments({ proposalId }: ProposalAttachmentsProps) {
         </p>
       </div>
 
-      {/* List of uploaded files */}
-      <ProposalAttachmentList
-        files={fileUpload.filePreviews}
-        onRemove={handleRemoveFile}
-      />
+      <ProposalAttachmentList files={allFiles} onRemove={handleRemove} />
 
-      {/* Drop zone */}
       <FileDropZone
         acceptedFileTypes={ACCEPTED_EXTENSIONS}
         onSelectFiles={handleSelectFiles}
@@ -87,22 +139,15 @@ export function ProposalAttachments({ proposalId }: ProposalAttachmentsProps) {
           size: MAX_SIZE_MB,
         })}
         allowsMultiple={true}
-        isDisabled={!canAddMore || fileUpload.isUploading()}
+        isDisabled={!canAddMore || uploadMutation.isPending}
       />
 
-      {/* Counter */}
       <p className="text-sm text-neutral-gray4">
         {t('{count}/{max} attachments added', {
-          count: fileCount,
+          count: totalCount,
           max: MAX_FILES,
         })}
       </p>
     </div>
   );
 }
-
-/**
- * Hook to access the attachment IDs for form submission.
- * Use this alongside ProposalAttachments when you need programmatic access.
- */
-export { useProposalFileUpload };

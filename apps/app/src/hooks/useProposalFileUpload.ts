@@ -20,6 +20,8 @@ interface UseProposalFileUploadOptions {
   acceptedTypes?: string[];
   maxFiles?: number;
   maxSizePerFile?: number;
+  /** Called after successful upload or delete */
+  onMutationSuccess?: () => void;
 }
 
 const DEFAULT_ACCEPTED_TYPES = [
@@ -40,13 +42,18 @@ export const useProposalFileUpload = (
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
     maxFiles = DEFAULT_MAX_FILES,
     maxSizePerFile = DEFAULT_MAX_SIZE,
+    onMutationSuccess,
   } = options ?? {};
 
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const uploadAttachment = trpc.decision.uploadProposalAttachment.useMutation();
-  const deleteAttachment = trpc.decision.deleteProposalAttachment.useMutation();
+  const uploadAttachment = trpc.decision.uploadProposalAttachment.useMutation({
+    onSuccess: onMutationSuccess,
+  });
+  const deleteAttachment = trpc.decision.deleteProposalAttachment.useMutation({
+    onSuccess: onMutationSuccess,
+  });
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
@@ -159,7 +166,9 @@ export const useProposalFileUpload = (
   };
 
   const clearFiles = () => {
-    filePreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    for (const preview of filePreviews) {
+      URL.revokeObjectURL(preview.url);
+    }
     setFilePreviews([]);
   };
 

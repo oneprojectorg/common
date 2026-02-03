@@ -456,7 +456,21 @@ export function ProposalEditor({
           {/* Attachments */}
           {existingProposal && (
             <div className="border-t border-neutral-gray2 pt-8">
-              <ProposalAttachments proposalId={existingProposal.id} />
+              <ProposalAttachments
+                proposalId={existingProposal.id}
+                attachments={
+                  existingProposal.attachments?.map((pa) => ({
+                    id: pa.attachmentId,
+                    fileName: pa.attachment?.fileName ?? 'Unknown',
+                    fileSize: pa.attachment?.fileSize ?? null,
+                  })) ?? []
+                }
+                onMutate={() =>
+                  utils.decision.getProposal.invalidate({
+                    profileId: existingProposal.profileId,
+                  })
+                }
+              />
             </div>
           )}
         </div>

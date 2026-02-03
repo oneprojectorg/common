@@ -1,6 +1,5 @@
 'use client';
 
-import type { FilePreview } from '@/hooks/useProposalFileUpload';
 import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
 import { LuFile, LuX } from 'react-icons/lu';
@@ -15,8 +14,15 @@ function formatFileSize(bytes: number): string {
   return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 }
 
+export interface AttachmentListItem {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  uploading: boolean;
+}
+
 export interface ProposalAttachmentListProps {
-  files: FilePreview[];
+  files: AttachmentListItem[];
   onRemove: (id: string) => void;
 }
 
