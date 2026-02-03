@@ -55,4 +55,28 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.objectsInStorage.id,
     }),
   },
+
+  /**
+   * Profile invites relations
+   *
+   * profileId, accessRoleId, and invitedBy are NOT NULL.
+   */
+  profileInvites: {
+    profile: r.one.profiles({
+      from: r.profileInvites.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    accessRole: r.one.accessRoles({
+      from: r.profileInvites.accessRoleId,
+      to: r.accessRoles.id,
+      optional: false,
+    }),
+    inviter: r.one.profiles({
+      from: r.profileInvites.invitedBy,
+      to: r.profiles.id,
+      alias: 'profileInvite_inviter',
+      optional: false,
+    }),
+  },
 }));

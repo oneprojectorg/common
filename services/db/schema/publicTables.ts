@@ -42,10 +42,7 @@ export {
 } from './tables/profileUsers.sql';
 export type { ProfileUser } from './tables/profileUsers.sql';
 
-export {
-  profileInvites,
-  profileInvitesRelations,
-} from './tables/profileInvites.sql';
+export { profileInvites } from './tables/profileInvites.sql';
 export type { ProfileInvite } from './tables/profileInvites.sql';
 
 export {
