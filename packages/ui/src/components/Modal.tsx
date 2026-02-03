@@ -71,6 +71,7 @@ export const ModalHeader = ({
           slot="title"
           className={cn(
             'w-full text-center font-serif sm:text-title-sm',
+            isDismissable && 'px-14',
             className,
           )}
         >

@@ -180,7 +180,7 @@ export const ProfileInviteModal = ({
       isDismissable
       className="sm:max-w-xl"
     >
-      <ModalHeader>
+      <ModalHeader className="truncate">
         {t('Invite members to your decision-making process')}
       </ModalHeader>
 
