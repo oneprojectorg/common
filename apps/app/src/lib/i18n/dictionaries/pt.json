@@ -519,11 +519,12 @@
   "Failed to create role": "Falha ao criar a função",
   "Failed to delete role": "Falha ao excluir a função",
   "Role name": "Nome da função",
-  "Save": "Salvar",
   "Delete role": "Excluir função",
   "No roles configured": "Nenhuma função configurada",
-  "Remove {name}": "Remover {name}",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "Tem certeza de que deseja remover {roleName} de \"{processName}\"?",
-  "Removing...": "Removendo...",
-  "Remove": "Remover"
+  "Remove": "Remover",
+  "Attachments (optional)": "Anexos (opcional)",
+  "Support your proposal with relevant documents like budgets or supporting research.": "Apoie sua proposta com documentos relevantes como orçamentos ou pesquisa de suporte.",
+  "Accepts PDF, DOCX, XLSX up to {size}MB": "Aceita PDF, DOCX, XLSX até {size}MB",
+  "{count}/{max} attachments added": "{count}/{max} anexos adicionados"
 }

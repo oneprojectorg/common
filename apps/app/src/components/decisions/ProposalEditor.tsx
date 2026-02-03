@@ -28,6 +28,7 @@ import {
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
+import { ProposalAttachments } from './ProposalAttachments';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 
@@ -86,6 +87,7 @@ export function ProposalEditor({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
   const [showBudgetInput, setShowBudgetInput] = useState(false);
+  const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [collabProvider, setCollabProvider] =
@@ -331,10 +333,13 @@ export function ProposalEditor({
         budget: budget ?? undefined,
       };
 
-      // Update existing proposal
+      // Update existing proposal with attachments
       await updateProposalMutation.mutateAsync({
         proposalId: existingProposal.id,
-        data: { proposalData },
+        data: {
+          proposalData,
+          attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
+        },
       });
 
       // If draft, also submit (transition to submitted status)
@@ -360,6 +365,7 @@ export function ProposalEditor({
     categories,
     existingProposal,
     isDraft,
+    attachmentIds,
     submitProposalMutation,
     updateProposalMutation,
   ]);
@@ -449,6 +455,11 @@ export function ProposalEditor({
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
             userName={user.profile?.name}
           />
+
+          {/* Attachments */}
+          <div className="border-t border-neutral-gray2 pt-8">
+            <ProposalAttachments onAttachmentsChange={setAttachmentIds} />
+          </div>
         </div>
       </div>
 

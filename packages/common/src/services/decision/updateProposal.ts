@@ -1,17 +1,18 @@
 import { db, eq } from '@op/db/client';
 import {
-  DecisionProcess,
-  ProcessInstance,
+  type DecisionProcess,
+  type ProcessInstance,
   ProposalStatus,
   Visibility,
   organizations,
   processInstances,
+  proposalAttachments,
   proposalCategories,
   proposals,
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import {
@@ -79,6 +80,7 @@ async function updateProposalCategoryLink(
 
 export interface UpdateProposalInput {
   proposalData?: ProposalDataInput;
+  attachmentIds?: string[];
   status?: ProposalStatus;
   visibility?: Visibility;
 }
@@ -198,8 +200,40 @@ export const updateProposal = async ({
 
     // Update category link if proposal data was updated
     if (data.proposalData) {
-      const newCategoryLabel = (data.proposalData as any)?.category;
+      const newCategoryLabel = (data.proposalData as Record<string, unknown>)
+        ?.category as string | undefined;
       await updateProposalCategoryLink(proposalId, newCategoryLabel);
+    }
+
+    // Link new attachments to proposal if provided
+    if (data.attachmentIds && data.attachmentIds.length > 0) {
+      // Get existing attachment IDs for this proposal
+      const existingAttachments = await db
+        .select({ attachmentId: proposalAttachments.attachmentId })
+        .from(proposalAttachments)
+        .where(eq(proposalAttachments.proposalId, proposalId));
+
+      const existingIds = new Set(
+        existingAttachments.map((a) => a.attachmentId),
+      );
+
+      // Filter to only new attachment IDs
+      const newAttachmentIds = data.attachmentIds.filter(
+        (id) => !existingIds.has(id),
+      );
+
+      const profileId = dbUser.currentProfileId;
+      if (newAttachmentIds.length > 0 && profileId) {
+        const proposalAttachmentValues = newAttachmentIds.map(
+          (attachmentId) => ({
+            proposalId,
+            attachmentId,
+            uploadedBy: profileId,
+          }),
+        );
+
+        await db.insert(proposalAttachments).values(proposalAttachmentValues);
+      }
     }
 
     return updatedProposal;

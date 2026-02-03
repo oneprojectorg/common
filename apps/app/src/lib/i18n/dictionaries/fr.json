@@ -519,11 +519,12 @@
   "Failed to create role": "Échec de la création du rôle",
   "Failed to delete role": "Échec de la suppression du rôle",
   "Role name": "Nom du rôle",
-  "Save": "Enregistrer",
   "Delete role": "Supprimer le rôle",
   "No roles configured": "Aucun rôle configuré",
-  "Remove {name}": "Supprimer {name}",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "Êtes-vous sûr de vouloir supprimer {roleName} de \"{processName}\" ?",
-  "Removing...": "Suppression...",
-  "Remove": "Supprimer"
+  "Remove": "Supprimer",
+  "Attachments (optional)": "Pièces jointes (facultatif)",
+  "Support your proposal with relevant documents like budgets or supporting research.": "Soutenez votre proposition avec des documents pertinents comme des budgets ou des recherches de soutien.",
+  "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepte PDF, DOCX, XLSX jusqu'à {size}Mo",
+  "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées"
 }

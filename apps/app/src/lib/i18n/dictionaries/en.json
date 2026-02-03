@@ -519,11 +519,12 @@
   "Failed to create role": "Failed to create role",
   "Failed to delete role": "Failed to delete role",
   "Role name": "Role name",
-  "Save": "Save",
   "Delete role": "Delete role",
   "No roles configured": "No roles configured",
-  "Remove {name}": "Remove {name}",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "Are you sure you want to remove {roleName} from \"{processName}\"?",
-  "Removing...": "Removing...",
-  "Remove": "Remove"
+  "Remove": "Remove",
+  "Attachments (optional)": "Attachments (optional)",
+  "Support your proposal with relevant documents like budgets or supporting research.": "Support your proposal with relevant documents like budgets or supporting research.",
+  "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepts PDF, DOCX, XLSX up to {size}MB",
+  "{count}/{max} attachments added": "{count}/{max} attachments added"
 }
