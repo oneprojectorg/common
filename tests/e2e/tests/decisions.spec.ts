@@ -1,8 +1,4 @@
-import {
-  createDecisionInstance,
-  createDecisionProcess,
-  testSimpleVotingSchema,
-} from '@op/test';
+import { createDecisionInstance, getSeededTemplate } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
 
@@ -11,19 +7,16 @@ test.describe('Decisions', () => {
     authenticatedPage,
     org,
   }) => {
-    // 1. Create a decision process template
-    const process = await createDecisionProcess({
-      createdByProfileId: org.adminUser.profileId,
-      schema: testSimpleVotingSchema,
-    });
+    // 1. Get the seeded decision process template
+    const template = await getSeededTemplate();
 
     // 2. Create a decision instance with access for the authenticated user
     const instance = await createDecisionInstance({
-      processId: process.id,
+      processId: template.id,
       ownerProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
-      schema: testSimpleVotingSchema,
+      schema: template.processSchema,
     });
 
     // 3. Give the database a moment to ensure the transaction is committed
@@ -42,7 +35,7 @@ test.describe('Decisions', () => {
     // 6. Wait for the page to load and verify content
     // The DecisionHeader displays the process name
     await expect(
-      authenticatedPage.getByRole('heading', { name: process.name }),
+      authenticatedPage.getByRole('heading', { name: template.name }),
     ).toBeVisible({ timeout: 15000 });
   });
 
@@ -50,19 +43,16 @@ test.describe('Decisions', () => {
     authenticatedPage,
     org,
   }) => {
-    // 1. Create a decision process template
-    const process = await createDecisionProcess({
-      createdByProfileId: org.adminUser.profileId,
-      schema: testSimpleVotingSchema,
-    });
+    // 1. Get the seeded decision process template
+    const template = await getSeededTemplate();
 
     // 2. Create a decision instance with access for the authenticated user
     const instance = await createDecisionInstance({
-      processId: process.id,
+      processId: template.id,
       ownerProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
-      schema: testSimpleVotingSchema,
+      schema: template.processSchema,
     });
 
     // 3. Give the database a moment to ensure the transaction is committed
@@ -75,7 +65,7 @@ test.describe('Decisions', () => {
 
     // 5. Wait for the page to load
     await expect(
-      authenticatedPage.getByRole('heading', { name: process.name }),
+      authenticatedPage.getByRole('heading', { name: template.name }),
     ).toBeVisible({ timeout: 15000 });
 
     // 6. Click the "Submit a proposal" button

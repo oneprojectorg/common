@@ -13,7 +13,10 @@ export {
 export {
   createDecisionInstance,
   createDecisionProcess,
+  getSeededTemplate,
   grantDecisionProfileAccess,
+  SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
+  SEEDED_TEMPLATE_PROFILE_SLUG,
   testMinimalSchema,
   testSimpleVotingSchema,
   type CreateDecisionInstanceOptions,

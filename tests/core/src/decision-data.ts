@@ -9,7 +9,14 @@ import {
   profiles,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+
+/** Well-known slug for the seeded decision template profile */
+export const SEEDED_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
+
+/** Well-known name for the seeded Simple Voting template */
+export const SEEDED_SIMPLE_VOTING_TEMPLATE_NAME = 'Simple Voting';
 
 /**
  * Decision schema phase definition.
@@ -340,4 +347,32 @@ export async function grantDecisionProfileAccess(
       accessRoleId: isAdmin ? ROLES.ADMIN.id : ROLES.MEMBER.id,
     });
   }
+}
+
+/**
+ * Gets the seeded Simple Voting template from the database.
+ * This template is created by seed-test.ts and should always exist in test/e2e environments.
+ */
+export async function getSeededTemplate(): Promise<{
+  id: string;
+  name: string;
+  processSchema: DecisionProcessSchema;
+}> {
+  const [template] = await db
+    .select()
+    .from(decisionProcesses)
+    .where(eq(decisionProcesses.name, SEEDED_SIMPLE_VOTING_TEMPLATE_NAME));
+
+  if (!template) {
+    throw new Error(
+      `Seeded template "${SEEDED_SIMPLE_VOTING_TEMPLATE_NAME}" not found. ` +
+        'Make sure seed-test.ts has been run.',
+    );
+  }
+
+  return {
+    id: template.id,
+    name: template.name,
+    processSchema: template.processSchema as DecisionProcessSchema,
+  };
 }
