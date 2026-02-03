@@ -21,21 +21,6 @@ const ACCEPTED_TYPES = [
 
 const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.xlsx'];
 
-/** Attachment from the API */
-export interface ProposalAttachment {
-  id: string;
-  fileName: string;
-  fileSize: number | null;
-}
-
-export interface ProposalAttachmentsProps {
-  proposalId: string;
-  /** Attachments from getProposal */
-  attachments: ProposalAttachment[];
-  /** Called after upload/delete to refetch proposal */
-  onMutate: () => void;
-}
-
 /**
  * Attachment section for proposals.
  * Renders attachments from getProposal and handles upload/delete.
@@ -44,7 +29,11 @@ export function ProposalAttachments({
   proposalId,
   attachments,
   onMutate,
-}: ProposalAttachmentsProps) {
+}: {
+  proposalId: string;
+  attachments: { id: string; fileName: string; fileSize: number | null }[];
+  onMutate: () => void;
+}) {
   const t = useTranslations();
   const [uploadingFiles, setUploadingFiles] = useState<
     { id: string; fileName: string; fileSize: number }[]
@@ -106,7 +95,6 @@ export function ProposalAttachments({
     deleteMutation.mutate({ attachmentId: id, proposalId });
   };
 
-  // Combine existing + uploading for display
   const allFiles = [
     ...attachments.map((a) => ({
       id: a.id,
@@ -138,7 +126,7 @@ export function ProposalAttachments({
         description={t('Accepts PDF, DOCX, XLSX up to {size}MB', {
           size: MAX_SIZE_MB,
         })}
-        allowsMultiple={true}
+        allowsMultiple
         isDisabled={!canAddMore || uploadMutation.isPending}
       />
 

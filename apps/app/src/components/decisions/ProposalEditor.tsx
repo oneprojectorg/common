@@ -332,7 +332,7 @@ export function ProposalEditor({
         budget: budget ?? undefined,
       };
 
-      // Update existing proposal (attachments are saved on drop, not here)
+      // Update existing proposal
       await updateProposalMutation.mutateAsync({
         proposalId: existingProposal.id,
         data: {

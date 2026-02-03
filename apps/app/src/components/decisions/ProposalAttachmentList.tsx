@@ -4,26 +4,11 @@ import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
 import { LuFile, LuX } from 'react-icons/lu';
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) {
-    return '0 Bytes';
-  }
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
-}
-
 export interface AttachmentListItem {
   id: string;
   fileName: string;
   fileSize: number;
   uploading: boolean;
-}
-
-export interface ProposalAttachmentListProps {
-  files: AttachmentListItem[];
-  onRemove: (id: string) => void;
 }
 
 /**
@@ -33,7 +18,10 @@ export interface ProposalAttachmentListProps {
 export function ProposalAttachmentList({
   files,
   onRemove,
-}: ProposalAttachmentListProps) {
+}: {
+  files: AttachmentListItem[];
+  onRemove: (id: string) => void;
+}) {
   if (files.length === 0) {
     return null;
   }
@@ -84,4 +72,14 @@ export function ProposalAttachmentList({
       ))}
     </div>
   );
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) {
+    return '0 Bytes';
+  }
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 }
