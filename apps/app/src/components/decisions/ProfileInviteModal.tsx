@@ -24,16 +24,20 @@ import {
 import { ListBox, ListBoxItem } from 'react-aria-components';
 import { createPortal } from 'react-dom';
 import { LuX } from 'react-icons/lu';
+import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { RoleSelector, RoleSelectorSkeleton } from './RoleSelector';
 
+const emailSchema = z.string().email();
+const isValidEmail = (email: string) => emailSchema.safeParse(email).success;
+
 interface SelectedItem {
   id: string;
-  profileId: string;
+  profileId?: string;
   name: string;
-  email?: string;
+  email: string;
   avatarUrl?: string;
 }
 
@@ -98,8 +102,22 @@ export const ProfileInviteModal = ({
   // Filter out already selected items
   const filteredResults = useMemo(() => {
     const selectedIds = new Set(selectedItems.map((item) => item.profileId));
-    return flattenedResults.filter((result) => !selectedIds.has(result.id));
+    const selectedEmails = new Set(selectedItems.map((item) => item.email.toLowerCase()));
+    return flattenedResults.filter(
+      (result) =>
+        !selectedIds.has(result.id) &&
+        (!result.user?.email || !selectedEmails.has(result.user.email.toLowerCase())),
+    );
   }, [flattenedResults, selectedItems]);
+
+  // Check if query is a valid email that hasn't been selected yet
+  const canAddEmail = useMemo(() => {
+    if (!isValidEmail(debouncedQuery)) {
+      return false;
+    }
+    const selectedEmails = new Set(selectedItems.map((item) => item.email.toLowerCase()));
+    return !selectedEmails.has(debouncedQuery.toLowerCase());
+  }, [debouncedQuery, selectedItems]);
 
   // Invite mutation
   const inviteMutation = trpc.profile.invite.useMutation();
@@ -108,14 +126,28 @@ export const ProfileInviteModal = ({
   const totalPeople = selectedItems.length;
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
+    if (!result.user?.email) {
+      return;
+    }
     const newItem: SelectedItem = {
       id: result.id,
       profileId: result.id,
       name: result.name,
-      email: result.user?.email ?? undefined,
+      email: result.user.email,
       avatarUrl: result.avatarImage?.name
         ? getPublicUrl(result.avatarImage.name)
         : undefined,
+    };
+
+    setSelectedItems((prev) => [...prev, newItem]);
+    setSearchQuery('');
+  };
+
+  const handleAddEmail = (email: string) => {
+    const newItem: SelectedItem = {
+      id: `email-${email}`,
+      name: email,
+      email,
     };
 
     setSelectedItems((prev) => [...prev, newItem]);
@@ -130,15 +162,7 @@ export const ProfileInviteModal = ({
   };
 
   const handleSend = () => {
-    // Get emails from selected individuals
-    const emails = selectedItems
-      .filter((item) => item.email)
-      .map((item) => item.email!);
-
-    if (emails.length === 0) {
-      toast.error({ message: t('No email addresses to invite') });
-      return;
-    }
+    const emails = selectedItems.map((item) => item.email);
 
     startTransition(async () => {
       try {
@@ -199,7 +223,7 @@ export const ProfileInviteModal = ({
         {/* Search Input */}
         <div ref={searchContainerRef}>
           <SearchField
-            placeholder={t('Search for people to invite...')}
+            placeholder={t('Search by name or email...')}
             value={searchQuery}
             onChange={setSearchQuery}
             className="w-full"
@@ -228,19 +252,33 @@ export const ProfileInviteModal = ({
                 <div className="flex items-center justify-center p-4">
                   <LoadingSpinner className="size-4" />
                 </div>
-              ) : filteredResults.length > 0 ? (
+              ) : filteredResults.length > 0 || canAddEmail ? (
                 <ListBox
                   aria-label={t('Search results')}
-                  items={filteredResults}
                   onAction={(key) => {
-                    const result = filteredResults.find((r) => r.id === key);
-                    if (result) {
-                      handleSelectItem(result);
+                    if (key === 'add-email') {
+                      handleAddEmail(debouncedQuery);
+                    } else {
+                      const result = filteredResults.find((r) => r.id === key);
+                      if (result) {
+                        handleSelectItem(result);
+                      }
                     }
                   }}
                   className="outline-none"
                 >
-                  {(result) => (
+                  {canAddEmail && (
+                    <ListBoxItem
+                      id="add-email"
+                      textValue={debouncedQuery}
+                      className="hover:bg-neutral-gray0 focus:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
+                    >
+                      <div className="text-sm">
+                        {t('Invite {email}', { email: debouncedQuery })}
+                      </div>
+                    </ListBoxItem>
+                  )}
+                  {filteredResults.map((result) => (
                     <ListBoxItem
                       key={result.id}
                       id={result.id}
@@ -269,11 +307,11 @@ export const ProfileInviteModal = ({
                         title={result.name}
                       />
                     </ListBoxItem>
-                  )}
+                  ))}
                 </ListBox>
               ) : (
                 <div className="p-4 text-center text-sm text-neutral-gray4">
-                  {t('No result')}
+                  {t('No results')}
                 </div>
               )}
             </div>,
