@@ -41,6 +41,9 @@ interface SelectedItem {
   avatarUrl?: string;
 }
 
+// Map from roleId to array of selected items for that role
+type SelectedItemsByRole = Record<string, SelectedItem[]>;
+
 export const ProfileInviteModal = ({
   profileId,
   isOpen,
@@ -52,7 +55,8 @@ export const ProfileInviteModal = ({
 }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [selectedItemsByRole, setSelectedItemsByRole] =
+    useState<SelectedItemsByRole>({});
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
@@ -63,6 +67,15 @@ export const ProfileInviteModal = ({
     left: 0,
     width: 0,
   });
+
+  // Get items for current role
+  const currentRoleItems = selectedItemsByRole[selectedRoleId] ?? [];
+
+  // Get all selected items across all roles (for filtering duplicates)
+  const allSelectedItems = useMemo(
+    () => Object.values(selectedItemsByRole).flat(),
+    [selectedItemsByRole],
+  );
 
   // Update dropdown position when search query changes
   useEffect(() => {
@@ -99,11 +112,11 @@ export const ProfileInviteModal = ({
       .sort((a, b) => b.rank - a.rank);
   }, [searchResults]);
 
-  // Filter out already selected items
+  // Filter out already selected items (across all roles)
   const filteredResults = useMemo(() => {
-    const selectedIds = new Set(selectedItems.map((item) => item.profileId));
+    const selectedIds = new Set(allSelectedItems.map((item) => item.profileId));
     const selectedEmails = new Set(
-      selectedItems.map((item) => item.email.toLowerCase()),
+      allSelectedItems.map((item) => item.email.toLowerCase()),
     );
     return flattenedResults.filter(
       (result) =>
@@ -111,27 +124,36 @@ export const ProfileInviteModal = ({
         (!result.user?.email ||
           !selectedEmails.has(result.user.email.toLowerCase())),
     );
-  }, [flattenedResults, selectedItems]);
+  }, [flattenedResults, allSelectedItems]);
 
-  // Check if query is a valid email that hasn't been selected yet
+  // Check if query is a valid email that hasn't been selected yet (across all roles)
   const canAddEmail = useMemo(() => {
     if (!isValidEmail(debouncedQuery)) {
       return false;
     }
     const selectedEmails = new Set(
-      selectedItems.map((item) => item.email.toLowerCase()),
+      allSelectedItems.map((item) => item.email.toLowerCase()),
     );
     return !selectedEmails.has(debouncedQuery.toLowerCase());
-  }, [debouncedQuery, selectedItems]);
+  }, [debouncedQuery, allSelectedItems]);
 
   // Invite mutation
   const inviteMutation = trpc.profile.invite.useMutation();
 
-  // Calculate total people count (each selection counts as 1)
-  const totalPeople = selectedItems.length;
+  // Calculate total people count across all roles
+  const totalPeople = allSelectedItems.length;
+
+  // Calculate counts by role for the tab badges
+  const countsByRole = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const [roleId, items] of Object.entries(selectedItemsByRole)) {
+      counts[roleId] = items.length;
+    }
+    return counts;
+  }, [selectedItemsByRole]);
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
-    if (!result.user?.email) {
+    if (!result.user?.email || !selectedRoleId) {
       return;
     }
     const newItem: SelectedItem = {
@@ -144,41 +166,57 @@ export const ProfileInviteModal = ({
         : undefined,
     };
 
-    setSelectedItems((prev) => [...prev, newItem]);
+    setSelectedItemsByRole((prev) => ({
+      ...prev,
+      [selectedRoleId]: [...(prev[selectedRoleId] ?? []), newItem],
+    }));
     setSearchQuery('');
   };
 
   const handleAddEmail = (email: string) => {
+    if (!selectedRoleId) {
+      return;
+    }
     const newItem: SelectedItem = {
       id: `email-${email}`,
       name: email,
       email,
     };
 
-    setSelectedItems((prev) => [...prev, newItem]);
+    setSelectedItemsByRole((prev) => ({
+      ...prev,
+      [selectedRoleId]: [...(prev[selectedRoleId] ?? []), newItem],
+    }));
     setSearchQuery('');
   };
 
-  const handleRemoveItem = (keys: Set<Key>) => {
-    const keysArray = Array.from(keys);
-    setSelectedItems((prev) =>
-      prev.filter((item) => !keysArray.includes(item.id)),
-    );
+  const handleRemoveItem = (itemId: string) => {
+    setSelectedItemsByRole((prev) => ({
+      ...prev,
+      [selectedRoleId]: (prev[selectedRoleId] ?? []).filter(
+        (item) => item.id !== itemId,
+      ),
+    }));
   };
 
   const handleSend = () => {
-    const emails = selectedItems.map((item) => item.email);
-
     startTransition(async () => {
       try {
-        await inviteMutation.mutateAsync({
-          emails,
-          roleId: selectedRoleId,
-          profileId,
-        });
+        // Send invites for each role that has selected items
+        const invitePromises = Object.entries(selectedItemsByRole)
+          .filter(([, items]) => items.length > 0)
+          .map(([roleId, items]) =>
+            inviteMutation.mutateAsync({
+              emails: items.map((item) => item.email),
+              roleId,
+              profileId,
+            }),
+          );
+
+        await Promise.all(invitePromises);
 
         toast.success({ message: t('Invite sent successfully') });
-        setSelectedItems([]);
+        setSelectedItemsByRole({});
         setSearchQuery('');
         onOpenChange(false);
 
@@ -193,7 +231,7 @@ export const ProfileInviteModal = ({
   };
 
   const handleClose = () => {
-    setSelectedItems([]);
+    setSelectedItemsByRole({});
     setSearchQuery('');
     onOpenChange(false);
   };
@@ -220,7 +258,7 @@ export const ProfileInviteModal = ({
             profileId={profileId}
             selectedRoleId={selectedRoleId}
             onSelectionChange={handleTabChange}
-            selectedCount={selectedItems.length}
+            countsByRole={countsByRole}
             onRolesLoaded={setSelectedRoleId}
           />
         </Suspense>
@@ -323,10 +361,10 @@ export const ProfileInviteModal = ({
             document.body,
           )}
 
-        {/* Selected Items */}
-        {selectedItems.length > 0 && (
+        {/* Selected Items for Current Role */}
+        {currentRoleItems.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {selectedItems.map((item) => (
+            {currentRoleItems.map((item) => (
               <div
                 key={item.id}
                 className="flex h-14 items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
@@ -349,7 +387,7 @@ export const ProfileInviteModal = ({
                 />
                 <button
                   type="button"
-                  onClick={() => handleRemoveItem(new Set([item.id]))}
+                  onClick={() => handleRemoveItem(item.id)}
                   className="rounded-full p-1 hover:bg-neutral-gray1"
                   aria-label={`Remove ${item.name}`}
                 >
@@ -372,7 +410,7 @@ export const ProfileInviteModal = ({
         <Button
           color="primary"
           onPress={handleSend}
-          isDisabled={selectedItems.length === 0 || !selectedRoleId}
+          isDisabled={allSelectedItems.length === 0}
           isPending={isSubmitting}
         >
           {isSubmitting ? t('Sending...') : t('Send')}

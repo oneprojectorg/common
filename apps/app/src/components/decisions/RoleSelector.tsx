@@ -11,13 +11,13 @@ export const RoleSelector = ({
   profileId,
   selectedRoleId,
   onSelectionChange,
-  selectedCount,
+  countsByRole,
   onRolesLoaded,
 }: {
   profileId: string;
   selectedRoleId: string;
   onSelectionChange: (key: Key) => void;
-  selectedCount: number;
+  countsByRole: Record<string, number>;
   onRolesLoaded: (firstRoleId: string) => void;
 }) => {
   const [[globalRolesData, profileRolesData]] = trpc.useSuspenseQueries((t) => [
@@ -44,16 +44,21 @@ export const RoleSelector = ({
   return (
     <Tabs selectedKey={selectedRoleId} onSelectionChange={onSelectionChange}>
       <TabList>
-        {roles.map((role) => (
-          <Tab key={role.id} id={role.id}>
-            {role.name}
-            {selectedCount > 0 && selectedRoleId === role.id ? (
-              <span className="ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-teal px-1 text-xs text-neutral-offWhite">
-                {selectedCount}
+        {roles.map((role) => {
+          const count = countsByRole[role.id] ?? 0;
+          return (
+            <Tab key={role.id} id={role.id}>
+              <span className="flex items-center gap-1">
+                {role.name}
+                {count > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-teal px-1 text-xs text-neutral-offWhite">
+                    {count}
+                  </span>
+                )}
               </span>
-            ) : null}
-          </Tab>
-        ))}
+            </Tab>
+          );
+        })}
       </TabList>
     </Tabs>
   );
