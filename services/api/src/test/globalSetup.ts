@@ -64,6 +64,36 @@ export async function teardown() {
     casing: 'snake_case',
   });
 
+  // Seeded tables that will be "deseeded" - only the exact seeded rows should exist
+  // Storage tables (buckets, objects) are managed by Supabase and persist between tests
+  const seededTables = new Set([
+    'access_roles',
+    'access_role_permissions_on_access_zones',
+    'access_zones',
+    'buckets', // Supabase storage - created by seed
+    'objects', // Supabase storage - files uploaded during tests
+  ]);
+
+  // Get all table objects from schema (filter for actual PgTable instances)
+  const tables = Object.entries(schema).filter(
+    (entry): entry is [string, PgTable] =>
+      entry[1] instanceof PgTable && !seededTables.has(getTableName(entry[1])),
+  );
+
+  const errors: string[] = [];
+
+  // Check non-seeded tables are empty
+  for (const [, table] of tables) {
+    const tableName = getTableName(table);
+    const [result] = await db.select({ count: count() }).from(table);
+    const tableCount = result?.count ?? 0;
+
+    if (tableCount !== 0) {
+      errors.push(`Expected 0 rows in "${tableName}" but found ${tableCount}`);
+    }
+  }
+
+  // Verify seeded tables only contain expected seed data
   const accessZoneIds = ACCESS_ZONES.map((z) => z.id);
   const accessRoleIds = ACCESS_ROLES.map((r) => r.id);
   const DECISION_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
@@ -106,23 +136,6 @@ export async function teardown() {
     .where(inArray(schema.accessZones.id, accessZoneIds));
 
   console.log('✅ Deseeding completed');
-
-  // Now verify all tables are empty
-  const tables = Object.entries(schema).filter(
-    (entry): entry is [string, PgTable] => entry[1] instanceof PgTable,
-  );
-
-  const errors: string[] = [];
-
-  for (const [, table] of tables) {
-    const tableName = getTableName(table);
-    const [result] = await db.select({ count: count() }).from(table);
-    const tableCount = result?.count ?? 0;
-
-    if (tableCount !== 0) {
-      errors.push(`Expected 0 rows in "${tableName}" but found ${tableCount}`);
-    }
-  }
 
   if (errors.length > 0) {
     throw new Error(
