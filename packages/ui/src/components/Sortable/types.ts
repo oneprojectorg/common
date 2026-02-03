@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 
-export interface ReorderableItem {
+export interface SortableItem {
   id: string | number;
 }
 
-export interface ReorderableItemControls {
+export interface SortableItemControls {
   /** Props to spread on a drag handle element (use with DragHandle component) */
   dragHandleProps: {
     ref: (node: HTMLElement | null) => void;
@@ -23,7 +23,7 @@ export interface ReorderableItemControls {
   index: number;
 }
 
-export interface ReorderableProps<T extends ReorderableItem> {
+export interface SortableProps<T extends SortableItem> {
   /** Array of items to render and reorder */
   items: T[];
   /** Callback when items are reordered */
@@ -31,7 +31,7 @@ export interface ReorderableProps<T extends ReorderableItem> {
   /** How drag is triggered: 'handle' requires a drag handle, 'item' makes entire item draggable */
   dragTrigger?: 'handle' | 'item';
   /** Render function for each item */
-  children: (item: T, controls: ReorderableItemControls) => ReactNode;
+  children: (item: T, controls: SortableItemControls) => ReactNode;
   /** Optional custom drag preview */
   renderDragPreview?: (items: T[]) => ReactNode;
   /** Space between items in pixels */

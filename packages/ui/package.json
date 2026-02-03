@@ -67,7 +67,7 @@
     "./lib/primitive": "./src/lib/primitive.ts",
     "./hooks/use-media-query": "./src/hooks/use-media-query.ts",
     "./ui/table": "./src/components/ui/table.tsx",
-    "./Reorderable": "./src/components/Reorderable/index.ts"
+    "./Sortable": "./src/components/Sortable/index.ts"
   },
   "module": "./src/index.ts",
   "scripts": {

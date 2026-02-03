@@ -26,12 +26,12 @@ import { createPortal } from 'react-dom';
 import { tv } from 'tailwind-variants';
 
 import type {
-  ReorderableItem,
-  ReorderableItemControls,
-  ReorderableProps,
+  SortableItem,
+  SortableItemControls,
+  SortableProps,
 } from './types';
 
-const reorderableStyles = tv({
+const sortableStyles = tv({
   slots: {
     container: 'flex flex-col outline-none',
     item: 'relative outline-none',
@@ -55,11 +55,11 @@ const reorderableStyles = tv({
   },
 });
 
-interface SortableItemProps<T extends ReorderableItem> {
+interface SortableItemWrapperProps<T extends SortableItem> {
   item: T;
   index: number;
   dragTrigger: 'handle' | 'item';
-  children: (item: T, controls: ReorderableItemControls) => React.ReactNode;
+  children: (item: T, controls: SortableItemControls) => React.ReactNode;
   itemClassName?: string;
   getItemLabel?: (item: T) => string;
   useDragOverlay: boolean;
@@ -67,7 +67,7 @@ interface SortableItemProps<T extends ReorderableItem> {
   dropPlaceholderClassName?: string;
 }
 
-function SortableItem<T extends ReorderableItem>({
+function SortableItemWrapper<T extends SortableItem>({
   item,
   index,
   dragTrigger,
@@ -77,8 +77,8 @@ function SortableItem<T extends ReorderableItem>({
   useDragOverlay,
   showDropPlaceholder,
   dropPlaceholderClassName,
-}: SortableItemProps<T>) {
-  const styles = reorderableStyles();
+}: SortableItemWrapperProps<T>) {
+  const styles = sortableStyles();
   const {
     attributes,
     listeners,
@@ -120,7 +120,7 @@ function SortableItem<T extends ReorderableItem>({
         }
       : {};
 
-  const controls: ReorderableItemControls = {
+  const controls: SortableItemControls = {
     dragHandleProps,
     isDragging,
     isDropTarget: isOver,
@@ -163,7 +163,7 @@ function SortableItem<T extends ReorderableItem>({
   );
 }
 
-export function Reorderable<T extends ReorderableItem>({
+export function Sortable<T extends SortableItem>({
   items,
   onChange,
   dragTrigger = 'handle',
@@ -173,11 +173,11 @@ export function Reorderable<T extends ReorderableItem>({
   className,
   itemClassName,
   getItemLabel,
-  'aria-label': ariaLabel = 'Reorderable list',
+  'aria-label': ariaLabel = 'Sortable list',
   showDropPlaceholder = false,
   dropPlaceholderClassName,
-}: ReorderableProps<T>) {
-  const styles = reorderableStyles();
+}: SortableProps<T>) {
+  const styles = sortableStyles();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
   const sensors = useSensors(
@@ -232,7 +232,7 @@ export function Reorderable<T extends ReorderableItem>({
           style={{ gap: spaceBetweenItems }}
         >
           {items.map((item, index) => (
-            <SortableItem
+            <SortableItemWrapper
               key={String(item.id)}
               item={item}
               index={index}
@@ -244,7 +244,7 @@ export function Reorderable<T extends ReorderableItem>({
               dropPlaceholderClassName={dropPlaceholderClassName}
             >
               {children}
-            </SortableItem>
+            </SortableItemWrapper>
           ))}
         </div>
       </SortableContext>

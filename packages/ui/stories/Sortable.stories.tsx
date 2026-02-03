@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
-import { DragHandle, Reorderable } from '../src/components/Reorderable';
+import { DragHandle, Sortable } from '../src/components/Sortable';
 import { cn } from '../src/lib/utils';
 
 export default {
-  title: 'Reorderable',
-  component: Reorderable,
+  title: 'Sortable',
+  component: Sortable,
   parameters: {
     layout: 'centered',
   },
@@ -47,7 +47,7 @@ export const WithDragHandle = () => {
         The drag handle provides keyboard and screen reader accessibility. Mouse
         users can drag the entire row.
       </p>
-      <Reorderable
+      <Sortable
         items={tasks}
         onChange={setTasks}
         dragTrigger="handle"
@@ -74,7 +74,7 @@ export const WithDragHandle = () => {
             </span>
           </div>
         )}
-      </Reorderable>
+      </Sortable>
       <div className="mt-4 text-sm text-neutral-500">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
@@ -96,7 +96,7 @@ export const WithoutDragHandle = () => {
         The entire item is the drag target. Press Enter on an item to start
         dragging with keyboard.
       </p>
-      <Reorderable
+      <Sortable
         items={tasks}
         onChange={setTasks}
         dragTrigger="item"
@@ -119,7 +119,7 @@ export const WithoutDragHandle = () => {
             </span>
           </div>
         )}
-      </Reorderable>
+      </Sortable>
       <div className="mt-4 text-sm text-neutral-500">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
@@ -140,7 +140,7 @@ export const CustomDragPreview = () => {
         A custom preview is shown while dragging instead of the default item
         clone.
       </p>
-      <Reorderable
+      <Sortable
         items={tasks}
         onChange={setTasks}
         dragTrigger="handle"
@@ -169,7 +169,7 @@ export const CustomDragPreview = () => {
             </span>
           </div>
         )}
-      </Reorderable>
+      </Sortable>
       <div className="mt-4 text-sm text-neutral-500">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
@@ -189,7 +189,7 @@ export const WithDropPlaceholder = () => {
       <p className="mb-4 text-sm text-neutral-gray3">
         A placeholder shows where the dragged item will be dropped.
       </p>
-      <Reorderable
+      <Sortable
         items={tasks}
         onChange={setTasks}
         dragTrigger="handle"
@@ -217,7 +217,7 @@ export const WithDropPlaceholder = () => {
             </span>
           </div>
         )}
-      </Reorderable>
+      </Sortable>
       <div className="mt-4 text-sm text-neutral-500">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
@@ -237,7 +237,7 @@ export const CustomDropPlaceholder = () => {
       <p className="mb-4 text-sm text-neutral-gray3">
         The drop placeholder can be customized with your own styles.
       </p>
-      <Reorderable
+      <Sortable
         items={tasks}
         onChange={setTasks}
         dragTrigger="handle"
@@ -266,7 +266,7 @@ export const CustomDropPlaceholder = () => {
             </span>
           </div>
         )}
-      </Reorderable>
+      </Sortable>
       <div className="mt-4 text-sm text-neutral-500">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
