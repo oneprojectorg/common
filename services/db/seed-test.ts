@@ -2,7 +2,6 @@
 import { createServerClient } from '@supabase/ssr';
 import dotenv from 'dotenv';
 import { reset } from 'drizzle-seed';
-import { decisionTemplates } from '@op/common';
 
 import { db } from '.';
 import * as schema from './schema';
@@ -11,6 +10,174 @@ import {
   ACCESS_ROLE_PERMISSIONS,
   ACCESS_ZONES,
 } from './seedData/accessControl';
+
+/**
+ * Decision templates for seeding.
+ * NOTE: This is a copy of the template from @op/common to avoid circular dependency.
+ * If templates change in @op/common, update this copy as well.
+ */
+const simpleVoting = {
+  id: 'simple',
+  version: '1.0.0',
+  name: 'Simple Voting',
+  description:
+    'Basic approval voting where members vote for multiple proposals.',
+
+  phases: [
+    {
+      id: 'submission',
+      name: 'Proposal Submission',
+      description: 'Members submit proposals for consideration.',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'date', endDate: '2026-01-01' },
+      },
+      settings: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+          maxProposalsPerMember: {
+            type: 'number',
+            title: 'Maximum Proposals Per Member',
+            description: 'How many proposals can each member submit?',
+            minimum: 1,
+            default: 3,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+          maxProposalsPerMember: {
+            'ui:widget': 'number',
+            'ui:placeholder': '3',
+          },
+        },
+      },
+    },
+    {
+      id: 'review',
+      name: 'Review & Shortlist',
+      description: 'Reviewers evaluate and shortlist proposals.',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'date', endDate: '2026-01-02' },
+      },
+      settings: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+        },
+      },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      description: 'Members vote on shortlisted proposals.',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: true },
+        advancement: { method: 'date', endDate: '2026-01-03' },
+      },
+      settings: {
+        type: 'object',
+        required: ['maxVotesPerMember'],
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+          maxVotesPerMember: {
+            type: 'number',
+            title: 'Maximum Votes Per Member',
+            description: 'How many proposals can each member vote for?',
+            minimum: 1,
+            default: 3,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+          maxVotesPerMember: {
+            'ui:widget': 'number',
+            'ui:placeholder': '5',
+          },
+        },
+      },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [
+          {
+            id: 'sort-by-likes',
+            type: 'sort',
+            name: 'Sort by likes count',
+            sortBy: [{ field: 'voteData.likesCount', order: 'desc' }],
+          },
+          {
+            id: 'limit-by-votes',
+            type: 'limit',
+            name: 'Take top N (based on maxVotesPerMember config)',
+            count: { variable: 'maxVotesPerMember' },
+          },
+        ],
+      },
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      description: 'View final results and winning proposals.',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'date', endDate: '2026-01-04' },
+      },
+      settings: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+        },
+      },
+    },
+  ],
+};
+
+const decisionTemplates = {
+  simple: simpleVoting,
+};
 
 // For local development, we need to load the .env.local file from the root of the monorepo
 dotenv.config({
