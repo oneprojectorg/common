@@ -641,4 +641,225 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(allEmails[0]).toBe(adminUser.email);
     });
   });
+
+  describe('pending invites', () => {
+    it('should include pending invites in member list with status pending', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      // Create an invite for a new user
+      const newEmail = `pending-invite-${task.id}@oneproject.org`;
+      testData.trackAllowListEmail(newEmail);
+      testData.trackProfileInvite(newEmail, profile.id);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Create the invite using addUser
+      await caller.addUser({
+        profileId: profile.id,
+        inviteeEmail: newEmail,
+        roleIdsToAssign: [ROLES.MEMBER.id],
+      });
+
+      // List users - should include pending invite
+      const result = await caller.listUsers({
+        profileId: profile.id,
+      });
+
+      // Should have 2 active members + 1 pending invite = 3 total
+      expect(result.items).toHaveLength(3);
+
+      // Find the pending invite
+      const pendingMember = result.items.find(
+        (item) => item.email === newEmail.toLowerCase(),
+      );
+
+      expect(pendingMember).toBeDefined();
+      expect(pendingMember?.status).toBe('pending');
+      expect(pendingMember?.inviteId).toBeDefined();
+    });
+
+    it('should have status active for existing members', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+      });
+
+      // All existing members should have status 'active'
+      const adminMember = result.items.find(
+        (item) => item.email === adminUser.email,
+      );
+      const regularMember = result.items.find(
+        (item) => item.email === memberUsers[0]?.email,
+      );
+
+      expect(adminMember?.status).toBe('active');
+      expect(regularMember?.status).toBe('active');
+
+      // Active members should not have inviteId
+      expect(adminMember?.inviteId).toBeUndefined();
+      expect(regularMember?.inviteId).toBeUndefined();
+    });
+
+    it('should include pending invite roles', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      // Create an invite for a new user with Member role
+      const newEmail = `pending-role-${task.id}@oneproject.org`;
+      testData.trackAllowListEmail(newEmail);
+      testData.trackProfileInvite(newEmail, profile.id);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await caller.addUser({
+        profileId: profile.id,
+        inviteeEmail: newEmail,
+        roleIdsToAssign: [ROLES.MEMBER.id],
+      });
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+      });
+
+      const pendingMember = result.items.find(
+        (item) => item.email === newEmail.toLowerCase(),
+      );
+
+      expect(pendingMember?.roles).toHaveLength(1);
+      expect(pendingMember?.roles[0]?.id).toBe(ROLES.MEMBER.id);
+    });
+
+    it('should filter pending invites by search query', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      // Create two invites with different emails
+      const email1 = `searchable-alpha-${task.id}@oneproject.org`;
+      const email2 = `searchable-beta-${task.id}@oneproject.org`;
+      testData.trackAllowListEmail(email1);
+      testData.trackAllowListEmail(email2);
+      testData.trackProfileInvite(email1, profile.id);
+      testData.trackProfileInvite(email2, profile.id);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await caller.addUser({
+        profileId: profile.id,
+        inviteeEmail: email1,
+        roleIdsToAssign: [ROLES.MEMBER.id],
+      });
+
+      await caller.addUser({
+        profileId: profile.id,
+        inviteeEmail: email2,
+        roleIdsToAssign: [ROLES.MEMBER.id],
+      });
+
+      // Search for 'alpha' should only return the first invite
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        query: 'alpha',
+      });
+
+      // Should only find the alpha invite (admin doesn't match 'alpha')
+      const pendingItems = result.items.filter(
+        (item) => item.status === 'pending',
+      );
+      expect(pendingItems).toHaveLength(1);
+      expect(pendingItems[0]?.email).toBe(email1.toLowerCase());
+    });
+
+    it('should show pending invites only on last page of active members', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 3 },
+      });
+
+      // Create a pending invite
+      const newEmail = `pending-pagination-${task.id}@oneproject.org`;
+      testData.trackAllowListEmail(newEmail);
+      testData.trackProfileInvite(newEmail, profile.id);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      await caller.addUser({
+        profileId: profile.id,
+        inviteeEmail: newEmail,
+        roleIdsToAssign: [ROLES.MEMBER.id],
+      });
+
+      // First page with limit 2 - should NOT include pending invites
+      const page1 = await caller.listUsers({
+        profileId: profile.id,
+        limit: 2,
+        orderBy: 'email',
+        dir: 'asc',
+      });
+
+      expect(page1.items).toHaveLength(2);
+      expect(page1.next).toBeTruthy();
+
+      // All items on first page should be active
+      page1.items.forEach((item) => {
+        expect(item.status).toBe('active');
+      });
+
+      // Get remaining pages until we have all items
+      let allItems = [...page1.items];
+      let cursor = page1.next;
+
+      while (cursor) {
+        const nextPage = await caller.listUsers({
+          profileId: profile.id,
+          limit: 2,
+          cursor,
+          orderBy: 'email',
+          dir: 'asc',
+        });
+        allItems = [...allItems, ...nextPage.items];
+        cursor = nextPage.next;
+      }
+
+      // Total should be 4 active + 1 pending = 5
+      expect(allItems).toHaveLength(5);
+
+      // Pending invite should be in the results
+      const pendingItem = allItems.find((item) => item.status === 'pending');
+      expect(pendingItem).toBeDefined();
+      expect(pendingItem?.email).toBe(newEmail.toLowerCase());
+    });
+  });
 });

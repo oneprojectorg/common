@@ -19,19 +19,19 @@ export const deleteProfileInvitation = async ({
   profileId: string;
   user: User;
 }) => {
-  // Verify user has admin access to the profile
-  const profileUser = await getProfileAccessUser({ user, profileId });
+  // Fetch profile access and invite in parallel
+  const [profileUser, invite] = await Promise.all([
+    getProfileAccessUser({ user, profileId }),
+    db._query.profileInvites.findFirst({
+      where: eq(profileInvites.id, inviteId),
+    }),
+  ]);
 
   if (!profileUser) {
     throw new UnauthorizedError('You do not have access to this profile');
   }
 
   assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
-
-  // Get the invite and verify it belongs to this profile and is pending
-  const invite = await db._query.profileInvites.findFirst({
-    where: eq(profileInvites.id, inviteId),
-  });
 
   if (!invite) {
     throw new CommonError('Invite not found');
