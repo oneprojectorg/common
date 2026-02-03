@@ -1,5 +1,10 @@
 import { and, count, db, eq } from '@op/db/client';
-import type { ProcessInstance, Proposal } from '@op/db/schema';
+import type {
+  ObjectsInStorage,
+  ProcessInstance,
+  Profile,
+  Proposal,
+} from '@op/db/schema';
 import {
   ProfileRelationshipType,
   organizations,
@@ -15,8 +20,30 @@ import { checkPermission, permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { parseProposalData } from './proposalDataSchema';
+import {
+  type ProposalDocumentContent,
+  getProposalDocumentsContent,
+} from './getProposalDocumentsContent';
+import { type ProposalData, parseProposalData } from './proposalDataSchema';
+
+/** Attachment with signed URL for accessing the file */
+type AttachmentWithUrl = {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number | null;
+  storageObject: ObjectsInStorage | null;
+  url?: string;
+};
+
+/** Proposal attachment join record with nested attachment */
+type ProposalAttachmentWithDetails = {
+  id: string;
+  proposalId: string;
+  attachmentId: string;
+  uploadedBy: string;
+  attachment: AttachmentWithUrl | null;
+};
 
 export const getProposal = async ({
   profileId,
@@ -24,7 +51,19 @@ export const getProposal = async ({
 }: {
   profileId: string;
   user: User;
-}) => {
+}): Promise<
+  Omit<Proposal, 'proposalData'> & {
+    proposalData: ProposalData;
+    submittedBy: Profile & { avatarImage: ObjectsInStorage | null };
+    processInstance: ProcessInstance;
+    profile: Profile;
+    commentsCount: number;
+    likesCount: number;
+    followersCount: number;
+    documentContent: ProposalDocumentContent | undefined;
+    attachments: ProposalAttachmentWithDetails[];
+  }
+> => {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
@@ -50,7 +89,6 @@ export const getProposal = async ({
               storageObject: true,
             },
           },
-          uploader: true,
         },
       },
     },

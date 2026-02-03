@@ -60,12 +60,6 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.attachments.id,
       optional: false,
     }),
-    uploader: r.one.profiles({
-      from: r.proposalAttachments.uploadedBy,
-      to: r.profiles.id,
-      alias: 'proposalAttachment_uploader',
-      optional: false,
-    }),
   },
 
   /**
