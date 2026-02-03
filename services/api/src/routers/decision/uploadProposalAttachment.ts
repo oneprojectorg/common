@@ -169,7 +169,6 @@ export const uploadProposalAttachment = router({
         proposalId: z.string(),
       }),
     )
-    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { attachmentId, proposalId } = input;
       const { user } = ctx;
@@ -205,7 +204,5 @@ export const uploadProposalAttachment = router({
             eq(proposalAttachments.attachmentId, attachmentId),
           ),
         );
-
-      return { success: true };
     }),
 });
