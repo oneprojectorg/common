@@ -1,11 +1,8 @@
-import { db } from '@op/db';
-import { decisionProcesses, profiles } from '@op/db/schema';
 import {
   createDecisionInstance,
   createDecisionProcess,
   testSimpleVotingSchema,
 } from '@op/test';
-import { eq, inArray } from 'drizzle-orm';
 
 import { expect, test } from '../fixtures/index.js';
 
@@ -14,135 +11,95 @@ test.describe('Decisions', () => {
     authenticatedPage,
     org,
   }) => {
-    // Track IDs for cleanup
-    const createdProfileIds: string[] = [];
-    let processId: string | undefined;
+    // 1. Create a decision process template
+    const process = await createDecisionProcess({
+      createdByProfileId: org.adminUser.profileId,
+      schema: testSimpleVotingSchema,
+    });
 
-    try {
-      // 1. Create a decision process template
-      const process = await createDecisionProcess({
-        createdByProfileId: org.adminUser.profileId,
-        schema: testSimpleVotingSchema,
-      });
-      processId = process.id;
+    // 2. Create a decision instance with access for the authenticated user
+    const instance = await createDecisionInstance({
+      processId: process.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: testSimpleVotingSchema,
+    });
 
-      // 2. Create a decision instance with access for the authenticated user
-      const instance = await createDecisionInstance({
-        processId: process.id,
-        ownerProfileId: org.organizationProfile.id,
-        authUserId: org.adminUser.authUserId,
-        email: org.adminUser.email,
-        schema: testSimpleVotingSchema,
-      });
-      createdProfileIds.push(instance.profileId);
+    // 3. Give the database a moment to ensure the transaction is committed
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 3. Give the database a moment to ensure the transaction is committed
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    // 4. Navigate to the decision page with networkidle to ensure full load
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
 
-      // 4. Navigate to the decision page with networkidle to ensure full load
-      await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
-        waitUntil: 'networkidle',
-      });
+    // 5. Verify we're on the decision page and not redirected elsewhere
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(`/decisions/${instance.slug}`),
+    );
 
-      // 5. Verify we're on the decision page and not redirected elsewhere
-      await expect(authenticatedPage).toHaveURL(
-        new RegExp(`/decisions/${instance.slug}`),
-      );
-
-      // 6. Wait for the page to load and verify content
-      // The DecisionHeader displays the process name
-      await expect(
-        authenticatedPage.getByRole('heading', { name: process.name }),
-      ).toBeVisible({ timeout: 15000 });
-    } finally {
-      // Cleanup: delete created resources in reverse order
-      if (createdProfileIds.length > 0) {
-        await db
-          .delete(profiles)
-          .where(inArray(profiles.id, createdProfileIds));
-      }
-      if (processId) {
-        await db
-          .delete(decisionProcesses)
-          .where(eq(decisionProcesses.id, processId));
-      }
-    }
+    // 6. Wait for the page to load and verify content
+    // The DecisionHeader displays the process name
+    await expect(
+      authenticatedPage.getByRole('heading', { name: process.name }),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('can submit a proposal from decision page', async ({
     authenticatedPage,
     org,
   }) => {
-    // Track IDs for cleanup
-    const createdProfileIds: string[] = [];
-    let processId: string | undefined;
+    // 1. Create a decision process template
+    const process = await createDecisionProcess({
+      createdByProfileId: org.adminUser.profileId,
+      schema: testSimpleVotingSchema,
+    });
 
-    try {
-      // 1. Create a decision process template
-      const process = await createDecisionProcess({
-        createdByProfileId: org.adminUser.profileId,
-        schema: testSimpleVotingSchema,
-      });
-      processId = process.id;
+    // 2. Create a decision instance with access for the authenticated user
+    const instance = await createDecisionInstance({
+      processId: process.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: testSimpleVotingSchema,
+    });
 
-      // 2. Create a decision instance with access for the authenticated user
-      const instance = await createDecisionInstance({
-        processId: process.id,
-        ownerProfileId: org.organizationProfile.id,
-        authUserId: org.adminUser.authUserId,
-        email: org.adminUser.email,
-        schema: testSimpleVotingSchema,
-      });
-      createdProfileIds.push(instance.profileId);
+    // 3. Give the database a moment to ensure the transaction is committed
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 3. Give the database a moment to ensure the transaction is committed
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    // 4. Navigate to the decision page
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
 
-      // 4. Navigate to the decision page
-      await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
-        waitUntil: 'networkidle',
-      });
+    // 5. Wait for the page to load
+    await expect(
+      authenticatedPage.getByRole('heading', { name: process.name }),
+    ).toBeVisible({ timeout: 15000 });
 
-      // 5. Wait for the page to load
-      await expect(
-        authenticatedPage.getByRole('heading', { name: process.name }),
-      ).toBeVisible({ timeout: 15000 });
+    // 6. Click the "Submit a proposal" button
+    const submitButton = authenticatedPage.getByRole('button', {
+      name: 'Submit a proposal',
+    });
+    await expect(submitButton).toBeVisible({ timeout: 5000 });
+    await submitButton.click();
 
-      // 6. Click the "Submit a proposal" button
-      const submitButton = authenticatedPage.getByRole('button', {
-        name: 'Submit a proposal',
-      });
-      await expect(submitButton).toBeVisible({ timeout: 5000 });
-      await submitButton.click();
+    // 7. Wait for navigation to the proposal edit page
+    // The URL pattern is /decisions/{slug}/proposal/{profileId}/edit
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(`/decisions/${instance.slug}/proposal/[^/]+/edit`),
+      { timeout: 15000 },
+    );
 
-      // 7. Wait for navigation to the proposal edit page
-      // The URL pattern is /decisions/{slug}/proposal/{profileId}/edit
-      await expect(authenticatedPage).toHaveURL(
-        new RegExp(`/decisions/${instance.slug}/proposal/[^/]+/edit`),
-        { timeout: 15000 },
-      );
+    // 8. Verify we're on the proposal editor page
+    // The ProposalEditor shows "Untitled Proposal" heading and has a "Submit Proposal" button
+    await expect(authenticatedPage.getByText('Untitled Proposal')).toBeVisible({
+      timeout: 10000,
+    });
 
-      // 8. Verify we're on the proposal editor page
-      // The ProposalEditor shows "Untitled Proposal" heading and has a "Submit Proposal" button
-      await expect(
-        authenticatedPage.getByText('Untitled Proposal'),
-      ).toBeVisible({ timeout: 10000 });
-
-      await expect(
-        authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
-      ).toBeVisible({ timeout: 5000 });
-    } finally {
-      // Cleanup: delete created resources in reverse order
-      if (createdProfileIds.length > 0) {
-        await db
-          .delete(profiles)
-          .where(inArray(profiles.id, createdProfileIds));
-      }
-      if (processId) {
-        await db
-          .delete(decisionProcesses)
-          .where(eq(decisionProcesses.id, processId));
-      }
-    }
+    await expect(
+      authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
+    ).toBeVisible({ timeout: 5000 });
   });
 });
