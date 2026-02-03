@@ -101,8 +101,8 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
     .nullable(),
   // Roles using shared minimal encoder
   roles: z.array(accessRoleMinimalEncoder),
-  // Member status - active for existing members, pending for invites
-  status: z.enum(['active', 'pending']),
+  // Member status - active for existing members, pending for invites (only in list operations)
+  status: z.enum(['active', 'pending']).optional(),
   // Invite ID for pending members (only present when status is 'pending')
   inviteId: z.uuid().optional(),
 });

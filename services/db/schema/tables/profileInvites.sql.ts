@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   index,
   pgTable,
@@ -63,5 +63,26 @@ export const profileInvites = pgTable(
       .where(sql`accepted_on IS NULL`),
   ],
 );
+
+/**
+ * v1 relations for db._query API
+ * Note: v2 relations are defined in services/db/relations.ts for db.query API
+ */
+export const profileInvitesRelations = relations(profileInvites, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [profileInvites.profileId],
+    references: [profiles.id],
+    relationName: 'profileInvites',
+  }),
+  accessRole: one(accessRoles, {
+    fields: [profileInvites.accessRoleId],
+    references: [accessRoles.id],
+  }),
+  inviter: one(profiles, {
+    fields: [profileInvites.invitedBy],
+    references: [profiles.id],
+    relationName: 'invitedByProfile',
+  }),
+}));
 
 export type ProfileInvite = typeof profileInvites.$inferSelect;
