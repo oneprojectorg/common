@@ -5,7 +5,6 @@ import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'buffer';
 import { z } from 'zod';
 
-import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
@@ -21,7 +20,6 @@ export const uploadProposalAttachment = router({
   uploadProposalAttachment: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
-    .use(withDB)
     .input(
       z.object({
         file: z.string(), // base64 encoded
@@ -162,7 +160,6 @@ export const uploadProposalAttachment = router({
   deleteProposalAttachment: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
-    .use(withDB)
     .input(
       z.object({
         attachmentId: z.string(),
