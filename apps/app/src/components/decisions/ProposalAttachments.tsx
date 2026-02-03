@@ -88,18 +88,16 @@ export function ProposalAttachments({
         onRemove={handleRemoveFile}
       />
 
-      {/* Drop zone (only show if we can add more) */}
-      {canAddMore && (
-        <FileDropZone
-          acceptedFileTypes={ACCEPTED_EXTENSIONS}
-          onSelectFiles={handleSelectFiles}
-          description={t('Accepts PDF, DOCX, XLSX up to {size}MB', {
-            size: MAX_SIZE_MB,
-          })}
-          allowsMultiple={true}
-          isDisabled={fileUpload.isUploading()}
-        />
-      )}
+      {/* Drop zone */}
+      <FileDropZone
+        acceptedFileTypes={ACCEPTED_EXTENSIONS}
+        onSelectFiles={handleSelectFiles}
+        description={t('Accepts PDF, DOCX, XLSX up to {size}MB', {
+          size: MAX_SIZE_MB,
+        })}
+        allowsMultiple={true}
+        isDisabled={!canAddMore || fileUpload.isUploading()}
+      />
 
       {/* Counter */}
       <p className="text-sm text-neutral-gray4">
