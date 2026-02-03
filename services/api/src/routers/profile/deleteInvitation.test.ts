@@ -124,11 +124,9 @@ describe.concurrent('profile.deleteInvitation', () => {
 
     const { session: session2 } = await createIsolatedSession(
       // Need to use the admin of profile2 to create the invite
-      (
-        await db._query.profileUsers.findFirst({
-          where: (table, { eq }) => eq(table.profileId, profile2.id),
-        })
-      )!.email,
+      (await db._query.profileUsers.findFirst({
+        where: (table, { eq }) => eq(table.profileId, profile2.id),
+      }))!.email,
     );
 
     const inviteCaller = createInviteCaller(
