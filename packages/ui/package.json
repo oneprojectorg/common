@@ -23,6 +23,7 @@
     "./DropDownButton": "./src/components/DropDownButton.tsx",
     "./EmptyState": "./src/components/EmptyState.tsx",
     "./Field": "./src/components/Field.tsx",
+    "./FileDropZone": "./src/components/FileDropZone.tsx",
     "./Form": "./src/components/Form.tsx",
     "./Header": "./src/components/Header.tsx",
     "./HorizontalList": "./src/components/HorizontalList/index.tsx",
