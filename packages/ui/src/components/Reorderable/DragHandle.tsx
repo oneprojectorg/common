@@ -1,19 +1,27 @@
 'use client';
 
-import { Button } from 'react-aria-components';
+import { forwardRef } from 'react';
 import { LuGripVertical } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 
 import type { DragHandleProps } from './types';
 
 const dragHandleStyles = tv({
-  base: 'flex cursor-grab items-center justify-center rounded p-1 text-neutral-500 transition-colors outline-none hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-primary-teal active:cursor-grabbing',
+  base: 'flex cursor-grab touch-none items-center justify-center rounded p-1 text-neutral-500 transition-colors outline-none hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-primary-teal active:cursor-grabbing',
 });
 
-export function DragHandle({ size = 16, className }: DragHandleProps) {
+export const DragHandle = forwardRef<
+  HTMLButtonElement,
+  DragHandleProps & React.ButtonHTMLAttributes<HTMLButtonElement>
+>(function DragHandle({ size = 16, className, ...props }, ref) {
   return (
-    <Button slot="drag" className={dragHandleStyles({ className })}>
+    <button
+      ref={ref}
+      type="button"
+      className={dragHandleStyles({ className })}
+      {...props}
+    >
       <LuGripVertical size={size} />
-    </Button>
+    </button>
   );
-}
+});

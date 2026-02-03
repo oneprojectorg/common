@@ -52,15 +52,15 @@ export const WithDragHandle = () => {
         onChange={setTasks}
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
-        className="space-y-2"
+        spaceBetweenItems={8}
       >
-        {(task, { isDragging }) => (
+        {(task, { isDragging, dragHandleProps }) => (
           <div
             className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
               isDragging ? 'shadow-lg' : 'shadow-sm'
             }`}
           >
-            <DragHandle />
+            <DragHandle {...dragHandleProps} />
             <div className="flex-1">
               <h3>{task.title}</h3>
             </div>
@@ -101,7 +101,7 @@ export const WithoutDragHandle = () => {
         onChange={setTasks}
         dragTrigger="item"
         getItemLabel={(task) => task.title}
-        className="space-y-2"
+        spaceBetweenItems={8}
       >
         {(task, { isDragging }) => (
           <div
@@ -145,25 +145,122 @@ export const CustomDragPreview = () => {
         onChange={setTasks}
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
-        className="space-y-2"
+        spaceBetweenItems={8}
         renderDragPreview={(items) => (
           <div className="rounded-lg bg-primary-teal px-4 py-2 text-white shadow-xl">
             Moving: {items[0]?.title}
           </div>
         )}
       >
-        {(task, { isDragging }) => (
+        {(task, { isDragging, dragHandleProps }) => (
           <div
             className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
               isDragging ? 'shadow-lg' : 'shadow-sm'
             }`}
           >
-            <DragHandle />
+            <DragHandle {...dragHandleProps} />
             <div className="flex-1">
               <h3>{task.title}</h3>
             </div>
             <span
               className={`rounded px-2 py-0.5 text-xs font-medium ${priorityColors[task.priority]}`}
+            >
+              {task.priority}
+            </span>
+          </div>
+        )}
+      </Reorderable>
+      <div className="mt-4 text-sm text-neutral-500">
+        Current order: {tasks.map((t) => t.id).join(', ')}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Shows the default drop placeholder where the item will be placed.
+ */
+export const WithDropPlaceholder = () => {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  return (
+    <div className="w-[400px]">
+      <h3 className="mb-4 text-lg font-semibold">With Drop Placeholder</h3>
+      <p className="mb-4 text-sm text-neutral-gray3">
+        A placeholder shows where the dragged item will be dropped.
+      </p>
+      <Reorderable
+        items={tasks}
+        onChange={setTasks}
+        dragTrigger="handle"
+        getItemLabel={(task) => task.title}
+        spaceBetweenItems={8}
+        showDropPlaceholder
+      >
+        {(task, { isDragging, dragHandleProps }) => (
+          <div
+            className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
+              isDragging ? 'shadow-lg' : 'shadow-sm'
+            }`}
+          >
+            <DragHandle {...dragHandleProps} />
+            <div className="flex-1">
+              <h3>{task.title}</h3>
+            </div>
+            <span
+              className={cn(
+                `rounded px-2 py-0.5 text-xs font-medium`,
+                priorityColors[task.priority],
+              )}
+            >
+              {task.priority}
+            </span>
+          </div>
+        )}
+      </Reorderable>
+      <div className="mt-4 text-sm text-neutral-500">
+        Current order: {tasks.map((t) => t.id).join(', ')}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Custom styling for the drop placeholder.
+ */
+export const CustomDropPlaceholder = () => {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  return (
+    <div className="w-[400px]">
+      <h3 className="mb-4 text-lg font-semibold">Custom Drop Placeholder</h3>
+      <p className="mb-4 text-sm text-neutral-gray3">
+        The drop placeholder can be customized with your own styles.
+      </p>
+      <Reorderable
+        items={tasks}
+        onChange={setTasks}
+        dragTrigger="handle"
+        getItemLabel={(task) => task.title}
+        spaceBetweenItems={8}
+        showDropPlaceholder
+        dropPlaceholderClassName="rounded-lg bg-amber-100 border-2 border-dashed border-amber-400"
+      >
+        {(task, { isDragging, dragHandleProps }) => (
+          <div
+            className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
+              isDragging ? 'shadow-lg' : 'shadow-sm'
+            }`}
+          >
+            <DragHandle {...dragHandleProps} />
+            <div className="flex-1">
+              <h3>{task.title}</h3>
+            </div>
+            <span
+              className={cn(
+                `rounded px-2 py-0.5 text-xs font-medium`,
+                priorityColors[task.priority],
+              )}
             >
               {task.priority}
             </span>

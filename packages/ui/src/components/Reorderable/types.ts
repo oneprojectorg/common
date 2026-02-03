@@ -5,10 +5,16 @@ export interface ReorderableItem {
 }
 
 export interface ReorderableItemControls {
-  /** Props to spread on a drag handle element */
+  /** Props to spread on a drag handle element (use with DragHandle component) */
   dragHandleProps: {
-    slot: 'drag';
-  };
+    ref: (node: HTMLElement | null) => void;
+    tabIndex: number;
+    role: string;
+    'aria-roledescription': string;
+    'aria-describedby': string;
+    'aria-disabled': boolean;
+    'aria-pressed': boolean | undefined;
+  } & Record<string, unknown>;
   /** Whether this item is currently being dragged */
   isDragging: boolean;
   /** Whether this item is a drop target */
@@ -28,6 +34,8 @@ export interface ReorderableProps<T extends ReorderableItem> {
   children: (item: T, controls: ReorderableItemControls) => ReactNode;
   /** Optional custom drag preview */
   renderDragPreview?: (items: T[]) => ReactNode;
+  /** Space between items in pixels */
+  spaceBetweenItems?: number;
   /** Class name for the container */
   className?: string;
   /** Class name for each item wrapper */
@@ -36,6 +44,10 @@ export interface ReorderableProps<T extends ReorderableItem> {
   getItemLabel?: (item: T) => string;
   /** Accessible label for the list */
   'aria-label'?: string;
+  /** Whether to show a placeholder where the dragged item will be dropped */
+  showDropPlaceholder?: boolean;
+  /** Class name for the drop placeholder */
+  dropPlaceholderClassName?: string;
 }
 
 export interface DragHandleProps {
