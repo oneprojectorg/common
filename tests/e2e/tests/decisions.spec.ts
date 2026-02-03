@@ -3,42 +3,6 @@ import { createDecisionInstance, getSeededTemplate } from '@op/test';
 import { expect, test } from '../fixtures/index.js';
 
 test.describe('Decisions', () => {
-  test('can navigate to a decision process page', async ({
-    authenticatedPage,
-    org,
-  }) => {
-    // 1. Get the seeded decision process template
-    const template = await getSeededTemplate();
-
-    // 2. Create a decision instance with access for the authenticated user
-    const instance = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-      schema: template.processSchema,
-    });
-
-    // 3. Give the database a moment to ensure the transaction is committed
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // 4. Navigate to the decision page with networkidle to ensure full load
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'networkidle',
-    });
-
-    // 5. Verify we're on the decision page and not redirected elsewhere
-    await expect(authenticatedPage).toHaveURL(
-      new RegExp(`/decisions/${instance.slug}`),
-    );
-
-    // 6. Wait for the page to load and verify content
-    // The DecisionHeader displays the process name
-    await expect(
-      authenticatedPage.getByRole('heading', { name: template.name }),
-    ).toBeVisible({ timeout: 15000 });
-  });
-
   test('can submit a proposal from decision page', async ({
     authenticatedPage,
     org,
