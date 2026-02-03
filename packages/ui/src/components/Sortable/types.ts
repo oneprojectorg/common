@@ -34,8 +34,6 @@ export interface SortableProps<T extends SortableItem> {
   children: (item: T, controls: SortableItemControls) => ReactNode;
   /** Optional custom drag preview */
   renderDragPreview?: (items: T[]) => ReactNode;
-  /** Space between items in pixels */
-  spaceBetweenItems?: number;
   /** Class name for the container */
   className?: string;
   /** Class name for each item wrapper */

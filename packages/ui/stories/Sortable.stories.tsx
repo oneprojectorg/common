@@ -52,7 +52,7 @@ export const WithDragHandle = () => {
         onChange={setTasks}
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
-        spaceBetweenItems={8}
+        className="gap-2"
       >
         {(task, { isDragging, dragHandleProps }) => (
           <div
@@ -101,7 +101,7 @@ export const WithoutDragHandle = () => {
         onChange={setTasks}
         dragTrigger="item"
         getItemLabel={(task) => task.title}
-        spaceBetweenItems={8}
+        className="gap-2"
       >
         {(task, { isDragging }) => (
           <div
@@ -145,7 +145,7 @@ export const CustomDragPreview = () => {
         onChange={setTasks}
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
-        spaceBetweenItems={8}
+        className="gap-2"
         renderDragPreview={(items) => (
           <div className="rounded-lg bg-primary-teal px-4 py-2 text-white shadow-xl">
             Moving: {items[0]?.title}
@@ -194,7 +194,7 @@ export const WithDropPlaceholder = () => {
         onChange={setTasks}
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
-        spaceBetweenItems={8}
+        className="gap-2"
         showDropPlaceholder
       >
         {(task, { isDragging, dragHandleProps }) => (
@@ -242,7 +242,7 @@ export const CustomDropPlaceholder = () => {
         onChange={setTasks}
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
-        spaceBetweenItems={8}
+        className="gap-2"
         showDropPlaceholder
         dropPlaceholderClassName="rounded-lg bg-amber-100 border-2 border-dashed border-amber-400"
       >

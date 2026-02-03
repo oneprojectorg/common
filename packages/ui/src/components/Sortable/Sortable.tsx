@@ -169,7 +169,6 @@ export function Sortable<T extends SortableItem>({
   dragTrigger = 'handle',
   children,
   renderDragPreview,
-  spaceBetweenItems = 0,
   className,
   itemClassName,
   getItemLabel,
@@ -229,7 +228,6 @@ export function Sortable<T extends SortableItem>({
           role="listbox"
           aria-label={ariaLabel}
           className={styles.container({ className })}
-          style={{ gap: spaceBetweenItems }}
         >
           {items.map((item, index) => (
             <SortableItemWrapper
