@@ -20,20 +20,19 @@ const ACCEPTED_TYPES = [
 const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.xlsx'];
 
 export interface ProposalAttachmentsProps {
-  /** Callback to get uploaded attachment IDs for form submission */
-  onAttachmentsChange?: (attachmentIds: string[]) => void;
+  /** The proposal ID to link attachments to (required for immediate save on drop) */
+  proposalId: string;
 }
 
 /**
  * Complete attachment section for proposals.
  * Includes file drop zone and attachment list with upload handling.
  */
-export function ProposalAttachments({
-  onAttachmentsChange,
-}: ProposalAttachmentsProps) {
+export function ProposalAttachments({ proposalId }: ProposalAttachmentsProps) {
   const t = useTranslations();
 
   const fileUpload = useProposalFileUpload({
+    proposalId,
     acceptedTypes: ACCEPTED_TYPES,
     maxFiles: MAX_FILES,
     maxSizePerFile: MAX_SIZE_BYTES,
@@ -45,25 +44,17 @@ export function ProposalAttachments({
 
     for (const file of filesToUpload) {
       try {
+        // Attachment is saved to proposal immediately on upload
         await fileUpload.uploadFile(file);
-        // Notify parent of new attachment IDs after each upload
-        onAttachmentsChange?.(fileUpload.getUploadedAttachmentIds());
       } catch {
         // Error handling is done in the hook
       }
     }
-
-    // Final update after all uploads complete
-    onAttachmentsChange?.(fileUpload.getUploadedAttachmentIds());
   };
 
   const handleRemoveFile = (id: string) => {
+    // Attachment is unlinked from proposal immediately on remove
     fileUpload.removeFile(id);
-    // Get IDs after removal - need to filter manually since state update is async
-    const remainingIds = fileUpload.filePreviews
-      .filter((f) => f.id !== id && f.uploaded && !f.error)
-      .map((f) => f.id);
-    onAttachmentsChange?.(remainingIds);
   };
 
   const canAddMore = fileUpload.filePreviews.length < MAX_FILES;

@@ -1,6 +1,6 @@
 import { CommonError, getCurrentProfileId } from '@op/common';
-import { db } from '@op/db/client';
-import { attachments } from '@op/db/schema';
+import { and, db, eq } from '@op/db/client';
+import { attachments, proposalAttachments } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'buffer';
 import { z } from 'zod';
@@ -27,6 +27,9 @@ export const uploadProposalAttachment = router({
         file: z.string(), // base64 encoded
         fileName: z.string(),
         mimeType: z.string(),
+        // Optional - if provided, links attachment to proposal immediately on upload
+        // Use for proposal attachments; omit for inline images in rich text content
+        proposalId: z.string().optional(),
       }),
     )
     .output(
@@ -40,7 +43,7 @@ export const uploadProposalAttachment = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { file, fileName, mimeType } = input;
+      const { file, fileName, mimeType, proposalId } = input;
       const { user } = ctx;
       const profileId = await getCurrentProfileId(user.id);
 
@@ -137,6 +140,15 @@ export const uploadProposalAttachment = router({
         throw new CommonError('Failed to create attachment record');
       }
 
+      // Link attachment to proposal immediately for better UX (if proposalId provided)
+      if (proposalId) {
+        await db.insert(proposalAttachments).values({
+          proposalId,
+          attachmentId: attachment.id,
+          uploadedBy: profileId,
+        });
+      }
+
       return {
         url: signedUrlData.signedUrl,
         path: filePath,
@@ -145,5 +157,55 @@ export const uploadProposalAttachment = router({
         mimeType,
         fileSize: buffer.length,
       };
+    }),
+
+  deleteProposalAttachment: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 20 },
+  })
+    .use(withDB)
+    .input(
+      z.object({
+        attachmentId: z.string(),
+        proposalId: z.string(),
+      }),
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const { attachmentId, proposalId } = input;
+      const { user } = ctx;
+      const profileId = await getCurrentProfileId(user.id);
+
+      // Verify the attachment link exists and user has permission (they uploaded it)
+      const existingLink = await db
+        .select()
+        .from(proposalAttachments)
+        .where(
+          and(
+            eq(proposalAttachments.proposalId, proposalId),
+            eq(proposalAttachments.attachmentId, attachmentId),
+          ),
+        )
+        .limit(1);
+
+      if (!existingLink[0]) {
+        throw new CommonError('Attachment not found on this proposal');
+      }
+
+      // Only the uploader can delete
+      if (existingLink[0].uploadedBy !== profileId) {
+        throw new CommonError('Not authorized to delete this attachment');
+      }
+
+      // Delete the link (soft delete - keeps the attachment record)
+      await db
+        .delete(proposalAttachments)
+        .where(
+          and(
+            eq(proposalAttachments.proposalId, proposalId),
+            eq(proposalAttachments.attachmentId, attachmentId),
+          ),
+        );
+
+      return { success: true };
     }),
 });

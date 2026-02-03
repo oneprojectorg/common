@@ -87,7 +87,6 @@ export function ProposalEditor({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
   const [showBudgetInput, setShowBudgetInput] = useState(false);
-  const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [collabProvider, setCollabProvider] =
@@ -333,12 +332,11 @@ export function ProposalEditor({
         budget: budget ?? undefined,
       };
 
-      // Update existing proposal with attachments
+      // Update existing proposal (attachments are saved on drop, not here)
       await updateProposalMutation.mutateAsync({
         proposalId: existingProposal.id,
         data: {
           proposalData,
-          attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
         },
       });
 
@@ -365,7 +363,6 @@ export function ProposalEditor({
     categories,
     existingProposal,
     isDraft,
-    attachmentIds,
     submitProposalMutation,
     updateProposalMutation,
   ]);
@@ -457,9 +454,11 @@ export function ProposalEditor({
           />
 
           {/* Attachments */}
-          <div className="border-t border-neutral-gray2 pt-8">
-            <ProposalAttachments onAttachmentsChange={setAttachmentIds} />
-          </div>
+          {existingProposal && (
+            <div className="border-t border-neutral-gray2 pt-8">
+              <ProposalAttachments proposalId={existingProposal.id} />
+            </div>
+          )}
         </div>
       </div>
 

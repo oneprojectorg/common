@@ -15,6 +15,8 @@ export interface FilePreview {
 }
 
 interface UseProposalFileUploadOptions {
+  /** The proposal to link attachments to (required for proposal attachments, optional for inline images) */
+  proposalId?: string;
   acceptedTypes?: string[];
   maxFiles?: number;
   maxSizePerFile?: number;
@@ -34,6 +36,7 @@ export const useProposalFileUpload = (
   options: UseProposalFileUploadOptions,
 ) => {
   const {
+    proposalId,
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
     maxFiles = DEFAULT_MAX_FILES,
     maxSizePerFile = DEFAULT_MAX_SIZE,
@@ -43,6 +46,7 @@ export const useProposalFileUpload = (
   const [isDragOver, setIsDragOver] = useState(false);
 
   const uploadAttachment = trpc.decision.uploadProposalAttachment.useMutation();
+  const deleteAttachment = trpc.decision.deleteProposalAttachment.useMutation();
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
@@ -100,6 +104,7 @@ export const useProposalFileUpload = (
           file: base64,
           fileName: file.name,
           mimeType: file.type,
+          proposalId,
         })
         .catch((err) => {
           toast.status(err);
@@ -132,11 +137,24 @@ export const useProposalFileUpload = (
     }
   };
 
-  const removeFile = (id: string) => {
+  const removeFile = async (id: string) => {
     const preview = filePreviews.find((f) => f.id === id);
     if (preview) {
       URL.revokeObjectURL(preview.url);
       setFilePreviews((prev) => prev.filter((f) => f.id !== id));
+
+      // If uploaded and linked to a proposal, also delete the link from backend
+      if (preview.uploaded && proposalId) {
+        try {
+          await deleteAttachment.mutateAsync({
+            attachmentId: id,
+            proposalId,
+          });
+        } catch (error) {
+          console.error('Failed to delete attachment:', error);
+          // Don't throw - UI already updated, backend deletion is best-effort
+        }
+      }
     }
   };
 
