@@ -50,11 +50,6 @@ export const relations = defineRelations(schema, (r) => ({
    * Links proposals to their attachments with uploader info.
    */
   proposalAttachments: {
-    proposal: r.one.proposals({
-      from: r.proposalAttachments.proposalId,
-      to: r.proposals.id,
-      optional: false,
-    }),
     attachment: r.one.attachments({
       from: r.proposalAttachments.attachmentId,
       to: r.attachments.id,

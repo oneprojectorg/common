@@ -496,14 +496,14 @@ describe.concurrent('getProposal', () => {
     expect(result.attachments).toHaveLength(1);
 
     const [attachment] = result.attachments ?? [];
-    expect(attachment).toBeDefined();
-    expect(attachment?.attachmentId).toBe(uploadResult.id);
-    expect(attachment?.proposalId).toBe(proposal.id);
-    expect(attachment?.attachment).toBeDefined();
-    expect(attachment?.attachment?.fileName).toBe('test-attachment.png');
-    expect(attachment?.attachment?.mimeType).toBe('image/png');
-    // Signed URL should be present
-    expect(attachment?.attachment?.url).toBeDefined();
-    expect(attachment?.attachment?.url).toContain('http');
+    expect(attachment).toMatchObject({
+      attachmentId: uploadResult.id,
+      proposalId: proposal.id,
+      attachment: {
+        fileName: 'test-attachment.png',
+        mimeType: 'image/png',
+        url: expect.stringContaining('http'),
+      },
+    });
   });
 });
