@@ -73,7 +73,7 @@ export const searchProfiles = async ({
       .leftJoin(organizations, eq(organizations.profileId, profiles.id))
       .leftJoin(users, eq(users.profileId, profiles.id))
       .where(
-        sql`(${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery})${sql` AND ${eq(profiles.type, type)}`}`,
+        sql`(${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery} OR ${users.email} ILIKE ${'%' + query + '%'})${sql` AND ${eq(profiles.type, type)}`}`,
       )
       .limit(limit)
       .orderBy(sql`rank DESC`);
