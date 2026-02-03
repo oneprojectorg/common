@@ -48,7 +48,7 @@ export const RoleSelector = ({
           <Tab key={role.id} id={role.id}>
             {role.name}
             {selectedCount > 0 && selectedRoleId === role.id ? (
-              <span className="ml-1.5 min-w-4 rounded-full bg-teal-500 px-1.5 py-0.5 text-xs text-white">
+              <span className="ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-teal px-1 text-xs text-neutral-offWhite">
                 {selectedCount}
               </span>
             ) : null}

@@ -213,7 +213,7 @@ export const ProfileInviteModal = ({
         {t('Invite members to your decision-making process')}
       </ModalHeader>
 
-      <ModalBody className="space-y-4">
+      <ModalBody className="space-y-6">
         {/* Role Tabs */}
         <Suspense fallback={<RoleSelectorSkeleton />}>
           <RoleSelector
@@ -240,7 +240,7 @@ export const ProfileInviteModal = ({
           typeof document !== 'undefined' &&
           createPortal(
             <div
-              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-md border border-neutral-gray2 bg-white shadow-lg"
+              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg"
               style={{
                 top: dropdownPosition.top,
                 left: dropdownPosition.left,
@@ -325,46 +325,38 @@ export const ProfileInviteModal = ({
 
         {/* Selected Items */}
         {selectedItems.length > 0 && (
-          <div>
-            <div className="mb-2 text-sm font-medium text-neutral-charcoal">
-              {t('Selected members')}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {selectedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex h-14 items-center rounded-lg border border-neutral-gray2 bg-white px-3"
+          <div className="flex flex-wrap gap-2">
+            {selectedItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex h-14 items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+              >
+                <ProfileItem
+                  size="small"
+                  avatar={
+                    <Avatar placeholder={item.name} className="size-6 shrink-0">
+                      {item.avatarUrl ? (
+                        <Image
+                          src={item.avatarUrl}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : null}
+                    </Avatar>
+                  }
+                  title={item.name}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveItem(new Set([item.id]))}
+                  className="rounded-full p-1 hover:bg-neutral-gray1"
+                  aria-label={`Remove ${item.name}`}
                 >
-                  <ProfileItem
-                    size="small"
-                    avatar={
-                      <Avatar
-                        placeholder={item.name}
-                        className="size-6 shrink-0"
-                      >
-                        {item.avatarUrl ? (
-                          <Image
-                            src={item.avatarUrl}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : null}
-                      </Avatar>
-                    }
-                    title={item.name}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveItem(new Set([item.id]))}
-                    className="ml-1 rounded-full p-1 hover:bg-neutral-gray1"
-                    aria-label={`Remove ${item.name}`}
-                  >
-                    <LuX className="size-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
+                  <LuX className="size-4" />
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </ModalBody>
