@@ -102,11 +102,14 @@ export const ProfileInviteModal = ({
   // Filter out already selected items
   const filteredResults = useMemo(() => {
     const selectedIds = new Set(selectedItems.map((item) => item.profileId));
-    const selectedEmails = new Set(selectedItems.map((item) => item.email.toLowerCase()));
+    const selectedEmails = new Set(
+      selectedItems.map((item) => item.email.toLowerCase()),
+    );
     return flattenedResults.filter(
       (result) =>
         !selectedIds.has(result.id) &&
-        (!result.user?.email || !selectedEmails.has(result.user.email.toLowerCase())),
+        (!result.user?.email ||
+          !selectedEmails.has(result.user.email.toLowerCase())),
     );
   }, [flattenedResults, selectedItems]);
 
@@ -115,7 +118,9 @@ export const ProfileInviteModal = ({
     if (!isValidEmail(debouncedQuery)) {
       return false;
     }
-    const selectedEmails = new Set(selectedItems.map((item) => item.email.toLowerCase()));
+    const selectedEmails = new Set(
+      selectedItems.map((item) => item.email.toLowerCase()),
+    );
     return !selectedEmails.has(debouncedQuery.toLowerCase());
   }, [debouncedQuery, selectedItems]);
 
@@ -364,7 +369,7 @@ export const ProfileInviteModal = ({
         )}
       </ModalBody>
 
-      <ModalFooter className="flex items-center justify-between">
+      <ModalFooter className="flex-row items-center justify-between">
         <div className="text-sm text-neutral-black">
           {totalPeople > 0
             ? t('{count, plural, =1 {1 person} other {# people}}', {
