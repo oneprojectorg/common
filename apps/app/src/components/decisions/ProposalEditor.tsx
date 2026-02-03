@@ -449,7 +449,7 @@ export function ProposalEditor({
             onEditorReady={handleEditorReady}
             onProviderReady={setCollabProvider}
             placeholder={t('Write your proposal here...')}
-            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
+            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
             userName={user.profile?.name}
           />
 
