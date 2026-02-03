@@ -9,7 +9,7 @@ import {
   profileRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { createServerClient } from '@op/supabase/lib';
+import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -119,38 +119,27 @@ export const getProposal = async ({
   let attachmentsWithUrls = proposal.attachments ?? [];
 
   if (attachmentsWithUrls.length > 0) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
+    const supabase = createSBServiceClient();
 
-    if (supabaseUrl && serviceRoleKey) {
-      const supabase = createServerClient(supabaseUrl, serviceRoleKey, {
-        cookieOptions: {},
-        cookies: {
-          getAll: async () => [],
-          setAll: async () => {},
-        },
-      });
+    attachmentsWithUrls = await Promise.all(
+      attachmentsWithUrls.map(async (pa) => {
+        const storagePath = pa.attachment?.storageObject?.name;
+        if (!storagePath) {
+          return pa;
+        }
 
-      attachmentsWithUrls = await Promise.all(
-        attachmentsWithUrls.map(async (pa) => {
-          const storagePath = pa.attachment?.storageObject?.name;
-          if (!storagePath) {
-            return pa;
-          }
+        const { data } = await supabase.storage
+          .from('assets')
+          .createSignedUrl(storagePath, 60 * 60 * 24);
 
-          const { data } = await supabase.storage
-            .from('assets')
-            .createSignedUrl(storagePath, 60 * 60 * 24);
-
-          return {
-            ...pa,
-            attachment: pa.attachment
-              ? { ...pa.attachment, url: data?.signedUrl }
-              : pa.attachment,
-          };
-        }),
-      );
-    }
+        return {
+          ...pa,
+          attachment: pa.attachment
+            ? { ...pa.attachment, url: data?.signedUrl }
+            : pa.attachment,
+        };
+      }),
+    );
   }
 
   return {
