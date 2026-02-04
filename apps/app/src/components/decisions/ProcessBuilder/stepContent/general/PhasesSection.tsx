@@ -10,6 +10,7 @@ import {
   AccordionTrigger,
 } from '@op/ui/Accordion';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
+import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { use, useCallback, useState } from 'react';
 import { DisclosureStateContext } from 'react-aria-components';
@@ -18,9 +19,15 @@ import { LuChevronRight, LuGripVertical } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
+import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+
+interface PhaseRules {
+  proposals?: { submit?: boolean; edit?: boolean };
+  voting?: { submit?: boolean; edit?: boolean };
+}
 
 interface Phase {
   id: string;
@@ -28,6 +35,7 @@ interface Phase {
   description?: string;
   startDate?: string;
   endDate?: string;
+  rules?: PhaseRules;
 }
 
 export default function PhasesSection({
@@ -49,30 +57,43 @@ export default function PhasesSection({
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
+  // Only auto-save to API when in draft mode
+  const isDraft = instance.status === 'draft';
+
   // Auto-save phases
-  useAutoSave({
+  // TODO: Use hasPendingChanges and publishChanges in the header for "Publish Changes" button
+  const {
+    hasPendingChanges: _hasPendingChanges,
+    publishChanges: _publishChanges,
+  } = useAutoSave({
     data: phases,
-    onSave: useCallback(
-      async (data: Phase[]) => {
+    enabled: isDraft,
+    onLocalSave: useCallback(
+      (data: Phase[]) => {
         // Update localStorage via Zustand
         for (const phase of data) {
           setPhaseData(decisionProfileId, phase.id, {
             startDate: phase.startDate,
             endDate: phase.endDate,
+            rules: phase.rules,
           });
         }
-
-        // Save to API
+      },
+      [decisionProfileId, setPhaseData],
+    ),
+    onApiSave: useCallback(
+      async (data: Phase[]) => {
         await updateInstance.mutateAsync({
           instanceId,
           phases: data.map((phase) => ({
             phaseId: phase.id,
             startDate: phase.startDate,
             endDate: phase.endDate,
+            settings: { rules: phase.rules },
           })),
         });
       },
-      [decisionProfileId, instanceId, setPhaseData, updateInstance],
+      [instanceId, updateInstance],
     ),
     setSaveStatus: useCallback(
       (status) => setSaveStatus(decisionProfileId, status),
@@ -192,11 +213,114 @@ export const PhaseEditor = ({
                   </div>
                 </div>
               </div>
+              <hr />
+              <PhaseControls
+                phase={phase}
+                onUpdate={(updates) => updatePhase(phase.id, updates)}
+              />
             </AccordionContent>
           </AccordionItem>
         )}
       </Sortable>
     </Accordion>
+  );
+};
+
+/** Controls for configuring phase behavior (proposals, voting) */
+const PhaseControls = ({
+  phase,
+  onUpdate,
+}: {
+  phase: Phase;
+  onUpdate: (updates: Partial<Phase>) => void;
+}) => {
+  const t = useTranslations();
+
+  const updateRules = (updates: Partial<PhaseRules>) => {
+    onUpdate({
+      rules: {
+        ...phase.rules,
+        ...updates,
+      },
+    });
+  };
+
+  return (
+    <div className="space-y-4 p-4">
+      {/* Proposal Settings */}
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium text-neutral-charcoal">
+          {t('Proposal Settings')}
+        </h4>
+        <ToggleRow label={t('Accept proposal submissions')}>
+          <ToggleButton
+            isSelected={phase.rules?.proposals?.submit ?? false}
+            onChange={(val) =>
+              updateRules({
+                proposals: {
+                  ...phase.rules?.proposals,
+                  submit: val,
+                },
+              })
+            }
+            size="small"
+          />
+        </ToggleRow>
+        {phase.rules?.proposals?.submit && (
+          <ToggleRow label={t('Allow proposal editing')}>
+            <ToggleButton
+              isSelected={phase.rules?.proposals?.edit ?? false}
+              onChange={(val) =>
+                updateRules({
+                  proposals: {
+                    ...phase.rules?.proposals,
+                    edit: val,
+                  },
+                })
+              }
+              size="small"
+            />
+          </ToggleRow>
+        )}
+      </div>
+
+      {/* Voting Settings */}
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium text-neutral-charcoal">
+          {t('Voting Settings')}
+        </h4>
+        <ToggleRow label={t('Enable voting')}>
+          <ToggleButton
+            isSelected={phase.rules?.voting?.submit ?? false}
+            onChange={(val) =>
+              updateRules({
+                voting: {
+                  ...phase.rules?.voting,
+                  submit: val,
+                },
+              })
+            }
+            size="small"
+          />
+        </ToggleRow>
+        {phase.rules?.voting?.submit && (
+          <ToggleRow label={t('Allow vote changes')}>
+            <ToggleButton
+              isSelected={phase.rules?.voting?.edit ?? false}
+              onChange={(val) =>
+                updateRules({
+                  voting: {
+                    ...phase.rules?.voting,
+                    edit: val,
+                  },
+                })
+              }
+              size="small"
+            />
+          </ToggleRow>
+        )}
+      </div>
+    </div>
   );
 };
 
