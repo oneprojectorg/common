@@ -78,3 +78,16 @@ export const DATE_TIME_UTC_FORMAT = {
   hour: 'numeric',
   minute: 'numeric',
 } as const;
+
+/**
+ * Format file size in human-readable format (Bytes, KB, MB, GB)
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) {
+    return '0 Bytes';
+  }
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
+}
