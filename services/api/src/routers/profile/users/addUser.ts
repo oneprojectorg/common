@@ -18,7 +18,6 @@ export const addUserRouter = router({
     .output(
       z.object({
         email: z.string(),
-        invited: z.literal(true),
       }),
     )
     .mutation(async ({ ctx, input }) => {

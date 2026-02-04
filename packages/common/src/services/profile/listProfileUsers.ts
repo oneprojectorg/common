@@ -224,12 +224,11 @@ export const listProfileUsers = async ({
 
     // Transform pending invites to ProfileMember shape
     pendingInvites = filteredInvites.map((invite) => {
-      // Cast to AccessRole - Drizzle v1 types don't always infer correctly for one relations
       const role = invite.accessRole;
       return {
         // ProfileUser-like fields with placeholder values for pending invites
         id: invite.id,
-        authUserId: '', // Not assigned yet
+        authUserId: null, // Not assigned yet
         email: invite.email,
         name: invite.email.split('@')[0] ?? null, // Use email prefix as name placeholder
         about: null,

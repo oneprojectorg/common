@@ -6,7 +6,11 @@ import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, UnauthorizedError } from '../../utils/error';
+import {
+  ConflictError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
 
@@ -27,7 +31,7 @@ export const addProfileUser = async ({
   currentUser: User;
 }) => {
   if (roleIdsToAssign.length === 0) {
-    throw new CommonError('At least one role must be specified');
+    throw new ValidationError('At least one role must be specified');
   }
 
   const roleIdsToAssignDeduped = [...new Set(roleIdsToAssign)];
@@ -77,20 +81,20 @@ export const addProfileUser = async ({
     const invalidRoleIds = roleIdsToAssignDeduped.filter(
       (id) => !validRoleIds.has(id),
     );
-    throw new CommonError(
+    throw new ValidationError(
       `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
     );
   }
 
   if (existingUser && existingUser.profileUsers.length > 0) {
-    throw new CommonError('User is already a member of this profile');
+    throw new ConflictError('User is already a member of this profile');
   }
 
   // If user exists in the system, check for pending invite then create one
   // (user already has an account, no need to add to allowList)
   if (existingUser) {
     if (existingPendingInvite) {
-      throw new CommonError(
+      throw new ConflictError(
         'User already has a pending invite to this profile',
       );
     }
@@ -126,12 +130,14 @@ export const addProfileUser = async ({
       }),
     );
 
-    return { email: normalizedEmail, invited: true as const };
+    return { email: normalizedEmail };
   }
 
   // Check for existing pending invite
   if (existingPendingInvite) {
-    throw new CommonError('User already has a pending invite to this profile');
+    throw new ConflictError(
+      'User already has a pending invite to this profile',
+    );
   }
 
   // Add to allowList for signup authorization (without profile metadata)
@@ -175,5 +181,5 @@ export const addProfileUser = async ({
     }),
   );
 
-  return { email: normalizedEmail, invited: true as const };
+  return { email: normalizedEmail };
 };

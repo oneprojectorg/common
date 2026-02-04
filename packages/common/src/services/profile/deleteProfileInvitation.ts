@@ -3,7 +3,11 @@ import { profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, UnauthorizedError } from '../../utils/error';
+import {
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 
 /**
@@ -33,17 +37,13 @@ export const deleteProfileInvitation = async ({
 
   assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
 
-  if (!invite) {
-    throw new CommonError('Invite not found');
-  }
-
-  if (invite.profileId !== profileId) {
-    throw new CommonError('Invite does not belong to this profile');
+  if (!invite || invite.profileId !== profileId) {
+    throw new NotFoundError('Invite not found');
   }
 
   // Invite is pending when acceptedOn is null
   if (invite.acceptedOn !== null) {
-    throw new CommonError('Only pending invites can be revoked');
+    throw new ConflictError('Only pending invites can be revoked');
   }
 
   // Delete the invite
