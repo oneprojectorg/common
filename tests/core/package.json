@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@op/common": "workspace:*",
     "@op/db": "workspace:*",
     "@supabase/supabase-js": "^2.49.3",
     "drizzle-orm": "catalog:"

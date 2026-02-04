@@ -23,7 +23,8 @@ export {
   type CreateDecisionInstanceResult,
   type CreateDecisionProcessOptions,
   type CreateDecisionProcessResult,
-  type DecisionPhaseSchema,
-  type DecisionProcessSchema,
   type GrantDecisionProfileAccessOptions,
 } from './decision-data';
+
+// Re-export schema types from @op/common for convenience
+export type { DecisionSchemaDefinition, PhaseDefinition } from '@op/common';

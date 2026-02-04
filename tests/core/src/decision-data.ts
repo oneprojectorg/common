@@ -1,3 +1,4 @@
+import type { DecisionSchemaDefinition } from '@op/common';
 import {
   EntityType,
   ProcessStatus,
@@ -18,42 +19,7 @@ export const SEEDED_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
 export const SEEDED_SIMPLE_VOTING_TEMPLATE_NAME = 'Simple Voting';
 
 /**
- * Decision schema phase definition.
- * Matches the DecisionSchemaDefinition structure from @op/common.
- */
-export interface DecisionPhaseSchema {
-  id: string;
-  name: string;
-  description?: string;
-  rules: {
-    proposals?: { submit?: boolean; edit?: boolean };
-    voting?: { submit?: boolean; edit?: boolean };
-    advancement?: { method: 'date' | 'manual'; endDate?: string };
-  };
-  settings?: Record<string, unknown>;
-  selectionPipeline?: Record<string, unknown>;
-  startDate?: string;
-  endDate?: string;
-}
-
-/**
- * Decision schema definition.
- * Matches the DecisionSchemaDefinition structure from @op/common.
- */
-export interface DecisionProcessSchema {
-  id: string;
-  version: string;
-  name: string;
-  description?: string;
-  config?: { hideBudget?: boolean };
-  phases: DecisionPhaseSchema[];
-  proposalTemplate?: Record<string, unknown>;
-}
-
-/**
  * A simple voting schema for testing.
- * This mirrors the simpleVoting schema from @op/common but is self-contained
- * to avoid ESM/CJS import issues across different test environments.
  */
 export const testSimpleVotingSchema = {
   id: 'simple',
@@ -103,11 +69,10 @@ export const testSimpleVotingSchema = {
       },
     },
   ],
-};
+} satisfies DecisionSchemaDefinition;
 
 /**
  * A minimal test schema with just two phases for simpler unit tests.
- * Matches the legacy testDecisionSchema used in TestDecisionsDataManager.
  */
 export const testMinimalSchema = {
   id: 'test-schema',
@@ -136,7 +101,7 @@ export const testMinimalSchema = {
       },
     },
   ],
-};
+} satisfies DecisionSchemaDefinition;
 
 export interface CreateDecisionProcessOptions {
   /** Profile ID of the user creating the process */
@@ -146,14 +111,14 @@ export interface CreateDecisionProcessOptions {
   /** Optional description for the process */
   description?: string;
   /** Schema to use for the process (defaults to testSimpleVotingSchema) */
-  schema?: DecisionProcessSchema;
+  schema?: DecisionSchemaDefinition;
 }
 
 export interface CreateDecisionProcessResult {
   id: string;
   name: string;
   description: string | null;
-  processSchema: DecisionProcessSchema;
+  processSchema: DecisionSchemaDefinition;
   createdByProfileId: string;
   createdAt: string | null;
   updatedAt: string | null;
@@ -191,7 +156,7 @@ export async function createDecisionProcess(
     id: processRecord.id,
     name: processRecord.name,
     description: processRecord.description,
-    processSchema: processRecord.processSchema as DecisionProcessSchema,
+    processSchema: processRecord.processSchema as DecisionSchemaDefinition,
     createdByProfileId: processRecord.createdByProfileId,
     createdAt: processRecord.createdAt,
     updatedAt: processRecord.updatedAt,
@@ -210,7 +175,7 @@ export interface CreateDecisionInstanceOptions {
   /** Optional name for the instance (auto-generated if not provided) */
   name?: string;
   /** Schema to use for generating instance data (defaults to testSimpleVotingSchema) */
-  schema?: DecisionProcessSchema;
+  schema?: DecisionSchemaDefinition;
   /** Status of the instance (defaults to PUBLISHED) */
   status?: ProcessStatus;
   /** Whether to grant admin access (defaults to true) */
@@ -355,7 +320,7 @@ export async function grantDecisionProfileAccess(
 export async function getSeededTemplate(): Promise<{
   id: string;
   name: string;
-  processSchema: DecisionProcessSchema;
+  processSchema: DecisionSchemaDefinition;
 }> {
   const [template] = await db
     .select()
@@ -364,14 +329,13 @@ export async function getSeededTemplate(): Promise<{
 
   if (!template) {
     throw new Error(
-      `Seeded template "${SEEDED_SIMPLE_VOTING_TEMPLATE_NAME}" not found. ` +
-        'Make sure seed-test.ts has been run.',
+      `Seeded template "${SEEDED_SIMPLE_VOTING_TEMPLATE_NAME}" not found. Make sure seed-test.ts has been run.`,
     );
   }
 
   return {
     id: template.id,
     name: template.name,
-    processSchema: template.processSchema as DecisionProcessSchema,
+    processSchema: template.processSchema as DecisionSchemaDefinition,
   };
 }
