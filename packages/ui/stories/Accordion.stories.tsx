@@ -3,7 +3,11 @@ import { use, useState } from 'react';
 import { DisclosureStateContext } from 'react-aria-components';
 import { LuPlus } from 'react-icons/lu';
 
-import { DragHandle, Sortable } from '../src/components/Sortable';
+import {
+  DragHandle,
+  DropIndicatorLine,
+  Sortable,
+} from '../src/components/Sortable';
 import {
   Accordion,
   AccordionContent,
@@ -234,6 +238,7 @@ export const CustomHeader: Story = {
             dragTrigger="handle"
             getItemLabel={(section) => section.title}
             className="gap-2"
+            renderDropIndicator={DropIndicatorLine}
           >
             {(section, { dragHandleProps, isDragging }) => (
               <AccordionItem
