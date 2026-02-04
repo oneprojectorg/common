@@ -59,6 +59,6 @@ export function getViewerExtensions(): AnyExtension[] {
     Link.configure({
       openOnClick: true,
     }),
-    IframelyExtension.configure({ editable: false }) as AnyExtension,
+    IframelyExtension as AnyExtension,
   ];
 }

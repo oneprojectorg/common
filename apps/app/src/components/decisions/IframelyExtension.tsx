@@ -12,8 +12,6 @@ import { shouldAutoEmbed } from './urlUtils';
 
 interface IframelyOptions {
   HTMLAttributes: Record<string, any>;
-  /** Whether the embed can be removed (shows X button) */
-  editable: boolean;
 }
 
 declare module '@tiptap/core' {
@@ -30,17 +28,16 @@ declare module '@tiptap/core' {
 const IframelyComponent: React.FC<ReactNodeViewProps> = ({
   node,
   deleteNode,
-  extension,
+  editor,
 }) => {
   const src = node.attrs.src;
-  const { editable } = extension.options;
 
   return (
     <NodeViewWrapper className="iframely-embed">
       <LinkPreview
         url={src}
         className="my-4"
-        onRemove={editable ? deleteNode : undefined}
+        onRemove={editor.isEditable ? deleteNode : undefined}
       />
     </NodeViewWrapper>
   );
@@ -52,7 +49,6 @@ export const IframelyExtension = Node.create<IframelyOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-      editable: true,
     };
   },
 
