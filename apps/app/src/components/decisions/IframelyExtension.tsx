@@ -12,6 +12,8 @@ import { shouldAutoEmbed } from './urlUtils';
 
 interface IframelyOptions {
   HTMLAttributes: Record<string, any>;
+  /** Whether the embed can be removed (shows X button) */
+  editable: boolean;
 }
 
 declare module '@tiptap/core' {
@@ -25,17 +27,26 @@ declare module '@tiptap/core' {
   }
 }
 
-const IframelyComponent: React.FC<ReactNodeViewProps> = ({
-  node,
-  deleteNode,
-}) => {
-  const src = node.attrs.src as string;
+const createIframelyComponent = (
+  editable: boolean,
+): React.FC<ReactNodeViewProps> => {
+  const IframelyComponent: React.FC<ReactNodeViewProps> = ({
+    node,
+    deleteNode,
+  }) => {
+    const src = node.attrs.src as string;
 
-  return (
-    <NodeViewWrapper className="iframely-embed">
-      <LinkPreview url={src} className="my-4" onRemove={deleteNode} />
-    </NodeViewWrapper>
-  );
+    return (
+      <NodeViewWrapper className="iframely-embed">
+        <LinkPreview
+          url={src}
+          className="my-4"
+          onRemove={editable ? deleteNode : undefined}
+        />
+      </NodeViewWrapper>
+    );
+  };
+  return IframelyComponent;
 };
 
 export const IframelyExtension = Node.create<IframelyOptions>({
@@ -44,6 +55,7 @@ export const IframelyExtension = Node.create<IframelyOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
+      editable: true,
     };
   },
 
@@ -107,7 +119,9 @@ export const IframelyExtension = Node.create<IframelyOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(IframelyComponent);
+    return ReactNodeViewRenderer(
+      createIframelyComponent(this.options.editable),
+    );
   },
 
   addInputRules() {
