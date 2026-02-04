@@ -50,7 +50,8 @@ const accordionStyles = tv({
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
           'disabled:cursor-not-allowed disabled:opacity-50',
         ],
-        indicator: 'text-muted-fg group-data-[expanded]/accordion-item:rotate-90',
+        indicator:
+          'text-muted-fg group-data-[expanded]/accordion-item:rotate-90',
         content: 'border-t',
         contentInner: 'p-4',
       },
@@ -203,7 +204,11 @@ const AccordionTrigger = ({
   const styles = useAccordionStyles();
 
   return (
-    <Button {...props} slot="trigger" className={cx(styles.trigger(), className)}>
+    <Button
+      {...props}
+      slot="trigger"
+      className={cx(styles.trigger(), className)}
+    >
       {showIndicator && indicatorPosition === 'start' && <AccordionIndicator />}
       {children}
       {showIndicator && indicatorPosition === 'end' && <AccordionIndicator />}
