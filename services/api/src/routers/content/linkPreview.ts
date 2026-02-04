@@ -22,18 +22,18 @@ const linkPreviewResponseSchema = z.object({
 
 const getLinkPreview = async (url: string) => {
   try {
-    const apiKey = process.env.IFRAMELY_API_KEY;
+    const iframelyKey = process.env.IFRAMELY_KEY;
 
-    if (!apiKey) {
+    if (!iframelyKey) {
       return {
         url,
-        error: 'Iframely API key not configured',
+        error: 'Iframely key not configured',
       };
     }
 
     // TODO: add caching
     const response = await fetch(
-      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${apiKey}`,
+      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}`,
     );
 
     if (!response.ok) {
