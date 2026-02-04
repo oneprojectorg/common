@@ -68,12 +68,12 @@ function handleMutationError(
 export function ProposalEditor({
   instance,
   backHref,
-  existingProposal,
+  proposal,
   isEditMode = false,
 }: {
   instance: ProcessInstance;
   backHref: string;
-  existingProposal?: Proposal;
+  proposal: Proposal;
   isEditMode?: boolean;
 }) {
   const router = useRouter();
@@ -99,18 +99,17 @@ export function ProposalEditor({
   const initializedRef = useRef(false);
 
   // Check if editing a draft (should show info modal and use submitProposal)
-  const isDraft =
-    isEditMode && existingProposal?.status === ProposalStatus.DRAFT;
+  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
-      existingProposal?.proposalData,
+      proposal?.proposalData,
     );
     if (existingId) {
       return existingId;
     }
-    return `proposal-${instance.id}-${existingProposal?.id ?? crypto.randomUUID()}`;
-  }, [existingProposal?.proposalData, existingProposal?.id, instance.id]);
+    return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
+  }, [proposal?.proposalData, proposal?.id, instance.id]);
 
   // Editor extensions - memoized with collaborative flag
   const editorExtensions = useMemo(
@@ -191,10 +190,8 @@ export function ProposalEditor({
   // Parse existing proposal data for editing
   const parsedProposalData = useMemo(
     () =>
-      isEditMode && existingProposal
-        ? parseProposalData(existingProposal.proposalData)
-        : null,
-    [isEditMode, existingProposal],
+      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
+    [isEditMode, proposal],
   );
 
   // Mutations
@@ -215,7 +212,7 @@ export function ProposalEditor({
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: async () => {
       await utils.decision.getProposal.invalidate({
-        profileId: existingProposal?.profileId,
+        profileId: proposal?.profileId,
       });
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
@@ -229,7 +226,7 @@ export function ProposalEditor({
   useEffect(() => {
     if (
       isEditMode &&
-      existingProposal &&
+      proposal &&
       parsedProposalData &&
       !initializedRef.current
     ) {
@@ -252,7 +249,7 @@ export function ProposalEditor({
 
       initializedRef.current = true;
     }
-  }, [isEditMode, existingProposal, parsedProposalData]);
+  }, [isEditMode, proposal, parsedProposalData]);
 
   // Show info modal for new proposals or drafts
   useEffect(() => {
@@ -317,12 +314,12 @@ export function ProposalEditor({
     setIsSubmitting(true);
 
     try {
-      if (!existingProposal) {
+      if (!proposal) {
         throw new Error('No proposal to update');
       }
 
       const proposalData: ProposalDataInput = {
-        ...parseProposalData(existingProposal.proposalData),
+        ...parseProposalData(proposal.proposalData),
         collaborationDocId,
         title,
         category:
@@ -334,7 +331,7 @@ export function ProposalEditor({
 
       // Update existing proposal
       await updateProposalMutation.mutateAsync({
-        proposalId: existingProposal.id,
+        proposalId: proposal.id,
         data: {
           proposalData,
         },
@@ -343,7 +340,7 @@ export function ProposalEditor({
       // If draft, also submit (transition to submitted status)
       if (isDraft) {
         await submitProposalMutation.mutateAsync({
-          proposalId: existingProposal.id,
+          proposalId: proposal.id,
         });
       }
     } catch (error) {
@@ -361,7 +358,7 @@ export function ProposalEditor({
     selectedCategory,
     collaborationDocId,
     categories,
-    existingProposal,
+    proposal,
     isDraft,
     submitProposalMutation,
     updateProposalMutation,
@@ -454,26 +451,24 @@ export function ProposalEditor({
           />
 
           {/* Attachments */}
-          {existingProposal && (
-            <div className="border-t border-neutral-gray2 pt-8">
-              <ProposalAttachments
-                proposalId={existingProposal.id}
-                attachments={
-                  existingProposal.attachments?.map((pa) => ({
-                    id: pa.attachmentId,
-                    fileName: pa.attachment?.fileName ?? 'Unknown',
-                    fileSize: pa.attachment?.fileSize ?? null,
-                    url: pa.attachment?.url,
-                  })) ?? []
-                }
-                onMutate={() =>
-                  utils.decision.getProposal.invalidate({
-                    profileId: existingProposal.profileId,
-                  })
-                }
-              />
-            </div>
-          )}
+          <div className="border-t border-neutral-gray2 pt-8">
+            <ProposalAttachments
+              proposalId={proposal.id}
+              attachments={
+                proposal.attachments?.map((pa) => ({
+                  id: pa.attachmentId,
+                  fileName: pa.attachment?.fileName ?? 'Unknown',
+                  fileSize: pa.attachment?.fileSize ?? null,
+                  url: pa.attachment?.url,
+                })) ?? []
+              }
+              onMutate={() =>
+                utils.decision.getProposal.invalidate({
+                  profileId: proposal.profileId,
+                })
+              }
+            />
+          </div>
         </div>
       </div>
 

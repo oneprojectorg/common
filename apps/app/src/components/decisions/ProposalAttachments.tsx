@@ -47,7 +47,6 @@ function attachmentsReducer(
 
 /**
  * Attachment section for proposals.
- * Uses useOptimistic for immediate UI feedback during uploads and deletes.
  */
 export function ProposalAttachments({
   proposalId,
