@@ -195,7 +195,7 @@ export const WithDropPlaceholder = () => {
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
         className="gap-2"
-        showDropPlaceholder
+        dropIndicator="placeholder"
       >
         {(task, { isDragging, dragHandleProps }) => (
           <div
@@ -243,7 +243,7 @@ export const CustomDropPlaceholder = () => {
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
         className="gap-2"
-        showDropPlaceholder
+        dropIndicator="placeholder"
         dropPlaceholderClassName="rounded-lg bg-amber-100 border-2 border-dashed border-amber-400"
       >
         {(task, { isDragging, dragHandleProps }) => (
@@ -312,7 +312,7 @@ const variableHeightItems: CardItem[] = [
 
 /**
  * Items with varying heights to demonstrate the sortable handles
- * different sized content gracefully.
+ * different sized content gracefully. Uses a line indicator for cleaner UX.
  */
 export const VariableHeightItems = () => {
   const [items, setItems] = useState(variableHeightItems);
@@ -321,8 +321,8 @@ export const VariableHeightItems = () => {
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">Variable Height Items</h3>
       <p className="mb-4 text-sm text-neutral-gray3">
-        Items with different content lengths sort correctly, with the drop
-        placeholder matching each item's height.
+        Items with different content lengths sort correctly. A line indicator
+        shows where the item will be dropped.
       </p>
       <Sortable
         items={items}
@@ -330,7 +330,7 @@ export const VariableHeightItems = () => {
         dragTrigger="handle"
         getItemLabel={(item) => item.title}
         className="gap-2"
-        showDropPlaceholder
+        dropIndicator="line"
       >
         {(item, { isDragging, dragHandleProps }) => (
           <div

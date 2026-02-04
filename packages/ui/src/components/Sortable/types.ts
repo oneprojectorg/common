@@ -42,9 +42,14 @@ export interface SortableProps<T extends SortableItem> {
   getItemLabel?: (item: T) => string;
   /** Accessible label for the list */
   'aria-label'?: string;
-  /** Whether to show a placeholder where the dragged item will be dropped */
-  showDropPlaceholder?: boolean;
-  /** Class name for the drop placeholder */
+  /**
+   * How to indicate where the dragged item will be dropped:
+   * - 'none': No visual indicator (default)
+   * - 'placeholder': Show a placeholder matching the dragged item's size
+   * - 'line': Show a thin line between items
+   */
+  dropIndicator?: 'placeholder' | 'line' | 'none';
+  /** Class name for the drop placeholder (only used when dropIndicator='placeholder') */
   dropPlaceholderClassName?: string;
 }
 

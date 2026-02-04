@@ -1,14 +1,12 @@
 'use client';
 
 import {
-  type ClientRect,
   DndContext,
   type DragEndEvent,
-  type DragMoveEvent,
   DragOverlay,
   type DragStartEvent,
-  type KeyboardCoordinateGetter,
   KeyboardSensor,
+  type Modifier,
   MouseSensor,
   TouchSensor,
   type UniqueIdentifier,
@@ -19,6 +17,7 @@ import {
 import {
   SortableContext,
   arrayMove,
+  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -39,13 +38,10 @@ const sortableStyles = tv({
     item: 'relative outline-none',
     dropPlaceholder:
       'rounded-lg border-1 border-dashed border-primary/40 bg-primary/20',
+    // The line indicator: shown in place of the dragged item
+    dropLine: 'relative my-1 h-0.5 rounded-full bg-primary',
   },
   variants: {
-    isDragging: {
-      true: {
-        item: 'opacity-40',
-      },
-    },
     hasDragHandle: {
       true: {
         item: '',
@@ -58,73 +54,13 @@ const sortableStyles = tv({
 });
 
 /**
- * Custom keyboard coordinate getter that moves directly to the next/previous
- * item's position. This fixes the default dnd-kit behavior where variable
- * height items don't move far enough to trigger reordering.
- *
- * The coordinate getter returns the NEW position for the collision rect's
- * top-left corner (not a delta, not the center).
+ * Modifier to adjust the drag overlay position when using line indicator mode.
+ * Shifts the overlay up slightly so it doesn't cover the line.
  */
-const customKeyboardCoordinates: KeyboardCoordinateGetter = (
-  event,
-  { context: { active, collisionRect, droppableRects, droppableContainers } },
-) => {
-  if (!['ArrowUp', 'ArrowDown'].includes(event.code)) {
-    return undefined;
-  }
-
-  event.preventDefault();
-
-  if (!active || !collisionRect) {
-    return undefined;
-  }
-
-  const isMovingDown = event.code === 'ArrowDown';
-
-  // Get all droppable containers with their rects
-  const containers = [...droppableContainers.getEnabled()]
-    .map((container) => ({
-      id: container.id,
-      rect: droppableRects.get(container.id),
-    }))
-    .filter(
-      (item): item is { id: UniqueIdentifier; rect: ClientRect } =>
-        item.rect !== undefined && item.id !== active.id,
-    );
-
-  // Filter to only containers in the direction we're moving
-  const collisionCenterY = collisionRect.top + collisionRect.height / 2;
-
-  const containersInDirection = containers.filter(({ rect }) => {
-    const targetCenterY = rect.top + rect.height / 2;
-    if (isMovingDown) {
-      return targetCenterY > collisionCenterY;
-    } else {
-      return targetCenterY < collisionCenterY;
-    }
-  });
-
-  if (containersInDirection.length === 0) {
-    return undefined;
-  }
-
-  // Find the closest container in that direction (by center distance)
-  const closest = containersInDirection.reduce((prev, curr) => {
-    const prevCenterY = prev.rect.top + prev.rect.height / 2;
-    const currCenterY = curr.rect.top + curr.rect.height / 2;
-    const prevDistance = Math.abs(prevCenterY - collisionCenterY);
-    const currDistance = Math.abs(currCenterY - collisionCenterY);
-    return currDistance < prevDistance ? curr : prev;
-  });
-
-  const targetCenterY = closest.rect.top + closest.rect.height / 2;
-
-  // Return coordinates for collision rect's top-left corner such that
-  // our center aligns with the target's center.
-  // Keep X the same (just use current collision rect's left position)
+const adjustTranslate: Modifier = ({ transform }) => {
   return {
-    x: collisionRect.left,
-    y: targetCenterY - collisionRect.height / 2,
+    ...transform,
+    y: transform.y - 25,
   };
 };
 
@@ -135,8 +71,7 @@ interface SortableItemWrapperProps<T extends SortableItem> {
   children: (item: T, controls: SortableItemControls) => React.ReactNode;
   itemClassName?: string;
   getItemLabel?: (item: T) => string;
-  useDragOverlay: boolean;
-  showDropPlaceholder: boolean;
+  dropIndicator: 'placeholder' | 'line' | 'none';
   dropPlaceholderClassName?: string;
 }
 
@@ -147,8 +82,7 @@ function SortableItemWrapper<T extends SortableItem>({
   children,
   itemClassName,
   getItemLabel,
-  useDragOverlay,
-  showDropPlaceholder,
+  dropIndicator,
   dropPlaceholderClassName,
 }: SortableItemWrapperProps<T>) {
   const styles = sortableStyles();
@@ -170,8 +104,6 @@ function SortableItemWrapper<T extends SortableItem>({
     transition,
   };
 
-  // When using a handle, the handle gets the listeners
-  // When using item mode, the item wrapper gets the listeners
   const dragHandleProps =
     dragTrigger === 'handle'
       ? {
@@ -200,9 +132,10 @@ function SortableItemWrapper<T extends SortableItem>({
     index,
   };
 
-  // When using DragOverlay, show placeholder where item will drop
-  if (useDragOverlay && isDragging) {
-    if (showDropPlaceholder) {
+  // When item is being dragged, show appropriate indicator
+  if (isDragging) {
+    if (dropIndicator === 'placeholder') {
+      // Show a placeholder matching the item's size
       return (
         <div
           ref={setNodeRef}
@@ -211,13 +144,25 @@ function SortableItemWrapper<T extends SortableItem>({
             className: dropPlaceholderClassName,
           })}
         >
-          {/* Invisible content to maintain height */}
           <div style={{ visibility: 'hidden' }}>{children(item, controls)}</div>
         </div>
       );
     }
-    // Hide the original item when not showing placeholder
-    style.opacity = 0;
+
+    if (dropIndicator === 'line') {
+      // Show a thin line where the item will be placed
+      return (
+        <div ref={setNodeRef} style={style} className={styles.dropLine()} />
+      );
+    }
+
+    // 'none' mode: hide the item completely
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ ...style, opacity: 0, height: 0, overflow: 'hidden' }}
+      />
+    );
   }
 
   return (
@@ -225,7 +170,6 @@ function SortableItemWrapper<T extends SortableItem>({
       ref={setNodeRef}
       style={style}
       className={styles.item({
-        isDragging: !useDragOverlay && isDragging,
         hasDragHandle: dragTrigger === 'handle',
         className: itemClassName,
       })}
@@ -246,70 +190,32 @@ export function Sortable<T extends SortableItem>({
   itemClassName,
   getItemLabel,
   'aria-label': ariaLabel = 'Sortable list',
-  showDropPlaceholder = false,
+  dropIndicator = 'none',
   dropPlaceholderClassName,
 }: SortableProps<T>) {
   const styles = sortableStyles();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  // Track items internally for live reordering during keyboard drag
-  const [internalItems, setInternalItems] = useState(items);
-
-  // Sync internal items when external items change (but not during drag)
-  React.useEffect(() => {
-    if (!activeId) {
-      setInternalItems(items);
-    }
-  }, [items, activeId]);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
     useSensor(KeyboardSensor, {
-      coordinateGetter: customKeyboardCoordinates,
+      coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id);
-    setInternalItems(items);
-  };
-
-  // Handle live reordering during drag (especially for keyboard)
-  const handleDragMove = (event: DragMoveEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setInternalItems((currentItems) => {
-        const oldIndex = currentItems.findIndex(
-          (item) => String(item.id) === active.id,
-        );
-        const newIndex = currentItems.findIndex(
-          (item) => String(item.id) === over.id,
-        );
-
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          return arrayMove(currentItems, oldIndex, newIndex);
-        }
-        return currentItems;
-      });
-    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = internalItems.findIndex(
-        (item) => String(item.id) === active.id,
-      );
-      const newIndex = internalItems.findIndex(
-        (item) => String(item.id) === over.id,
-      );
-      const newItems = arrayMove(internalItems, oldIndex, newIndex);
+      const oldIndex = items.findIndex((item) => String(item.id) === active.id);
+      const newIndex = items.findIndex((item) => String(item.id) === over.id);
+      const newItems = arrayMove(items, oldIndex, newIndex);
       onChange(newItems);
-    } else {
-      // Even if no change in position, commit the current internal state
-      onChange(internalItems);
     }
 
     setActiveId(null);
@@ -317,11 +223,10 @@ export function Sortable<T extends SortableItem>({
 
   const handleDragCancel = () => {
     setActiveId(null);
-    setInternalItems(items); // Reset to original order
   };
 
   const activeItem = activeId
-    ? internalItems.find((item) => String(item.id) === activeId)
+    ? items.find((item) => String(item.id) === activeId)
     : null;
 
   return (
@@ -329,12 +234,11 @@ export function Sortable<T extends SortableItem>({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
       <SortableContext
-        items={internalItems.map((item) => String(item.id))}
+        items={items.map((item) => String(item.id))}
         strategy={verticalListSortingStrategy}
       >
         <div
@@ -342,7 +246,7 @@ export function Sortable<T extends SortableItem>({
           aria-label={ariaLabel}
           className={styles.container({ className })}
         >
-          {internalItems.map((item, index) => (
+          {items.map((item, index) => (
             <SortableItemWrapper
               key={String(item.id)}
               item={item}
@@ -350,8 +254,7 @@ export function Sortable<T extends SortableItem>({
               dragTrigger={dragTrigger}
               itemClassName={itemClassName}
               getItemLabel={getItemLabel}
-              useDragOverlay={true}
-              showDropPlaceholder={showDropPlaceholder}
+              dropIndicator={dropIndicator}
               dropPlaceholderClassName={dropPlaceholderClassName}
             >
               {children}
@@ -362,12 +265,19 @@ export function Sortable<T extends SortableItem>({
 
       {typeof document !== 'undefined' &&
         createPortal(
-          <DragOverlay>
+          <DragOverlay
+            modifiers={dropIndicator === 'line' ? [adjustTranslate] : undefined}
+          >
             {activeItem ? (
               renderDragPreview ? (
                 renderDragPreview([activeItem])
               ) : (
-                <div style={{ cursor: 'grabbing' }}>
+                <div
+                  style={{
+                    cursor: 'grabbing',
+                    opacity: dropIndicator === 'line' ? 0.8 : 1,
+                  }}
+                >
                   {children(activeItem, {
                     dragHandleProps: {
                       ref: () => {},
@@ -380,7 +290,7 @@ export function Sortable<T extends SortableItem>({
                     },
                     isDragging: true,
                     isDropTarget: false,
-                    index: internalItems.findIndex((i) => i.id === activeItem.id),
+                    index: items.findIndex((i) => i.id === activeItem.id),
                   })}
                 </div>
               )
