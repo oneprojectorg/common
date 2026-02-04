@@ -1,11 +1,5 @@
-import { and, db, eq, gt, isNull, lt, or, sql } from '@op/db/client';
-import {
-  type AccessRole,
-  profileInvites,
-  profileUsers,
-  profiles,
-  users,
-} from '@op/db/schema';
+import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
+import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -207,15 +201,17 @@ export const listProfileUsers = async ({
   // Query pending invites (only on the last page of active members to avoid duplicate fetches)
   let pendingInvites: ProfileMember[] = [];
   if (!hasMore) {
-    const inviteResults = await db._query.profileInvites.findMany({
-      where: and(
-        eq(profileInvites.profileId, profileId),
-        isNull(profileInvites.acceptedOn),
-      ),
+    const inviteResults = await db.query.profileInvites.findMany({
+      where: {
+        profileId,
+        acceptedOn: { isNull: true },
+      },
       with: {
         accessRole: true,
       },
-      orderBy: (table, { asc }) => [asc(table.email)],
+      orderBy: {
+        email: 'asc',
+      },
     });
 
     // Filter by search query if provided
@@ -228,8 +224,8 @@ export const listProfileUsers = async ({
 
     // Transform pending invites to ProfileMember shape
     pendingInvites = filteredInvites.map((invite) => {
-      // Cast to AccessRole since we know the relation returns a single object
-      const role = invite.accessRole as AccessRole | null;
+      // Cast to AccessRole - Drizzle v1 types don't always infer correctly for one relations
+      const role = invite.accessRole;
       return {
         // ProfileUser-like fields with placeholder values for pending invites
         id: invite.id,

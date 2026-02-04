@@ -22,8 +22,8 @@ export const deleteProfileInvitation = async ({
   // Fetch profile access and invite in parallel
   const [profileUser, invite] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
-    db._query.profileInvites.findFirst({
-      where: eq(profileInvites.id, inviteId),
+    db.query.profileInvites.findFirst({
+      where: { id: inviteId },
     }),
   ]);
 

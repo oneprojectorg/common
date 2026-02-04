@@ -43,27 +43,26 @@ export const addProfileUser = async ({
   ] = await Promise.all([
     assertProfile(profileId),
     getProfileAccessUser({ user: currentUser, profileId }),
-    db._query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, roleIdsToAssignDeduped),
+    db.query.accessRoles.findMany({
+      where: { id: { in: roleIdsToAssignDeduped } },
     }),
-    db._query.users.findFirst({
-      where: (table, { eq }) => eq(table.email, normalizedEmail),
+    db.query.users.findFirst({
+      where: { email: normalizedEmail },
       with: {
         profileUsers: {
-          where: (table, { eq }) => eq(table.profileId, profileId),
+          where: { profileId },
         },
       },
     }),
-    db._query.profileInvites.findFirst({
-      where: (table, { and, eq, isNull }) =>
-        and(
-          eq(table.email, normalizedEmail),
-          eq(table.profileId, profileId),
-          isNull(table.acceptedOn),
-        ),
+    db.query.profileInvites.findFirst({
+      where: {
+        email: normalizedEmail,
+        profileId,
+        acceptedOn: { isNull: true },
+      },
     }),
-    db._query.allowList.findFirst({
-      where: (table, { eq }) => eq(table.email, normalizedEmail),
+    db.query.allowList.findFirst({
+      where: { email: normalizedEmail },
     }),
   ]);
 

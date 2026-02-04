@@ -3,6 +3,7 @@ import { index, integer, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { accessRoles } from './access.sql';
+import { profileInvites } from './profileInvites.sql';
 import { profiles } from './profiles.sql';
 
 /**
@@ -57,6 +58,7 @@ export const accessRolesRelations = relations(accessRoles, ({ many, one }) => ({
     fields: [accessRoles.profileId],
     references: [profiles.id],
   }),
+  profileInvites: many(profileInvites),
 }));
 
 export const accessRolePermissionsOnAccessZonesRelations = relations(

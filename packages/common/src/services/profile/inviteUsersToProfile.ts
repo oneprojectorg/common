@@ -48,30 +48,29 @@ export const inviteUsersToProfile = async (input: {
     // Get the profile details for the invite
     assertProfile(requesterProfileId),
     // Get the target role
-    db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, roleId),
+    db.query.accessRoles.findFirst({
+      where: { id: roleId },
     }),
     // Get all users with their profile memberships for this profile
-    db._query.users.findMany({
-      where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+    db.query.users.findMany({
+      where: { email: { in: normalizedEmails } },
       with: {
         profileUsers: {
-          where: (table, { eq }) => eq(table.profileId, requesterProfileId),
+          where: { profileId: requesterProfileId },
         },
       },
     }),
     // Get all existing allowList entries for these emails
-    db._query.allowList.findMany({
-      where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+    db.query.allowList.findMany({
+      where: { email: { in: normalizedEmails } },
     }),
     // Get existing pending invites for this profile (acceptedOn is null = pending)
-    db._query.profileInvites.findMany({
-      where: (table, { and, eq, inArray, isNull }) =>
-        and(
-          inArray(table.email, normalizedEmails),
-          eq(table.profileId, requesterProfileId),
-          isNull(table.acceptedOn),
-        ),
+    db.query.profileInvites.findMany({
+      where: {
+        email: { in: normalizedEmails },
+        profileId: requesterProfileId,
+        acceptedOn: { isNull: true },
+      },
     }),
     getProfileAccessUser({
       user,

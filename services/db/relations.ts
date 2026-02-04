@@ -107,4 +107,30 @@ export const relations = defineRelations(schema, (r) => ({
       optional: false,
     }),
   },
+
+  /**
+   * Users relations
+   *
+   * authUserId and profileId are NOT NULL.
+   */
+  users: {
+    profileUsers: r.many.profileUsers({
+      from: r.users.authUserId,
+      to: r.profileUsers.authUserId,
+    }),
+    profile: r.one.profiles({
+      from: r.users.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    currentProfile: r.one.profiles({
+      from: r.users.currentProfileId,
+      to: r.profiles.id,
+      alias: 'user_currentProfile',
+    }),
+    avatarImage: r.one.objectsInStorage({
+      from: r.users.avatarImageId,
+      to: r.objectsInStorage.id,
+    }),
+  },
 }));
