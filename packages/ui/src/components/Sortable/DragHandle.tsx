@@ -12,12 +12,13 @@ const dragHandleStyles = tv({
 
 export const DragHandle = forwardRef<
   HTMLButtonElement,
-  DragHandleProps & React.ButtonHTMLAttributes<HTMLButtonElement>
->(function DragHandle({ size = 16, className, ...props }, ref) {
+  DragHandleProps & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'>
+>(function DragHandle({ size = 16, className, 'aria-label': ariaLabel, ...props }, ref) {
   return (
     <button
       ref={ref}
       type="button"
+      aria-label={ariaLabel}
       className={dragHandleStyles({ className })}
       {...props}
     >

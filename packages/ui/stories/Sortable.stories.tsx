@@ -60,7 +60,7 @@ export const WithDragHandle = () => {
               isDragging ? 'shadow-lg' : 'shadow-sm'
             }`}
           >
-            <DragHandle {...dragHandleProps} />
+            <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
             <div className="flex-1">
               <h3>{task.title}</h3>
             </div>
@@ -158,7 +158,7 @@ export const CustomDragPreview = () => {
               isDragging ? 'shadow-lg' : 'shadow-sm'
             }`}
           >
-            <DragHandle {...dragHandleProps} />
+            <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
             <div className="flex-1">
               <h3>{task.title}</h3>
             </div>
@@ -203,7 +203,7 @@ export const WithDropPlaceholder = () => {
               isDragging ? 'shadow-lg' : 'shadow-sm'
             }`}
           >
-            <DragHandle {...dragHandleProps} />
+            <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
             <div className="flex-1">
               <h3>{task.title}</h3>
             </div>
@@ -252,7 +252,7 @@ export const CustomDropPlaceholder = () => {
               isDragging ? 'shadow-lg' : 'shadow-sm'
             }`}
           >
-            <DragHandle {...dragHandleProps} />
+            <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
             <div className="flex-1">
               <h3>{task.title}</h3>
             </div>
@@ -339,7 +339,7 @@ export const VariableHeightItems = () => {
               isDragging ? 'shadow-lg' : 'shadow-sm',
             )}
           >
-            <DragHandle {...dragHandleProps} className="mt-0.5 shrink-0" />
+            <DragHandle aria-label="Drag to reorder" {...dragHandleProps} className="mt-0.5 shrink-0" />
             <div className="flex-1">
               <h3 className="font-medium">{item.title}</h3>
               <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-600">

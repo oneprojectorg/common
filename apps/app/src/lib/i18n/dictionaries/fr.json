@@ -527,5 +527,6 @@
   "Attachments (optional)": "Pièces jointes (facultatif)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Soutenez votre proposition avec des documents pertinents comme des budgets ou des recherches de soutien.",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepte PDF, DOCX, XLSX jusqu'à {size}Mo",
-  "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées"
+  "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées",
+  "Drag to reorder": "Glisser pour réorganiser"
 }
