@@ -1,7 +1,18 @@
-import { CommonError, getCurrentProfileId } from '@op/common';
+import {
+  CommonError,
+  assertOrganizationByProfileId,
+  getCurrentProfileId,
+  getOrgAccessUser,
+} from '@op/common';
 import { and, db, eq } from '@op/db/client';
-import { attachments, proposalAttachments } from '@op/db/schema';
+import {
+  type ProcessInstance,
+  attachments,
+  proposalAttachments,
+  proposals,
+} from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 import { Buffer } from 'buffer';
 import { z } from 'zod';
 
@@ -14,6 +25,8 @@ const ALLOWED_MIME_TYPES = [
   'image/webp',
   'image/gif',
   'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ];
 
 export const uploadProposalAttachment = router({
@@ -140,6 +153,34 @@ export const uploadProposalAttachment = router({
 
       // Link attachment to proposal immediately for better UX (if proposalId provided)
       if (proposalId) {
+        // NOTE: Revisit after we introduce collaborative editing of proposals.
+        // Currently checks that user has decisions:UPDATE permission in the org.
+        // May need to check proposal-level permissions (author, collaborator) instead.
+        const proposal = await db._query.proposals.findFirst({
+          where: eq(proposals.id, proposalId),
+          with: {
+            processInstance: true,
+          },
+        });
+
+        const processInstance = proposal?.processInstance as
+          | ProcessInstance
+          | undefined;
+
+        if (!processInstance) {
+          throw new CommonError('Proposal or process instance not found');
+        }
+
+        const org = await assertOrganizationByProfileId(
+          processInstance.ownerProfileId,
+        );
+        const orgUser = await getOrgAccessUser({
+          user: { id: user.id },
+          organizationId: org.id,
+        });
+
+        assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+
         await db.insert(proposalAttachments).values({
           proposalId,
           attachmentId: attachment.id,
