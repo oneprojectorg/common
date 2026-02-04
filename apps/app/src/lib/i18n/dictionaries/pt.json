@@ -496,5 +496,17 @@
   "Saving...": "Salvando...",
   "Saved": "Salvo",
   "Saved at {time}": "Salvo às {time}",
-  "Failed to save": "Falha ao salvar"
+  "Failed to save": "Falha ao salvar",
+  "Invite": "Convidar",
+  "Invite members to your decision-making process": "Convide membros para seu processo de tomada de decisão",
+  "Search by name or email...": "Buscar por nome ou e-mail...",
+  "Invite {email}": "Convidar {email}",
+  "No results": "Nenhum resultado",
+  "No {roleName}s have been added": "Nenhum {roleName} foi adicionado",
+  "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {1 pessoa} other {# pessoas}}",
+  "Invite sent successfully": "Convite enviado com sucesso",
+  "Selected members": "Membros selecionados",
+  "No email addresses to invite": "Nenhum endereço de e-mail para convidar",
+  "Remove {name}": "Remover {name}",
+  "Select a role": "Selecionar um cargo"
 }

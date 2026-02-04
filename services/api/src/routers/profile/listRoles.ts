@@ -13,20 +13,20 @@ const roleSortableSchema = createSortable(['name'] as const);
 
 const inputSchema = z
   .object({
-    slug: z.string().optional(),
+    profileId: z.string().uuid().optional(),
   })
   .merge(paginationSchema)
   .merge(roleSortableSchema);
 
-export const rolesRouter = router({
+export const listRolesRouter = router({
   listRoles: commonAuthedProcedure()
     .input(inputSchema)
     .output(createPaginatedOutput(roleEncoder))
     .query(async ({ input }) => {
-      const { slug, cursor, limit, dir } = input;
+      const { profileId, cursor, limit, dir } = input;
 
       return getRoles({
-        profileSlug: slug,
+        profileId,
         cursor,
         limit,
         dir,

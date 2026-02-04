@@ -1,8 +1,22 @@
 import { ReactNode } from 'react';
+import { VariantProps, tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
 
-type ProfileItemProps = {
+const titleStyles = tv({
+  base: '',
+  variants: {
+    size: {
+      default: 'leading-base font-semibold text-neutral-black',
+      small: 'text-base text-neutral-charcoal',
+    },
+  },
+  defaultVariants: {
+    size: 'default',
+  },
+});
+
+type ProfileItemProps = VariantProps<typeof titleStyles> & {
   avatar: ReactNode;
   title: string;
   description?: string;
@@ -19,6 +33,7 @@ export const ProfileItem = ({
   description,
   className,
   children,
+  size,
 }: ProfileItemProps) => {
   const hasAdditionalContent = description || children;
 
@@ -33,9 +48,7 @@ export const ProfileItem = ({
       {avatar}
 
       <div className="min-w-0 flex-1">
-        <div className="leading-base font-semibold text-neutral-black">
-          {title}
-        </div>
+        <div className={titleStyles({ size })}>{title}</div>
 
         {description ? (
           <div className="mt-2 text-neutral-charcoal">{description}</div>

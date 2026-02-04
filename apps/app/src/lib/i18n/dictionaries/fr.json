@@ -496,5 +496,17 @@
   "Saving...": "Enregistrement...",
   "Saved": "Enregistré",
   "Saved at {time}": "Enregistré à {time}",
-  "Failed to save": "Échec de l'enregistrement"
+  "Failed to save": "Échec de l'enregistrement",
+  "Invite": "Inviter",
+  "Invite members to your decision-making process": "Inviter des membres à votre processus de prise de décision",
+  "Search by name or email...": "Rechercher par nom ou courriel...",
+  "Invite {email}": "Inviter {email}",
+  "No results": "Aucun résultat",
+  "No {roleName}s have been added": "Aucun {roleName} n'a été ajouté",
+  "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {1 personne} other {# personnes}}",
+  "Invite sent successfully": "Invitation envoyée avec succès",
+  "Selected members": "Membres sélectionnés",
+  "No email addresses to invite": "Aucune adresse courriel à inviter",
+  "Remove {name}": "Supprimer {name}",
+  "Select a role": "Sélectionner un rôle"
 }

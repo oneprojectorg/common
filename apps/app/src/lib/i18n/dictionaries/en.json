@@ -496,5 +496,17 @@
   "Saving...": "Saving...",
   "Saved": "Saved",
   "Saved at {time}": "Saved at {time}",
-  "Failed to save": "Failed to save"
+  "Failed to save": "Failed to save",
+  "Invite": "Invite",
+  "Invite members to your decision-making process": "Invite members to your decision-making process",
+  "Search by name or email...": "Search by name or email...",
+  "Invite {email}": "Invite {email}",
+  "No results": "No results",
+  "No {roleName}s have been added": "No {roleName}s have been added",
+  "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {1 person} other {# people}}",
+  "Invite sent successfully": "Invite sent successfully",
+  "Selected members": "Selected members",
+  "No email addresses to invite": "No email addresses to invite",
+  "Remove {name}": "Remove {name}",
+  "Select a role": "Select a role"
 }

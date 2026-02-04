@@ -5,14 +5,17 @@ import { trpc } from '@op/api/client';
 import type { SortDir } from '@op/common';
 import { useCursorPagination, useDebounce, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { Button } from '@op/ui/Button';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { useEffect, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
+import { LuUserPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ProfileInviteModal } from './ProfileInviteModal';
 import { ProfileUsersAccessTable } from './ProfileUsersAccessTable';
 
 // Sort columns supported by profile.listUsers endpoint
@@ -25,6 +28,7 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   // Sorting state
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
@@ -80,13 +84,23 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
           {t('Members')}
         </h2>
 
-        <SearchField
-          placeholder={t('Search')}
-          value={searchQuery}
-          onChange={setSearchQuery}
-          size={isMobile ? 'small' : undefined}
-          className="w-full md:max-w-96"
-        />
+        <div className="flex items-start justify-between gap-4">
+          <SearchField
+            placeholder={t('Search')}
+            value={searchQuery}
+            onChange={setSearchQuery}
+            size={isMobile ? 'small' : undefined}
+            className="w-full md:max-w-96"
+          />
+          <Button
+            color="secondary"
+            size="small"
+            onPress={() => setIsInviteModalOpen(true)}
+          >
+            <LuUserPlus className="size-4" />
+            {t('Invite')}
+          </Button>
+        </div>
 
         <ProfileUsersAccessTable
           profileUsers={profileUsers}
@@ -103,6 +117,12 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
         <Pagination
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
+        />
+
+        <ProfileInviteModal
+          profileId={profileId}
+          isOpen={isInviteModalOpen}
+          onOpenChange={setIsInviteModalOpen}
         />
       </div>
     </ClientOnly>
