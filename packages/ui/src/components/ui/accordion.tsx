@@ -38,9 +38,8 @@ const accordionStyles = tv({
     contentInner: '',
   },
   variants: {
-    unstyled: {
-      true: {},
-      false: {
+    variant: {
+      default: {
         root: 'flex flex-col gap-3',
         item: 'rounded-lg border bg-white',
         header: 'flex items-center px-4 py-2',
@@ -55,10 +54,11 @@ const accordionStyles = tv({
         content: 'border-t',
         contentInner: 'p-4',
       },
+      unstyled: {},
     },
   },
   defaultVariants: {
-    unstyled: false,
+    variant: 'default',
   },
 });
 
@@ -69,7 +69,7 @@ type AccordionStyles = ReturnType<typeof accordionStyles>;
 // ============================================================================
 
 const AccordionContext = createContext<AccordionStyles>(
-  accordionStyles({ unstyled: false }),
+  accordionStyles({ variant: 'default' }),
 );
 
 const useAccordionStyles = () => use(AccordionContext);
@@ -89,20 +89,20 @@ interface AccordionProps extends Omit<DisclosureGroupProps, 'className'> {
   onExpandedChange?: (keys: Set<Key>) => void;
   /** Disable all child disclosures */
   isDisabled?: boolean;
-  /** Remove default styling */
-  unstyled?: boolean;
+  /** Visual style variant */
+  variant?: 'default' | 'unstyled';
   /** Custom className */
   className?: string;
   children: React.ReactNode;
 }
 
 const Accordion = ({
-  unstyled,
+  variant = 'default',
   className,
   children,
   ...props
 }: AccordionProps) => {
-  const styles = accordionStyles({ unstyled });
+  const styles = accordionStyles({ variant });
 
   return (
     <AccordionContext.Provider value={styles}>

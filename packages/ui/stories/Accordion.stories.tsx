@@ -226,7 +226,7 @@ export const CustomHeader: Story = {
         <Accordion
           defaultExpandedKeys={['proposal']}
           allowsMultipleExpanded
-          unstyled
+          variant="unstyled"
         >
           <Sortable
             items={sections}
@@ -379,7 +379,7 @@ export const Controlled: Story = {
 export const Unstyled: Story = {
   render: () => (
     <div className="w-[400px]">
-      <Accordion unstyled defaultExpandedKeys={['1']}>
+      <Accordion variant="unstyled" defaultExpandedKeys={['1']}>
         <AccordionItem
           id="1"
           className="mb-2 rounded-lg border-2 border-dashed border-purple-300 bg-purple-50"
