@@ -7,8 +7,9 @@ import { useTranslations } from '@/lib/i18n';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+function formatTime(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 export function SaveStatusIndicator({
@@ -16,7 +17,7 @@ export function SaveStatusIndicator({
   savedAt,
 }: {
   status: SaveStatus;
-  savedAt?: Date;
+  savedAt?: Date | string;
 }) {
   const t = useTranslations();
 

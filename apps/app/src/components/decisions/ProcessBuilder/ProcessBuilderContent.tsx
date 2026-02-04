@@ -8,6 +8,7 @@ import { useProcessNavigation } from './useProcessNavigation';
 
 export function ProcessBuilderContent({
   decisionProfileId,
+  instanceId,
   decisionName,
   navigationConfig,
 }: SectionProps & { navigationConfig?: NavigationConfig }) {
@@ -33,6 +34,7 @@ export function ProcessBuilderContent({
   return (
     <ContentComponent
       decisionProfileId={decisionProfileId}
+      instanceId={instanceId}
       decisionName={decisionName}
     />
   );

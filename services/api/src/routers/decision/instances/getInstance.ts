@@ -23,7 +23,9 @@ import { trackProcessViewed } from '../../../utils/analytics';
 /**
  * Legacy getInstance endpoint - uses legacy encoders with state-based format.
  * Used by the legacy route: /profile/[slug]/decisions/[id]
+ * @deprecated Use the new decision system instead
  */
+
 export const getLegacyInstanceRouter = router({
   getLegacyInstance: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },

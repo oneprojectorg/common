@@ -7,6 +7,7 @@ import {
 } from '../../../encoders/legacyDecision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
+/** @deprecated Use the new decision system instead */
 export const updateInstanceRouter = router({
   updateInstance: commonAuthedProcedure()
     .input(legacyUpdateInstanceInputSchema)

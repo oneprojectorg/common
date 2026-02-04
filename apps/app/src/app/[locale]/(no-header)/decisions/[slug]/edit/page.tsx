@@ -40,6 +40,7 @@ const EditDecisionPage = async ({
         <main className="grow">
           <ProcessBuilderContent
             decisionProfileId={decisionProfile.id}
+            instanceId={decisionProfile.processInstance.id}
             decisionName={decisionProfile.name}
             navigationConfig={navigationConfig}
           />
