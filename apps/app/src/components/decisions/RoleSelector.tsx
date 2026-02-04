@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { Key, useEffect, useMemo, useRef } from 'react';
 
@@ -22,6 +22,7 @@ export const RoleSelector = ({
   onRolesLoaded: (roleId: string, roleName: string) => void;
   onRoleNameChange: (roleName: string) => void;
 }) => {
+  const t = useTranslations();
   const [[globalRolesData, profileRolesData]] = trpc.useSuspenseQueries((t) => [
     t.profile.listRoles({}),
     t.profile.listRoles({ profileId }),
@@ -56,7 +57,7 @@ export const RoleSelector = ({
       selectedKey={selectedRoleId}
       onSelectionChange={handleSelectionChange}
     >
-      <TabList>
+      <TabList aria-label={t('Select a role')}>
         {roles.map((role) => {
           const count = countsByRole[role.id] ?? 0;
           return (
@@ -78,13 +79,10 @@ export const RoleSelector = ({
 };
 
 export const RoleSelectorSkeleton = () => {
-  const t = useTranslations();
   return (
-    <div className="flex h-8 items-center">
-      <LoadingSpinner className="size-4" />
-      <span className="ml-2 text-sm text-neutral-gray4">
-        {t('Loading roles...')}
-      </span>
+    <div className="flex gap-4">
+      <Skeleton className="h-8 w-20 rounded-md" />
+      <Skeleton className="h-8 w-24 rounded-md" />
     </div>
   );
 };

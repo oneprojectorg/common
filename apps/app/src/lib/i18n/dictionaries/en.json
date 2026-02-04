@@ -507,5 +507,6 @@
   "Invite sent successfully": "Invite sent successfully",
   "Selected members": "Selected members",
   "No email addresses to invite": "No email addresses to invite",
-  "Remove {name}": "Remove {name}"
+  "Remove {name}": "Remove {name}",
+  "Select a role": "Select a role"
 }

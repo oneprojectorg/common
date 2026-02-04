@@ -507,5 +507,6 @@
   "Invite sent successfully": "আমন্ত্রণ সফলভাবে পাঠানো হয়েছে",
   "Selected members": "নির্বাচিত সদস্যরা",
   "No email addresses to invite": "আমন্ত্রণ করার জন্য কোনো ইমেইল ঠিকানা নেই",
-  "Remove {name}": "{name} সরান"
+  "Remove {name}": "{name} সরান",
+  "Select a role": "একটি ভূমিকা নির্বাচন করুন"
 }

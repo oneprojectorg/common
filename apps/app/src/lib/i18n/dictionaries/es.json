@@ -506,5 +506,6 @@
   "Invite sent successfully": "Invitación enviada exitosamente",
   "Selected members": "Miembros seleccionados",
   "No email addresses to invite": "No hay direcciones de correo para invitar",
-  "Remove {name}": "Eliminar {name}"
+  "Remove {name}": "Eliminar {name}",
+  "Select a role": "Seleccionar un rol"
 }
