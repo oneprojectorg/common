@@ -1,11 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
+import { cn } from '@op/ui/utils';
 import { memo, useEffect } from 'react';
-import { LuGlobe } from 'react-icons/lu';
+import { LuGlobe, LuX } from 'react-icons/lu';
 
 declare global {
   interface Window {
@@ -18,74 +18,131 @@ declare global {
 interface LinkPreviewProps {
   url: string;
   className?: string;
+  onRemove?: () => void;
 }
 
-export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
-  const {
-    data: previewData,
-    isLoading: loading,
-    error,
-  } = trpc.content.linkPreview.useQuery(
-    { url },
-    {
-      enabled: !!url,
-      retry: false,
-    },
-  );
+/**
+ * Extracts the domain from a URL for display (e.g., "youtube.com")
+ */
+function getDomain(url: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    // Remove www. prefix if present
+    return hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
 
-  useEffect(() => {
-    // relies on the embed.js from iframely being loaded
-    window.iframely && window.iframely.load();
-  });
-
-  if (loading) {
-    return (
-      <Skeleton className={className}>
-        <Skeleton className="mb-2 h-4" />
-        <Skeleton className="mb-2 h-3 w-3/4 bg-gray-200" />
-        <Skeleton className="h-20 bg-gray-200" />
-      </Skeleton>
+export const LinkPreview = memo(
+  ({ url, className, onRemove }: LinkPreviewProps) => {
+    const {
+      data: previewData,
+      isLoading: loading,
+      error,
+    } = trpc.content.linkPreview.useQuery(
+      { url },
+      {
+        enabled: !!url,
+        retry: false,
+      },
     );
-  }
 
-  if (error || !previewData || previewData.error) {
-    return null;
-  }
+    const domain = getDomain(url);
 
-  return (
-    <Surface className={className}>
-      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
-        {previewData.html && (
-          <div
-            className="aspect-video w-full"
-            dangerouslySetInnerHTML={{ __html: previewData.html }}
-          />
+    useEffect(() => {
+      window.iframely?.load();
+    }, [previewData?.html]);
+
+    // Loading state: show card with spinner and domain
+    if (loading) {
+      return (
+        <Surface className={cn('rounded-lg', className)}>
+          <div className="flex aspect-video w-full items-center justify-center bg-neutral-gray1">
+            <LoadingSpinner className="size-8" />
+          </div>
+          <div className="border-t border-neutral-gray2 px-4 py-3">
+            <span className="text-sm text-neutral-gray4">{domain}</span>
+          </div>
+        </Surface>
+      );
+    }
+
+    // Error/fallback state: show URL as a simple link card
+    if (error || !previewData || previewData.error) {
+      return (
+        <Surface className={cn('rounded-lg', className)}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-4"
+          >
+            <LuGlobe className="size-5 shrink-0 text-neutral-gray4" />
+            <span className="truncate text-sm text-neutral-gray4">{url}</span>
+          </a>
+        </Surface>
+      );
+    }
+
+    const title = previewData.meta?.title;
+
+    return (
+      <Surface
+        className={cn(
+          'group bg-neutral-white relative rounded-lg border-neutral-gray1',
+          className,
         )}
-        <div className="p-4">
-          {previewData.meta?.title && (
-            <Header3 className="text-base text-neutral-black">
-              {previewData.meta.title}
-            </Header3>
-          )}
-          {previewData.meta?.author && <span>{previewData.meta.author}</span>}
-          <div className="flex flex-col text-xs text-neutral-gray4">
-            {previewData.meta?.site && <span>{previewData.meta.site}</span>}
+      >
+        {onRemove && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1 focus-visible:opacity-100"
+            aria-label="Remove preview"
+          >
+            <LuX className="size-4" />
+          </button>
+        )}
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block outline-none"
+        >
+          {previewData.html ? (
+            <div
+              className="aspect-video w-full"
+              dangerouslySetInnerHTML={{ __html: previewData.html }}
+            />
+          ) : previewData.thumbnail_url ? (
+            <div className="aspect-video w-full">
+              <img
+                src={previewData.thumbnail_url}
+                alt={title ?? ''}
+                className="size-full object-cover"
+              />
+            </div>
+          ) : null}
+          <div className="px-4 py-4">
+            <span className="text-sm text-neutral-black">
+              {title ?? domain}
+              {title && (
+                <>
+                  {' '}
+                  <span className="text-neutral-gray4">· {domain}</span>
+                </>
+              )}
+            </span>
           </div>
-          {previewData.meta?.description && (
-            <p className="text-sm text-neutral-gray4">
-              {previewData.meta.description.length > 200
-                ? previewData.meta.description.slice(0, 200) + '...'
-                : previewData.meta.description}
-            </p>
-          )}
-          <hr className="my-2" />
-          <div className="flex items-center gap-2 text-xs text-neutral-gray4">
-            <LuGlobe className="size-4" /> <span>{url}</span>
-          </div>
-        </div>
-      </a>
-    </Surface>
-  );
-});
+        </a>
+      </Surface>
+    );
+  },
+);
 
 LinkPreview.displayName = 'LinkPreview';

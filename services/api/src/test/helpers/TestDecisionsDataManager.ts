@@ -1,18 +1,17 @@
 import { db } from '@op/db/client';
+import type { ProcessStatus } from '@op/db/schema';
 import {
-  ProcessStatus,
   decisionProcesses,
   organizationUserToAccessRoles,
   organizationUsers,
   processInstances,
-  profileUserToAccessRoles,
-  profileUsers,
   profiles,
   proposals,
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
+import { grantDecisionProfileAccess, testMinimalSchema } from '@op/test';
 import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { z } from 'zod';
@@ -30,6 +29,8 @@ import {
   createTestUser,
   supabaseTestAdminClient,
 } from '../supabase-utils';
+
+type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -50,40 +51,6 @@ interface CreatedInstance {
 }
 
 type EncodedDecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;
-type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
-
-/**
- * A simple test schema in the new DecisionSchemaDefinition format.
- * Used for creating test decision processes.
- */
-const testDecisionSchema: DecisionSchemaDefinition = {
-  id: 'test-schema',
-  version: '1.0.0',
-  name: 'Test Schema',
-  description: 'A simple schema for testing',
-  phases: [
-    {
-      id: 'initial',
-      name: 'Initial Phase',
-      description: 'The starting phase',
-      rules: {
-        proposals: { submit: true },
-        voting: { submit: false },
-        advancement: { method: 'manual' },
-      },
-    },
-    {
-      id: 'final',
-      name: 'Final Phase',
-      description: 'The ending phase',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: false },
-        advancement: { method: 'manual' },
-      },
-    },
-  ],
-};
 
 interface DecisionSetupOutput {
   user: User;
@@ -239,7 +206,7 @@ export class TestDecisionsDataManager {
     // We insert directly because the createProcess router uses the legacy format,
     // but listDecisionProfiles and other new endpoints expect the new format.
     const newProcessSchema: DecisionSchemaDefinition = {
-      ...testDecisionSchema,
+      ...testMinimalSchema,
       name: processName,
     };
 
@@ -416,23 +383,14 @@ export class TestDecisionsDataManager {
     profileId: string,
     authUserId: string,
     email: string,
-    isAdmin: boolean = true,
+    isAdmin = true,
   ): Promise<void> {
-    const [profileUser] = await db
-      .insert(profileUsers)
-      .values({
-        profileId,
-        authUserId,
-        email,
-      })
-      .returning();
-
-    if (profileUser) {
-      await db.insert(profileUserToAccessRoles).values({
-        profileUserId: profileUser.id,
-        accessRoleId: isAdmin ? ROLES.ADMIN.id : ROLES.MEMBER.id,
-      });
-    }
+    await grantDecisionProfileAccess({
+      profileId,
+      authUserId,
+      email,
+      isAdmin,
+    });
   }
 
   /**

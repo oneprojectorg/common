@@ -3,8 +3,11 @@ import colors from 'tailwindcss/colors';
 
 import { PREVIEW_DOMAIN_SUFFIX, isPreviewDomain } from '../previews.mjs';
 
-export const APP_PORT = 3100;
-export const API_PORT = 3300;
+const appPortEnv = process.env.APP_PORT || process.env.NEXT_PUBLIC_APP_PORT;
+export const APP_PORT = appPortEnv ? Number.parseInt(appPortEnv, 10) : 3100;
+
+const apiPortEnv = process.env.API_PORT || process.env.NEXT_PUBLIC_API_PORT;
+export const API_PORT = apiPortEnv ? Number.parseInt(apiPortEnv, 10) : 3300;
 export const UI_WORKSHOP_PORT = 3600;
 export const EMAILS_PORT = 3883;
 export const ORM_VIZ_PORT = 3700;

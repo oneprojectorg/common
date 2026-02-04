@@ -7,6 +7,7 @@
   "exports": {
     ".": "./index.ts",
     "./client": "./client.ts",
+    "./test": "./test.ts",
     "./schema": "./schema/index.ts",
     "./tables": "./tables.ts",
     "./seedData/accessControl": "./seedData/accessControl.ts"
