@@ -1,10 +1,5 @@
-import { db, eq } from '@op/db/client';
-import {
-  type ProcessInstance,
-  attachments,
-  proposalAttachments,
-  proposals,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
+import { attachments, proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -95,20 +90,18 @@ async function linkAttachmentToProposal({
   // NOTE: Revisit after we introduce collaborative editing of proposals.
   // Currently checks that user has decisions:UPDATE permission in the org.
   // May need to check proposal-level permissions (author, collaborator) instead.
-  const proposal = await db._query.proposals.findFirst({
-    where: eq(proposals.id, proposalId),
+  const proposal = await db.query.proposals.findFirst({
+    where: { id: proposalId },
     with: {
       processInstance: true,
     },
   });
 
-  const processInstance = proposal?.processInstance as
-    | ProcessInstance
-    | undefined;
-
-  if (!processInstance) {
+  if (!proposal?.processInstance) {
     throw new CommonError('Proposal or process instance not found');
   }
+
+  const processInstance = proposal.processInstance;
 
   const org = await assertOrganizationByProfileId(
     processInstance.ownerProfileId,
