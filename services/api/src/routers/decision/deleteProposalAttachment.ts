@@ -1,6 +1,4 @@
-import { CommonError, getCurrentProfileId } from '@op/common';
-import { and, db, eq } from '@op/db/client';
-import { proposalAttachments } from '@op/db/schema';
+import { deleteProposalAttachment as deleteProposalAttachmentService } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -16,35 +14,10 @@ export const deleteProposalAttachment = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { attachmentId, proposalId } = input;
-      const { user } = ctx;
-      const profileId = await getCurrentProfileId(user.id);
-
-      // Verify the attachment link exists and user has permission (they uploaded it)
-      const existingLink = await db.query.proposalAttachments.findFirst({
-        where: {
-          proposalId,
-          attachmentId,
-        },
+      await deleteProposalAttachmentService({
+        attachmentId: input.attachmentId,
+        proposalId: input.proposalId,
+        user: ctx.user,
       });
-
-      if (!existingLink) {
-        throw new CommonError('Attachment not found on this proposal');
-      }
-
-      // Only the uploader can delete
-      if (existingLink.uploadedBy !== profileId) {
-        throw new CommonError('Not authorized to delete this attachment');
-      }
-
-      // Delete the link (soft delete - keeps the attachment record)
-      await db
-        .delete(proposalAttachments)
-        .where(
-          and(
-            eq(proposalAttachments.proposalId, proposalId),
-            eq(proposalAttachments.attachmentId, attachmentId),
-          ),
-        );
     }),
 });

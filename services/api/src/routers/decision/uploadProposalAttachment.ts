@@ -1,19 +1,10 @@
 import {
   CommonError,
-  assertOrganizationByProfileId,
   getCurrentProfileId,
-  getOrgAccessUser,
+  uploadProposalAttachment as uploadProposalAttachmentService,
 } from '@op/common';
-import { db, eq } from '@op/db/client';
-import {
-  type ProcessInstance,
-  attachments,
-  proposalAttachments,
-  proposals,
-} from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
-import { Buffer } from 'buffer';
+import { Buffer } from 'node:buffer';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -94,17 +85,20 @@ export const uploadProposalAttachment = router({
         );
       }
 
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE!,
-        {
-          cookieOptions: {},
-          cookies: {
-            getAll: async () => [],
-            setAll: async () => {},
-          },
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE;
+
+      if (!supabaseUrl || !supabaseServiceRole) {
+        throw new CommonError('Storage configuration missing');
+      }
+
+      const supabase = createServerClient(supabaseUrl, supabaseServiceRole, {
+        cookieOptions: {},
+        cookies: {
+          getAll: async () => [],
+          setAll: async () => {},
         },
-      );
+      });
 
       const bucket = 'assets';
       const filePath = `profile/${profileId}/proposals/${Date.now()}_${sanitizedFileName}`;
@@ -134,67 +128,25 @@ export const uploadProposalAttachment = router({
         throw new CommonError('Could not get signed url');
       }
 
-      // Create attachment record in database
-      const [attachment] = await db
-        .insert(attachments)
-        .values({
-          storageObjectId: data.id,
+      // Create attachment record and optionally link to proposal
+      const result = await uploadProposalAttachmentService({
+        input: {
           fileName: sanitizedFileName,
           mimeType,
           fileSize: buffer.length,
-          profileId,
-          // postId is optional - we don't set it for proposal attachments
-        })
-        .returning();
-
-      if (!attachment) {
-        throw new CommonError('Failed to create attachment record');
-      }
-
-      // Link attachment to proposal immediately for better UX (if proposalId provided)
-      if (proposalId) {
-        // NOTE: Revisit after we introduce collaborative editing of proposals.
-        // Currently checks that user has decisions:UPDATE permission in the org.
-        // May need to check proposal-level permissions (author, collaborator) instead.
-        const proposal = await db._query.proposals.findFirst({
-          where: eq(proposals.id, proposalId),
-          with: {
-            processInstance: true,
-          },
-        });
-
-        const processInstance = proposal?.processInstance as
-          | ProcessInstance
-          | undefined;
-
-        if (!processInstance) {
-          throw new CommonError('Proposal or process instance not found');
-        }
-
-        const org = await assertOrganizationByProfileId(
-          processInstance.ownerProfileId,
-        );
-        const orgUser = await getOrgAccessUser({
-          user: { id: user.id },
-          organizationId: org.id,
-        });
-
-        assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
-
-        await db.insert(proposalAttachments).values({
+          storageObjectId: data.id,
           proposalId,
-          attachmentId: attachment.id,
-          uploadedBy: profileId,
-        });
-      }
+        },
+        user,
+      });
 
       return {
         url: signedUrlData.signedUrl,
         path: filePath,
-        id: attachment.id,
-        fileName: sanitizedFileName,
-        mimeType,
-        fileSize: buffer.length,
+        id: result.id,
+        fileName: result.fileName,
+        mimeType: result.mimeType,
+        fileSize: result.fileSize,
       };
     }),
 });
