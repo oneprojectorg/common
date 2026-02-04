@@ -31,7 +31,12 @@ export function ProposalAttachments({
   onMutate,
 }: {
   proposalId: string;
-  attachments: { id: string; fileName: string; fileSize: number | null }[];
+  attachments: {
+    id: string;
+    fileName: string;
+    fileSize: number | null;
+    url?: string;
+  }[];
   onMutate: () => void;
 }) {
   const t = useTranslations();
@@ -101,6 +106,7 @@ export function ProposalAttachments({
       fileName: a.fileName,
       fileSize: a.fileSize ?? 0,
       uploading: false,
+      url: a.url,
     })),
     ...uploadingFiles.map((f) => ({ ...f, uploading: true })),
   ];

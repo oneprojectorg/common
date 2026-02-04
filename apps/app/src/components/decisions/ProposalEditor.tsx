@@ -463,6 +463,7 @@ export function ProposalEditor({
                     id: pa.attachmentId,
                     fileName: pa.attachment?.fileName ?? 'Unknown',
                     fileSize: pa.attachment?.fileSize ?? null,
+                    url: pa.attachment?.url,
                   })) ?? []
                 }
                 onMutate={() =>

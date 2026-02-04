@@ -9,6 +9,7 @@ export interface AttachmentListItem {
   fileName: string;
   fileSize: number;
   uploading: boolean;
+  url?: string;
 }
 
 /**
@@ -46,9 +47,21 @@ export function ProposalAttachmentList({
               </>
             ) : (
               <>
-                <span className="truncate text-base font-medium text-neutral-charcoal">
-                  {file.fileName}
-                </span>
+                {file.url ? (
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={file.fileName}
+                    className="truncate text-base font-medium text-neutral-charcoal hover:text-primary-teal hover:underline"
+                  >
+                    {file.fileName}
+                  </a>
+                ) : (
+                  <span className="truncate text-base font-medium text-neutral-charcoal">
+                    {file.fileName}
+                  </span>
+                )}
                 <span className="text-sm text-neutral-gray4">
                   {formatFileSize(file.fileSize)}
                 </span>
