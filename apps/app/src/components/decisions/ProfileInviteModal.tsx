@@ -412,7 +412,7 @@ export const ProfileInviteModal = ({
       </ModalBody>
 
       <ModalFooter className="flex-row items-center justify-between">
-        <div className="text-sm text-neutral-black">
+        <div className="text-base text-neutral-black">
           {totalPeople > 0
             ? t('{count, plural, =1 {1 person} other {# people}}', {
                 count: totalPeople,
