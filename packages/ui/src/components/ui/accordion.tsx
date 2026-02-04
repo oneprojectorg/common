@@ -210,16 +210,19 @@ const AccordionTrigger = ({
 // ============================================================================
 
 interface AccordionIndicatorProps {
+  /** Custom icon component */
+  icon?: React.ComponentType<{ className?: string }>;
   /** Custom className */
   className?: string;
 }
 
-const AccordionIndicator = ({ className }: AccordionIndicatorProps) => {
+const AccordionIndicator = ({
+  icon: Icon = LuChevronRight,
+  className,
+}: AccordionIndicatorProps) => {
   const styles = useAccordionStyles();
 
-  return (
-    <LuChevronRight aria-hidden className={cn(styles.indicator(), className)} />
-  );
+  return <Icon aria-hidden className={cn(styles.indicator(), className)} />;
 };
 
 // ============================================================================
