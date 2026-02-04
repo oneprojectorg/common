@@ -41,13 +41,14 @@ export const listProfileUserInvites = async ({
 
   // Build search filter with ILIKE for substring + trigram for typo tolerance
   // Matches the approach used in listProfileUsers
+  const trimmedQuery = query?.trim();
   const searchFilter =
-    query && query.length >= 2
+    trimmedQuery && trimmedQuery.length >= 2
       ? (() => {
-          const ilikePattern = `%${query}%`;
+          const ilikePattern = `%${trimmedQuery}%`;
           return sql`(
             ${profileInvites.email} ILIKE ${ilikePattern}
-            OR ${query} <% ${profileInvites.email}
+            OR ${trimmedQuery} <% ${profileInvites.email}
           )`;
         })()
       : undefined;

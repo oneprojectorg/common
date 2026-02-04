@@ -143,7 +143,10 @@ export const inviteUsersToProfile = async (input: {
       }
 
       // If existing user, check if already a member
-      if (existingUser && existingProfileUserAuthIds.has(existingUser.authUserId)) {
+      if (
+        existingUser &&
+        existingProfileUserAuthIds.has(existingUser.authUserId)
+      ) {
         results.failed.push({
           email,
           reason: 'User is already a member of this profile',
