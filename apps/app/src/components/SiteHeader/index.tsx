@@ -315,7 +315,7 @@ const AvatarMenuContent = ({
         >
           <Button
             unstyled
-            className="text-sm text-neutral-charcoal underline hover:no-underline sm:text-xs"
+            className="text-neutral-charcoal underline hover:no-underline sm:text-sm"
             onPress={() => {
               setIsOrgDeletionOpen(true);
               onClose?.();
