@@ -1,3 +1,6 @@
+'use client';
+
+import { trpc } from '@op/api/client';
 import {
   Accordion,
   AccordionContent,
@@ -8,96 +11,104 @@ import {
 } from '@op/ui/Accordion';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
-import { use, useState } from 'react';
+import { use, useCallback, useState } from 'react';
 import { DisclosureStateContext } from 'react-aria-components';
 import { LuChevronRight, LuGripVertical } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
+import { useAutoSave } from '../../hooks/useAutoSave';
+import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 interface Phase {
   id: string;
-  title: string;
-  content: React.ReactNode;
+  name: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
-const initialPhases: Phase[] = [
-  {
-    id: 'proposal',
-    title: 'Proposal Submission',
-    content: (
-      <div className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm">Headline</label>
-          <input
-            type="text"
-            defaultValue="Share your proposals."
-            className="w-full rounded-md border border-border px-3 py-2"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm">Description</label>
-          <textarea
-            rows={3}
-            className="w-full rounded-md border border-border px-3 py-2"
-            defaultValue="Enter your proposal details here..."
-          />
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="mb-1 block text-sm">Start date</label>
-            <input
-              type="date"
-              className="w-full rounded-md border border-border px-3 py-2"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="mb-1 block text-sm">End date</label>
-            <input
-              type="date"
-              className="w-full rounded-md border border-border px-3 py-2"
-            />
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 'review',
-    title: 'Review & Shortlisting',
-    content: (
-      <p className="text-muted-fg">
-        Configure review and shortlisting settings...
-      </p>
-    ),
-  },
-  {
-    id: 'voting',
-    title: 'Voting',
-    content: <p className="text-muted-fg">Configure voting settings...</p>,
-  },
-  {
-    id: 'results',
-    title: 'Results Announcement',
-    content: (
-      <p className="text-muted-fg">
-        Configure results announcement settings...
-      </p>
-    ),
-  },
-];
-
-export default function PhasesSection({ decisionProfileId }: SectionProps) {
-  const [phases, setPhases] = useState(initialPhases);
+export default function PhasesSection({
+  instanceId,
+  decisionProfileId,
+}: SectionProps) {
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const initialPhases = instance.process?.processSchema?.phases ?? [];
+  const [phases, setPhases] = useState<Phase[]>(initialPhases);
   const t = useTranslations();
+
+  // Store and mutation for saving
+  const setPhaseData = useProcessBuilderStore((s) => s.setPhaseData);
+  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
+  const markSaved = useProcessBuilderStore((s) => s.markSaved);
+  const saveState = useProcessBuilderStore((s) =>
+    s.getSaveState(decisionProfileId),
+  );
+
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+
+  // Auto-save phases
+  useAutoSave({
+    data: phases,
+    onSave: useCallback(
+      async (data: Phase[]) => {
+        // Update localStorage via Zustand
+        for (const phase of data) {
+          setPhaseData(decisionProfileId, phase.id, {
+            startDate: phase.startDate,
+            endDate: phase.endDate,
+          });
+        }
+
+        // Save to API
+        await updateInstance.mutateAsync({
+          instanceId,
+          phases: data.map((phase) => ({
+            phaseId: phase.id,
+            startDate: phase.startDate,
+            endDate: phase.endDate,
+          })),
+        });
+      },
+      [decisionProfileId, instanceId, setPhaseData, updateInstance],
+    ),
+    setSaveStatus: useCallback(
+      (status) => setSaveStatus(decisionProfileId, status),
+      [decisionProfileId, setSaveStatus],
+    ),
+    markSaved: useCallback(
+      () => markSaved(decisionProfileId),
+      [decisionProfileId, markSaved],
+    ),
+  });
+
+  const updatePhase = (phaseId: string, updates: Partial<Phase>) => {
+    setPhases((prev) =>
+      prev.map((phase) =>
+        phase.id === phaseId ? { ...phase, ...updates } : phase,
+      ),
+    );
+  };
+
   return (
     <div className="mx-auto w-full max-w-160 space-y-4 p-4 md:p-8">
-      <h2 className="font-serif text-title-sm">{t('Phases')}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-title-sm">{t('Phases')}</h2>
+        <SaveStatusIndicator
+          status={saveState.status}
+          savedAt={saveState.savedAt}
+        />
+      </div>
       <p className="text-neutral-charcoal">
-        Define the phases of your decision-making process
+        {t('Define the phases of your decision-making process')}
       </p>
-      <PhaseEditor phases={phases} setPhases={setPhases} />
+      <PhaseEditor
+        phases={phases}
+        setPhases={setPhases}
+        updatePhase={updatePhase}
+      />
     </div>
   );
 }
@@ -105,9 +116,11 @@ export default function PhasesSection({ decisionProfileId }: SectionProps) {
 export const PhaseEditor = ({
   phases,
   setPhases,
+  updatePhase,
 }: {
   phases: Phase[];
   setPhases: (phases: Phase[]) => void;
+  updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
 }) => {
   return (
     <Accordion allowsMultipleExpanded variant="unstyled">
@@ -115,10 +128,10 @@ export const PhaseEditor = ({
         items={phases}
         onChange={setPhases}
         dragTrigger="handle"
-        getItemLabel={(phase) => phase.title}
+        getItemLabel={(phase) => phase.name}
         className="gap-2"
         renderDragPreview={(items) => (
-          <PhaseDragPreview title={items[0]?.title} />
+          <PhaseDragPreview name={items[0]?.name} />
         )}
         renderDropIndicator={PhaseDropIndicator}
       >
@@ -135,11 +148,50 @@ export const PhaseEditor = ({
               <AccordionTrigger className="flex items-center gap-2">
                 <AccordionIndicator />
               </AccordionTrigger>
-              <AccordionTitleInput defaultValue={phase.title} />
+              <AccordionTitleInput
+                value={phase.name}
+                onChange={(name) => updatePhase(phase.id, { name })}
+              />
             </AccordionHeader>
             <AccordionContent>
               <hr />
-              <div className="p-4">{phase.content}</div>
+              <div className="space-y-4 p-4">
+                <div>
+                  <label className="mb-1 block text-sm">Description</label>
+                  <textarea
+                    rows={3}
+                    value={phase.description ?? ''}
+                    onChange={(e) =>
+                      updatePhase(phase.id, { description: e.target.value })
+                    }
+                    className="w-full rounded-md border border-border px-3 py-2"
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-sm">Start date</label>
+                    <input
+                      type="date"
+                      value={phase.startDate ?? ''}
+                      onChange={(e) =>
+                        updatePhase(phase.id, { startDate: e.target.value })
+                      }
+                      className="w-full rounded-md border border-border px-3 py-2"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="mb-1 block text-sm">End date</label>
+                    <input
+                      type="date"
+                      value={phase.endDate ?? ''}
+                      onChange={(e) =>
+                        updatePhase(phase.id, { endDate: e.target.value })
+                      }
+                      className="w-full rounded-md border border-border px-3 py-2"
+                    />
+                  </div>
+                </div>
+              </div>
             </AccordionContent>
           </AccordionItem>
         )}
@@ -150,10 +202,12 @@ export const PhaseEditor = ({
 
 /** Input that is only editable when the accordion is expanded */
 const AccordionTitleInput = ({
-  defaultValue,
+  value,
+  onChange,
   className,
 }: {
-  defaultValue: string;
+  value: string;
+  onChange: (value: string) => void;
   className?: string;
 }) => {
   const state = use(DisclosureStateContext);
@@ -162,7 +216,8 @@ const AccordionTitleInput = ({
   return (
     <input
       type="text"
-      defaultValue={defaultValue}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
       disabled={!isExpanded}
       className={cn(
         'flex-1 rounded border bg-transparent px-2 py-1 font-serif text-title-sm',
@@ -175,14 +230,14 @@ const AccordionTitleInput = ({
 };
 
 /** Element to show when a phase is being dragged */
-const PhaseDragPreview = ({ title }: { title?: string }) => {
+const PhaseDragPreview = ({ name }: { name?: string }) => {
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
       <div className="p-1">
         <LuGripVertical size={16} />
       </div>
       <LuChevronRight size={16} />
-      <p className="px-2 py-1 font-serif text-title-sm">{title}</p>
+      <p className="px-2 py-1 font-serif text-title-sm">{name}</p>
     </div>
   );
 };
