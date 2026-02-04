@@ -34,6 +34,8 @@ import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import type { FormBuilderConfig } from '../stepContent/template/types';
+
 // ============ Store-specific Types ============
 
 /**
@@ -68,6 +70,8 @@ export interface FormInstanceData extends Partial<InstanceData> {
   includeReview?: boolean;
   /** Whether to keep process private */
   isPrivate?: boolean;
+  /** Form builder configuration for proposal template */
+  templateConfig?: FormBuilderConfig;
 }
 
 // ============ UI-only Types ============
@@ -104,6 +108,10 @@ interface ProcessBuilderState {
     decisionId: string,
     phaseId: string,
   ) => InstancePhaseData | undefined;
+
+  // Actions for template config (form builder)
+  setTemplateConfig: (decisionId: string, config: FormBuilderConfig) => void;
+  getTemplateConfig: (decisionId: string) => FormBuilderConfig | undefined;
 
   // Actions for save state
   setSaveStatus: (decisionId: string, status: SaveStatus) => void;
@@ -174,6 +182,21 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
         const phases = get().instances[decisionId]?.phases;
         return phases?.find((p) => p.phaseId === phaseId);
       },
+
+      // Template config actions
+      setTemplateConfig: (decisionId, config) =>
+        set((state) => ({
+          instances: {
+            ...state.instances,
+            [decisionId]: {
+              ...state.instances[decisionId],
+              templateConfig: config,
+            },
+          },
+        })),
+
+      getTemplateConfig: (decisionId) =>
+        get().instances[decisionId]?.templateConfig,
 
       // Save state actions
       setSaveStatus: (decisionId, status) =>
