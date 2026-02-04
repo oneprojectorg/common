@@ -96,10 +96,13 @@ export const inviteUsersToProfile = async (input: {
   const results = {
     successful: [] as string[],
     failed: [] as { email: string; reason: string }[],
+    // Auth user IDs of existing users who were successfully invited (for cache invalidation)
+    existingUserAuthIds: [] as string[],
   };
 
   const emailsToInvite: Array<{
     email: string;
+    authUserId?: string; // Only set for existing users
     inviterName: string;
     profileName: string;
     inviteUrl: string;
@@ -166,9 +169,10 @@ export const inviteUsersToProfile = async (input: {
           message: personalMessage,
         });
 
-        // Prepare email for event-based sending
+        // Prepare email for event-based sending (include authUserId for existing users)
         emailsToInvite.push({
           email,
+          authUserId: existingUser.authUserId,
           inviterName: profileUser?.name || user.email || 'A team member',
           profileName: profile.name,
           inviteUrl: OPURLConfig('APP').ENV_URL,
@@ -238,6 +242,12 @@ export const inviteUsersToProfile = async (input: {
 
       // Mark all as successful since invite was processed
       results.successful.push(...emailsToInvite.map((e) => e.email));
+      // Collect auth user IDs for existing users (for cache invalidation)
+      results.existingUserAuthIds.push(
+        ...emailsToInvite
+          .filter((e) => e.authUserId !== undefined)
+          .map((e) => e.authUserId!),
+      );
     } catch (eventError) {
       console.error('Failed to send profile invite event:', eventError);
 
@@ -262,6 +272,7 @@ export const inviteUsersToProfile = async (input: {
     details: {
       successful: results.successful,
       failed: results.failed,
+      existingUserAuthIds: results.existingUserAuthIds,
     },
   };
 };

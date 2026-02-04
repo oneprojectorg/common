@@ -1,6 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
 import { inviteUsersToProfile } from '@op/common';
-import { db } from '@op/db/client';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -26,6 +25,7 @@ const outputSchema = z.object({
         reason: z.string(),
       }),
     ),
+    existingUserAuthIds: z.array(z.string()),
   }),
 });
 
@@ -46,23 +46,14 @@ export const inviteProfileUserRouter = router({
         user,
       });
 
-      // Invalidate caches for users who were successfully invited
-      if (result.details.successful.length > 0) {
-        // Find existing users by email to get their auth user IDs
-        const existingUsers = await db.query.users.findMany({
-          where: { email: { in: result.details.successful } },
-          columns: { authUserId: true },
-        });
-
-        if (existingUsers.length > 0) {
-          const userIds = existingUsers.map((u) => u.authUserId);
-          waitUntil(
-            invalidateMultiple({
-              type: 'user',
-              paramsList: userIds.map((id) => [id]),
-            }),
-          );
-        }
+      // Invalidate caches for existing users who were successfully invited
+      if (result.details.existingUserAuthIds.length > 0) {
+        waitUntil(
+          invalidateMultiple({
+            type: 'user',
+            paramsList: result.details.existingUserAuthIds.map((id) => [id]),
+          }),
+        );
       }
 
       return result;
