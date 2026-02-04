@@ -41,3 +41,4 @@ export const getGradientForString = (name: string) => {
 };
 
 export * from 'tailwind-variants';
+export { formatFileSize } from '../utils/file';

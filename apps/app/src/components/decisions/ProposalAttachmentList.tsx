@@ -2,6 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
+import { formatFileSize } from '@op/ui/utils';
 import { LuFileText, LuX } from 'react-icons/lu';
 
 export interface AttachmentListItem {
@@ -84,14 +85,4 @@ export function ProposalAttachmentList({
       ))}
     </div>
   );
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) {
-    return '0 Bytes';
-  }
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 }

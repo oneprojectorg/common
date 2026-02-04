@@ -53,6 +53,7 @@ export const useProposalFileUpload = (
   });
   const deleteAttachment = trpc.decision.deleteProposalAttachment.useMutation({
     onSuccess: onMutationSuccess,
+    onError: (error) => toast.error({ message: error.message }),
   });
 
   const validateFile = (file: File): string | null => {
@@ -144,24 +145,18 @@ export const useProposalFileUpload = (
     }
   };
 
-  const removeFile = async (id: string) => {
+  const removeFile = (id: string) => {
     const preview = filePreviews.find((f) => f.id === id);
-    if (preview) {
-      URL.revokeObjectURL(preview.url);
-      setFilePreviews((prev) => prev.filter((f) => f.id !== id));
+    if (!preview) {
+      return;
+    }
 
-      // If uploaded and linked to a proposal, also delete the link from backend
-      if (preview.uploaded && proposalId) {
-        try {
-          await deleteAttachment.mutateAsync({
-            attachmentId: id,
-            proposalId,
-          });
-        } catch (error) {
-          console.error('Failed to delete attachment:', error);
-          // Don't throw - UI already updated, backend deletion is best-effort
-        }
-      }
+    URL.revokeObjectURL(preview.url);
+    setFilePreviews((prev) => prev.filter((f) => f.id !== id));
+
+    // If uploaded and linked to a proposal, also delete from backend
+    if (preview.uploaded && proposalId) {
+      deleteAttachment.mutate({ attachmentId: id, proposalId });
     }
   };
 
