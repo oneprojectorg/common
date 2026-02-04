@@ -15,7 +15,12 @@ export const DragHandle = forwardRef<
   DragHandleProps &
     Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'>
 >(function DragHandle(
-  { size = 16, className, 'aria-label': ariaLabel = 'Drag to reorder', ...props },
+  {
+    size = 16,
+    className,
+    'aria-label': ariaLabel = 'Drag to reorder',
+    ...props
+  },
   ref,
 ) {
   return (
