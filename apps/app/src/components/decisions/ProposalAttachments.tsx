@@ -72,7 +72,7 @@ export function ProposalAttachments({
         continue;
       }
 
-      const tempId = `uploading-${Date.now()}`;
+      const tempId = `uploading-${crypto.randomUUID()}`;
       setUploadingFiles((prev) => [
         ...prev,
         { id: tempId, fileName: file.name, fileSize: file.size },

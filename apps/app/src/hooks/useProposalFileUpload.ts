@@ -82,7 +82,7 @@ export const useProposalFileUpload = (
       throw new Error(validationError);
     }
 
-    const previewId = `${Date.now()}-${Math.random()}`;
+    const previewId = crypto.randomUUID();
 
     // Create initial preview
     const preview: FilePreview = {
