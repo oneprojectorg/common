@@ -43,6 +43,7 @@
     "./RadioGroup": "./src/components/RadioGroup.tsx",
     "./ReactionsButton": "./src/components/ReactionsButton.tsx",
     "./RichTextEditor": "./src/components/RichTextEditor/index.ts",
+    "./Sortable": "./src/components/Sortable/index.ts",
     "./Surface": "./src/components/Surface.tsx",
     "./RAC": "./src/RAC.ts",
     "./RAH": "./src/RAH.ts",
@@ -66,8 +67,7 @@
     "./utils/formatting": "./src/utils/formatting.ts",
     "./lib/primitive": "./src/lib/primitive.ts",
     "./hooks/use-media-query": "./src/hooks/use-media-query.ts",
-    "./ui/table": "./src/components/ui/table.tsx",
-    "./Sortable": "./src/components/Sortable/index.ts"
+    "./ui/table": "./src/components/ui/table.tsx"
   },
   "module": "./src/index.ts",
   "scripts": {
