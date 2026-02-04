@@ -131,60 +131,10 @@ export const inviteUsersToProfile = async (input: {
   for (const rawEmail of emails) {
     const email = rawEmail.toLowerCase();
     try {
-      // Look up user from the batched results
       const existingUser = usersByEmail.get(email);
 
-      // Check if user is already a member of this profile
-      if (existingUser) {
-        const isAlreadyMember = existingProfileUserAuthIds.has(
-          existingUser.authUserId,
-        );
-
-        if (isAlreadyMember) {
-          results.failed.push({
-            email,
-            reason: 'User is already a member of this profile',
-          });
-          continue;
-        }
-
-        // User exists but not in this profile - check for existing pending invite
-        const hasPendingInvite = pendingInviteEmailsSet.has(email);
-
-        if (hasPendingInvite) {
-          results.failed.push({
-            email,
-            reason: 'User already has a pending invite to this profile',
-          });
-          continue;
-        }
-
-        // Create profile invite record (user already has an account, no need to add to allowList)
-        await db.insert(profileInvites).values({
-          email,
-          profileId: requesterProfileId,
-          profileEntityType: profile.type,
-          accessRoleId: targetRole.id,
-          invitedBy: profileUser.profileId,
-          message: personalMessage,
-        });
-
-        // Prepare email for event-based sending (include authUserId for existing users)
-        emailsToInvite.push({
-          email,
-          authUserId: existingUser.authUserId,
-          inviterName: profileUser?.name || user.email || 'A team member',
-          profileName: profile.name,
-          inviteUrl: OPURLConfig('APP').ENV_URL,
-          personalMessage,
-        });
-        continue;
-      }
-
-      // User doesn't exist - check for existing pending invite
-      const hasPendingInvite = pendingInviteEmailsSet.has(email);
-
-      if (hasPendingInvite) {
+      // Check for pending invite (applies to both existing and new users)
+      if (pendingInviteEmailsSet.has(email)) {
         results.failed.push({
           email,
           reason: 'User already has a pending invite to this profile',
@@ -192,9 +142,17 @@ export const inviteUsersToProfile = async (input: {
         continue;
       }
 
-      // Add to allowList for signup authorization (without profile metadata)
-      const isInAllowList = allowListEmailsSet.has(email);
-      if (!isInAllowList) {
+      // If existing user, check if already a member
+      if (existingUser && existingProfileUserAuthIds.has(existingUser.authUserId)) {
+        results.failed.push({
+          email,
+          reason: 'User is already a member of this profile',
+        });
+        continue;
+      }
+
+      // If new user (no account), add to allowList for signup authorization
+      if (!existingUser && !allowListEmailsSet.has(email)) {
         await db.insert(allowList).values({
           email,
           organizationId: null,
@@ -212,9 +170,10 @@ export const inviteUsersToProfile = async (input: {
         message: personalMessage,
       });
 
-      // Prepare email for event-based sending
+      // Add to emailsToInvite (with authUserId if existing user)
       emailsToInvite.push({
         email,
+        authUserId: existingUser?.authUserId,
         inviterName: profileUser?.name || user.email || 'A team member',
         profileName: profile.name,
         inviteUrl: OPURLConfig('APP').ENV_URL,
