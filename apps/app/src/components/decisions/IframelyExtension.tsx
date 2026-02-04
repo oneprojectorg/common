@@ -25,12 +25,15 @@ declare module '@tiptap/core' {
   }
 }
 
-const IframelyComponent: React.FC<ReactNodeViewProps> = ({ node }) => {
+const IframelyComponent: React.FC<ReactNodeViewProps> = ({
+  node,
+  deleteNode,
+}) => {
   const src = node.attrs.src as string;
 
   return (
     <NodeViewWrapper className="iframely-embed">
-      <LinkPreview url={src} className="my-4" />
+      <LinkPreview url={src} className="my-4" onRemove={deleteNode} />
     </NodeViewWrapper>
   );
 };
