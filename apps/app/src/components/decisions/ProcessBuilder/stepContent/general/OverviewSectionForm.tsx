@@ -389,7 +389,7 @@ export function OverviewSectionForm({
               />
             </div>
           </section>
-          <form.SubmitButton>Save</form.SubmitButton>
+          <form.SubmitButton>{t('Save')}</form.SubmitButton>
         </div>
       </form>
     </div>
