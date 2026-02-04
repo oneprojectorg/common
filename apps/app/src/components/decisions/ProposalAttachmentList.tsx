@@ -1,6 +1,5 @@
 'use client';
 
-import { formatFileSize } from '@/utils/formatting';
 import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
 import { formatFileSize } from '@op/ui/utils';

@@ -234,20 +234,18 @@ export function ProposalView({
                   {t('Attachments')}
                 </h3>
                 <ProposalAttachmentViewList
-                  files={currentProposal.attachments
-                    .filter(
-                      (
-                        a,
-                      ): a is typeof a & {
-                        attachment: NonNullable<typeof a.attachment>;
-                      } => Boolean(a.attachment),
-                    )
-                    .map((a) => ({
-                      id: a.id,
-                      fileName: a.attachment.fileName,
-                      fileSize: a.attachment.fileSize ?? 0,
-                      url: a.attachment.url ?? undefined,
-                    }))}
+                  files={currentProposal.attachments.flatMap((a) =>
+                    a.attachment
+                      ? [
+                          {
+                            id: a.id,
+                            fileName: a.attachment.fileName,
+                            fileSize: a.attachment.fileSize ?? 0,
+                            url: a.attachment.url ?? undefined,
+                          },
+                        ]
+                      : [],
+                  )}
                 />
               </div>
             )}
