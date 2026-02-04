@@ -27,26 +27,23 @@ declare module '@tiptap/core' {
   }
 }
 
-const createIframelyComponent = (
-  editable: boolean,
-): React.FC<ReactNodeViewProps> => {
-  const IframelyComponent: React.FC<ReactNodeViewProps> = ({
-    node,
-    deleteNode,
-  }) => {
-    const src = node.attrs.src as string;
+const IframelyComponent: React.FC<ReactNodeViewProps> = ({
+  node,
+  deleteNode,
+  extension,
+}) => {
+  const src = node.attrs.src;
+  const { editable } = extension.options;
 
-    return (
-      <NodeViewWrapper className="iframely-embed">
-        <LinkPreview
-          url={src}
-          className="my-4"
-          onRemove={editable ? deleteNode : undefined}
-        />
-      </NodeViewWrapper>
-    );
-  };
-  return IframelyComponent;
+  return (
+    <NodeViewWrapper className="iframely-embed">
+      <LinkPreview
+        url={src}
+        className="my-4"
+        onRemove={editable ? deleteNode : undefined}
+      />
+    </NodeViewWrapper>
+  );
 };
 
 export const IframelyExtension = Node.create<IframelyOptions>({
@@ -119,9 +116,7 @@ export const IframelyExtension = Node.create<IframelyOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(
-      createIframelyComponent(this.options.editable),
-    );
+    return ReactNodeViewRenderer(IframelyComponent);
   },
 
   addInputRules() {
