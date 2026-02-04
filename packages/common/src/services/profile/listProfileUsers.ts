@@ -35,8 +35,6 @@ const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
 
 /**
  * List all members of a profile with cursor-based pagination.
- * Includes both active members and pending invites.
- * Pending invites are appended after active members on the last page.
  */
 export const listProfileUsers = async ({
   profileId,
@@ -184,8 +182,8 @@ export const listProfileUsers = async ({
   const hasMore = profileUserResults.length > limit;
   const resultItems = profileUserResults.slice(0, limit);
 
-  // Transform to ProfileUserWithRelations shape
-  const items: ProfileUserWithRelations[] = resultItems.map((result) => {
+  // Transform results
+  const items = resultItems.map((result) => {
     const { serviceUser, roles, ...baseProfileUser } =
       result as ProfileUserQueryResult;
     const userProfile = serviceUser?.profile;
