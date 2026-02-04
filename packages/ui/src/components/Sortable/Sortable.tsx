@@ -156,12 +156,11 @@ function SortableItemWrapper<T extends SortableItem>({
       );
     }
 
-    // 'none' mode: hide the item completely
+    // 'none' mode: keep the space but hide the content
     return (
-      <div
-        ref={setNodeRef}
-        style={{ ...style, opacity: 0, height: 0, overflow: 'hidden' }}
-      />
+      <div ref={setNodeRef} style={style}>
+        <div style={{ visibility: 'hidden' }}>{children(item, controls)}</div>
+      </div>
     );
   }
 
