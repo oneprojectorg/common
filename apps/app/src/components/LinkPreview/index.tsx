@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import { memo, useEffect, useMemo } from 'react';
+import { memo, useEffect } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
 declare global {
@@ -48,10 +48,11 @@ export const LinkPreview = memo(
       },
     );
 
-    const domain = useMemo(() => getDomain(url), [url]);
+    const domain = getDomain(url);
 
     useEffect(() => {
-      // relies on the embed.js from iframely being loaded
+      // Initialize iframely embeds after HTML content renders.
+      // No deps array - must run after every render to catch DOM updates.
       window.iframely?.load();
     });
 
@@ -103,7 +104,7 @@ export const LinkPreview = memo(
               e.stopPropagation();
               onRemove();
             }}
-            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1"
+            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1 focus-visible:opacity-100"
             aria-label="Remove preview"
           >
             <LuX className="size-4" />
@@ -113,12 +114,11 @@ export const LinkPreview = memo(
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="block"
+          className="block outline-none"
         >
           {previewData.html ? (
             <div
               className="aspect-video w-full"
-              // eslint-disable-next-line react/no-danger
               dangerouslySetInnerHTML={{ __html: previewData.html }}
             />
           ) : previewData.thumbnail_url ? (
