@@ -1482,6 +1482,9 @@ importers:
 
   tests/core:
     dependencies:
+      '@op/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@op/db':
         specifier: workspace:*
         version: link:../../services/db

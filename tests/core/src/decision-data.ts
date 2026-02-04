@@ -1,4 +1,3 @@
-import { db } from '@op/db';
 import {
   EntityType,
   ProcessStatus,
@@ -9,7 +8,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { eq } from 'drizzle-orm';
+import { db, eq } from '@op/db/test';
 import { randomUUID } from 'node:crypto';
 
 /** Well-known slug for the seeded decision template profile */

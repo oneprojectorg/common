@@ -14,45 +14,40 @@ import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { getTemplate } from './getTemplate';
-import { createInstanceDataFromTemplate } from './schemas/instanceData';
+import {
+  type PhaseOverride,
+  createInstanceDataFromTemplate,
+} from './schemas/instanceData';
+
+/** Options for the core instance creation function (no auth required) */
+export type CreateInstanceFromTemplateCoreOptions = {
+  templateId: string;
+  name: string;
+  description?: string;
+  phases?: PhaseOverride[];
+  ownerProfileId: string;
+  creatorAuthUserId: string;
+  creatorEmail: string;
+  /** Defaults to DRAFT */
+  status?: ProcessStatus;
+};
 
 /**
- * Creates a decision process instance from a DecisionSchemaDefinition template.
+ * Core logic for creating a decision process instance from a template.
+ * This function does not require a User object - it takes primitive values directly,
+ * making it suitable for use in tests and internal services.
  */
-export const createInstanceFromTemplate = async ({
+export const createInstanceFromTemplateCore = async ({
   templateId,
   name,
   description,
   phases,
-  user,
-}: {
-  /** ID of the process template in the DB */
-  templateId: string;
-  name: string;
-  description?: string;
-  /** Optional phase overrides (dates and settings) */
-  phases?: Array<{
-    phaseId: string;
-    startDate?: string;
-    endDate?: string;
-    settings?: Record<string, unknown>;
-  }>;
-  user: User;
-}) => {
-  // Fetch user and template in parallel (they're independent)
-  const [dbUser, template] = await Promise.all([
-    assertUserByAuthId(
-      user.id,
-      new UnauthorizedError('User must be authenticated'),
-    ),
-    getTemplate(templateId),
-  ]);
-
-  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
-  if (!ownerProfileId) {
-    // TODO: profileId should not be nullable in the schema
-    throw new UnauthorizedError('User must have an active profile');
-  }
+  ownerProfileId,
+  creatorAuthUserId,
+  creatorEmail,
+  status = ProcessStatus.DRAFT,
+}: CreateInstanceFromTemplateCoreOptions) => {
+  const template = await getTemplate(templateId);
 
   const instanceData = createInstanceDataFromTemplate({
     template,
@@ -90,19 +85,12 @@ export const createInstanceFromTemplate = async ({
         currentStateId: instanceData.currentPhaseId, // DB column is currentStateId but stores phaseId
         ownerProfileId,
         profileId: instanceProfile.id,
-        status: ProcessStatus.DRAFT,
+        status,
       })
       .returning();
 
     if (!newInstance) {
       throw new CommonError('Failed to create decision process instance');
-    }
-
-    // TODO: This shouldn't be a requirement in the future and we need to resolve that (SMS accounts for instance)
-    if (!user.email) {
-      throw new CommonError(
-        'Failed to create decision process instance. User email was missing',
-      );
     }
 
     // Add the creator as a profile user with Admin role
@@ -111,8 +99,8 @@ export const createInstanceFromTemplate = async ({
         .insert(profileUsers)
         .values({
           profileId: instanceProfile.id,
-          authUserId: user.id,
-          email: user.email,
+          authUserId: creatorAuthUserId,
+          email: creatorEmail,
         })
         .returning(),
       tx._query.accessRoles.findFirst({
@@ -165,4 +153,53 @@ export const createInstanceFromTemplate = async ({
   }
 
   return profile;
+};
+
+/** Options for the public instance creation function (requires User) */
+export type CreateInstanceFromTemplateOptions = {
+  templateId: string;
+  name: string;
+  description?: string;
+  phases?: PhaseOverride[];
+  user: User;
+};
+
+/**
+ * Creates a decision process instance from a template.
+ * Validates the user and delegates to createInstanceFromTemplateCore.
+ */
+export const createInstanceFromTemplate = async ({
+  templateId,
+  name,
+  description,
+  phases,
+  user,
+}: CreateInstanceFromTemplateOptions) => {
+  const dbUser = await assertUserByAuthId(
+    user.id,
+    new UnauthorizedError('User must be authenticated'),
+  );
+
+  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
+  if (!ownerProfileId) {
+    // TODO: profileId should not be nullable in the schema
+    throw new UnauthorizedError('User must have an active profile');
+  }
+
+  // TODO: This shouldn't be a requirement in the future and we need to resolve that (SMS accounts for instance)
+  if (!user.email) {
+    throw new CommonError(
+      'Failed to create decision process instance. User email was missing',
+    );
+  }
+
+  return createInstanceFromTemplateCore({
+    templateId,
+    name,
+    description,
+    phases,
+    ownerProfileId,
+    creatorAuthUserId: user.id,
+    creatorEmail: user.email,
+  });
 };
