@@ -51,10 +51,8 @@ export const LinkPreview = memo(
     const domain = getDomain(url);
 
     useEffect(() => {
-      // Initialize iframely embeds after HTML content renders.
-      // No deps array - must run after every render to catch DOM updates.
       window.iframely?.load();
-    });
+    }, [previewData?.html]);
 
     // Loading state: show card with spinner and domain
     if (loading) {
