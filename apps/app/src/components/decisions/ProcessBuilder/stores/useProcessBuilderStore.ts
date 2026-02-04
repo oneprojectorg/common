@@ -62,6 +62,11 @@ export interface ProcessConfig {
 export interface PhaseData {
   startDate?: string;
   endDate?: string;
+  // Phase rules for controlling behavior (proposals, voting)
+  rules?: {
+    proposals?: { submit?: boolean; edit?: boolean };
+    voting?: { submit?: boolean; edit?: boolean };
+  };
   // Dynamic settings based on schema (e.g., budget, maxProposalsPerMember, maxVotesPerMember)
   settings?: Record<string, unknown>;
 }
