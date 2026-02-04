@@ -26,7 +26,6 @@ import {
   LuCircleHelp,
   LuLogOut,
   LuSearch,
-  LuTrash2,
 } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -275,19 +274,6 @@ const AvatarMenuContent = ({
         <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
         {t('Log out')}
       </MenuItem>
-      {deleteOrganizationEnabled && (
-        <MenuItem
-          id="delete-account"
-          className="px-0 py-2 text-functional-red hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
-          onAction={() => {
-            setIsOrgDeletionOpen(true);
-            onClose?.();
-          }}
-        >
-          <LuTrash2 className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
-          {t('Delete account')}
-        </MenuItem>
-      )}
       <MenuItemSimple
         isDisabled
         className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
@@ -322,6 +308,23 @@ const AvatarMenuContent = ({
           • One Project • {new Date().getFullYear()}
         </div>
       </MenuItemSimple>
+      {deleteOrganizationEnabled && (
+        <MenuItemSimple
+          isDisabled
+          className="flex flex-col items-start justify-start px-0 pt-2 hover:bg-transparent"
+        >
+          <Button
+            unstyled
+            className="text-sm text-neutral-charcoal underline hover:no-underline sm:text-xs"
+            onPress={() => {
+              setIsOrgDeletionOpen(true);
+              onClose?.();
+            }}
+          >
+            {t('Delete account')}
+          </Button>
+        </MenuItemSimple>
+      )}
     </>
   );
 };
