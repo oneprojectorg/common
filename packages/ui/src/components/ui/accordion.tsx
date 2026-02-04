@@ -31,7 +31,8 @@ const accordionStyles = tv({
     item: 'group/accordion-item',
     header: '',
     trigger: '',
-    indicator: 'size-4 shrink-0 transition-transform duration-200',
+    indicator:
+      'size-4 shrink-0 transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-90',
     content:
       'h-[var(--disclosure-panel-height)] overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none',
     contentInner: '',
@@ -49,8 +50,7 @@ const accordionStyles = tv({
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
           'disabled:cursor-not-allowed disabled:opacity-50',
         ],
-        indicator:
-          'text-muted-fg group-data-[expanded]/accordion-item:rotate-90',
+        indicator: 'text-muted-fg',
         content: '',
         contentInner: 'p-4',
       },
