@@ -34,7 +34,7 @@ const buildRoleNameSubquery = (profileUserIdColumn: unknown) => sql`COALESCE((
 ), '')`;
 
 /**
- * List all members of a profile with cursor-based pagination.
+ * List all members of a profile with cursor-based pagination
  */
 export const listProfileUsers = async ({
   profileId,
