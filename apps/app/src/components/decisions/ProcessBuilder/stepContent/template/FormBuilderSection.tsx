@@ -139,8 +139,36 @@ export default function FormBuilderSection({
     setSortableFields(newFields);
   }, []);
 
+  const handleUpdateField = useCallback(
+    (fieldId: string, updates: Partial<FormField>) => {
+      setSortableFields((prev) =>
+        prev.map((field) =>
+          field.id === fieldId ? { ...field, ...updates } : field,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleFieldSelect = useCallback((fieldId: string) => {
+    const fieldElement = document.querySelector(
+      `[data-field-id="${fieldId}"]`,
+    ) as HTMLElement | null;
+    if (fieldElement) {
+      fieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus the first focusable element within the card (the label input)
+      const focusable = fieldElement.querySelector(
+        'input, button, [tabindex]:not([tabindex="-1"])',
+      ) as HTMLElement | null;
+      if (focusable) {
+        // Small delay to allow scroll to complete
+        setTimeout(() => focusable.focus(), 300);
+      }
+    }
+  }, []);
+
   return (
-    <SidebarProvider>
+    <SidebarProvider isOpen={true}>
       <div className="flex h-full flex-col md:flex-row">
         {/* Mobile header with sidebar trigger */}
         <div className="flex items-center gap-2 border-b p-4 md:hidden">
@@ -149,7 +177,11 @@ export default function FormBuilderSection({
         </div>
 
         {/* Sidebar - hidden on mobile, slides in as drawer */}
-        <FormBuilderSidebar fields={allFields} onAddField={handleAddField} />
+        <FormBuilderSidebar
+          fields={allFields}
+          onAddField={handleAddField}
+          onFieldSelect={handleFieldSelect}
+        />
 
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
@@ -193,6 +225,7 @@ export default function FormBuilderSection({
                   field={field}
                   controls={controls}
                   onRemove={handleRemoveField}
+                  onUpdate={handleUpdateField}
                 />
               )}
             </Sortable>
