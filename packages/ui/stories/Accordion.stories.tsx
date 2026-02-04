@@ -230,7 +230,7 @@ export const CustomHeader: Story = {
             dragTrigger="handle"
             getItemLabel={(section) => section.title}
             className="gap-2"
-            showDropPlaceholder
+            dropIndicator="placeholder"
           >
             {(section, { dragHandleProps, isDragging }) => (
               <AccordionItem
