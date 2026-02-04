@@ -12,8 +12,10 @@ import {
 import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
-import type { ProfileUserQueryResult } from './getProfileUserWithRelations';
-import type { ProfileMember } from './types';
+import type {
+  ProfileUserQueryResult,
+  ProfileUserWithRelations,
+} from './getProfileUserWithRelations';
 
 export type ProfileUserOrderBy = 'name' | 'email' | 'role';
 
@@ -52,7 +54,7 @@ export const listProfileUsers = async ({
   query?: string;
   cursor?: string | null;
   limit?: number;
-}): Promise<PaginatedResult<ProfileMember>> => {
+}): Promise<PaginatedResult<ProfileUserWithRelations>> => {
   const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
     assertProfile(profileId),
@@ -182,8 +184,8 @@ export const listProfileUsers = async ({
   const hasMore = profileUserResults.length > limit;
   const resultItems = profileUserResults.slice(0, limit);
 
-  // Transform active members
-  const activeMembers: ProfileMember[] = resultItems.map((result) => {
+  // Transform to ProfileUserWithRelations shape
+  const items: ProfileUserWithRelations[] = resultItems.map((result) => {
     const { serviceUser, roles, ...baseProfileUser } =
       result as ProfileUserQueryResult;
     const userProfile = serviceUser?.profile;
@@ -194,60 +196,8 @@ export const listProfileUsers = async ({
       about: userProfile?.bio || baseProfileUser.about,
       profile: userProfile ?? null,
       roles: roles.map((roleJunction) => roleJunction.accessRole),
-      status: 'active' as const,
     };
   });
-
-  // Query pending invites (only on the last page of active members to avoid duplicate fetches)
-  let pendingInvites: ProfileMember[] = [];
-  if (!hasMore) {
-    const inviteResults = await db.query.profileInvites.findMany({
-      where: {
-        profileId,
-        acceptedOn: { isNull: true },
-      },
-      with: {
-        accessRole: true,
-      },
-      orderBy: {
-        email: 'asc',
-      },
-    });
-
-    // Filter by search query if provided
-    const filteredInvites =
-      query && query.length >= 2
-        ? inviteResults.filter((invite) =>
-            invite.email.toLowerCase().includes(query.toLowerCase()),
-          )
-        : inviteResults;
-
-    // Transform pending invites to ProfileMember shape
-    pendingInvites = filteredInvites.map((invite) => {
-      const role = invite.accessRole;
-      return {
-        // ProfileUser-like fields with placeholder values for pending invites
-        id: invite.id,
-        authUserId: null, // Not assigned yet
-        email: invite.email,
-        name: invite.email.split('@')[0] ?? null, // Use email prefix as name placeholder
-        about: null,
-        profileId: invite.profileId,
-        createdAt: invite.createdAt ?? null,
-        updatedAt: invite.updatedAt ?? null,
-        deletedAt: null,
-        // Relations
-        profile: null,
-        roles: role ? [role] : [],
-        // Member status
-        status: 'pending' as const,
-        inviteId: invite.id,
-      };
-    });
-  }
-
-  // Combine active members and pending invites
-  const items = [...activeMembers, ...pendingInvites];
 
   // Build next cursor from last item
   // Cursor value must match the primary ORDER BY column
