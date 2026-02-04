@@ -58,6 +58,6 @@ export interface DragHandleProps {
   size?: number;
   /** Additional class name */
   className?: string;
-  /** Accessible label for the drag handle (e.g., "Drag to reorder") */
-  'aria-label': string;
+  /** Accessible label for the drag handle (defaults to "Drag to reorder") */
+  'aria-label'?: string;
 }
