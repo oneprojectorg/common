@@ -1,6 +1,6 @@
 'use client';
 
-import { formatFileSize } from '@/utils/formatting';
+import { formatFileSize } from '@op/ui/utils';
 import { LuDownload, LuFileText } from 'react-icons/lu';
 
 export interface AttachmentViewItem {
