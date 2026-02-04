@@ -247,79 +247,66 @@ const PhaseControls = ({
 
   return (
     <div className="space-y-4 p-4">
-      {/* Proposal Settings */}
-      <div className="space-y-3">
-        <h4 className="text-sm font-medium text-neutral-charcoal">
-          {t('Proposal Settings')}
-        </h4>
-        <ToggleRow label={t('Accept proposal submissions')}>
+      <ToggleRow label={t('Enable proposal submission')}>
+        <ToggleButton
+          isSelected={phase.rules?.proposals?.submit ?? false}
+          onChange={(val) =>
+            updateRules({
+              proposals: {
+                ...phase.rules?.proposals,
+                submit: val,
+              },
+            })
+          }
+          size="small"
+        />
+      </ToggleRow>
+      {phase.rules?.proposals?.submit && (
+        <ToggleRow label={t('Allow proposal editing')}>
           <ToggleButton
-            isSelected={phase.rules?.proposals?.submit ?? false}
+            isSelected={phase.rules?.proposals?.edit ?? false}
             onChange={(val) =>
               updateRules({
                 proposals: {
                   ...phase.rules?.proposals,
-                  submit: val,
+                  edit: val,
                 },
               })
             }
             size="small"
           />
         </ToggleRow>
-        {phase.rules?.proposals?.submit && (
-          <ToggleRow label={t('Allow proposal editing')}>
-            <ToggleButton
-              isSelected={phase.rules?.proposals?.edit ?? false}
-              onChange={(val) =>
-                updateRules({
-                  proposals: {
-                    ...phase.rules?.proposals,
-                    edit: val,
-                  },
-                })
-              }
-              size="small"
-            />
-          </ToggleRow>
-        )}
-      </div>
-
-      {/* Voting Settings */}
-      <div className="space-y-3">
-        <h4 className="text-sm font-medium text-neutral-charcoal">
-          {t('Voting Settings')}
-        </h4>
-        <ToggleRow label={t('Enable voting')}>
+      )}
+      <ToggleRow label={t('Enable voting')}>
+        <ToggleButton
+          isSelected={phase.rules?.voting?.submit ?? false}
+          onChange={(val) =>
+            updateRules({
+              voting: {
+                ...phase.rules?.voting,
+                submit: val,
+              },
+            })
+          }
+          size="small"
+        />
+      </ToggleRow>
+      {phase.rules?.voting?.submit && (
+        <ToggleRow label={t('Allow vote changes')}>
           <ToggleButton
-            isSelected={phase.rules?.voting?.submit ?? false}
+            isSelected={phase.rules?.voting?.edit ?? false}
             onChange={(val) =>
               updateRules({
                 voting: {
                   ...phase.rules?.voting,
-                  submit: val,
+                  edit: val,
                 },
               })
             }
             size="small"
           />
         </ToggleRow>
-        {phase.rules?.voting?.submit && (
-          <ToggleRow label={t('Allow vote changes')}>
-            <ToggleButton
-              isSelected={phase.rules?.voting?.edit ?? false}
-              onChange={(val) =>
-                updateRules({
-                  voting: {
-                    ...phase.rules?.voting,
-                    edit: val,
-                  },
-                })
-              }
-              size="small"
-            />
-          </ToggleRow>
-        )}
-      </div>
+      )}
     </div>
   );
 };
