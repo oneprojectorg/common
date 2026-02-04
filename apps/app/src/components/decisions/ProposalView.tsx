@@ -24,6 +24,7 @@ import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
+import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { getProposalContent } from './proposalContentUtils';
 
@@ -224,6 +225,32 @@ export function ProposalView({
           ) : (
             <DocumentNotAvailable />
           )}
+
+          {/* Attachments Section */}
+          {currentProposal.attachments &&
+            currentProposal.attachments.length > 0 && (
+              <div className="border-t pt-8">
+                <h3 className="mb-4 text-lg font-semibold text-neutral-charcoal">
+                  {t('Attachments')}
+                </h3>
+                <ProposalAttachmentViewList
+                  files={currentProposal.attachments
+                    .filter(
+                      (
+                        a,
+                      ): a is typeof a & {
+                        attachment: NonNullable<typeof a.attachment>;
+                      } => Boolean(a.attachment),
+                    )
+                    .map((a) => ({
+                      id: a.id,
+                      fileName: a.attachment.fileName,
+                      fileSize: a.attachment.fileSize ?? 0,
+                      url: a.attachment.url ?? undefined,
+                    }))}
+                />
+              </div>
+            )}
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>

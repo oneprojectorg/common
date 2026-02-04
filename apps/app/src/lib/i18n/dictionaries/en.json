@@ -510,6 +510,7 @@
   "No email addresses to invite": "No email addresses to invite",
   "Remove {name}": "Remove {name}",
   "Select a role": "Select a role",
+<<<<<<< HEAD
   "Add role": "Add role",
   "Admin": "Admin",
   "Read": "Read",
@@ -523,6 +524,7 @@
   "No roles configured": "No roles configured",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "Are you sure you want to remove {roleName} from \"{processName}\"?",
   "Remove": "Remove",
+  "Attachments": "Attachments",
   "Attachments (optional)": "Attachments (optional)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Support your proposal with relevant documents like budgets or supporting research.",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepts PDF, DOCX, XLSX up to {size}MB",
