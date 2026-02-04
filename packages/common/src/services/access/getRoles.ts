@@ -26,7 +26,7 @@ type RoleCursor = { value: string; id: string };
  * Get roles for a profile or global roles with cursor-based pagination.
  * - If profileId is provided: returns only roles specific to that profile
  * - If no profileId: returns only global roles (profileId IS NULL)
- * - If zoneName is provided: includes permission bitfield for that zone
+ * - If zoneName is provided: includes permission for that zone
  */
 export const getRoles = async (params?: {
   profileId?: string;
