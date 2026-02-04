@@ -117,7 +117,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           Common
         </Heading>
         <IconButton
-          className="absolute top-3 left-3 size-8 text-neutral-gray3"
+          className="absolute top-3 right-3 size-8 text-neutral-gray3"
           slot="close"
         >
           <LuX className="size-6" />
