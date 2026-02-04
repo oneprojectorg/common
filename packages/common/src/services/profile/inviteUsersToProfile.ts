@@ -245,8 +245,8 @@ export const inviteUsersToProfile = async (input: {
       // Collect auth user IDs for existing users (for cache invalidation)
       results.existingUserAuthIds.push(
         ...emailsToInvite
-          .filter((e) => e.authUserId !== undefined)
-          .map((e) => e.authUserId!),
+          .filter((e): e is typeof e & { authUserId: string } => !!e.authUserId)
+          .map((e) => e.authUserId),
       );
     } catch (eventError) {
       console.error('Failed to send profile invite event:', eventError);

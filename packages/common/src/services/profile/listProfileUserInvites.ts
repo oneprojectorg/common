@@ -1,5 +1,5 @@
 import { and, db, eq, isNull, sql } from '@op/db/client';
-import { profileInvites, type AccessRole } from '@op/db/schema';
+import { type AccessRole, profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
