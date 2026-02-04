@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,9 +21,33 @@ const ACCEPTED_TYPES = [
 
 const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.xlsx'];
 
+interface Attachment {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  url?: string;
+  pending?: boolean;
+}
+
+type OptimisticAction =
+  | { type: 'add'; attachment: Attachment }
+  | { type: 'remove'; id: string };
+
+function attachmentsReducer(
+  state: Attachment[],
+  action: OptimisticAction,
+): Attachment[] {
+  switch (action.type) {
+    case 'add':
+      return [...state, { ...action.attachment, pending: true }];
+    case 'remove':
+      return state.filter((a) => a.id !== action.id);
+  }
+}
+
 /**
  * Attachment section for proposals.
- * Renders attachments from getProposal and handles upload/delete.
+ * Uses useOptimistic for immediate UI feedback during uploads and deletes.
  */
 export function ProposalAttachments({
   proposalId,
@@ -40,31 +64,40 @@ export function ProposalAttachments({
   onMutate: () => void;
 }) {
   const t = useTranslations();
-  const [uploadingFiles, setUploadingFiles] = useState<
-    { id: string; fileName: string; fileSize: number }[]
-  >([]);
+
+  // Normalize attachments to ensure fileSize is always a number
+  const normalizedAttachments: Attachment[] = attachments.map((a) => ({
+    id: a.id,
+    fileName: a.fileName,
+    fileSize: a.fileSize ?? 0,
+    url: a.url,
+  }));
+
+  const [optimisticAttachments, dispatch] = useOptimistic(
+    normalizedAttachments,
+    attachmentsReducer,
+  );
 
   const uploadMutation = trpc.decision.uploadProposalAttachment.useMutation({
-    onSuccess: () => {
-      onMutate();
-      setUploadingFiles([]);
-    },
+    onSuccess: onMutate,
     onError: (err) => {
       toast.error({ message: err.message });
-      setUploadingFiles([]);
+      onMutate(); // Refetch to clear optimistic state on error
     },
   });
 
   const deleteMutation = trpc.decision.deleteProposalAttachment.useMutation({
     onSuccess: onMutate,
-    onError: (err) => toast.error({ message: err.message }),
+    onError: (err) => {
+      toast.error({ message: err.message });
+      onMutate(); // Refetch to restore deleted item on error
+    },
   });
 
-  const totalCount = attachments.length + uploadingFiles.length;
-  const canAddMore = totalCount < MAX_FILES;
+  const canAddMore = optimisticAttachments.length < MAX_FILES;
 
-  const handleSelectFiles = async (files: File[]) => {
-    const remainingSlots = MAX_FILES - totalCount;
+  const handleSelectFiles = (files: File[]) => {
+    const remainingSlots = MAX_FILES - optimisticAttachments.length;
     const filesToUpload = files.slice(0, remainingSlots);
 
     for (const file of filesToUpload) {
@@ -77,39 +110,50 @@ export function ProposalAttachments({
         continue;
       }
 
-      const tempId = `uploading-${crypto.randomUUID()}`;
-      setUploadingFiles((prev) => [
-        ...prev,
-        { id: tempId, fileName: file.name, fileSize: file.size },
-      ]);
+      const tempId = crypto.randomUUID();
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        uploadMutation.mutate({
-          file: reader.result as string,
+      startTransition(async () => {
+        dispatch({
+          type: 'add',
+          attachment: {
+            id: tempId,
+            fileName: file.name,
+            fileSize: file.size,
+          },
+        });
+
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+
+        await uploadMutation.mutateAsync({
+          file: base64,
           fileName: file.name,
           mimeType: file.type,
           proposalId,
         });
-      };
-      reader.readAsDataURL(file);
+      });
     }
   };
 
   const handleRemove = (id: string) => {
-    deleteMutation.mutate({ attachmentId: id, proposalId });
+    startTransition(async () => {
+      dispatch({ type: 'remove', id });
+
+      await deleteMutation.mutateAsync({ attachmentId: id, proposalId });
+    });
   };
 
-  const allFiles = [
-    ...attachments.map((a) => ({
-      id: a.id,
-      fileName: a.fileName,
-      fileSize: a.fileSize ?? 0,
-      uploading: false,
-      url: a.url,
-    })),
-    ...uploadingFiles.map((f) => ({ ...f, uploading: true })),
-  ];
+  const displayFiles = optimisticAttachments.map((a) => ({
+    id: a.id,
+    fileName: a.fileName,
+    fileSize: a.fileSize,
+    uploading: a.pending ?? false,
+    url: a.url,
+  }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,7 +168,7 @@ export function ProposalAttachments({
         </p>
       </div>
 
-      <ProposalAttachmentList files={allFiles} onRemove={handleRemove} />
+      <ProposalAttachmentList files={displayFiles} onRemove={handleRemove} />
 
       <FileDropZone
         acceptedFileTypes={ACCEPTED_EXTENSIONS}
@@ -133,12 +177,12 @@ export function ProposalAttachments({
           size: MAX_SIZE_MB,
         })}
         allowsMultiple
-        isDisabled={!canAddMore || uploadMutation.isPending}
+        isDisabled={!canAddMore}
       />
 
       <p className="text-sm text-neutral-gray4">
         {t('{count}/{max} attachments added', {
-          count: totalCount,
+          count: optimisticAttachments.length,
           max: MAX_FILES,
         })}
       </p>
