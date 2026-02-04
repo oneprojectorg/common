@@ -7,6 +7,7 @@ import { useDebounce } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
+import { IconButton } from '@op/ui/IconButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
@@ -391,14 +392,13 @@ export const ProfileInviteModal = ({
                   }
                   title={item.name}
                 />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveItem(item.id)}
-                  className="rounded-full p-1 hover:bg-neutral-gray1"
-                  aria-label={`Remove ${item.name}`}
+                <IconButton
+                  size="small"
+                  onPress={() => handleRemoveItem(item.id)}
+                  aria-label={t('Remove {name}', { name: item.name })}
                 >
                   <LuX className="size-4" />
-                </button>
+                </IconButton>
               </div>
             ))}
           </div>

@@ -506,5 +506,6 @@
   "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {1 pessoa} other {# pessoas}}",
   "Invite sent successfully": "Convite enviado com sucesso",
   "Selected members": "Membros selecionados",
-  "No email addresses to invite": "Nenhum endereço de e-mail para convidar"
+  "No email addresses to invite": "Nenhum endereço de e-mail para convidar",
+  "Remove {name}": "Remover {name}"
 }

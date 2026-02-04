@@ -506,5 +506,6 @@
   "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {১ জন} other {# জন}}",
   "Invite sent successfully": "আমন্ত্রণ সফলভাবে পাঠানো হয়েছে",
   "Selected members": "নির্বাচিত সদস্যরা",
-  "No email addresses to invite": "আমন্ত্রণ করার জন্য কোনো ইমেইল ঠিকানা নেই"
+  "No email addresses to invite": "আমন্ত্রণ করার জন্য কোনো ইমেইল ঠিকানা নেই",
+  "Remove {name}": "{name} সরান"
 }
