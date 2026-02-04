@@ -6,6 +6,7 @@ import { EntityType } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
+import { EmptyState } from '@op/ui/EmptyState';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
@@ -23,7 +24,7 @@ import {
 } from 'react';
 import { ListBox, ListBoxItem } from 'react-aria-components';
 import { createPortal } from 'react-dom';
-import { LuX } from 'react-icons/lu';
+import { LuLeaf, LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -58,6 +59,7 @@ export const ProfileInviteModal = ({
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+  const [selectedRoleName, setSelectedRoleName] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startTransition] = useTransition();
@@ -259,7 +261,11 @@ export const ProfileInviteModal = ({
             selectedRoleId={selectedRoleId}
             onSelectionChange={handleTabChange}
             countsByRole={countsByRole}
-            onRolesLoaded={setSelectedRoleId}
+            onRolesLoaded={(roleId, roleName) => {
+              setSelectedRoleId(roleId);
+              setSelectedRoleName(roleName);
+            }}
+            onRoleNameChange={setSelectedRoleName}
           />
         </Suspense>
 
@@ -362,7 +368,7 @@ export const ProfileInviteModal = ({
           )}
 
         {/* Selected Items for Current Role */}
-        {currentRoleItems.length > 0 && (
+        {currentRoleItems.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {currentRoleItems.map((item) => (
               <div
@@ -396,7 +402,13 @@ export const ProfileInviteModal = ({
               </div>
             ))}
           </div>
-        )}
+        ) : selectedRoleName ? (
+          <EmptyState icon={<LuLeaf />}>
+            {t('No {roleName}s have been added', {
+              roleName: selectedRoleName,
+            })}
+          </EmptyState>
+        ) : null}
       </ModalBody>
 
       <ModalFooter className="flex-row items-center justify-between">

@@ -502,6 +502,7 @@
   "Search by name or email...": "নাম বা ইমেইল দিয়ে অনুসন্ধান করুন...",
   "Invite {email}": "{email} আমন্ত্রণ করুন",
   "No results": "কোনো ফলাফল নেই",
+  "No {roleName}s have been added": "কোনো {roleName} যোগ করা হয়নি",
   "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {১ জন} other {# জন}}",
   "Invite sent successfully": "আমন্ত্রণ সফলভাবে পাঠানো হয়েছে",
   "Selected members": "নির্বাচিত সদস্যরা",

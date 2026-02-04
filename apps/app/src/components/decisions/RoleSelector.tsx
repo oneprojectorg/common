@@ -13,12 +13,14 @@ export const RoleSelector = ({
   onSelectionChange,
   countsByRole,
   onRolesLoaded,
+  onRoleNameChange,
 }: {
   profileId: string;
   selectedRoleId: string;
   onSelectionChange: (key: Key) => void;
   countsByRole: Record<string, number>;
-  onRolesLoaded: (firstRoleId: string) => void;
+  onRolesLoaded: (roleId: string, roleName: string) => void;
+  onRoleNameChange: (roleName: string) => void;
 }) => {
   const [[globalRolesData, profileRolesData]] = trpc.useSuspenseQueries((t) => [
     t.profile.listRoles({}),
@@ -33,16 +35,27 @@ export const RoleSelector = ({
 
   // Set default role on mount if none selected
   const hasInitialized = useRef(false);
-  const firstRoleId = roles[0]?.id;
+  const firstRole = roles[0];
   useEffect(() => {
-    if (!hasInitialized.current && firstRoleId && !selectedRoleId) {
+    if (!hasInitialized.current && firstRole && !selectedRoleId) {
       hasInitialized.current = true;
-      onRolesLoaded(firstRoleId);
+      onRolesLoaded(firstRole.id, firstRole.name);
     }
-  }, [firstRoleId, selectedRoleId, onRolesLoaded]);
+  }, [firstRole, selectedRoleId, onRolesLoaded]);
+
+  const handleSelectionChange = (key: Key) => {
+    const role = roles.find((r) => r.id === key);
+    if (role) {
+      onRoleNameChange(role.name);
+    }
+    onSelectionChange(key);
+  };
 
   return (
-    <Tabs selectedKey={selectedRoleId} onSelectionChange={onSelectionChange}>
+    <Tabs
+      selectedKey={selectedRoleId}
+      onSelectionChange={handleSelectionChange}
+    >
       <TabList>
         {roles.map((role) => {
           const count = countsByRole[role.id] ?? 0;

@@ -502,6 +502,7 @@
   "Search by name or email...": "Rechercher par nom ou courriel...",
   "Invite {email}": "Inviter {email}",
   "No results": "Aucun résultat",
+  "No {roleName}s have been added": "Aucun {roleName} n'a été ajouté",
   "{count, plural, =1 {1 person} other {# people}}": "{count, plural, =1 {1 personne} other {# personnes}}",
   "Invite sent successfully": "Invitation envoyée avec succès",
   "Selected members": "Membres sélectionnés",
