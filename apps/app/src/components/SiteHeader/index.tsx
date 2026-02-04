@@ -290,7 +290,7 @@ const AvatarMenuContent = ({
         isDisabled
         className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4 hover:bg-transparent"
       >
-        <div className="text-sm sm:text-xs">
+        <div className="text-xs">
           <span
             className="pointer text-primary-teal hover:underline"
             onClick={() => {
@@ -306,25 +306,23 @@ const AvatarMenuContent = ({
             {t('Ethical Open Source')}
           </span>{' '}
           • One Project • {new Date().getFullYear()}
+          {deleteOrganizationEnabled && (
+            <>
+              {' • '}
+              <Button
+                unstyled
+                className="text-neutral-charcoal underline hover:no-underline"
+                onPress={() => {
+                  setIsOrgDeletionOpen(true);
+                  onClose?.();
+                }}
+              >
+                {t('Delete my account')}
+              </Button>
+            </>
+          )}
         </div>
       </MenuItemSimple>
-      {deleteOrganizationEnabled && (
-        <MenuItemSimple
-          isDisabled
-          className="flex flex-col items-start justify-start px-0 pt-2 hover:bg-transparent"
-        >
-          <Button
-            unstyled
-            className="text-neutral-charcoal underline hover:no-underline sm:text-sm"
-            onPress={() => {
-              setIsOrgDeletionOpen(true);
-              onClose?.();
-            }}
-          >
-            {t('Delete account')}
-          </Button>
-        </MenuItemSimple>
-      )}
     </>
   );
 };
