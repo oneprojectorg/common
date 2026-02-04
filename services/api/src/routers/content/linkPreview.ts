@@ -33,8 +33,7 @@ const getLinkPreview = async (url: string) => {
 
     // TODO: add caching
     const response = await fetch(
-      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=aa8038ac9862d03c63b8309c9b8e9935`,
-      // `https://cdn.iframe.ly/api/iframely?omit_script=1&consent=1&url=${encodeURIComponent(url)}&api_key=${apiKey}`,
+      `https://cdn.iframe.ly/api/iframely?omit_script=1&consent=1&url=${encodeURIComponent(url)}&api_key=${apiKey}`,
     );
 
     if (!response.ok) {
