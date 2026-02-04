@@ -1,16 +1,16 @@
 import type { IconType } from 'react-icons';
 import {
-  LuAlignLeft,
   LuAlignJustify,
-  LuVideo,
-  LuMic,
-  LuListChecks,
+  LuAlignLeft,
+  LuCalendar,
   LuChevronDown,
+  LuHash,
+  LuListChecks,
+  LuMic,
+  LuSquare,
   LuToggleLeft,
   LuUpload,
-  LuCalendar,
-  LuHash,
-  LuSquare,
+  LuVideo,
 } from 'react-icons/lu';
 
 import type { FieldCategory, FieldType, FieldTypeConfig } from './types';
