@@ -14,7 +14,6 @@ import {
   DisclosurePanel as DisclosurePanelPrimitive,
   Disclosure as DisclosurePrimitive,
   DisclosureStateContext,
-  Heading,
 } from 'react-aria-components';
 import { LuChevronRight } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
@@ -52,7 +51,7 @@ const accordionStyles = tv({
         ],
         indicator:
           'text-muted-fg group-data-[expanded]/accordion-item:rotate-90',
-        content: 'border-t',
+        content: '',
         contentInner: 'p-4',
       },
       unstyled: {},
@@ -158,25 +157,15 @@ const AccordionItem = ({
 // ============================================================================
 
 interface AccordionHeaderProps {
-  /** Heading level for accessibility. Default: 3 */
-  level?: 2 | 3 | 4 | 5 | 6;
   /** Custom className */
   className?: string;
   children: React.ReactNode;
 }
 
-const AccordionHeader = ({
-  level = 3,
-  className,
-  children,
-}: AccordionHeaderProps) => {
+const AccordionHeader = ({ className, children }: AccordionHeaderProps) => {
   const styles = useAccordionStyles();
 
-  return (
-    <Heading level={level} className={cn(styles.header(), className)}>
-      {children}
-    </Heading>
-  );
+  return <div className={cn(styles.header(), className)}>{children}</div>;
 };
 
 // ============================================================================

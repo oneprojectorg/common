@@ -256,9 +256,8 @@ export const CustomHeader: Story = {
                   <AccordionTitleInput defaultValue={section.title} />
                 </AccordionHeader>
                 <AccordionContent>
-                  <div className="border-t border-border px-4 py-4">
-                    {section.content}
-                  </div>
+                  <hr />
+                  <div className="p-4">{section.content}</div>
                 </AccordionContent>
               </AccordionItem>
             )}
