@@ -1,6 +1,11 @@
 import { useState } from 'react';
 
-import { DragHandle, Sortable } from '../src/components/Sortable';
+import {
+  DragHandle,
+  DropIndicatorLine,
+  DropIndicatorPlaceholder,
+  Sortable,
+} from '../src/components/Sortable';
 import { cn } from '../src/lib/utils';
 
 export default {
@@ -56,8 +61,8 @@ export const WithDragHandle = () => {
       >
         {(task, { isDragging, dragHandleProps }) => (
           <div
-            className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
-              isDragging ? 'shadow-lg' : 'shadow-sm'
+            className={`flex items-center gap-3 rounded-lg border bg-white p-3 ${
+              isDragging && 'shadow-lg'
             }`}
           >
             <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
@@ -105,8 +110,8 @@ export const WithoutDragHandle = () => {
       >
         {(task, { isDragging }) => (
           <div
-            className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
-              isDragging ? 'shadow-lg' : 'shadow-sm'
+            className={`flex items-center gap-3 rounded-lg border bg-white p-3 ${
+              isDragging && 'shadow-lg'
             }`}
           >
             <div className="flex-1 text-left">
@@ -154,8 +159,8 @@ export const CustomDragPreview = () => {
       >
         {(task, { isDragging, dragHandleProps }) => (
           <div
-            className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
-              isDragging ? 'shadow-lg' : 'shadow-sm'
+            className={`flex items-center gap-3 rounded-lg border bg-white p-3 ${
+              isDragging && 'shadow-lg'
             }`}
           >
             <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
@@ -178,7 +183,7 @@ export const CustomDragPreview = () => {
 };
 
 /**
- * Shows the default drop placeholder where the item will be placed.
+ * Shows a drop placeholder where the item will be placed.
  */
 export const WithDropPlaceholder = () => {
   const [tasks, setTasks] = useState(initialTasks);
@@ -195,12 +200,12 @@ export const WithDropPlaceholder = () => {
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
         className="gap-2"
-        dropIndicator="placeholder"
+        renderDropIndicator={DropIndicatorPlaceholder}
       >
         {(task, { isDragging, dragHandleProps }) => (
           <div
-            className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
-              isDragging ? 'shadow-lg' : 'shadow-sm'
+            className={`flex items-center gap-3 rounded-lg border bg-white p-3 ${
+              isDragging && 'shadow-lg'
             }`}
           >
             <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
@@ -226,16 +231,16 @@ export const WithDropPlaceholder = () => {
 };
 
 /**
- * Custom styling for the drop placeholder.
+ * Using a line indicator instead of a placeholder.
  */
-export const CustomDropPlaceholder = () => {
+export const WithLineIndicator = () => {
   const [tasks, setTasks] = useState(initialTasks);
 
   return (
     <div className="w-[400px]">
-      <h3 className="mb-4 text-lg font-semibold">Custom Drop Placeholder</h3>
+      <h3 className="mb-4 text-lg font-semibold">With Line Indicator</h3>
       <p className="mb-4 text-sm text-neutral-gray3">
-        The drop placeholder can be customized with your own styles.
+        A thin line shows where the item will be dropped.
       </p>
       <Sortable
         items={tasks}
@@ -243,13 +248,64 @@ export const CustomDropPlaceholder = () => {
         dragTrigger="handle"
         getItemLabel={(task) => task.title}
         className="gap-2"
-        dropIndicator="placeholder"
-        dropPlaceholderClassName="rounded-lg bg-amber-100 border-2 border-dashed border-amber-400"
+        renderDropIndicator={DropIndicatorLine}
       >
         {(task, { isDragging, dragHandleProps }) => (
           <div
-            className={`flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 ${
-              isDragging ? 'shadow-lg' : 'shadow-sm'
+            className={`flex items-center gap-3 rounded-lg border bg-white p-3 ${
+              isDragging && 'shadow-lg'
+            }`}
+          >
+            <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
+            <div className="flex-1">
+              <h3>{task.title}</h3>
+            </div>
+            <span
+              className={cn(
+                `rounded px-2 py-0.5 text-xs font-medium`,
+                priorityColors[task.priority],
+              )}
+            >
+              {task.priority}
+            </span>
+          </div>
+        )}
+      </Sortable>
+      <div className="mt-4 text-sm text-neutral-500">
+        Current order: {tasks.map((t) => t.id).join(', ')}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Custom drop indicator with your own styling.
+ */
+export const CustomDropIndicator = () => {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  return (
+    <div className="w-[400px]">
+      <h3 className="mb-4 text-lg font-semibold">Custom Drop Indicator</h3>
+      <p className="mb-4 text-sm text-neutral-gray3">
+        You can create your own drop indicator with custom styling.
+      </p>
+      <Sortable
+        items={tasks}
+        onChange={setTasks}
+        dragTrigger="handle"
+        getItemLabel={(task) => task.title}
+        className="gap-2"
+        renderDropIndicator={({ children }) => (
+          <div className="rounded-lg border-2 border-dashed border-amber-400 bg-amber-100">
+            <div style={{ visibility: 'hidden' }}>{children}</div>
+          </div>
+        )}
+      >
+        {(task, { isDragging, dragHandleProps }) => (
+          <div
+            className={`flex items-center gap-3 rounded-lg border bg-white p-3 ${
+              isDragging && 'shadow-lg'
             }`}
           >
             <DragHandle aria-label="Drag to reorder" {...dragHandleProps} />
@@ -330,13 +386,13 @@ export const VariableHeightItems = () => {
         dragTrigger="handle"
         getItemLabel={(item) => item.title}
         className="gap-2"
-        dropIndicator="line"
+        renderDropIndicator={DropIndicatorLine}
       >
         {(item, { isDragging, dragHandleProps }) => (
           <div
             className={cn(
-              'flex gap-3 rounded-lg border border-neutral-200 bg-white p-3',
-              isDragging ? 'shadow-lg' : 'shadow-sm',
+              'flex gap-3 rounded-lg border bg-white p-3',
+              isDragging && 'shadow-lg',
             )}
           >
             <DragHandle

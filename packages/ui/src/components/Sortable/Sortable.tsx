@@ -6,7 +6,6 @@ import {
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
-  type Modifier,
   MouseSensor,
   TouchSensor,
   type UniqueIdentifier,
@@ -27,6 +26,7 @@ import { createPortal } from 'react-dom';
 import { tv } from 'tailwind-variants';
 
 import type {
+  DropIndicatorProps,
   SortableItem,
   SortableItemControls,
   SortableProps,
@@ -36,10 +36,6 @@ const sortableStyles = tv({
   slots: {
     container: 'flex flex-col outline-none',
     item: 'relative outline-none',
-    dropPlaceholder:
-      'rounded-lg border-1 border-dashed border-primary/40 bg-primary/20',
-    // The line indicator: shown in place of the dragged item
-    dropLine: 'relative my-1 h-0.5 rounded-full bg-primary',
   },
   variants: {
     hasDragHandle: {
@@ -53,17 +49,6 @@ const sortableStyles = tv({
   },
 });
 
-/**
- * Modifier to adjust the drag overlay position when using line indicator mode.
- * Shifts the overlay up slightly so it doesn't cover the line.
- */
-const adjustTranslate: Modifier = ({ transform }) => {
-  return {
-    ...transform,
-    y: transform.y - 25,
-  };
-};
-
 interface SortableItemWrapperProps<T extends SortableItem> {
   item: T;
   index: number;
@@ -71,8 +56,7 @@ interface SortableItemWrapperProps<T extends SortableItem> {
   children: (item: T, controls: SortableItemControls) => React.ReactNode;
   itemClassName?: string;
   getItemLabel?: (item: T) => string;
-  dropIndicator: 'placeholder' | 'line' | 'none';
-  dropPlaceholderClassName?: string;
+  renderDropIndicator?: (props: DropIndicatorProps<T>) => React.ReactNode;
 }
 
 function SortableItemWrapper<T extends SortableItem>({
@@ -82,8 +66,7 @@ function SortableItemWrapper<T extends SortableItem>({
   children,
   itemClassName,
   getItemLabel,
-  dropIndicator,
-  dropPlaceholderClassName,
+  renderDropIndicator,
 }: SortableItemWrapperProps<T>) {
   const styles = sortableStyles();
   const {
@@ -132,34 +115,22 @@ function SortableItemWrapper<T extends SortableItem>({
     index,
   };
 
-  // When item is being dragged, show appropriate indicator
+  // When item is being dragged, show drop indicator or default behavior
   if (isDragging) {
-    if (dropIndicator === 'placeholder') {
-      // Show a placeholder matching the item's size
+    const itemContent = children(item, controls);
+
+    if (renderDropIndicator) {
       return (
-        <div
-          ref={setNodeRef}
-          style={style}
-          className={styles.dropPlaceholder({
-            className: dropPlaceholderClassName,
-          })}
-        >
-          <div style={{ visibility: 'hidden' }}>{children(item, controls)}</div>
+        <div ref={setNodeRef} style={style}>
+          {renderDropIndicator({ item, children: itemContent })}
         </div>
       );
     }
 
-    if (dropIndicator === 'line') {
-      // Show a thin line where the item will be placed
-      return (
-        <div ref={setNodeRef} style={style} className={styles.dropLine()} />
-      );
-    }
-
-    // 'none' mode: keep the space but hide the content
+    // Default: keep the space but hide the content
     return (
       <div ref={setNodeRef} style={style}>
-        <div style={{ visibility: 'hidden' }}>{children(item, controls)}</div>
+        <div style={{ visibility: 'hidden' }}>{itemContent}</div>
       </div>
     );
   }
@@ -189,8 +160,7 @@ export function Sortable<T extends SortableItem>({
   itemClassName,
   getItemLabel,
   'aria-label': ariaLabel = 'Sortable list',
-  dropIndicator = 'none',
-  dropPlaceholderClassName,
+  renderDropIndicator,
 }: SortableProps<T>) {
   const styles = sortableStyles();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -253,8 +223,7 @@ export function Sortable<T extends SortableItem>({
               dragTrigger={dragTrigger}
               itemClassName={itemClassName}
               getItemLabel={getItemLabel}
-              dropIndicator={dropIndicator}
-              dropPlaceholderClassName={dropPlaceholderClassName}
+              renderDropIndicator={renderDropIndicator}
             >
               {children}
             </SortableItemWrapper>
@@ -264,19 +233,12 @@ export function Sortable<T extends SortableItem>({
 
       {typeof document !== 'undefined' &&
         createPortal(
-          <DragOverlay
-            modifiers={dropIndicator === 'line' ? [adjustTranslate] : undefined}
-          >
+          <DragOverlay>
             {activeItem ? (
               renderDragPreview ? (
                 renderDragPreview([activeItem])
               ) : (
-                <div
-                  style={{
-                    cursor: 'grabbing',
-                    opacity: dropIndicator === 'line' ? 0.8 : 1,
-                  }}
-                >
+                <div style={{ cursor: 'grabbing' }}>
                   {children(activeItem, {
                     dragHandleProps: {
                       ref: () => {},

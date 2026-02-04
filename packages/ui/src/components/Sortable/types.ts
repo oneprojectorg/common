@@ -23,6 +23,13 @@ export interface SortableItemControls {
   index: number;
 }
 
+export interface DropIndicatorProps<T extends SortableItem> {
+  /** The item being dragged */
+  item: T;
+  /** Render the item content (useful for size-matching placeholders) */
+  children: ReactNode;
+}
+
 export interface SortableProps<T extends SortableItem> {
   /** Array of items to render and reorder */
   items: T[];
@@ -43,14 +50,12 @@ export interface SortableProps<T extends SortableItem> {
   /** Accessible label for the list */
   'aria-label'?: string;
   /**
-   * How to indicate where the dragged item will be dropped:
-   * - 'none': No visual indicator (default)
-   * - 'placeholder': Show a placeholder matching the dragged item's size
-   * - 'line': Show a thin line between items
+   * Component to render as the drop indicator while dragging.
+   * Receives the item being dragged and a children prop containing the item content
+   * (useful for size-matching placeholders).
+   * If not provided, the item's space is preserved but content is hidden.
    */
-  dropIndicator?: 'placeholder' | 'line' | 'none';
-  /** Class name for the drop placeholder (only used when dropIndicator='placeholder') */
-  dropPlaceholderClassName?: string;
+  renderDropIndicator?: (props: DropIndicatorProps<T>) => ReactNode;
 }
 
 export interface DragHandleProps {
