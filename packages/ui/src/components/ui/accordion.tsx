@@ -17,24 +17,62 @@ import {
   Heading,
 } from 'react-aria-components';
 import { LuChevronRight } from 'react-icons/lu';
+import { tv } from 'tailwind-variants';
 
 import { cx } from '../../lib/primitive';
 import { cn } from '../../lib/utils';
 
-// cx() is used for RAC components that support render prop classNames (Button, Disclosure, etc.)
-// cn() is used for elements that only accept string classNames (Heading, plain divs, icons)
+// ============================================================================
+// Styles
+// ============================================================================
+
+const accordionStyles = tv({
+  slots: {
+    root: '',
+    item: 'group/accordion-item',
+    header: '',
+    trigger: '',
+    indicator: 'size-4 shrink-0 transition-transform duration-200',
+    content:
+      'h-[var(--disclosure-panel-height)] overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none',
+    contentInner: '',
+  },
+  variants: {
+    unstyled: {
+      true: {},
+      false: {
+        root: 'flex flex-col gap-3',
+        item: 'rounded-lg border bg-white',
+        header: 'flex items-center px-4 py-2',
+        trigger: [
+          'flex flex-1 items-center gap-3',
+          'cursor-pointer text-left font-medium',
+          'outline-none',
+          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+        ],
+        indicator: 'text-muted-fg group-data-[expanded]/accordion-item:rotate-90',
+        content: 'border-t',
+        contentInner: 'p-4',
+      },
+    },
+  },
+  defaultVariants: {
+    unstyled: false,
+  },
+});
+
+type AccordionStyles = ReturnType<typeof accordionStyles>;
 
 // ============================================================================
 // Context
 // ============================================================================
 
-interface AccordionContextValue {
-  unstyled?: boolean;
-}
+const AccordionContext = createContext<AccordionStyles>(
+  accordionStyles({ unstyled: false }),
+);
 
-const AccordionContext = createContext<AccordionContextValue>({});
-
-const useAccordionContext = () => use(AccordionContext);
+const useAccordionStyles = () => use(AccordionContext);
 
 // ============================================================================
 // Accordion (Group)
@@ -51,7 +89,7 @@ interface AccordionProps extends Omit<DisclosureGroupProps, 'className'> {
   onExpandedChange?: (keys: Set<Key>) => void;
   /** Disable all child disclosures */
   isDisabled?: boolean;
-  /** Remove all default styling */
+  /** Remove default styling */
   unstyled?: boolean;
   /** Custom className */
   className?: string;
@@ -64,11 +102,13 @@ const Accordion = ({
   children,
   ...props
 }: AccordionProps) => {
+  const styles = accordionStyles({ unstyled });
+
   return (
-    <AccordionContext.Provider value={{ unstyled }}>
+    <AccordionContext.Provider value={styles}>
       <DisclosureGroupPrimitive
         {...props}
-        className={cx(!unstyled && 'flex flex-col', className)}
+        className={cx(styles.root(), className)}
       >
         {children}
       </DisclosureGroupPrimitive>
@@ -91,8 +131,6 @@ interface AccordionItemProps extends Omit<DisclosureProps, 'className'> {
   onExpandedChange?: (isExpanded: boolean) => void;
   /** Disable this item */
   isDisabled?: boolean;
-  /** Remove all default styling */
-  unstyled?: boolean;
   /** Custom className (supports render props) */
   className?:
     | string
@@ -101,26 +139,14 @@ interface AccordionItemProps extends Omit<DisclosureProps, 'className'> {
 }
 
 const AccordionItem = ({
-  unstyled: unstyledProp,
   className,
   children,
   ...props
 }: AccordionItemProps) => {
-  const { unstyled: contextUnstyled } = useAccordionContext();
-  const unstyled = unstyledProp ?? contextUnstyled;
+  const styles = useAccordionStyles();
 
   return (
-    <DisclosurePrimitive
-      {...props}
-      className={cx(
-        !unstyled && [
-          'group/accordion-item',
-          'border-b border-border',
-          'data-[expanded]:bg-muted/30',
-        ],
-        className,
-      )}
-    >
+    <DisclosurePrimitive {...props} className={cx(styles.item(), className)}>
       {children}
     </DisclosurePrimitive>
   );
@@ -133,8 +159,6 @@ const AccordionItem = ({
 interface AccordionHeaderProps {
   /** Heading level for accessibility. Default: 3 */
   level?: 2 | 3 | 4 | 5 | 6;
-  /** Remove all default styling */
-  unstyled?: boolean;
   /** Custom className */
   className?: string;
   children: React.ReactNode;
@@ -142,18 +166,13 @@ interface AccordionHeaderProps {
 
 const AccordionHeader = ({
   level = 3,
-  unstyled: unstyledProp,
   className,
   children,
 }: AccordionHeaderProps) => {
-  const { unstyled: contextUnstyled } = useAccordionContext();
-  const unstyled = unstyledProp ?? contextUnstyled;
+  const styles = useAccordionStyles();
 
   return (
-    <Heading
-      level={level}
-      className={cn(!unstyled && ['flex items-center', 'px-4 py-3'], className)}
-    >
+    <Heading level={level} className={cn(styles.header(), className)}>
       {children}
     </Heading>
   );
@@ -169,8 +188,6 @@ interface AccordionTriggerProps
   showIndicator?: boolean;
   /** Indicator position if showIndicator is true. Default: 'start' */
   indicatorPosition?: 'start' | 'end';
-  /** Remove all default styling */
-  unstyled?: boolean;
   /** Custom className (supports render props) */
   className?: string;
   children: React.ReactNode;
@@ -179,29 +196,14 @@ interface AccordionTriggerProps
 const AccordionTrigger = ({
   showIndicator = false,
   indicatorPosition = 'start',
-  unstyled: unstyledProp,
   className,
   children,
   ...props
 }: AccordionTriggerProps) => {
-  const { unstyled: contextUnstyled } = useAccordionContext();
-  const unstyled = unstyledProp ?? contextUnstyled;
+  const styles = useAccordionStyles();
 
   return (
-    <Button
-      {...props}
-      slot="trigger"
-      className={cx(
-        !unstyled && [
-          'flex flex-1 items-center gap-2',
-          'cursor-pointer text-left font-medium',
-          'outline-none',
-          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        ],
-        className,
-      )}
-    >
+    <Button {...props} slot="trigger" className={cx(styles.trigger(), className)}>
       {showIndicator && indicatorPosition === 'start' && <AccordionIndicator />}
       {children}
       {showIndicator && indicatorPosition === 'end' && <AccordionIndicator />}
@@ -219,17 +221,10 @@ interface AccordionIndicatorProps {
 }
 
 const AccordionIndicator = ({ className }: AccordionIndicatorProps) => {
-  const state = use(DisclosureStateContext);
+  const styles = useAccordionStyles();
 
   return (
-    <LuChevronRight
-      aria-hidden
-      className={cn(
-        'size-4 shrink-0 text-muted-fg transition-transform duration-200',
-        state?.isExpanded && 'rotate-90',
-        className,
-      )}
-    />
+    <LuChevronRight aria-hidden className={cn(styles.indicator(), className)} />
   );
 };
 
@@ -239,21 +234,17 @@ const AccordionIndicator = ({ className }: AccordionIndicatorProps) => {
 
 interface AccordionContentProps
   extends Omit<DisclosurePanelProps, 'className'> {
-  /** Remove all default styling */
-  unstyled?: boolean;
   /** Custom className */
   className?: string;
   children: React.ReactNode;
 }
 
 const AccordionContent = ({
-  unstyled: unstyledProp,
   className,
   children,
   ...props
 }: AccordionContentProps) => {
-  const { unstyled: contextUnstyled } = useAccordionContext();
-  const unstyled = unstyledProp ?? contextUnstyled;
+  const styles = useAccordionStyles();
   const state = use(DisclosureStateContext);
   const panelRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
@@ -301,15 +292,9 @@ const AccordionContent = ({
     <DisclosurePanelPrimitive
       {...props}
       ref={panelRef}
-      className={cx(
-        // Animation styles always applied
-        'h-[var(--disclosure-panel-height)] overflow-hidden',
-        'transition-[height] duration-200 ease-out',
-        'motion-reduce:transition-none',
-        className,
-      )}
+      className={cx(styles.content(), className)}
     >
-      <div className={cn(!unstyled && 'px-4 pb-4')}>{children}</div>
+      <div className={cn(styles.contentInner())}>{children}</div>
     </DisclosurePanelPrimitive>
   );
 };

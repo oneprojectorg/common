@@ -223,38 +223,34 @@ export const CustomHeader: Story = {
 
     return (
       <div className="w-[500px]">
-        <Accordion defaultExpandedKeys={['proposal']} allowsMultipleExpanded>
+        <Accordion
+          defaultExpandedKeys={['proposal']}
+          allowsMultipleExpanded
+          unstyled
+        >
           <Sortable
             items={sections}
             onChange={setSections}
             dragTrigger="handle"
             getItemLabel={(section) => section.title}
             className="gap-2"
-            dropIndicator="placeholder"
           >
             {(section, { dragHandleProps, isDragging }) => (
               <AccordionItem
                 id={section.id}
-                unstyled
                 className={cn(
-                  'rounded-lg border border-border bg-white shadow-sm',
+                  'rounded-lg border bg-white',
                   isDragging && 'opacity-50',
                 )}
               >
-                <AccordionHeader
-                  unstyled
-                  className="flex items-center gap-2 px-3 py-2"
-                >
+                <AccordionHeader className="flex items-center gap-2 px-3 py-2">
                   <DragHandle {...dragHandleProps} />
-                  <AccordionTrigger
-                    unstyled
-                    className="flex items-center gap-2"
-                  >
+                  <AccordionTrigger className="flex items-center gap-2">
                     <AccordionIndicator />
                   </AccordionTrigger>
                   <AccordionTitleInput defaultValue={section.title} />
                 </AccordionHeader>
-                <AccordionContent unstyled>
+                <AccordionContent>
                   <div className="border-t border-border px-4 py-4">
                     {section.content}
                   </div>
