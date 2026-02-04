@@ -1,4 +1,3 @@
-import { db } from '@op/db';
 import {
   type Organization,
   organizationUserToAccessRoles,
@@ -8,8 +7,8 @@ import {
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 export const TEST_USER_DEFAULT_PASSWORD = 'Test_Password_123!';

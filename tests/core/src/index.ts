@@ -9,3 +9,22 @@ export {
   type CreateUserOptions,
   type GeneratedUser,
 } from './test-data';
+
+export {
+  createDecisionInstance,
+  createDecisionProcess,
+  getSeededTemplate,
+  grantDecisionProfileAccess,
+  SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
+  SEEDED_TEMPLATE_PROFILE_SLUG,
+  testMinimalSchema,
+  testSimpleVotingSchema,
+  type CreateDecisionInstanceOptions,
+  type CreateDecisionInstanceResult,
+  type CreateDecisionProcessOptions,
+  type CreateDecisionProcessResult,
+  type GrantDecisionProfileAccessOptions,
+} from './decision-data';
+
+// Re-export schema types from @op/common for convenience
+export type { DecisionSchemaDefinition, PhaseDefinition } from '@op/common';

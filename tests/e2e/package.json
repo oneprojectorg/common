@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@op/common": "workspace:^",
     "@op/db": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/test": "workspace:*",
