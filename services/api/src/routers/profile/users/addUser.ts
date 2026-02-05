@@ -5,7 +5,9 @@ import { profileUserEncoder } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const addUserRouter = router({
-  addUser: commonAuthedProcedure()
+  addUser: commonAuthedProcedure({
+    rateLimit: { windowSize: 30, maxRequests: 10 },
+  })
     .input(
       z.object({
         profileId: z.uuid(),

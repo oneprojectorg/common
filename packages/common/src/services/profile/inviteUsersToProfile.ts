@@ -80,10 +80,8 @@ export const inviteUsersToProfile = async (input: {
     );
   }
 
-  // If this is the inviter's profile, we let them through. Otherwise assert admin access
-  if (profileUser.profileId !== requesterProfileId) {
-    assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
-  }
+  // Always require admin access to send invites
+  assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
 
   if (!targetRole) {
     throw new CommonError('Invalid role specified for profile invite');
