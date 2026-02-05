@@ -1,5 +1,6 @@
 'use client';
 
+import { useTiptapCollab } from '@/hooks/useTiptapCollab';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
@@ -8,13 +9,12 @@ import {
   type proposalEncoder,
 } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { NumberField } from '@op/ui/NumberField';
-import { Select, SelectItem } from '@op/ui/Select';
+import { RichTextEditorSkeleton } from '@op/ui/RichTextEditor';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
-import type { TiptapCollabProvider } from '@tiptap-pro/provider';
-import type { Editor } from '@tiptap/react';
+import Form from '@rjsf/core';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+import validator from '@rjsf/validator-ajv8';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,16 +22,61 @@ import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { CollaborativePresence } from '../RichTextEditor';
 import {
-  CollaborativeEditor,
-  CollaborativePresence,
-  RichTextEditorToolbar,
-  getProposalExtensions,
-} from '../RichTextEditor';
+  type CollaborativeFormContext,
+  CollaborativeRichTextWidget,
+} from '../experimental/CollaborativeRichTextWidget';
+import { CollaborativeTextWidget } from '../experimental/CollaborativeTextWidget';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
+
+/**
+ * Hardcoded proposal schema with summary and description fields.
+ */
+const PROPOSAL_SCHEMA: RJSFSchema = {
+  type: 'object',
+  required: ['summary', 'description'],
+  properties: {
+    summary: {
+      type: 'string',
+      title: 'Summary',
+      description: 'A brief summary of your proposal',
+      maxLength: 500,
+    },
+    description: {
+      type: 'string',
+      title: 'Description',
+      description: 'Full description of your proposal',
+    },
+  },
+};
+
+const PROPOSAL_UI_SCHEMA: UiSchema = {
+  summary: {
+    'ui:widget': 'CollaborativeText',
+    'ui:placeholder': 'Enter a brief summary of your proposal...',
+    'ui:options': {
+      field: 'summary', // Separate Y.XmlFragment for summary
+    },
+  },
+  description: {
+    'ui:widget': 'CollaborativeRichText',
+    'ui:placeholder': 'Write your full proposal description here...',
+    'ui:options': {
+      // Use default fragment for backward compatibility with existing docs
+      field: 'default',
+      className: 'min-h-96',
+    },
+  },
+};
+
+interface ProposalFormData {
+  summary?: string;
+  description?: string;
+}
 
 /** Handles tRPC validation errors from mutation responses */
 function handleMutationError(
@@ -64,6 +109,81 @@ function handleMutationError(
   }
 }
 
+/**
+ * RJSF Field Template with hr separator between fields
+ */
+function FieldTemplate({
+  children,
+  id,
+}: {
+  children: React.ReactNode;
+  id: string;
+}) {
+  const isFirstField = id === 'root_summary';
+  return (
+    <div className="mb-6">
+      {!isFirstField && <hr className="mb-6 border-t border-neutral-gray2" />}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * RJSF Object Field Template
+ */
+function ObjectFieldTemplate({
+  properties,
+}: {
+  properties: { content: React.ReactNode }[];
+}) {
+  return (
+    <div className="space-y-2">{properties.map((prop) => prop.content)}</div>
+  );
+}
+
+/**
+ * Custom textarea widget that matches our design system
+ */
+function TextareaWidget({
+  value,
+  onChange,
+  schema,
+  uiSchema,
+  required,
+}: {
+  value?: string;
+  onChange: (value: string) => void;
+  schema: { title?: string; description?: string };
+  uiSchema?: { 'ui:placeholder'?: string };
+  required?: boolean;
+}) {
+  return (
+    <TextField
+      label={schema.title}
+      description={schema.description}
+      value={value || ''}
+      onChange={onChange}
+      isRequired={required}
+      useTextArea
+      textareaProps={{
+        placeholder: uiSchema?.['ui:placeholder'],
+        rows: 3,
+      }}
+    />
+  );
+}
+
+const CustomTemplates = {
+  FieldTemplate,
+  ObjectFieldTemplate,
+};
+
+const CustomWidgets = {
+  textarea: TextareaWidget,
+  CollaborativeRichText: CollaborativeRichTextWidget,
+  CollaborativeText: CollaborativeTextWidget,
+};
+
 export function ProposalEditor({
   instance,
   backHref,
@@ -83,21 +203,14 @@ export function ProposalEditor({
 
   // Form state
   const [title, setTitle] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [budget, setBudget] = useState<number | null>(null);
-  const [showBudgetInput, setShowBudgetInput] = useState(false);
-
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-  const [collabProvider, setCollabProvider] =
-    useState<TiptapCollabProvider | null>(null);
+  const [formData, setFormData] = useState<ProposalFormData>({});
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Refs
-  const budgetInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
 
-  // Check if editing a draft (should show info modal and use submitProposal)
+  // Check if editing a draft
   const isDraft =
     isEditMode && existingProposal?.status === ProposalStatus.DRAFT;
 
@@ -111,81 +224,26 @@ export function ProposalEditor({
     return `proposal-${instance.id}-${existingProposal?.id ?? crypto.randomUUID()}`;
   }, [existingProposal?.proposalData, existingProposal?.id, instance.id]);
 
-  // Editor extensions - memoized with collaborative flag
-  const editorExtensions = useMemo(
-    () => getProposalExtensions({ collaborative: true }),
-    [],
-  );
+  // Initialize TipTap collaboration
+  const { ydoc, provider, status, isSynced } = useTiptapCollab({
+    docId: collaborationDocId,
+    enabled: true,
+    userName: user.profile?.name ?? 'Anonymous',
+  });
+
+  // Form context for collaborative widgets
+  const formContext = useMemo<CollaborativeFormContext | undefined>(() => {
+    if (!ydoc || !provider) {
+      return undefined;
+    }
+    return { ydoc, provider, userName: user.profile?.name };
+  }, [ydoc, provider, user.profile?.name]);
 
   // Extract template data from the instance
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
   const proposalInfoContent = instance.instanceData?.fieldValues
     ?.proposalInfoContent as string | undefined;
-
-  // Get categories from database
-  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId: instance.id,
-  });
-  const { categories } = categoriesData;
-
-  // Extract budget config from current phase settings or legacy template
-  const { budgetCapAmount, isBudgetRequired } = useMemo(() => {
-    let cap: number | undefined;
-    let required = true; // Default to required
-
-    // New schema: get budget from current phase settings
-    const currentPhaseId = instance.instanceData?.currentPhaseId;
-    const currentPhaseData = instance.instanceData?.phases?.find(
-      (p) => p.phaseId === currentPhaseId,
-    );
-    const phaseBudget = currentPhaseData?.settings?.budget as
-      | number
-      | undefined;
-
-    if (phaseBudget != null) {
-      return { budgetCapAmount: phaseBudget, isBudgetRequired: required };
-    }
-
-    // Legacy schema: extract from proposalTemplate.properties.budget
-    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
-    if (
-      proposalTemplate &&
-      typeof proposalTemplate === 'object' &&
-      'properties' in proposalTemplate
-    ) {
-      const properties = proposalTemplate.properties;
-      if (
-        properties &&
-        typeof properties === 'object' &&
-        'budget' in properties
-      ) {
-        const budgetProp = properties.budget;
-        if (
-          budgetProp &&
-          typeof budgetProp === 'object' &&
-          'maximum' in budgetProp
-        ) {
-          cap = budgetProp.maximum as number;
-        }
-      }
-
-      // Check if budget is in required array
-      if (
-        'required' in proposalTemplate &&
-        Array.isArray(proposalTemplate.required)
-      ) {
-        required = proposalTemplate.required.includes('budget');
-      }
-    }
-
-    // Fallback to instance data fieldValues
-    if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
-      cap = instance.instanceData.fieldValues.budgetCapAmount as number;
-    }
-
-    return { budgetCapAmount: cap, isBudgetRequired: required };
-  }, [instance]);
 
   // Parse existing proposal data for editing
   const parsedProposalData = useMemo(
@@ -232,22 +290,20 @@ export function ProposalEditor({
       parsedProposalData &&
       !initializedRef.current
     ) {
-      const {
-        title: existingTitle,
-        category: existingCategory,
-        budget: existingBudget,
-      } = parsedProposalData;
+      const { title: existingTitle } = parsedProposalData;
 
       if (existingTitle) {
         setTitle(existingTitle);
       }
-      if (existingCategory) {
-        setSelectedCategory(existingCategory);
-      }
-      if (existingBudget !== undefined) {
-        setBudget(existingBudget);
-        setShowBudgetInput(true);
-      }
+
+      // Initialize form data from existing proposal
+      // Note: summary is a new field, description already exists
+      setFormData({
+        summary:
+          ((parsedProposalData as Record<string, unknown>).summary as string) ||
+          '',
+        description: parsedProposalData.description || '',
+      });
 
       initializedRef.current = true;
     }
@@ -260,20 +316,18 @@ export function ProposalEditor({
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
 
-  // Auto-focus budget input when shown
-  useEffect(() => {
-    if (showBudgetInput && budgetInputRef.current) {
-      budgetInputRef.current.focus();
-    }
-  }, [showBudgetInput]);
-
-  const handleEditorReady = useCallback((editor: Editor) => {
-    setEditorInstance(editor);
-  }, []);
-
   const handleCloseInfoModal = useCallback(() => {
     setShowInfoModal(false);
   }, []);
+
+  const handleFormChange = useCallback(
+    ({ formData: newFormData }: { formData?: ProposalFormData }) => {
+      if (newFormData) {
+        setFormData(newFormData);
+      }
+    },
+    [],
+  );
 
   const handleSubmitProposal = useCallback(async () => {
     // Validate required fields
@@ -283,26 +337,16 @@ export function ProposalEditor({
       missingFields.push(t('Title'));
     }
 
-    // Check for empty content in the editor
-    if (editorInstance) {
-      const isEmpty = editorInstance.isEmpty;
-      if (isEmpty) {
-        missingFields.push(t('Description'));
-      }
+    if (!formData.summary?.trim()) {
+      missingFields.push(t('Summary'));
     }
 
-    if (isBudgetRequired && budget === null) {
-      missingFields.push(t('Budget'));
-    }
-
-    // Validate budget cap
-    if (budget !== null && budgetCapAmount && budget > budgetCapAmount) {
-      toast.error({
-        message: t('Budget cannot exceed {amount}', {
-          amount: budgetCapAmount.toLocaleString(),
-        }),
-      });
-      return;
+    // Check for empty description content
+    const descriptionHtml = formData.description || '';
+    const hasDescription =
+      descriptionHtml.replace(/<[^>]*>/g, '').trim().length > 0;
+    if (!hasDescription) {
+      missingFields.push(t('Description'));
     }
 
     if (missingFields.length > 0) {
@@ -324,11 +368,8 @@ export function ProposalEditor({
         ...parseProposalData(existingProposal.proposalData),
         collaborationDocId,
         title,
-        category:
-          categories && categories.length > 0
-            ? (selectedCategory ?? undefined)
-            : undefined,
-        budget: budget ?? undefined,
+        summary: formData.summary,
+        description: formData.description,
       };
 
       // Update existing proposal
@@ -351,18 +392,38 @@ export function ProposalEditor({
   }, [
     t,
     title,
-    editorInstance,
-    isBudgetRequired,
-    budget,
-    budgetCapAmount,
-    selectedCategory,
+    formData,
     collaborationDocId,
-    categories,
     existingProposal,
     isDraft,
     submitProposalMutation,
     updateProposalMutation,
   ]);
+
+  // Show loading state while connecting
+  if (!provider || status === 'connecting') {
+    return (
+      <ProposalEditorLayout
+        backHref={backHref}
+        title={title}
+        onSubmitProposal={handleSubmitProposal}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        isDraft={isDraft}
+        presenceSlot={null}
+      >
+        <div className="flex flex-col gap-6 p-6">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+            <span className="text-sm text-neutral-gray4">
+              {t('Connecting to collaboration server...')}
+            </span>
+          </div>
+          <RichTextEditorSkeleton />
+        </div>
+      </ProposalEditorLayout>
+    );
+  }
 
   return (
     <ProposalEditorLayout
@@ -372,12 +433,26 @@ export function ProposalEditor({
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
       isDraft={isDraft}
-      presenceSlot={<CollaborativePresence provider={collabProvider} />}
+      presenceSlot={<CollaborativePresence provider={provider} />}
     >
-      <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+      <div className="flex flex-1 flex-col gap-8">
+        {/* Connection status */}
+        <div className="flex items-center gap-2">
+          <div
+            className={`h-2 w-2 rounded-full ${
+              status === 'connected' ? 'bg-green-500' : 'bg-red-500'
+            }`}
+          />
+          <span className="text-xs text-neutral-gray4">
+            {status === 'connected'
+              ? isSynced
+                ? t('Synced')
+                : t('Syncing...')
+              : t('Disconnected')}
+          </span>
+        </div>
 
-        <div className="mx-auto flex max-w-4xl flex-col gap-4">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
           {/* Title */}
           <TextField
             type="text"
@@ -385,70 +460,27 @@ export function ProposalEditor({
             onChange={setTitle}
             inputProps={{
               placeholder: 'Untitled Proposal',
-              className: 'border-0 p-0 font-serif !text-title-lg',
+              className: 'border-0 p-0 font-serif text-title-lg',
             }}
           />
 
-          {/* Category and Budget */}
-          <div className="flex gap-6">
-            {categories && categories.length > 0 && (
-              <Select
-                variant="pill"
-                size="medium"
-                placeholder={t('Select category')}
-                selectedKey={selectedCategory}
-                onSelectionChange={(key) => setSelectedCategory(key as string)}
-                className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-                popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
-              >
-                {categories.map((category) => (
-                  <SelectItem
-                    className="min-w-fit"
-                    key={category.id}
-                    id={category.name}
-                  >
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </Select>
-            )}
-
-            {!showBudgetInput && (
-              <Button
-                variant="pill"
-                color="pill"
-                onPress={() => setShowBudgetInput(true)}
-              >
-                Add budget
-              </Button>
-            )}
-
-            {showBudgetInput && (
-              <NumberField
-                ref={budgetInputRef}
-                value={budget}
-                onChange={setBudget}
-                prefixText="$"
-                inputProps={{
-                  placeholder: budgetCapAmount
-                    ? `Max ${budgetCapAmount.toLocaleString()}`
-                    : 'Enter amount',
-                }}
-                fieldClassName="w-auto"
-              />
-            )}
-          </div>
-
-          {/* Rich Text Editor with Collaboration */}
-          <CollaborativeEditor
-            docId={collaborationDocId}
-            extensions={editorExtensions}
-            onEditorReady={handleEditorReady}
-            onProviderReady={setCollabProvider}
-            placeholder={t('Write your proposal here...')}
-            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
-            userName={user.profile?.name}
-          />
+          {/* RJSF Form with Summary and Description */}
+          <Form<ProposalFormData>
+            schema={PROPOSAL_SCHEMA}
+            uiSchema={PROPOSAL_UI_SCHEMA}
+            formData={formData}
+            formContext={formContext}
+            onChange={handleFormChange}
+            validator={validator}
+            widgets={CustomWidgets}
+            templates={CustomTemplates}
+            showErrorList={false}
+            liveValidate={false}
+            noHtml5Validate
+          >
+            {/* Hide default submit button */}
+            <div />
+          </Form>
         </div>
       </div>
 
