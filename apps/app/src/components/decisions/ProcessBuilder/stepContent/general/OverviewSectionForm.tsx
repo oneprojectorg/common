@@ -24,7 +24,7 @@ interface OverviewFormData {
   objective: string;
   name: string;
   description: string;
-  budget: number | null;
+  budget: number | undefined;
   hideBudget: boolean;
   enableCategories: boolean;
   includeReview: boolean;
@@ -41,14 +41,7 @@ function AutoSaveHandler({
 }: {
   values: OverviewFormData;
   decisionProfileId: string;
-  setInstanceData: (
-    id: string,
-    data: {
-      name?: string;
-      description?: string;
-      config?: Record<string, unknown>;
-    },
-  ) => void;
+  setInstanceData: (id: string, data: Partial<OverviewFormData>) => void;
   setSaveStatus: (
     id: string,
     status: 'idle' | 'saving' | 'saved' | 'error',
@@ -80,15 +73,13 @@ function AutoSaveHandler({
     setInstanceData(decisionProfileId, {
       name: debouncedValues.name,
       description: debouncedValues.description,
-      config: {
-        steward: debouncedValues.steward,
-        objective: debouncedValues.objective,
-        budget: debouncedValues.budget,
-        hideBudget: debouncedValues.hideBudget,
-        enableCategories: debouncedValues.enableCategories,
-        includeReview: debouncedValues.includeReview,
-        isPrivate: debouncedValues.isPrivate,
-      },
+      steward: debouncedValues.steward,
+      objective: debouncedValues.objective,
+      budget: debouncedValues.budget ?? undefined,
+      hideBudget: debouncedValues.hideBudget,
+      enableCategories: debouncedValues.enableCategories,
+      includeReview: debouncedValues.includeReview,
+      isPrivate: debouncedValues.isPrivate,
     });
 
     // Mark as saved with timestamp
@@ -128,9 +119,6 @@ export function OverviewSectionForm({
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
-  // Extract config for easier access
-  const config = instanceData?.config;
-
   // Mock options - these would come from API
   const stewardOptions = [
     { id: 'one-project', label: 'One Project' },
@@ -140,14 +128,14 @@ export function OverviewSectionForm({
 
   const form = useAppForm({
     defaultValues: {
-      // Config fields
-      steward: config?.steward ?? '',
-      objective: config?.objective ?? '',
-      budget: (config?.budget ?? null) as number | null,
-      hideBudget: config?.hideBudget ?? true,
-      enableCategories: config?.enableCategories ?? true,
-      includeReview: config?.includeReview ?? true,
-      isPrivate: config?.isPrivate ?? false,
+      // Form fields (some in backend InstanceData, some form-only)
+      steward: instanceData?.steward ?? '',
+      objective: instanceData?.objective ?? '',
+      budget: instanceData?.budget,
+      hideBudget: instanceData?.hideBudget ?? true,
+      enableCategories: instanceData?.enableCategories ?? true,
+      includeReview: instanceData?.includeReview ?? true,
+      isPrivate: instanceData?.isPrivate ?? false,
       // Instance-level fields
       name: instanceData?.name ?? decisionName ?? '',
       description: instanceData?.description ?? '',
@@ -305,8 +293,8 @@ export function OverviewSectionForm({
                 <div>
                   <NumberField
                     label={t('Total Budget Available')}
-                    value={field.state.value}
-                    onChange={field.handleChange}
+                    value={field.state.value ?? null}
+                    onChange={(value) => field.handleChange(value ?? undefined)}
                     prefixText="$"
                     inputProps={{
                       placeholder: '0.00',
