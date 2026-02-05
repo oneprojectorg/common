@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
+import { allowList } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { randomUUID } from 'crypto';
+import { event } from '@op/events';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
@@ -327,7 +328,79 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     expect(invite2?.accessRoleId).toBe(ROLES.MEMBER.id);
   });
 
-  it('should fail when non-admin tries to invite', async ({
+  it('should fail with empty invitations array', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.invite({
+        invitations: [],
+        profileId: profile.id,
+      }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+  });
+
+  it('should fail with invalid roleId', async ({ task, onTestFinished }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const standaloneUser = await testData.createStandaloneUser();
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const invalidRoleId = '00000000-0000-0000-0000-000000000000';
+
+    await expect(
+      caller.invite({
+        invitations: [{ email: standaloneUser.email, roleId: invalidRoleId }],
+        profileId: profile.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'CommonError' },
+    });
+  });
+
+  it('should fail when user is not associated with the profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    // Create a profile but we'll use a different user to call invite
+    const { profile } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create a standalone user who is NOT a member of the profile
+    const outsideUser = await testData.createStandaloneUser();
+    const targetUser = await testData.createStandaloneUser();
+
+    const { session } = await createIsolatedSession(outsideUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.invite({
+        invitations: [{ email: targetUser.email, roleId: ROLES.MEMBER.id }],
+        profileId: profile.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should fail when user lacks ADMIN permission', async ({
     task,
     onTestFinished,
   }) => {
@@ -341,22 +414,23 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       throw new Error('Expected memberUser to be defined');
     }
 
-    // Create a standalone user to be invited
-    const invitee = await testData.createStandaloneUser();
+    const targetUser = await testData.createStandaloneUser();
 
-    // Create session as member (not admin) and try to invite
+    // Login as member (not admin)
     const { session } = await createIsolatedSession(memberUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
       caller.invite({
-        invitations: [{ email: invitee.email, roleId: ROLES.MEMBER.id }],
+        invitations: [{ email: targetUser.email, roleId: ROLES.MEMBER.id }],
         profileId: profile.id,
       }),
-    ).rejects.toThrow(/not authenticated/i);
+    ).rejects.toMatchObject({
+      cause: { name: 'AccessControlException' },
+    });
   });
 
-  it('should fail when invalid roleId is provided', async ({
+  it('should pass personalMessage to the event', async ({
     task,
     onTestFinished,
   }) => {
@@ -365,19 +439,139 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       users: { admin: 1 },
     });
 
-    const invitee = await testData.createStandaloneUser();
+    const standaloneUser = await testData.createStandaloneUser();
+    testData.trackProfileInvite(standaloneUser.email, profile.id);
 
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Use a random UUID that doesn't correspond to any role
-    const invalidRoleId = randomUUID();
+    const personalMessage = 'Welcome to our team!';
+
+    // Clear previous mock calls
+    vi.mocked(event.send).mockClear();
+
+    const result = await caller.invite({
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
+      profileId: profile.id,
+      personalMessage,
+    });
+
+    expect(result.success).toBe(true);
+
+    // Verify event.send was called with the personalMessage
+    expect(event.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          invitations: expect.arrayContaining([
+            expect.objectContaining({
+              email: standaloneUser.email.toLowerCase(),
+              personalMessage,
+            }),
+          ]),
+        }),
+      }),
+    );
+  });
+
+  it('should fail with invalid profileId', async ({ task, onTestFinished }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    // Create a profile just to get an admin user with a session
+    const { adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const standaloneUser = await testData.createStandaloneUser();
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const invalidProfileId = '00000000-0000-0000-0000-000000000000';
 
     await expect(
       caller.invite({
-        invitations: [{ email: invitee.email, roleId: invalidRoleId }],
-        profileId: profile.id,
+        invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
+        profileId: invalidProfileId,
       }),
-    ).rejects.toThrow(/Invalid role/i);
+    ).rejects.toMatchObject({
+      cause: { name: 'NotFoundError' },
+    });
+  });
+
+  it('should not duplicate allowList entry for new user already on allowList', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create a new email and manually add to allowList first
+    const newEmail = `pre-allowed-${task.id}@oneproject.org`;
+    testData.trackAllowListEmail(newEmail);
+    testData.trackProfileInvite(newEmail, profile.id);
+
+    // Pre-add to allowList
+    await db.insert(allowList).values({
+      email: newEmail.toLowerCase(),
+      organizationId: null,
+      metadata: null,
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Invite should succeed without duplicating allowList entry
+    const result = await caller.invite({
+      invitations: [{ email: newEmail, roleId: ROLES.MEMBER.id }],
+      profileId: profile.id,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.details.successful).toContain(newEmail.toLowerCase());
+
+    // Verify only one allowList entry exists (no duplicate)
+    const allowListEntries = await db._query.allowList.findMany({
+      where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
+    });
+
+    expect(allowListEntries).toHaveLength(1);
+  });
+
+  it('should return existingUserAuthIds for cache invalidation', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create a standalone user (existing in the system but not in profile)
+    const existingUser = await testData.createStandaloneUser();
+    testData.trackProfileInvite(existingUser.email, profile.id);
+
+    // Create a new email (doesn't exist in system)
+    const newEmail = `new-user-${task.id}@oneproject.org`;
+    testData.trackAllowListEmail(newEmail);
+    testData.trackProfileInvite(newEmail, profile.id);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.invite({
+      invitations: [
+        { email: existingUser.email, roleId: ROLES.MEMBER.id },
+        { email: newEmail, roleId: ROLES.MEMBER.id },
+      ],
+      profileId: profile.id,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.details.successful).toHaveLength(2);
+
+    // existingUserAuthIds should only contain the existing user's authUserId
+    expect(result.details.existingUserAuthIds).toHaveLength(1);
+    expect(result.details.existingUserAuthIds[0]).toBe(existingUser.authUserId);
   });
 });
