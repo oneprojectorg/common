@@ -147,6 +147,23 @@ export const PhaseEditor = ({
 }) => {
   const t = useTranslations();
 
+  // Safely parse a date string to DateValue
+  const safeParseDateString = (dateStr: string | undefined) => {
+    if (!dateStr) {
+      return undefined;
+    }
+    try {
+      return parseDate(dateStr);
+    } catch {
+      return undefined;
+    }
+  };
+
+  // Format DateValue to ISO string (YYYY-MM-DD)
+  const formatDateValue = (date: { year: number; month: number; day: number }) => {
+    return `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
+  };
+
   return (
     <Accordion allowsMultipleExpanded variant="unstyled">
       <Sortable
@@ -198,12 +215,10 @@ export const PhaseEditor = ({
                   <div className="flex-1">
                     <DatePicker
                       label={t('Start date')}
-                      value={
-                        phase.startDate ? parseDate(phase.startDate) : undefined
-                      }
+                      value={safeParseDateString(phase.startDate)}
                       onChange={(date) =>
                         updatePhase(phase.id, {
-                          startDate: `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`,
+                          startDate: formatDateValue(date),
                         })
                       }
                     />
@@ -211,12 +226,10 @@ export const PhaseEditor = ({
                   <div className="flex-1">
                     <DatePicker
                       label={t('End date')}
-                      value={
-                        phase.endDate ? parseDate(phase.endDate) : undefined
-                      }
+                      value={safeParseDateString(phase.endDate)}
                       onChange={(date) =>
                         updatePhase(phase.id, {
-                          endDate: `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`,
+                          endDate: formatDateValue(date),
                         })
                       }
                     />
