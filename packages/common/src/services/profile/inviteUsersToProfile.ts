@@ -259,7 +259,10 @@ export const inviteUsersToProfile = async ({
       emailsToInvite.forEach((emailData) => {
         results.failed.push({
           email: emailData.email,
-          reason: error instanceof Error ? error.message : 'Failed to process invitation',
+          reason:
+            error instanceof Error
+              ? error.message
+              : 'Failed to process invitation',
         });
       });
     }
