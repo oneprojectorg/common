@@ -27,8 +27,6 @@ type ProfileWithAvatar = Profile & { avatarImage: ObjectsInStorage | null };
 export type ProfileUserWithRelations = ProfileUser & {
   profile: ProfileWithAvatar | null;
   roles: AccessRole[];
-  status?: 'active' | 'pending';
-  inviteId?: string;
 };
 
 /**
