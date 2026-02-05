@@ -59,15 +59,17 @@ export const acceptProfileInvite = async ({
       throw new CommonError('Failed to create profile user');
     }
 
-    await tx.insert(profileUserToAccessRoles).values({
-      profileUserId: profileUser.id,
-      accessRoleId: invite.accessRoleId,
-    });
-
-    await tx
-      .update(profileInvites)
-      .set({ acceptedOn: new Date().toISOString() })
-      .where(eq(profileInvites.id, inviteId));
+    // Role assignment and invite update can run in parallel
+    await Promise.all([
+      tx.insert(profileUserToAccessRoles).values({
+        profileUserId: profileUser.id,
+        accessRoleId: invite.accessRoleId,
+      }),
+      tx
+        .update(profileInvites)
+        .set({ acceptedOn: new Date().toISOString() })
+        .where(eq(profileInvites.id, inviteId)),
+    ]);
 
     return profileUser;
   });
