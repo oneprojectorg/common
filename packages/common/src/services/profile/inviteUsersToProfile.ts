@@ -84,10 +84,7 @@ export const inviteUsersToProfile = async (input: {
     );
   }
 
-  // If this is the inviter's profile, we let them through. Otherwise assert admin access
-  if (profileUser.profileId !== requesterProfileId) {
-    assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
-  }
+  assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
 
   if (!targetRole) {
     throw new CommonError('Invalid role specified for profile invite');
@@ -154,23 +151,26 @@ export const inviteUsersToProfile = async (input: {
         continue;
       }
 
-      // If new user (no account), add to allowList for signup authorization
-      if (!existingUser && !allowListEmailsSet.has(email)) {
-        await db.insert(allowList).values({
-          email,
-          organizationId: null,
-          metadata: null,
-        });
-      }
+      // Use transaction to ensure allowList and profileInvites are created atomically
+      await db.transaction(async (tx) => {
+        // If new user (no account), add to allowList for signup authorization
+        if (!existingUser && !allowListEmailsSet.has(email)) {
+          await tx.insert(allowList).values({
+            email,
+            organizationId: null,
+            metadata: null,
+          });
+        }
 
-      // Create profile invite record
-      await db.insert(profileInvites).values({
-        email,
-        profileId: requesterProfileId,
-        profileEntityType: profile.type,
-        accessRoleId: targetRole.id,
-        invitedBy: profileUser.profileId,
-        message: personalMessage,
+        // Create profile invite record
+        await tx.insert(profileInvites).values({
+          email,
+          profileId: requesterProfileId,
+          profileEntityType: profile.type,
+          accessRoleId: targetRole.id,
+          invitedBy: profileUser.profileId,
+          message: personalMessage,
+        });
       });
 
       // Add to emailsToInvite (with authUserId if existing user)
