@@ -4,8 +4,8 @@ import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
 import { parseProposalData } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
@@ -16,7 +16,6 @@ import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useRef } from 'react';
 import { LuBookmark } from 'react-icons/lu';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -28,7 +27,7 @@ import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { getProposalContent } from './proposalContentUtils';
 
-type Proposal = z.infer<typeof proposalEncoder>;
+type Proposal = RouterOutput['decision']['getProposal'];
 
 export function ProposalView({
   proposal: initialProposal,
@@ -234,18 +233,7 @@ export function ProposalView({
                   {t('Attachments')}
                 </h3>
                 <ProposalAttachmentViewList
-                  files={currentProposal.attachments.flatMap((a) =>
-                    a.attachment
-                      ? [
-                          {
-                            id: a.id,
-                            fileName: a.attachment.fileName,
-                            fileSize: a.attachment.fileSize ?? 0,
-                            url: a.attachment.url ?? undefined,
-                          },
-                        ]
-                      : [],
-                  )}
+                  attachments={currentProposal.attachments}
                 />
               </div>
             )}

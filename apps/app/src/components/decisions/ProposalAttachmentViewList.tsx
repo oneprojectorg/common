@@ -1,22 +1,32 @@
+import type { RouterOutput } from '@op/api';
 import { formatFileSize } from '@op/ui/utils';
 import { LuDownload, LuFileText } from 'react-icons/lu';
 
-export interface AttachmentViewItem {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  url?: string;
-}
+type ProposalAttachment = NonNullable<
+  RouterOutput['decision']['getProposal']['attachments']
+>[number];
 
 /**
  * Displays a read-only list of file attachments for viewing a proposal.
  * Shows file name, size, and download link - no edit controls.
  */
 export function ProposalAttachmentViewList({
-  files,
+  attachments,
 }: {
-  files: AttachmentViewItem[];
+  attachments: ProposalAttachment[];
 }) {
+  const files = attachments.flatMap((a) =>
+    a.attachment
+      ? [
+          {
+            id: a.id,
+            fileName: a.attachment.fileName,
+            fileSize: a.attachment.fileSize ?? 0,
+            url: a.attachment.url,
+          },
+        ]
+      : [],
+  );
   if (files.length === 0) {
     return null;
   }
