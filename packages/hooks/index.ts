@@ -1,7 +1,7 @@
 import useAuthLogout from './src/useAuthLogout';
 import useAuthUser from './src/useAuthUser';
 import { useCursorPagination } from './src/useCursorPagination';
-import { useDebounce } from './src/useDebounce';
+import { useDebounce, useDebouncedCallback } from './src/useDebounce';
 import { useInfiniteScroll } from './src/useInfiniteScroll';
 import { useIntersectionObserver } from './src/useIntersectionObserver';
 import useMediaQuery from './src/useMediaQuery';
@@ -12,10 +12,11 @@ export {
   useAuthLogout,
   useAuthUser,
   useCursorPagination,
+  useDebounce,
+  useDebouncedCallback,
   useInfiniteScroll,
   useIntersectionObserver,
   useMediaQuery,
   useMount,
   useRelativeTime,
-  useDebounce,
 };

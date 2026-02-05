@@ -8,6 +8,7 @@ import {
   type proposalEncoder,
 } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
+import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -220,6 +221,37 @@ export function ProposalEditor({
     onError: (error) => handleMutationError(error, 'update'),
   });
 
+  // Silent auto-save mutation (no redirects, no toasts)
+  const autoSaveMutation = trpc.decision.updateProposal.useMutation({
+    onError: (error) => {
+      console.error('Auto-save failed:', error);
+    },
+  });
+
+  // Debounced title save - persists to database while user types
+  const debouncedSaveTitle = useDebouncedCallback((newTitle: string) => {
+    if (!proposal) {
+      return;
+    }
+
+    const currentData = parseProposalData(proposal.proposalData);
+    // Only save if title actually changed
+    if (currentData.title === newTitle) {
+      return;
+    }
+
+    autoSaveMutation.mutate({
+      proposalId: proposal.id,
+      data: {
+        proposalData: {
+          ...currentData,
+          collaborationDocId,
+          title: newTitle,
+        },
+      },
+    });
+  }, 1500);
+
   // Initialize form with existing proposal data
   useEffect(() => {
     if (
@@ -382,7 +414,10 @@ export function ProposalEditor({
             {/* Title - Collaborative */}
             <CollaborativeTitleField
               placeholder="Untitled Proposal"
-              onChange={setTitle}
+              onChange={(text) => {
+                setTitle(text);
+                debouncedSaveTitle(text);
+              }}
             />
 
             {/* Category and Budget */}
