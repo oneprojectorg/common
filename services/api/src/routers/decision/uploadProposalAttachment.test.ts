@@ -57,7 +57,7 @@ describe.concurrent('uploadProposalAttachment', () => {
       mimeType: 'image/png',
     });
     expect(result.id).toBeDefined();
-    expect(result.url).toBeDefined();
+    expect(result.fileSize).toBeGreaterThan(0);
 
     // Verify attachment was linked to proposal
     const link = await db.query.proposalAttachments.findFirst({
