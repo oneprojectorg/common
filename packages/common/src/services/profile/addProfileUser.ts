@@ -7,7 +7,6 @@ import {
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
-import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, UnauthorizedError } from '../../utils/error';
@@ -120,50 +119,43 @@ export const addProfileUser = async ({
     where: (table, { eq }) => eq(table.email, normalizedEmail),
   });
 
-  if (!existingAllowListEntry) {
-    const metadata: AllowListMetadata = {
-      invitedBy: currentUser.id,
-      invitedAt: new Date().toISOString(),
-      inviteType: 'profile',
-      personalMessage,
-      roleIds: roleIdsToAssignDeduped,
-      profileId,
-      inviterProfileName: profile.name,
-    };
+  // Use transaction to ensure allowList insert and email send succeed together
+  await db.transaction(async (tx) => {
+    if (!existingAllowListEntry) {
+      const metadata: AllowListMetadata = {
+        invitedBy: currentUser.id,
+        invitedAt: new Date().toISOString(),
+        inviteType: 'profile',
+        personalMessage,
+        roleIds: roleIdsToAssignDeduped,
+        profileId,
+        inviterProfileName: profile.name,
+      };
 
-    await db.insert(allowList).values({
-      email: normalizedEmail,
-      organizationId: null,
-      metadata,
+      await tx.insert(allowList).values({
+        email: normalizedEmail,
+        organizationId: null,
+        metadata,
+      });
+    }
+
+    await event.send({
+      name: Events.profileInviteSent.name,
+      data: {
+        senderProfileId: currentProfileUser.profileId,
+        invitations: [
+          {
+            email: normalizedEmail,
+            inviterName:
+              currentProfileUser.name || currentUser.email || 'A team member',
+            profileName: profile.name,
+            inviteUrl: OPURLConfig('APP').ENV_URL,
+            personalMessage,
+          },
+        ],
+      },
     });
-  }
-
-  // Send invite email via event (fire-and-forget with error logging)
-  waitUntil(
-    event
-      .send({
-        name: Events.profileInviteSent.name,
-        data: {
-          senderProfileId: currentProfileUser.profileId,
-          invitations: [
-            {
-              email: normalizedEmail,
-              inviterName:
-                currentProfileUser.name || currentUser.email || 'A team member',
-              profileName: profile.name,
-              inviteUrl: OPURLConfig('APP').ENV_URL,
-              personalMessage,
-            },
-          ],
-        },
-      })
-      .catch((err) => {
-        console.error(
-          `Failed to send profile invite email to ${normalizedEmail}:`,
-          err,
-        );
-      }),
-  );
+  });
 
   return { email: normalizedEmail, invited: true as const };
 };
