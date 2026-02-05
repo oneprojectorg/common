@@ -228,44 +228,30 @@ export const inviteUsersToProfile = async ({
   // Batch insert and send event in a single transaction
   // If event.send fails, we rollback the DB inserts
   if (profileInviteEntries.length > 0) {
-    try {
-      await db.transaction(async (tx) => {
-        if (allowListEntries.length > 0) {
-          await tx.insert(allowList).values(allowListEntries);
-        }
-        await tx.insert(profileInvites).values(profileInviteEntries);
+    await db.transaction(async (tx) => {
+      if (allowListEntries.length > 0) {
+        await tx.insert(allowList).values(allowListEntries);
+      }
+      await tx.insert(profileInvites).values(profileInviteEntries);
 
-        // Send event inside transaction - failure rolls back DB changes
-        await event.send({
-          name: Events.profileInviteSent.name,
-          data: {
-            senderProfileId: profileUser.profileId,
-            invitations: emailsToInvite,
-          },
-        });
+      // Send event inside transaction - failure rolls back DB changes
+      await event.send({
+        name: Events.profileInviteSent.name,
+        data: {
+          senderProfileId: profileUser.profileId,
+          invitations: emailsToInvite,
+        },
       });
+    });
 
-      // Mark all as successful since transaction completed
-      results.successful.push(...emailsToInvite.map((e) => e.email));
-      // Collect auth user IDs for existing users (for cache invalidation)
-      results.existingUserAuthIds.push(
-        ...emailsToInvite
-          .filter((e): e is typeof e & { authUserId: string } => !!e.authUserId)
-          .map((e) => e.authUserId),
-      );
-    } catch (error) {
-      console.error('Failed to process invitations:', error);
-      // Mark all pending invitations as failed
-      emailsToInvite.forEach((emailData) => {
-        results.failed.push({
-          email: emailData.email,
-          reason:
-            error instanceof Error
-              ? error.message
-              : 'Failed to process invitation',
-        });
-      });
-    }
+    // Mark all as successful since transaction completed
+    results.successful.push(...emailsToInvite.map((e) => e.email));
+    // Collect auth user IDs for existing users (for cache invalidation)
+    results.existingUserAuthIds.push(
+      ...emailsToInvite
+        .filter((e): e is typeof e & { authUserId: string } => !!e.authUserId)
+        .map((e) => e.authUserId),
+    );
   }
 
   const message = generateInviteResultMessage(
