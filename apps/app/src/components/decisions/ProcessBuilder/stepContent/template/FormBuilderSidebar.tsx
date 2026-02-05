@@ -1,9 +1,8 @@
 'use client';
 
 import { Sidebar, SidebarTrigger, useSidebar } from '@op/ui/Sidebar';
-import { LuHouse } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { AddFieldMenu } from './AddFieldMenu';
 import { getFieldIcon } from './fieldRegistry';
@@ -13,6 +12,7 @@ interface FormBuilderSidebarProps {
   fields: FormField[];
   onAddField: (type: FieldType) => void;
   onFieldSelect?: (fieldId: string) => void;
+  side?: 'left' | 'right';
 }
 
 /**
@@ -33,11 +33,12 @@ export function FormBuilderSidebar({
   fields,
   onAddField,
   onFieldSelect,
+  side,
 }: FormBuilderSidebarProps) {
   const t = useTranslations();
 
   return (
-    <Sidebar label={t('Form builder sidebar')} className="border-r">
+    <Sidebar label={t('Form builder sidebar')} className="border-r" side={side}>
       <SidebarContent
         fields={fields}
         onAddField={onAddField}
@@ -74,16 +75,6 @@ function SidebarContent({
 
   return (
     <nav className="flex flex-col gap-2 p-4">
-      {/* Home link - mobile only */}
-      <Link
-        href="/"
-        className="flex h-8 items-center gap-2 px-2 text-primary-teal md:hidden"
-      >
-        <LuHouse className="size-4" />
-        {t('Home')}
-      </Link>
-      <hr className="md:hidden" />
-
       {/* Add field button - hidden on mobile (shown at bottom instead) */}
       <div className="hidden md:block">
         <AddFieldMenu onAddField={handleAddField} />

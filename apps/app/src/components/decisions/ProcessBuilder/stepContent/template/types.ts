@@ -20,7 +20,7 @@ export type FieldType =
   | 'dropdown'
   | 'yes_no'
   // Other
-  | 'file_upload'
+  | 'attachments'
   | 'date'
   | 'number'
   | 'section';
@@ -43,6 +43,8 @@ export interface FormField {
   options?: string[];
   /** Placeholder text for text inputs */
   placeholder?: string;
+  /** Description/guidance text for participants */
+  description?: string;
 }
 
 /**

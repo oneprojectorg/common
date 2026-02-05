@@ -1,25 +1,28 @@
 'use client';
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionIndicator,
-  AccordionItem,
-  AccordionTrigger,
-} from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
-import { Input } from '@op/ui/Field';
 import { DragHandle } from '@op/ui/Sortable';
 import type { SortableItemControls } from '@op/ui/Sortable';
+import { TextField } from '@op/ui/TextField';
+import { ToggleButton } from '@op/ui/ToggleButton';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
+import { useEffect, useRef, useState } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { LuGripVertical, LuLock, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { FieldConfigDropdown } from './FieldConfigDropdown';
 import { FieldPreview } from './FieldPreview';
+import { getFieldIcon, getFieldLabelKey } from './fieldRegistry';
 import type { FormField } from './types';
+
+/** Field types that have dropdown/choice options */
+const FIELD_TYPES_WITH_OPTIONS: FormField['type'][] = [
+  'dropdown',
+  'multiple_choice',
+];
 
 interface FieldCardProps {
   field: FormField;
@@ -32,10 +35,51 @@ interface FieldCardProps {
 }
 
 /**
- * Check if a field type has configuration options.
+ * Input that automatically resizes based on its content.
  */
-function hasConfigOptions(type: FormField['type']): boolean {
-  return type === 'dropdown';
+function AutoSizeInput({
+  value,
+  onChange,
+  className,
+  inputRef,
+  minWidth = 30,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  inputRef?: React.RefObject<HTMLInputElement>;
+  minWidth?: number;
+}) {
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [width, setWidth] = useState(minWidth);
+
+  useEffect(() => {
+    if (measureRef.current) {
+      const measuredWidth = measureRef.current.offsetWidth;
+      setWidth(Math.max(minWidth, measuredWidth + 4)); // +4 for cursor space
+    }
+  }, [value, minWidth]);
+
+  return (
+    <div className="relative inline-block">
+      {/* Hidden span to measure text width */}
+      <span
+        ref={measureRef}
+        className={cn(className, 'invisible absolute whitespace-pre')}
+        aria-hidden="true"
+      >
+        {value || ''}
+      </span>
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(className, 'border-none bg-transparent outline-none')}
+        style={{ width }}
+      />
+    </div>
+  );
 }
 
 /**
@@ -52,6 +96,8 @@ export function FieldCard({
   const t = useTranslations();
   const isDragging = controls?.isDragging ?? false;
 
+  const Icon = getFieldIcon(field.type);
+
   // Locked fields render as static cards
   if (field.locked) {
     return (
@@ -63,9 +109,17 @@ export function FieldCard({
           <div className="flex size-6 items-center justify-center text-neutral-gray4">
             <LuLock size={16} />
           </div>
-          <span className="flex-1 font-medium text-neutral-charcoal">
-            {field.label}
-          </span>
+          <TooltipTrigger>
+            <AriaButton
+              className="flex items-center text-neutral-gray4"
+              onPress={() => labelInputRef.current?.focus()}
+            >
+              <Icon size={16} />
+            </AriaButton>
+            <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
+          </TooltipTrigger>
+
+          <span className="flex-1 text-neutral-charcoal">{field.label}</span>
         </div>
         <div className="px-6">
           <FieldPreview field={field} />
@@ -75,6 +129,8 @@ export function FieldCard({
   }
 
   // Sortable fields with internal accordion for config
+  const labelInputRef = useRef<HTMLInputElement>(null!);
+
   return (
     <div
       data-field-id={field.id}
@@ -83,23 +139,33 @@ export function FieldCard({
         isDragging && 'opacity-50',
       )}
     >
-      {/* Header: drag handle, label input, remove button */}
+      {/* Header: drag handle, icon, label input, remove button */}
       <div className="flex items-center gap-2">
-        {controls && (
-          <DragHandle
-            {...controls.dragHandleProps}
-            aria-label={t('Drag to reorder {field}', { field: field.label })}
-          />
-        )}
-        <Input
-          type="text"
-          value={field.label}
-          onChange={(e) => onUpdate?.(field.id, { label: e.target.value })}
-          className={cn(
-            'h-auto flex-1 rounded-none border-x-0 border-t-0 border-b-1 border-transparent px-0 py-2 font-medium text-neutral-charcoal',
-            'focus:border-primary-teal focus:bg-white',
+        <div className="flex grow items-center gap-2">
+          {controls && (
+            <DragHandle
+              {...controls.dragHandleProps}
+              aria-label={t('Drag to reorder {field}', { field: field.label })}
+            />
           )}
-        />
+          <div className="flex shrink items-center gap-2 rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1 focus-within:border-neutral-gray2 focus-within:bg-white">
+            <TooltipTrigger>
+              <AriaButton
+                className="flex items-center text-neutral-gray4"
+                onPress={() => labelInputRef.current?.focus()}
+              >
+                <Icon size={16} />
+              </AriaButton>
+              <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
+            </TooltipTrigger>
+            <AutoSizeInput
+              inputRef={labelInputRef}
+              value={field.label}
+              onChange={(label) => onUpdate?.(field.id, { label })}
+              className="text-neutral-charcoal"
+            />
+          </div>
+        </div>
         {onRemove && (
           <Button
             color="ghost"
@@ -112,37 +178,46 @@ export function FieldCard({
           </Button>
         )}
       </div>
+      <div className="px-8">
+        {/* Description field */}
+        <div className="mt-4">
+          <TextField
+            label={t('Description')}
+            value={field.description ?? ''}
+            onChange={(value) => onUpdate?.(field.id, { description: value })}
+            useTextArea
+            textareaProps={{
+              placeholder: t('Provide additional guidance for participants...'),
+              className: 'min-h-24 resize-none',
+            }}
+          />
+        </div>
 
-      {/* Field preview */}
-      <div className="mt-3 px-6">
-        <FieldPreview field={field} />
+        {/* Options section (for dropdown/multiple choice fields) */}
+        {FIELD_TYPES_WITH_OPTIONS.includes(field.type) && (
+          <div className="mt-4">
+            <FieldConfigDropdown
+              options={field.options ?? []}
+              onOptionsChange={(options) => onUpdate?.(field.id, { options })}
+            />
+          </div>
+        )}
+
+        {/* Required toggle */}
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-sm text-neutral-charcoal">
+            {t('Required?')}
+          </span>
+          <ToggleButton
+            size="small"
+            isSelected={field.required ?? false}
+            onChange={(isSelected) =>
+              onUpdate?.(field.id, { required: isSelected })
+            }
+            aria-label={t('Required')}
+          />
+        </div>
       </div>
-
-      {/* Configuration accordion (only for field types with config options) */}
-      {hasConfigOptions(field.type) && (
-        <Accordion className="mt-3" variant="unstyled">
-          <AccordionItem id="config">
-            <AccordionHeader className="flex items-center gap-2 border-t pt-3">
-              <AccordionTrigger className="flex items-center gap-2 text-sm text-neutral-gray4 hover:text-neutral-charcoal">
-                <AccordionIndicator />
-                <span>{t('Options')}</span>
-              </AccordionTrigger>
-            </AccordionHeader>
-            <AccordionContent>
-              <div className="pt-3">
-                {field.type === 'dropdown' && (
-                  <FieldConfigDropdown
-                    options={field.options ?? []}
-                    onOptionsChange={(options) =>
-                      onUpdate?.(field.id, { options })
-                    }
-                  />
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      )}
     </div>
   );
 }
@@ -168,6 +243,6 @@ export function FieldCardDragPreview({ field }: { field: FormField }) {
  */
 export function FieldCardDropIndicator() {
   return (
-    <div className="h-16 rounded-lg border-2 border-dashed border-neutral-gray3 bg-neutral-offWhite" />
+    <div className="flex h-12 items-center gap-2 rounded-lg border bg-neutral-offWhite" />
   );
-}
+} /** DropIndicator to show when a phase is being dragged */

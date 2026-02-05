@@ -1,6 +1,9 @@
 'use client';
 
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { SidebarProvider } from '@op/ui/Sidebar';
+import { Skeleton } from '@op/ui/Skeleton';
 import { Sortable } from '@op/ui/Sortable';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -20,6 +23,41 @@ import {
 } from './FormBuilderSidebar';
 import { getFieldLabelKey } from './fieldRegistry';
 import type { FieldType, FormField } from './types';
+
+/**
+ * Skeleton loading state shown while store is hydrating.
+ */
+function FormBuilderSkeleton() {
+  return (
+    <div className="flex h-full flex-col md:flex-row">
+      {/* Sidebar skeleton - desktop only */}
+      <div className="hidden w-64 shrink-0 border-r p-4 md:block">
+        <Skeleton className="mb-4 h-10 w-full" />
+        <Skeleton className="mb-2 h-4 w-20" />
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      </div>
+
+      {/* Main content skeleton */}
+      <main className="flex-1 p-4 md:p-8">
+        <div className="mx-auto max-w-160">
+          <Skeleton className="mb-2 h-8 w-48" />
+          <Skeleton className="mb-6 h-5 w-72" />
+
+          {/* Field card skeletons */}
+          <div className="space-y-3">
+            <Skeleton className="h-24 w-full rounded-lg" />
+            <Skeleton className="h-24 w-full rounded-lg" />
+            <Skeleton className="h-32 w-full rounded-lg" />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 /**
  * Locked fields that appear at the top of the form.
@@ -63,6 +101,11 @@ export default function FormBuilderSection({
     DEFAULT_SORTABLE_FIELDS,
   );
   const [hasHydrated, setHasHydrated] = useState(false);
+
+  // Sidebar is always open on desktop, toggleable on mobile
+  const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
   const { getTemplateConfig, setTemplateConfig, setSaveStatus, markSaved } =
     useProcessBuilderStore();
@@ -167,13 +210,18 @@ export default function FormBuilderSection({
     }
   }, []);
 
+  // Show skeleton while store is hydrating
+  if (!hasHydrated) {
+    return <FormBuilderSkeleton />;
+  }
+
   return (
-    <SidebarProvider isOpen={true}>
+    <SidebarProvider isOpen={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
       <div className="flex h-full flex-col md:flex-row">
         {/* Mobile header with sidebar trigger */}
-        <div className="flex items-center gap-2 border-b p-4 md:hidden">
-          <FormBuilderMobileTrigger />
+        <div className="flex items-center gap-2 p-4 md:hidden">
           <h2 className="font-serif text-title-sm">{t('Proposal template')}</h2>
+          <FormBuilderMobileTrigger />
         </div>
 
         {/* Sidebar - hidden on mobile, slides in as drawer */}
@@ -181,17 +229,18 @@ export default function FormBuilderSection({
           fields={allFields}
           onAddField={handleAddField}
           onFieldSelect={handleFieldSelect}
+          side={isMobile ? 'right' : 'left'}
         />
 
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
-          <div className="mx-auto max-w-160">
+          <div className="mx-auto max-w-160 space-y-4">
             {/* Desktop title - hidden on mobile (shown in mobile header) */}
-            <h2 className="hidden font-serif text-title-sm md:block">
+            <h2 className="hidden font-serif text-title-sm md:mt-8 md:block">
               {t('Proposal template')}
             </h2>
             {/* Responsive subtitle */}
-            <p className="mb-6 text-neutral-charcoal">
+            <p className="text-neutral-charcoal">
               <span className="hidden md:inline">
                 {t('Build your proposal using the tools on the left')}
               </span>
@@ -199,7 +248,7 @@ export default function FormBuilderSection({
                 {t('Build your proposal using the tools below')}
               </span>
             </p>
-
+            <hr />
             {/* Locked fields - rendered statically outside Sortable */}
             <div className="mb-3 space-y-3">
               {LOCKED_FIELDS.map((field) => (
