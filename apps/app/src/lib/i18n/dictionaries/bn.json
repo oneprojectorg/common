@@ -457,6 +457,8 @@
   "Allow vote changes": "ভোট পরিবর্তনের অনুমতি দিন",
   "Start date": "শুরুর তারিখ",
   "End date": "শেষ তারিখ",
+  "Phase name": "পর্যায়ের নাম",
+  "No phases defined": "কোনো পর্যায় নির্ধারিত নেই",
   "Proposal Categories": "প্রস্তাব বিভাগসমূহ",
   "Voting": "ভোটদান",
   "Form Builder": "ফর্ম নির্মাতা",

@@ -75,6 +75,8 @@ export default function PhasesSection({
         // Update localStorage via Zustand
         for (const phase of data) {
           setPhaseData(decisionProfileId, phase.id, {
+            name: phase.name,
+            description: phase.description,
             startDate: phase.startDate,
             endDate: phase.endDate,
             rules: phase.rules,
@@ -89,6 +91,8 @@ export default function PhasesSection({
           instanceId,
           phases: data.map((phase) => ({
             phaseId: phase.id,
+            name: phase.name,
+            description: phase.description,
             startDate: phase.startDate,
             endDate: phase.endDate,
             settings: { rules: phase.rules },
@@ -170,6 +174,14 @@ export const PhaseEditor = ({
     return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
+  if (phases.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
+        <p className="text-neutral-gray4">{t('No phases defined')}</p>
+      </div>
+    );
+  }
+
   return (
     <Accordion allowsMultipleExpanded variant="unstyled">
       <Sortable
@@ -199,6 +211,7 @@ export const PhaseEditor = ({
               <AccordionTitleInput
                 value={phase.name}
                 onChange={(name) => updatePhase(phase.id, { name })}
+                aria-label={t('Phase name')}
               />
             </AccordionHeader>
             <AccordionContent>
@@ -345,10 +358,12 @@ const AccordionTitleInput = ({
   value,
   onChange,
   className,
+  'aria-label': ariaLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  'aria-label'?: string;
 }) => {
   const state = use(DisclosureStateContext);
   const isExpanded = state?.isExpanded ?? false;
@@ -359,6 +374,7 @@ const AccordionTitleInput = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={!isExpanded}
+      aria-label={ariaLabel}
       className={cn(
         'flex-1 rounded border bg-transparent px-2 py-1 font-serif text-title-sm',
         'disabled:cursor-default disabled:border-transparent',

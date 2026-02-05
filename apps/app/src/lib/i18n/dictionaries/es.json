@@ -456,6 +456,8 @@
   "Allow vote changes": "Permitir cambios de voto",
   "Start date": "Fecha de inicio",
   "End date": "Fecha de fin",
+  "Phase name": "Nombre de fase",
+  "No phases defined": "No hay fases definidas",
   "Proposal Categories": "Categorías de propuestas",
   "Voting": "Votación",
   "Form Builder": "Constructor de formularios",

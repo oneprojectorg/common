@@ -60,6 +60,8 @@ export interface ProcessConfig {
  * The `settings` object is dynamic and defined by the schema.
  */
 export interface PhaseData {
+  name?: string;
+  description?: string;
   startDate?: string;
   endDate?: string;
   // Phase rules for controlling behavior (proposals, voting)

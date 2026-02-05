@@ -457,6 +457,8 @@
   "Allow vote changes": "Allow vote changes",
   "Start date": "Start date",
   "End date": "End date",
+  "Phase name": "Phase name",
+  "No phases defined": "No phases defined",
   "Proposal Categories": "Proposal Categories",
   "Voting": "Voting",
   "Form Builder": "Form Builder",
