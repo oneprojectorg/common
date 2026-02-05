@@ -523,6 +523,7 @@
   "No roles configured": "Aucun rôle configuré",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "Êtes-vous sûr de vouloir supprimer {roleName} de \"{processName}\" ?",
   "Remove": "Supprimer",
+  "Attachments": "Pièces jointes",
   "Attachments (optional)": "Pièces jointes (facultatif)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Soutenez votre proposition avec des documents pertinents comme des budgets ou des recherches de soutien.",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepte PDF, DOCX, XLSX jusqu'à {size}Mo",

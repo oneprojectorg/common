@@ -523,6 +523,7 @@
   "No roles configured": "কোনো ভূমিকা কনফিগার করা হয়নি",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "আপনি কি নিশ্চিত যে আপনি \"{processName}\" থেকে {roleName} সরাতে চান?",
   "Remove": "সরান",
+  "Attachments": "সংযুক্তি",
   "Attachments (optional)": "সংযুক্তি (ঐচ্ছিক)",
   "Support your proposal with relevant documents like budgets or supporting research.": "বাজেট বা সহায়ক গবেষণার মতো প্রাসঙ্গিক নথি দিয়ে আপনার প্রস্তাব সমর্থন করুন।",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "PDF, DOCX, XLSX {size}MB পর্যন্ত গ্রহণ করে",

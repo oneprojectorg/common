@@ -4,8 +4,8 @@ import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
 import { parseProposalData } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
@@ -16,7 +16,6 @@ import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useRef } from 'react';
 import { LuBookmark } from 'react-icons/lu';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -24,10 +23,11 @@ import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
+import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { getProposalContent } from './proposalContentUtils';
 
-type Proposal = z.infer<typeof proposalEncoder>;
+type Proposal = RouterOutput['decision']['getProposal'];
 
 export function ProposalView({
   proposal: initialProposal,
@@ -224,6 +224,19 @@ export function ProposalView({
           ) : (
             <DocumentNotAvailable />
           )}
+
+          {/* Attachments Section */}
+          {currentProposal.attachments &&
+            currentProposal.attachments.length > 0 && (
+              <div className="border-t pt-8">
+                <h3 className="mb-4 text-lg font-semibold text-neutral-charcoal">
+                  {t('Attachments')}
+                </h3>
+                <ProposalAttachmentViewList
+                  attachments={currentProposal.attachments}
+                />
+              </div>
+            )}
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>
