@@ -38,7 +38,7 @@ const TemplateList = () => {
   const createDecisionInstance =
     trpc.decision.createInstanceFromTemplate.useMutation({
       onSuccess: (data) => {
-        router.push(`/decisions/edit/${data.slug}`);
+        router.push(`/decisions/${data.slug}/edit`);
       },
     });
 
