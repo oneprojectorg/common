@@ -338,21 +338,21 @@ export class TestProfileUserDataManager {
         .where(inArray(allowList.email, this.createdAllowListEmails));
     }
 
-    // 4. Delete profile users by exact IDs
+    // 3. Delete profile users by exact IDs
     if (this.createdProfileUserIds.length > 0) {
       await db
         .delete(profileUsers)
         .where(inArray(profileUsers.id, this.createdProfileUserIds));
     }
 
-    // 5. Delete profiles by exact IDs (cascades to profileUsers -> profileUserToAccessRoles)
+    // 4. Delete profiles by exact IDs (cascades to profileUsers -> profileUserToAccessRoles)
     if (this.createdProfileIds.length > 0) {
       await db
         .delete(profiles)
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 6. Delete auth users by exact IDs (cascades to users table)
+    // 5. Delete auth users by exact IDs (cascades to users table)
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
         this.createdAuthUserIds.map((userId) =>

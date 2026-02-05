@@ -225,7 +225,8 @@ export const inviteUsersToProfile = async ({
     });
   }
 
-  // Batch insert all entries in a single transaction
+  // Batch insert and send event in a single transaction
+  // If event.send fails, we rollback the DB inserts
   if (profileInviteEntries.length > 0) {
     try {
       await db.transaction(async (tx) => {
@@ -233,33 +234,18 @@ export const inviteUsersToProfile = async ({
           await tx.insert(allowList).values(allowListEntries);
         }
         await tx.insert(profileInvites).values(profileInviteEntries);
-      });
-    } catch (error) {
-      console.error('Failed to batch insert invitations:', error);
-      // Mark all pending invitations as failed
-      emailsToInvite.forEach((emailData) => {
-        results.failed.push({
-          email: emailData.email,
-          reason: error instanceof Error ? error.message : 'Database error',
+
+        // Send event inside transaction - failure rolls back DB changes
+        await event.send({
+          name: Events.profileInviteSent.name,
+          data: {
+            senderProfileId: profileUser.profileId,
+            invitations: emailsToInvite,
+          },
         });
       });
-      // Clear the emailsToInvite since the transaction failed
-      emailsToInvite.length = 0;
-    }
-  }
 
-  // Send single event with all invitations - workflow handles retries per email
-  if (emailsToInvite.length > 0) {
-    try {
-      await event.send({
-        name: Events.profileInviteSent.name,
-        data: {
-          senderProfileId: profileUser.profileId,
-          invitations: emailsToInvite,
-        },
-      });
-
-      // Mark all as successful since invite was processed
+      // Mark all as successful since transaction completed
       results.successful.push(...emailsToInvite.map((e) => e.email));
       // Collect auth user IDs for existing users (for cache invalidation)
       results.existingUserAuthIds.push(
@@ -267,14 +253,13 @@ export const inviteUsersToProfile = async ({
           .filter((e): e is typeof e & { authUserId: string } => !!e.authUserId)
           .map((e) => e.authUserId),
       );
-    } catch (eventError) {
-      console.error('Failed to send profile invite event:', eventError);
-
-      // Mark all as failed since event couldn't be queued
+    } catch (error) {
+      console.error('Failed to process invitations:', error);
+      // Mark all pending invitations as failed
       emailsToInvite.forEach((emailData) => {
         results.failed.push({
           email: emailData.email,
-          reason: 'Failed to queue invitation email.',
+          reason: error instanceof Error ? error.message : 'Failed to process invitation',
         });
       });
     }
