@@ -4,7 +4,7 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, useEditor } from '@tiptap/react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useCollaborativeDoc } from '../RichTextEditor/CollaborativeDocContext';
 import { getPlainTextExtensions } from './plainTextExtensions';
@@ -75,10 +75,6 @@ export function CollaborativeTitleField({
   // Track content changes
   const isInternalUpdate = useRef(false);
 
-  const extractPlainText = useCallback((html: string) => {
-    return html.replace(/<[^>]*>/g, '').trim();
-  }, []);
-
   useEffect(() => {
     if (!editor || !onChange) {
       return;
@@ -88,8 +84,7 @@ export function CollaborativeTitleField({
       if (isInternalUpdate.current) {
         return;
       }
-      const html = editor.getHTML();
-      const plainText = extractPlainText(html);
+      const plainText = editor.getText().trim();
       onChange(plainText);
     };
 
@@ -97,7 +92,7 @@ export function CollaborativeTitleField({
     return () => {
       editor.off('update', handleUpdate);
     };
-  }, [editor, onChange, extractPlainText]);
+  }, [editor, onChange]);
 
   if (!editor) {
     return <div className="h-8 animate-pulse rounded bg-neutral-gray1" />;

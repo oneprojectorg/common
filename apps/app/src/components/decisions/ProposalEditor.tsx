@@ -28,7 +28,7 @@ import {
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
-import { CollaborativeTitleField } from '../experimental/CollaborativeTitleField';
+import { CollaborativeTitleField } from '../collaboration/CollaborativeTitleField';
 import { ProposalAttachments } from './ProposalAttachments';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
