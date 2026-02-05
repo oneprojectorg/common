@@ -87,7 +87,7 @@ describe.concurrent('profile.acceptInvite', () => {
 
     // Verify the invite was marked as accepted
     const updatedInvite = await db.query.profileInvites.findFirst({
-      where: eq(profileInvites.id, invite.id),
+      where: { id: invite.id },
     });
 
     expect(updatedInvite?.acceptedOn).not.toBeNull();
