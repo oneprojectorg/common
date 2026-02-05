@@ -11,13 +11,13 @@ import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Doc } from 'yjs';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,6 +28,7 @@ import {
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
+import { CollaborativeTitleField } from '../experimental/CollaborativeTitleField';
 import { ProposalAttachments } from './ProposalAttachments';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
@@ -91,6 +92,7 @@ export function ProposalEditor({
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [collabProvider, setCollabProvider] =
     useState<TiptapCollabProvider | null>(null);
+  const [ydoc, setYdoc] = useState<Doc | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -378,16 +380,18 @@ export function ProposalEditor({
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
 
         <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
-          {/* Title */}
-          <TextField
-            type="text"
-            value={title}
-            onChange={setTitle}
-            inputProps={{
-              placeholder: 'Untitled Proposal',
-              className: 'border-0 p-0 font-serif !text-title-lg',
-            }}
-          />
+          {/* Title - Collaborative */}
+          {ydoc && collabProvider ? (
+            <CollaborativeTitleField
+              ydoc={ydoc}
+              provider={collabProvider}
+              placeholder="Untitled Proposal"
+              onChange={setTitle}
+              userName={user.profile?.name ?? 'Anonymous'}
+            />
+          ) : (
+            <div className="h-8 animate-pulse rounded bg-neutral-gray1" />
+          )}
 
           {/* Category and Budget */}
           <div className="flex gap-6">
@@ -445,6 +449,7 @@ export function ProposalEditor({
             extensions={editorExtensions}
             onEditorReady={handleEditorReady}
             onProviderReady={setCollabProvider}
+            onYdocReady={setYdoc}
             placeholder={t('Write your proposal here...')}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
             userName={user.profile?.name}

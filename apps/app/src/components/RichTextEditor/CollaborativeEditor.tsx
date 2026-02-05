@@ -40,6 +40,8 @@ export interface CollaborativeEditorProps {
   onEditorReady?: (editor: Editor) => void;
   /** Called when the collaboration provider is ready */
   onProviderReady?: (provider: TiptapCollabProvider) => void;
+  /** Called when the Yjs document is ready (for sharing with other collaborative fields) */
+  onYdocReady?: (ydoc: Doc) => void;
   className?: string;
   editorClassName?: string;
   /** User's display name for the collaboration cursor */
@@ -58,6 +60,7 @@ export const CollaborativeEditor = forwardRef<
       placeholder = 'Start writing...',
       onEditorReady,
       onProviderReady,
+      onYdocReady,
       className = '',
       editorClassName = '',
       userName,
@@ -76,6 +79,13 @@ export const CollaborativeEditor = forwardRef<
         onProviderReady(provider);
       }
     }, [provider, onProviderReady]);
+
+    // Notify parent when ydoc becomes available
+    useEffect(() => {
+      if (ydoc && onYdocReady) {
+        onYdocReady(ydoc);
+      }
+    }, [ydoc, onYdocReady]);
 
     // Wait for provider before rendering the editor inner component
     // This ensures Snapshot extension is included from the start
