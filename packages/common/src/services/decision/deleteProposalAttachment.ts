@@ -7,7 +7,7 @@ import { getCurrentProfileId } from '../access';
 
 /**
  * Deletes the link between an attachment and a proposal.
- * Only the original uploader can delete their attachment.
+ * Only the proposal owner can delete attachments.
  * This is a soft delete - the attachment record itself is preserved.
  */
 export async function deleteProposalAttachment({
@@ -21,7 +21,7 @@ export async function deleteProposalAttachment({
 }) {
   const profileId = await getCurrentProfileId(user.id);
 
-  // Verify the attachment link exists and user has permission (they uploaded it)
+  // Verify the attachment link exists
   const existingLink = await db.query.proposalAttachments.findFirst({
     where: {
       proposalId,
@@ -33,9 +33,20 @@ export async function deleteProposalAttachment({
     throw new CommonError('Attachment not found on this proposal');
   }
 
-  // Only the uploader can delete
-  if (existingLink.uploadedBy !== profileId) {
-    throw new UnauthorizedError('Not authorized to delete this attachment');
+  // NOTE: Revisit after we introduce collaborative editing of proposals.
+  // Currently only the proposal owner can delete attachments.
+  const proposal = await db.query.proposals.findFirst({
+    where: { id: proposalId },
+  });
+
+  if (!proposal) {
+    throw new CommonError('Proposal not found');
+  }
+
+  if (proposal.submittedByProfileId !== profileId) {
+    throw new UnauthorizedError(
+      'Only the proposal owner can delete attachments',
+    );
   }
 
   // Delete the link (soft delete - keeps the attachment record)

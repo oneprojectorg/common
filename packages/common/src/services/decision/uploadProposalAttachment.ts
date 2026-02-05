@@ -1,11 +1,9 @@
 import { db } from '@op/db/client';
 import { attachments, proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
 
-import { CommonError } from '../../utils';
-import { getCurrentProfileId, getOrgAccessUser } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
+import { CommonError, UnauthorizedError } from '../../utils';
+import { getCurrentProfileId } from '../access';
 
 export interface UploadProposalAttachmentInput {
   /** Sanitized file name */
@@ -61,7 +59,6 @@ export async function uploadProposalAttachment({
       attachmentId: attachment.id,
       proposalId,
       profileId,
-      user,
     });
   }
 
@@ -80,38 +77,24 @@ async function linkAttachmentToProposal({
   attachmentId,
   proposalId,
   profileId,
-  user,
 }: {
   attachmentId: string;
   proposalId: string;
   profileId: string;
-  user: User;
 }) {
   // NOTE: Revisit after we introduce collaborative editing of proposals.
-  // Currently checks that user has decisions:UPDATE permission in the org.
-  // May need to check proposal-level permissions (author, collaborator) instead.
+  // Currently only the proposal owner can attach files.
   const proposal = await db.query.proposals.findFirst({
     where: { id: proposalId },
-    with: {
-      processInstance: true,
-    },
   });
 
-  if (!proposal?.processInstance) {
-    throw new CommonError('Proposal or process instance not found');
+  if (!proposal) {
+    throw new CommonError('Proposal not found');
   }
 
-  const processInstance = proposal.processInstance;
-
-  const org = await assertOrganizationByProfileId(
-    processInstance.ownerProfileId,
-  );
-  const orgUser = await getOrgAccessUser({
-    user: { id: user.id },
-    organizationId: org.id,
-  });
-
-  assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+  if (proposal.submittedByProfileId !== profileId) {
+    throw new UnauthorizedError('Only the proposal owner can add attachments');
+  }
 
   await db.insert(proposalAttachments).values({
     proposalId,

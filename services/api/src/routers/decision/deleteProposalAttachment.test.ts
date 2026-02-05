@@ -21,7 +21,7 @@ const VALID_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 describe.concurrent('deleteProposalAttachment', () => {
-  it('should allow uploader to delete their own attachment', async ({
+  it('should allow proposal owner to delete attachment', async ({
     task,
     onTestFinished,
   }) => {
@@ -78,7 +78,7 @@ describe.concurrent('deleteProposalAttachment', () => {
     expect(linkAfter).toBeUndefined();
   });
 
-  it('should reject delete from user who did not upload the attachment', async ({
+  it('should reject delete from user who is not the proposal owner', async ({
     task,
     onTestFinished,
   }) => {
@@ -100,32 +100,34 @@ describe.concurrent('deleteProposalAttachment', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Admin uploads an attachment
-    const uploadResult = await adminCaller.decision.uploadProposalAttachment({
+    // Owner uploads an attachment
+    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
       file: VALID_PNG_BASE64,
-      fileName: 'admin-file.png',
+      fileName: 'owner-file.png',
       mimeType: 'image/png',
       proposalId: proposal.id,
     });
 
-    // Create a member user in the same org
-    const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    // Create a different user (not the proposal owner)
+    const otherSetup = await testData.createDecisionSetup({
+      instanceCount: 0,
+      grantAccess: false,
     });
 
-    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    const nonOwnerCaller = await createAuthenticatedCaller(
+      otherSetup.userEmail,
+    );
 
-    // Member should NOT be able to delete admin's attachment
+    // Non-owner should NOT be able to delete attachment
     await expect(
-      memberCaller.decision.deleteProposalAttachment({
+      nonOwnerCaller.decision.deleteProposalAttachment({
         attachmentId: uploadResult.id,
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({
-      message: 'Not authorized to delete this attachment',
+      cause: { name: 'UnauthorizedError' },
     });
   });
 });
