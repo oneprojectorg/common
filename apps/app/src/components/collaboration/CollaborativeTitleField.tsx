@@ -4,7 +4,7 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, useEditor } from '@tiptap/react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 import { getPlainTextExtensions } from './plainTextExtensions';
@@ -68,12 +68,15 @@ export function CollaborativeTitleField({
       attributes: {
         class: `h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal focus:outline-none ${className}`,
       },
+      handleKeyDown: (_view, event) => {
+        if (event.key === 'Enter') {
+          return true;
+        }
+        return false;
+      },
     },
     immediatelyRender: false,
   });
-
-  // Track content changes
-  const isInternalUpdate = useRef(false);
 
   useEffect(() => {
     if (!editor || !onChange) {
@@ -81,9 +84,6 @@ export function CollaborativeTitleField({
     }
 
     const handleUpdate = () => {
-      if (isInternalUpdate.current) {
-        return;
-      }
       const plainText = editor.getText().trim();
       onChange(plainText);
     };
