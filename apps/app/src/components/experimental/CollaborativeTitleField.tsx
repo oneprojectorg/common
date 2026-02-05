@@ -1,27 +1,19 @@
 'use client';
 
-import { getAvatarColorForString } from '@op/ui/utils';
-import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Doc } from 'yjs';
 
+import { useCollaborativeDoc } from '../RichTextEditor/CollaborativeDocContext';
 import { getPlainTextExtensions } from './plainTextExtensions';
 
 interface CollaborativeTitleFieldProps {
-  /** The shared Yjs document */
-  ydoc: Doc;
-  /** The TipTap Cloud provider */
-  provider: TiptapCollabProvider;
   /** Placeholder text */
   placeholder?: string;
   /** Called when content changes (returns plain text) */
   onChange?: (text: string) => void;
-  /** User name for collaboration cursor */
-  userName?: string;
   /** Additional className for the editor */
   className?: string;
 }
@@ -29,20 +21,24 @@ interface CollaborativeTitleFieldProps {
 /**
  * A collaborative plain text field for the proposal title.
  * Uses TipTap with minimal extensions for proper cursor sync.
+ * Must be used within a CollaborativeDocProvider.
+ *
+ * @example
+ * ```tsx
+ * <CollaborativeDocProvider docId="proposal-123" userName="Alice">
+ *   <CollaborativeTitleField
+ *     placeholder="Untitled Proposal"
+ *     onChange={setTitle}
+ *   />
+ * </CollaborativeDocProvider>
+ * ```
  */
 export function CollaborativeTitleField({
-  ydoc,
-  provider,
   placeholder = 'Untitled Proposal',
   onChange,
-  userName = 'Anonymous',
   className = '',
 }: CollaborativeTitleFieldProps) {
-  // Derive color from username
-  const user = useMemo(() => {
-    const { hex } = getAvatarColorForString(userName);
-    return { name: userName, color: hex };
-  }, [userName]);
+  const { ydoc, provider, user } = useCollaborativeDoc();
 
   // Build collaborative extensions for the title field
   const extensions = useMemo(() => {

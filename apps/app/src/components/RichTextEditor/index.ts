@@ -1,3 +1,9 @@
+// Collaborative document context (shared ydoc/provider for all fields)
+export {
+  CollaborativeDocProvider,
+  useCollaborativeDoc,
+} from './CollaborativeDocContext';
+
 // Collaborative editor (real-time sync via TipTap Cloud)
 export {
   CollaborativeEditor,

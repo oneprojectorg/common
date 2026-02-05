@@ -12,17 +12,16 @@ import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
-import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Doc } from 'yjs';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import {
+  CollaborativeDocProvider,
   CollaborativeEditor,
   CollaborativePresence,
   RichTextEditorToolbar,
@@ -90,9 +89,6 @@ export function ProposalEditor({
   const [showBudgetInput, setShowBudgetInput] = useState(false);
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-  const [collabProvider, setCollabProvider] =
-    useState<TiptapCollabProvider | null>(null);
-  const [ydoc, setYdoc] = useState<Doc | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -366,126 +362,122 @@ export function ProposalEditor({
     updateProposalMutation,
   ]);
 
-  return (
-    <ProposalEditorLayout
-      backHref={backHref}
-      title={title}
-      onSubmitProposal={handleSubmitProposal}
-      isSubmitting={isSubmitting}
-      isEditMode={isEditMode}
-      isDraft={isDraft}
-      presenceSlot={<CollaborativePresence provider={collabProvider} />}
-    >
-      <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+  const userName = user.profile?.name ?? 'Anonymous';
 
-        <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
-          {/* Title - Collaborative */}
-          {ydoc && collabProvider ? (
+  return (
+    <CollaborativeDocProvider docId={collaborationDocId} userName={userName}>
+      <ProposalEditorLayout
+        backHref={backHref}
+        title={title}
+        onSubmitProposal={handleSubmitProposal}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        isDraft={isDraft}
+        presenceSlot={<CollaborativePresence />}
+      >
+        <div className="flex flex-1 flex-col gap-12">
+          {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+
+          <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
+            {/* Title - Collaborative */}
             <CollaborativeTitleField
-              ydoc={ydoc}
-              provider={collabProvider}
               placeholder="Untitled Proposal"
               onChange={setTitle}
-              userName={user.profile?.name ?? 'Anonymous'}
             />
-          ) : (
-            <div className="h-8 animate-pulse rounded bg-neutral-gray1" />
-          )}
 
-          {/* Category and Budget */}
-          <div className="flex gap-6">
-            {categories && categories.length > 0 && (
-              <Select
-                variant="pill"
-                size="medium"
-                placeholder={t('Select category')}
-                selectedKey={selectedCategory}
-                onSelectionChange={(key) => setSelectedCategory(key as string)}
-                className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-                popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
-              >
-                {categories.map((category) => (
-                  <SelectItem
-                    className="min-w-fit"
-                    key={category.id}
-                    id={category.name}
-                  >
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </Select>
-            )}
+            {/* Category and Budget */}
+            <div className="flex gap-6">
+              {categories && categories.length > 0 && (
+                <Select
+                  variant="pill"
+                  size="medium"
+                  placeholder={t('Select category')}
+                  selectedKey={selectedCategory}
+                  onSelectionChange={(key) =>
+                    setSelectedCategory(key as string)
+                  }
+                  className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+                  popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
+                >
+                  {categories.map((category) => (
+                    <SelectItem
+                      className="min-w-fit"
+                      key={category.id}
+                      id={category.name}
+                    >
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
 
-            {!showBudgetInput && (
-              <Button
-                variant="pill"
-                color="pill"
-                onPress={() => setShowBudgetInput(true)}
-              >
-                Add budget
-              </Button>
-            )}
+              {!showBudgetInput && (
+                <Button
+                  variant="pill"
+                  color="pill"
+                  onPress={() => setShowBudgetInput(true)}
+                >
+                  Add budget
+                </Button>
+              )}
 
-            {showBudgetInput && (
-              <NumberField
-                ref={budgetInputRef}
-                value={budget}
-                onChange={setBudget}
-                prefixText="$"
-                inputProps={{
-                  placeholder: budgetCapAmount
-                    ? `Max ${budgetCapAmount.toLocaleString()}`
-                    : 'Enter amount',
-                }}
-                fieldClassName="w-auto"
+              {showBudgetInput && (
+                <NumberField
+                  ref={budgetInputRef}
+                  value={budget}
+                  onChange={setBudget}
+                  prefixText="$"
+                  inputProps={{
+                    placeholder: budgetCapAmount
+                      ? `Max ${budgetCapAmount.toLocaleString()}`
+                      : 'Enter amount',
+                  }}
+                  fieldClassName="w-auto"
+                />
+              )}
+            </div>
+
+            {/* Rich Text Editor with Collaboration */}
+            <CollaborativeEditor
+              field="content"
+              extensions={editorExtensions}
+              onEditorReady={handleEditorReady}
+              placeholder={t('Write your proposal here...')}
+              editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
+            />
+
+            {/* Attachments */}
+            <div className="border-t border-neutral-gray2 pt-8">
+              <ProposalAttachments
+                proposalId={proposal.id}
+                attachments={
+                  proposal.attachments?.map((pa) => ({
+                    id: pa.attachmentId,
+                    fileName: pa.attachment?.fileName ?? 'Unknown',
+                    fileSize: pa.attachment?.fileSize ?? null,
+                    url: pa.attachment?.url,
+                  })) ?? []
+                }
+                onMutate={() =>
+                  utils.decision.getProposal.invalidate({
+                    profileId: proposal.profileId,
+                  })
+                }
               />
-            )}
-          </div>
-
-          {/* Rich Text Editor with Collaboration */}
-          <CollaborativeEditor
-            docId={collaborationDocId}
-            extensions={editorExtensions}
-            onEditorReady={handleEditorReady}
-            onProviderReady={setCollabProvider}
-            onYdocReady={setYdoc}
-            placeholder={t('Write your proposal here...')}
-            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
-            userName={user.profile?.name}
-          />
-
-          {/* Attachments */}
-          <div className="border-t border-neutral-gray2 pt-8">
-            <ProposalAttachments
-              proposalId={proposal.id}
-              attachments={
-                proposal.attachments?.map((pa) => ({
-                  id: pa.attachmentId,
-                  fileName: pa.attachment?.fileName ?? 'Unknown',
-                  fileSize: pa.attachment?.fileSize ?? null,
-                  url: pa.attachment?.url,
-                })) ?? []
-              }
-              onMutate={() =>
-                utils.decision.getProposal.invalidate({
-                  profileId: proposal.profileId,
-                })
-              }
-            />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Proposal Info Modal */}
-      {proposalInfoTitle && proposalInfoContent && (
-        <ProposalInfoModal
-          isOpen={showInfoModal}
-          onClose={handleCloseInfoModal}
-          title={proposalInfoTitle}
-          content={proposalInfoContent}
-        />
-      )}
-    </ProposalEditorLayout>
+        {/* Proposal Info Modal */}
+        {proposalInfoTitle && proposalInfoContent && (
+          <ProposalInfoModal
+            isOpen={showInfoModal}
+            onClose={handleCloseInfoModal}
+            title={proposalInfoTitle}
+            content={proposalInfoContent}
+          />
+        )}
+      </ProposalEditorLayout>
+    </CollaborativeDocProvider>
   );
 }
