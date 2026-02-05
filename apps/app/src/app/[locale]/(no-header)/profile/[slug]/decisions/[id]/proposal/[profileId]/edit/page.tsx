@@ -32,7 +32,7 @@ function ProposalEditPageContent({
     <ProposalEditor
       instance={instance}
       backHref={backHref}
-      existingProposal={proposal}
+      proposal={proposal}
       isEditMode={true}
     />
   );

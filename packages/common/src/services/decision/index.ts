@@ -44,6 +44,10 @@ export * from './getExportStatus';
 export * from './exports';
 export * from './getProposalDocumentsContent';
 
+// Proposal attachments
+export * from './uploadProposalAttachment';
+export * from './deleteProposalAttachment';
+
 // Voting management
 export * from './voting';
 

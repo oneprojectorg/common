@@ -1,4 +1,5 @@
 import { mergeRouters } from '../../trpcFactory';
+import { deleteProposalAttachment } from './deleteProposalAttachment';
 import { instancesRouter } from './instances';
 import { processesRouter } from './processes';
 import { proposalsRouter } from './proposals';
@@ -12,5 +13,6 @@ export const decisionRouter = mergeRouters(
   proposalsRouter,
   resultsRouter,
   uploadProposalAttachment,
+  deleteProposalAttachment,
   votingRouter,
 );

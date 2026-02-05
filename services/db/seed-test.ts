@@ -224,6 +224,33 @@ const supabase = createServerClient(
 );
 
 /**
+ * Ensures a storage bucket exists, creating it if necessary
+ */
+async function ensureBucket(name: string): Promise<void> {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  const exists = buckets?.some((b) => b.name === name);
+
+  if (!exists) {
+    const { error } = await supabase.storage.createBucket(name, {
+      public: true,
+    });
+    if (error) {
+      console.warn(`  ⚠ Warning creating ${name} bucket:`, error.message);
+    } else {
+      console.log(`  ✓ Created ${name} bucket`);
+    }
+  } else {
+    // Bucket exists, empty it
+    const { error } = await supabase.storage.emptyBucket(name);
+    if (error) {
+      console.warn(`  ⚠ Warning emptying ${name} bucket:`, error.message);
+    } else {
+      console.log(`  ✓ Emptied ${name} bucket`);
+    }
+  }
+}
+
+/**
  * Wipe database tables and empty storage buckets
  */
 async function wipeDatabase() {
@@ -234,20 +261,9 @@ async function wipeDatabase() {
 
   console.log('✅ Database wipe completed\n');
 
-  // Empty storage buckets
-  try {
-    await supabase.storage.emptyBucket('assets');
-    console.log(`  ✓ Emptied assets bucket`);
-  } catch (error: any) {
-    console.warn(`  ⚠ Warning emptying assets bucket:`, error.message);
-  }
-
-  try {
-    await supabase.storage.emptyBucket('avatars');
-    console.log(`  ✓ Emptied avatars bucket`);
-  } catch (error: any) {
-    console.warn(`  ⚠ Warning emptying avatars bucket:`, error.message);
-  }
+  // Ensure storage buckets exist and are empty
+  await ensureBucket('assets');
+  await ensureBucket('avatars');
 }
 
 /**

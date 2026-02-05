@@ -14,6 +14,7 @@ import {
   profileRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -24,6 +25,25 @@ import {
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+
+/** Attachment with signed URL for accessing the file */
+type AttachmentWithUrl = {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number | null;
+  storageObject: ObjectsInStorage | null;
+  url?: string;
+};
+
+/** Proposal attachment join record with nested attachment */
+type ProposalAttachmentWithDetails = {
+  id: string;
+  proposalId: string;
+  attachmentId: string;
+  uploadedBy: string;
+  attachment: AttachmentWithUrl | null;
+};
 
 export const getProposal = async ({
   profileId,
@@ -41,6 +61,7 @@ export const getProposal = async ({
     likesCount: number;
     followersCount: number;
     documentContent: ProposalDocumentContent | undefined;
+    attachments: ProposalAttachmentWithDetails[];
   }
 > => {
   const dbUser = await assertUserByAuthId(user.id);
@@ -61,6 +82,15 @@ export const getProposal = async ({
         },
       },
       profile: true,
+      attachments: {
+        with: {
+          attachment: {
+            with: {
+              storageObject: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -123,11 +153,39 @@ export const getProposal = async ({
   // TODO: Add access control - check if user can view this proposal
   // For now, any authenticated user can view any proposal
 
+  // Generate signed URLs for attachments
+  let attachmentsWithUrls = proposal.attachments ?? [];
+
+  if (attachmentsWithUrls.length > 0) {
+    const supabase = createSBServiceClient();
+
+    attachmentsWithUrls = await Promise.all(
+      attachmentsWithUrls.map(async (pa) => {
+        const storagePath = pa.attachment?.storageObject?.name;
+        if (!storagePath) {
+          return pa;
+        }
+
+        const { data } = await supabase.storage
+          .from('assets')
+          .createSignedUrl(storagePath, 60 * 60 * 24);
+
+        return {
+          ...pa,
+          attachment: pa.attachment
+            ? { ...pa.attachment, url: data?.signedUrl }
+            : pa.attachment,
+        };
+      }),
+    );
+  }
+
   return {
     ...proposal,
     proposalData: parseProposalData(proposal.proposalData),
     ...engagementCounts,
     documentContent: documentContentMap.get(proposal.id),
+    attachments: attachmentsWithUrls,
   };
 };
 

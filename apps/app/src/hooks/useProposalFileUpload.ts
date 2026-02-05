@@ -15,9 +15,13 @@ export interface FilePreview {
 }
 
 interface UseProposalFileUploadOptions {
+  /** The proposal to link attachments to (required for proposal attachments, optional for inline images) */
+  proposalId?: string;
   acceptedTypes?: string[];
   maxFiles?: number;
   maxSizePerFile?: number;
+  /** Called after successful upload or delete */
+  onMutationSuccess?: () => void;
 }
 
 const DEFAULT_ACCEPTED_TYPES = [
@@ -34,15 +38,23 @@ export const useProposalFileUpload = (
   options: UseProposalFileUploadOptions,
 ) => {
   const {
+    proposalId,
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
     maxFiles = DEFAULT_MAX_FILES,
     maxSizePerFile = DEFAULT_MAX_SIZE,
+    onMutationSuccess,
   } = options ?? {};
 
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const uploadAttachment = trpc.decision.uploadProposalAttachment.useMutation();
+  const uploadAttachment = trpc.decision.uploadProposalAttachment.useMutation({
+    onSuccess: onMutationSuccess,
+  });
+  const deleteAttachment = trpc.decision.deleteProposalAttachment.useMutation({
+    onSuccess: onMutationSuccess,
+    onError: (error) => toast.error({ message: error.message }),
+  });
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
@@ -71,7 +83,7 @@ export const useProposalFileUpload = (
       throw new Error(validationError);
     }
 
-    const previewId = `${Date.now()}-${Math.random()}`;
+    const previewId = crypto.randomUUID();
 
     // Create initial preview
     const preview: FilePreview = {
@@ -100,6 +112,7 @@ export const useProposalFileUpload = (
           file: base64,
           fileName: file.name,
           mimeType: file.type,
+          proposalId,
         })
         .catch((err) => {
           toast.status(err);
@@ -134,14 +147,23 @@ export const useProposalFileUpload = (
 
   const removeFile = (id: string) => {
     const preview = filePreviews.find((f) => f.id === id);
-    if (preview) {
-      URL.revokeObjectURL(preview.url);
-      setFilePreviews((prev) => prev.filter((f) => f.id !== id));
+    if (!preview) {
+      return;
+    }
+
+    URL.revokeObjectURL(preview.url);
+    setFilePreviews((prev) => prev.filter((f) => f.id !== id));
+
+    // If uploaded and linked to a proposal, also delete from backend
+    if (preview.uploaded && proposalId) {
+      deleteAttachment.mutate({ attachmentId: id, proposalId });
     }
   };
 
   const clearFiles = () => {
-    filePreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    for (const preview of filePreviews) {
+      URL.revokeObjectURL(preview.url);
+    }
     setFilePreviews([]);
   };
 

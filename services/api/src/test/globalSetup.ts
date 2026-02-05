@@ -64,6 +64,22 @@ export async function teardown() {
     casing: 'snake_case',
   });
 
+  // Seeded tables that will be "deseeded" - only the exact seeded rows should exist
+  // Storage tables (buckets, objects) are managed by Supabase and persist between tests
+  const seededTables = new Set([
+    'access_roles',
+    'access_role_permissions_on_access_zones',
+    'access_zones',
+    'buckets', // Supabase storage - created by seed
+    'objects', // Supabase storage - files uploaded during tests
+  ]);
+
+  // Get all table objects from schema (filter for actual PgTable instances)
+  const tables = Object.entries(schema).filter(
+    (entry): entry is [string, PgTable] =>
+      entry[1] instanceof PgTable && !seededTables.has(getTableName(entry[1])),
+  );
+
   const accessZoneIds = ACCESS_ZONES.map((z) => z.id);
   const accessRoleIds = ACCESS_ROLES.map((r) => r.id);
   const DECISION_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
@@ -107,13 +123,8 @@ export async function teardown() {
 
   console.log('✅ Deseeding completed');
 
-  // Now verify all tables are empty
-  const tables = Object.entries(schema).filter(
-    (entry): entry is [string, PgTable] => entry[1] instanceof PgTable,
-  );
-
+  // Check non-seeded tables are empty AFTER deseeding
   const errors: string[] = [];
-
   for (const [, table] of tables) {
     const tableName = getTableName(table);
     const [result] = await db.select({ count: count() }).from(table);

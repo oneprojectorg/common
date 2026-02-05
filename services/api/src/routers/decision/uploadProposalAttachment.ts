@@ -1,11 +1,12 @@
-import { CommonError, getCurrentProfileId } from '@op/common';
-import { db } from '@op/db/client';
-import { attachments } from '@op/db/schema';
+import {
+  CommonError,
+  getCurrentProfileId,
+  uploadProposalAttachment as uploadProposalAttachmentService,
+} from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
-import { Buffer } from 'buffer';
+import { Buffer } from 'node:buffer';
 import { z } from 'zod';
 
-import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
@@ -15,18 +16,22 @@ const ALLOWED_MIME_TYPES = [
   'image/webp',
   'image/gif',
   'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ];
 
 export const uploadProposalAttachment = router({
   uploadProposalAttachment: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
-    .use(withDB)
     .input(
       z.object({
         file: z.string(), // base64 encoded
         fileName: z.string(),
         mimeType: z.string(),
+        // Optional - if provided, links attachment to proposal immediately on upload
+        // Use for proposal attachments; omit for inline images in rich text content
+        proposalId: z.string().optional(),
       }),
     )
     .output(
@@ -40,7 +45,7 @@ export const uploadProposalAttachment = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { file, fileName, mimeType } = input;
+      const { file, fileName, mimeType, proposalId } = input;
       const { user } = ctx;
       const profileId = await getCurrentProfileId(user.id);
 
@@ -80,17 +85,20 @@ export const uploadProposalAttachment = router({
         );
       }
 
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE!,
-        {
-          cookieOptions: {},
-          cookies: {
-            getAll: async () => [],
-            setAll: async () => {},
-          },
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE;
+
+      if (!supabaseUrl || !supabaseServiceRole) {
+        throw new CommonError('Storage configuration missing');
+      }
+
+      const supabase = createServerClient(supabaseUrl, supabaseServiceRole, {
+        cookieOptions: {},
+        cookies: {
+          getAll: async () => [],
+          setAll: async () => {},
         },
-      );
+      });
 
       const bucket = 'assets';
       const filePath = `profile/${profileId}/proposals/${Date.now()}_${sanitizedFileName}`;
@@ -120,30 +128,25 @@ export const uploadProposalAttachment = router({
         throw new CommonError('Could not get signed url');
       }
 
-      // Create attachment record in database
-      const [attachment] = await db
-        .insert(attachments)
-        .values({
-          storageObjectId: data.id,
+      // Create attachment record and optionally link to proposal
+      const result = await uploadProposalAttachmentService({
+        input: {
           fileName: sanitizedFileName,
           mimeType,
           fileSize: buffer.length,
-          profileId,
-          // postId is optional - we don't set it for proposal attachments
-        })
-        .returning();
-
-      if (!attachment) {
-        throw new CommonError('Failed to create attachment record');
-      }
+          storageObjectId: data.id,
+          proposalId,
+        },
+        user,
+      });
 
       return {
         url: signedUrlData.signedUrl,
         path: filePath,
-        id: attachment.id,
-        fileName: sanitizedFileName,
-        mimeType,
-        fileSize: buffer.length,
+        id: result.id,
+        fileName: result.fileName,
+        mimeType: result.mimeType,
+        fileSize: result.fileSize,
       };
     }),
 });
