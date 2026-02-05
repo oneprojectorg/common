@@ -2,12 +2,13 @@ import { organizations, profileUsers, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { accessRoleMinimalEncoder } from './access';
 import { individualsEncoder } from './individuals';
 import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
 import { type organizationsEncoder } from './organizations';
 import { projectEncoder } from './projects';
-import { accessRoleMinimalEncoder, storageItemMinimalEncoder } from './shared';
+import { storageItemMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 
 // Base profile encoder without organization reference

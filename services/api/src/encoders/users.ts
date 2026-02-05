@@ -4,25 +4,17 @@ import { authUsers } from 'drizzle-orm/supabase';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { accessRoleMinimalEncoder, permissionsSchema } from './access';
 import {
   organizationsEncoder,
   organizationsWithProfileEncoder,
 } from './organizations';
 import { baseProfileEncoder } from './profiles';
-import { accessRoleMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
-
-const permissionSchema = z.object({
-  admin: z.boolean(),
-  create: z.boolean(),
-  read: z.boolean(),
-  update: z.boolean(),
-  delete: z.boolean(),
-});
 
 const zonePermissionsSchema = z.record(
   z.string(),
-  permissionSchema,
+  permissionsSchema,
 ) satisfies z.ZodType<ZonePermissions>;
 
 const accessZoneSchema = z.object({

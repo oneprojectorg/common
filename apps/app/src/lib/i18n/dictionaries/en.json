@@ -509,5 +509,21 @@
   "Selected members": "Selected members",
   "No email addresses to invite": "No email addresses to invite",
   "Remove {name}": "Remove {name}",
-  "Select a role": "Select a role"
+  "Select a role": "Select a role",
+  "Add role": "Add role",
+  "Admin": "Admin",
+  "Read": "Read",
+  "Update": "Update",
+  "Role created successfully": "Role created successfully",
+  "Role deleted successfully": "Role deleted successfully",
+  "Failed to create role": "Failed to create role",
+  "Failed to delete role": "Failed to delete role",
+  "Role name": "Role name",
+  "Save": "Save",
+  "Delete role": "Delete role",
+  "No roles configured": "No roles configured",
+  "Remove {name}": "Remove {name}",
+  "Are you sure you want to remove {roleName} from \"{processName}\"?": "Are you sure you want to remove {roleName} from \"{processName}\"?",
+  "Removing...": "Removing...",
+  "Remove": "Remove"
 }

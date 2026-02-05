@@ -322,5 +322,6 @@ export const getUserSession = async ({
 };
 
 export * from './getRoles';
+export * from './permissions';
 export * from './utils';
 export * from './platformAdmin';

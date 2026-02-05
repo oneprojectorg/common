@@ -509,5 +509,21 @@
   "Selected members": "Membros selecionados",
   "No email addresses to invite": "Nenhum endereço de e-mail para convidar",
   "Remove {name}": "Remover {name}",
-  "Select a role": "Selecionar um cargo"
+  "Select a role": "Selecionar um cargo",
+  "Add role": "Adicionar função",
+  "Admin": "Admin",
+  "Read": "Ler",
+  "Update": "Atualizar",
+  "Role created successfully": "Função criada com sucesso",
+  "Role deleted successfully": "Função excluída com sucesso",
+  "Failed to create role": "Falha ao criar a função",
+  "Failed to delete role": "Falha ao excluir a função",
+  "Role name": "Nome da função",
+  "Save": "Salvar",
+  "Delete role": "Excluir função",
+  "No roles configured": "Nenhuma função configurada",
+  "Remove {name}": "Remover {name}",
+  "Are you sure you want to remove {roleName} from \"{processName}\"?": "Tem certeza de que deseja remover {roleName} de \"{processName}\"?",
+  "Removing...": "Removendo...",
+  "Remove": "Remover"
 }

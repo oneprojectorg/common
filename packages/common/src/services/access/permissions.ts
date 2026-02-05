@@ -1,18 +1,49 @@
-import { CommonError } from '@/src/utils';
 import { db } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
-  accessZones,
   organizationUserToAccessRoles,
 } from '@op/db/schema';
+import { toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
-export async function createRole(
-  name: string,
-  permissions: Record<string, number>,
-  description?: string,
-) {
+import { CommonError, NotFoundError } from '../../utils';
+import { assertProfileAdmin } from '../assert';
+
+export type Permissions = {
+  admin: boolean;
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+};
+
+export async function createRole({
+  name,
+  zoneName,
+  permissions,
+  description,
+  profileId,
+  user,
+}: {
+  name: string;
+  zoneName: string;
+  permissions: Permissions;
+  description?: string;
+  profileId: string;
+  user: { id: string };
+}) {
+  const [zone] = await Promise.all([
+    db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, zoneName),
+    }),
+    assertProfileAdmin(user, profileId),
+  ]);
+
+  if (!zone) {
+    throw new NotFoundError('Zone', zoneName);
+  }
+
   return await db.transaction(async (tx) => {
     // Create the role
     const [role] = await tx
@@ -20,6 +51,7 @@ export async function createRole(
       .values({
         name,
         description,
+        profileId,
       })
       .returning();
 
@@ -27,27 +59,115 @@ export async function createRole(
       throw new CommonError('Could not create role');
     }
 
-    // Get all zones
-    const zones = await tx.select().from(accessZones);
-    const zoneMap = new Map(zones.map((z) => [z.name, z.id]));
+    // Create permission entry for the specified zone
+    await tx.insert(accessRolePermissionsOnAccessZones).values({
+      accessRoleId: role.id,
+      accessZoneId: zone.id,
+      permission: toBitField(permissions),
+    });
 
-    // Create permission entries
-    const permissionEntries = Object.entries(permissions)
-      .filter(([zoneName]) => zoneMap.has(zoneName))
-      .map(([zoneName, permission]) => ({
-        accessRoleId: role.id,
-        accessZoneId: zoneMap.get(zoneName)!,
-        permission,
-      }));
-
-    if (permissionEntries.length > 0) {
-      await tx
-        .insert(accessRolePermissionsOnAccessZones)
-        .values(permissionEntries);
-    }
-
-    return role;
+    return {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      permissions,
+    };
   });
+}
+
+/**
+ * Update the permission for a role on a specific zone
+ */
+export async function updateRolePermissions({
+  roleId,
+  zoneName,
+  permissions,
+  user,
+}: {
+  roleId: string;
+  zoneName: string;
+  permissions: Permissions;
+  user: { id: string };
+}) {
+  const [zone, role] = await Promise.all([
+    db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, zoneName),
+    }),
+    db._query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.id, roleId),
+    }),
+  ]);
+
+  if (!zone) {
+    throw new NotFoundError('Zone', zoneName);
+  }
+
+  if (!role) {
+    throw new NotFoundError('Role', roleId);
+  }
+
+  if (!role.profileId) {
+    throw new CommonError('Cannot modify permissions for global roles');
+  }
+
+  await assertProfileAdmin(user, role.profileId);
+
+  // Convert boolean permissions to bitfield
+  const bitfield = toBitField(permissions);
+
+  // Upsert the permission entry
+  const existing = await db._query.accessRolePermissionsOnAccessZones.findFirst(
+    {
+      where: (table, { eq, and }) =>
+        and(eq(table.accessRoleId, roleId), eq(table.accessZoneId, zone.id)),
+    },
+  );
+
+  if (existing) {
+    await db
+      .update(accessRolePermissionsOnAccessZones)
+      .set({ permission: bitfield })
+      .where(eq(accessRolePermissionsOnAccessZones.id, existing.id));
+  } else {
+    await db.insert(accessRolePermissionsOnAccessZones).values({
+      accessRoleId: roleId,
+      accessZoneId: zone.id,
+      permission: bitfield,
+    });
+  }
+
+  return role;
+}
+
+/**
+ * Delete a role (only profile-specific roles can be deleted)
+ */
+export async function deleteRole({
+  roleId,
+  user,
+}: {
+  roleId: string;
+  user: { id: string };
+}) {
+  // First check if the role is a global role (profileId IS NULL)
+  const role = await db._query.accessRoles.findFirst({
+    where: (table, { eq }) => eq(table.id, roleId),
+  });
+
+  if (!role) {
+    throw new NotFoundError('Role', roleId);
+  }
+
+  if (!role.profileId) {
+    throw new CommonError('Cannot delete global roles');
+  }
+
+  await assertProfileAdmin(user, role.profileId);
+
+  // Delete the role (cascade will handle permissions)
+  await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
+
+  return { success: true, deletedId: roleId };
 }
 
 export async function assignRoleToUser(
