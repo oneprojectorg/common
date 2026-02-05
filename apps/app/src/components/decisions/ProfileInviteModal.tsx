@@ -205,18 +205,21 @@ export const ProfileInviteModal = ({
   const handleSend = () => {
     startTransition(async () => {
       try {
-        // Send invites for each role that has selected items
-        const invitePromises = Object.entries(selectedItemsByRole)
+        // Collect all invitations across all roles into a single array
+        const invitations = Object.entries(selectedItemsByRole)
           .filter(([, items]) => items.length > 0)
-          .map(([roleId, items]) =>
-            inviteMutation.mutateAsync({
-              emails: items.map((item) => item.email),
-              roleId,
-              profileId,
-            }),
+          .flatMap(([roleId, items]) =>
+            items.map((item) => ({ email: item.email, roleId })),
           );
 
-        await Promise.all(invitePromises);
+        if (invitations.length === 0) {
+          return;
+        }
+
+        await inviteMutation.mutateAsync({
+          invitations,
+          profileId,
+        });
 
         toast.success({ message: t('Invite sent successfully') });
         setSelectedItemsByRole({});

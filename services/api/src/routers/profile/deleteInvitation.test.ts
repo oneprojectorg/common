@@ -44,8 +44,7 @@ describe.concurrent('profile.deleteInvitation', () => {
       await createTestContextWithSession(session),
     );
     await inviteCaller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -133,8 +132,7 @@ describe.concurrent('profile.deleteInvitation', () => {
       await createTestContextWithSession(session2),
     );
     await inviteCaller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile2.id,
     });
 
@@ -184,8 +182,7 @@ describe.concurrent('profile.deleteInvitation', () => {
       await createTestContextWithSession(session),
     );
     await inviteCaller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -245,8 +242,7 @@ describe.concurrent('profile.deleteInvitation', () => {
       await createTestContextWithSession(adminSession),
     );
     await inviteCaller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 

@@ -6,10 +6,14 @@ import { z } from 'zod';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  emails: z
-    .array(z.email('Must be a valid email address'))
-    .min(1, 'At least one email address is required'),
-  roleId: z.string().uuid(),
+  invitations: z
+    .array(
+      z.object({
+        email: z.email('Must be a valid email address'),
+        roleId: z.string().uuid(),
+      }),
+    )
+    .min(1, 'At least one invitation is required'),
   profileId: z.string().uuid(),
   personalMessage: z.string().optional(),
 });
@@ -39,8 +43,7 @@ export const inviteProfileUserRouter = router({
       const { user } = ctx;
 
       const result = await inviteUsersToProfile({
-        emails: input.emails,
-        roleId: input.roleId,
+        invitations: input.invitations,
         requesterProfileId: input.profileId,
         personalMessage: input.personalMessage,
         user,

@@ -24,22 +24,37 @@ const generateInviteResultMessage = (
 };
 
 /**
- * Invite users to a profile with a specific role
+ * Invite users to a profile with roles.
+ * Each invitation specifies an email and roleId, allowing per-user role assignment.
  */
-export const inviteUsersToProfile = async (input: {
-  emails: string[];
-  roleId: string;
+export const inviteUsersToProfile = async ({
+  invitations,
+  requesterProfileId,
+  personalMessage,
+  user,
+}: {
+  invitations: Array<{ email: string; roleId: string }>;
   requesterProfileId: string;
   personalMessage?: string;
   user: User;
 }) => {
-  const { emails, roleId, requesterProfileId, personalMessage, user } = input;
+  if (invitations.length === 0) {
+    throw new CommonError('At least one invitation is required');
+  }
 
-  const normalizedEmails = emails.map((e) => e.toLowerCase());
+  const normalizedInvitations = invitations.map((inv) => ({
+    email: inv.email.toLowerCase(),
+    roleId: inv.roleId,
+  }));
+
+  const normalizedEmails = normalizedInvitations.map((inv) => inv.email);
+  const uniqueRoleIds = [
+    ...new Set(normalizedInvitations.map((inv) => inv.roleId)),
+  ];
 
   const [
     profile,
-    targetRole,
+    targetRoles,
     existingUsers,
     existingAllowListEntries,
     existingPendingInvites,
@@ -47,9 +62,9 @@ export const inviteUsersToProfile = async (input: {
   ] = await Promise.all([
     // Get the profile details for the invite
     assertProfile(requesterProfileId),
-    // Get the target role
-    db.query.accessRoles.findFirst({
-      where: { id: roleId },
+    // Get all target roles
+    db.query.accessRoles.findMany({
+      where: { id: { in: uniqueRoleIds } },
     }),
     // Get all users with their profile memberships for this profile
     db.query.users.findMany({
@@ -86,8 +101,13 @@ export const inviteUsersToProfile = async (input: {
 
   assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
 
-  if (!targetRole) {
-    throw new CommonError('Invalid role specified for profile invite');
+  // Validate all roles exist
+  const rolesById = new Map(targetRoles.map((r) => [r.id, r]));
+  const invalidRoleIds = uniqueRoleIds.filter((id) => !rolesById.has(id));
+  if (invalidRoleIds.length > 0) {
+    throw new CommonError(
+      `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
+    );
   }
 
   const results = {
@@ -124,11 +144,12 @@ export const inviteUsersToProfile = async (input: {
     existingPendingInvites.map((invite) => invite.email.toLowerCase()),
   );
 
-  // Process each email
-  for (const rawEmail of emails) {
-    const email = rawEmail.toLowerCase();
+  // Process each invitation
+  for (const invitation of normalizedInvitations) {
+    const { email, roleId } = invitation;
     try {
       const existingUser = usersByEmail.get(email);
+      const targetRole = rolesById.get(roleId)!;
 
       // Check for pending invite (applies to both existing and new users)
       if (pendingInviteEmailsSet.has(email)) {
@@ -225,7 +246,7 @@ export const inviteUsersToProfile = async (input: {
 
   const message = generateInviteResultMessage(
     results.successful.length,
-    emails.length,
+    normalizedInvitations.length,
   );
 
   return {

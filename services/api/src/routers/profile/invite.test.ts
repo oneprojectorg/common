@@ -41,8 +41,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -96,8 +95,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.invite({
-      emails: [memberUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: memberUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -126,8 +124,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.invite({
-      emails: [newEmail],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: newEmail, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -173,8 +170,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
 
     // First invite should succeed
     const firstResult = await caller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -182,8 +178,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
 
     // Second invite should fail
     const secondResult = await caller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -211,8 +206,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await caller.invite({
-      emails: [standaloneUser.email],
-      roleId: ROLES.MEMBER.id,
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
       profileId: profile.id,
     });
 
@@ -225,7 +219,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     expect(allowListEntry).toBeUndefined();
   });
 
-  it('should handle multiple emails with mixed results', async ({
+  it('should handle multiple invitations with mixed results', async ({
     task,
     onTestFinished,
   }) => {
@@ -252,12 +246,11 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.invite({
-      emails: [
-        standaloneUser.email, // Should succeed - existing user gets invite
-        memberUser.email, // Should fail - already a member
-        newEmail, // Should succeed - new user gets invite + allowList
+      invitations: [
+        { email: standaloneUser.email, roleId: ROLES.MEMBER.id }, // Should succeed
+        { email: memberUser.email, roleId: ROLES.MEMBER.id }, // Should fail - already a member
+        { email: newEmail, roleId: ROLES.MEMBER.id }, // Should succeed
       ],
-      roleId: ROLES.MEMBER.id,
       profileId: profile.id,
     });
 
@@ -273,5 +266,63 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       memberUser.email.toLowerCase(),
     );
     expect(result.details.failed[0]?.reason).toContain('already a member');
+  });
+
+  it('should support batch input with per-user role assignment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create two standalone users to be invited
+    const user1 = await testData.createStandaloneUser();
+    const user2 = await testData.createStandaloneUser();
+    testData.trackProfileInvite(user1.email, profile.id);
+    testData.trackProfileInvite(user2.email, profile.id);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Use batch format: user1 as ADMIN, user2 as MEMBER
+    const result = await caller.invite({
+      invitations: [
+        { email: user1.email, roleId: ROLES.ADMIN.id },
+        { email: user2.email, roleId: ROLES.MEMBER.id },
+      ],
+      profileId: profile.id,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.details.successful).toHaveLength(2);
+    expect(result.details.successful).toContain(user1.email.toLowerCase());
+    expect(result.details.successful).toContain(user2.email.toLowerCase());
+
+    // Verify each invite was created with the correct role
+    const invite1 = await db._query.profileInvites.findFirst({
+      where: (table, { eq, and, isNull }) =>
+        and(
+          eq(table.profileId, profile.id),
+          eq(table.email, user1.email.toLowerCase()),
+          isNull(table.acceptedOn),
+        ),
+    });
+
+    const invite2 = await db._query.profileInvites.findFirst({
+      where: (table, { eq, and, isNull }) =>
+        and(
+          eq(table.profileId, profile.id),
+          eq(table.email, user2.email.toLowerCase()),
+          isNull(table.acceptedOn),
+        ),
+    });
+
+    expect(invite1).toBeDefined();
+    expect(invite1?.accessRoleId).toBe(ROLES.ADMIN.id);
+
+    expect(invite2).toBeDefined();
+    expect(invite2?.accessRoleId).toBe(ROLES.MEMBER.id);
   });
 });
