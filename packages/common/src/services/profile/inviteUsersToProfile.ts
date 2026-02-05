@@ -199,7 +199,7 @@ export const inviteUsersToProfile = async ({
       emailsToInvite.push({
         email,
         authUserId: existingUser?.authUserId,
-        inviterName: profileUser?.name || user.email || 'A team member',
+        inviterName: profileUser.name || user.email || 'A team member',
         profileName: profile.name,
         inviteUrl: OPURLConfig('APP').ENV_URL,
         personalMessage,
