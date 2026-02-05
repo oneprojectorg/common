@@ -5,7 +5,7 @@ import { Sidebar, useSidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 import { usePress } from 'react-aria';
-import { LuHouse, LuUsers } from 'react-icons/lu';
+import { LuHouse, LuMessageCircle, LuUsers } from 'react-icons/lu';
 
 import { Link, usePathname, useTranslations } from '@/lib/i18n';
 
@@ -25,7 +25,7 @@ export const SidebarNav = () => {
         </NavLink>
         {decisionsTabEnabled && (
           <NavLink href="/decisions" active={pathname.startsWith('/decisions')}>
-            <LuUsers className="size-4" /> {t('Decisions')}
+            <LuMessageCircle className="size-4" /> {t('Decisions')}
           </NavLink>
         )}
       </nav>
