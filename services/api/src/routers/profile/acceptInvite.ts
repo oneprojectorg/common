@@ -6,9 +6,7 @@ import { z } from 'zod';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 export const acceptInviteRouter = router({
-  acceptInvite: commonAuthedProcedure({
-    rateLimit: { windowSize: 60, maxRequests: 10 },
-  })
+  acceptInvite: commonAuthedProcedure()
     .input(
       z.object({
         inviteId: z.string().uuid(),
