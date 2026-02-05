@@ -1,5 +1,5 @@
-import { db, eq } from '@op/db/client';
-import { EntityType, profileInvites, profileUsers } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { EntityType, profileInvites } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
@@ -45,9 +45,7 @@ describe.concurrent('profile.acceptInvite', () => {
     }
 
     // Track invite for cleanup
-    onTestFinished(async () => {
-      await db.delete(profileInvites).where(eq(profileInvites.id, invite.id));
-    });
+    testData.trackProfileInvite(invite.id);
 
     // Accept the invite as the invitee
     const { session } = await createIsolatedSession(invitee.email);
@@ -58,11 +56,7 @@ describe.concurrent('profile.acceptInvite', () => {
     });
 
     // Track created profileUser for cleanup
-    onTestFinished(async () => {
-      if (result?.id) {
-        await db.delete(profileUsers).where(eq(profileUsers.id, result.id));
-      }
-    });
+    testData.trackProfileUser(result.id);
 
     // Verify the profileUser was created
     expect(result).toBeDefined();
@@ -110,7 +104,11 @@ describe.concurrent('profile.acceptInvite', () => {
       caller.acceptInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
       }),
-    ).rejects.toThrow('Invite not found or already accepted');
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'CommonError',
+      },
+    });
   });
 
   it('should fail when invite is already accepted', async ({
@@ -144,9 +142,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    onTestFinished(async () => {
-      await db.delete(profileInvites).where(eq(profileInvites.id, invite.id));
-    });
+    testData.trackProfileInvite(invite.id);
 
     // Try to accept the already-accepted invite
     const { session } = await createIsolatedSession(user.email);
@@ -156,7 +152,11 @@ describe.concurrent('profile.acceptInvite', () => {
       caller.acceptInvite({
         inviteId: invite.id,
       }),
-    ).rejects.toThrow('Invite not found or already accepted');
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'CommonError',
+      },
+    });
   });
 
   it('should fail when user email does not match invite email', async ({
@@ -189,9 +189,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    onTestFinished(async () => {
-      await db.delete(profileInvites).where(eq(profileInvites.id, invite.id));
-    });
+    testData.trackProfileInvite(invite.id);
 
     // Try to accept an invite meant for a different email
     const { session } = await createIsolatedSession(user.email);
@@ -201,7 +199,11 @@ describe.concurrent('profile.acceptInvite', () => {
       caller.acceptInvite({
         inviteId: invite.id,
       }),
-    ).rejects.toThrow('This invite is for a different email address');
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+      },
+    });
   });
 
   it('should fail when user is already a member of the profile', async ({
@@ -236,9 +238,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    onTestFinished(async () => {
-      await db.delete(profileInvites).where(eq(profileInvites.id, invite.id));
-    });
+    testData.trackProfileInvite(invite.id);
 
     // Try to accept invite when already a member
     const { session } = await createIsolatedSession(existingMember.email);
@@ -248,7 +248,11 @@ describe.concurrent('profile.acceptInvite', () => {
       caller.acceptInvite({
         inviteId: invite.id,
       }),
-    ).rejects.toThrow('You are already a member of this profile');
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'CommonError',
+      },
+    });
   });
 
   it('should handle case-insensitive email matching', async ({
@@ -282,9 +286,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    onTestFinished(async () => {
-      await db.delete(profileInvites).where(eq(profileInvites.id, invite.id));
-    });
+    testData.trackProfileInvite(invite.id);
 
     // Accept invite - should work despite case difference
     const { session } = await createIsolatedSession(invitee.email);
@@ -295,11 +297,7 @@ describe.concurrent('profile.acceptInvite', () => {
     });
 
     // Track created profileUser for cleanup
-    onTestFinished(async () => {
-      if (result?.id) {
-        await db.delete(profileUsers).where(eq(profileUsers.id, result.id));
-      }
-    });
+    testData.trackProfileUser(result.id);
 
     expect(result).toBeDefined();
     expect(result.profileId).toBe(profile.id);
@@ -335,9 +333,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    onTestFinished(async () => {
-      await db.delete(profileInvites).where(eq(profileInvites.id, invite.id));
-    });
+    testData.trackProfileInvite(invite.id);
 
     // Accept the invite
     const { session } = await createIsolatedSession(invitee.email);
@@ -348,11 +344,7 @@ describe.concurrent('profile.acceptInvite', () => {
     });
 
     // Track created profileUser for cleanup
-    onTestFinished(async () => {
-      if (result?.id) {
-        await db.delete(profileUsers).where(eq(profileUsers.id, result.id));
-      }
-    });
+    testData.trackProfileUser(result.id);
 
     // Verify the ADMIN role was assigned
     const profileUserWithRoles = await db.query.profileUsers.findFirst({
