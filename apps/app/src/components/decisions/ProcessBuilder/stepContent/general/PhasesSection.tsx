@@ -1,5 +1,6 @@
 'use client';
 
+import { parseDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import {
   Accordion,
@@ -9,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@op/ui/Accordion';
+import { DatePicker } from '@op/ui/DatePicker';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
@@ -143,6 +145,8 @@ export const PhaseEditor = ({
   setPhases: (phases: Phase[]) => void;
   updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
 }) => {
+  const t = useTranslations();
+
   return (
     <Accordion allowsMultipleExpanded variant="unstyled">
       <Sortable
@@ -178,7 +182,7 @@ export const PhaseEditor = ({
               <hr />
               <div className="space-y-4 p-4">
                 <div>
-                  <label className="mb-1 block text-sm">Description</label>
+                  <label className="mb-1 block text-sm">{t('Description')}</label>
                   <textarea
                     rows={3}
                     value={phase.description ?? ''}
@@ -190,25 +194,25 @@ export const PhaseEditor = ({
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="mb-1 block text-sm">Start date</label>
-                    <input
-                      type="date"
-                      value={phase.startDate ?? ''}
-                      onChange={(e) =>
-                        updatePhase(phase.id, { startDate: e.target.value })
+                    <DatePicker
+                      label={t('Start date')}
+                      value={phase.startDate ? parseDate(phase.startDate) : undefined}
+                      onChange={(date) =>
+                        updatePhase(phase.id, {
+                          startDate: `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`,
+                        })
                       }
-                      className="w-full rounded-md border border-border px-3 py-2"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="mb-1 block text-sm">End date</label>
-                    <input
-                      type="date"
-                      value={phase.endDate ?? ''}
-                      onChange={(e) =>
-                        updatePhase(phase.id, { endDate: e.target.value })
+                    <DatePicker
+                      label={t('End date')}
+                      value={phase.endDate ? parseDate(phase.endDate) : undefined}
+                      onChange={(date) =>
+                        updatePhase(phase.id, {
+                          endDate: `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`,
+                        })
                       }
-                      className="w-full rounded-md border border-border px-3 py-2"
                     />
                   </div>
                 </div>
