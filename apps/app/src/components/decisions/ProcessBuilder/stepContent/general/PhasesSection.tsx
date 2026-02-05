@@ -147,21 +147,23 @@ export const PhaseEditor = ({
 }) => {
   const t = useTranslations();
 
-  // Safely parse a date string to DateValue
+  // Safely parse a date string (ISO datetime or YYYY-MM-DD) to DateValue
   const safeParseDateString = (dateStr: string | undefined) => {
     if (!dateStr) {
       return undefined;
     }
     try {
-      return parseDate(dateStr);
+      // Handle ISO datetime strings by extracting just the date part
+      const datePart = dateStr.split('T')[0];
+      return datePart ? parseDate(datePart) : undefined;
     } catch {
       return undefined;
     }
   };
 
-  // Format DateValue to ISO string (YYYY-MM-DD)
+  // Format DateValue to ISO datetime string
   const formatDateValue = (date: { year: number; month: number; day: number }) => {
-    return `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
+    return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
   return (
