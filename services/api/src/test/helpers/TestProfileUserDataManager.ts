@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import {
   allowList,
+  profileInvites,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -8,7 +9,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
 
@@ -69,6 +70,8 @@ export class TestProfileUserDataManager {
   private createdAuthUserIds: string[] = [];
   private createdProfileUserIds: string[] = [];
   private createdAllowListEmails: string[] = [];
+  private createdProfileInvites: Array<{ email: string; profileId: string }> =
+    [];
 
   constructor(
     testId: string,
@@ -268,6 +271,18 @@ export class TestProfileUserDataManager {
   }
 
   /**
+   * Tracks a profile invite for cleanup.
+   * Call this when testing invite flows that create profileInvites records.
+   */
+  trackProfileInvite(email: string, profileId: string): void {
+    this.ensureCleanupRegistered();
+    this.createdProfileInvites.push({
+      email: email.toLowerCase(),
+      profileId,
+    });
+  }
+
+  /**
    * Generates a unique email for test users.
    */
   private generateEmail(
@@ -302,28 +317,42 @@ export class TestProfileUserDataManager {
       throw new Error('Supabase admin test client not initialized');
     }
 
-    // 1. Delete allowList entries by exact emails
+    // 1. Delete profile invites by exact email+profileId combinations
+    if (this.createdProfileInvites.length > 0) {
+      for (const invite of this.createdProfileInvites) {
+        await db
+          .delete(profileInvites)
+          .where(
+            and(
+              eq(profileInvites.email, invite.email),
+              eq(profileInvites.profileId, invite.profileId),
+            ),
+          );
+      }
+    }
+
+    // 2. Delete allowList entries by exact emails
     if (this.createdAllowListEmails.length > 0) {
       await db
         .delete(allowList)
         .where(inArray(allowList.email, this.createdAllowListEmails));
     }
 
-    // 2. Delete profile users by exact IDs
+    // 4. Delete profile users by exact IDs
     if (this.createdProfileUserIds.length > 0) {
       await db
         .delete(profileUsers)
         .where(inArray(profileUsers.id, this.createdProfileUserIds));
     }
 
-    // 3. Delete profiles by exact IDs (cascades to profileUsers -> profileUserToAccessRoles)
+    // 5. Delete profiles by exact IDs (cascades to profileUsers -> profileUserToAccessRoles)
     if (this.createdProfileIds.length > 0) {
       await db
         .delete(profiles)
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 4. Delete auth users by exact IDs (cascades to users table)
+    // 6. Delete auth users by exact IDs (cascades to users table)
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
         this.createdAuthUserIds.map((userId) =>
