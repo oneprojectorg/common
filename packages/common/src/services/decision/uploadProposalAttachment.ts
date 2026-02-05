@@ -12,8 +12,8 @@ export interface UploadProposalAttachmentInput {
   fileSize: number;
   /** Supabase storage object ID from the upload */
   storageObjectId: string;
-  /** If provided, links attachment to proposal immediately */
-  proposalId?: string;
+  /** Links attachment to proposal */
+  proposalId: string;
 }
 
 export interface UploadProposalAttachmentResult {
@@ -35,7 +35,22 @@ export async function uploadProposalAttachment({
   user: User;
 }): Promise<UploadProposalAttachmentResult> {
   const { fileName, mimeType, fileSize, storageObjectId, proposalId } = input;
-  const profileId = await getCurrentProfileId(user.id);
+
+  // Fetch profile and proposal in parallel
+  const [profileId, proposal] = await Promise.all([
+    getCurrentProfileId(user.id),
+    db.query.proposals.findFirst({
+      where: { id: proposalId },
+    }),
+  ]);
+
+  if (!proposal) {
+    throw new CommonError('Proposal not found');
+  }
+
+  if (proposal.submittedByProfileId !== profileId) {
+    throw new UnauthorizedError('Only the proposal owner can add attachments');
+  }
 
   // Create attachment record in database
   const [attachment] = await db
@@ -53,14 +68,12 @@ export async function uploadProposalAttachment({
     throw new CommonError('Failed to create attachment record');
   }
 
-  // Link attachment to proposal if proposalId provided
-  if (proposalId) {
-    await linkAttachmentToProposal({
-      attachmentId: attachment.id,
-      proposalId,
-      profileId,
-    });
-  }
+  // Link attachment to proposal
+  await db.insert(proposalAttachments).values({
+    proposalId,
+    attachmentId: attachment.id,
+    uploadedBy: profileId,
+  });
 
   return {
     id: attachment.id,
@@ -68,37 +81,4 @@ export async function uploadProposalAttachment({
     mimeType,
     fileSize,
   };
-}
-
-/**
- * Links an existing attachment to a proposal with permission checks.
- */
-async function linkAttachmentToProposal({
-  attachmentId,
-  proposalId,
-  profileId,
-}: {
-  attachmentId: string;
-  proposalId: string;
-  profileId: string;
-}) {
-  // NOTE: Revisit after we introduce collaborative editing of proposals.
-  // Currently only the proposal owner can attach files.
-  const proposal = await db.query.proposals.findFirst({
-    where: { id: proposalId },
-  });
-
-  if (!proposal) {
-    throw new CommonError('Proposal not found');
-  }
-
-  if (proposal.submittedByProfileId !== profileId) {
-    throw new UnauthorizedError('Only the proposal owner can add attachments');
-  }
-
-  await db.insert(proposalAttachments).values({
-    proposalId,
-    attachmentId,
-    uploadedBy: profileId,
-  });
 }

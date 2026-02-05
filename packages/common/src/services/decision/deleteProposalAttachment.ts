@@ -19,30 +19,30 @@ export async function deleteProposalAttachment({
   proposalId: string;
   user: User;
 }) {
-  const profileId = await getCurrentProfileId(user.id);
-
-  // Verify the attachment link exists
-  const existingLink = await db.query.proposalAttachments.findFirst({
-    where: {
-      proposalId,
-      attachmentId,
-    },
-  });
+  // Fetch all data in parallel
+  const [profileId, existingLink, proposal] = await Promise.all([
+    getCurrentProfileId(user.id),
+    db.query.proposalAttachments.findFirst({
+      where: {
+        proposalId,
+        attachmentId,
+      },
+    }),
+    db.query.proposals.findFirst({
+      where: { id: proposalId },
+    }),
+  ]);
 
   if (!existingLink) {
     throw new CommonError('Attachment not found on this proposal');
   }
 
-  // NOTE: Revisit after we introduce collaborative editing of proposals.
-  // Currently only the proposal owner can delete attachments.
-  const proposal = await db.query.proposals.findFirst({
-    where: { id: proposalId },
-  });
-
   if (!proposal) {
     throw new CommonError('Proposal not found');
   }
 
+  // NOTE: Revisit after we introduce collaborative editing of proposals.
+  // Currently only the proposal owner can delete attachments.
   if (proposal.submittedByProfileId !== profileId) {
     throw new UnauthorizedError(
       'Only the proposal owner can delete attachments',

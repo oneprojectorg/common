@@ -29,15 +29,11 @@ export const uploadProposalAttachment = router({
         file: z.string(), // base64 encoded
         fileName: z.string(),
         mimeType: z.string(),
-        // Optional - if provided, links attachment to proposal immediately on upload
-        // Use for proposal attachments; omit for inline images in rich text content
-        proposalId: z.string().optional(),
+        proposalId: z.string(),
       }),
     )
     .output(
       z.object({
-        url: z.string(),
-        path: z.string(),
         id: z.string(),
         fileName: z.string(),
         mimeType: z.string(),
@@ -53,7 +49,7 @@ export const uploadProposalAttachment = router({
 
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new CommonError(
-          'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) and PDFs are allowed.',
+          'Unsupported file type. Allowed: PNG, JPEG, GIF, WebP, PDF, DOCX, XLSX.',
         );
       }
 
@@ -118,17 +114,7 @@ export const uploadProposalAttachment = router({
         throw new CommonError('Upload failed - no data returned');
       }
 
-      // Get signed URL
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
-          .from(bucket)
-          .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
-
-      if (signedUrlError || !signedUrlData) {
-        throw new CommonError('Could not get signed url');
-      }
-
-      // Create attachment record and optionally link to proposal
+      // Create attachment record and link to proposal
       const result = await uploadProposalAttachmentService({
         input: {
           fileName: sanitizedFileName,
@@ -141,8 +127,6 @@ export const uploadProposalAttachment = router({
       });
 
       return {
-        url: signedUrlData.signedUrl,
-        path: filePath,
         id: result.id,
         fileName: result.fileName,
         mimeType: result.mimeType,
