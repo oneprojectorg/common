@@ -29,9 +29,7 @@ export const uploadProposalAttachment = router({
         file: z.string(), // base64 encoded
         fileName: z.string(),
         mimeType: z.string(),
-        // Optional - if provided, links attachment to proposal immediately on upload
-        // Use for proposal attachments; omit for inline images in rich text content
-        proposalId: z.string().optional(),
+        proposalId: z.string(),
       }),
     )
     .output(

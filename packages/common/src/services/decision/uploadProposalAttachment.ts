@@ -12,8 +12,8 @@ export interface UploadProposalAttachmentInput {
   fileSize: number;
   /** Supabase storage object ID from the upload */
   storageObjectId: string;
-  /** If provided, links attachment to proposal immediately */
-  proposalId?: string;
+  /** Links attachment to proposal */
+  proposalId: string;
 }
 
 export interface UploadProposalAttachmentResult {
@@ -53,14 +53,12 @@ export async function uploadProposalAttachment({
     throw new CommonError('Failed to create attachment record');
   }
 
-  // Link attachment to proposal if proposalId provided
-  if (proposalId) {
-    await linkAttachmentToProposal({
-      attachmentId: attachment.id,
-      proposalId,
-      profileId,
-    });
-  }
+  // Link attachment to proposal
+  await linkAttachmentToProposal({
+    attachmentId: attachment.id,
+    proposalId,
+    profileId,
+  });
 
   return {
     id: attachment.id,
