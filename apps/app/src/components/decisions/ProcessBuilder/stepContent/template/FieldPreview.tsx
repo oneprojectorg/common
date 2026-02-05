@@ -84,7 +84,7 @@ export function FieldPreview({ field }: FieldPreviewProps) {
         </div>
       );
 
-    case 'file_upload':
+    case 'attachments':
       return (
         <div className="flex items-center justify-center rounded-md border border-dashed border-neutral-gray3 bg-white px-3 py-4 text-neutral-gray4">
           {placeholder}

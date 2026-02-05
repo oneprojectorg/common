@@ -1,15 +1,15 @@
 import type { IconType } from 'react-icons';
 import {
-  LuAlignJustify,
   LuAlignLeft,
   LuCalendar,
   LuChevronDown,
+  LuFilePlus,
   LuHash,
+  LuLetterText,
   LuListChecks,
   LuMic,
   LuSquare,
   LuToggleLeft,
-  LuUpload,
   LuVideo,
 } from 'react-icons/lu';
 
@@ -34,7 +34,7 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     placeholderKey: 'Short answer text',
   },
   long_text: {
-    icon: LuAlignJustify,
+    icon: LuLetterText,
     labelKey: 'Long text',
     placeholderKey: 'Long answer text',
   },
@@ -65,10 +65,10 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     placeholderKey: 'Yes or No',
   },
   // Other
-  file_upload: {
-    icon: LuUpload,
-    labelKey: 'File upload',
-    placeholderKey: 'Upload a file',
+  attachments: {
+    icon: LuFilePlus,
+    labelKey: 'Attachments',
+    placeholderKey: 'Attach files',
   },
   date: {
     icon: LuCalendar,
@@ -104,7 +104,7 @@ export const FIELD_CATEGORIES: FieldCategory[] = [
   {
     id: 'other',
     labelKey: 'Other',
-    types: ['file_upload', 'date', 'number', 'section'],
+    types: ['attachments', 'date', 'number', 'section'],
   },
 ];
 
