@@ -162,7 +162,11 @@ export const PhaseEditor = ({
   };
 
   // Format DateValue to ISO datetime string
-  const formatDateValue = (date: { year: number; month: number; day: number }) => {
+  const formatDateValue = (date: {
+    year: number;
+    month: number;
+    day: number;
+  }) => {
     return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
