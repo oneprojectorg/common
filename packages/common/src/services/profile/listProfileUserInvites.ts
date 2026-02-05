@@ -1,5 +1,9 @@
 import { and, db, eq, isNull, sql } from '@op/db/client';
-import { type AccessRole, profileInvites } from '@op/db/schema';
+import {
+  type AccessRole,
+  type ProfileInvite,
+  profileInvites,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -7,11 +11,23 @@ import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
 
+/**
+ * Query result type for profile invite with its access role relation.
+ * accessRole is NOT NULL in the schema, so it's always present.
+ */
+type ProfileInviteQueryResult = ProfileInvite & {
+  accessRole: AccessRole;
+};
+
 export type ProfileInviteMember = {
   id: string;
   email: string;
   profileId: string;
-  role: AccessRole | null;
+  role: {
+    id: string;
+    name: string;
+    description: string | null;
+  };
   createdAt: string | null;
 };
 
@@ -62,19 +78,19 @@ export const listProfileUserInvites = async ({
     ? and(baseCondition, searchFilter)
     : baseCondition;
 
-  const inviteResults = await db._query.profileInvites.findMany({
+  const inviteResults = (await db._query.profileInvites.findMany({
     where: whereClause,
     with: {
       accessRole: true,
     },
     orderBy: (table, { asc }) => [asc(table.email)],
-  });
+  })) as ProfileInviteQueryResult[];
 
   return inviteResults.map((invite) => ({
     id: invite.id,
     email: invite.email,
     profileId: invite.profileId,
-    role: invite.accessRole as unknown as AccessRole | null,
+    role: invite.accessRole,
     createdAt: invite.createdAt,
   }));
 };

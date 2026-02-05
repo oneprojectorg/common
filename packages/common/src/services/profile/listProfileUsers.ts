@@ -217,8 +217,8 @@ export const listProfileUsers = async ({
     // orderBy === 'role' - get first role name alphabetically (matching the ORDER BY subquery)
     // Use simple string comparison to match PostgreSQL's default collation
     const sortedRoles = [...lastResult.roles].sort((a, b) => {
-      const nameA = a.accessRole?.name ?? '';
-      const nameB = b.accessRole?.name ?? '';
+      const nameA = a.accessRole.name;
+      const nameB = b.accessRole.name;
       if (nameA < nameB) {
         return -1;
       }
@@ -227,7 +227,7 @@ export const listProfileUsers = async ({
       }
       return 0;
     });
-    const firstRoleName = sortedRoles[0]?.accessRole?.name ?? '';
+    const firstRoleName = sortedRoles[0]?.accessRole.name ?? '';
     return encodeCursor<ProfileUserCursor>({
       value: firstRoleName,
       tiebreaker: lastResult.email,
