@@ -39,6 +39,7 @@ const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
 
 export default function RolesSection({
   decisionProfileId,
+  instanceId,
   decisionName,
 }: SectionProps) {
   return (
@@ -46,6 +47,7 @@ export default function RolesSection({
       <div className="mx-auto max-w-5xl">
         <RolesSectionContent
           decisionProfileId={decisionProfileId}
+          instanceId={instanceId}
           decisionName={decisionName}
         />
       </div>
