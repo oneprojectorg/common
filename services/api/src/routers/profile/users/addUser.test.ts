@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import {
@@ -10,17 +10,32 @@ import {
 import { createCallerFactory } from '../../../trpcFactory';
 import { usersRouter } from './index';
 
+// Mock the event system to avoid Inngest API calls in tests
+vi.mock('@op/events', async () => {
+  const actual = await vi.importActual('@op/events');
+  return {
+    ...actual,
+    event: {
+      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
+    },
+  };
+});
+
 describe.concurrent('profile.users.addUser', () => {
   const createCaller = createCallerFactory(usersRouter);
 
-  it('should add a user to the profile', async ({ task, onTestFinished }) => {
+  it('should create an invite for an existing user (not add them directly)', async ({
+    task,
+    onTestFinished,
+  }) => {
     const testData = new TestProfileUserDataManager(task.id, onTestFinished);
     const { profile, adminUser } = await testData.createProfile({
       users: { admin: 1 },
     });
 
-    // Create a standalone user to be added
+    // Create a standalone user to be invited
     const standaloneUser = await testData.createStandaloneUser();
+    testData.trackProfileInvite(standaloneUser.email, profile.id);
 
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -31,31 +46,33 @@ describe.concurrent('profile.users.addUser', () => {
       roleIdsToAssign: [ROLES.MEMBER.id],
     });
 
+    // Should return the invited email (invite created, not added directly)
     expect(result).toBeDefined();
-    expect(result.invited).toBe(false);
-    if (result.invited === false) {
-      expect(result.profileUser.email).toBe(standaloneUser.email);
-    }
+    expect(result.email).toBe(standaloneUser.email.toLowerCase());
 
-    // Verify user was added to the profile
-    const addedUser = await db._query.profileUsers.findFirst({
+    // Verify profile_invites record was created
+    const invite = await db._query.profileInvites.findFirst({
+      where: (table, { eq, and, isNull }) =>
+        and(
+          eq(table.profileId, profile.id),
+          eq(table.email, standaloneUser.email.toLowerCase()),
+          isNull(table.acceptedOn),
+        ),
+    });
+
+    expect(invite).toBeDefined();
+    expect(invite?.accessRoleId).toBe(ROLES.MEMBER.id);
+
+    // Verify user was NOT added to profileUsers directly
+    const profileUser = await db._query.profileUsers.findFirst({
       where: (table, { eq, and }) =>
         and(
           eq(table.profileId, profile.id),
-          eq(table.email, standaloneUser.email),
+          eq(table.email, standaloneUser.email.toLowerCase()),
         ),
-      with: {
-        roles: {
-          with: {
-            accessRole: true,
-          },
-        },
-      },
     });
 
-    expect(addedUser).toBeDefined();
-    expect(addedUser?.roles).toHaveLength(1);
-    expect(addedUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
+    expect(profileUser).toBeUndefined();
   });
 
   it('should fail when user is already a member', async ({
@@ -112,7 +129,7 @@ describe.concurrent('profile.users.addUser', () => {
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
-  it('should add new email to allowList with personalMessage', async ({
+  it('should create invite for new email with personalMessage and add to allowList', async ({
     task,
     onTestFinished,
   }) => {
@@ -124,6 +141,7 @@ describe.concurrent('profile.users.addUser', () => {
     // Generate a new email that doesn't exist in the system
     const newEmail = `new-user-${task.id}@oneproject.org`;
     testData.trackAllowListEmail(newEmail);
+    testData.trackProfileInvite(newEmail, profile.id);
 
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -137,28 +155,129 @@ describe.concurrent('profile.users.addUser', () => {
     });
 
     expect(result).toBeDefined();
-    expect(result.invited).toBe(true);
-    if (result.invited === true) {
-      expect(result.email).toBe(newEmail.toLowerCase());
-    }
+    expect(result.email).toBe(newEmail.toLowerCase());
 
-    // Verify the allowList entry was created with the personalMessage
+    // Verify the allowList entry was created (for new users who need to sign up)
     const allowListEntry = await db._query.allowList.findFirst({
       where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
     });
 
     expect(allowListEntry).toBeDefined();
-    expect(allowListEntry?.metadata).toBeDefined();
 
-    const metadata = allowListEntry?.metadata as {
-      personalMessage?: string;
-      inviteType?: string;
-      roleIds?: string[];
-      profileId?: string;
-    };
-    expect(metadata.personalMessage).toBe(personalMessage);
-    expect(metadata.inviteType).toBe('profile');
-    expect(metadata.roleIds).toEqual([ROLES.MEMBER.id]);
-    expect(metadata.profileId).toBe(profile.id);
+    // Verify profile_invites record was created with the personalMessage
+    const invite = await db._query.profileInvites.findFirst({
+      where: (table, { eq, and, isNull }) =>
+        and(
+          eq(table.profileId, profile.id),
+          eq(table.email, newEmail.toLowerCase()),
+          isNull(table.acceptedOn),
+        ),
+    });
+
+    expect(invite).toBeDefined();
+    expect(invite?.message).toBe(personalMessage);
+    expect(invite?.accessRoleId).toBe(ROLES.MEMBER.id);
+  });
+
+  it('should fail when existing user already has a pending invite', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create a standalone user to be invited
+    const standaloneUser = await testData.createStandaloneUser();
+    testData.trackProfileInvite(standaloneUser.email, profile.id);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // First invite should succeed
+    const result = await caller.addUser({
+      profileId: profile.id,
+      inviteeEmail: standaloneUser.email,
+      roleIdsToAssign: [ROLES.MEMBER.id],
+    });
+
+    expect(result.email).toBe(standaloneUser.email.toLowerCase());
+
+    // Second invite should fail
+    await expect(
+      caller.addUser({
+        profileId: profile.id,
+        inviteeEmail: standaloneUser.email,
+        roleIdsToAssign: [ROLES.MEMBER.id],
+      }),
+    ).rejects.toThrow(/already has a pending invite/i);
+  });
+
+  it('should fail when new user already has a pending invite', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Generate a new email that doesn't exist in the system
+    const newEmail = `new-user-pending-${task.id}@oneproject.org`;
+    testData.trackAllowListEmail(newEmail);
+    testData.trackProfileInvite(newEmail, profile.id);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // First invite should succeed
+    const result = await caller.addUser({
+      profileId: profile.id,
+      inviteeEmail: newEmail,
+      roleIdsToAssign: [ROLES.MEMBER.id],
+    });
+
+    expect(result.email).toBe(newEmail.toLowerCase());
+
+    // Second invite should fail
+    await expect(
+      caller.addUser({
+        profileId: profile.id,
+        inviteeEmail: newEmail,
+        roleIdsToAssign: [ROLES.MEMBER.id],
+      }),
+    ).rejects.toThrow(/already has a pending invite/i);
+  });
+
+  it('should not add existing user to allowList', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create a standalone user to be invited
+    const standaloneUser = await testData.createStandaloneUser();
+    testData.trackProfileInvite(standaloneUser.email, profile.id);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await caller.addUser({
+      profileId: profile.id,
+      inviteeEmail: standaloneUser.email,
+      roleIdsToAssign: [ROLES.MEMBER.id],
+    });
+
+    // Verify existing user was NOT added to allowList (they already have an account)
+    const allowListEntry = await db._query.allowList.findFirst({
+      where: (table, { eq }) =>
+        eq(table.email, standaloneUser.email.toLowerCase()),
+    });
+
+    expect(allowListEntry).toBeUndefined();
   });
 });
