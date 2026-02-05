@@ -6,7 +6,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect, useMemo, useRef } from 'react';
 
-import { useCollaborativeDoc } from '../RichTextEditor/CollaborativeDocContext';
+import { useCollaborativeDoc } from './CollaborativeDocContext';
 import { getPlainTextExtensions } from './plainTextExtensions';
 
 interface CollaborativeTitleFieldProps {

@@ -22,13 +22,15 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import {
-  CollaborativeDocProvider,
-  CollaborativeEditor,
-  CollaborativePresence,
   RichTextEditorToolbar,
   getProposalExtensions,
 } from '../RichTextEditor';
-import { CollaborativeTitleField } from '../collaboration/CollaborativeTitleField';
+import {
+  CollaborativeDocProvider,
+  CollaborativeEditor,
+  CollaborativePresence,
+  CollaborativeTitleField,
+} from '../collaboration';
 import { ProposalAttachments } from './ProposalAttachments';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';

@@ -1,19 +1,3 @@
-// Collaborative document context (shared ydoc/provider for all fields)
-export {
-  CollaborativeDocProvider,
-  useCollaborativeDoc,
-} from './CollaborativeDocContext';
-
-// Collaborative editor (real-time sync via TipTap Cloud)
-export {
-  CollaborativeEditor,
-  type CollaborativeEditorProps,
-  type CollaborativeEditorRef,
-} from './CollaborativeEditor';
-
-// Collaborative presence indicator (avatar stack)
-export { CollaborativePresence } from './CollaborativePresence';
-
 // App-specific RichTextEditor with toolbar (non-collaborative)
 export {
   RichTextEditorWithToolbar,
