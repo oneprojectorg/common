@@ -455,6 +455,8 @@
   "Allow proposal editing": "Autoriser la modification des propositions",
   "Enable voting": "Activer le vote",
   "Allow vote changes": "Autoriser les changements de vote",
+  "Start date": "Date de début",
+  "End date": "Date de fin",
   "Proposal Categories": "Catégories de propositions",
   "Voting": "Vote",
   "Form Builder": "Constructeur de formulaire",
