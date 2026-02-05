@@ -1,6 +1,6 @@
 import { cache } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
-import type { ProfileUser } from '@op/db/schema';
+import type { Profile, ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { NormalizedRole } from 'access-zones';
@@ -24,6 +24,7 @@ type OrgUserWithNormalizedRoles = {
 
 type ProfileUserWithNormalizedRoles = ProfileUser & {
   roles: NormalizedRole[];
+  profile: Profile;
 };
 
 // gets a user assuming that the user is authenticated
@@ -100,6 +101,7 @@ export const getProfileAccessUser = async ({
       where: (table, { eq }) =>
         and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
       with: {
+        profile: true,
         roles: {
           with: {
             accessRole: {
@@ -129,6 +131,7 @@ export const getProfileAccessUser = async ({
     const { roles: _, ...profileUserWithoutRoles } = profileUser;
     return {
       ...profileUserWithoutRoles,
+      profile: profileUser.profile as Profile,
       roles: normalizedRoles,
     };
   };

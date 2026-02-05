@@ -119,7 +119,7 @@ export const inviteUsersToProfile = async ({
   };
 
   // Compute repeated values once (same for every invitation)
-  const inviterName = profileUser.name || user.email || 'A team member';
+  const inviterName = profileUser.profile.name || user.email || 'A team member';
   const profileName = profile.name;
   const inviteUrl = OPURLConfig('APP').ENV_URL;
 
