@@ -1,5 +1,5 @@
 import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
-import { profileUsers, profiles, users } from '@op/db/schema';
+import { profileInvites, profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -178,12 +178,12 @@ export const listProfileUsers = async ({
     limit: limit + 1,
   });
 
-  // Check if there are more results
-  const hasMore = profileUserResults.length > limit;
+  // Check if there are more active members
+  const hasMoreActiveMembers = profileUserResults.length > limit;
   const resultItems = profileUserResults.slice(0, limit);
 
-  // Transform results
-  const items = resultItems.map((result) => {
+  // Transform active member results
+  const activeItems: ProfileUserWithRelations[] = resultItems.map((result) => {
     const { serviceUser, roles, ...baseProfileUser } =
       result as ProfileUserQueryResult;
     const userProfile = serviceUser?.profile;
@@ -194,14 +194,72 @@ export const listProfileUsers = async ({
       about: userProfile?.bio || baseProfileUser.about,
       profile: userProfile ?? null,
       roles: roles.map((roleJunction) => roleJunction.accessRole),
+      status: 'active' as const,
     };
   });
 
-  // Build next cursor from last item
-  // Cursor value must match the primary ORDER BY column
+  // If this is the last page of active members, also fetch pending invites
+  let pendingItems: ProfileUserWithRelations[] = [];
+  if (!hasMoreActiveMembers) {
+    // Build pending invites search filter
+    const pendingSearchFilter =
+      query && query.length >= 2
+        ? or(
+            sql`${profileInvites.email} ILIKE ${`%${query}%`}`,
+            sql`${query} <% ${profileInvites.email}`,
+          )
+        : undefined;
+
+    const pendingInvites = await db._query.profileInvites.findMany({
+      where: and(
+        eq(profileInvites.profileId, profileId),
+        sql`${profileInvites.acceptedOn} IS NULL`,
+        pendingSearchFilter,
+      ),
+      orderBy: (table, { asc }) => [asc(table.email)],
+    });
+
+    // Fetch roles for pending invites
+    const roleIds = [...new Set(pendingInvites.map((i) => i.accessRoleId))];
+    const roles =
+      roleIds.length > 0
+        ? await db.query.accessRoles.findMany({
+            where: { id: { in: roleIds } },
+          })
+        : [];
+    const rolesById = new Map(roles.map((r) => [r.id, r]));
+
+    // Transform pending invites to match ProfileUserWithRelations shape
+    pendingItems = pendingInvites.map((invite) => {
+      const role = rolesById.get(invite.accessRoleId);
+      return {
+        // Required ProfileUser fields with placeholder/null values
+        id: invite.id,
+        authUserId: '',
+        profileId: invite.profileId,
+        email: invite.email,
+        name: null,
+        about: null,
+        createdAt: invite.createdAt,
+        updatedAt: invite.createdAt,
+        deletedAt: null,
+        // Relations
+        profile: null,
+        roles: role ? [role] : [],
+        // Status fields
+        status: 'pending' as const,
+        inviteId: invite.id,
+      };
+    });
+  }
+
+  // Combine items - active members first, then pending invites
+  const allItems = [...activeItems, ...pendingItems];
+
+  // Build next cursor from last active member (pending invites don't use cursor pagination)
   const lastResult = resultItems[resultItems.length - 1];
   const buildNextCursor = (): string | null => {
-    if (!hasMore || !lastResult) {
+    if (!hasMoreActiveMembers || !lastResult) {
       return null;
     }
 
@@ -239,7 +297,7 @@ export const listProfileUsers = async ({
   const nextCursor = buildNextCursor();
 
   return {
-    items,
+    items: allItems,
     next: nextCursor,
   };
 };

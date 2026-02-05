@@ -79,6 +79,8 @@ export type Profile = z.infer<typeof profileEncoder>;
 
 // Profile user encoders - using createSelectSchema for base fields
 export const profileUserEncoder = createSelectSchema(profileUsers).extend({
+  // Override authUserId to allow empty string for pending invites
+  authUserId: z.string(),
   // Override timestamp fields to handle both string and Date, and allow null/undefined
   createdAt: z.union([z.string(), z.date()]).nullish(),
   updatedAt: z.union([z.string(), z.date()]).nullish(),
@@ -99,6 +101,19 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
     .nullable(),
   // Roles using shared minimal encoder
   roles: z.array(accessRoleMinimalEncoder),
+  // Status field: 'active' for members, 'pending' for invites
+  status: z.enum(['active', 'pending']).optional(),
+  // Invite ID for pending invites (used for revoking)
+  inviteId: z.uuid().optional(),
+});
+
+// Profile invite encoder for pending invitations
+export const profileInviteEncoder = z.object({
+  id: z.uuid(),
+  email: z.string(),
+  profileId: z.uuid(),
+  role: accessRoleMinimalEncoder.nullable(),
+  createdAt: z.string().nullable(),
 });
 
 export type ProfileUser = z.infer<typeof profileUserEncoder>;

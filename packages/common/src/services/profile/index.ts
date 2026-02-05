@@ -5,6 +5,7 @@ export * from './listProfiles';
 export * from './profileRelationships';
 export * from './inviteUsersToProfile';
 export * from './listProfileUsers';
+export * from './listProfileUserInvites';
 export * from './addProfileUser';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
