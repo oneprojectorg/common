@@ -19,9 +19,11 @@ export const acceptProfileInvite = async ({
   user: User;
 }) => {
   // 1. Find the pending invite (acceptedOn is null means pending)
-  const invite = await db._query.profileInvites.findFirst({
-    where: (table, { eq, and, isNull }) =>
-      and(eq(table.id, inviteId), isNull(table.acceptedOn)),
+  const invite = await db.query.profileInvites.findFirst({
+    where: {
+      id: inviteId,
+      acceptedOn: { isNull: true },
+    },
   });
 
   if (!invite) {
@@ -34,9 +36,11 @@ export const acceptProfileInvite = async ({
   }
 
   // 3. Check user isn't already a member
-  const existingMembership = await db._query.profileUsers.findFirst({
-    where: (table, { eq, and }) =>
-      and(eq(table.profileId, invite.profileId), eq(table.authUserId, user.id)),
+  const existingMembership = await db.query.profileUsers.findFirst({
+    where: {
+      profileId: invite.profileId,
+      authUserId: user.id,
+    },
   });
 
   if (existingMembership) {

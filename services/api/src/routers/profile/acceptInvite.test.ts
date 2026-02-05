@@ -1,7 +1,6 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import { EntityType, profileInvites, profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
@@ -72,6 +71,7 @@ describe.concurrent('profile.acceptInvite', () => {
     expect(result.email).toBe(invitee.email);
 
     // Verify the role was assigned
+    // Note: Using v1 API here because profileUsers.roles relation isn't defined in v2
     const profileUserWithRoles = await db._query.profileUsers.findFirst({
       where: (table, { eq }) => eq(table.id, result.id),
       with: {
@@ -87,8 +87,8 @@ describe.concurrent('profile.acceptInvite', () => {
     expect(profileUserWithRoles?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
 
     // Verify the invite was marked as accepted
-    const updatedInvite = await db._query.profileInvites.findFirst({
-      where: (table, { eq }) => eq(table.id, invite.id),
+    const updatedInvite = await db.query.profileInvites.findFirst({
+      where: eq(profileInvites.id, invite.id),
     });
 
     expect(updatedInvite?.acceptedOn).not.toBeNull();
@@ -356,6 +356,7 @@ describe.concurrent('profile.acceptInvite', () => {
     });
 
     // Verify the ADMIN role was assigned
+    // Note: Using v1 API here because profileUsers.roles relation isn't defined in v2
     const profileUserWithRoles = await db._query.profileUsers.findFirst({
       where: (table, { eq }) => eq(table.id, result.id),
       with: {
