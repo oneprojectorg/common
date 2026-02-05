@@ -46,9 +46,8 @@ describe.concurrent('profile.users.addUser', () => {
       roleIdsToAssign: [ROLES.MEMBER.id],
     });
 
-    // Should return invited: true (not add directly)
+    // Should return the invited email (invite created, not added directly)
     expect(result).toBeDefined();
-    expect(result.invited).toBe(true);
     expect(result.email).toBe(standaloneUser.email.toLowerCase());
 
     // Verify profile_invites record was created
@@ -156,7 +155,6 @@ describe.concurrent('profile.users.addUser', () => {
     });
 
     expect(result).toBeDefined();
-    expect(result.invited).toBe(true);
     expect(result.email).toBe(newEmail.toLowerCase());
 
     // Verify the allowList entry was created (for new users who need to sign up)
@@ -204,7 +202,7 @@ describe.concurrent('profile.users.addUser', () => {
       roleIdsToAssign: [ROLES.MEMBER.id],
     });
 
-    expect(result.invited).toBe(true);
+    expect(result.email).toBe(standaloneUser.email.toLowerCase());
 
     // Second invite should fail
     await expect(
@@ -240,7 +238,7 @@ describe.concurrent('profile.users.addUser', () => {
       roleIdsToAssign: [ROLES.MEMBER.id],
     });
 
-    expect(result.invited).toBe(true);
+    expect(result.email).toBe(newEmail.toLowerCase());
 
     // Second invite should fail
     await expect(

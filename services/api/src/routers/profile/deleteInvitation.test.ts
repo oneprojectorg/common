@@ -155,12 +155,13 @@ describe.concurrent('profile.deleteInvitation', () => {
       await createTestContextWithSession(session1),
     );
 
+    // Implementation throws "not found" to avoid leaking info about invites in other profiles
     await expect(
       deleteCaller.deleteInvitation({
         inviteId: invite!.id,
         profileId: profile1.id,
       }),
-    ).rejects.toThrow(/does not belong to this profile/i);
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('should fail when invite is already accepted', async ({
