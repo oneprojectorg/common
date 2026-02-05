@@ -80,20 +80,6 @@ export async function teardown() {
       entry[1] instanceof PgTable && !seededTables.has(getTableName(entry[1])),
   );
 
-  const errors: string[] = [];
-
-  // Check non-seeded tables are empty
-  for (const [, table] of tables) {
-    const tableName = getTableName(table);
-    const [result] = await db.select({ count: count() }).from(table);
-    const tableCount = result?.count ?? 0;
-
-    if (tableCount !== 0) {
-      errors.push(`Expected 0 rows in "${tableName}" but found ${tableCount}`);
-    }
-  }
-
-  // Verify seeded tables only contain expected seed data
   const accessZoneIds = ACCESS_ZONES.map((z) => z.id);
   const accessRoleIds = ACCESS_ROLES.map((r) => r.id);
   const DECISION_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
@@ -136,6 +122,18 @@ export async function teardown() {
     .where(inArray(schema.accessZones.id, accessZoneIds));
 
   console.log('✅ Deseeding completed');
+
+  // Check non-seeded tables are empty AFTER deseeding
+  const errors: string[] = [];
+  for (const [, table] of tables) {
+    const tableName = getTableName(table);
+    const [result] = await db.select({ count: count() }).from(table);
+    const tableCount = result?.count ?? 0;
+
+    if (tableCount !== 0) {
+      errors.push(`Expected 0 rows in "${tableName}" but found ${tableCount}`);
+    }
+  }
 
   if (errors.length > 0) {
     throw new Error(
