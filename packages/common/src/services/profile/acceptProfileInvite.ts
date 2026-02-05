@@ -30,7 +30,7 @@ export const acceptProfileInvite = async ({
     throw new CommonError('Invite not found or already accepted');
   }
 
-  // 2. Verify user's email matches (case-insensitive)
+  // TODO: We verify the user's email here. We should verify this only if an existing member doesn't exist. So we should store the profileId of the invitee. This comes in a separate PR updating the table with a migration
   if (invite.email.toLowerCase() !== user.email?.toLowerCase()) {
     throw new UnauthorizedError('This invite is for a different email address');
   }
