@@ -1,10 +1,5 @@
 import { db } from '@op/db/client';
-import {
-  EntityType,
-  profileInvites,
-  profileUserToAccessRoles,
-  profileUsers,
-} from '@op/db/schema';
+import { EntityType, profileInvites, profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
