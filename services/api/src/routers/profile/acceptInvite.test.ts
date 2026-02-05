@@ -71,9 +71,8 @@ describe.concurrent('profile.acceptInvite', () => {
     expect(result.email).toBe(invitee.email);
 
     // Verify the role was assigned
-    // Note: Using v1 API here because profileUsers.roles relation isn't defined in v2
-    const profileUserWithRoles = await db._query.profileUsers.findFirst({
-      where: (table, { eq }) => eq(table.id, result.id),
+    const profileUserWithRoles = await db.query.profileUsers.findFirst({
+      where: { id: result.id },
       with: {
         roles: {
           with: {
@@ -356,9 +355,8 @@ describe.concurrent('profile.acceptInvite', () => {
     });
 
     // Verify the ADMIN role was assigned
-    // Note: Using v1 API here because profileUsers.roles relation isn't defined in v2
-    const profileUserWithRoles = await db._query.profileUsers.findFirst({
-      where: (table, { eq }) => eq(table.id, result.id),
+    const profileUserWithRoles = await db.query.profileUsers.findFirst({
+      where: { id: result.id },
       with: {
         roles: {
           with: {
