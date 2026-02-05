@@ -2,6 +2,7 @@
 
 import { parseDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
+import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import {
   Accordion,
   AccordionContent,
@@ -26,27 +27,13 @@ import type { SectionProps } from '../../contentRegistry';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
-interface PhaseRules {
-  proposals?: { submit?: boolean; edit?: boolean };
-  voting?: { submit?: boolean; edit?: boolean };
-}
-
-interface Phase {
-  id: string;
-  name: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  rules?: PhaseRules;
-}
-
 export function PhasesSectionContent({
   instanceId,
   decisionProfileId,
 }: SectionProps) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const initialPhases = instance.process?.processSchema?.phases ?? [];
-  const [phases, setPhases] = useState<Phase[]>(initialPhases);
+  const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
   const t = useTranslations();
 
   // Store and mutation for saving
@@ -71,7 +58,7 @@ export function PhasesSectionContent({
     data: phases,
     enabled: isDraft,
     onLocalSave: useCallback(
-      (data: Phase[]) => {
+      (data: PhaseDefinition[]) => {
         // Update localStorage via Zustand
         for (const phase of data) {
           setPhaseData(decisionProfileId, phase.id, {
@@ -86,7 +73,7 @@ export function PhasesSectionContent({
       [decisionProfileId, setPhaseData],
     ),
     onApiSave: useCallback(
-      async (data: Phase[]) => {
+      async (data: PhaseDefinition[]) => {
         await updateInstance.mutateAsync({
           instanceId,
           phases: data.map((phase) => ({
@@ -95,7 +82,7 @@ export function PhasesSectionContent({
             description: phase.description,
             startDate: phase.startDate,
             endDate: phase.endDate,
-            settings: { rules: phase.rules },
+            rules: phase.rules,
           })),
         });
       },
@@ -111,7 +98,7 @@ export function PhasesSectionContent({
     ),
   });
 
-  const updatePhase = (phaseId: string, updates: Partial<Phase>) => {
+  const updatePhase = (phaseId: string, updates: Partial<PhaseDefinition>) => {
     setPhases((prev) =>
       prev.map((phase) =>
         phase.id === phaseId ? { ...phase, ...updates } : phase,
@@ -145,9 +132,9 @@ export const PhaseEditor = ({
   setPhases,
   updatePhase,
 }: {
-  phases: Phase[];
-  setPhases: (phases: Phase[]) => void;
-  updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
+  phases: PhaseDefinition[];
+  setPhases: (phases: PhaseDefinition[]) => void;
+  updatePhase: (phaseId: string, updates: Partial<PhaseDefinition>) => void;
 }) => {
   const t = useTranslations();
 
@@ -273,8 +260,8 @@ const PhaseControls = ({
   phase,
   onUpdate,
 }: {
-  phase: Phase;
-  onUpdate: (updates: Partial<Phase>) => void;
+  phase: PhaseDefinition;
+  onUpdate: (updates: Partial<PhaseDefinition>) => void;
 }) => {
   const t = useTranslations();
 

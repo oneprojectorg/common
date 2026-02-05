@@ -86,6 +86,7 @@ export const getInstanceRouter = router({
         return processInstanceWithSchemaEncoder.parse({
           ...instance,
           instanceData: instance.instanceData,
+          process: instance.process,
         });
       } catch (error) {
         if (error instanceof NotFoundError) {

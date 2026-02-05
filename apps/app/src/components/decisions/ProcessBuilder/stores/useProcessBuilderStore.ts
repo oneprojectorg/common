@@ -9,7 +9,7 @@
  * 1. Form components read initial values from this store (after hydration)
  * 2. Auto-save writes debounced form values back to this store
  * 3. Store persists to localStorage automatically via Zustand middleware
- * 4. On form submission, data is sent to the API (TODO: not yet implemented)
+ * 4. On form submission, data is sent to the API
  *
  * ## Hydration
  * This store uses `skipHydration: true` to prevent race conditions in SSR.
@@ -27,69 +27,50 @@
  *
  * ## Structure
  * Data is keyed by `decisionId` to support multiple concurrent drafts:
- * - `instances[decisionId]` - Form data (name, description, config, phases)
- * - `saveStatus[decisionId]` - UI save indicator state
+ * - `instances[decisionId]` - Form data aligned with backend InstanceData
+ * - `saveStates[decisionId]` - UI save indicator state
  */
-import type { Option } from '@op/ui/MultiSelectComboBox';
+import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-// ============ Instance Data Types ============
+// ============ Store-specific Types ============
 
 /**
- * Process-level configuration.
- * These settings apply to the entire decision process.
+ * Extended instance data for form state.
+ * Includes fields stored separately in the DB but tracked together for form convenience.
+ *
+ * Backend-aligned fields (from InstanceData):
+ * - budget, hideBudget, fieldValues, currentPhaseId, stateData, phases
+ *
+ * Form-only fields (not yet in backend, stored in localStorage only):
+ * - steward, objective, enableCategories, includeReview, isPrivate
  */
-export interface ProcessConfig {
-  // Process Stewardship
-  stewardProfileId?: string;
-  focusAreas?: Option[];
-  objective?: string;
+export interface FormInstanceData extends Partial<InstanceData> {
+  /** Instance name (stored in processInstances.name, not instanceData) */
+  name?: string;
+  /** Instance description (stored in processInstances.description, not instanceData) */
+  description?: string;
 
-  // Process Details
-  budget?: number | null;
+  // Form-only fields (not in backend InstanceData yet)
+  // TODO: Add these to backend schema when ready to persist
+  /** Profile ID of the steward */
+  stewardProfileId?: string;
+  /** Process objective description */
+  objective?: string;
+  /** Total budget available */
+  budget?: number;
+  /** Whether to hide budget from members */
   hideBudget?: boolean;
+  /** Whether to organize proposals into categories */
   enableCategories?: boolean;
-  multiPhase?: boolean;
+  /** Whether to include proposal review phase */
   includeReview?: boolean;
+  /** Whether to keep process private */
   isPrivate?: boolean;
 }
 
-/**
- * Phase-specific settings.
- * The `settings` object is dynamic and defined by the schema.
- */
-export interface PhaseData {
-  name?: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  // Phase rules for controlling behavior (proposals, voting)
-  rules?: {
-    proposals?: { submit?: boolean; edit?: boolean };
-    voting?: { submit?: boolean; edit?: boolean };
-  };
-  // Dynamic settings based on schema (e.g., budget, maxProposalsPerMember, maxVotesPerMember)
-  settings?: Record<string, unknown>;
-}
-
-/**
- * Complete instance data structure.
- * Mirrors the database instanceData JSONB structure.
- */
-export interface InstanceData {
-  // Top-level instance fields (stored separately in DB but tracked here for form state)
-  name?: string;
-  description?: string;
-
-  // Process-level configuration
-  config?: ProcessConfig;
-
-  // Phase-specific data, keyed by phase ID (e.g., 'submission', 'review', 'voting', 'results')
-  phases?: Record<string, PhaseData>;
-}
-
-// ============ Store Types ============
+// ============ UI-only Types ============
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -98,27 +79,31 @@ interface SaveState {
   savedAt?: Date;
 }
 
+// ============ Store Interface ============
+
 interface ProcessBuilderState {
   // Instance data keyed by decisionId
-  instances: Record<string, InstanceData>;
+  instances: Record<string, FormInstanceData>;
   // Save state keyed by decisionId
   saveStates: Record<string, SaveState>;
 
   // Actions for instance data
-  setInstanceData: (decisionId: string, data: Partial<InstanceData>) => void;
-  getInstanceData: (decisionId: string) => InstanceData | undefined;
+  setInstanceData: (
+    decisionId: string,
+    data: Partial<FormInstanceData>,
+  ) => void;
+  getInstanceData: (decisionId: string) => FormInstanceData | undefined;
 
-  // Actions for config (process-level settings)
-  setConfig: (decisionId: string, config: Partial<ProcessConfig>) => void;
-  getConfig: (decisionId: string) => ProcessConfig | undefined;
-
-  // Actions for phase data
+  // Actions for phase data (operates on phases array)
   setPhaseData: (
     decisionId: string,
     phaseId: string,
-    data: Partial<PhaseData>,
+    data: Partial<InstancePhaseData>,
   ) => void;
-  getPhaseData: (decisionId: string, phaseId: string) => PhaseData | undefined;
+  getPhaseData: (
+    decisionId: string,
+    phaseId: string,
+  ) => InstancePhaseData | undefined;
 
   // Actions for save state
   setSaveStatus: (decisionId: string, status: SaveStatus) => void;
@@ -152,43 +137,43 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
 
       getInstanceData: (decisionId) => get().instances[decisionId],
 
-      // Config actions
-      setConfig: (decisionId, config) =>
-        set((state) => ({
-          instances: {
-            ...state.instances,
-            [decisionId]: {
-              ...state.instances[decisionId],
-              config: {
-                ...state.instances[decisionId]?.config,
-                ...config,
-              },
-            },
-          },
-        })),
-
-      getConfig: (decisionId) => get().instances[decisionId]?.config,
-
-      // Phase data actions
+      // Phase data actions (operates on phases array)
       setPhaseData: (decisionId, phaseId, data) =>
-        set((state) => ({
-          instances: {
-            ...state.instances,
-            [decisionId]: {
-              ...state.instances[decisionId],
-              phases: {
-                ...state.instances[decisionId]?.phases,
-                [phaseId]: {
-                  ...state.instances[decisionId]?.phases?.[phaseId],
-                  ...data,
-                },
+        set((state) => {
+          const instance = state.instances[decisionId];
+          const existingPhases = instance?.phases ?? [];
+
+          // Find existing phase or create new entry
+          const phaseIndex = existingPhases.findIndex(
+            (p) => p.phaseId === phaseId,
+          );
+
+          let updatedPhases: InstancePhaseData[];
+          if (phaseIndex >= 0) {
+            // Update existing phase
+            updatedPhases = existingPhases.map((phase, idx) =>
+              idx === phaseIndex ? { ...phase, ...data } : phase,
+            );
+          } else {
+            // Add new phase
+            updatedPhases = [...existingPhases, { phaseId, ...data }];
+          }
+
+          return {
+            instances: {
+              ...state.instances,
+              [decisionId]: {
+                ...instance,
+                phases: updatedPhases,
               },
             },
-          },
-        })),
+          };
+        }),
 
-      getPhaseData: (decisionId, phaseId) =>
-        get().instances[decisionId]?.phases?.[phaseId],
+      getPhaseData: (decisionId, phaseId) => {
+        const phases = get().instances[decisionId]?.phases;
+        return phases?.find((p) => p.phaseId === phaseId);
+      },
 
       // Save state actions
       setSaveStatus: (decisionId, status) =>
