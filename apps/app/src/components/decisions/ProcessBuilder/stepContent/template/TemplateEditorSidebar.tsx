@@ -36,7 +36,11 @@ export function TemplateEditorSidebar({
   const t = useTranslations();
 
   return (
-    <Sidebar label={t('Template editor sidebar')} className="border-r" side={side}>
+    <Sidebar
+      label={t('Template editor sidebar')}
+      className="border-r"
+      side={side}
+    >
       <SidebarContent fields={fields} onAddField={onAddField} />
     </Sidebar>
   );
