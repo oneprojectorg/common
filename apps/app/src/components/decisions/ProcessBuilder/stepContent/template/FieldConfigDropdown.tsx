@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { DragHandle, Sortable } from '@op/ui/Sortable';
+import { DragHandle, Sortable, type SortableItem } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
 import { useEffect, useRef } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
@@ -13,8 +13,8 @@ interface FieldConfigDropdownProps {
   onOptionsChange: (options: string[]) => void;
 }
 
-interface OptionItem {
-  id: string;
+/** Internal type for sortable options */
+interface OptionItem extends SortableItem {
   value: string;
 }
 
