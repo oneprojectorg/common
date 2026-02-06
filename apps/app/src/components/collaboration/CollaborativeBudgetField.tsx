@@ -9,17 +9,20 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
-/** Yjs-synced budget shape — currency + amount as an atomic value */
+/**
+ * Yjs-synced budget shape — currency + amount as an atomic value
+ * TODO: the backend part will be done separately once we have more clarity how it's going to be used.
+ */
 interface BudgetValue {
   currency: string;
   amount: number;
 }
 
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_CURRENCY_SYMBOL = '$';
 
-/** Map currency codes to their display symbol */
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
+  USD: DEFAULT_CURRENCY_SYMBOL,
 };
 
 interface CollaborativeBudgetFieldProps {
@@ -61,7 +64,8 @@ export function CollaborativeBudgetField({
   const [isRevealed, setIsRevealed] = useState(initialValue !== null);
   const showInput = isRevealed || budget !== null;
   const currencySymbol =
-    CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ?? '$';
+    CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ??
+    DEFAULT_CURRENCY_SYMBOL;
 
   // Auto-focus when input first appears via the "Add budget" button
   const justRevealedRef = useRef(false);
