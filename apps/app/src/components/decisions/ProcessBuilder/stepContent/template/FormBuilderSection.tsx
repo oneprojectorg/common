@@ -63,7 +63,11 @@ function FormBuilderSkeleton() {
  * Locked field definitions (without labels - labels are added with translations).
  */
 const LOCKED_FIELD_DEFINITIONS = [
-  { id: 'proposal-title', type: 'short_text' as const, labelKey: 'Proposal title' },
+  {
+    id: 'proposal-title',
+    type: 'short_text' as const,
+    labelKey: 'Proposal title',
+  },
   { id: 'category', type: 'dropdown' as const, labelKey: 'Category' },
 ] as const;
 
@@ -71,7 +75,11 @@ const LOCKED_FIELD_DEFINITIONS = [
  * Default sortable field definitions (without labels - labels are added with translations).
  */
 const DEFAULT_SORTABLE_FIELD_DEFINITIONS = [
-  { id: 'proposal-summary', type: 'long_text' as const, labelKey: 'Proposal summary' },
+  {
+    id: 'proposal-summary',
+    type: 'long_text' as const,
+    labelKey: 'Proposal summary',
+  },
 ] as const;
 
 export default function FormBuilderSection({
@@ -105,8 +113,9 @@ export default function FormBuilderSection({
     [t],
   );
 
-  const [sortableFields, setSortableFields] =
-    useState<FormField[]>(defaultSortableFields);
+  const [sortableFields, setSortableFields] = useState<FormField[]>(
+    defaultSortableFields,
+  );
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Sidebar is always open on desktop, toggleable on mobile
@@ -200,23 +209,6 @@ export default function FormBuilderSection({
     [],
   );
 
-  const handleFieldSelect = useCallback((fieldId: string) => {
-    const fieldElement = document.querySelector(
-      `[data-field-id="${fieldId}"]`,
-    ) as HTMLElement | null;
-    if (fieldElement) {
-      fieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Focus the first focusable element within the card (the label input)
-      const focusable = fieldElement.querySelector(
-        'input, button, [tabindex]:not([tabindex="-1"])',
-      ) as HTMLElement | null;
-      if (focusable) {
-        // Small delay to allow scroll to complete
-        setTimeout(() => focusable.focus(), 300);
-      }
-    }
-  }, []);
-
   // Show skeleton while store is hydrating
   if (!hasHydrated) {
     return <FormBuilderSkeleton />;
@@ -235,7 +227,6 @@ export default function FormBuilderSection({
         <FormBuilderSidebar
           fields={allFields}
           onAddField={handleAddField}
-          onFieldSelect={handleFieldSelect}
           side={isMobile ? 'right' : 'left'}
         />
 

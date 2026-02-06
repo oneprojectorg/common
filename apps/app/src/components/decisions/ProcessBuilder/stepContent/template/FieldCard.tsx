@@ -105,10 +105,7 @@ export function FieldCard({
   // Locked fields render as static cards
   if (field.locked) {
     return (
-      <div
-        data-field-id={field.id}
-        className="flex flex-col gap-2 rounded-lg border bg-neutral-offWhite p-4"
-      >
+      <div className="flex flex-col gap-2 rounded-lg border bg-neutral-offWhite p-4">
         <div className="flex items-center gap-2">
           <div className="flex size-6 items-center justify-center text-neutral-gray4">
             <LuLock size={16} />
@@ -133,7 +130,6 @@ export function FieldCard({
 
   return (
     <div
-      data-field-id={field.id}
       className={cn(
         'rounded-lg border bg-white p-4',
         isDragging && 'opacity-50',

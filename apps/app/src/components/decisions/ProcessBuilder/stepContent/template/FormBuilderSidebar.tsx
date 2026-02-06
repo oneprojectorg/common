@@ -11,7 +11,6 @@ import type { FieldType, FormField } from './types';
 interface FormBuilderSidebarProps {
   fields: FormField[];
   onAddField: (type: FieldType) => void;
-  onFieldSelect?: (fieldId: string) => void;
   side?: 'left' | 'right';
 }
 
@@ -32,18 +31,13 @@ export function FormBuilderMobileTrigger() {
 export function FormBuilderSidebar({
   fields,
   onAddField,
-  onFieldSelect,
   side,
 }: FormBuilderSidebarProps) {
   const t = useTranslations();
 
   return (
     <Sidebar label={t('Form builder sidebar')} className="border-r" side={side}>
-      <SidebarContent
-        fields={fields}
-        onAddField={onAddField}
-        onFieldSelect={onFieldSelect}
-      />
+      <SidebarContent fields={fields} onAddField={onAddField} />
     </Sidebar>
   );
 }
@@ -54,20 +48,12 @@ export function FormBuilderSidebar({
 function SidebarContent({
   fields,
   onAddField,
-  onFieldSelect,
-}: FormBuilderSidebarProps) {
+}: Omit<FormBuilderSidebarProps, 'side'>) {
   const t = useTranslations();
   const { setOpen, isMobile } = useSidebar();
 
   const handleAddField = (type: FieldType) => {
     onAddField(type);
-    if (isMobile) {
-      setOpen(false);
-    }
-  };
-
-  const handleFieldSelect = (fieldId: string) => {
-    onFieldSelect?.(fieldId);
     if (isMobile) {
       setOpen(false);
     }
@@ -89,14 +75,10 @@ function SidebarContent({
             const Icon = getFieldIcon(field.type);
             return (
               <li key={field.id}>
-                <button
-                  type="button"
-                  onClick={() => handleFieldSelect(field.id)}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-neutral-charcoal hover:bg-neutral-gray1"
-                >
+                <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-neutral-charcoal">
                   <Icon size={16} className="shrink-0 text-neutral-gray4" />
                   <span className="truncate">{field.label}</span>
-                </button>
+                </div>
               </li>
             );
           })}
