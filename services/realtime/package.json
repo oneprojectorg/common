@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@op/common": "workspace:*",
-    "centrifuge": "^5.5.2",
+    "@supabase/supabase-js": "^2.49.3",
     "jsonwebtoken": "^9.0.2",
     "zod": "catalog:"
   },

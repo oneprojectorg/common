@@ -1395,9 +1395,9 @@ importers:
       '@op/common':
         specifier: workspace:*
         version: link:../../packages/common
-      centrifuge:
-        specifier: ^5.5.2
-        version: 5.5.2
+      '@supabase/supabase-js':
+        specifier: ^2.49.3
+        version: 2.49.3
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -5824,9 +5824,6 @@ packages:
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
-
-  centrifuge@5.5.2:
-    resolution: {integrity: sha512-ewr0sYidOWKevUq9WyaddlYSg3q2Xmxc+OLl5xjV6WFTWOb0IChJjdNaUhkqL5JbFCsIe/eo3KXinKrm7JwUcA==}
 
   chai@5.2.1:
     resolution: {integrity: sha512-5nFxhUrX0PqtyogoYOA8IPswy5sZFTOsBFl/9bNsmDLgsxYTzSZQJDPppDnZPTQbzSEm0hqGjWPzRemQCYbD6A==}
@@ -14760,11 +14757,6 @@ snapshots:
   caseless@0.12.0: {}
 
   ccount@2.0.1: {}
-
-  centrifuge@5.5.2:
-    dependencies:
-      events: 3.3.0
-      protobufjs: 7.5.4
 
   chai@5.2.1:
     dependencies:
