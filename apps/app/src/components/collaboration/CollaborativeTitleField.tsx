@@ -15,7 +15,6 @@ import { useCollaborativeDoc } from './CollaborativeDocContext';
 interface CollaborativeTitleFieldProps {
   placeholder?: string;
   onChange?: (text: string) => void;
-  className?: string;
 }
 
 /**
@@ -24,7 +23,6 @@ interface CollaborativeTitleFieldProps {
 export function CollaborativeTitleField({
   placeholder = 'Untitled Proposal',
   onChange,
-  className = '',
 }: CollaborativeTitleFieldProps) {
   const { ydoc, provider, user } = useCollaborativeDoc();
 
@@ -55,7 +53,8 @@ export function CollaborativeTitleField({
     extensions,
     editorProps: {
       attributes: {
-        class: `h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal focus:outline-none ${className}`,
+        class:
+          'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal focus:outline-none',
       },
       handleKeyDown: (_view, event) => {
         if (event.key === 'Enter') {
