@@ -1,20 +1,14 @@
 import { db } from '@op/db/client';
-import {
-  profileUserToAccessRoles,
-  profileUsers,
-  profiles,
-  users,
-} from '@op/db/schema';
+import { allowList } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 
+import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-  createTestUser,
-  supabaseTestAdminClient,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 import { inviteProfileUserRouter } from './invite';
@@ -30,127 +24,45 @@ vi.mock('@op/events', async () => {
   };
 });
 
-describe.skip('Profile Invite Integration Tests', () => {
+describe('Profile Invite Integration Tests', () => {
   const createCaller = createCallerFactory(inviteProfileUserRouter);
 
   it('should add existing user to profile when invited', async ({
     task,
     onTestFinished,
   }) => {
-    const testId = task.id;
-
-    // Track created resources for cleanup
-    const createdProfileIds: string[] = [];
-    const createdAuthUserIds: string[] = [];
-
-    // Register cleanup
-    onTestFinished(async () => {
-      // Clean up profile users first (due to foreign keys)
-      for (const profileId of createdProfileIds) {
-        await db
-          .delete(profileUsers)
-          .where(eq(profileUsers.profileId, profileId));
-      }
-
-      // Clean up profiles
-      for (const profileId of createdProfileIds) {
-        await db.delete(profiles).where(eq(profiles.id, profileId));
-      }
-
-      // Clean up auth users
-      for (const authUserId of createdAuthUserIds) {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUserId);
-        await db.delete(users).where(eq(users.authUserId, authUserId));
-      }
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
     });
 
-    // 1. Create a profile
-    const [profile] = await db
-      .insert(profiles)
-      .values({
-        name: `Test Profile ${testId}`,
-        slug: `test-profile-${testId}-${randomUUID()}`,
-      })
-      .returning();
+    // Create a standalone user to be invited
+    const invitee = await testData.createStandaloneUser();
 
-    if (!profile) {
-      throw new Error('Failed to create profile');
-    }
-    createdProfileIds.push(profile.id);
+    // Track the allowList entry that will be created by the invite
+    testData.trackAllowListEmail(invitee.email);
 
-    // 2. Create admin user who will send invites
-    const adminEmail = `admin-${testId}@oneproject.org`;
-    const adminAuthUser = await createTestUser(adminEmail).then(
-      (res) => res.user,
-    );
-
-    if (!adminAuthUser) {
-      throw new Error('Failed to create admin auth user');
-    }
-    createdAuthUserIds.push(adminAuthUser.id);
-
-    // Wait for trigger to create user record, then fetch it
-    const adminUserRecord = await db._query.users.findFirst({
-      where: eq(users.authUserId, adminAuthUser.id),
-    });
-
-    if (!adminUserRecord) {
-      throw new Error('Failed to find admin user record');
-    }
-
-    // Create admin as profileUser with admin role
-    const [adminProfileUser] = await db
-      .insert(profileUsers)
-      .values({
-        authUserId: adminAuthUser.id,
-        profileId: profile.id,
-        email: adminEmail,
-        name: 'Admin User',
-      })
-      .returning();
-
-    if (!adminProfileUser) {
-      throw new Error('Failed to create admin profile user');
-    }
-
-    // Assign admin role to profile user
-    await db.insert(profileUserToAccessRoles).values({
-      profileUserId: adminProfileUser.id,
-      accessRoleId: ROLES.ADMIN.id,
-    });
-
-    // 3. Create user to be invited
-    const inviteeEmail = `invitee-${testId}@oneproject.org`;
-    const inviteeAuthUser = await createTestUser(inviteeEmail).then(
-      (res) => res.user,
-    );
-
-    if (!inviteeAuthUser) {
-      throw new Error('Failed to create invitee auth user');
-    }
-    createdAuthUserIds.push(inviteeAuthUser.id);
-
-    // 4. Create session as admin and call invite endpoint
-    const { session } = await createIsolatedSession(adminEmail);
+    // Create session as admin and call invite endpoint
+    const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.invite({
-      emails: [inviteeEmail],
+      emails: [invitee.email],
       roleId: ROLES.MEMBER.id,
       profileId: profile.id,
     });
 
-    // 5. Verify result
+    // Verify result
     expect(result.success).toBe(true);
-    expect(result.details.successful).toContain(inviteeEmail);
+    expect(result.details.successful).toContain(invitee.email);
     expect(result.details.failed).toHaveLength(0);
 
-    // 6. Verify profileUser was created
+    // Verify profileUser was created
     const createdProfileUser = await db._query.profileUsers.findFirst({
       where: (table, { eq, and }) =>
         and(
           eq(table.profileId, profile.id),
-          eq(table.authUserId, inviteeAuthUser.id),
+          eq(table.authUserId, invitee.authUserId),
         ),
       with: {
         roles: {
@@ -162,7 +74,7 @@ describe.skip('Profile Invite Integration Tests', () => {
     });
 
     expect(createdProfileUser).toBeDefined();
-    expect(createdProfileUser?.email).toBe(inviteeEmail);
+    expect(createdProfileUser?.email).toBe(invitee.email);
     expect(createdProfileUser?.roles).toHaveLength(1);
     expect(createdProfileUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
   });
@@ -171,112 +83,22 @@ describe.skip('Profile Invite Integration Tests', () => {
     task,
     onTestFinished,
   }) => {
-    const testId = task.id;
-
-    const createdProfileIds: string[] = [];
-    const createdAuthUserIds: string[] = [];
-
-    onTestFinished(async () => {
-      // Clean up profile users first (due to foreign keys)
-      for (const profileId of createdProfileIds) {
-        await db
-          .delete(profileUsers)
-          .where(eq(profileUsers.profileId, profileId));
-      }
-
-      // Clean up profiles
-      for (const profileId of createdProfileIds) {
-        await db.delete(profiles).where(eq(profiles.id, profileId));
-      }
-
-      // Clean up auth users
-      for (const authUserId of createdAuthUserIds) {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUserId);
-        await db.delete(users).where(eq(users.authUserId, authUserId));
-      }
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
     });
 
-    // Create profile
-    const [profile] = await db
-      .insert(profiles)
-      .values({
-        name: `Test Profile ${testId}`,
-        slug: `test-profile-${testId}-${randomUUID()}`,
-      })
-      .returning();
-
-    if (!profile) {
-      throw new Error('Failed to create profile');
+    const memberUser = memberUsers[0];
+    if (!memberUser) {
+      throw new Error('Expected memberUser to be defined');
     }
-    createdProfileIds.push(profile.id);
-
-    // Create admin user
-    const adminEmail = `admin-${testId}@oneproject.org`;
-    const adminAuthUser = await createTestUser(adminEmail).then(
-      (res) => res.user,
-    );
-
-    if (!adminAuthUser) {
-      throw new Error('Failed to create admin auth user');
-    }
-    createdAuthUserIds.push(adminAuthUser.id);
-
-    const [adminProfileUser] = await db
-      .insert(profileUsers)
-      .values({
-        authUserId: adminAuthUser.id,
-        profileId: profile.id,
-        email: adminEmail,
-        name: 'Admin User',
-      })
-      .returning();
-
-    if (!adminProfileUser) {
-      throw new Error('Failed to create admin profile user');
-    }
-
-    await db.insert(profileUserToAccessRoles).values({
-      profileUserId: adminProfileUser.id,
-      accessRoleId: ROLES.ADMIN.id,
-    });
-
-    // Create user who is already a member
-    const memberEmail = `member-${testId}@oneproject.org`;
-    const memberAuthUser = await createTestUser(memberEmail).then(
-      (res) => res.user,
-    );
-
-    if (!memberAuthUser) {
-      throw new Error('Failed to create member auth user');
-    }
-    createdAuthUserIds.push(memberAuthUser.id);
-
-    // Add them as existing member
-    const [existingMember] = await db
-      .insert(profileUsers)
-      .values({
-        authUserId: memberAuthUser.id,
-        profileId: profile.id,
-        email: memberEmail,
-        name: 'Member User',
-      })
-      .returning();
-
-    if (!existingMember) {
-      throw new Error('Failed to create existing member');
-    }
-
-    await db.insert(profileUserToAccessRoles).values({
-      profileUserId: existingMember.id,
-      accessRoleId: ROLES.MEMBER.id,
-    });
 
     // Try to invite existing member
-    const { session } = await createIsolatedSession(adminEmail);
+    const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.invite({
-      emails: [memberEmail],
+      emails: [memberUser.email],
       roleId: ROLES.MEMBER.id,
       profileId: profile.id,
     });
@@ -285,6 +107,138 @@ describe.skip('Profile Invite Integration Tests', () => {
     expect(result.success).toBe(false);
     expect(result.details.successful).toHaveLength(0);
     expect(result.details.failed).toHaveLength(1);
+    expect(result.details.failed[0]?.reason).toContain('already a member');
+  });
+
+  it('should fail when non-admin tries to invite', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+
+    const memberUser = memberUsers[0];
+    if (!memberUser) {
+      throw new Error('Expected memberUser to be defined');
+    }
+
+    // Create a standalone user to be invited
+    const invitee = await testData.createStandaloneUser();
+
+    // Create session as member (not admin) and try to invite
+    const { session } = await createIsolatedSession(memberUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.invite({
+        emails: [invitee.email],
+        roleId: ROLES.MEMBER.id,
+        profileId: profile.id,
+      }),
+    ).rejects.toThrow(/not authenticated/i);
+  });
+
+  it('should add new email to allowList when user does not exist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Generate an email that doesn't exist in the system
+    const newEmail = `new-user-${task.id}-${randomUUID().slice(0, 6)}@example.com`;
+
+    // Track the allowList entry for cleanup
+    testData.trackAllowListEmail(newEmail);
+
+    // Create session as admin and invite the new email
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.invite({
+      emails: [newEmail],
+      roleId: ROLES.MEMBER.id,
+      profileId: profile.id,
+    });
+
+    // Should succeed - email added to allowList and invite sent
+    expect(result.success).toBe(true);
+    expect(result.details.successful).toContain(newEmail);
+    expect(result.details.failed).toHaveLength(0);
+
+    // Verify allowList entry was created
+    const allowListEntry = await db._query.allowList.findFirst({
+      where: eq(allowList.email, newEmail),
+    });
+
+    expect(allowListEntry).toBeDefined();
+    expect(allowListEntry?.email).toBe(newEmail);
+  });
+
+  it('should fail when invalid roleId is provided', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const invitee = await testData.createStandaloneUser();
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Use a random UUID that doesn't correspond to any role
+    const invalidRoleId = randomUUID();
+
+    await expect(
+      caller.invite({
+        emails: [invitee.email],
+        roleId: invalidRoleId,
+        profileId: profile.id,
+      }),
+    ).rejects.toThrow(/Invalid role/i);
+  });
+
+  it('should handle batch invites with partial success', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+
+    const existingMember = memberUsers[0];
+    if (!existingMember) {
+      throw new Error('Expected existingMember to be defined');
+    }
+
+    // Create a new user who can be successfully invited
+    const newInvitee = await testData.createStandaloneUser();
+    testData.trackAllowListEmail(newInvitee.email);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Invite both: one should succeed (newInvitee), one should fail (existingMember)
+    const result = await caller.invite({
+      emails: [newInvitee.email, existingMember.email],
+      roleId: ROLES.MEMBER.id,
+      profileId: profile.id,
+    });
+
+    // Partial success - one succeeded, one failed
+    expect(result.success).toBe(true); // At least one succeeded
+    expect(result.details.successful).toContain(newInvitee.email);
+    expect(result.details.successful).not.toContain(existingMember.email);
+    expect(result.details.failed).toHaveLength(1);
+    expect(result.details.failed[0]?.email).toBe(existingMember.email);
     expect(result.details.failed[0]?.reason).toContain('already a member');
   });
 });

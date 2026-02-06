@@ -101,4 +101,14 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
   roles: z.array(accessRoleMinimalEncoder),
 });
 
+// Profile invite encoder for pending invitations
+// accessRoleId is NOT NULL in schema, so role is always present
+export const profileInviteEncoder = z.object({
+  id: z.uuid(),
+  email: z.string(),
+  profileId: z.uuid(),
+  role: accessRoleMinimalEncoder,
+  createdAt: z.string().nullable(),
+});
+
 export type ProfileUser = z.infer<typeof profileUserEncoder>;

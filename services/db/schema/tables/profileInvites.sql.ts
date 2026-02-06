@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { relations } from 'drizzle-orm/_relations';
 import {
   index,
   pgTable,
@@ -65,3 +66,19 @@ export const profileInvites = pgTable(
 );
 
 export type ProfileInvite = typeof profileInvites.$inferSelect;
+
+export const profileInvitesRelations = relations(profileInvites, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [profileInvites.profileId],
+    references: [profiles.id],
+  }),
+  accessRole: one(accessRoles, {
+    fields: [profileInvites.accessRoleId],
+    references: [accessRoles.id],
+  }),
+  inviter: one(profiles, {
+    fields: [profileInvites.invitedBy],
+    references: [profiles.id],
+    relationName: 'profileInvite_inviter',
+  }),
+}));
