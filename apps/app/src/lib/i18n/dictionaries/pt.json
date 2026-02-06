@@ -537,5 +537,6 @@
   "Support your proposal with relevant documents like budgets or supporting research.": "Apoie sua proposta com documentos relevantes como orçamentos ou pesquisa de suporte.",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Aceita PDF, DOCX, XLSX até {size}MB",
   "{count}/{max} attachments added": "{count}/{max} anexos adicionados",
-  "Drag to reorder": "Arraste para reordenar"
+  "Drag to reorder": "Arraste para reordenar",
+  "Max {amount}": "Máx {amount}"
 }

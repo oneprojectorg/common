@@ -120,7 +120,9 @@ export function CollaborativeBudgetField({
       prefixText={currencySymbol}
       inputProps={{
         placeholder: budgetCapAmount
-          ? `Max ${budgetCapAmount.toLocaleString()}`
+          ? t('Max {amount}', {
+              amount: budgetCapAmount.toLocaleString(),
+            })
           : t('Enter amount'),
       }}
       fieldClassName="w-auto"
