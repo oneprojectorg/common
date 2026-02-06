@@ -13,7 +13,7 @@ const buttonStyle = tv({
     variant: {
       primary: '',
       icon: 'flex gap-2 text-sm sm:text-base',
-      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
+      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal shadow-none hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     color: {
       primary:

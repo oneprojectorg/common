@@ -25,6 +25,11 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: DEFAULT_CURRENCY_SYMBOL,
 };
 
+/** Formats a number as a locale-aware currency string (e.g. 5000 → "$5,000") */
+function formatBudgetDisplay(amount: number, currencySymbol: string): string {
+  return `${currencySymbol}${amount.toLocaleString()}`;
+}
+
 interface CollaborativeBudgetFieldProps {
   budgetCapAmount?: number;
   initialValue?: number | null;
@@ -35,6 +40,9 @@ interface CollaborativeBudgetFieldProps {
  * Collaborative budget input synced via Yjs Y.Map.
  * Stores `{ currency, amount }` in the shared doc for future
  * multi-currency support.
+ *
+ * Displays as a pill when a value exists, switching to an inline
+ * NumberField on click for editing.
  */
 export function CollaborativeBudgetField({
   budgetCapAmount,
@@ -63,21 +71,18 @@ export function CollaborativeBudgetField({
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  const [isRevealed, setIsRevealed] = useState(initialValue !== null);
-  const showInput = isRevealed || budget !== null;
+  const [isEditing, setIsEditing] = useState(false);
   const budgetAmount = budget?.amount ?? null;
   const currencySymbol =
     CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ??
     DEFAULT_CURRENCY_SYMBOL;
 
-  // Auto-focus when input first appears via the "Add budget" button
-  const justRevealedRef = useRef(false);
+  // Auto-focus when switching to edit mode
   useEffect(() => {
-    if (justRevealedRef.current && budgetInputRef.current) {
+    if (isEditing && budgetInputRef.current) {
       budgetInputRef.current.focus();
-      justRevealedRef.current = false;
     }
-  });
+  }, [isEditing]);
 
   const handleChange = (value: number | null) => {
     if (value === null) {
@@ -99,19 +104,33 @@ export function CollaborativeBudgetField({
     onChangeRef.current?.(budgetAmount);
   }, [budgetAmount]);
 
-  const handleReveal = () => {
-    justRevealedRef.current = true;
-    setIsRevealed(true);
+  const handleStartEditing = () => {
+    setIsEditing(true);
   };
 
-  if (!showInput) {
+  const handleBlur = () => {
+    setIsEditing(false);
+  };
+
+  // No value and not editing → "Add budget" pill
+  if (budgetAmount === null && !isEditing) {
     return (
-      <Button variant="pill" color="pill" onPress={handleReveal}>
+      <Button variant="pill" color="pill" onPress={handleStartEditing}>
         {t('Add budget')}
       </Button>
     );
   }
 
+  // Has a value and not editing → display as pill
+  if (budgetAmount !== null && !isEditing) {
+    return (
+      <Button variant="pill" color="pill" onPress={handleStartEditing}>
+        {formatBudgetDisplay(budgetAmount, currencySymbol)}
+      </Button>
+    );
+  }
+
+  // Editing mode → inline NumberField
   return (
     <NumberField
       ref={budgetInputRef}
@@ -124,6 +143,7 @@ export function CollaborativeBudgetField({
               amount: budgetCapAmount.toLocaleString(),
             })
           : t('Enter amount'),
+        onBlur: handleBlur,
       }}
       fieldClassName="w-auto"
     />
