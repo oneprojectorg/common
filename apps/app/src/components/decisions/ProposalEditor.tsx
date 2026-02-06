@@ -37,6 +37,12 @@ import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
+interface ProposalDraftFields {
+  title: string;
+  category: string | null;
+  budget: number | null;
+}
+
 /** Handles tRPC validation errors from mutation responses */
 function handleMutationError(
   error: { data?: unknown; message?: string },
@@ -85,18 +91,31 @@ export function ProposalEditor({
   const utils = trpc.useUtils();
   const { user } = useUser();
 
-  const [title, setTitle] = useState('');
-  const titleRef = useRef('');
-  const categoryRef = useRef<string | null>(null);
-  const budgetRef = useRef<number | null>(null);
+  const parsedProposalData = useMemo(
+    () =>
+      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
+    [isEditMode, proposal],
+  );
+
+  const initialDraft = useMemo<ProposalDraftFields>(
+    () => ({
+      title: parsedProposalData?.title ?? '',
+      category: parsedProposalData?.category ?? null,
+      budget: parsedProposalData?.budget ?? null,
+    }),
+    [
+      parsedProposalData?.title,
+      parsedProposalData?.category,
+      parsedProposalData?.budget,
+    ],
+  );
+
+  const [draft, setDraft] = useState<ProposalDraftFields>(initialDraft);
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const initializedRef = useRef(false);
-
-  // Check if editing a draft (should show info modal and use submitProposal)
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
   const collaborationDocId = useMemo(() => {
@@ -109,30 +128,25 @@ export function ProposalEditor({
     return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
   }, [proposal?.proposalData, proposal?.id, instance.id]);
 
-  // Editor extensions - memoized with collaborative flag
   const editorExtensions = useMemo(
     () => getProposalExtensions({ collaborative: true }),
     [],
   );
 
-  // Extract template data from the instance
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
   const proposalInfoContent = instance.instanceData?.fieldValues
     ?.proposalInfoContent as string | undefined;
 
-  // Get categories from database
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId: instance.id,
   });
   const { categories } = categoriesData;
 
-  // Extract budget config from current phase settings or legacy template
   const { budgetCapAmount, isBudgetRequired } = useMemo(() => {
     let cap: number | undefined;
-    let required = true; // Default to required
+    let required = true;
 
-    // New schema: get budget from current phase settings
     const currentPhaseId = instance.instanceData?.currentPhaseId;
     const currentPhaseData = instance.instanceData?.phases?.find(
       (p) => p.phaseId === currentPhaseId,
@@ -146,6 +160,36 @@ export function ProposalEditor({
     }
 
     // Fallback to instance data fieldValues
+    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
+    if (
+      proposalTemplate &&
+      typeof proposalTemplate === 'object' &&
+      'properties' in proposalTemplate
+    ) {
+      const properties = proposalTemplate.properties;
+      if (
+        properties &&
+        typeof properties === 'object' &&
+        'budget' in properties
+      ) {
+        const budgetProp = properties.budget;
+        if (
+          budgetProp &&
+          typeof budgetProp === 'object' &&
+          'maximum' in budgetProp
+        ) {
+          cap = budgetProp.maximum as number;
+        }
+      }
+
+      if (
+        'required' in proposalTemplate &&
+        Array.isArray(proposalTemplate.required)
+      ) {
+        required = proposalTemplate.required.includes('budget');
+      }
+    }
+
     if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
       cap = instance.instanceData.fieldValues.budgetCapAmount as number;
     }
@@ -153,13 +197,6 @@ export function ProposalEditor({
     return { budgetCapAmount: cap, isBudgetRequired: required };
   }, [instance]);
 
-  const parsedProposalData = useMemo(
-    () =>
-      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
-    [isEditMode, proposal],
-  );
-
-  // Mutations
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
       posthog?.capture('submit_proposal_success', {
@@ -193,44 +230,50 @@ export function ProposalEditor({
     },
   });
 
-  const debouncedAutoSave = useDebouncedCallback(() => {
-    if (!proposal) {
-      return;
-    }
+  const draftRef = useRef<ProposalDraftFields>(initialDraft);
 
-    const currentData = parseProposalData(proposal.proposalData);
-
-    autoSaveMutation.mutate({
-      proposalId: proposal.id,
-      data: {
-        proposalData: {
-          ...currentData,
-          collaborationDocId,
-          title: titleRef.current,
-          category: categoryRef.current ?? undefined,
-          budget: budgetRef.current ?? undefined,
-        },
-      },
-    });
-  }, 1500);
-
-  // Initialize title from existing proposal data
   useEffect(() => {
-    if (
-      isEditMode &&
-      proposal &&
-      parsedProposalData &&
-      !initializedRef.current
-    ) {
-      if (parsedProposalData.title) {
-        titleRef.current = parsedProposalData.title;
-        setTitle(parsedProposalData.title);
-      }
-      initializedRef.current = true;
-    }
-  }, [isEditMode, proposal, parsedProposalData]);
+    draftRef.current = draft;
+  }, [draft]);
 
-  // Show info modal for new proposals or drafts
+  useEffect(() => {
+    draftRef.current = initialDraft;
+    setDraft(initialDraft);
+  }, [initialDraft]);
+
+  const buildProposalData = useCallback(
+    (nextDraft: ProposalDraftFields): ProposalDataInput => {
+      const serverData = parseProposalData(proposal?.proposalData);
+      return {
+        ...serverData,
+        collaborationDocId,
+        title: nextDraft.title,
+        category: nextDraft.category ?? undefined,
+        budget: nextDraft.budget ?? undefined,
+      };
+    },
+    [proposal?.proposalData, collaborationDocId],
+  );
+
+  const saveFields = useCallback(
+    (nextDraft?: ProposalDraftFields) => {
+      if (!proposal) {
+        return;
+      }
+      const draftToPersist = nextDraft ?? draftRef.current;
+
+      autoSaveMutation.mutate({
+        proposalId: proposal.id,
+        data: {
+          proposalData: buildProposalData(draftToPersist),
+        },
+      });
+    },
+    [proposal, autoSaveMutation, buildProposalData],
+  );
+
+  const debouncedAutoSave = useDebouncedCallback(saveFields, 1500);
+
   useEffect(() => {
     if ((!isEditMode || isDraft) && proposalInfoTitle && proposalInfoContent) {
       setShowInfoModal(true);
@@ -245,50 +288,28 @@ export function ProposalEditor({
     setShowInfoModal(false);
   }, []);
 
-  const handleCategoryChange = useCallback(
-    (category: string | null) => {
-      categoryRef.current = category;
-      debouncedAutoSave();
-    },
-    [debouncedAutoSave],
-  );
-
-  const handleBudgetChange = useCallback(
-    (budget: number | null) => {
-      budgetRef.current = budget;
-      debouncedAutoSave();
-    },
-    [debouncedAutoSave],
-  );
-
   const handleSubmitProposal = useCallback(async () => {
-    const currentTitle = titleRef.current;
-    const currentBudget = budgetRef.current;
-    const currentCategory = categoryRef.current;
+    const currentDraft = draftRef.current;
 
-    // Validate required fields
     const missingFields: string[] = [];
-
-    if (!currentTitle || currentTitle.trim() === '') {
+    if (!currentDraft.title || currentDraft.title.trim() === '') {
       missingFields.push(t('Title'));
     }
 
-    // Check for empty content in the editor
     if (editorInstance) {
       if (editorInstance.isEmpty) {
         missingFields.push(t('Description'));
       }
     }
 
-    if (isBudgetRequired && currentBudget === null) {
+    if (isBudgetRequired && currentDraft.budget === null) {
       missingFields.push(t('Budget'));
     }
 
-    // Validate budget cap
     if (
-      currentBudget !== null &&
+      currentDraft.budget !== null &&
       budgetCapAmount &&
-      currentBudget > budgetCapAmount
+      currentDraft.budget > budgetCapAmount
     ) {
       toast.error({
         message: t('Budget cannot exceed {amount}', {
@@ -316,15 +337,14 @@ export function ProposalEditor({
       const proposalData: ProposalDataInput = {
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
-        title: currentTitle,
+        title: currentDraft.title,
         category:
           categories && categories.length > 0
-            ? (currentCategory ?? undefined)
+            ? (currentDraft.category ?? undefined)
             : undefined,
-        budget: currentBudget ?? undefined,
+        budget: currentDraft.budget ?? undefined,
       };
 
-      // Update existing proposal
       await updateProposalMutation.mutateAsync({
         proposalId: proposal.id,
         data: {
@@ -332,7 +352,6 @@ export function ProposalEditor({
         },
       });
 
-      // If draft, also submit (transition to submitted status)
       if (isDraft) {
         await submitProposalMutation.mutateAsync({
           proposalId: proposal.id,
@@ -358,17 +377,15 @@ export function ProposalEditor({
 
   const userName = user.profile?.name ?? 'Anonymous';
 
-  const editorSkeleton = <ProposalEditorSkeleton />;
-
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
       userName={userName}
-      fallback={editorSkeleton}
+      fallback={<ProposalEditorSkeleton />}
     >
       <ProposalEditorLayout
         backHref={backHref}
-        title={title}
+        title={draft.title}
         onSubmitProposal={handleSubmitProposal}
         isSubmitting={isSubmitting}
         isEditMode={isEditMode}
@@ -382,9 +399,16 @@ export function ProposalEditor({
             <CollaborativeTitleField
               placeholder="Untitled Proposal"
               onChange={(text) => {
-                titleRef.current = text;
-                setTitle(text);
-                debouncedAutoSave();
+                const nextDraft = {
+                  ...draftRef.current,
+                  title: text,
+                };
+                draftRef.current = nextDraft;
+                setDraft((currentDraft) => ({
+                  ...currentDraft,
+                  title: text,
+                }));
+                debouncedAutoSave(nextDraft);
               }}
             />
 
@@ -392,13 +416,35 @@ export function ProposalEditor({
               <CollaborativeCategoryField
                 categories={categories ?? []}
                 initialValue={parsedProposalData?.category ?? null}
-                onChange={handleCategoryChange}
+                onChange={(value) => {
+                  const nextDraft = {
+                    ...draftRef.current,
+                    category: value,
+                  };
+                  draftRef.current = nextDraft;
+                  setDraft((currentDraft) => ({
+                    ...currentDraft,
+                    category: value,
+                  }));
+                  saveFields(nextDraft);
+                }}
               />
 
               <CollaborativeBudgetField
                 budgetCapAmount={budgetCapAmount}
                 initialValue={parsedProposalData?.budget ?? null}
-                onChange={handleBudgetChange}
+                onChange={(value) => {
+                  const nextDraft = {
+                    ...draftRef.current,
+                    budget: value,
+                  };
+                  draftRef.current = nextDraft;
+                  setDraft((currentDraft) => ({
+                    ...currentDraft,
+                    budget: value,
+                  }));
+                  debouncedAutoSave(nextDraft);
+                }}
               />
             </div>
 
