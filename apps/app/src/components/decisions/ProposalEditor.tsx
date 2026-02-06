@@ -80,22 +80,29 @@ function handleMutationError(
   }
 }
 
+interface ProposalEditorProps {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
+  isEditMode?: boolean;
+}
+
+/**
+ * Outer shell: computes the collaboration doc ID and wraps children
+ * in CollaborativeDocProvider so collaborative field components can
+ * access the shared Yjs document.
+ */
 export function ProposalEditor({
   instance,
   backHref,
   proposal,
   isEditMode = false,
-}: {
-  instance: ProcessInstance;
-  backHref: string;
-  proposal: Proposal;
-  isEditMode?: boolean;
-}) {
+}: ProposalEditorProps) {
+  const { user } = useUser();
   const router = useRouter();
   const t = useTranslations();
   const posthog = usePostHog();
   const utils = trpc.useUtils();
-  const { user } = useUser();
 
   const parsedProposalData = useMemo(
     () =>
