@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./fulog": "./src/fulog.ts",
-    "./previews": "./previews.mjs"
+    "./previews": "./previews.mjs",
+    "./utils": "./src/utils.ts"
   },
   "types": "./src/config.ts",
   "scripts": {

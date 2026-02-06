@@ -1,5 +1,21 @@
 import he from 'he';
 
+/**
+ * Sanitizes a URL to prevent XSS attacks via javascript: or data: URI schemes.
+ * Only allows http: and https: protocols.
+ */
+export function sanitizeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '#';
+    }
+    return parsed.href;
+  } catch {
+    return '#';
+  }
+}
+
 /*
  * A Rust-like match util
  *
@@ -56,8 +72,22 @@ export function getTextPreview({
     .replace(/<\/?(p|div|li|h[1-6]|blockquote|tr)[^>]*>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n');
 
-  // Strip HTML tags with regex
-  const text = withLineBreaks.replace(/<[^>]*>/g, '');
+  // Strip HTML tags with a loop to handle nested/malformed tags like <<script>script>
+  // A single-pass regex can miss tags that reassemble after replacement
+  let text = withLineBreaks;
+  const tagPattern = /<[^>]*>/g;
+  let previous: string;
+  do {
+    previous = text;
+    text = text.replace(tagPattern, '');
+  } while (text !== previous);
+
+  // Handle incomplete tags at end and orphaned closing brackets
+  text = text
+    .replace(/<[^>]*$/g, '') // Incomplete tags at end
+    .replace(/^[^<]*>/g, (m) => (m.includes('<') ? m : '')) // Orphaned closing >
+    .replace(/</g, '&lt;') // Escape any remaining < as a safety measure
+    .replace(/>/g, '&gt;'); // Escape any remaining >
 
   // Split by newlines and filter out empty lines
   const lines = text

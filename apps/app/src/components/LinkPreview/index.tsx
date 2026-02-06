@@ -1,10 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { sanitizeUrl } from '@op/core/utils';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
 declare global {
@@ -49,6 +50,7 @@ export const LinkPreview = memo(
     );
 
     const domain = getDomain(url);
+    const safeUrl = useMemo(() => sanitizeUrl(url), [url]);
 
     useEffect(() => {
       window.iframely?.load();
@@ -73,7 +75,7 @@ export const LinkPreview = memo(
       return (
         <Surface className={cn('rounded-lg', className)}>
           <a
-            href={url}
+            href={safeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-4"
@@ -109,7 +111,7 @@ export const LinkPreview = memo(
           </button>
         )}
         <a
-          href={url}
+          href={safeUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="block outline-none"

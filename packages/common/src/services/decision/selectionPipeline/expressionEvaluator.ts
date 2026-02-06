@@ -311,8 +311,12 @@ function evaluateVariable(
   return null;
 }
 
+// Keys that could lead to prototype pollution
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
  * Helper to set a value in an object using dot notation
+ * Guards against prototype pollution by blocking dangerous keys
  */
 export function setValueByPath(obj: any, path: string, value: any): void {
   const parts = path.split('.');
@@ -320,7 +324,7 @@ export function setValueByPath(obj: any, path: string, value: any): void {
 
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i];
-    if (!part) {
+    if (!part || DANGEROUS_KEYS.has(part)) {
       continue;
     }
     if (!(part in current) || typeof current[part] !== 'object') {
@@ -330,7 +334,7 @@ export function setValueByPath(obj: any, path: string, value: any): void {
   }
 
   const lastPart = parts[parts.length - 1];
-  if (lastPart) {
+  if (lastPart && !DANGEROUS_KEYS.has(lastPart)) {
     current[lastPart] = value;
   }
 }
@@ -343,7 +347,7 @@ export function getValueByPath(obj: any, path: string): any {
   let current = obj;
 
   for (const part of parts) {
-    if (current == null) {
+    if (current == null || DANGEROUS_KEYS.has(part)) {
       return null;
     }
     current = current[part];
