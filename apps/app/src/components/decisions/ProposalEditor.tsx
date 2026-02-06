@@ -418,7 +418,7 @@ export function ProposalEditor({
               }}
             />
 
-            <div className="flex gap-6">
+            <div className="flex gap-2">
               <CollaborativeCategoryField
                 categories={categories ?? []}
                 initialValue={parsedProposalData?.category ?? null}
