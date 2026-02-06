@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@op/ui/Skeleton';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Document from '@tiptap/extension-document';
@@ -82,7 +83,7 @@ export function CollaborativeTitleField({
   }, [editor, onChange]);
 
   if (!editor) {
-    return <div className="h-8 animate-pulse rounded bg-neutral-gray1" />;
+    return <Skeleton className="h-8" />;
   }
 
   return <EditorContent editor={editor} />;
