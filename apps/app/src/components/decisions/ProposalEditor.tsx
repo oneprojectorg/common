@@ -68,25 +68,37 @@ function handleMutationError(
   }
 }
 
-interface ProposalEditorProps {
-  instance: ProcessInstance;
-  backHref: string;
-  proposal: Proposal;
-  isEditMode?: boolean;
-}
-
-/**
- * Outer shell: computes the collaboration doc ID and wraps children
- * in CollaborativeDocProvider so collaborative field components can
- * access the shared Yjs document.
- */
 export function ProposalEditor({
   instance,
   backHref,
   proposal,
   isEditMode = false,
-}: ProposalEditorProps) {
+}: {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
+  isEditMode?: boolean;
+}) {
+  const router = useRouter();
+  const t = useTranslations();
+  const posthog = usePostHog();
+  const utils = trpc.useUtils();
   const { user } = useUser();
+
+  // Form state — title kept as state for layout display, category/budget
+  // owned by collaborative components and mirrored via refs for submit/auto-save
+  const [title, setTitle] = useState('');
+  const categoryRef = useRef<string | null>(null);
+  const budgetRef = useRef<number | null>(null);
+
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const initializedRef = useRef(false);
+
+  // Check if editing a draft (should show info modal and use submitProposal)
+  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -97,68 +109,6 @@ export function ProposalEditor({
     }
     return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
   }, [proposal?.proposalData, proposal?.id, instance.id]);
-
-  const userName = user.profile?.name ?? 'Anonymous';
-
-  return (
-    <CollaborativeDocProvider
-      docId={collaborationDocId}
-      userName={userName}
-      fallback={<ProposalEditorSkeleton />}
-    >
-      <ProposalEditorContent
-        instance={instance}
-        backHref={backHref}
-        proposal={proposal}
-        isEditMode={isEditMode}
-        collaborationDocId={collaborationDocId}
-      />
-    </CollaborativeDocProvider>
-  );
-}
-
-/**
- * Inner content rendered inside the CollaborativeDocProvider.
- * Collaborative field components (title, category, budget) each
- * manage their own Yjs binding internally and notify this component
- * of changes via onChange for DB persistence.
- */
-function ProposalEditorContent({
-  instance,
-  backHref,
-  proposal,
-  isEditMode = false,
-  collaborationDocId,
-}: ProposalEditorProps & { collaborationDocId: string }) {
-  const router = useRouter();
-  const t = useTranslations();
-  const posthog = usePostHog();
-  const utils = trpc.useUtils();
-
-  // Parse existing proposal data once for initial values
-  const parsedProposalData = useMemo(
-    () =>
-      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
-    [isEditMode, proposal],
-  );
-
-  // Latest field values tracked via refs — collaborative components own
-  // the Yjs state, these refs just mirror the latest for submit/auto-save
-  const titleRef = useRef(parsedProposalData?.title ?? '');
-  const categoryRef = useRef<string | null>(
-    parsedProposalData?.category ?? null,
-  );
-  const budgetRef = useRef<number | null>(parsedProposalData?.budget ?? null);
-
-  const [title, setTitle] = useState(parsedProposalData?.title ?? '');
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const initializedRef = useRef(false);
-
-  // Check if editing a draft (should show info modal and use submitProposal)
-  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
   // Editor extensions - memoized with collaborative flag
   const editorExtensions = useMemo(
@@ -204,6 +154,13 @@ function ProposalEditorContent({
     return { budgetCapAmount: cap, isBudgetRequired: required };
   }, [instance]);
 
+  // Parse existing proposal data for editing
+  const parsedProposalData = useMemo(
+    () =>
+      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
+    [isEditMode, proposal],
+  );
+
   // Mutations
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
@@ -238,7 +195,7 @@ function ProposalEditorContent({
     },
   });
 
-  /** Debounced auto-save: persists all collaborative fields to the DB */
+  // Debounced auto-save: persists all collaborative fields to the DB
   const debouncedAutoSave = useDebouncedCallback(() => {
     if (!proposal) {
       return;
@@ -252,7 +209,7 @@ function ProposalEditorContent({
         proposalData: {
           ...currentData,
           collaborationDocId,
-          title: titleRef.current,
+          title,
           category: categoryRef.current ?? undefined,
           budget: budgetRef.current ?? undefined,
         },
@@ -290,15 +247,6 @@ function ProposalEditorContent({
     setShowInfoModal(false);
   }, []);
 
-  const handleTitleChange = useCallback(
-    (text: string) => {
-      setTitle(text);
-      titleRef.current = text;
-      debouncedAutoSave();
-    },
-    [debouncedAutoSave],
-  );
-
   const handleCategoryChange = useCallback(
     (category: string | null) => {
       categoryRef.current = category;
@@ -316,14 +264,13 @@ function ProposalEditorContent({
   );
 
   const handleSubmitProposal = useCallback(async () => {
-    const currentTitle = titleRef.current;
     const currentBudget = budgetRef.current;
     const currentCategory = categoryRef.current;
 
     // Validate required fields
     const missingFields: string[] = [];
 
-    if (!currentTitle || currentTitle.trim() === '') {
+    if (!title || title.trim() === '') {
       missingFields.push(t('Title'));
     }
 
@@ -370,7 +317,7 @@ function ProposalEditorContent({
       const proposalData: ProposalDataInput = {
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
-        title: currentTitle,
+        title,
         category:
           categories && categories.length > 0
             ? (currentCategory ?? undefined)
@@ -399,6 +346,7 @@ function ProposalEditorContent({
     }
   }, [
     t,
+    title,
     editorInstance,
     isBudgetRequired,
     budgetCapAmount,
@@ -410,81 +358,94 @@ function ProposalEditorContent({
     updateProposalMutation,
   ]);
 
+  const userName = user.profile?.name ?? 'Anonymous';
+
+  const editorSkeleton = <ProposalEditorSkeleton />;
+
   return (
-    <ProposalEditorLayout
-      backHref={backHref}
-      title={title}
-      onSubmitProposal={handleSubmitProposal}
-      isSubmitting={isSubmitting}
-      isEditMode={isEditMode}
-      isDraft={isDraft}
-      presenceSlot={<CollaborativePresence />}
+    <CollaborativeDocProvider
+      docId={collaborationDocId}
+      userName={userName}
+      fallback={editorSkeleton}
     >
-      <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+      <ProposalEditorLayout
+        backHref={backHref}
+        title={title}
+        onSubmitProposal={handleSubmitProposal}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        isDraft={isDraft}
+        presenceSlot={<CollaborativePresence />}
+      >
+        <div className="flex flex-1 flex-col gap-12">
+          {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
 
-        <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
-          {/* Title - Collaborative via Yjs XmlFragment */}
-          <CollaborativeTitleField
-            placeholder="Untitled Proposal"
-            onChange={handleTitleChange}
-          />
-
-          {/* Category and Budget - Collaborative via Yjs Y.Map */}
-          <div className="flex gap-6">
-            <CollaborativeCategoryField
-              categories={categories ?? []}
-              initialValue={parsedProposalData?.category ?? null}
-              onChange={handleCategoryChange}
+          <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
+            {/* Title - Collaborative */}
+            <CollaborativeTitleField
+              placeholder="Untitled Proposal"
+              onChange={(text) => {
+                setTitle(text);
+                debouncedAutoSave();
+              }}
             />
 
-            <CollaborativeBudgetField
-              budgetCapAmount={budgetCapAmount}
-              initialValue={parsedProposalData?.budget ?? null}
-              onChange={handleBudgetChange}
-            />
-          </div>
+            {/* Category and Budget - Collaborative via Yjs Y.Map */}
+            <div className="flex gap-6">
+              <CollaborativeCategoryField
+                categories={categories ?? []}
+                initialValue={parsedProposalData?.category ?? null}
+                onChange={handleCategoryChange}
+              />
 
-          {/* Rich Text Editor with Collaboration */}
-          <CollaborativeEditor
-            field="content"
-            extensions={editorExtensions}
-            onEditorReady={handleEditorReady}
-            placeholder={t('Write your proposal here...')}
-            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
-          />
+              <CollaborativeBudgetField
+                budgetCapAmount={budgetCapAmount}
+                initialValue={parsedProposalData?.budget ?? null}
+                onChange={handleBudgetChange}
+              />
+            </div>
 
-          {/* Attachments */}
-          <div className="border-t border-neutral-gray2 pt-8">
-            <ProposalAttachments
-              proposalId={proposal.id}
-              attachments={
-                proposal.attachments?.map((pa) => ({
-                  id: pa.attachmentId,
-                  fileName: pa.attachment?.fileName ?? 'Unknown',
-                  fileSize: pa.attachment?.fileSize ?? null,
-                  url: pa.attachment?.url,
-                })) ?? []
-              }
-              onMutate={() =>
-                utils.decision.getProposal.invalidate({
-                  profileId: proposal.profileId,
-                })
-              }
+            {/* Rich Text Editor with Collaboration */}
+            <CollaborativeEditor
+              field="content"
+              extensions={editorExtensions}
+              onEditorReady={handleEditorReady}
+              placeholder={t('Write your proposal here...')}
+              editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
             />
+
+            {/* Attachments */}
+            <div className="border-t border-neutral-gray2 pt-8">
+              <ProposalAttachments
+                proposalId={proposal.id}
+                attachments={
+                  proposal.attachments?.map((pa) => ({
+                    id: pa.attachmentId,
+                    fileName: pa.attachment?.fileName ?? 'Unknown',
+                    fileSize: pa.attachment?.fileSize ?? null,
+                    url: pa.attachment?.url,
+                  })) ?? []
+                }
+                onMutate={() =>
+                  utils.decision.getProposal.invalidate({
+                    profileId: proposal.profileId,
+                  })
+                }
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Proposal Info Modal */}
-      {proposalInfoTitle && proposalInfoContent && (
-        <ProposalInfoModal
-          isOpen={showInfoModal}
-          onClose={handleCloseInfoModal}
-          title={proposalInfoTitle}
-          content={proposalInfoContent}
-        />
-      )}
-    </ProposalEditorLayout>
+        {/* Proposal Info Modal */}
+        {proposalInfoTitle && proposalInfoContent && (
+          <ProposalInfoModal
+            isOpen={showInfoModal}
+            onClose={handleCloseInfoModal}
+            title={proposalInfoTitle}
+            content={proposalInfoContent}
+          />
+        )}
+      </ProposalEditorLayout>
+    </CollaborativeDocProvider>
   );
 }
