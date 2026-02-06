@@ -11,24 +11,8 @@ import { UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
 
-/**
- * Query result type for profile invite with its access role relation.
- * accessRole is NOT NULL in the schema, so it's always present.
- */
-type ProfileInviteQueryResult = ProfileInvite & {
+export type ProfileInviteWithRole = ProfileInvite & {
   accessRole: AccessRole;
-};
-
-export type ProfileInviteMember = {
-  id: string;
-  email: string;
-  profileId: string;
-  role: {
-    id: string;
-    name: string;
-    description: string | null;
-  };
-  createdAt: string | null;
 };
 
 /**
@@ -43,7 +27,7 @@ export const listProfileUserInvites = async ({
   profileId: string;
   user: User;
   query?: string;
-}): Promise<ProfileInviteMember[]> => {
+}): Promise<ProfileInviteWithRole[]> => {
   const [profileAccessUser] = await Promise.all([
     getProfileAccessUser({ user, profileId }),
     assertProfile(profileId),
@@ -78,7 +62,7 @@ export const listProfileUserInvites = async ({
     ? and(baseCondition, searchFilter)
     : baseCondition;
 
-  const inviteResults = (await db.query.profileInvites.findMany({
+  const invite = await db.query.profileInvites.findMany({
     where: {
       RAW: whereClause,
     },
@@ -88,13 +72,7 @@ export const listProfileUserInvites = async ({
     orderBy: {
       email: 'asc',
     },
-  })) as ProfileInviteQueryResult[];
+  });
 
-  return inviteResults.map((invite) => ({
-    id: invite.id,
-    email: invite.email,
-    profileId: invite.profileId,
-    role: invite.accessRole,
-    createdAt: invite.createdAt,
-  }));
+  return invite;
 };
