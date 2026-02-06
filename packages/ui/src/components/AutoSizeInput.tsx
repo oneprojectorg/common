@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -29,7 +29,7 @@ export function AutoSizeInput({
   const inputContainerRef = useRef<HTMLInputElement>(null);
   const [width, setWidth] = useState(minWidth);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (measureRef.current) {
       let measuredWidth = measureRef.current.offsetWidth;
       measuredWidth = Math.max(minWidth, measuredWidth);

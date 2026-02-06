@@ -72,7 +72,9 @@ export const CustomMinWidth: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <span className="text-sm text-neutral-gray4">minWidth=30 (default):</span>
+        <span className="text-sm text-neutral-gray4">
+          minWidth=30 (default):
+        </span>
         <div className="rounded border border-neutral-gray2 bg-white p-2">
           <AutoSizeInputDemo
             initialValue=""
@@ -90,6 +92,26 @@ export const CustomMinWidth: Story = {
             aria-label="Custom min width"
           />
         </div>
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * Demonstrates constraining the input within a flex container.
+ * Uses min-w-0 and overflow-hidden on a wrapper to prevent the input
+ * from overflowing when text is longer than available space.
+ */
+export const ConstrainedWidth: Story = {
+  render: () => (
+    <div className="flex max-w-64 items-center gap-2 rounded border border-neutral-gray2 bg-neutral-gray1 px-2 py-1">
+      <span className="shrink-0 text-neutral-gray4">📝</span>
+      <div className="min-w-0 overflow-hidden">
+        <AutoSizeInputDemo
+          initialValue="This is a very long field label that should be clipped"
+          className="text-neutral-charcoal"
+          aria-label="Constrained auto-sizing input"
+        />
       </div>
     </div>
   ),
