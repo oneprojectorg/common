@@ -2,6 +2,7 @@
 
 import { useCollaborativeField } from '@/hooks/useCollaborativeField';
 import { Select, SelectItem } from '@op/ui/Select';
+import { useEffect, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -34,6 +35,13 @@ export function CollaborativeCategoryField({
     string | null
   >(ydoc, 'category', initialValue);
 
+  const onChangeRef = useRef(onChange);
+  const lastEmittedValueRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   if (categories.length === 0) {
     return null;
   }
@@ -41,8 +49,16 @@ export function CollaborativeCategoryField({
   const handleSelectionChange = (key: string | number) => {
     const value = String(key);
     setSelectedCategory(value);
-    onChange?.(value);
   };
+
+  useEffect(() => {
+    if (lastEmittedValueRef.current === selectedCategory) {
+      return;
+    }
+
+    lastEmittedValueRef.current = selectedCategory;
+    onChangeRef.current?.(selectedCategory);
+  }, [selectedCategory]);
 
   return (
     <Select
@@ -51,6 +67,7 @@ export function CollaborativeCategoryField({
       placeholder={t('Select category')}
       selectedKey={selectedCategory}
       onSelectionChange={handleSelectionChange}
+      selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
       className="w-auto max-w-36 overflow-hidden sm:max-w-96"
       popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
     >

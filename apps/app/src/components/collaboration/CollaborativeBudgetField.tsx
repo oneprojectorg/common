@@ -56,8 +56,16 @@ export function CollaborativeBudgetField({
     initialBudgetValue,
   );
 
+  const onChangeRef = useRef(onChange);
+  const lastEmittedAmountRef = useRef<number | null | undefined>(undefined);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   const [isRevealed, setIsRevealed] = useState(initialValue !== null);
   const showInput = isRevealed || budget !== null;
+  const budgetAmount = budget?.amount ?? null;
   const currencySymbol =
     CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ??
     DEFAULT_CURRENCY_SYMBOL;
@@ -80,8 +88,16 @@ export function CollaborativeBudgetField({
         amount: value,
       });
     }
-    onChange?.(value);
   };
+
+  useEffect(() => {
+    if (lastEmittedAmountRef.current === budgetAmount) {
+      return;
+    }
+
+    lastEmittedAmountRef.current = budgetAmount;
+    onChangeRef.current?.(budgetAmount);
+  }, [budgetAmount]);
 
   const handleReveal = () => {
     justRevealedRef.current = true;
@@ -99,7 +115,7 @@ export function CollaborativeBudgetField({
   return (
     <NumberField
       ref={budgetInputRef}
-      value={budget?.amount ?? null}
+      value={budgetAmount}
       onChange={handleChange}
       prefixText={currencySymbol}
       inputProps={{
