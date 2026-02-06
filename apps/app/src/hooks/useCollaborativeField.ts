@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Doc } from 'yjs';
+import type { Doc, YMapEvent } from 'yjs';
 
 /**
  * Syncs a scalar value bidirectionally with a Yjs shared Map.
@@ -36,7 +36,11 @@ export function useCollaborativeField<T>(
       setValue(existing as T);
     }
 
-    const observer = () => {
+    const observer = (event: YMapEvent<unknown>) => {
+      // Only react to changes for our specific field
+      if (!event.keysChanged.has(field)) {
+        return;
+      }
       if (isLocalUpdateRef.current) {
         isLocalUpdateRef.current = false;
         return;
