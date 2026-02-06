@@ -1,10 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  allowList,
-  profileUserToAccessRoles,
-  profileUsers,
-} from '@op/db/schema';
+import { allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -12,7 +8,6 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
-import { AllowListMetadata } from '../user/validators';
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -29,31 +24,47 @@ const generateInviteResultMessage = (
 };
 
 /**
- * Invite users to a profile with a specific role
+ * Invite users to a profile with roles.
+ * Each invitation specifies an email and roleId, allowing per-user role assignment.
  */
-export const inviteUsersToProfile = async (input: {
-  emails: string[];
-  roleId: string;
+export const inviteUsersToProfile = async ({
+  invitations,
+  requesterProfileId,
+  personalMessage,
+  user,
+}: {
+  invitations: Array<{ email: string; roleId: string }>;
   requesterProfileId: string;
   personalMessage?: string;
   user: User;
 }) => {
-  const { emails, roleId, requesterProfileId, personalMessage, user } = input;
+  if (invitations.length === 0) {
+    throw new CommonError('At least one invitation is required');
+  }
 
-  const normalizedEmails = emails.map((e) => e.toLowerCase());
+  const normalizedInvitations = invitations.map((inv) => ({
+    email: inv.email.toLowerCase(),
+    roleId: inv.roleId,
+  }));
+
+  const normalizedEmails = normalizedInvitations.map((inv) => inv.email);
+  const uniqueRoleIds = [
+    ...new Set(normalizedInvitations.map((inv) => inv.roleId)),
+  ];
 
   const [
     profile,
-    targetRole,
+    targetRoles,
     existingUsers,
     existingAllowListEntries,
+    existingPendingInvites,
     profileUser,
   ] = await Promise.all([
     // Get the profile details for the invite
     assertProfile(requesterProfileId),
-    // Get the target role
-    db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, roleId),
+    // Get all target roles
+    db._query.accessRoles.findMany({
+      where: (table, { inArray }) => inArray(table.id, uniqueRoleIds),
     }),
     // Get all users with their profile memberships for this profile
     db._query.users.findMany({
@@ -68,6 +79,15 @@ export const inviteUsersToProfile = async (input: {
     db._query.allowList.findMany({
       where: (table, { inArray }) => inArray(table.email, normalizedEmails),
     }),
+    // Get existing pending invites for this profile (acceptedOn is null = pending)
+    db._query.profileInvites.findMany({
+      where: (table, { inArray, eq, and, isNull }) =>
+        and(
+          inArray(table.email, normalizedEmails),
+          eq(table.profileId, requesterProfileId),
+          isNull(table.acceptedOn),
+        ),
+    }),
     getProfileAccessUser({
       user,
       profileId: requesterProfileId,
@@ -80,25 +100,28 @@ export const inviteUsersToProfile = async (input: {
     );
   }
 
-  // Always require admin access to send invites
   assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
 
-  if (!targetRole) {
-    throw new CommonError('Invalid role specified for profile invite');
+  // Validate all roles exist
+  const rolesById = new Map(targetRoles.map((r) => [r.id, r]));
+  const invalidRoleIds = uniqueRoleIds.filter((id) => !rolesById.has(id));
+  if (invalidRoleIds.length > 0) {
+    throw new CommonError(
+      `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
+    );
   }
 
   const results = {
     successful: [] as string[],
     failed: [] as { email: string; reason: string }[],
+    // Auth user IDs of existing users who were successfully invited (for cache invalidation)
+    existingUserAuthIds: [] as string[],
   };
 
-  const emailsToInvite: Array<{
-    email: string;
-    inviterName: string;
-    profileName: string;
-    inviteUrl: string;
-    personalMessage?: string;
-  }> = [];
+  // Compute repeated values once (same for every invitation)
+  const inviterName = profileUser.profile.name || user.email || 'A team member';
+  const profileName = profile.name;
+  const inviteUrl = OPURLConfig('APP').ENV_URL;
 
   const usersByEmail = new Map(
     existingUsers.map((user) => [user.email.toLowerCase(), user]),
@@ -114,92 +137,104 @@ export const inviteUsersToProfile = async (input: {
     existingAllowListEntries.map((entry) => entry.email.toLowerCase()),
   );
 
-  // Process each email
-  for (const rawEmail of emails) {
-    const email = rawEmail.toLowerCase();
-    try {
-      // Look up user from the batched results
-      const existingUser = usersByEmail.get(email);
+  const pendingInviteEmailsSet = new Set(
+    existingPendingInvites.map((invite) => invite.email.toLowerCase()),
+  );
 
-      // Check if user is already a member of this profile
-      if (existingUser) {
-        const isAlreadyMember = existingProfileUserAuthIds.has(
-          existingUser.authUserId,
-        );
+  // Collect data for batch insert
+  const allowListEntries: Array<{
+    email: string;
+    organizationId: null;
+    metadata: null;
+  }> = [];
 
-        if (isAlreadyMember) {
-          results.failed.push({
-            email,
-            reason: 'User is already a member of this profile',
-          });
-          continue;
-        }
+  const profileInviteEntries: Array<{
+    email: string;
+    profileId: string;
+    profileEntityType: string;
+    accessRoleId: string;
+    invitedBy: string;
+    message?: string;
+  }> = [];
 
-        // User exists but not in this profile - add them directly
-        await db.transaction(async (tx) => {
-          // Add user to profile
-          const [newProfileUser] = await tx
-            .insert(profileUsers)
-            .values({
-              authUserId: existingUser.authUserId,
-              profileId: requesterProfileId,
-              email: existingUser.email,
-              name: existingUser.name || existingUser.email.split('@')[0],
-            })
-            .returning();
+  const emailsToInvite: Array<{
+    email: string;
+    authUserId?: string;
+    inviterName: string;
+    profileName: string;
+    inviteUrl: string;
+    personalMessage?: string;
+  }> = [];
 
-          // Assign role
-          if (newProfileUser) {
-            await tx.insert(profileUserToAccessRoles).values({
-              profileUserId: newProfileUser.id,
-              accessRoleId: targetRole.id,
-            });
-          }
-        });
-      }
+  // Process each invitation - validate and collect data
+  for (const invitation of normalizedInvitations) {
+    const { email, roleId } = invitation;
+    const existingUser = usersByEmail.get(email);
+    const targetRole = rolesById.get(roleId)!;
 
-      // Check if email is already in the allowList using the Set
-      const isInAllowList = allowListEmailsSet.has(email);
-
-      if (!isInAllowList) {
-        const metadata: AllowListMetadata = {
-          invitedBy: user.id,
-          invitedAt: new Date().toISOString(),
-          inviteType: 'profile',
-          personalMessage: personalMessage,
-          roleId,
-          profileId: requesterProfileId,
-          inviterProfileName: profile.name,
-        };
-
-        // Add the email to the allowList
-        await db.insert(allowList).values({
-          email,
-          organizationId: null,
-          metadata,
-        });
-      }
-
-      // Prepare email for event-based sending
-      emailsToInvite.push({
-        email,
-        inviterName: profileUser?.name || user.email || 'A team member',
-        profileName: profile.name,
-        inviteUrl: OPURLConfig('APP').ENV_URL,
-        personalMessage,
-      });
-    } catch (error) {
-      console.error(`Failed to process invitation for ${email}:`, error);
+    // Check for pending invite (applies to both existing and new users)
+    if (pendingInviteEmailsSet.has(email)) {
       results.failed.push({
         email,
-        reason: error instanceof Error ? error.message : 'Unknown error',
+        reason: 'User already has a pending invite to this profile',
       });
+      continue;
     }
+
+    // If existing user, check if already a member
+    if (
+      existingUser &&
+      existingProfileUserAuthIds.has(existingUser.authUserId)
+    ) {
+      results.failed.push({
+        email,
+        reason: 'User is already a member of this profile',
+      });
+      continue;
+    }
+
+    // Collect allowList entry if needed (new user without existing allowList entry)
+    if (!existingUser && !allowListEmailsSet.has(email)) {
+      allowListEntries.push({
+        email,
+        organizationId: null,
+        metadata: null,
+      });
+      // Mark as added to prevent duplicates within the same batch
+      allowListEmailsSet.add(email);
+    }
+
+    // Collect profile invite entry
+    profileInviteEntries.push({
+      email,
+      profileId: requesterProfileId,
+      profileEntityType: profile.type,
+      accessRoleId: targetRole.id,
+      invitedBy: profileUser.profileId,
+      message: personalMessage,
+    });
+
+    // Collect email data for event
+    emailsToInvite.push({
+      email,
+      authUserId: existingUser?.authUserId,
+      inviterName,
+      profileName,
+      inviteUrl,
+      personalMessage,
+    });
   }
 
-  // Send single event with all invitations - workflow handles retries per email
-  if (emailsToInvite.length > 0) {
-    try {
+  // Batch insert and send event in a single transaction
+  // If event.send fails, we rollback the DB inserts
+  if (profileInviteEntries.length > 0) {
+    await db.transaction(async (tx) => {
+      if (allowListEntries.length > 0) {
+        await tx.insert(allowList).values(allowListEntries);
+      }
+      await tx.insert(profileInvites).values(profileInviteEntries);
+
+      // Send event inside transaction - failure rolls back DB changes
       await event.send({
         name: Events.profileInviteSent.name,
         data: {
@@ -207,25 +242,21 @@ export const inviteUsersToProfile = async (input: {
           invitations: emailsToInvite,
         },
       });
+    });
 
-      // Mark all as successful since invite was processed
-      results.successful.push(...emailsToInvite.map((e) => e.email));
-    } catch (eventError) {
-      console.error('Failed to send profile invite event:', eventError);
-
-      // Mark all as failed since event couldn't be queued
-      emailsToInvite.forEach((emailData) => {
-        results.failed.push({
-          email: emailData.email,
-          reason: 'Failed to queue invitation email.',
-        });
-      });
-    }
+    // Mark all as successful since transaction completed
+    results.successful.push(...emailsToInvite.map((e) => e.email));
+    // Collect auth user IDs for existing users (for cache invalidation)
+    results.existingUserAuthIds.push(
+      ...emailsToInvite
+        .filter((e): e is typeof e & { authUserId: string } => !!e.authUserId)
+        .map((e) => e.authUserId),
+    );
   }
 
   const message = generateInviteResultMessage(
     results.successful.length,
-    emails.length,
+    normalizedInvitations.length,
   );
 
   return {
@@ -234,6 +265,7 @@ export const inviteUsersToProfile = async (input: {
     details: {
       successful: results.successful,
       failed: results.failed,
+      existingUserAuthIds: results.existingUserAuthIds,
     },
   };
 };

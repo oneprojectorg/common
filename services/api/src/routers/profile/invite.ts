@@ -1,17 +1,19 @@
 import { invalidateMultiple } from '@op/cache';
-import { CommonError, inviteUsersToProfile } from '@op/common';
-import { db } from '@op/db/client';
-import { TRPCError } from '@trpc/server';
+import { inviteUsersToProfile } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  emails: z
-    .array(z.email('Must be a valid email address'))
-    .min(1, 'At least one email address is required'),
-  roleId: z.string().uuid(),
+  invitations: z
+    .array(
+      z.object({
+        email: z.email('Must be a valid email address'),
+        roleId: z.string().uuid(),
+      }),
+    )
+    .min(1, 'At least one invitation is required'),
   profileId: z.string().uuid(),
   personalMessage: z.string().optional(),
 });
@@ -27,6 +29,7 @@ const outputSchema = z.object({
         reason: z.string(),
       }),
     ),
+    existingUserAuthIds: z.array(z.string()),
   }),
 });
 
@@ -37,51 +40,25 @@ export const inviteProfileUserRouter = router({
     .input(inputSchema)
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
-      try {
-        const { user } = ctx;
+      const { user } = ctx;
 
-        const result = await inviteUsersToProfile({
-          emails: input.emails,
-          roleId: input.roleId,
-          requesterProfileId: input.profileId,
-          personalMessage: input.personalMessage,
-          user,
-        });
+      const result = await inviteUsersToProfile({
+        invitations: input.invitations,
+        requesterProfileId: input.profileId,
+        personalMessage: input.personalMessage,
+        user,
+      });
 
-        // Invalidate caches for users who were successfully invited
-        if (result.details.successful.length > 0) {
-          // Find existing users by email to get their auth user IDs
-          const existingUsers = await db._query.users.findMany({
-            where: (table, { inArray }) =>
-              inArray(table.email, result.details.successful),
-            columns: { authUserId: true },
-          });
-
-          if (existingUsers.length > 0) {
-            const userIds = existingUsers.map((u) => u.authUserId);
-            waitUntil(
-              invalidateMultiple({
-                type: 'user',
-                paramsList: userIds.map((id) => [id]),
-              }),
-            );
-          }
-        }
-
-        return result;
-      } catch (error) {
-        if (error instanceof CommonError) {
-          throw error;
-        }
-
-        // Handle other errors
-        const message =
-          error instanceof Error ? error.message : 'Failed to send invitation';
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message,
-        });
+      // Invalidate caches for existing users who were successfully invited
+      if (result.details.existingUserAuthIds.length > 0) {
+        waitUntil(
+          invalidateMultiple({
+            type: 'user',
+            paramsList: result.details.existingUserAuthIds.map((id) => [id]),
+          }),
+        );
       }
+
+      return result;
     }),
 });
