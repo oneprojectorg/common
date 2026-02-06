@@ -43,12 +43,14 @@ function AutoSizeInput({
   className,
   inputRef,
   minWidth = 30,
+  'aria-label': ariaLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement>;
   minWidth?: number;
+  'aria-label': string;
 }) {
   const measureRef = useRef<HTMLSpanElement>(null);
   const [width, setWidth] = useState(minWidth);
@@ -77,6 +79,7 @@ function AutoSizeInput({
         onChange={(e) => onChange(e.target.value)}
         className={cn(className, 'border-none bg-transparent outline-none')}
         style={{ width }}
+        aria-label={ariaLabel}
       />
     </div>
   );
@@ -95,6 +98,7 @@ export function FieldCard({
 }: FieldCardProps) {
   const t = useTranslations();
   const isDragging = controls?.isDragging ?? false;
+  const labelInputRef = useRef<HTMLInputElement>(null!);
 
   const Icon = getFieldIcon(field.type);
 
@@ -110,10 +114,7 @@ export function FieldCard({
             <LuLock size={16} />
           </div>
           <TooltipTrigger>
-            <AriaButton
-              className="flex items-center text-neutral-gray4"
-              onPress={() => labelInputRef.current?.focus()}
-            >
+            <AriaButton className="flex items-center text-neutral-gray4">
               <Icon size={16} />
             </AriaButton>
             <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
@@ -129,7 +130,6 @@ export function FieldCard({
   }
 
   // Sortable fields with internal accordion for config
-  const labelInputRef = useRef<HTMLInputElement>(null!);
 
   return (
     <div
@@ -163,6 +163,7 @@ export function FieldCard({
               value={field.label}
               onChange={(label) => onUpdate?.(field.id, { label })}
               className="text-neutral-charcoal"
+              aria-label={t('Field label')}
             />
           </div>
         </div>
@@ -245,4 +246,4 @@ export function FieldCardDropIndicator() {
   return (
     <div className="flex h-12 items-center gap-2 rounded-lg border bg-neutral-offWhite" />
   );
-} /** DropIndicator to show when a phase is being dragged */
+}

@@ -60,46 +60,53 @@ function FormBuilderSkeleton() {
 }
 
 /**
- * Locked fields that appear at the top of the form.
- * These cannot be reordered or removed.
+ * Locked field definitions (without labels - labels are added with translations).
  */
-const LOCKED_FIELDS: FormField[] = [
-  {
-    id: 'proposal-title',
-    type: 'short_text',
-    label: 'Proposal Title',
-    required: true,
-    locked: true,
-  },
-  {
-    id: 'category',
-    type: 'dropdown',
-    label: 'Category',
-    required: true,
-    locked: true,
-  },
-];
+const LOCKED_FIELD_DEFINITIONS = [
+  { id: 'proposal-title', type: 'short_text' as const, labelKey: 'Proposal title' },
+  { id: 'category', type: 'dropdown' as const, labelKey: 'Category' },
+] as const;
 
 /**
- * Default sortable fields for new forms.
+ * Default sortable field definitions (without labels - labels are added with translations).
  */
-const DEFAULT_SORTABLE_FIELDS: FormField[] = [
-  {
-    id: 'proposal-summary',
-    type: 'long_text',
-    label: 'Proposal Summary',
-    required: false,
-    locked: false,
-  },
-];
+const DEFAULT_SORTABLE_FIELD_DEFINITIONS = [
+  { id: 'proposal-summary', type: 'long_text' as const, labelKey: 'Proposal summary' },
+] as const;
 
 export default function FormBuilderSection({
   decisionProfileId,
 }: SectionProps) {
   const t = useTranslations();
-  const [sortableFields, setSortableFields] = useState<FormField[]>(
-    DEFAULT_SORTABLE_FIELDS,
+
+  // Build locked fields with translated labels
+  const lockedFields = useMemo<FormField[]>(
+    () =>
+      LOCKED_FIELD_DEFINITIONS.map((def) => ({
+        id: def.id,
+        type: def.type,
+        label: t(def.labelKey),
+        required: true,
+        locked: true,
+      })),
+    [t],
   );
+
+  // Build default sortable fields with translated labels
+  const defaultSortableFields = useMemo<FormField[]>(
+    () =>
+      DEFAULT_SORTABLE_FIELD_DEFINITIONS.map((def) => ({
+        id: def.id,
+        type: def.type,
+        label: t(def.labelKey),
+        required: false,
+        locked: false,
+      })),
+    [t],
+  );
+
+  const [sortableFields, setSortableFields] =
+    useState<FormField[]>(defaultSortableFields);
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Sidebar is always open on desktop, toggleable on mobile
@@ -112,8 +119,8 @@ export default function FormBuilderSection({
 
   // Combine locked + sortable fields for display and persistence
   const allFields = useMemo(
-    () => [...LOCKED_FIELDS, ...sortableFields],
-    [sortableFields],
+    () => [...lockedFields, ...sortableFields],
+    [lockedFields, sortableFields],
   );
 
   // Hydrate from store on mount
@@ -251,7 +258,7 @@ export default function FormBuilderSection({
             <hr />
             {/* Locked fields - rendered statically outside Sortable */}
             <div className="mb-3 space-y-3">
-              {LOCKED_FIELDS.map((field) => (
+              {lockedFields.map((field) => (
                 <FieldCard key={field.id} field={field} />
               ))}
             </div>
