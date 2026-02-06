@@ -85,8 +85,6 @@ export function ProposalEditor({
   const utils = trpc.useUtils();
   const { user } = useUser();
 
-  // Form state — title kept as state for layout display, category/budget
-  // owned by collaborative components and mirrored via refs for submit/auto-save
   const [title, setTitle] = useState('');
   const titleRef = useRef('');
   const categoryRef = useRef<string | null>(null);
@@ -155,7 +153,6 @@ export function ProposalEditor({
     return { budgetCapAmount: cap, isBudgetRequired: required };
   }, [instance]);
 
-  // Parse existing proposal data for editing
   const parsedProposalData = useMemo(
     () =>
       isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
@@ -196,7 +193,6 @@ export function ProposalEditor({
     },
   });
 
-  // Debounced auto-save: persists all collaborative fields to the DB
   const debouncedAutoSave = useDebouncedCallback(() => {
     if (!proposal) {
       return;
@@ -383,7 +379,6 @@ export function ProposalEditor({
           {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
 
           <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
-            {/* Title - Collaborative */}
             <CollaborativeTitleField
               placeholder="Untitled Proposal"
               onChange={(text) => {
@@ -393,7 +388,6 @@ export function ProposalEditor({
               }}
             />
 
-            {/* Category and Budget - Collaborative via Yjs Y.Map */}
             <div className="flex gap-6">
               <CollaborativeCategoryField
                 categories={categories ?? []}
@@ -408,7 +402,6 @@ export function ProposalEditor({
               />
             </div>
 
-            {/* Rich Text Editor with Collaboration */}
             <CollaborativeEditor
               field="content"
               extensions={editorExtensions}
@@ -417,7 +410,6 @@ export function ProposalEditor({
               editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
             />
 
-            {/* Attachments */}
             <div className="border-t border-neutral-gray2 pt-8">
               <ProposalAttachments
                 proposalId={proposal.id}
@@ -439,7 +431,6 @@ export function ProposalEditor({
           </div>
         </div>
 
-        {/* Proposal Info Modal */}
         {proposalInfoTitle && proposalInfoContent && (
           <ProposalInfoModal
             isOpen={showInfoModal}

@@ -58,11 +58,7 @@ export function CollaborativeBudgetField({
     initialBudgetValue,
   );
 
-  // Decouple visibility from value: input stays visible once revealed,
-  // even if the budget amount is cleared to null.
   const [isRevealed, setIsRevealed] = useState(initialValue !== null);
-
-  // Show input if explicitly revealed OR if a remote collaborator sets a budget
   const showInput = isRevealed || budget !== null;
   const currencySymbol =
     CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ?? '$';
