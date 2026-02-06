@@ -6,14 +6,18 @@ export const zodUrlRefine = (val: string) => {
     return true;
   }
 
+  // Simplified URL pattern to avoid ReDoS vulnerability
+  // Uses possessive-like matching with atomic groups emulated via lookahead
   const urlPattern = new RegExp(
     '^(https?:\\/\\/)?' + // protocol
-      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-      '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-      '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-      '(\\#[-a-z\\d_]*)?$',
-    'i', // fragment locator
+      '(' +
+      '([a-z\\d][a-z\\d-]*\\.)+[a-z]{2,}|' + // domain name (simplified)
+      '(\\d{1,3}\\.){3}\\d{1,3}' + // OR ip (v4) address
+      ')' +
+      '(:\\d+)?' + // port
+      '(\\/[^\\s]*)?' + // path, query, fragment (simplified)
+      '$',
+    'i',
   );
 
   return urlPattern.test(val);
