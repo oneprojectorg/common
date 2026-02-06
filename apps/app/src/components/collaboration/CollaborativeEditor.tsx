@@ -39,7 +39,7 @@ export interface CollaborativeEditorProps {
   editorClassName?: string;
 }
 
-/** Rich text editor with real-time collaboration via TipTap Cloud. */
+/** Rich text editor with real-time collaboration via TipTap Cloud */
 export const CollaborativeEditor = forwardRef<
   CollaborativeEditorRef,
   CollaborativeEditorProps
