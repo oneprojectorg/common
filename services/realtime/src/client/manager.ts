@@ -1,5 +1,5 @@
 import { type ChannelName } from '@op/common/realtime';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 import { type RealtimeMessage, realtimeMessageSchema } from '../schemas';
@@ -114,9 +114,7 @@ export class RealtimeManager {
           // Notify all listeners for this channel
           const channelListeners = this.channelListeners.get(channel);
           if (channelListeners) {
-            channelListeners.forEach((listener) =>
-              listener({ channel, data }),
-            );
+            channelListeners.forEach((listener) => listener({ channel, data }));
           }
         },
       );
