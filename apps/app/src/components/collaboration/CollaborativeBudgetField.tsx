@@ -3,7 +3,7 @@
 import { useCollaborativeField } from '@/hooks/useCollaborativeField';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -58,7 +58,12 @@ export function CollaborativeBudgetField({
     initialBudgetValue,
   );
 
-  const showInput = budget !== null;
+  // Decouple visibility from value: input stays visible once revealed,
+  // even if the budget amount is cleared to null.
+  const [isRevealed, setIsRevealed] = useState(initialValue !== null);
+
+  // Show input if explicitly revealed OR if a remote collaborator sets a budget
+  const showInput = isRevealed || budget !== null;
   const currencySymbol =
     CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ?? '$';
 
@@ -85,7 +90,7 @@ export function CollaborativeBudgetField({
 
   const handleReveal = () => {
     justRevealedRef.current = true;
-    setBudget({ currency: DEFAULT_CURRENCY, amount: 0 });
+    setIsRevealed(true);
   };
 
   if (!showInput) {
@@ -99,7 +104,7 @@ export function CollaborativeBudgetField({
   return (
     <NumberField
       ref={budgetInputRef}
-      value={budget.amount}
+      value={budget?.amount ?? null}
       onChange={handleChange}
       prefixText={currencySymbol}
       inputProps={{

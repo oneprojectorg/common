@@ -88,6 +88,7 @@ export function ProposalEditor({
   // Form state — title kept as state for layout display, category/budget
   // owned by collaborative components and mirrored via refs for submit/auto-save
   const [title, setTitle] = useState('');
+  const titleRef = useRef('');
   const categoryRef = useRef<string | null>(null);
   const budgetRef = useRef<number | null>(null);
 
@@ -209,7 +210,7 @@ export function ProposalEditor({
         proposalData: {
           ...currentData,
           collaborationDocId,
-          title,
+          title: titleRef.current,
           category: categoryRef.current ?? undefined,
           budget: budgetRef.current ?? undefined,
         },
@@ -226,6 +227,7 @@ export function ProposalEditor({
       !initializedRef.current
     ) {
       if (parsedProposalData.title) {
+        titleRef.current = parsedProposalData.title;
         setTitle(parsedProposalData.title);
       }
       initializedRef.current = true;
@@ -264,13 +266,14 @@ export function ProposalEditor({
   );
 
   const handleSubmitProposal = useCallback(async () => {
+    const currentTitle = titleRef.current;
     const currentBudget = budgetRef.current;
     const currentCategory = categoryRef.current;
 
     // Validate required fields
     const missingFields: string[] = [];
 
-    if (!title || title.trim() === '') {
+    if (!currentTitle || currentTitle.trim() === '') {
       missingFields.push(t('Title'));
     }
 
@@ -317,7 +320,7 @@ export function ProposalEditor({
       const proposalData: ProposalDataInput = {
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
-        title,
+        title: currentTitle,
         category:
           categories && categories.length > 0
             ? (currentCategory ?? undefined)
@@ -346,7 +349,6 @@ export function ProposalEditor({
     }
   }, [
     t,
-    title,
     editorInstance,
     isBudgetRequired,
     budgetCapAmount,
@@ -385,6 +387,7 @@ export function ProposalEditor({
             <CollaborativeTitleField
               placeholder="Untitled Proposal"
               onChange={(text) => {
+                titleRef.current = text;
                 setTitle(text);
                 debouncedAutoSave();
               }}
