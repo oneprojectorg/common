@@ -80,24 +80,17 @@ function handleMutationError(
   }
 }
 
-interface ProposalEditorProps {
-  instance: ProcessInstance;
-  backHref: string;
-  proposal: Proposal;
-  isEditMode?: boolean;
-}
-
-/**
- * Outer shell: computes the collaboration doc ID and wraps children
- * in CollaborativeDocProvider so collaborative field components can
- * access the shared Yjs document.
- */
 export function ProposalEditor({
   instance,
   backHref,
   proposal,
   isEditMode = false,
-}: ProposalEditorProps) {
+}: {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
+  isEditMode?: boolean;
+}) {
   const { user } = useUser();
   const router = useRouter();
   const t = useTranslations();
@@ -172,7 +165,6 @@ export function ProposalEditor({
       return { budgetCapAmount: phaseBudget, isBudgetRequired: required };
     }
 
-    // Fallback to instance data fieldValues
     const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
     if (
       proposalTemplate &&
