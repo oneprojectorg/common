@@ -75,7 +75,7 @@ export function FieldCard({
   return (
     <div
       className={cn(
-        'rounded-lg border bg-white p-4',
+        'rounded-lg border bg-white px-3 py-4',
         isDragging && 'opacity-50',
       )}
     >
@@ -172,12 +172,14 @@ export function FieldCardDragPreview({ field }: { field: FormField }) {
   const Icon = getFieldIcon(field.type);
   return (
     <div className="rounded-lg border bg-white p-4 shadow-lg">
-      <div className="flex items-center gap-2">
-        <div className="flex size-8 items-center justify-center text-neutral-gray4">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center text-neutral-gray4">
           <LuGripVertical className="size-4" />
         </div>
-        <Icon className="size-4 text-neutral-gray4" />
-        <span className="text-neutral-charcoal">{field.label}</span>
+        <div className="flex min-w-0 items-center gap-2 rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1">
+          <Icon className="size-4 text-neutral-gray4" />
+          <span className="text-neutral-charcoal">{field.label}</span>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 'use client';
 
-import { Sidebar, SidebarTrigger, useSidebar } from '@op/ui/Sidebar';
+import { Button } from '@op/ui/Button';
+import { Sidebar, useSidebar } from '@op/ui/Sidebar';
+import { LuAlignJustify } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -15,10 +17,23 @@ interface TemplateEditorSidebarProps {
 }
 
 /**
- * Sidebar trigger button for mobile - shows hamburger menu icon.
+ * Button to toggle the sidebar on mobile, showing the field list.
  */
-export function TemplateEditorMobileTrigger() {
-  return <SidebarTrigger className="size-4 md:hidden" />;
+export function FieldListTrigger() {
+  const t = useTranslations();
+  const { toggleSidebar } = useSidebar();
+
+  return (
+    <Button
+      color="secondary"
+      className="gap-2 text-neutral-charcoal"
+      size="small"
+      onPress={toggleSidebar}
+    >
+      <LuAlignJustify className="size-4" />
+      {t('Field list')}
+    </Button>
+  );
 }
 
 /**
