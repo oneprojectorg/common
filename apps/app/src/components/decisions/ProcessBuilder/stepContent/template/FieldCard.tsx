@@ -106,11 +106,11 @@ export function FieldCard({
     return (
       <div className="flex items-center gap-2 rounded-lg border bg-neutral-offWhite p-4">
         <div className="flex size-6 items-center justify-center text-neutral-gray4">
-          <LuLock size={16} />
+          <LuLock className="size-4" />
         </div>
         <TooltipTrigger>
           <AriaButton className="flex items-center text-neutral-gray4">
-            <Icon size={16} />
+            <Icon className="size-4" />
           </AriaButton>
           <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
         </TooltipTrigger>
@@ -144,7 +144,7 @@ export function FieldCard({
                 className="flex items-center text-neutral-gray4"
                 onPress={() => labelInputRef.current?.focus()}
               >
-                <Icon size={16} />
+                <Icon className="size-4" />
               </AriaButton>
               <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
             </TooltipTrigger>
@@ -165,7 +165,7 @@ export function FieldCard({
             onPress={() => onRemove(field.id)}
             className="p-2 text-neutral-gray4 hover:text-neutral-charcoal"
           >
-            <LuX size={16} />
+            <LuX className="size-4" />
           </Button>
         )}
       </div>
@@ -222,9 +222,9 @@ export function FieldCardDragPreview({ field }: { field: FormField }) {
     <div className="rounded-lg border bg-white p-4 shadow-lg">
       <div className="flex items-center gap-2">
         <div className="flex size-8 items-center justify-center text-neutral-gray4">
-          <LuGripVertical size={16} />
+          <LuGripVertical className="size-4" />
         </div>
-        <Icon size={16} className="text-neutral-gray4" />
+        <Icon className="size-4 text-neutral-gray4" />
         <span className="text-neutral-charcoal">{field.label}</span>
       </div>
     </div>

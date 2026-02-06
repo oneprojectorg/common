@@ -8,7 +8,7 @@ import { AddFieldMenu } from './AddFieldMenu';
 import { getFieldIcon } from './fieldRegistry';
 import type { FieldType, FormField } from './types';
 
-interface FormBuilderSidebarProps {
+interface TemplateEditorSidebarProps {
   fields: FormField[];
   onAddField: (type: FieldType) => void;
   side?: 'left' | 'right';
@@ -17,26 +17,26 @@ interface FormBuilderSidebarProps {
 /**
  * Sidebar trigger button for mobile - shows hamburger menu icon.
  */
-export function FormBuilderMobileTrigger() {
+export function TemplateEditorMobileTrigger() {
   return <SidebarTrigger className="size-4 md:hidden" />;
 }
 
 /**
- * Sidebar for the form builder showing available fields
+ * Sidebar for the template editor showing available fields
  * and an "Add field" button.
  *
  * On desktop: renders as a fixed sidebar
  * On mobile: renders as a slide-out drawer via the Sidebar component
  */
-export function FormBuilderSidebar({
+export function TemplateEditorSidebar({
   fields,
   onAddField,
   side,
-}: FormBuilderSidebarProps) {
+}: TemplateEditorSidebarProps) {
   const t = useTranslations();
 
   return (
-    <Sidebar label={t('Form builder sidebar')} className="border-r" side={side}>
+    <Sidebar label={t('Template editor sidebar')} className="border-r" side={side}>
       <SidebarContent fields={fields} onAddField={onAddField} />
     </Sidebar>
   );
@@ -48,7 +48,7 @@ export function FormBuilderSidebar({
 function SidebarContent({
   fields,
   onAddField,
-}: Omit<FormBuilderSidebarProps, 'side'>) {
+}: Omit<TemplateEditorSidebarProps, 'side'>) {
   const t = useTranslations();
   const { setOpen, isMobile } = useSidebar();
 
@@ -76,7 +76,7 @@ function SidebarContent({
             return (
               <li key={field.id}>
                 <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-neutral-charcoal">
-                  <Icon size={16} className="shrink-0 text-neutral-gray4" />
+                  <Icon className="size-4 shrink-0 text-neutral-gray4" />
                   <span className="truncate">{field.label}</span>
                 </div>
               </li>
