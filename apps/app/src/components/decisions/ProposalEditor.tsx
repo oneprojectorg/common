@@ -47,6 +47,7 @@ interface ProposalDraftFields {
 function handleMutationError(
   error: { data?: unknown; message?: string },
   operationType: 'create' | 'update' | 'submit',
+  t: (key: string, params?: Record<string, string | number>) => string,
 ) {
   console.error(`Failed to ${operationType} proposal:`, error);
 
@@ -62,14 +63,19 @@ function handleMutationError(
       toast.error({ message: errorMessages[0] });
     } else {
       toast.error({
-        title: 'Please fix the following issues:',
+        title: t('Please fix the following issues:'),
         message: errorMessages.join(', '),
       });
     }
   } else {
+    const titleMap = {
+      create: t('Failed to create proposal'),
+      update: t('Failed to update proposal'),
+      submit: t('Failed to submit proposal'),
+    } as const;
     toast.error({
-      title: `Failed to ${operationType} proposal`,
-      message: error.message || 'An unexpected error occurred',
+      title: titleMap[operationType],
+      message: error.message || t('An unexpected error occurred'),
     });
   }
 }
@@ -208,7 +214,7 @@ export function ProposalEditor({
       });
       router.push(backHref);
     },
-    onError: (error) => handleMutationError(error, 'submit'),
+    onError: (error) => handleMutationError(error, 'submit', t),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
@@ -221,7 +227,7 @@ export function ProposalEditor({
       });
       router.push(backHref);
     },
-    onError: (error) => handleMutationError(error, 'update'),
+    onError: (error) => handleMutationError(error, 'update', t),
   });
 
   const autoSaveMutation = trpc.decision.updateProposal.useMutation({
@@ -375,7 +381,7 @@ export function ProposalEditor({
     updateProposalMutation,
   ]);
 
-  const userName = user.profile?.name ?? 'Anonymous';
+  const userName = user.profile?.name ?? t('Anonymous');
 
   return (
     <CollaborativeDocProvider
@@ -397,7 +403,7 @@ export function ProposalEditor({
 
           <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
             <CollaborativeTitleField
-              placeholder="Untitled Proposal"
+              placeholder={t('Untitled Proposal')}
               onChange={(text) => {
                 const nextDraft = {
                   ...draftRef.current,
@@ -453,7 +459,7 @@ export function ProposalEditor({
               extensions={editorExtensions}
               onEditorReady={handleEditorReady}
               placeholder={t('Write your proposal here...')}
-              editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
+              editorClassName="w-full !max-w-128 sm:min-w-128 min-h-80 px-0 py-4"
             />
 
             <div className="border-t border-neutral-gray2 pt-8">
@@ -462,7 +468,7 @@ export function ProposalEditor({
                 attachments={
                   proposal.attachments?.map((pa) => ({
                     id: pa.attachmentId,
-                    fileName: pa.attachment?.fileName ?? 'Unknown',
+                    fileName: pa.attachment?.fileName ?? t('Unknown'),
                     fileSize: pa.attachment?.fileSize ?? null,
                     url: pa.attachment?.url,
                   })) ?? []
