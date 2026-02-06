@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
+import { Button as AriaButton } from '@op/ui/RAC';
 import { DragHandle } from '@op/ui/Sortable';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
@@ -8,7 +9,6 @@ import { ToggleButton } from '@op/ui/ToggleButton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
 import { LuGripVertical, LuLock, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
