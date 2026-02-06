@@ -605,5 +605,8 @@
   "Attach files": "Anexar arquivos",
   "Select a date": "Selecionar uma data",
   "Enter a number": "Inserir um número",
-  "Section divider": "Divisor de seção"
+  "Section divider": "Divisor de seção",
+  "Proposal title": "Título da proposta",
+  "Proposal summary": "Resumo da proposta",
+  "Field label": "Rótulo do campo"
 }

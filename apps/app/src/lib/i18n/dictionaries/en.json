@@ -610,5 +610,8 @@
   "Attach files": "Attach files",
   "Select a date": "Select a date",
   "Enter a number": "Enter a number",
-  "Section divider": "Section divider"
+  "Section divider": "Section divider",
+  "Proposal title": "Proposal title",
+  "Proposal summary": "Proposal summary",
+  "Field label": "Field label"
 }

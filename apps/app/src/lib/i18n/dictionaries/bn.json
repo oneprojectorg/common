@@ -609,5 +609,8 @@
   "Attach files": "ফাইল সংযুক্ত করুন",
   "Select a date": "একটি তারিখ নির্বাচন করুন",
   "Enter a number": "একটি সংখ্যা লিখুন",
-  "Section divider": "সেকশন বিভাজক"
+  "Section divider": "সেকশন বিভাজক",
+  "Proposal title": "প্রস্তাবের শিরোনাম",
+  "Proposal summary": "প্রস্তাবের সারাংশ",
+  "Field label": "ফিল্ড লেবেল"
 }

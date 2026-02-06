@@ -609,5 +609,8 @@
   "Attach files": "Joindre des fichiers",
   "Select a date": "Sélectionner une date",
   "Enter a number": "Entrer un nombre",
-  "Section divider": "Séparateur de section"
+  "Section divider": "Séparateur de section",
+  "Proposal title": "Titre de la proposition",
+  "Proposal summary": "Résumé de la proposition",
+  "Field label": "Libellé du champ"
 }
