@@ -9,20 +9,34 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
+/** Yjs-synced budget shape — currency + amount as an atomic value */
+interface BudgetValue {
+  currency: string;
+  amount: number;
+}
+
+const DEFAULT_CURRENCY = 'USD';
+
+/** Map currency codes to their display symbol */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+};
+
 interface CollaborativeBudgetFieldProps {
   /** Maximum allowed budget (for placeholder text) */
   budgetCapAmount?: number;
-  /** Initial value from the database (used before Yjs syncs) */
+  /** Initial amount from the database (used before Yjs syncs) */
   initialValue?: number | null;
-  /** Called when the value changes — use for DB persistence */
+  /** Called when the value changes — passes the raw amount for DB persistence */
   onChange?: (budget: number | null) => void;
 }
 
 /**
  * Collaborative budget input synced via Yjs Y.Map.
+ * Stores `{ currency, amount }` in the shared doc for future
+ * multi-currency support. Currently hardcoded to USD.
  * Shows an "Add budget" pill button when no budget is set,
- * then reveals the number input. Changes sync in real time
- * across all connected users.
+ * then reveals the number input.
  */
 export function CollaborativeBudgetField({
   budgetCapAmount,
@@ -33,14 +47,20 @@ export function CollaborativeBudgetField({
   const { ydoc } = useCollaborativeDoc();
   const budgetInputRef = useRef<HTMLInputElement>(null);
 
-  const [budget, setBudget] = useCollaborativeField<number | null>(
+  const initialBudgetValue =
+    initialValue !== null
+      ? { currency: DEFAULT_CURRENCY, amount: initialValue }
+      : null;
+
+  const [budget, setBudget] = useCollaborativeField<BudgetValue | null>(
     ydoc,
     'budget',
-    initialValue,
+    initialBudgetValue,
   );
 
-  // Show the input if a value exists (either from init or remote Yjs update)
   const showInput = budget !== null;
+  const currencySymbol =
+    CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ?? '$';
 
   // Auto-focus when input first appears via the "Add budget" button
   const justRevealedRef = useRef(false);
@@ -52,16 +72,20 @@ export function CollaborativeBudgetField({
   });
 
   const handleChange = (value: number | null) => {
-    setBudget(value);
+    if (value === null) {
+      setBudget(null);
+    } else {
+      setBudget({
+        currency: budget?.currency ?? DEFAULT_CURRENCY,
+        amount: value,
+      });
+    }
     onChange?.(value);
   };
 
   const handleReveal = () => {
-    // Set to 0 so the input renders, then immediately clear to null
-    // so the user sees an empty input. The Yjs field gets set to 0
-    // briefly but that's fine — the user will type a real value.
     justRevealedRef.current = true;
-    setBudget(0);
+    setBudget({ currency: DEFAULT_CURRENCY, amount: 0 });
   };
 
   if (!showInput) {
@@ -75,9 +99,9 @@ export function CollaborativeBudgetField({
   return (
     <NumberField
       ref={budgetInputRef}
-      value={budget}
+      value={budget.amount}
       onChange={handleChange}
-      prefixText="$"
+      prefixText={currencySymbol}
       inputProps={{
         placeholder: budgetCapAmount
           ? `Max ${budgetCapAmount.toLocaleString()}`
