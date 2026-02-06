@@ -26,20 +26,15 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 };
 
 interface CollaborativeBudgetFieldProps {
-  /** Maximum allowed budget (for placeholder text) */
   budgetCapAmount?: number;
-  /** Initial amount from the database (used before Yjs syncs) */
   initialValue?: number | null;
-  /** Called when the value changes — passes the raw amount for DB persistence */
   onChange?: (budget: number | null) => void;
 }
 
 /**
  * Collaborative budget input synced via Yjs Y.Map.
  * Stores `{ currency, amount }` in the shared doc for future
- * multi-currency support. Currently hardcoded to USD.
- * Shows an "Add budget" pill button when no budget is set,
- * then reveals the number input.
+ * multi-currency support.
  */
 export function CollaborativeBudgetField({
   budgetCapAmount,
