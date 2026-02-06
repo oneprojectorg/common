@@ -1,5 +1,6 @@
 'use client';
 
+import { AutoSizeInput } from '@op/ui/AutoSizeInput';
 import { Button } from '@op/ui/Button';
 import { Button as AriaButton } from '@op/ui/RAC';
 import { DragHandle } from '@op/ui/Sortable';
@@ -8,7 +9,7 @@ import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { LuGripVertical, LuLock, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -31,57 +32,6 @@ interface FieldCardProps {
   onRemove?: (fieldId: string) => void;
   /** Update handler for field changes */
   onUpdate?: (fieldId: string, updates: Partial<FormField>) => void;
-}
-
-/**
- * Input that automatically resizes based on its content.
- */
-function AutoSizeInput({
-  value,
-  onChange,
-  className,
-  inputRef,
-  minWidth = 30,
-  'aria-label': ariaLabel,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-  inputRef?: React.RefObject<HTMLInputElement>;
-  minWidth?: number;
-  'aria-label': string;
-}) {
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const [width, setWidth] = useState(minWidth);
-
-  useEffect(() => {
-    if (measureRef.current) {
-      const measuredWidth = measureRef.current.offsetWidth;
-      setWidth(Math.max(minWidth, measuredWidth + 4)); // +4 for cursor space
-    }
-  }, [value, minWidth]);
-
-  return (
-    <div className="relative inline-block">
-      {/* Hidden span to measure text width */}
-      <span
-        ref={measureRef}
-        className={cn(className, 'invisible absolute whitespace-pre')}
-        aria-hidden="true"
-      >
-        {value || ''}
-      </span>
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(className, 'border-none bg-transparent outline-none')}
-        style={{ width }}
-        aria-label={ariaLabel}
-      />
-    </div>
-  );
 }
 
 /**
@@ -130,31 +80,33 @@ export function FieldCard({
       )}
     >
       {/* Header: drag handle, icon, label input, remove button */}
-      <div className="flex items-center gap-2">
-        <div className="flex grow items-center gap-2">
+      <div className="flex w-full items-center gap-2">
+        <div className="flex min-w-0 grow items-center gap-2">
           {controls && (
             <DragHandle
               {...controls.dragHandleProps}
               aria-label={t('Drag to reorder {field}', { field: field.label })}
             />
           )}
-          <div className="flex shrink items-center gap-2 rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1 focus-within:border-neutral-gray2 focus-within:bg-white">
+          <div className="flex min-w-0 items-center gap-2 rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1 focus-within:border-neutral-gray2 focus-within:bg-white">
             <TooltipTrigger>
               <AriaButton
-                className="flex items-center text-neutral-gray4"
+                className="flex shrink-0 items-center text-neutral-gray4"
                 onPress={() => labelInputRef.current?.focus()}
               >
                 <Icon className="size-4" />
               </AriaButton>
               <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
             </TooltipTrigger>
-            <AutoSizeInput
-              inputRef={labelInputRef}
-              value={field.label}
-              onChange={(label) => onUpdate?.(field.id, { label })}
-              className="text-neutral-charcoal"
-              aria-label={t('Field label')}
-            />
+            <div className="min-w-0 overflow-hidden">
+              <AutoSizeInput
+                inputRef={labelInputRef}
+                value={field.label}
+                onChange={(label) => onUpdate?.(field.id, { label })}
+                className="text-neutral-charcoal"
+                aria-label={t('Field label')}
+              />
+            </div>
           </div>
         </div>
         {onRemove && (
