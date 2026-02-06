@@ -1,17 +1,12 @@
 'use client';
 
-import {
-  type CollabStatus,
-  type CollabUser,
-  useTiptapCollab,
-} from '@/hooks/useTiptapCollab';
+import type { CollabStatus } from '@/hooks/useTiptapCollab';
 import {
   RichTextEditorSkeleton,
   StyledRichTextContent,
   useRichTextEditor,
 } from '@op/ui/RichTextEditor';
 import Snapshot from '@tiptap-pro/extension-snapshot';
-import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import type { Editor, Extensions } from '@tiptap/react';
@@ -22,7 +17,8 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import type { Doc } from 'yjs';
+
+import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 // How often to create a snapshot in version history
 const AUTOVERSION_INTERVAL_SECONDS = 900; // 15 minutes
@@ -34,16 +30,13 @@ export interface CollaborativeEditorRef {
 }
 
 export interface CollaborativeEditorProps {
-  docId: string;
+  /** The Yjs field name to bind to (defaults to 'default' for main content) */
+  field?: string;
   extensions?: Extensions;
   placeholder?: string;
   onEditorReady?: (editor: Editor) => void;
-  /** Called when the collaboration provider is ready */
-  onProviderReady?: (provider: TiptapCollabProvider) => void;
   className?: string;
   editorClassName?: string;
-  /** User's display name for the collaboration cursor */
-  userName?: string;
 }
 
 /** Rich text editor with real-time collaboration via TipTap Cloud */
@@ -53,94 +46,29 @@ export const CollaborativeEditor = forwardRef<
 >(
   (
     {
-      docId,
-      extensions = [],
-      placeholder = 'Start writing...',
-      onEditorReady,
-      onProviderReady,
-      className = '',
-      editorClassName = '',
-      userName,
-    },
-    ref,
-  ) => {
-    const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
-      docId,
-      enabled: true,
-      userName: userName ?? 'Anonymous',
-    });
-
-    // Notify parent when provider becomes available
-    useEffect(() => {
-      if (provider && onProviderReady) {
-        onProviderReady(provider);
-      }
-    }, [provider, onProviderReady]);
-
-    // Wait for provider before rendering the editor inner component
-    // This ensures Snapshot extension is included from the start
-    if (!provider) {
-      return <RichTextEditorSkeleton className={className} />;
-    }
-
-    return (
-      <CollaborativeEditorInner
-        ref={ref}
-        ydoc={ydoc}
-        provider={provider}
-        status={status}
-        isSynced={isSynced}
-        extensions={extensions}
-        placeholder={placeholder}
-        onEditorReady={onEditorReady}
-        className={className}
-        editorClassName={editorClassName}
-        user={user}
-      />
-    );
-  },
-);
-
-type CollaborativeEditorInnerProps = Omit<CollaborativeEditorProps, 'docId'> & {
-  ydoc: Doc;
-  provider: TiptapCollabProvider;
-  status: CollabStatus;
-  isSynced: boolean;
-  /** User object with assigned color from the hook */
-  user: CollabUser;
-};
-
-const CollaborativeEditorInner = forwardRef<
-  CollaborativeEditorRef,
-  CollaborativeEditorInnerProps
->(
-  (
-    {
-      ydoc,
-      provider,
-      status,
-      isSynced,
+      field = 'default',
       extensions = [],
       placeholder = 'Start writing...',
       onEditorReady,
       className = '',
       editorClassName = '',
-      user,
     },
     ref,
   ) => {
+    const { ydoc, provider, status, isSynced, user } = useCollaborativeDoc();
+
     // Build collaborative extensions with cursor support
     const collaborativeExtensions = useMemo(
       () => [
         ...extensions,
-        Collaboration.configure({ document: ydoc }),
+        Collaboration.configure({ document: ydoc, field }),
         CollaborationCaret.configure({
           provider,
           user,
         }),
         Snapshot.configure({ provider }),
       ],
-      [extensions, ydoc, provider, user],
+      [extensions, ydoc, field, provider, user],
     );
 
     const editor = useRichTextEditor({
@@ -186,7 +114,5 @@ const CollaborativeEditorInner = forwardRef<
     );
   },
 );
-
-CollaborativeEditorInner.displayName = 'CollaborativeEditorInner';
 
 CollaborativeEditor.displayName = 'CollaborativeEditor';

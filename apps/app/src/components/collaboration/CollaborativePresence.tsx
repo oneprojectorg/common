@@ -3,10 +3,10 @@
 import { useAwarenessUsers } from '@/hooks/useAwarenessUsers';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
-import type { TiptapCollabProvider } from '@tiptap-pro/provider';
+
+import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 interface CollaborativePresenceProps {
-  provider: TiptapCollabProvider | null;
   /** Maximum avatars to show before "+N" overflow */
   maxVisible?: number;
   className?: string;
@@ -14,13 +14,14 @@ interface CollaborativePresenceProps {
 
 /**
  * Avatar stack showing users currently editing the document.
- * Subscribe to TipTap awareness to show real-time presence.
+ * Subscribes to TipTap awareness to show real-time presence.
+ * Must be used within a CollaborativeDocProvider.
  */
 export function CollaborativePresence({
-  provider,
   maxVisible = 3,
   className,
 }: CollaborativePresenceProps) {
+  const { provider } = useCollaborativeDoc();
   const users = useAwarenessUsers(provider);
 
   if (users.length === 0) {
