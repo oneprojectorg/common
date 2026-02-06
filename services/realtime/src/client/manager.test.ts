@@ -1,26 +1,21 @@
 import { Channels } from '@op/common/realtime';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import WebSocket from 'ws';
 
 import type { RealtimeMessage } from '../schemas';
 import { RealtimeClient } from '../server/client';
-import { generateConnectionToken } from '../server/token';
 import { type RealtimeHandler, RealtimeManager } from './manager';
-
-// Make WebSocket available globally for Centrifuge
-global.WebSocket = WebSocket as any;
 
 describe.concurrent('RealtimeManager', () => {
   let realtimeClient: RealtimeClient;
-  const WS_URL = process.env.CENTRIFUGO_WS_URL!;
-  const API_URL = process.env.CENTRIFUGO_API_URL!;
-  const API_KEY = process.env.CENTRIFUGO_API_KEY!;
+  const SUPABASE_URL = process.env.SUPABASE_URL!;
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   beforeAll(() => {
     // Initialize the server client for publishing messages
     realtimeClient = new RealtimeClient({
-      apiUrl: API_URL,
-      apiKey: API_KEY,
+      supabaseUrl: SUPABASE_URL,
+      serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
     });
   });
 
@@ -32,18 +27,12 @@ describe.concurrent('RealtimeManager', () => {
   });
 
   it('should connect, subscribe to a channel, and receive published messages', async () => {
-    const TEST_USER_ID = 'test-user-connect';
     const TEST_CHANNEL = Channels.org('test-connect');
-
-    // Generate a real token using the token generation function
-    const getToken = async () => {
-      return generateConnectionToken(TEST_USER_ID);
-    };
 
     // Initialize the RealtimeManager
     RealtimeManager.initialize({
-      wsUrl: WS_URL,
-      getToken,
+      supabaseUrl: SUPABASE_URL,
+      supabaseAnonKey: SUPABASE_ANON_KEY,
     });
 
     const manager = RealtimeManager.getInstance();
@@ -81,113 +70,16 @@ describe.concurrent('RealtimeManager', () => {
     expect(receivedMessage).toEqual(testMessage);
   });
 
-  it.each([
-    { token: '', description: 'empty token' },
-    { token: 'random-token', description: 'invalid token' },
-  ])(
-    'should not allow unauthenticated users to connect to channels with $description',
-    async ({ token, description }) => {
-      const TEST_CHANNEL = Channels.org(
-        `test-unauth-${description.replace(/\s+/g, '-')}`,
-      );
-
-      // Create a new instance to avoid interference with other tests
-      // Force reset the singleton by accessing private static property
-      (RealtimeManager as any).instance = null;
-
-      // Initialize with an invalid/empty token to simulate unauthenticated user
-      const getToken = async () => {
-        return token;
-      };
-
-      RealtimeManager.initialize({
-        wsUrl: WS_URL,
-        getToken,
-      });
-
-      const manager = RealtimeManager.getInstance();
-
-      // Track disconnect reason to verify it's auth-related
-      let disconnectReason: any = null;
-
-      const disconnectionPromise = new Promise<boolean>((resolve) => {
-        manager.addConnectionListener((isConnected: boolean) => {
-          if (!isConnected) {
-            resolve(true);
-          }
-        });
-
-        // If no disconnection happens within 1 second, assume connection might have succeeded
-        setTimeout(() => resolve(false), 1000);
-      });
-
-      // Trigger connection and hook into centrifuge events immediately
-      const messageReceived = new Promise<boolean>((resolve) => {
-        const handler = () => {
-          resolve(true);
-        };
-
-        // Attempt to subscribe - this triggers ensureConnected()
-        manager.subscribe(TEST_CHANNEL, handler);
-
-        // Immediately after subscribe, access centrifuge and hook into events
-        // Use setTimeout to ensure centrifuge is initialized
-        setTimeout(() => {
-          const centrifugeInstance = (manager as any).centrifuge;
-          if (centrifugeInstance) {
-            centrifugeInstance.on('disconnected', (ctx: any) => {
-              disconnectReason = ctx;
-            });
-          }
-        }, 0);
-
-        // Set a timer to resolve false if no message is received
-        setTimeout(() => resolve(false), 1000);
-      });
-
-      // Wait for disconnection or timeout
-      const disconnected = await disconnectionPromise;
-
-      // Publish a test message
-      const testMessage: RealtimeMessage = { mutationId: 'test-mutation-2' };
-
-      await realtimeClient.publish({
-        channel: TEST_CHANNEL,
-        data: testMessage,
-      });
-
-      // Wait to see if the message is received
-      const received = await messageReceived;
-
-      // Verify that either:
-      // 1. The connection was never established (disconnected)
-      // 2. No message was received (because connection failed)
-      expect(disconnected || !received).toBe(true);
-
-      // Verify the disconnect reason indicates authentication failure
-      expect(disconnectReason).toBeDefined();
-      // Both 3500 (invalid token) and 3501 (bad request) are auth-related errors
-      expect([3500, 3501]).toContain(disconnectReason.code);
-      expect(disconnectReason.reason).toBeDefined();
-    },
-  );
-
   it('should deliver messages to multiple subscribers on the same channel', async () => {
-    const TEST_USER_ID = 'test-user-multiple';
     const TEST_CHANNEL = Channels.org('test-multiple-subscribers');
 
     // Reset the singleton
     (RealtimeManager as any).instance = null;
 
-    // Generate a real token
-    const getToken = async () => {
-      return generateConnectionToken(TEST_USER_ID);
-    };
-
     // Initialize the RealtimeManager
     RealtimeManager.initialize({
-      wsUrl: WS_URL,
-      getToken,
+      supabaseUrl: SUPABASE_URL,
+      supabaseAnonKey: SUPABASE_ANON_KEY,
     });
 
     const manager = RealtimeManager.getInstance();
