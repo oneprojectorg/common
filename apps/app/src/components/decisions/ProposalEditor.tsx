@@ -9,9 +9,6 @@ import {
 } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { NumberField } from '@op/ui/NumberField';
-import { Select, SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
@@ -26,6 +23,8 @@ import {
   getProposalExtensions,
 } from '../RichTextEditor';
 import {
+  CollaborativeBudgetField,
+  CollaborativeCategoryField,
   CollaborativeDocProvider,
   CollaborativeEditor,
   CollaborativePresence,
@@ -69,39 +68,25 @@ function handleMutationError(
   }
 }
 
+interface ProposalEditorProps {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
+  isEditMode?: boolean;
+}
+
+/**
+ * Outer shell: computes the collaboration doc ID and wraps children
+ * in CollaborativeDocProvider so collaborative field components can
+ * access the shared Yjs document.
+ */
 export function ProposalEditor({
   instance,
   backHref,
   proposal,
   isEditMode = false,
-}: {
-  instance: ProcessInstance;
-  backHref: string;
-  proposal: Proposal;
-  isEditMode?: boolean;
-}) {
-  const router = useRouter();
-  const t = useTranslations();
-  const posthog = usePostHog();
-  const utils = trpc.useUtils();
+}: ProposalEditorProps) {
   const { user } = useUser();
-
-  // Form state
-  const [title, setTitle] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [budget, setBudget] = useState<number | null>(null);
-  const [showBudgetInput, setShowBudgetInput] = useState(false);
-
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Refs
-  const budgetInputRef = useRef<HTMLInputElement>(null);
-  const initializedRef = useRef(false);
-
-  // Check if editing a draft (should show info modal and use submitProposal)
-  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -112,6 +97,68 @@ export function ProposalEditor({
     }
     return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
   }, [proposal?.proposalData, proposal?.id, instance.id]);
+
+  const userName = user.profile?.name ?? 'Anonymous';
+
+  return (
+    <CollaborativeDocProvider
+      docId={collaborationDocId}
+      userName={userName}
+      fallback={<ProposalEditorSkeleton />}
+    >
+      <ProposalEditorContent
+        instance={instance}
+        backHref={backHref}
+        proposal={proposal}
+        isEditMode={isEditMode}
+        collaborationDocId={collaborationDocId}
+      />
+    </CollaborativeDocProvider>
+  );
+}
+
+/**
+ * Inner content rendered inside the CollaborativeDocProvider.
+ * Collaborative field components (title, category, budget) each
+ * manage their own Yjs binding internally and notify this component
+ * of changes via onChange for DB persistence.
+ */
+function ProposalEditorContent({
+  instance,
+  backHref,
+  proposal,
+  isEditMode = false,
+  collaborationDocId,
+}: ProposalEditorProps & { collaborationDocId: string }) {
+  const router = useRouter();
+  const t = useTranslations();
+  const posthog = usePostHog();
+  const utils = trpc.useUtils();
+
+  // Parse existing proposal data once for initial values
+  const parsedProposalData = useMemo(
+    () =>
+      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
+    [isEditMode, proposal],
+  );
+
+  // Latest field values tracked via refs — collaborative components own
+  // the Yjs state, these refs just mirror the latest for submit/auto-save
+  const titleRef = useRef(parsedProposalData?.title ?? '');
+  const categoryRef = useRef<string | null>(
+    parsedProposalData?.category ?? null,
+  );
+  const budgetRef = useRef<number | null>(parsedProposalData?.budget ?? null);
+
+  const [title, setTitle] = useState(parsedProposalData?.title ?? '');
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const initializedRef = useRef(false);
+
+  // Check if editing a draft (should show info modal and use submitProposal)
+  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
   // Editor extensions - memoized with collaborative flag
   const editorExtensions = useMemo(
@@ -157,13 +204,6 @@ export function ProposalEditor({
     return { budgetCapAmount: cap, isBudgetRequired: required };
   }, [instance]);
 
-  // Parse existing proposal data for editing
-  const parsedProposalData = useMemo(
-    () =>
-      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
-    [isEditMode, proposal],
-  );
-
   // Mutations
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
@@ -198,8 +238,8 @@ export function ProposalEditor({
     },
   });
 
-  // Persists to database while user types
-  const debouncedSaveTitle = useDebouncedCallback((newTitle: string) => {
+  /** Debounced auto-save: persists all collaborative fields to the DB */
+  const debouncedAutoSave = useDebouncedCallback(() => {
     if (!proposal) {
       return;
     }
@@ -212,13 +252,15 @@ export function ProposalEditor({
         proposalData: {
           ...currentData,
           collaborationDocId,
-          title: newTitle,
+          title: titleRef.current,
+          category: categoryRef.current ?? undefined,
+          budget: budgetRef.current ?? undefined,
         },
       },
     });
   }, 1500);
 
-  // Initialize form with existing proposal data
+  // Initialize title from existing proposal data
   useEffect(() => {
     if (
       isEditMode &&
@@ -226,23 +268,9 @@ export function ProposalEditor({
       parsedProposalData &&
       !initializedRef.current
     ) {
-      const {
-        title: existingTitle,
-        category: existingCategory,
-        budget: existingBudget,
-      } = parsedProposalData;
-
-      if (existingTitle) {
-        setTitle(existingTitle);
+      if (parsedProposalData.title) {
+        setTitle(parsedProposalData.title);
       }
-      if (existingCategory) {
-        setSelectedCategory(existingCategory);
-      }
-      if (existingBudget !== undefined) {
-        setBudget(existingBudget);
-        setShowBudgetInput(true);
-      }
-
       initializedRef.current = true;
     }
   }, [isEditMode, proposal, parsedProposalData]);
@@ -254,13 +282,6 @@ export function ProposalEditor({
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
 
-  // Auto-focus budget input when shown
-  useEffect(() => {
-    if (showBudgetInput && budgetInputRef.current) {
-      budgetInputRef.current.focus();
-    }
-  }, [showBudgetInput]);
-
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
   }, []);
@@ -269,28 +290,60 @@ export function ProposalEditor({
     setShowInfoModal(false);
   }, []);
 
+  const handleTitleChange = useCallback(
+    (text: string) => {
+      setTitle(text);
+      titleRef.current = text;
+      debouncedAutoSave();
+    },
+    [debouncedAutoSave],
+  );
+
+  const handleCategoryChange = useCallback(
+    (category: string | null) => {
+      categoryRef.current = category;
+      debouncedAutoSave();
+    },
+    [debouncedAutoSave],
+  );
+
+  const handleBudgetChange = useCallback(
+    (budget: number | null) => {
+      budgetRef.current = budget;
+      debouncedAutoSave();
+    },
+    [debouncedAutoSave],
+  );
+
   const handleSubmitProposal = useCallback(async () => {
+    const currentTitle = titleRef.current;
+    const currentBudget = budgetRef.current;
+    const currentCategory = categoryRef.current;
+
     // Validate required fields
     const missingFields: string[] = [];
 
-    if (!title || title.trim() === '') {
+    if (!currentTitle || currentTitle.trim() === '') {
       missingFields.push(t('Title'));
     }
 
     // Check for empty content in the editor
     if (editorInstance) {
-      const isEmpty = editorInstance.isEmpty;
-      if (isEmpty) {
+      if (editorInstance.isEmpty) {
         missingFields.push(t('Description'));
       }
     }
 
-    if (isBudgetRequired && budget === null) {
+    if (isBudgetRequired && currentBudget === null) {
       missingFields.push(t('Budget'));
     }
 
     // Validate budget cap
-    if (budget !== null && budgetCapAmount && budget > budgetCapAmount) {
+    if (
+      currentBudget !== null &&
+      budgetCapAmount &&
+      currentBudget > budgetCapAmount
+    ) {
       toast.error({
         message: t('Budget cannot exceed {amount}', {
           amount: budgetCapAmount.toLocaleString(),
@@ -317,12 +370,12 @@ export function ProposalEditor({
       const proposalData: ProposalDataInput = {
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
-        title,
+        title: currentTitle,
         category:
           categories && categories.length > 0
-            ? (selectedCategory ?? undefined)
+            ? (currentCategory ?? undefined)
             : undefined,
-        budget: budget ?? undefined,
+        budget: currentBudget ?? undefined,
       };
 
       // Update existing proposal
@@ -346,12 +399,9 @@ export function ProposalEditor({
     }
   }, [
     t,
-    title,
     editorInstance,
     isBudgetRequired,
-    budget,
     budgetCapAmount,
-    selectedCategory,
     collaborationDocId,
     categories,
     proposal,
@@ -360,131 +410,81 @@ export function ProposalEditor({
     updateProposalMutation,
   ]);
 
-  const userName = user.profile?.name ?? 'Anonymous';
-
-  const editorSkeleton = <ProposalEditorSkeleton />;
-
   return (
-    <CollaborativeDocProvider
-      docId={collaborationDocId}
-      userName={userName}
-      fallback={editorSkeleton}
+    <ProposalEditorLayout
+      backHref={backHref}
+      title={title}
+      onSubmitProposal={handleSubmitProposal}
+      isSubmitting={isSubmitting}
+      isEditMode={isEditMode}
+      isDraft={isDraft}
+      presenceSlot={<CollaborativePresence />}
     >
-      <ProposalEditorLayout
-        backHref={backHref}
-        title={title}
-        onSubmitProposal={handleSubmitProposal}
-        isSubmitting={isSubmitting}
-        isEditMode={isEditMode}
-        isDraft={isDraft}
-        presenceSlot={<CollaborativePresence />}
-      >
-        <div className="flex flex-1 flex-col gap-12">
-          {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+      <div className="flex flex-1 flex-col gap-12">
+        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
 
-          <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
-            {/* Title - Collaborative */}
-            <CollaborativeTitleField
-              placeholder="Untitled Proposal"
-              onChange={(text) => {
-                setTitle(text);
-                debouncedSaveTitle(text);
-              }}
+        <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
+          {/* Title - Collaborative via Yjs XmlFragment */}
+          <CollaborativeTitleField
+            placeholder="Untitled Proposal"
+            onChange={handleTitleChange}
+          />
+
+          {/* Category and Budget - Collaborative via Yjs Y.Map */}
+          <div className="flex gap-6">
+            <CollaborativeCategoryField
+              categories={categories ?? []}
+              initialValue={parsedProposalData?.category ?? null}
+              onChange={handleCategoryChange}
             />
 
-            {/* Category and Budget */}
-            <div className="flex gap-6">
-              {categories && categories.length > 0 && (
-                <Select
-                  variant="pill"
-                  size="medium"
-                  placeholder={t('Select category')}
-                  selectedKey={selectedCategory}
-                  onSelectionChange={(key) =>
-                    setSelectedCategory(key as string)
-                  }
-                  className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-                  popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
-                >
-                  {categories.map((category) => (
-                    <SelectItem
-                      className="min-w-fit"
-                      key={category.id}
-                      id={category.name}
-                    >
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </Select>
-              )}
-
-              {!showBudgetInput && (
-                <Button
-                  variant="pill"
-                  color="pill"
-                  onPress={() => setShowBudgetInput(true)}
-                >
-                  Add budget
-                </Button>
-              )}
-
-              {showBudgetInput && (
-                <NumberField
-                  ref={budgetInputRef}
-                  value={budget}
-                  onChange={setBudget}
-                  prefixText="$"
-                  inputProps={{
-                    placeholder: budgetCapAmount
-                      ? `Max ${budgetCapAmount.toLocaleString()}`
-                      : 'Enter amount',
-                  }}
-                  fieldClassName="w-auto"
-                />
-              )}
-            </div>
-
-            {/* Rich Text Editor with Collaboration */}
-            <CollaborativeEditor
-              field="default"
-              extensions={editorExtensions}
-              onEditorReady={handleEditorReady}
-              placeholder={t('Write your proposal here...')}
-              editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
+            <CollaborativeBudgetField
+              budgetCapAmount={budgetCapAmount}
+              initialValue={parsedProposalData?.budget ?? null}
+              onChange={handleBudgetChange}
             />
+          </div>
 
-            {/* Attachments */}
-            <div className="border-t border-neutral-gray2 pt-8">
-              <ProposalAttachments
-                proposalId={proposal.id}
-                attachments={
-                  proposal.attachments?.map((pa) => ({
-                    id: pa.attachmentId,
-                    fileName: pa.attachment?.fileName ?? 'Unknown',
-                    fileSize: pa.attachment?.fileSize ?? null,
-                    url: pa.attachment?.url,
-                  })) ?? []
-                }
-                onMutate={() =>
-                  utils.decision.getProposal.invalidate({
-                    profileId: proposal.profileId,
-                  })
-                }
-              />
-            </div>
+          {/* Rich Text Editor with Collaboration */}
+          <CollaborativeEditor
+            field="content"
+            extensions={editorExtensions}
+            onEditorReady={handleEditorReady}
+            placeholder={t('Write your proposal here...')}
+            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
+          />
+
+          {/* Attachments */}
+          <div className="border-t border-neutral-gray2 pt-8">
+            <ProposalAttachments
+              proposalId={proposal.id}
+              attachments={
+                proposal.attachments?.map((pa) => ({
+                  id: pa.attachmentId,
+                  fileName: pa.attachment?.fileName ?? 'Unknown',
+                  fileSize: pa.attachment?.fileSize ?? null,
+                  url: pa.attachment?.url,
+                })) ?? []
+              }
+              onMutate={() =>
+                utils.decision.getProposal.invalidate({
+                  profileId: proposal.profileId,
+                })
+              }
+            />
           </div>
         </div>
+      </div>
 
-        {/* Proposal Info Modal */}
-        {proposalInfoTitle && proposalInfoContent && (
-          <ProposalInfoModal
-            isOpen={showInfoModal}
-            onClose={handleCloseInfoModal}
-            title={proposalInfoTitle}
-            content={proposalInfoContent}
-          />
-        )}
-      </ProposalEditorLayout>
-    </CollaborativeDocProvider>
+      {/* Proposal Info Modal */}
+      {proposalInfoTitle && proposalInfoContent && (
+        <ProposalInfoModal
+          isOpen={showInfoModal}
+          onClose={handleCloseInfoModal}
+          title={proposalInfoTitle}
+          content={proposalInfoContent}
+        />
+      )}
+    </ProposalEditorLayout>
   );
 }
