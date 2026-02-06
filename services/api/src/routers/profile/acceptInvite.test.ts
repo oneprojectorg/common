@@ -45,7 +45,7 @@ describe.concurrent('profile.acceptInvite', () => {
     }
 
     // Track invite for cleanup
-    testData.trackProfileInvite(invite.id);
+    testData.trackProfileInvite(invitee.email, profile.id);
 
     // Accept the invite as the invitee
     const { session } = await createIsolatedSession(invitee.email);
@@ -54,9 +54,6 @@ describe.concurrent('profile.acceptInvite', () => {
     const result = await caller.acceptInvite({
       inviteId: invite.id,
     });
-
-    // Track created profileUser for cleanup
-    testData.trackProfileUser(result.id);
 
     // Verify the profileUser was created
     expect(result).toBeDefined();
@@ -142,7 +139,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    testData.trackProfileInvite(invite.id);
+    testData.trackProfileInvite(user.email, profile.id);
 
     // Try to accept the already-accepted invite
     const { session } = await createIsolatedSession(user.email);
@@ -189,7 +186,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    testData.trackProfileInvite(invite.id);
+    testData.trackProfileInvite('different-email@oneproject.org', profile.id);
 
     // Try to accept an invite meant for a different email
     const { session } = await createIsolatedSession(user.email);
@@ -238,7 +235,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    testData.trackProfileInvite(invite.id);
+    testData.trackProfileInvite(existingMember.email, profile.id);
 
     // Try to accept invite when already a member
     const { session } = await createIsolatedSession(existingMember.email);
@@ -286,7 +283,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    testData.trackProfileInvite(invite.id);
+    testData.trackProfileInvite(uppercaseEmail, profile.id);
 
     // Accept invite - should work despite case difference
     const { session } = await createIsolatedSession(invitee.email);
@@ -295,9 +292,6 @@ describe.concurrent('profile.acceptInvite', () => {
     const result = await caller.acceptInvite({
       inviteId: invite.id,
     });
-
-    // Track created profileUser for cleanup
-    testData.trackProfileUser(result.id);
 
     expect(result).toBeDefined();
     expect(result.profileId).toBe(profile.id);
@@ -333,7 +327,7 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    testData.trackProfileInvite(invite.id);
+    testData.trackProfileInvite(invitee.email, profile.id);
 
     // Accept the invite
     const { session } = await createIsolatedSession(invitee.email);
@@ -342,9 +336,6 @@ describe.concurrent('profile.acceptInvite', () => {
     const result = await caller.acceptInvite({
       inviteId: invite.id,
     });
-
-    // Track created profileUser for cleanup
-    testData.trackProfileUser(result.id);
 
     // Verify the ADMIN role was assigned
     const profileUserWithRoles = await db.query.profileUsers.findFirst({
