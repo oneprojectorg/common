@@ -11,7 +11,7 @@ import MembersSection from './stepContent/members/MembersSection';
 import RolesSection from './stepContent/members/RolesSection';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
 import SettingsSection from './stepContent/rubric/SettingsSection';
-import FormBuilderSection from './stepContent/template/FormBuilderSection';
+import TemplateEditorSection from './stepContent/template/TemplateEditorSection';
 
 // Props that all section components receive
 export interface SectionProps {
@@ -35,7 +35,7 @@ const CONTENT_REGISTRY: ContentRegistry = {
     voting: VotingSection,
   },
   template: {
-    formBuilder: FormBuilderSection,
+    templateEditor: TemplateEditorSection,
   },
   rubric: {
     criteria: CriteriaSection,
