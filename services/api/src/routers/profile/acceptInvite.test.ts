@@ -103,7 +103,7 @@ describe.concurrent('profile.acceptInvite', () => {
       }),
     ).rejects.toMatchObject({
       cause: {
-        name: 'CommonError',
+        name: 'NotFoundError',
       },
     });
   });
@@ -151,7 +151,7 @@ describe.concurrent('profile.acceptInvite', () => {
       }),
     ).rejects.toMatchObject({
       cause: {
-        name: 'CommonError',
+        name: 'ConflictError',
       },
     });
   });

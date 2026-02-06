@@ -6,7 +6,12 @@ import {
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { CommonError, UnauthorizedError } from '../../utils/error';
+import {
+  CommonError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../utils/error';
 
 /**
  * Accept a profile invite, creating a profileUser with the specified role.
@@ -18,16 +23,19 @@ export const acceptProfileInvite = async ({
   inviteId: string;
   user: User;
 }) => {
-  // 1. Find the pending invite (acceptedOn is null means pending)
+  // 1. Find the invite
   const invite = await db.query.profileInvites.findFirst({
     where: {
       id: inviteId,
-      acceptedOn: { isNull: true },
     },
   });
 
   if (!invite) {
-    throw new CommonError('Invite not found or already accepted');
+    throw new NotFoundError('Invite', inviteId);
+  }
+
+  if (invite.acceptedOn) {
+    throw new ConflictError('This invite has already been accepted');
   }
 
   // TODO: We verify the user's email here. We should verify this only if an existing member doesn't exist. So we should store the profileId of the invitee. This comes in a separate PR updating the table with a migration
