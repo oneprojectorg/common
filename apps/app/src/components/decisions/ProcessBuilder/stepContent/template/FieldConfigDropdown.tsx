@@ -66,8 +66,11 @@ export function FieldConfigDropdown({
   // Focus the last input when a new option is added
   useEffect(() => {
     if (shouldFocusNewRef.current && containerRef.current) {
-      const inputs = containerRef.current.querySelectorAll('input[type="text"]');
-      const lastInput = inputs[inputs.length - 1] as HTMLInputElement | undefined;
+      const inputs =
+        containerRef.current.querySelectorAll('input[type="text"]');
+      const lastInput = inputs[inputs.length - 1] as
+        | HTMLInputElement
+        | undefined;
       lastInput?.focus();
       shouldFocusNewRef.current = false;
     }
