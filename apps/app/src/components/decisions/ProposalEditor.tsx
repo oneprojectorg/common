@@ -10,6 +10,15 @@ import {
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
+import Form, { type IChangeEvent } from '@rjsf/core';
+import type {
+  FieldProps,
+  ObjectFieldTemplateProps,
+  RJSFSchema,
+  UiSchema,
+  ValidatorType,
+} from '@rjsf/utils';
+import validator from '@rjsf/validator-ajv8';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
@@ -28,6 +37,7 @@ import {
   CollaborativeDocProvider,
   CollaborativeEditor,
   CollaborativePresence,
+  CollaborativeShortTextWidget,
   CollaborativeTitleField,
 } from '../collaboration';
 import { ProposalAttachments } from './ProposalAttachments';
@@ -37,13 +47,273 @@ import { ProposalInfoModal } from './ProposalInfoModal';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalDraftFields {
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/**
+ * Draft state for the three system fields persisted to proposalData.
+ * Dynamic template fields live exclusively in Yjs and are NOT part of this.
+ */
+interface ProposalDraftFields extends Record<string, unknown> {
   title: string;
   category: string | null;
   budget: number | null;
 }
 
-/** Handles tRPC validation errors from mutation responses */
+/**
+ * Extra props passed to RJSF fields/widgets via `formContext`.
+ * Contains runtime data that the schema alone can't express.
+ */
+interface ProposalFormContext {
+  categories: Array<{ id: string; name: string }>;
+  budgetCapAmount?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Schema compilation — proposalTemplate (JSON Schema) → RJSF schema + uiSchema
+// ---------------------------------------------------------------------------
+
+/**
+ * Known system property keys in the proposal template schema.
+ * These get special `ui:field` rendering (collaborative wrappers)
+ * and are persisted to proposalData. Everything else is treated
+ * as a dynamic template field rendered via `CollaborativeShortText`.
+ */
+const SYSTEM_FIELD_KEYS = new Set([
+  'title',
+  'description',
+  'budget',
+  'category',
+]);
+
+/**
+ * Builds the complete RJSF schema and uiSchema from the stored
+ * `processSchema.proposalTemplate` (JSON Schema).
+ *
+ * System fields (title, category, budget) get dedicated `ui:field`
+ * wrappers that use our collaborative components.
+ * Dynamic fields (user-created via template builder) get rendered
+ * as `CollaborativeShortText` widgets backed by Yjs fragments.
+ * Dynamic field values live exclusively in Yjs — they are NOT
+ * persisted to proposalData.
+ *
+ * @param proposalTemplate - The raw JSON Schema stored on processSchema
+ * @param budgetCapAmount - Optional budget ceiling from phase settings
+ * @param t - Translation function
+ */
+function compileProposalSchema(
+  proposalTemplate: Record<string, unknown> | null,
+  budgetCapAmount: number | undefined,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): {
+  schema: RJSFSchema;
+  uiSchema: UiSchema<Record<string, unknown>, RJSFSchema, ProposalFormContext>;
+} {
+  // Pull required array from stored template
+  const templateRequired =
+    proposalTemplate &&
+    'required' in proposalTemplate &&
+    Array.isArray(proposalTemplate.required)
+      ? (proposalTemplate.required as string[])
+      : [];
+
+  const isCategoryRequired = templateRequired.includes('category');
+
+  // System fields — always present regardless of template contents
+  const schemaProperties: NonNullable<RJSFSchema['properties']> = {
+    title: { type: 'string', title: t('Title'), minLength: 1 },
+    category: {
+      type: isCategoryRequired ? 'string' : ['string', 'null'],
+      title: t('Category'),
+    },
+    budget: {
+      type: ['number', 'null'],
+      title: t('Budget'),
+      minimum: 0,
+      ...(budgetCapAmount ? { maximum: budgetCapAmount } : {}),
+    },
+  };
+
+  const uiProperties: Record<string, unknown> = {
+    title: {
+      'ui:field': 'CollaborativeTitleField',
+      'ui:placeholder': t('Untitled Proposal'),
+    },
+    category: { 'ui:field': 'CollaborativeCategoryField' },
+    budget: { 'ui:field': 'CollaborativeBudgetField' },
+  };
+
+  // Merge dynamic (non-system) properties from the stored template
+  if (
+    proposalTemplate &&
+    'properties' in proposalTemplate &&
+    proposalTemplate.properties &&
+    typeof proposalTemplate.properties === 'object'
+  ) {
+    const templateProps = proposalTemplate.properties as Record<
+      string,
+      Record<string, unknown>
+    >;
+
+    for (const [key, propSchema] of Object.entries(templateProps)) {
+      if (SYSTEM_FIELD_KEYS.has(key)) {
+        continue;
+      }
+
+      // Dynamic field — add to schema and wire as collaborative short text.
+      // The field key is used as both the JSON Schema property name
+      // and the Yjs fragment name for collaborative editing.
+      schemaProperties[key] = {
+        type: 'string',
+        ...(propSchema.title ? { title: String(propSchema.title) } : {}),
+        ...(propSchema.description
+          ? { description: String(propSchema.description) }
+          : {}),
+      };
+
+      uiProperties[key] = {
+        'ui:widget': 'CollaborativeShortText',
+        'ui:options': { field: key },
+      };
+    }
+  }
+
+  const required = Array.from(new Set(['title', ...templateRequired])).filter(
+    (key) => key in schemaProperties,
+  );
+
+  return {
+    schema: { type: 'object', required, properties: schemaProperties },
+    uiSchema: uiProperties as UiSchema<
+      Record<string, unknown>,
+      RJSFSchema,
+      ProposalFormContext
+    >,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// RJSF custom field wrappers — bridge RJSF ↔ collaborative components
+// ---------------------------------------------------------------------------
+
+/**
+ * RJSF custom field: collaborative proposal title.
+ * Renders a TipTap editor bound to the "title" Y.Doc fragment.
+ * Calls `props.onChange` on every keystroke so RJSF mirrors the Yjs value.
+ */
+function CollaborativeTitleRjsfField(props: FieldProps) {
+  const placeholder = props.uiSchema?.['ui:placeholder'] as string | undefined;
+
+  return (
+    <CollaborativeTitleField
+      placeholder={placeholder}
+      onChange={(value) => props.onChange(value)}
+    />
+  );
+}
+
+/**
+ * RJSF custom field: collaborative category selector.
+ * Reads available categories from `formContext`.
+ */
+function CollaborativeCategoryRjsfField(props: FieldProps) {
+  const { categories } = (props.formContext ?? {}) as ProposalFormContext;
+
+  return (
+    <CollaborativeCategoryField
+      categories={categories}
+      initialValue={(props.formData as string | null) ?? null}
+      onChange={(value) => props.onChange(value)}
+    />
+  );
+}
+
+/**
+ * RJSF custom field: collaborative budget input.
+ * Reads `budgetCapAmount` from `formContext`.
+ */
+function CollaborativeBudgetRjsfField(props: FieldProps) {
+  const { budgetCapAmount } = (props.formContext ?? {}) as ProposalFormContext;
+
+  return (
+    <CollaborativeBudgetField
+      budgetCapAmount={budgetCapAmount}
+      initialValue={(props.formData as number | null) ?? null}
+      onChange={(value) => props.onChange(value)}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RJSF registries
+// ---------------------------------------------------------------------------
+
+const RJSF_FIELDS = {
+  CollaborativeTitleField: CollaborativeTitleRjsfField,
+  CollaborativeCategoryField: CollaborativeCategoryRjsfField,
+  CollaborativeBudgetField: CollaborativeBudgetRjsfField,
+};
+
+const RJSF_WIDGETS = {
+  CollaborativeShortText: CollaborativeShortTextWidget,
+};
+
+// ---------------------------------------------------------------------------
+// RJSF templates — suppress default chrome, control layout
+// ---------------------------------------------------------------------------
+
+/** Suppress RJSF's default label/description — our fields handle their own. */
+function FieldTemplate({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+/**
+ * Custom object template that renders system fields in the correct layout:
+ * - Title at full width
+ * - Category + Budget side-by-side in a flex row
+ * - All dynamic template fields stacked below
+ */
+function ObjectFieldTemplate({ properties }: ObjectFieldTemplateProps) {
+  const titleProp = properties.find((p) => p.name === 'title');
+  const categoryProp = properties.find((p) => p.name === 'category');
+  const budgetProp = properties.find((p) => p.name === 'budget');
+
+  const dynamicProps = properties.filter((p) => !SYSTEM_FIELD_KEYS.has(p.name));
+
+  return (
+    <div className="space-y-4">
+      {titleProp?.content}
+
+      {(categoryProp || budgetProp) && (
+        <div className="flex gap-2">
+          {categoryProp?.content}
+          {budgetProp?.content}
+        </div>
+      )}
+
+      {dynamicProps.map((prop) => prop.content)}
+    </div>
+  );
+}
+
+const RJSF_TEMPLATES = { FieldTemplate, ObjectFieldTemplate };
+
+// ---------------------------------------------------------------------------
+// Validator — cast once to satisfy RJSF generics
+// ---------------------------------------------------------------------------
+
+const proposalValidator = validator as ValidatorType<
+  Record<string, unknown>,
+  RJSFSchema,
+  ProposalFormContext
+>;
+
+// ---------------------------------------------------------------------------
+// Error handling
+// ---------------------------------------------------------------------------
+
+/** Handles tRPC validation errors from mutation responses. */
 function handleMutationError(
   error: { data?: unknown; message?: string },
   operationType: 'create' | 'update' | 'submit',
@@ -80,6 +350,10 @@ function handleMutationError(
   }
 }
 
+// ---------------------------------------------------------------------------
+// ProposalEditor
+// ---------------------------------------------------------------------------
+
 export function ProposalEditor({
   instance,
   backHref,
@@ -96,6 +370,8 @@ export function ProposalEditor({
   const t = useTranslations();
   const posthog = usePostHog();
   const utils = trpc.useUtils();
+
+  // -- Parsed server state --------------------------------------------------
 
   const parsedProposalData = useMemo(
     () =>
@@ -124,6 +400,8 @@ export function ProposalEditor({
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
+  // -- Collaboration --------------------------------------------------------
+
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
       proposal?.proposalData,
@@ -139,6 +417,8 @@ export function ProposalEditor({
     [],
   );
 
+  // -- Instance config ------------------------------------------------------
+
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
   const proposalInfoContent = instance.instanceData?.fieldValues
@@ -149,58 +429,114 @@ export function ProposalEditor({
   });
   const { categories } = categoriesData;
 
-  const { budgetCapAmount, isBudgetRequired } = useMemo(() => {
-    let cap: number | undefined;
-    let required = true;
+  const { budgetCapAmount, isBudgetRequired, isCategoryRequired } =
+    useMemo(() => {
+      let cap: number | undefined;
+      let budgetRequired = true;
+      let categoryRequired = true;
 
-    const currentPhaseId = instance.instanceData?.currentPhaseId;
-    const currentPhaseData = instance.instanceData?.phases?.find(
-      (p) => p.phaseId === currentPhaseId,
-    );
-    const phaseBudget = currentPhaseData?.settings?.budget as
-      | number
-      | undefined;
+      const currentPhaseId = instance.instanceData?.currentPhaseId;
+      const currentPhaseData = instance.instanceData?.phases?.find(
+        (p) => p.phaseId === currentPhaseId,
+      );
+      const phaseBudget = currentPhaseData?.settings?.budget as
+        | number
+        | undefined;
 
-    if (phaseBudget != null) {
-      return { budgetCapAmount: phaseBudget, isBudgetRequired: required };
-    }
+      if (phaseBudget != null) {
+        return {
+          budgetCapAmount: phaseBudget,
+          isBudgetRequired: budgetRequired,
+          isCategoryRequired: categoryRequired,
+        };
+      }
 
-    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
-    if (
-      proposalTemplate &&
-      typeof proposalTemplate === 'object' &&
-      'properties' in proposalTemplate
-    ) {
-      const properties = proposalTemplate.properties;
+      const proposalTemplate =
+        instance.process?.processSchema?.proposalTemplate;
       if (
-        properties &&
-        typeof properties === 'object' &&
-        'budget' in properties
+        proposalTemplate &&
+        typeof proposalTemplate === 'object' &&
+        'properties' in proposalTemplate
       ) {
-        const budgetProp = properties.budget;
+        const properties = proposalTemplate.properties;
         if (
-          budgetProp &&
-          typeof budgetProp === 'object' &&
-          'maximum' in budgetProp
+          properties &&
+          typeof properties === 'object' &&
+          'budget' in properties
         ) {
-          cap = budgetProp.maximum as number;
+          const budgetProp = properties.budget;
+          if (
+            budgetProp &&
+            typeof budgetProp === 'object' &&
+            'maximum' in budgetProp
+          ) {
+            cap = budgetProp.maximum as number;
+          }
+        }
+
+        if (
+          'required' in proposalTemplate &&
+          Array.isArray(proposalTemplate.required)
+        ) {
+          budgetRequired = proposalTemplate.required.includes('budget');
+          categoryRequired = proposalTemplate.required.includes('category');
         }
       }
 
-      if (
-        'required' in proposalTemplate &&
-        Array.isArray(proposalTemplate.required)
-      ) {
-        required = proposalTemplate.required.includes('budget');
+      if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
+        cap = instance.instanceData.fieldValues.budgetCapAmount as number;
       }
-    }
 
-    if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
-      cap = instance.instanceData.fieldValues.budgetCapAmount as number;
-    }
+      return {
+        budgetCapAmount: cap,
+        isBudgetRequired: budgetRequired,
+        isCategoryRequired: categoryRequired,
+      };
+    }, [instance]);
 
-    return { budgetCapAmount: cap, isBudgetRequired: required };
-  }, [instance]);
+  // -- RJSF schema compilation ----------------------------------------------
+  //
+  // The proposalTemplate stored on processSchema is already JSON Schema.
+  // We read it, inject system field uiSchema mappings, and derive dynamic
+  // field widgets for any non-system properties.
+  //
+  // HACK: Until the template builder (PR #541) lands and persists to the
+  // server, we inject a mock dynamic field into the template to prove the
+  // compilation path works end-to-end.
+
+  const rawProposalTemplate = (instance.process?.processSchema
+    ?.proposalTemplate ?? null) as Record<string, unknown> | null;
+
+  const proposalTemplateWithMockField = useMemo(() => {
+    const base = rawProposalTemplate ?? {
+      type: 'object',
+      properties: {},
+      required: [],
+    };
+    const properties = (base.properties ?? {}) as Record<string, unknown>;
+
+    return {
+      ...base,
+      properties: {
+        ...properties,
+        // Mock dynamic field — remove once template builder persists to server
+        fld_need_assessment: {
+          type: 'string',
+          title: 'Is there a high NEED for this project?',
+          description:
+            'Consider: Do the worker-owners clearly demonstrate a significant financial or operational need? Would this project address barriers the co-op faces to survival or growth?',
+        },
+      },
+    };
+  }, [rawProposalTemplate]);
+
+  const { schema: proposalSchema, uiSchema: proposalUiSchema } = useMemo(
+    () =>
+      compileProposalSchema(proposalTemplateWithMockField, budgetCapAmount, t),
+    [proposalTemplateWithMockField, budgetCapAmount, t],
+  );
+
+  // -- Mutations ------------------------------------------------------------
 
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
@@ -235,6 +571,8 @@ export function ProposalEditor({
     },
   });
 
+  // -- Draft management -----------------------------------------------------
+
   const draftRef = useRef<ProposalDraftFields>(initialDraft);
 
   useEffect(() => {
@@ -246,6 +584,11 @@ export function ProposalEditor({
     setDraft(initialDraft);
   }, [initialDraft]);
 
+  /**
+   * Builds the proposalData payload for server persistence.
+   * Only system fields (title, category, budget) are included —
+   * dynamic template field values live in Yjs exclusively.
+   */
   const buildProposalData = useCallback(
     (nextDraft: ProposalDraftFields): ProposalDataInput => {
       const serverData = parseProposalData(proposal?.proposalData);
@@ -258,6 +601,20 @@ export function ProposalEditor({
       };
     },
     [proposal?.proposalData, collaborationDocId],
+  );
+
+  /**
+   * Extracts system draft fields from RJSF formData.
+   * Dynamic field values are ignored — they sync via Yjs only.
+   */
+  const toProposalDraft = useCallback(
+    (formData: Record<string, unknown>): ProposalDraftFields => ({
+      title: typeof formData.title === 'string' ? formData.title : '',
+      category:
+        typeof formData.category === 'string' ? formData.category : null,
+      budget: typeof formData.budget === 'number' ? formData.budget : null,
+    }),
+    [],
   );
 
   const saveFields = useCallback(
@@ -279,6 +636,8 @@ export function ProposalEditor({
 
   const debouncedAutoSave = useDebouncedCallback(saveFields, 1500);
 
+  // -- UI state handlers ----------------------------------------------------
+
   useEffect(() => {
     if ((!isEditMode || isDraft) && proposalInfoTitle && proposalInfoContent) {
       setShowInfoModal(true);
@@ -292,6 +651,22 @@ export function ProposalEditor({
   const handleCloseInfoModal = useCallback(() => {
     setShowInfoModal(false);
   }, []);
+
+  /**
+   * Handles RJSF form changes. Extracts system fields into the draft
+   * and triggers debounced autosave for persistence.
+   */
+  const handleFormChange = useCallback(
+    (event: IChangeEvent<Record<string, unknown>>) => {
+      const nextDraft = toProposalDraft(
+        (event.formData ?? {}) as Record<string, unknown>,
+      );
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
+      debouncedAutoSave(nextDraft);
+    },
+    [toProposalDraft, debouncedAutoSave],
+  );
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
@@ -309,6 +684,15 @@ export function ProposalEditor({
 
     if (isBudgetRequired && currentDraft.budget === null) {
       missingFields.push(t('Budget'));
+    }
+
+    if (
+      isCategoryRequired &&
+      categories &&
+      categories.length > 0 &&
+      currentDraft.category === null
+    ) {
+      missingFields.push(t('Category'));
     }
 
     if (
@@ -371,6 +755,7 @@ export function ProposalEditor({
     t,
     editorInstance,
     isBudgetRequired,
+    isCategoryRequired,
     budgetCapAmount,
     collaborationDocId,
     categories,
@@ -379,6 +764,8 @@ export function ProposalEditor({
     submitProposalMutation,
     updateProposalMutation,
   ]);
+
+  // -- Render ---------------------------------------------------------------
 
   const userName = user.profile?.name ?? t('Anonymous');
 
@@ -402,57 +789,26 @@ export function ProposalEditor({
           {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
 
           <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
-            <CollaborativeTitleField
-              placeholder={t('Untitled Proposal')}
-              onChange={(text) => {
-                const nextDraft = {
-                  ...draftRef.current,
-                  title: text,
-                };
-                draftRef.current = nextDraft;
-                setDraft((currentDraft) => ({
-                  ...currentDraft,
-                  title: text,
-                }));
-                debouncedAutoSave(nextDraft);
+            <Form
+              schema={proposalSchema}
+              uiSchema={proposalUiSchema}
+              fields={RJSF_FIELDS}
+              validator={proposalValidator}
+              widgets={RJSF_WIDGETS}
+              templates={RJSF_TEMPLATES}
+              formData={draft}
+              formContext={{
+                categories: categories ?? [],
+                budgetCapAmount,
               }}
-            />
-
-            <div className="flex gap-2">
-              <CollaborativeCategoryField
-                categories={categories ?? []}
-                initialValue={parsedProposalData?.category ?? null}
-                onChange={(value) => {
-                  const nextDraft = {
-                    ...draftRef.current,
-                    category: value,
-                  };
-                  draftRef.current = nextDraft;
-                  setDraft((currentDraft) => ({
-                    ...currentDraft,
-                    category: value,
-                  }));
-                  saveFields(nextDraft);
-                }}
-              />
-
-              <CollaborativeBudgetField
-                budgetCapAmount={budgetCapAmount}
-                initialValue={parsedProposalData?.budget ?? null}
-                onChange={(value) => {
-                  const nextDraft = {
-                    ...draftRef.current,
-                    budget: value,
-                  };
-                  draftRef.current = nextDraft;
-                  setDraft((currentDraft) => ({
-                    ...currentDraft,
-                    budget: value,
-                  }));
-                  debouncedAutoSave(nextDraft);
-                }}
-              />
-            </div>
+              onChange={handleFormChange}
+              showErrorList={false}
+              liveValidate={false}
+              noHtml5Validate
+            >
+              {/* Hide default submit button — we use our own in the layout */}
+              <div />
+            </Form>
 
             <CollaborativeEditor
               field="default"

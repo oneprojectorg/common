@@ -11,3 +11,4 @@ export { CollaborativeTitleField } from './CollaborativeTitleField';
 export { CollaborativeCategoryField } from './CollaborativeCategoryField';
 export { CollaborativeBudgetField } from './CollaborativeBudgetField';
 export { CollaborativePresence } from './CollaborativePresence';
+export { CollaborativeShortTextWidget } from './CollaborativeShortTextWidget';
