@@ -18,16 +18,16 @@ import {
   FieldCardDropIndicator,
 } from './FieldCard';
 import {
-  FormBuilderMobileTrigger,
-  FormBuilderSidebar,
-} from './FormBuilderSidebar';
+  TemplateEditorMobileTrigger,
+  TemplateEditorSidebar,
+} from './TemplateEditorSidebar';
 import { getFieldLabelKey } from './fieldRegistry';
 import type { FieldType, FormField } from './types';
 
 /**
  * Skeleton loading state shown while store is hydrating.
  */
-function FormBuilderSkeleton() {
+function TemplateEditorSkeleton() {
   return (
     <div className="flex h-full flex-col md:flex-row">
       {/* Sidebar skeleton - desktop only */}
@@ -82,7 +82,7 @@ const DEFAULT_SORTABLE_FIELD_DEFINITIONS = [
   },
 ] as const;
 
-export default function FormBuilderSection({
+export default function TemplateEditorSection({
   decisionProfileId,
 }: SectionProps) {
   const t = useTranslations();
@@ -211,7 +211,7 @@ export default function FormBuilderSection({
 
   // Show skeleton while store is hydrating
   if (!hasHydrated) {
-    return <FormBuilderSkeleton />;
+    return <TemplateEditorSkeleton />;
   }
 
   return (
@@ -220,11 +220,11 @@ export default function FormBuilderSection({
         {/* Mobile header with sidebar trigger */}
         <div className="flex items-center gap-2 p-4 md:hidden">
           <h2 className="font-serif text-title-sm">{t('Proposal template')}</h2>
-          <FormBuilderMobileTrigger />
+          <TemplateEditorMobileTrigger />
         </div>
 
         {/* Sidebar - hidden on mobile, slides in as drawer */}
-        <FormBuilderSidebar
+        <TemplateEditorSidebar
           fields={allFields}
           onAddField={handleAddField}
           side={isMobile ? 'right' : 'left'}

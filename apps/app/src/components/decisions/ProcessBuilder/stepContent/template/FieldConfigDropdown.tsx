@@ -28,7 +28,12 @@ export function FieldConfigDropdown({
 }: FieldConfigDropdownProps) {
   const t = useTranslations();
 
-  // Use refs to maintain stable IDs across reorders
+  // Stable ID management for drag-and-drop:
+  // The Sortable component requires stable IDs to track items across reorders.
+  // Since options are stored as string[], we need to generate and maintain IDs
+  // separately. Using array indices as IDs causes items to "swap" during drag
+  // because the index changes as items move. By keeping IDs in a ref, we ensure
+  // each option maintains its identity throughout reorders.
   const idCounterRef = useRef(0);
   const itemsRef = useRef<OptionItem[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,7 +59,7 @@ export function FieldConfigDropdown({
     });
   } else {
     // Items removed - rebuild from scratch with new IDs
-    // This handles removal correctly since we can't know which was removed
+    // (we can't know which item was removed, so we regenerate all IDs)
     optionItems = options.map((value) => ({
       id: `option-${idCounterRef.current++}`,
       value,
@@ -66,11 +71,10 @@ export function FieldConfigDropdown({
   // Focus the last input when a new option is added
   useEffect(() => {
     if (shouldFocusNewRef.current && containerRef.current) {
-      const inputs =
-        containerRef.current.querySelectorAll('input[type="text"]');
-      const lastInput = inputs[inputs.length - 1] as
-        | HTMLInputElement
-        | undefined;
+      const inputs = containerRef.current.querySelectorAll(
+        'input[type="text"]',
+      ) as NodeListOf<HTMLInputElement>;
+      const lastInput = inputs[inputs.length - 1];
       lastInput?.focus();
       shouldFocusNewRef.current = false;
     }
@@ -83,7 +87,7 @@ export function FieldConfigDropdown({
     }
     return (
       <div className="flex items-center gap-2">
-        <LuGripVertical className="text-neutral-gray3" size={16} />
+        <LuGripVertical className="size-4 text-neutral-gray3" />
         <span className="mr-12 grow rounded-lg border border-neutral-gray2 bg-white px-4 py-3 text-neutral-charcoal shadow-lg">
           {item.value || t('Option')}
         </span>
@@ -162,7 +166,7 @@ export function FieldConfigDropdown({
                 onPress={() => handleRemoveOption(index)}
                 className="p-2 text-neutral-gray3 hover:text-neutral-charcoal"
               >
-                <LuX size={16} />
+                <LuX className="size-4" />
               </Button>
             </div>
           );
@@ -176,7 +180,7 @@ export function FieldConfigDropdown({
         onPress={handleAddOption}
         className="hover:text-primary-tealDark gap-1 p-0 text-primary-teal"
       >
-        <LuPlus size={16} />
+        <LuPlus className="size-4" />
         <span>{t('Add option')}</span>
       </Button>
     </div>

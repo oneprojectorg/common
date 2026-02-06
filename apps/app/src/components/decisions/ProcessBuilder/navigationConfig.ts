@@ -18,7 +18,7 @@ export const SECTIONS_BY_STEP = {
     { id: 'proposalCategories', labelKey: 'Proposal Categories' },
     { id: 'voting', labelKey: 'Voting' },
   ],
-  template: [{ id: 'formBuilder', labelKey: 'Form Builder' }],
+  template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
   rubric: [
     { id: 'criteria', labelKey: 'Criteria' },
     { id: 'settings', labelKey: 'Settings' },
@@ -51,7 +51,7 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
   },
   sections: {
     general: ['overview', 'phases', 'proposalCategories', 'voting'],
-    template: ['formBuilder'],
+    template: ['templateEditor'],
     rubric: ['criteria', 'settings'],
     members: ['roles', 'members'],
   },

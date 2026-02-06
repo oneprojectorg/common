@@ -25,7 +25,7 @@ export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
   return (
     <MenuTrigger>
       <Button color="neutral" className="w-full justify-center gap-2">
-        <LuPlus size={16} />
+        <LuPlus className="size-4" />
         {t('Add field')}
       </Button>
       <Popover placement="bottom start" className="w-56">
@@ -48,7 +48,7 @@ export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
                 const Icon = config.icon;
                 return (
                   <MenuItem key={type} id={type} className="gap-2">
-                    <Icon size={16} className="text-neutral-gray4" />
+                    <Icon className="size-4 text-neutral-gray4" />
                     {t(config.labelKey)}
                   </MenuItem>
                 );
