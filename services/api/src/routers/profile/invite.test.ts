@@ -430,48 +430,50 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     });
   });
 
-  it('should pass personalMessage to the event', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
-    const { profile, adminUser } = await testData.createProfile({
-      users: { admin: 1 },
-    });
+  // This test clears the global event.send mock, so it must run sequentially
+  // to avoid race conditions with other tests
+  it.sequential(
+    'should pass personalMessage to the event',
+    async ({ task, onTestFinished }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
 
-    const standaloneUser = await testData.createStandaloneUser();
-    testData.trackProfileInvite(standaloneUser.email, profile.id);
+      const standaloneUser = await testData.createStandaloneUser();
+      testData.trackProfileInvite(standaloneUser.email, profile.id);
 
-    const { session } = await createIsolatedSession(adminUser.email);
-    const caller = createCaller(await createTestContextWithSession(session));
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
 
-    const personalMessage = 'Welcome to our team!';
+      const personalMessage = 'Welcome to our team!';
 
-    // Clear previous mock calls
-    vi.mocked(event.send).mockClear();
+      // Clear previous mock calls
+      vi.mocked(event.send).mockClear();
 
-    const result = await caller.invite({
-      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
-      profileId: profile.id,
-      personalMessage,
-    });
+      const result = await caller.invite({
+        invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
+        profileId: profile.id,
+        personalMessage,
+      });
 
-    expect(result.success).toBe(true);
+      expect(result.success).toBe(true);
 
-    // Verify event.send was called with the personalMessage
-    expect(event.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          invitations: expect.arrayContaining([
-            expect.objectContaining({
-              email: standaloneUser.email.toLowerCase(),
-              personalMessage,
-            }),
-          ]),
+      // Verify event.send was called with the personalMessage
+      expect(event.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            invitations: expect.arrayContaining([
+              expect.objectContaining({
+                email: standaloneUser.email.toLowerCase(),
+                personalMessage,
+              }),
+            ]),
+          }),
         }),
-      }),
-    );
-  });
+      );
+    },
+  );
 
   it('should fail with invalid profileId', async ({ task, onTestFinished }) => {
     const testData = new TestProfileUserDataManager(task.id, onTestFinished);
@@ -573,5 +575,174 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     // existingUserAuthIds should only contain the existing user's authUserId
     expect(result.details.existingUserAuthIds).toHaveLength(1);
     expect(result.details.existingUserAuthIds[0]).toBe(existingUser.authUserId);
+  });
+
+  // This test modifies the global event.send mock, so it must run sequentially
+  // to avoid race conditions with other tests
+  it.sequential(
+    'should rollback transaction when event.send fails',
+    async ({ task, onTestFinished }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1 },
+      });
+
+      // Create a new email that doesn't exist in the system
+      const newEmail = `rollback-test-${task.id}@oneproject.org`;
+      // Track for defensive cleanup in case rollback fails
+      testData.trackAllowListEmail(newEmail);
+      testData.trackProfileInvite(newEmail, profile.id);
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Mock event.send to throw an error for this test only
+      vi.mocked(event.send).mockImplementationOnce(() => {
+        throw new Error('Event send failed');
+      });
+
+      // The invite should fail
+      await expect(
+        caller.invite({
+          invitations: [{ email: newEmail, roleId: ROLES.MEMBER.id }],
+          profileId: profile.id,
+        }),
+      ).rejects.toThrow('Event send failed');
+
+      // Restore the mock to default behavior
+      vi.mocked(event.send).mockResolvedValue({ ids: ['mock-event-id'] });
+
+      // Verify NO profileInvites record was created (transaction rolled back)
+      const invite = await db._query.profileInvites.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.profileId, profile.id),
+            eq(table.email, newEmail.toLowerCase()),
+          ),
+      });
+
+      expect(invite).toBeUndefined();
+
+      // Verify NO allowList entry was created (transaction rolled back)
+      const allowListEntry = await db._query.allowList.findFirst({
+        where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
+      });
+
+      expect(allowListEntry).toBeUndefined();
+    },
+  );
+
+  it('should reject duplicate emails in same batch via database constraint', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create a standalone user to be invited
+    const standaloneUser = await testData.createStandaloneUser();
+    // Track for defensive cleanup in case transaction doesn't roll back
+    testData.trackProfileInvite(standaloneUser.email, profile.id);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Send same email twice in one request - DB unique constraint prevents this
+    await expect(
+      caller.invite({
+        invitations: [
+          { email: standaloneUser.email, roleId: ROLES.MEMBER.id },
+          { email: standaloneUser.email, roleId: ROLES.ADMIN.id },
+        ],
+        profileId: profile.id,
+      }),
+    ).rejects.toThrow();
+
+    // Verify no invite was created (transaction rolled back)
+    const invites = await db._query.profileInvites.findMany({
+      where: (table, { eq, and, isNull }) =>
+        and(
+          eq(table.profileId, profile.id),
+          eq(table.email, standaloneUser.email.toLowerCase()),
+          isNull(table.acceptedOn),
+        ),
+    });
+
+    expect(invites).toHaveLength(0);
+  });
+
+  it('should normalize mixed case emails to lowercase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Use mixed case email
+    const mixedCaseEmail = `Test.User.${task.id}@OneProject.ORG`;
+    const normalizedEmail = mixedCaseEmail.toLowerCase();
+    testData.trackAllowListEmail(normalizedEmail);
+    testData.trackProfileInvite(normalizedEmail, profile.id);
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.invite({
+      invitations: [{ email: mixedCaseEmail, roleId: ROLES.MEMBER.id }],
+      profileId: profile.id,
+    });
+
+    expect(result.success).toBe(true);
+    // Verify the returned successful email is lowercase
+    expect(result.details.successful).toContain(normalizedEmail);
+    expect(result.details.successful).not.toContain(mixedCaseEmail);
+
+    // Verify the database record uses lowercase
+    const invite = await db._query.profileInvites.findFirst({
+      where: (table, { eq, and, isNull }) =>
+        and(
+          eq(table.profileId, profile.id),
+          eq(table.email, normalizedEmail),
+          isNull(table.acceptedOn),
+        ),
+    });
+
+    expect(invite).toBeDefined();
+    expect(invite?.email).toBe(normalizedEmail);
+
+    // Verify allowList also uses lowercase
+    const allowListEntry = await db._query.allowList.findFirst({
+      where: (table, { eq }) => eq(table.email, normalizedEmail),
+    });
+
+    expect(allowListEntry).toBeDefined();
+    expect(allowListEntry?.email).toBe(normalizedEmail);
+  });
+
+  it('should reject malformed email addresses', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Test with invalid email format
+    await expect(
+      caller.invite({
+        invitations: [{ email: 'not-an-email', roleId: ROLES.MEMBER.id }],
+        profileId: profile.id,
+      }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
   });
 });
