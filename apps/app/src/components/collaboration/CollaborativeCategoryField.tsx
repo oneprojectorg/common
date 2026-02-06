@@ -56,6 +56,13 @@ export function CollaborativeCategoryField({
     onChangeRef.current?.(selectedCategory);
   }, [selectedCategory]);
 
+  const onChangeRef = useRef(onChange);
+  const lastEmittedValueRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   if (categories.length === 0) {
     return null;
   }
@@ -64,6 +71,15 @@ export function CollaborativeCategoryField({
     const value = String(key);
     setSelectedCategory(value);
   };
+
+  useEffect(() => {
+    if (lastEmittedValueRef.current === selectedCategory) {
+      return;
+    }
+
+    lastEmittedValueRef.current = selectedCategory;
+    onChangeRef.current?.(selectedCategory);
+  }, [selectedCategory]);
 
   return (
     <Select
