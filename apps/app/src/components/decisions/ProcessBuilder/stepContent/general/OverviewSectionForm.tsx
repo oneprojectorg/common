@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { NumberField } from '@op/ui/NumberField';
 import { SelectItem } from '@op/ui/Select';
+import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,6 +39,7 @@ export function OverviewSectionForm({
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
+  const previousValuesRef = useRef<string | null>(null);
 
   // tRPC mutation
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
@@ -55,6 +57,14 @@ export function OverviewSectionForm({
 
   // Debounced auto-save function (similar to ProposalEditor pattern)
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
+    const valuesString = JSON.stringify(values);
+
+    // Skip if values haven't changed (prevents save loop from form.Subscribe re-renders)
+    if (valuesString === previousValuesRef.current) {
+      return;
+    }
+    previousValuesRef.current = valuesString;
+
     setSaveStatus(decisionProfileId, 'saving');
     setInstanceData(decisionProfileId, {
       name: values.name,
