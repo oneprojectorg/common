@@ -547,7 +547,6 @@
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepte PDF, DOCX, XLSX jusqu'à {size}Mo",
   "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées",
   "Drag to reorder": "Glisser pour réorganiser",
-  "Join decision-making processes": "Rejoignez les processus de prise de décision",
   "You've been invited to join the following decision-making processes": "Vous avez été invité à rejoindre les processus de prise de décision suivants",
   "I don't want to participate": "Je ne veux pas participer",
   "Failed to accept invitations": "Échec de l'acceptation des invitations",
@@ -562,5 +561,6 @@
   "Spanish": "espagnol",
   "French": "français",
   "Portuguese": "portugais",
-  "Bengali": "bengali"
+  "Bengali": "bengali",
+  "Max {amount}": "Max {amount}"
 }
