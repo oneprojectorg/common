@@ -32,6 +32,7 @@ import {
   CollaborativeTitleField,
 } from '../collaboration';
 import { ProposalAttachments } from './ProposalAttachments';
+import { ProposalEditorSkeleton } from './ProposalEditorSkeleton';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 
@@ -393,8 +394,14 @@ export function ProposalEditor({
 
   const userName = user.profile?.name ?? 'Anonymous';
 
+  const editorSkeleton = <ProposalEditorSkeleton />;
+
   return (
-    <CollaborativeDocProvider docId={collaborationDocId} userName={userName}>
+    <CollaborativeDocProvider
+      docId={collaborationDocId}
+      userName={userName}
+      fallback={editorSkeleton}
+    >
       <ProposalEditorLayout
         backHref={backHref}
         title={title}

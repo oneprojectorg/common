@@ -16,8 +16,8 @@ import type { Doc } from 'yjs';
 interface CollaborativeDocContextValue {
   /** The shared Yjs document - all collaborative fields bind to this */
   ydoc: Doc;
-  /** TipTap Cloud collaboration provider (null until connected) */
-  provider: TiptapCollabProvider | null;
+  /** TipTap Cloud collaboration provider */
+  provider: TiptapCollabProvider;
   /** Connection status */
   status: CollabStatus;
   /** Whether the document has synced with the server */
@@ -34,16 +34,19 @@ interface CollaborativeDocProviderProps {
   docId: string;
   /** User's display name for collaboration cursors */
   userName?: string;
+  /** Loading state to show while the collaboration provider initializes */
+  fallback?: ReactNode;
   children: ReactNode;
 }
 
 /**
  * Provider for collaborative document editing.
  * Creates a single Yjs document and TipTap provider shared by all child collaborative fields.
+ * Renders the fallback until the provider is ready.
  *
  * @example
  * ```tsx
- * <CollaborativeDocProvider docId="proposal-123" userName="Alice">
+ * <CollaborativeDocProvider docId="proposal-123" userName="Alice" fallback={<Skeleton />}>
  *   <CollaborativeTitleField />
  *   <CollaborativeEditor />
  * </CollaborativeDocProvider>
@@ -52,6 +55,7 @@ interface CollaborativeDocProviderProps {
 export function CollaborativeDocProvider({
   docId,
   userName = 'Anonymous',
+  fallback = null,
   children,
 }: CollaborativeDocProviderProps) {
   const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
@@ -59,6 +63,10 @@ export function CollaborativeDocProvider({
     enabled: true,
     userName,
   });
+
+  if (!provider) {
+    return <>{fallback}</>;
+  }
 
   return (
     <CollaborativeDocContext.Provider

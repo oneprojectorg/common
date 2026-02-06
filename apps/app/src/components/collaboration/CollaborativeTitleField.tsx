@@ -43,7 +43,10 @@ export function CollaborativeTitleField({
         document: ydoc,
         field: 'title',
       }),
-      ...(provider ? [CollaborationCaret.configure({ provider, user })] : []),
+      CollaborationCaret.configure({
+        provider,
+        user,
+      }),
     ],
     [ydoc, provider, user, placeholder],
   );

@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProposalEditor } from '@/components/decisions/ProposalEditor';
+import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 
 function ProposalEditPageContent({
   profileId,
@@ -47,31 +48,6 @@ function ProposalEditPageContent({
   );
 }
 
-function ProposalEditPageSkeleton() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header loading */}
-      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
-        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="h-10 w-24 animate-pulse rounded bg-gray-200" />
-      </div>
-
-      {/* Content loading */}
-      <div className="flex-1 bg-white px-6 py-8">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-12 w-96 animate-pulse rounded bg-gray-200" />
-          <div className="flex gap-4">
-            <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="h-96 w-full animate-pulse rounded bg-gray-200" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const ProposalEditPage = () => {
   const { profileId, slug } = useParams<{
     profileId: string;
@@ -80,7 +56,7 @@ const ProposalEditPage = () => {
 
   return (
     <ErrorBoundary>
-      <Suspense fallback={<ProposalEditPageSkeleton />}>
+      <Suspense fallback={<ProposalEditorSkeleton />}>
         <ProposalEditPageContent profileId={profileId} slug={slug} />
       </Suspense>
     </ErrorBoundary>
