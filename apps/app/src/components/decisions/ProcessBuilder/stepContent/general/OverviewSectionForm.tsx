@@ -1,10 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { useDebounce } from '@op/hooks';
+import { useDebouncedCallback } from '@op/hooks';
 import { NumberField } from '@op/ui/NumberField';
 import { SelectItem } from '@op/ui/Select';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -14,6 +14,7 @@ import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
+import type { FormInstanceData } from '../../stores/useProcessBuilderStore';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
@@ -31,72 +32,6 @@ interface OverviewFormData {
   isPrivate: boolean;
 }
 
-// Auto-save component that subscribes to form values
-function AutoSaveHandler({
-  values,
-  decisionProfileId,
-  setInstanceData,
-  setSaveStatus,
-  markSaved,
-}: {
-  values: OverviewFormData;
-  decisionProfileId: string;
-  setInstanceData: (id: string, data: Partial<OverviewFormData>) => void;
-  setSaveStatus: (
-    id: string,
-    status: 'idle' | 'saving' | 'saved' | 'error',
-  ) => void;
-  markSaved: (id: string) => void;
-}) {
-  const [debouncedValues] = useDebounce(values, AUTOSAVE_DEBOUNCE_MS);
-  const isInitialMount = useRef(true);
-  const previousValues = useRef<string | null>(null);
-
-  useEffect(() => {
-    const valuesString = JSON.stringify(debouncedValues);
-
-    // Skip initial mount
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      previousValues.current = valuesString;
-      return;
-    }
-
-    // Skip if values haven't changed
-    if (valuesString === previousValues.current) {
-      return;
-    }
-    previousValues.current = valuesString;
-
-    // Update Zustand store (persists to localStorage)
-    setSaveStatus(decisionProfileId, 'saving');
-    setInstanceData(decisionProfileId, {
-      name: debouncedValues.name,
-      description: debouncedValues.description,
-      steward: debouncedValues.steward,
-      objective: debouncedValues.objective,
-      budget: debouncedValues.budget ?? undefined,
-      hideBudget: debouncedValues.hideBudget,
-      enableCategories: debouncedValues.enableCategories,
-      includeReview: debouncedValues.includeReview,
-      isPrivate: debouncedValues.isPrivate,
-    });
-
-    // Mark as saved with timestamp
-    markSaved(decisionProfileId);
-
-    // TODO: Add API mutation here once storage location is decided
-  }, [
-    debouncedValues,
-    decisionProfileId,
-    setInstanceData,
-    setSaveStatus,
-    markSaved,
-  ]);
-
-  return null;
-}
-
 // Form component - only rendered after Zustand hydration is complete
 export function OverviewSectionForm({
   decisionProfileId,
@@ -104,6 +39,7 @@ export function OverviewSectionForm({
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
+  const previousValuesRef = useRef<string | null>(null);
 
   // tRPC mutation
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
@@ -118,6 +54,36 @@ export function OverviewSectionForm({
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
+
+  // Debounced auto-save function (similar to ProposalEditor pattern)
+  const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
+    const valuesString = JSON.stringify(values);
+
+    // Skip if values haven't changed
+    if (valuesString === previousValuesRef.current) {
+      return;
+    }
+    previousValuesRef.current = valuesString;
+
+    // Update Zustand store (persists to localStorage)
+    setSaveStatus(decisionProfileId, 'saving');
+    setInstanceData(decisionProfileId, {
+      name: values.name,
+      description: values.description,
+      steward: values.steward,
+      objective: values.objective,
+      budget: values.budget,
+      hideBudget: values.hideBudget,
+      enableCategories: values.enableCategories,
+      includeReview: values.includeReview,
+      isPrivate: values.isPrivate,
+    } satisfies Partial<FormInstanceData>);
+
+    // Mark as saved with timestamp
+    markSaved(decisionProfileId);
+
+    // TODO: Add API mutation here once storage location is decided
+  }, AUTOSAVE_DEBOUNCE_MS);
 
   // Mock options - these would come from API
   const stewardOptions = [
@@ -167,18 +133,13 @@ export function OverviewSectionForm({
           void form.handleSubmit();
         }}
       >
-        {/* Auto-save handler - subscribes to form values */}
+        {/* Auto-save handler - subscribes to form values and triggers debounced save */}
         <form.Subscribe
           selector={(state) => state.values}
-          children={(values) => (
-            <AutoSaveHandler
-              values={values as OverviewFormData}
-              decisionProfileId={decisionProfileId}
-              setInstanceData={setInstanceData}
-              setSaveStatus={setSaveStatus}
-              markSaved={markSaved}
-            />
-          )}
+          children={(values) => {
+            debouncedSave(values as OverviewFormData);
+            return null;
+          }}
         />
 
         <div className="mx-auto w-full max-w-160 space-y-8 p-4 md:p-8">
