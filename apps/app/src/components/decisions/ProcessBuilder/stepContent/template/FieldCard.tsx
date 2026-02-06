@@ -14,7 +14,6 @@ import { LuGripVertical, LuLock, LuX } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { FieldConfigDropdown } from './FieldConfigDropdown';
-import { FieldPreview } from './FieldPreview';
 import { getFieldIcon, getFieldLabelKey } from './fieldRegistry';
 import type { FormField } from './types';
 
@@ -105,23 +104,18 @@ export function FieldCard({
   // Locked fields render as static cards
   if (field.locked) {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border bg-neutral-offWhite p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex size-6 items-center justify-center text-neutral-gray4">
-            <LuLock size={16} />
-          </div>
-          <TooltipTrigger>
-            <AriaButton className="flex items-center text-neutral-gray4">
-              <Icon size={16} />
-            </AriaButton>
-            <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
-          </TooltipTrigger>
+      <div className="flex items-center gap-2 rounded-lg border bg-neutral-offWhite p-4">
+        <div className="flex size-6 items-center justify-center text-neutral-gray4">
+          <LuLock size={16} />
+        </div>
+        <TooltipTrigger>
+          <AriaButton className="flex items-center text-neutral-gray4">
+            <Icon size={16} />
+          </AriaButton>
+          <Tooltip>{t(getFieldLabelKey(field.type))}</Tooltip>
+        </TooltipTrigger>
 
-          <span className="flex-1 text-neutral-charcoal">{field.label}</span>
-        </div>
-        <div className="px-6">
-          <FieldPreview field={field} />
-        </div>
+        <span className="flex-1 text-neutral-charcoal">{field.label}</span>
       </div>
     );
   }
