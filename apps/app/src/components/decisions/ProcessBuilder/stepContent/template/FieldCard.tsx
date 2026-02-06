@@ -126,7 +126,7 @@ export function FieldCard({
     );
   }
 
-  // Sortable fields with internal accordion for config
+  // Sortable fields with config for each field
 
   return (
     <div
