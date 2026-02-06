@@ -16,7 +16,7 @@ import {
   FieldCardDropIndicator,
 } from './FieldCard';
 import {
-  TemplateEditorMobileTrigger,
+  FieldListTrigger,
   TemplateEditorSidebar,
 } from './TemplateEditorSidebar';
 import { TemplateEditorSkeleton } from './TemplateEditorSkeleton';
@@ -180,9 +180,9 @@ export function TemplateEditorContent({
     <SidebarProvider isOpen={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
       <div className="flex h-full flex-col md:flex-row">
         {/* Mobile header with sidebar trigger */}
-        <div className="flex items-center gap-2 p-4 md:hidden">
+        <div className="flex items-center justify-between gap-2 p-4 md:hidden">
           <h2 className="font-serif text-title-sm">{t('Proposal template')}</h2>
-          <TemplateEditorMobileTrigger />
+          <FieldListTrigger />
         </div>
 
         {/* Sidebar - hidden on mobile, slides in as drawer */}
