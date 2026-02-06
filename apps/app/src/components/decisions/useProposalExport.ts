@@ -2,6 +2,8 @@ import { trpc } from '@op/api/client';
 import { toast } from '@op/ui/Toast';
 import { useEffect, useState } from 'react';
 
+const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
 export const useProposalExport = () => {
   const [exportId, setExportId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -9,9 +11,9 @@ export const useProposalExport = () => {
 
   const exportMutation = trpc.decision.export.useMutation();
 
-  // Use nil UUID when no exportId to satisfy UUID validation
+  // Use nil UUID when no exportId to satisfy server-side UUID validation.
   const { data: exportStatus } = trpc.decision.getExportStatus.useQuery(
-    { exportId: exportId || '' },
+    { exportId: exportId || NIL_UUID },
     {
       enabled: !!exportId && isExporting,
       refetchInterval: 2000,
