@@ -2,6 +2,7 @@
 
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -181,7 +182,9 @@ export function TemplateEditorContent({
       <div className="flex h-full flex-col md:flex-row">
         {/* Mobile header with sidebar trigger */}
         <div className="flex items-center justify-between gap-2 p-4 md:hidden">
-          <h2 className="font-serif text-title-sm">{t('Proposal template')}</h2>
+          <Header2 className="font-serif text-title-sm">
+            {t('Proposal template')}
+          </Header2>
           <FieldListTrigger />
         </div>
 
@@ -196,9 +199,9 @@ export function TemplateEditorContent({
         <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
             {/* Desktop title - hidden on mobile (shown in mobile header) */}
-            <h2 className="hidden font-serif text-title-sm md:mt-8 md:block">
+            <Header2 className="hidden font-serif text-title-sm md:mt-8 md:block">
               {t('Proposal template')}
-            </h2>
+            </Header2>
             {/* Responsive subtitle */}
             <p className="text-neutral-charcoal">
               <span className="hidden md:inline">
