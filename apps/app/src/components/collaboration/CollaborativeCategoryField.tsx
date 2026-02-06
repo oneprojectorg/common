@@ -13,13 +13,9 @@ interface CategoryOption {
 }
 
 interface CollaborativeCategoryFieldProps {
-  /** Available categories to choose from */
   categories: CategoryOption[];
-  /** Initial value from the database (used before Yjs syncs) */
   initialValue?: string | null;
-  /** Called when the value changes — use for DB persistence */
   onChange?: (category: string | null) => void;
-  className?: string;
 }
 
 /**
@@ -30,7 +26,6 @@ export function CollaborativeCategoryField({
   categories,
   initialValue = null,
   onChange,
-  className,
 }: CollaborativeCategoryFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -56,7 +51,7 @@ export function CollaborativeCategoryField({
       placeholder={t('Select category')}
       selectedKey={selectedCategory}
       onSelectionChange={handleSelectionChange}
-      className={className ?? 'w-auto max-w-36 overflow-hidden sm:max-w-96'}
+      className="w-auto max-w-36 overflow-hidden sm:max-w-96"
       popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
     >
       {categories.map((category) => (
