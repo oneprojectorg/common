@@ -107,4 +107,29 @@ export const relations = defineRelations(schema, (r) => ({
       optional: false,
     }),
   },
+
+  /**
+   * Profile users relations
+   *
+   * Links profile users to their assigned roles.
+   */
+  profileUsers: {
+    roles: r.many.profileUserToAccessRoles({
+      from: r.profileUsers.id,
+      to: r.profileUserToAccessRoles.profileUserId,
+    }),
+  },
+
+  /**
+   * Profile user to access roles relations (join table)
+   *
+   * Links the join table to the actual access role.
+   */
+  profileUserToAccessRoles: {
+    accessRole: r.one.accessRoles({
+      from: r.profileUserToAccessRoles.accessRoleId,
+      to: r.accessRoles.id,
+      optional: false,
+    }),
+  },
 }));

@@ -11,6 +11,7 @@ export * from './reactions';
 export * from './decision';
 export * from './platform';
 export {
+  acceptProfileInvite,
   updateUserProfile,
   getProfile,
   searchProfiles,
