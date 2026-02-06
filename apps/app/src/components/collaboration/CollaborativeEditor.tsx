@@ -62,11 +62,12 @@ export const CollaborativeEditor = forwardRef<
       () => [
         ...extensions,
         Collaboration.configure({ document: ydoc, field }),
-        CollaborationCaret.configure({
-          provider,
-          user,
-        }),
-        Snapshot.configure({ provider }),
+        ...(provider
+          ? [
+              CollaborationCaret.configure({ provider, user }),
+              Snapshot.configure({ provider }),
+            ]
+          : []),
       ],
       [extensions, ydoc, field, provider, user],
     );

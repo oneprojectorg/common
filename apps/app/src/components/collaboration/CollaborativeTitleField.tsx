@@ -29,8 +29,8 @@ export function CollaborativeTitleField({
   const { ydoc, provider, user } = useCollaborativeDoc();
 
   // Build collaborative extensions for the title field
-  const extensions = useMemo(() => {
-    return [
+  const extensions = useMemo(
+    () => [
       Document,
       Paragraph,
       Text,
@@ -43,12 +43,10 @@ export function CollaborativeTitleField({
         document: ydoc,
         field: 'title',
       }),
-      CollaborationCaret.configure({
-        provider,
-        user,
-      }),
-    ];
-  }, [ydoc, provider, user, placeholder]);
+      ...(provider ? [CollaborationCaret.configure({ provider, user })] : []),
+    ],
+    [ydoc, provider, user, placeholder],
+  );
 
   const editor = useEditor({
     extensions,

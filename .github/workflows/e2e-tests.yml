@@ -36,6 +36,8 @@ jobs:
       # Google OAuth (stub values - not used in E2E tests)
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
+      # TipTap Cloud (collaborative editing - stub for tests)
+      NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
       # Centrifugo (realtime - stub values for tests)
       CENTRIFUGO_API_URL: http://localhost:8000/api
       CENTRIFUGO_API_KEY: test_api_key

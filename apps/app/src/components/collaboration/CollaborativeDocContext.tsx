@@ -16,8 +16,8 @@ import type { Doc } from 'yjs';
 interface CollaborativeDocContextValue {
   /** The shared Yjs document - all collaborative fields bind to this */
   ydoc: Doc;
-  /** TipTap Cloud collaboration provider */
-  provider: TiptapCollabProvider;
+  /** TipTap Cloud collaboration provider (null until connected) */
+  provider: TiptapCollabProvider | null;
   /** Connection status */
   status: CollabStatus;
   /** Whether the document has synced with the server */
@@ -34,8 +34,6 @@ interface CollaborativeDocProviderProps {
   docId: string;
   /** User's display name for collaboration cursors */
   userName?: string;
-  /** Loading state to show while connecting */
-  fallback?: ReactNode;
   children: ReactNode;
 }
 
@@ -54,7 +52,6 @@ interface CollaborativeDocProviderProps {
 export function CollaborativeDocProvider({
   docId,
   userName = 'Anonymous',
-  fallback = null,
   children,
 }: CollaborativeDocProviderProps) {
   const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
@@ -62,11 +59,6 @@ export function CollaborativeDocProvider({
     enabled: true,
     userName,
   });
-
-  // Wait for provider to be ready before rendering children
-  if (!provider) {
-    return <>{fallback}</>;
-  }
 
   return (
     <CollaborativeDocContext.Provider
