@@ -16,7 +16,7 @@ import { DatePicker } from '@op/ui/DatePicker';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
-import { use, useEffect, useRef, useState } from 'react';
+import { use, useState } from 'react';
 import { DisclosureStateContext } from 'react-aria-components';
 import { LuChevronRight, LuGripVertical } from 'react-icons/lu';
 
@@ -37,7 +37,6 @@ export function PhasesSectionContent({
   const initialPhases = instance.process?.processSchema?.phases ?? [];
   const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
   const t = useTranslations();
-  const previousPhasesRef = useRef<string | null>(null);
 
   // Store and mutation for saving
   const setPhaseData = useProcessBuilderStore((s) => s.setPhaseData);
@@ -54,15 +53,6 @@ export function PhasesSectionContent({
 
   // Debounced auto-save function (similar to ProposalEditor pattern)
   const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
-    const phasesString = JSON.stringify(data);
-
-    // Skip if phases haven't changed
-    if (phasesString === previousPhasesRef.current) {
-      return;
-    }
-    previousPhasesRef.current = phasesString;
-
-    // Update Zustand store (persists to localStorage)
     setSaveStatus(decisionProfileId, 'saving');
     for (const phase of data) {
       setPhaseData(decisionProfileId, phase.id, {
@@ -99,13 +89,21 @@ export function PhasesSectionContent({
     }
   }, AUTOSAVE_DEBOUNCE_MS);
 
-  // Trigger debounced save when phases change
-  useEffect(() => {
-    debouncedSave(phases);
-  }, [phases, debouncedSave]);
+  // Update phases and trigger debounced save
+  const updatePhases = (
+    updater:
+      | PhaseDefinition[]
+      | ((prev: PhaseDefinition[]) => PhaseDefinition[]),
+  ) => {
+    setPhases((prev) => {
+      const updated = typeof updater === 'function' ? updater(prev) : updater;
+      debouncedSave(updated);
+      return updated;
+    });
+  };
 
   const updatePhase = (phaseId: string, updates: Partial<PhaseDefinition>) => {
-    setPhases((prev) =>
+    updatePhases((prev) =>
       prev.map((phase) =>
         phase.id === phaseId ? { ...phase, ...updates } : phase,
       ),
@@ -126,7 +124,7 @@ export function PhasesSectionContent({
       </p>
       <PhaseEditor
         phases={phases}
-        setPhases={setPhases}
+        setPhases={updatePhases}
         updatePhase={updatePhase}
       />
     </div>
