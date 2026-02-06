@@ -3,6 +3,7 @@
 import { parseDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
+import { useDebouncedCallback } from '@op/hooks';
 import {
   Accordion,
   AccordionContent,
@@ -15,7 +16,7 @@ import { DatePicker } from '@op/ui/DatePicker';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
-import { use, useCallback, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { DisclosureStateContext } from 'react-aria-components';
 import { LuChevronRight, LuGripVertical } from 'react-icons/lu';
 
@@ -24,8 +25,9 @@ import { useTranslations } from '@/lib/i18n';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
-import { useAutoSave } from '../../hooks/useAutoSave';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+
+const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 export function PhasesSectionContent({
   instanceId,
@@ -35,6 +37,7 @@ export function PhasesSectionContent({
   const initialPhases = instance.process?.processSchema?.phases ?? [];
   const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
   const t = useTranslations();
+  const previousPhasesRef = useRef<string | null>(null);
 
   // Store and mutation for saving
   const setPhaseData = useProcessBuilderStore((s) => s.setPhaseData);
@@ -49,32 +52,32 @@ export function PhasesSectionContent({
   // Only auto-save to API when in draft mode
   const isDraft = instance.status === 'draft';
 
-  // Auto-save phases
-  // TODO: Use hasPendingChanges and publishChanges in the header for "Publish Changes" button
-  const {
-    hasPendingChanges: _hasPendingChanges,
-    publishChanges: _publishChanges,
-  } = useAutoSave({
-    data: phases,
-    enabled: isDraft,
-    onLocalSave: useCallback(
-      (data: PhaseDefinition[]) => {
-        // Update localStorage via Zustand
-        for (const phase of data) {
-          setPhaseData(decisionProfileId, phase.id, {
-            name: phase.name,
-            description: phase.description,
-            startDate: phase.startDate,
-            endDate: phase.endDate,
-            rules: phase.rules,
-          });
-        }
-      },
-      [decisionProfileId, setPhaseData],
-    ),
-    onApiSave: useCallback(
-      async (data: PhaseDefinition[]) => {
-        await updateInstance.mutateAsync({
+  // Debounced auto-save function (similar to ProposalEditor pattern)
+  const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
+    const phasesString = JSON.stringify(data);
+
+    // Skip if phases haven't changed
+    if (phasesString === previousPhasesRef.current) {
+      return;
+    }
+    previousPhasesRef.current = phasesString;
+
+    // Update Zustand store (persists to localStorage)
+    setSaveStatus(decisionProfileId, 'saving');
+    for (const phase of data) {
+      setPhaseData(decisionProfileId, phase.id, {
+        name: phase.name,
+        description: phase.description,
+        startDate: phase.startDate,
+        endDate: phase.endDate,
+        rules: phase.rules,
+      });
+    }
+
+    // Save to API if in draft mode
+    if (isDraft) {
+      updateInstance.mutate(
+        {
           instanceId,
           phases: data.map((phase) => ({
             phaseId: phase.id,
@@ -84,19 +87,22 @@ export function PhasesSectionContent({
             endDate: phase.endDate,
             rules: phase.rules,
           })),
-        });
-      },
-      [instanceId, updateInstance],
-    ),
-    setSaveStatus: useCallback(
-      (status) => setSaveStatus(decisionProfileId, status),
-      [decisionProfileId, setSaveStatus],
-    ),
-    markSaved: useCallback(
-      () => markSaved(decisionProfileId),
-      [decisionProfileId, markSaved],
-    ),
-  });
+        },
+        {
+          onSuccess: () => markSaved(decisionProfileId),
+          onError: () => setSaveStatus(decisionProfileId, 'error'),
+        },
+      );
+    } else {
+      // Just mark as saved for localStorage
+      markSaved(decisionProfileId);
+    }
+  }, AUTOSAVE_DEBOUNCE_MS);
+
+  // Trigger debounced save when phases change
+  useEffect(() => {
+    debouncedSave(phases);
+  }, [phases, debouncedSave]);
 
   const updatePhase = (phaseId: string, updates: Partial<PhaseDefinition>) => {
     setPhases((prev) =>
