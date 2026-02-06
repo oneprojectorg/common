@@ -223,24 +223,19 @@ export function ProposalEditor({
     onError: (error) => handleMutationError(error, 'update'),
   });
 
-  // Silent auto-save mutation (no redirects, no toasts)
   const autoSaveMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {
       console.error('Auto-save failed:', error);
     },
   });
 
-  // Debounced title save - persists to database while user types
+  // Persists to database while user types
   const debouncedSaveTitle = useDebouncedCallback((newTitle: string) => {
     if (!proposal) {
       return;
     }
 
     const currentData = parseProposalData(proposal.proposalData);
-    // Only save if title actually changed
-    if (currentData.title === newTitle) {
-      return;
-    }
 
     autoSaveMutation.mutate({
       proposalId: proposal.id,

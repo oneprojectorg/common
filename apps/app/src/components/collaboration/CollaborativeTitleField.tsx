@@ -12,28 +12,13 @@ import { useEffect, useMemo } from 'react';
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 interface CollaborativeTitleFieldProps {
-  /** Placeholder text */
   placeholder?: string;
-  /** Called when content changes (returns plain text) */
   onChange?: (text: string) => void;
-  /** Additional className for the editor */
   className?: string;
 }
 
 /**
  * A collaborative plain text field for the proposal title.
- * Uses TipTap with minimal extensions for proper cursor sync.
- * Must be used within a CollaborativeDocProvider.
- *
- * @example
- * ```tsx
- * <CollaborativeDocProvider docId="proposal-123" userName="Alice">
- *   <CollaborativeTitleField
- *     placeholder="Untitled Proposal"
- *     onChange={setTitle}
- *   />
- * </CollaborativeDocProvider>
- * ```
  */
 export function CollaborativeTitleField({
   placeholder = 'Untitled Proposal',

@@ -77,12 +77,6 @@ export function CollaborativeDocProvider({
   );
 }
 
-/**
- * Hook to access the collaborative document context.
- * Must be used within a CollaborativeDocProvider.
- *
- * @throws Error if used outside of CollaborativeDocProvider
- */
 export function useCollaborativeDoc(): CollaborativeDocContextValue {
   const ctx = useContext(CollaborativeDocContext);
   if (!ctx) {

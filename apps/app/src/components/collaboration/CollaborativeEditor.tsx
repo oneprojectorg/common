@@ -39,21 +39,7 @@ export interface CollaborativeEditorProps {
   editorClassName?: string;
 }
 
-/**
- * Rich text editor with real-time collaboration via TipTap Cloud.
- * Must be used within a CollaborativeDocProvider.
- *
- * @example
- * ```tsx
- * <CollaborativeDocProvider docId="proposal-123" userName="Alice">
- *   <CollaborativeEditor
- *     field="content"
- *     extensions={getProposalExtensions()}
- *     onEditorReady={setEditor}
- *   />
- * </CollaborativeDocProvider>
- * ```
- */
+/** Rich text editor with real-time collaboration via TipTap Cloud. */
 export const CollaborativeEditor = forwardRef<
   CollaborativeEditorRef,
   CollaborativeEditorProps
