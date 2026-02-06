@@ -223,13 +223,15 @@ export function FieldCard({
  * Drag preview shown while dragging a field card.
  */
 export function FieldCardDragPreview({ field }: { field: FormField }) {
+  const Icon = getFieldIcon(field.type);
   return (
     <div className="rounded-lg border bg-white p-4 shadow-lg">
       <div className="flex items-center gap-2">
         <div className="flex size-8 items-center justify-center text-neutral-gray4">
           <LuGripVertical size={16} />
         </div>
-        <span className="font-medium text-neutral-charcoal">{field.label}</span>
+        <Icon size={16} className="text-neutral-gray4" />
+        <span className="text-neutral-charcoal">{field.label}</span>
       </div>
     </div>
   );
