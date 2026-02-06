@@ -72,12 +72,18 @@ export function getTextPreview({
     .replace(/<\/?(p|div|li|h[1-6]|blockquote|tr)[^>]*>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n');
 
-  // Strip HTML tags with a robust approach that handles edge cases:
-  // 1. First handle incomplete/malformed tags (e.g., <script without >)
-  // 2. Then handle complete tags
-  // 3. Finally handle any remaining < characters
-  const text = withLineBreaks
-    .replace(/<[^>]*>/g, '') // Complete tags
+  // Strip HTML tags with a loop to handle nested/malformed tags like <<script>script>
+  // A single-pass regex can miss tags that reassemble after replacement
+  let text = withLineBreaks;
+  const tagPattern = /<[^>]*>/g;
+  let previous: string;
+  do {
+    previous = text;
+    text = text.replace(tagPattern, '');
+  } while (text !== previous);
+
+  // Handle incomplete tags at end and orphaned closing brackets
+  text = text
     .replace(/<[^>]*$/g, '') // Incomplete tags at end
     .replace(/^[^<]*>/g, (m) => (m.includes('<') ? m : '')) // Orphaned closing >
     .replace(/</g, '&lt;') // Escape any remaining < as a safety measure

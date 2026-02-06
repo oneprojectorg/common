@@ -347,7 +347,7 @@ export function getValueByPath(obj: any, path: string): any {
   let current = obj;
 
   for (const part of parts) {
-    if (current == null) {
+    if (current == null || DANGEROUS_KEYS.has(part)) {
       return null;
     }
     current = current[part];
