@@ -27,6 +27,9 @@ catalogs:
     '@tiptap/extension-collaboration-caret':
       specifier: ^3.15.3
       version: 3.17.1
+    '@tiptap/extension-document':
+      specifier: ^3.15.3
+      version: 3.17.1
     '@tiptap/extension-heading':
       specifier: ^3.15.3
       version: 3.17.1
@@ -45,10 +48,16 @@ catalogs:
     '@tiptap/extension-ordered-list':
       specifier: ^3.15.3
       version: 3.17.1
+    '@tiptap/extension-paragraph':
+      specifier: ^3.15.3
+      version: 3.17.1
     '@tiptap/extension-placeholder':
       specifier: ^3.15.3
       version: 3.17.1
     '@tiptap/extension-strike':
+      specifier: ^3.15.3
+      version: 3.17.1
+    '@tiptap/extension-text':
       specifier: ^3.15.3
       version: 3.17.1
     '@tiptap/extension-text-align':
@@ -557,6 +566,9 @@ importers:
       '@tiptap/extension-collaboration-caret':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)(@tiptap/y-tiptap@3.0.2(prosemirror-model@1.25.3)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29))
+      '@tiptap/extension-document':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
       '@tiptap/extension-heading':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
@@ -575,10 +587,16 @@ importers:
       '@tiptap/extension-ordered-list':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/extension-list@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1))
+      '@tiptap/extension-paragraph':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
       '@tiptap/extension-placeholder':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/extensions@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1))
       '@tiptap/extension-strike':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-text':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
       '@tiptap/extension-text-align':

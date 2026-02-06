@@ -25,14 +25,17 @@ catalog:
   '@tiptap/extension-bullet-list': ^3.15.3
   '@tiptap/extension-collaboration': ^3.15.3
   '@tiptap/extension-collaboration-caret': ^3.15.3
+  '@tiptap/extension-document': ^3.15.3
   '@tiptap/extension-heading': ^3.15.3
   '@tiptap/extension-horizontal-rule': ^3.15.3
   '@tiptap/extension-image': ^3.15.3
   '@tiptap/extension-link': ^3.15.3
   '@tiptap/extension-list-item': ^3.15.3
   '@tiptap/extension-ordered-list': ^3.15.3
+  '@tiptap/extension-paragraph': ^3.15.3
   '@tiptap/extension-placeholder': ^3.15.3
   '@tiptap/extension-strike': ^3.15.3
+  '@tiptap/extension-text': ^3.15.3
   '@tiptap/extension-text-align': ^3.15.3
   '@tiptap/extension-underline': ^3.15.3
   '@tiptap/suggestion': ^3.15.3

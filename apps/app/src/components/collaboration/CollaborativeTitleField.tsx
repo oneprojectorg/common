@@ -2,12 +2,14 @@
 
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
+import Document from '@tiptap/extension-document';
+import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
+import Text from '@tiptap/extension-text';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect, useMemo } from 'react';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
-import { getPlainTextExtensions } from './plainTextExtensions';
 
 interface CollaborativeTitleFieldProps {
   /** Placeholder text */
@@ -42,10 +44,10 @@ export function CollaborativeTitleField({
 
   // Build collaborative extensions for the title field
   const extensions = useMemo(() => {
-    const baseExtensions = getPlainTextExtensions({ collaborative: true });
-
     return [
-      ...baseExtensions,
+      Document,
+      Paragraph,
+      Text,
       Placeholder.configure({
         placeholder,
         emptyEditorClass:
