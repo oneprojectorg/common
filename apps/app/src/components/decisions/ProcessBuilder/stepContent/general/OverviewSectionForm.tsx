@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { useDebounce } from '@op/hooks';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { NumberField } from '@op/ui/NumberField';
-import { useMemo, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
