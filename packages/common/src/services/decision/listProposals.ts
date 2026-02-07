@@ -3,7 +3,6 @@ import type { ProposalStatus } from '@op/db/schema';
 import {
   ProfileRelationshipType,
   Visibility,
-  organizations,
   posts,
   postsToProfiles,
   processInstances,
@@ -16,11 +15,7 @@ import { assertAccess, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
-import {
-  getCurrentProfileId,
-  getOrgAccessUser,
-  getProfileAccessUser,
-} from '../access';
+import { getCurrentProfileId, getProfileAccessUser } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 
@@ -87,52 +82,36 @@ export const listProposals = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  // join the process table to the org table via ownerId to get the org id
-  const instanceOrg = await db
+  // Get the instance's profile for access checks
+  const instance = await db
     .select({
-      id: organizations.id,
-      currentStateId: processInstances.currentStateId,
-      instanceProfileId: processInstances.profileId,
+      profileId: processInstances.profileId,
     })
-    .from(organizations)
-    .leftJoin(
-      processInstances,
-      eq(organizations.profileId, processInstances.ownerProfileId),
-    )
+    .from(processInstances)
     .where(eq(processInstances.id, processInstanceId))
     .limit(1);
 
-  if (!instanceOrg[0]) {
+  if (!instance[0]?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
 
   let canManageProposals = false;
-  let orgUser: Awaited<ReturnType<typeof getOrgAccessUser>> = undefined;
+  let profileUser: Awaited<ReturnType<typeof getProfileAccessUser>> = undefined;
 
   // Only perform access checks if not skipped
   if (!skipAccessCheck) {
-    // ASSERT VIEW ACCESS ON ORGUSER
-    orgUser = await getOrgAccessUser({
+    // Assert view access via profileUser on the instance's profile
+    profileUser = await getProfileAccessUser({
       user,
-      organizationId: instanceOrg[0].id,
+      profileId: instance[0].profileId,
     });
 
-    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
-
-    // Check instance-level access - user must have access to the instance's profile
-    if (instanceOrg[0].instanceProfileId) {
-      const profileUser = await getProfileAccessUser({
-        user,
-        profileId: instanceOrg[0].instanceProfileId,
-      });
-
-      assertAccess({ profile: permission.READ }, profileUser?.roles ?? []);
-    }
+    assertAccess({ profile: permission.READ }, profileUser?.roles ?? []);
 
     // Check if user can manage proposals (approve/reject)
     canManageProposals = checkPermission(
-      { decisions: permission.ADMIN },
-      orgUser?.roles ?? [],
+      { profile: permission.ADMIN },
+      profileUser?.roles ?? [],
     );
   }
 
@@ -349,8 +328,8 @@ export const listProposals = async ({
     // Check if proposal is editable by current user
     const isOwner = proposal.submittedByProfileId === currentProfileId;
     const hasAdminPermission = checkPermission(
-      { decisions: permission.ADMIN },
-      orgUser?.roles ?? [],
+      { profile: permission.ADMIN },
+      profileUser?.roles ?? [],
     );
     const isEditable = isOwner || hasAdminPermission;
 
