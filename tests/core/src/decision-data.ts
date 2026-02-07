@@ -229,9 +229,15 @@ export async function createDecisionInstance(
 
   // 2. Create the process instance with proper instanceData structure
   const instanceData = {
+    templateId: schema.id,
+    templateVersion: schema.version,
+    templateName: schema.name,
+    templateDescription: schema.description,
     currentPhaseId: firstPhaseId,
     phases: schema.phases.map((phase, index) => ({
       phaseId: phase.id,
+      name: phase.name,
+      description: phase.description,
       rules: phase.rules,
       startDate: new Date(
         Date.now() + index * 7 * 24 * 60 * 60 * 1000,
