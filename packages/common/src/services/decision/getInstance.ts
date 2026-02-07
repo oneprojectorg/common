@@ -33,7 +33,9 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     }
 
     if (!instance.profileId) {
-      throw new NotFoundError('Process instance does not have an associated profile');
+      throw new NotFoundError(
+        'Process instance does not have an associated profile',
+      );
     }
 
     // Assert view access via profileUser on the instance's profile
