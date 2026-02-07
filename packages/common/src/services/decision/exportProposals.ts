@@ -74,13 +74,6 @@ export const exportProposals = async ({
   assertAccess({ decisions: permission.ADMIN }, orgUser.roles || []);
 
   const exportId = randomUUID();
-  const filters = {
-    categoryId: input.categoryId,
-    submittedByProfileId: input.submittedByProfileId,
-    status: input.status,
-    dir: input.dir,
-    proposalFilter: input.proposalFilter,
-  };
 
   // Set initial 'pending' status in cache so frontend can poll immediately
   const cacheKey = `export:proposal:${exportId}`;
@@ -90,8 +83,6 @@ export const exportProposals = async ({
       exportId,
       processInstanceId: input.processInstanceId,
       userId: user.id,
-      format: input.format,
-      filters,
       status: 'pending',
       createdAt: new Date().toISOString(),
     },
@@ -106,7 +97,13 @@ export const exportProposals = async ({
       processInstanceId: input.processInstanceId,
       userId: user.id,
       format: input.format,
-      filters,
+      filters: {
+        categoryId: input.categoryId,
+        submittedByProfileId: input.submittedByProfileId,
+        status: input.status,
+        dir: input.dir,
+        proposalFilter: input.proposalFilter,
+      },
     },
   });
 

@@ -9,7 +9,7 @@ export const useProposalExport = () => {
 
   const exportMutation = trpc.decision.export.useMutation();
 
-  // Use nil UUID when no exportId to satisfy server-side UUID validation.
+  // Use nil UUID when no exportId to satisfy UUID validation
   const { data: exportStatus } = trpc.decision.getExportStatus.useQuery(
     { exportId: exportId || '' },
     {
