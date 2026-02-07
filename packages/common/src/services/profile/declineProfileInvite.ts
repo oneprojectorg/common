@@ -1,4 +1,4 @@
-import { db, sql } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import { profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -36,7 +36,7 @@ export const declineProfileInvite = async ({
   const [deleted] = await db
     .delete(profileInvites)
     .where(
-      sql`${profileInvites.id} = ${inviteId} AND ${profileInvites.acceptedOn} IS NULL`,
+      and(eq(profileInvites.id, inviteId), isNull(profileInvites.acceptedOn)),
     )
     .returning({ id: profileInvites.id });
 
