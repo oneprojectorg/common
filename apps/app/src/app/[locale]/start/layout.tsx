@@ -1,14 +1,24 @@
-import { FullScreenSplitAside } from '@/components/layout/split/FullScreenSplitAside';
-import { FullScreenSplitLayout } from '@/components/layout/split/FullScreenSplitLayout';
-import { FullScreenSplitMain } from '@/components/layout/split/FullScreenSplitMain';
+import Link from 'next/link';
+
+import { CommonLogo } from '@/components/CommonLogo';
 
 const StartLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <FullScreenSplitLayout>
-      <div id="top-slot" className="absolute top-0 w-full lg:w-2/3" />
-      <FullScreenSplitMain>{children}</FullScreenSplitMain>
-      <FullScreenSplitAside />
-    </FullScreenSplitLayout>
+    <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
+      <div id="top-slot" className="absolute top-0 w-full" />
+      <main className="relative flex size-full flex-col overflow-y-scroll p-4 md:p-8">
+        <section className="sticky top-0 hidden lg:block">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
+              <CommonLogo />
+            </Link>
+          </div>
+        </section>
+        <section className="flex size-full flex-col items-center">
+          <div className="py-7 sm:py-20">{children}</div>
+        </section>
+      </main>
+    </div>
   );
 };
 
