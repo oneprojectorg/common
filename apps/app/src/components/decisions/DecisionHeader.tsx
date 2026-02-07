@@ -34,15 +34,25 @@ export async function DecisionHeader({
   const instanceData = instance.instanceData as any;
   const instancePhases = instanceData?.phases ?? [];
 
-  const phases: ProcessPhase[] = instancePhases.map((p: any) => ({
-    id: p.phaseId,
-    name: p.name,
-    description: p.description,
-    phase: {
-      startDate: p.startDate,
-      endDate: p.endDate,
-    },
-  }));
+  // For new instances, phases contain name/description directly.
+  // For legacy instances, fall back to process.processSchema states/phases for names.
+  const processSchema = (instance as any).process?.processSchema;
+  const templateStates = processSchema?.states || processSchema?.phases || [];
+
+  const phases: ProcessPhase[] = instancePhases.map((p: any) => {
+    const templateState = templateStates.find((s: any) => s.id === p.phaseId);
+    return {
+      id: p.phaseId,
+      name: p.name || templateState?.name,
+      description: p.description || templateState?.description,
+      type: templateState?.type,
+      config: templateState?.config,
+      phase: templateState?.phase || {
+        startDate: p.startDate,
+        endDate: p.endDate,
+      },
+    };
+  });
 
   const isResultsPhase = instance.currentStateId === 'results';
 
@@ -59,7 +69,11 @@ export async function DecisionHeader({
           label: instance.owner?.name,
           href: `/profile/${slug}?tab=decisions`,
         }}
-        title={instanceData?.schemaName || instance.name}
+        title={
+          instanceData?.schemaName ||
+          (instance as any).process?.name ||
+          instance.name
+        }
       />
 
       <div className="flex flex-col overflow-x-auto sm:items-center">

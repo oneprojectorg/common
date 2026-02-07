@@ -40,6 +40,19 @@ export const getLegacyInstanceRouter = router({
       return legacyProcessInstanceEncoder.parse({
         ...instance,
         instanceData: instance.instanceData as Record<string, any>,
+        process: instance.process
+          ? {
+              ...instance.process,
+              processSchema: (() => {
+                const schema = (instance.process as any)?.processSchema;
+                return typeof schema === 'object' &&
+                  schema !== null &&
+                  !Array.isArray(schema)
+                  ? schema
+                  : {};
+              })(),
+            }
+          : undefined,
         proposalCount: instance.proposalCount,
         participantCount: instance.participantCount,
       });

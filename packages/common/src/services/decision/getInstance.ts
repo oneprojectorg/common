@@ -17,6 +17,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instanceId),
       with: {
+        process: true,
         owner: true,
         proposals: {
           columns: {
