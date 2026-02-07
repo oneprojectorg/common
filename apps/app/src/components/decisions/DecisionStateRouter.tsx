@@ -42,7 +42,7 @@ function DecisionStateRouterNew({
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
     : (instance.description ??
-      instance.instanceData.schemaDescription ??
+      instance.instanceData.templateDescription ??
       undefined);
   const maxVotesPerMember = instance?.instanceData?.fieldValues
     ?.maxVotesPerMember as number | undefined;

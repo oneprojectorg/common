@@ -70,9 +70,9 @@ export async function DecisionHeader({
           href: `/profile/${slug}?tab=decisions`,
         }}
         title={
-          instanceData?.schemaName ||
-          (instance as any).process?.name ||
-          instance.name
+          instance.name ||
+          instanceData?.templateName ||
+          (instance as any).process?.name
         }
       />
 

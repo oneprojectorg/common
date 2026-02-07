@@ -44,7 +44,7 @@ export function VotingPage({
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
     : (instance.description ??
-      instance.instanceData?.schemaDescription ??
+      instance.instanceData?.templateDescription ??
       undefined);
   const aboutIsMarkup = !!instance?.description?.match('PPDESCRIPTION');
 

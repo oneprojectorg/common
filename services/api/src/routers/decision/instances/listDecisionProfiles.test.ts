@@ -258,7 +258,7 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     const profile = result.items[0];
-    expect(profile?.processInstance.instanceData.schemaId).toBeDefined();
+    expect(profile?.processInstance.instanceData.templateId).toBeDefined();
     expect(profile?.processInstance.owner).toBeDefined();
     expect(profile?.processInstance.owner?.id).toBe(
       setup.organization.profileId,

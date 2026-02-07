@@ -32,10 +32,10 @@ export interface PhaseInstanceData {
 export interface DecisionInstanceData {
   currentPhaseId: string;
   config?: ProcessConfig;
-  schemaId?: string;
-  schemaVersion?: string;
-  schemaName?: string;
-  schemaDescription?: string;
+  templateId?: string;
+  templateVersion?: string;
+  templateName?: string;
+  templateDescription?: string;
   phases: PhaseInstanceData[];
 }
 
@@ -69,10 +69,10 @@ export function createInstanceDataFromTemplate(input: {
   return {
     currentPhaseId: firstPhase.id,
     config: template.config,
-    schemaId: template.id,
-    schemaVersion: template.version,
-    schemaName: template.name,
-    schemaDescription: template.description,
+    templateId: template.id,
+    templateVersion: template.version,
+    templateName: template.name,
+    templateDescription: template.description,
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 

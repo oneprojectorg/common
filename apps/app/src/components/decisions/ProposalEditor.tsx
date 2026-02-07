@@ -169,7 +169,7 @@ export function ProposalEditor({
     onSuccess: async () => {
       posthog?.capture('submit_proposal_success', {
         process_instance_id: instance.id,
-        process_name: instance.instanceData?.schemaName,
+        process_name: instance.name || instance.instanceData?.templateName,
       });
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,

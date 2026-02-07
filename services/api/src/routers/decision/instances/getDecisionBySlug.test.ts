@@ -97,7 +97,7 @@ describe.concurrent('getDecisionBySlug', () => {
 
     const result = await caller.decision.getDecisionBySlug({ slug });
 
-    expect(result.processInstance.instanceData.schemaId).toBeDefined();
+    expect(result.processInstance.instanceData.templateId).toBeDefined();
     expect(result.processInstance.owner).toBeDefined();
     expect(result.processInstance.owner?.id).toBe(setup.organization.profileId);
   });

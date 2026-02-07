@@ -127,10 +127,10 @@ const instanceDataWithSchemaEncoder = z.object({
   hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   currentPhaseId: z.string(),
-  schemaId: z.string().optional(),
-  schemaVersion: z.string().optional(),
-  schemaName: z.string().optional(),
-  schemaDescription: z.string().optional(),
+  templateId: z.string().optional(),
+  templateVersion: z.string().optional(),
+  templateName: z.string().optional(),
+  templateDescription: z.string().optional(),
   stateData: z
     .record(
       z.string(),
