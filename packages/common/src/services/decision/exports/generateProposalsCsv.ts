@@ -2,7 +2,7 @@ import { type JSONContent, generateText } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { stringify } from 'csv-stringify/sync';
 
-import { listProposals } from '../listProposals';
+import type { listProposals } from '../listProposals';
 import { parseProposalData } from '../proposalDataSchema';
 
 // Infer the proposal type from the listProposals return value
@@ -10,27 +10,11 @@ type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 
-const MAX_FALLBACK_TITLE_LENGTH = 140;
-const tiptapTextExtensions = [StarterKit];
-
-function extractTextFromTipTapContent(content: unknown): string {
-  if (!Array.isArray(content)) {
-    return '';
-  }
-
-  const doc: JSONContent = {
-    type: 'doc',
-    content: content as JSONContent[],
-  };
-
-  try {
-    return generateText(doc, tiptapTextExtensions).trim();
-  } catch {
-    return '';
-  }
-}
-
-function getDocumentText(proposal: ProposalFromList): string {
+/**
+ * Extract plain text description from a proposal's documentContent.
+ * Uses TipTap's generateText for JSON docs, returns HTML string as-is for legacy.
+ */
+function getDocumentDescription(proposal: ProposalFromList): string {
   const documentContent = proposal.documentContent;
 
   if (!documentContent) {
@@ -42,23 +26,18 @@ function getDocumentText(proposal: ProposalFromList): string {
   }
 
   if (documentContent.type === 'json') {
-    return extractTextFromTipTapContent(documentContent.content);
+    try {
+      const doc: JSONContent = {
+        type: 'doc',
+        content: documentContent.content as JSONContent[],
+      };
+      return generateText(doc, [StarterKit]).trim();
+    } catch {
+      return '';
+    }
   }
 
   return '';
-}
-
-function getDocumentFallbackTitle(documentText: string): string {
-  const firstLine = documentText
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line.length > 0);
-
-  if (!firstLine) {
-    return '';
-  }
-
-  return firstLine.slice(0, MAX_FALLBACK_TITLE_LENGTH);
 }
 
 export async function generateProposalsCsv(
@@ -66,15 +45,12 @@ export async function generateProposalsCsv(
 ): Promise<string> {
   const rows = proposals.map((p) => {
     const proposalData = parseProposalData(p.proposalData);
-    const documentText = getDocumentText(p);
-    const title =
-      proposalData.title?.trim() || getDocumentFallbackTitle(documentText);
-    const description = proposalData.description?.trim() || documentText;
 
     return {
       'Proposal ID': p.id,
-      Title: title,
-      Description: description,
+      Title: proposalData.title || '',
+      Description:
+        proposalData.description?.trim() || getDocumentDescription(p),
       Budget: proposalData.budget ?? '',
       Category: proposalData.category ?? '',
       Status: p.status,
