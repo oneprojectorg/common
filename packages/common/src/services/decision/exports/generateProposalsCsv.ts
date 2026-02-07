@@ -11,21 +11,13 @@ type ProposalFromList = Awaited<
 >['proposals'][number];
 
 /**
- * Extract plain text description from a proposal's documentContent.
- * Uses TipTap's generateText for JSON docs, returns HTML string as-is for legacy.
+ * Extract plain text description from a proposal's document content.
+ * Uses TipTap generateText for collab docs, falls back to proposalData.description for legacy.
  */
 function getDocumentDescription(proposal: ProposalFromList): string {
   const documentContent = proposal.documentContent;
 
-  if (!documentContent) {
-    return '';
-  }
-
-  if (documentContent.type === 'html') {
-    return documentContent.content;
-  }
-
-  if (documentContent.type === 'json') {
+  if (documentContent?.type === 'json') {
     try {
       const doc: JSONContent = {
         type: 'doc',
@@ -37,7 +29,8 @@ function getDocumentDescription(proposal: ProposalFromList): string {
     }
   }
 
-  return '';
+  const proposalData = parseProposalData(proposal.proposalData);
+  return proposalData.description?.trim() || '';
 }
 
 export async function generateProposalsCsv(
@@ -49,8 +42,7 @@ export async function generateProposalsCsv(
     return {
       'Proposal ID': p.id,
       Title: proposalData.title || '',
-      Description:
-        proposalData.description?.trim() || getDocumentDescription(p),
+      Description: getDocumentDescription(p),
       Budget: proposalData.budget ?? '',
       Category: proposalData.category ?? '',
       Status: p.status,
