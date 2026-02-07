@@ -1,6 +1,7 @@
 import { mergeRouters } from '../../trpcFactory';
 import { acceptInviteRouter } from './acceptInvite';
 import { createRoleRouter } from './createRole';
+import { declineInviteRouter } from './declineInvite';
 import { deleteRoleRouter } from './deleteRole';
 import { getProfileRouter } from './getProfile';
 import { inviteProfileUserRouter } from './invite';
@@ -19,6 +20,7 @@ import { usersRouter } from './users';
 
 const profileRouter = mergeRouters(
   acceptInviteRouter,
+  declineInviteRouter,
   getProfileRouter,
   searchProfilesRouter,
   profileRelationshipRouter,

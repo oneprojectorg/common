@@ -62,17 +62,19 @@ export const listProfileUserInvites = async ({
     ? and(baseCondition, searchFilter)
     : baseCondition;
 
-  const invite = await db.query.profileInvites.findMany({
-    where: {
-      RAW: whereClause,
-    },
+  const invites = await db._query.profileInvites.findMany({
+    where: whereClause,
     with: {
       accessRole: true,
     },
-    orderBy: {
-      email: 'asc',
-    },
+    orderBy: (table, { asc }) => [asc(table.email)],
   });
 
-  return invite;
+  // Normalize accessRole type (db._query returns union of array | object)
+  return invites.map((invite) => ({
+    ...invite,
+    accessRole: (Array.isArray(invite.accessRole)
+      ? invite.accessRole[0]
+      : invite.accessRole) as AccessRole,
+  }));
 };

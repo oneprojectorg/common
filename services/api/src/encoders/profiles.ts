@@ -1,4 +1,9 @@
-import { organizations, profileUsers, profiles } from '@op/db/schema';
+import {
+  organizations,
+  profileInvites,
+  profileUsers,
+  profiles,
+} from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -75,6 +80,20 @@ export const profileWithFullOrgEncoder = baseProfileEncoder.extend({
 
 export const profileWithAvatarEncoder = baseProfileEncoder;
 
+// Minimal profile encoder for nested references (e.g., in profileUser, invites)
+export const profileMinimalEncoder = baseProfileEncoder
+  .pick({
+    id: true,
+    name: true,
+    slug: true,
+    bio: true,
+    email: true,
+    type: true,
+  })
+  .extend({
+    avatarImage: storageItemMinimalEncoder.nullable(),
+  });
+
 export type Profile = z.infer<typeof profileEncoder>;
 
 // Profile user encoders - using createSelectSchema for base fields
@@ -84,31 +103,22 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
   updatedAt: z.union([z.string(), z.date()]).nullish(),
   deletedAt: z.union([z.string(), z.date()]).nullish(),
   // Nested profile with minimal fields needed for display
-  profile: baseProfileEncoder
-    .pick({
-      id: true,
-      name: true,
-      slug: true,
-      bio: true,
-      email: true,
-      type: true,
-    })
-    .extend({
-      avatarImage: storageItemMinimalEncoder.nullable(),
-    })
-    .nullable(),
+  profile: profileMinimalEncoder.nullable(),
   // Roles using shared minimal encoder
   roles: z.array(accessRoleMinimalEncoder),
 });
 
 // Profile invite encoder for pending invitations
 // accessRoleId is NOT NULL in schema, so role is always present
-export const profileInviteEncoder = z.object({
-  id: z.uuid(),
-  email: z.string(),
-  profileId: z.uuid(),
-  role: accessRoleMinimalEncoder,
-  createdAt: z.string().nullable(),
-});
+export const profileInviteEncoder = createSelectSchema(profileInvites)
+  .pick({
+    id: true,
+    email: true,
+    profileId: true,
+    createdAt: true,
+  })
+  .extend({
+    role: accessRoleMinimalEncoder,
+  });
 
 export type ProfileUser = z.infer<typeof profileUserEncoder>;

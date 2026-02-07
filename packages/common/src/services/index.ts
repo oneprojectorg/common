@@ -12,12 +12,14 @@ export * from './decision';
 export * from './platform';
 export {
   acceptProfileInvite,
+  declineProfileInvite,
   updateUserProfile,
   getProfile,
   searchProfiles,
   listProfiles,
   inviteUsersToProfile,
   listProfileUsers,
+  listMyInvites,
   updateProfileUserRoles,
   removeProfileUser,
 } from './profile';
