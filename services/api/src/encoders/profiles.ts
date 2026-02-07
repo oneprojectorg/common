@@ -102,9 +102,7 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
   createdAt: z.union([z.string(), z.date()]).nullish(),
   updatedAt: z.union([z.string(), z.date()]).nullish(),
   deletedAt: z.union([z.string(), z.date()]).nullish(),
-  // Nested profile with minimal fields needed for display
   profile: profileMinimalEncoder.nullable(),
-  // Roles using shared minimal encoder
   roles: z.array(accessRoleMinimalEncoder),
 });
 
