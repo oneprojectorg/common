@@ -1,6 +1,9 @@
+import { type JSONContent, generateText } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
 import { stringify } from 'csv-stringify/sync';
 
 import { listProposals } from '../listProposals';
+import { parseProposalData } from '../proposalDataSchema';
 
 // Infer the proposal type from the listProposals return value
 type ProposalFromList = Awaited<
@@ -8,80 +11,23 @@ type ProposalFromList = Awaited<
 >['proposals'][number];
 
 const MAX_FALLBACK_TITLE_LENGTH = 140;
-
-function toText(value: unknown): string {
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-
-  if (typeof value === 'number') {
-    return String(value);
-  }
-
-  return '';
-}
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function appendTipTapText(node: unknown, chunks: string[]): void {
-  if (!node || typeof node !== 'object') {
-    return;
-  }
-
-  const nodeData = node as {
-    type?: unknown;
-    text?: unknown;
-    content?: unknown;
-  };
-
-  if (typeof nodeData.text === 'string') {
-    chunks.push(nodeData.text);
-  }
-
-  if (Array.isArray(nodeData.content)) {
-    for (const child of nodeData.content) {
-      appendTipTapText(child, chunks);
-    }
-  }
-
-  const type = typeof nodeData.type === 'string' ? nodeData.type : '';
-  const isBlockNode =
-    type === 'paragraph' ||
-    type === 'heading' ||
-    type === 'blockquote' ||
-    type === 'listItem';
-
-  if (type === 'hardBreak') {
-    chunks.push('\n');
-    return;
-  }
-
-  if (isBlockNode) {
-    chunks.push('\n');
-  }
-}
+const tiptapTextExtensions = [StarterKit];
 
 function extractTextFromTipTapContent(content: unknown): string {
   if (!Array.isArray(content)) {
     return '';
   }
 
-  const chunks: string[] = [];
-  for (const node of content) {
-    appendTipTapText(node, chunks);
-  }
+  const doc: JSONContent = {
+    type: 'doc',
+    content: content as JSONContent[],
+  };
 
-  return chunks
-    .join('')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/[ \t]{2,}/g, ' ')
-    .trim();
+  try {
+    return generateText(doc, tiptapTextExtensions).trim();
+  } catch {
+    return '';
+  }
 }
 
 function getDocumentText(proposal: ProposalFromList): string {
@@ -92,7 +38,7 @@ function getDocumentText(proposal: ProposalFromList): string {
   }
 
   if (documentContent.type === 'html') {
-    return stripHtml(documentContent.content);
+    return documentContent.content;
   }
 
   if (documentContent.type === 'json') {
@@ -119,24 +65,18 @@ export async function generateProposalsCsv(
   proposals: ProposalFromList[],
 ): Promise<string> {
   const rows = proposals.map((p) => {
-    const proposalData =
-      p.proposalData && typeof p.proposalData === 'object'
-        ? (p.proposalData as Record<string, unknown>)
-        : {};
+    const proposalData = parseProposalData(p.proposalData);
     const documentText = getDocumentText(p);
     const title =
-      toText(proposalData.title) || getDocumentFallbackTitle(documentText);
-    const description =
-      toText(proposalData.description) ||
-      toText(proposalData.content) ||
-      documentText;
+      proposalData.title?.trim() || getDocumentFallbackTitle(documentText);
+    const description = proposalData.description?.trim() || documentText;
 
     return {
       'Proposal ID': p.id,
       Title: title,
       Description: description,
-      Budget: toText(proposalData.budget),
-      Category: toText(proposalData.category),
+      Budget: proposalData.budget ?? '',
+      Category: proposalData.category ?? '',
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',
       'Submitter Email': p.submittedBy?.email || '',
