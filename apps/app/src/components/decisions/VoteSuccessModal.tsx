@@ -37,7 +37,7 @@ const VoteSuccessModalSuspense = ({
   // Transform to format expected by getNextSteps
   const phasesForNextSteps = instancePhases.map((phase) => ({
     id: phase.phaseId,
-    name: phase.name,
+    name: phase.name ?? '',
     description: phase.description,
     phase: phase.startDate
       ? { startDate: phase.startDate, endDate: phase.endDate }

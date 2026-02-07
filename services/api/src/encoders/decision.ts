@@ -144,7 +144,7 @@ const instanceDataWithSchemaEncoder = z.object({
     .array(
       z.object({
         phaseId: z.string(),
-        name: z.string(),
+        name: z.string().optional(),
         description: z.string().optional(),
         rules: phaseRulesEncoder.optional(),
         selectionPipeline: selectionPipelineEncoder.optional(),

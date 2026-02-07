@@ -15,9 +15,9 @@ import type {
 
 export interface PhaseInstanceData {
   phaseId: string;
-  name: string;
+  name?: string;
   description?: string;
-  rules: PhaseRules;
+  rules?: PhaseRules;
   selectionPipeline?: SelectionPipeline;
   settingsSchema?: JSONSchema7 & { ui?: UiSchema };
   startDate?: string;

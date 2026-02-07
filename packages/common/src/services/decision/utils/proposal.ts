@@ -13,5 +13,5 @@ export function checkProposalsAllowed(
     return { allowed: false, phaseName: 'Unknown' };
   }
   const allowed = phase.rules?.proposals?.submit !== false;
-  return { allowed, phaseName: phase.name };
+  return { allowed, phaseName: phase.name ?? 'Unknown' };
 }
