@@ -31,22 +31,16 @@ export async function DecisionHeader({
     notFound();
   }
 
-  const processSchema = instance.process?.processSchema as any;
+  const instanceData = instance.instanceData as any;
+  const instancePhases = instanceData?.phases ?? [];
 
-  // Legacy format: uses 'states' with phase.startDate structure
-  // V2 format: uses 'phases' with startDate/endDate merged from backend
-  const templateStates = processSchema?.states || processSchema?.phases || [];
-
-  const phases: ProcessPhase[] = templateStates.map((state: any) => ({
-    id: state.id,
-    name: state.name,
-    description: state.description,
-    type: state.type,
-    config: state.config,
-    // V2 has startDate/endDate directly, legacy has them in phase object
-    phase: state.phase || {
-      startDate: state.startDate,
-      endDate: state.endDate,
+  const phases: ProcessPhase[] = instancePhases.map((p: any) => ({
+    id: p.phaseId,
+    name: p.name,
+    description: p.description,
+    phase: {
+      startDate: p.startDate,
+      endDate: p.endDate,
     },
   }));
 
@@ -65,7 +59,7 @@ export async function DecisionHeader({
           label: instance.owner?.name,
           href: `/profile/${slug}?tab=decisions`,
         }}
-        title={instance.process?.name || instance.name}
+        title={instanceData?.schemaName || instance.name}
       />
 
       <div className="flex flex-col overflow-x-auto sm:items-center">

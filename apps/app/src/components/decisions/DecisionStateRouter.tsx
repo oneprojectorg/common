@@ -35,13 +35,15 @@ function DecisionStateRouterNew({
   const { currentStateId } = instance;
 
   // Derive values for StandardDecisionPage (format-agnostic)
-  const phases = instance.process?.processSchema?.phases ?? [];
+  const phases = instance.instanceData.phases ?? [];
   const currentPhaseId = instance.instanceData.currentPhaseId;
-  const currentPhase = phases.find((phase) => phase.id === currentPhaseId);
+  const currentPhase = phases.find((phase) => phase.phaseId === currentPhaseId);
   const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
-    : (instance.description ?? instance.process?.description ?? undefined);
+    : (instance.description ??
+      instance.instanceData.schemaDescription ??
+      undefined);
   const maxVotesPerMember = instance?.instanceData?.fieldValues
     ?.maxVotesPerMember as number | undefined;
 

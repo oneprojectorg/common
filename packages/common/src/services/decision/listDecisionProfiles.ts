@@ -23,7 +23,6 @@ const decisionProfileQueryConfig = {
     avatarImage: true,
     processInstance: {
       with: {
-        process: true,
         owner: {
           with: {
             avatarImage: true,

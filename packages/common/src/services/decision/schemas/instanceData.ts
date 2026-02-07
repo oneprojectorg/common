@@ -1,10 +1,12 @@
 /**
  * Instance data creation helpers for DecisionSchemaDefinition templates.
  */
+import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
 
 import { CommonError, ValidationError } from '../../../utils';
 import { schemaValidator } from '../schemaValidator';
+import type { SelectionPipeline } from '../selectionPipeline/types';
 import type {
   DecisionSchemaDefinition,
   PhaseRules,
@@ -13,7 +15,11 @@ import type {
 
 export interface PhaseInstanceData {
   phaseId: string;
+  name: string;
+  description?: string;
   rules: PhaseRules;
+  selectionPipeline?: SelectionPipeline;
+  settingsSchema?: JSONSchema7 & { ui?: UiSchema };
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;
@@ -26,6 +32,10 @@ export interface PhaseInstanceData {
 export interface DecisionInstanceData {
   currentPhaseId: string;
   config?: ProcessConfig;
+  schemaId?: string;
+  schemaVersion?: string;
+  schemaName?: string;
+  schemaDescription?: string;
   phases: PhaseInstanceData[];
 }
 
@@ -59,6 +69,10 @@ export function createInstanceDataFromTemplate(input: {
   return {
     currentPhaseId: firstPhase.id,
     config: template.config,
+    schemaId: template.id,
+    schemaVersion: template.version,
+    schemaName: template.name,
+    schemaDescription: template.description,
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 
@@ -82,7 +96,13 @@ export function createInstanceDataFromTemplate(input: {
 
       return {
         phaseId: phase.id,
+        name: phase.name,
+        ...(phase.description && { description: phase.description }),
         rules: phase.rules,
+        ...(phase.selectionPipeline && {
+          selectionPipeline: phase.selectionPipeline,
+        }),
+        ...(phase.settings && { settingsSchema: phase.settings }),
         ...(override?.startDate && {
           startDate: override.startDate,
         }),

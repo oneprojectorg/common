@@ -43,7 +43,9 @@ export function VotingPage({
 
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
-    : (instance.description ?? instance.process?.description ?? undefined);
+    : (instance.description ??
+      instance.instanceData?.schemaDescription ??
+      undefined);
   const aboutIsMarkup = !!instance?.description?.match('PPDESCRIPTION');
 
   const maxVotesPerMember = instance?.instanceData?.fieldValues

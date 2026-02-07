@@ -21,50 +21,31 @@ import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 
 /**
- * Helper to find current phase/state and extract voting config.
- * Supports both legacy (states) and new (phases) schema formats.
- * Returns undefined if the current phase/state is not found.
+ * Helper to find current phase and extract voting config.
+ * Reads from instanceData.phases which now contains all template fields.
+ * Returns undefined if the current phase is not found.
  */
-function getCurrentPhaseConfig(processInstance: {
-  instanceData: unknown;
-  process: unknown;
-}):
+function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
   | {
       allowProposals: boolean;
       allowDecisions: boolean;
     }
   | undefined {
   const instanceData = processInstance.instanceData as any;
-  const processSchema = (processInstance.process as any)?.processSchema;
 
-  if (!processSchema || !instanceData?.currentPhaseId) {
+  if (!instanceData?.currentPhaseId) {
     return undefined;
   }
 
   const currentPhaseId = instanceData.currentPhaseId;
+  const phases = instanceData.phases;
 
-  // Try new format first (phases with rules)
-  if (processSchema.phases) {
-    const currentPhase = processSchema.phases.find(
-      (p: any) => p.id === currentPhaseId,
-    );
+  if (phases) {
+    const currentPhase = phases.find((p: any) => p.phaseId === currentPhaseId);
     if (currentPhase) {
       return {
         allowProposals: currentPhase.rules?.proposals?.submit ?? false,
         allowDecisions: currentPhase.rules?.voting?.submit ?? false,
-      };
-    }
-  }
-
-  // Fall back to legacy format (states with config)
-  if (processSchema.states) {
-    const currentState = processSchema.states.find(
-      (s: any) => s.id === currentPhaseId,
-    );
-    if (currentState) {
-      return {
-        allowProposals: currentState.config?.allowProposals ?? false,
-        allowDecisions: currentState.config?.allowDecisions ?? false,
       };
     }
   }
@@ -164,8 +145,10 @@ export const submitVote = async ({
     // Get process instance and schema
     const processInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
+      columns: {
+        id: true,
+        ownerProfileId: true,
+        instanceData: true,
       },
     });
 
@@ -358,8 +341,10 @@ export const getVotingStatus = async ({
     // Get process instance and schema
     const processInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
+      columns: {
+        id: true,
+        ownerProfileId: true,
+        instanceData: true,
       },
     });
 
@@ -486,8 +471,10 @@ export const validateVoteSelectionService = async ({
     // Get process instance and schema
     const processInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
+      columns: {
+        id: true,
+        ownerProfileId: true,
+        instanceData: true,
       },
     });
 

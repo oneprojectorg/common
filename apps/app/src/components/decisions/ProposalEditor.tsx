@@ -149,38 +149,6 @@ export function ProposalEditor({
       return { budgetCapAmount: phaseBudget, isBudgetRequired: required };
     }
 
-    // Legacy schema: extract from proposalTemplate.properties.budget
-    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
-    if (
-      proposalTemplate &&
-      typeof proposalTemplate === 'object' &&
-      'properties' in proposalTemplate
-    ) {
-      const properties = proposalTemplate.properties;
-      if (
-        properties &&
-        typeof properties === 'object' &&
-        'budget' in properties
-      ) {
-        const budgetProp = properties.budget;
-        if (
-          budgetProp &&
-          typeof budgetProp === 'object' &&
-          'maximum' in budgetProp
-        ) {
-          cap = budgetProp.maximum as number;
-        }
-      }
-
-      // Check if budget is in required array
-      if (
-        'required' in proposalTemplate &&
-        Array.isArray(proposalTemplate.required)
-      ) {
-        required = proposalTemplate.required.includes('budget');
-      }
-    }
-
     // Fallback to instance data fieldValues
     if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
       cap = instance.instanceData.fieldValues.budgetCapAmount as number;
@@ -201,7 +169,7 @@ export function ProposalEditor({
     onSuccess: async () => {
       posthog?.capture('submit_proposal_success', {
         process_instance_id: instance.id,
-        process_name: instance.process?.name,
+        process_name: instance.instanceData?.schemaName,
       });
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,

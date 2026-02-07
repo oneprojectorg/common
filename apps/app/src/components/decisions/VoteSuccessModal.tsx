@@ -31,12 +31,12 @@ const VoteSuccessModalSuspense = ({
     instanceId,
   });
 
-  // Schema phases now include merged dates from backend
-  const phases = processInstance.process?.processSchema?.phases ?? [];
+  // Read phases directly from instanceData
+  const instancePhases = processInstance.instanceData?.phases ?? [];
 
   // Transform to format expected by getNextSteps
-  const phasesForNextSteps = phases.map((phase) => ({
-    id: phase.id,
+  const phasesForNextSteps = instancePhases.map((phase) => ({
+    id: phase.phaseId,
     name: phase.name,
     description: phase.description,
     phase: phase.startDate

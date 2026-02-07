@@ -91,7 +91,6 @@ export const listInstances = async ({
     const instanceList = await db._query.processInstances.findMany({
       where: whereClause,
       with: {
-        process: true,
         owner: true,
         proposals: {
           columns: {

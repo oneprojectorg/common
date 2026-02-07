@@ -23,20 +23,6 @@ export const listInstancesRouter = router({
         instances: result.instances.map((instance) => ({
           ...instance,
           instanceData: instance.instanceData as Record<string, any>,
-          // Some typechecking since these are unknown
-          process: instance.process
-            ? {
-                ...instance.process,
-                processSchema: (() => {
-                  const schema = (instance.process as any)?.processSchema;
-                  return typeof schema === 'object' &&
-                    schema !== null &&
-                    !Array.isArray(schema)
-                    ? schema
-                    : {};
-                })(),
-              }
-            : undefined,
           proposalCount: instance.proposalCount,
           participantCount: instance.participantCount,
         })),

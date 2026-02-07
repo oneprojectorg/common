@@ -127,6 +127,10 @@ const instanceDataWithSchemaEncoder = z.object({
   hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   currentPhaseId: z.string(),
+  schemaId: z.string().optional(),
+  schemaVersion: z.string().optional(),
+  schemaName: z.string().optional(),
+  schemaDescription: z.string().optional(),
   stateData: z
     .record(
       z.string(),
@@ -140,9 +144,13 @@ const instanceDataWithSchemaEncoder = z.object({
     .array(
       z.object({
         phaseId: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        rules: phaseRulesEncoder.optional(),
+        selectionPipeline: selectionPipelineEncoder.optional(),
+        settingsSchema: jsonSchemaEncoder.optional(),
         startDate: z.string().optional(),
         endDate: z.string().optional(),
-        rules: z.unknown().optional(),
         settings: z.record(z.string(), z.unknown()).optional(),
       }),
     )
@@ -165,7 +173,6 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
   })
   .extend({
     instanceData: instanceDataWithSchemaEncoder,
-    process: decisionProcessWithSchemaEncoder.optional(),
     owner: baseProfileEncoder.optional(),
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),

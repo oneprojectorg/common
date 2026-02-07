@@ -1,22 +1,12 @@
 import { db, eq } from '@op/db/client';
-import {
-  type DecisionProcess,
-  type ProcessInstance,
-  ProposalStatus,
-  proposals,
-} from '@op/db/schema';
+import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
-import type { DecisionSchemaDefinition } from './schemas';
-import type { InstanceData } from './types';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
-
-type ProcessInstanceWithProcess = ProcessInstance & {
-  process: DecisionProcess;
-};
 
 export interface SubmitProposalInput {
   proposalId: string;
@@ -36,11 +26,7 @@ export const submitProposal = async ({
   const existingProposal = await db._query.proposals.findFirst({
     where: eq(proposals.id, data.proposalId),
     with: {
-      processInstance: {
-        with: {
-          process: true,
-        },
-      },
+      processInstance: true,
     },
   });
 
@@ -55,14 +41,11 @@ export const submitProposal = async ({
     );
   }
 
-  const instance =
-    existingProposal.processInstance as ProcessInstanceWithProcess;
+  const instance = existingProposal.processInstance as
+    | ProcessInstance
+    | undefined;
   if (!instance) {
     throw new NotFoundError('Process instance not found');
-  }
-
-  if (!instance.process) {
-    throw new NotFoundError('Process definition not found');
   }
 
   // Authorization check
@@ -76,11 +59,7 @@ export const submitProposal = async ({
 
   assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
 
-  const process = instance.process as {
-    processSchema: DecisionSchemaDefinition;
-  };
-  const processSchema = process.processSchema;
-  const instanceData = instance.instanceData as InstanceData;
+  const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instanceData.currentPhaseId;
 
   if (!currentPhaseId) {
@@ -89,7 +68,7 @@ export const submitProposal = async ({
 
   // Check if proposals are allowed in current phase
   const { allowed, phaseName } = checkProposalsAllowed(
-    processSchema,
+    instanceData.phases,
     currentPhaseId,
   );
 

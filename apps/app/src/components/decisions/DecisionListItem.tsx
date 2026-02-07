@@ -32,15 +32,11 @@ const isClosingSoon = (dateString: string) => {
 export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
 
-  // Get current phase name from process schema
-  const currentPhaseName = processInstance.process?.processSchema?.phases?.find(
-    (phase) => phase.id === processInstance.currentStateId,
-  )?.name;
-
-  // Get closing date from phases - find the current phase's end date
+  // Get current phase from instanceData phases
   const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
+  const currentPhaseName = currentPhase?.name;
   const closingDate = currentPhase?.endDate;
 
   // Owner organization info
@@ -103,15 +99,11 @@ export const ProfileDecisionListItem = ({
 }) => {
   const { processInstance } = item;
 
-  // Get current phase name from process schema
-  const currentPhaseName = processInstance.process?.processSchema?.phases?.find(
-    (phase) => phase.id === processInstance.currentStateId,
-  )?.name;
-
-  // Get closing date from phases - find the current phase's end date
+  // Get current phase from instanceData phases
   const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
+  const currentPhaseName = currentPhase?.name;
   const closingDate = currentPhase?.endDate;
 
   return (

@@ -1,11 +1,4 @@
-import {
-  type DecisionSchemaDefinition,
-  type InstanceData,
-  NotFoundError,
-  type PhaseDefinition,
-  UnauthorizedError,
-  getInstance,
-} from '@op/common';
+import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 
@@ -47,20 +40,6 @@ export const getLegacyInstanceRouter = router({
       return legacyProcessInstanceEncoder.parse({
         ...instance,
         instanceData: instance.instanceData as Record<string, any>,
-        // Some typechecking since these are unknown
-        process: instance.process
-          ? {
-              ...instance.process,
-              processSchema: (() => {
-                const schema = (instance.process as any)?.processSchema;
-                return typeof schema === 'object' &&
-                  schema !== null &&
-                  !Array.isArray(schema)
-                  ? schema
-                  : {};
-              })(),
-            }
-          : undefined,
         proposalCount: instance.proposalCount,
         participantCount: instance.participantCount,
       });
@@ -91,40 +70,9 @@ export const getInstanceRouter = router({
         // Track process viewed event
         waitUntil(trackProcessViewed(ctx, input.instanceId));
 
-        // Get schema and instance data with proper typing
-        const process = instance.process as
-          | { processSchema?: DecisionSchemaDefinition }
-          | undefined;
-        const schema = process?.processSchema;
-        const instanceData = instance.instanceData as InstanceData | undefined;
-        const instancePhases = instanceData?.phases;
-
-        // Merge instance phase dates into schema phases
-        const processSchemaWithDates = schema
-          ? {
-              ...schema,
-              phases: schema.phases.map((phase: PhaseDefinition) => {
-                const instancePhase = instancePhases?.find(
-                  (p) => p.phaseId === phase.id,
-                );
-                return {
-                  ...phase,
-                  startDate: instancePhase?.startDate,
-                  endDate: instancePhase?.endDate,
-                };
-              }),
-            }
-          : {};
-
         return processInstanceWithSchemaEncoder.parse({
           ...instance,
-          instanceData,
-          process: instance.process
-            ? {
-                ...instance.process,
-                processSchema: processSchemaWithDates,
-              }
-            : undefined,
+          instanceData: instance.instanceData,
         });
       } catch (error) {
         if (error instanceof NotFoundError) {
