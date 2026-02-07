@@ -11,7 +11,6 @@ import { User } from '@op/supabase/lib';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type { InstanceData, ProcessSchema } from './types';
 
 export interface CreateInstanceInput {
@@ -93,9 +92,8 @@ export const createInstance = async ({
       return newInstance;
     });
 
-    // Create transitions for the process phases
-    // This is critical - if transitions can't be created, the process won't auto-advance
-    await createTransitionsForProcess({ processInstance: instance });
+    // Note: Transitions are created when the instance is published (status changes from DRAFT to PUBLISHED)
+    // Draft instances don't need transitions since they won't be processed
 
     return instance;
   } catch (error) {
