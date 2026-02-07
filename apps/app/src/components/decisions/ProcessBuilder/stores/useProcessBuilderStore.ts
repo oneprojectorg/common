@@ -42,7 +42,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
  */
 export interface ProcessConfig {
   // Process Stewardship
-  steward?: string;
+  stewardProfileId?: string;
   focusAreas?: Option[];
   objective?: string;
 
