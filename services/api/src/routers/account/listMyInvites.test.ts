@@ -259,17 +259,28 @@ describe.concurrent('account.listMyInvites', () => {
     expect(result).toHaveLength(1);
 
     const invite = result[0]!;
+    // db._query returns relations as array | object, normalize for assertions
+    const inviteProfile = Array.isArray(invite.profile)
+      ? invite.profile[0]
+      : invite.profile;
+    const inviteRole = Array.isArray(invite.accessRole)
+      ? invite.accessRole[0]
+      : invite.accessRole;
+    const inviteInviter = Array.isArray(invite.inviter)
+      ? invite.inviter[0]
+      : invite.inviter;
+
     // Verify profile relation is populated
-    expect(invite.profile).toBeDefined();
-    expect(invite.profile?.id).toBe(profile.id);
+    expect(inviteProfile).toBeDefined();
+    expect(inviteProfile?.id).toBe(profile.id);
 
     // Verify accessRole relation is populated
-    expect(invite.accessRole).toBeDefined();
-    expect(invite.accessRole?.id).toBe(ROLES.MEMBER.id);
+    expect(inviteRole).toBeDefined();
+    expect(inviteRole?.id).toBe(ROLES.MEMBER.id);
 
     // Verify inviter relation is populated with the correct inviter
-    expect(invite.inviter).toBeDefined();
-    expect(invite.inviter?.id).toBe(adminUser.userProfileId);
+    expect(inviteInviter).toBeDefined();
+    expect(inviteInviter?.id).toBe(adminUser.userProfileId);
   });
 
   it('should not return invites for other users', async ({
