@@ -71,6 +71,12 @@ export const processInstances = pgTable(
         onDelete: 'cascade',
       }),
 
+    // The steward profile responsible for running this process
+    stewardProfileId: uuid('steward_profile_id').references(() => profiles.id, {
+      onUpdate: 'cascade',
+      onDelete: 'set null',
+    }),
+
     // The process instance's own profile (for social features)
     profileId: uuid('profile_id').references(() => profiles.id, {
       onUpdate: 'cascade',
@@ -91,6 +97,7 @@ export const processInstances = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.processId).concurrently(),
     index().on(table.ownerProfileId).concurrently(),
+    index().on(table.stewardProfileId).concurrently(),
     index().on(table.profileId).concurrently(),
     index().on(table.currentStateId).concurrently(),
     index('process_instances_search_index').using('gin', table.search),
@@ -108,6 +115,11 @@ export const processInstancesRelations = relations(
       fields: [processInstances.ownerProfileId],
       references: [profiles.id],
       relationName: 'processInstanceOwner',
+    }),
+    steward: one(profiles, {
+      fields: [processInstances.stewardProfileId],
+      references: [profiles.id],
+      relationName: 'processInstanceSteward',
     }),
     profile: one(profiles, {
       fields: [processInstances.profileId],

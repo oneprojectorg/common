@@ -25,6 +25,7 @@ export const updateDecisionInstance = async ({
   name,
   description,
   status,
+  stewardProfileId,
   config,
   phases,
   user,
@@ -33,6 +34,7 @@ export const updateDecisionInstance = async ({
   name?: string;
   description?: string;
   status?: ProcessStatus;
+  stewardProfileId?: string;
   /** Process-level configuration (e.g., hideBudget) */
   config?: ProcessConfig;
   /** Optional phase overrides (dates and settings) */
@@ -76,6 +78,10 @@ export const updateDecisionInstance = async ({
 
   if (status !== undefined) {
     updateData.status = status;
+  }
+
+  if (stewardProfileId !== undefined) {
+    updateData.stewardProfileId = stewardProfileId;
   }
 
   // Apply config and/or phase overrides to existing instanceData
