@@ -534,5 +534,7 @@
   "You've been invited to join the following decision-making processes": "আপনাকে নিম্নলিখিত সিদ্ধান্ত গ্রহণ প্রক্রিয়ায় যোগ দিতে আমন্ত্রণ জানানো হয়েছে",
   "I don't want to participate": "আমি অংশগ্রহণ করতে চাই না",
   "Failed to accept invitations": "আমন্ত্রণ গ্রহণ করতে ব্যর্থ",
-  "Failed to decline invitation": "আমন্ত্রণ প্রত্যাখ্যান করতে ব্যর্থ"
+  "Failed to decline invitation": "আমন্ত্রণ প্রত্যাখ্যান করতে ব্যর্থ",
+  "Participants": "অংশগ্রহণকারী",
+  "Proposals": "প্রস্তাবনা"
 }

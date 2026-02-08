@@ -534,5 +534,7 @@
   "You've been invited to join the following decision-making processes": "Vous avez été invité à rejoindre les processus de prise de décision suivants",
   "I don't want to participate": "Je ne veux pas participer",
   "Failed to accept invitations": "Échec de l'acceptation des invitations",
-  "Failed to decline invitation": "Échec du refus de l'invitation"
+  "Failed to decline invitation": "Échec du refus de l'invitation",
+  "Participants": "Participants",
+  "Proposals": "Propositions"
 }

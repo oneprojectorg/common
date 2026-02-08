@@ -4,7 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
@@ -19,20 +19,20 @@ import { useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '../ErrorBoundary';
 import { ErrorMessage } from '../ErrorMessage';
 import { StepProps } from '../MultiStepForm';
-import { TranslatedText } from '../TranslatedText';
 import { FormContainer } from '../form/FormContainer';
 import { DecisionInvitesSkeleton } from './DecisionInvitesSkeleton';
 
-const DecisionStat = ({ number, label }: { number: number; label: string }) => (
-  <div className="flex flex-col items-center justify-center">
-    <span className="font-serif text-title-base text-neutral-black">
-      {number}
-    </span>
-    <span className="text-xs text-neutral-black">
-      <TranslatedText text={label} />
-    </span>
-  </div>
-);
+const DecisionStat = ({ number, label }: { number: number; label: string }) => {
+  const t = useTranslations();
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <span className="font-serif text-title-base text-neutral-black">
+        {number}
+      </span>
+      <span className="text-xs text-neutral-black">{t(label)}</span>
+    </div>
+  );
+};
 
 export const validator = z.object({});
 
@@ -219,14 +219,14 @@ export const DecisionInvitesForm = ({
 
                 {/* Per-card decline link (only show if multiple invites) */}
                 {invites.length > 1 && (
-                  <ButtonLink
+                  <Button
                     unstyled
                     className="self-center text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
                     onPress={() => handleDecline(invite.id)}
                     isDisabled={declineInvite.isPending}
                   >
                     {t("I don't want to participate")}
-                  </ButtonLink>
+                  </Button>
                 )}
               </div>
             );
@@ -248,14 +248,14 @@ export const DecisionInvitesForm = ({
           </Button>
           {/* Show single decline link at bottom only for single invite */}
           {invites.length === 1 && invites[0] && (
-            <ButtonLink
+            <Button
               unstyled
               className="h-10 px-2 py-2.5 text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
               onPress={() => handleDecline(invites[0]!.id)}
               isDisabled={declineInvite.isPending}
             >
               {t("I don't want to participate")}
-            </ButtonLink>
+            </Button>
           )}
         </div>
       </FormContainer>
