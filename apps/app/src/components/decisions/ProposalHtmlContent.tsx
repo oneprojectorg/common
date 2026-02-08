@@ -1,46 +1,20 @@
 'use client';
 
+import { viewerProseStyles } from '@op/ui/RichTextEditor';
 import { useEffect, useRef } from 'react';
 import { type Root, createRoot } from 'react-dom/client';
 
 import { LinkPreview } from '../LinkPreview';
 
 /**
- * Prose styles that match the TipTap editor/viewer output.
+ * Renders pre-generated HTML content for a proposal, replacing the read-only
+ * TipTap editor with zero JS overhead for initial render.
  *
- * These replicate the styles from:
- * - `baseEditorStyles` in packages/ui/src/components/RichTextEditor/editorConfig.ts
- * - `StyledRichTextContent` in packages/ui/src/components/RichTextEditor/StyledRichTextContent.tsx
+ * Typography styles are shared with the TipTap editor via `viewerProseStyles`.
  *
- * @see packages/ui/src/components/RichTextEditor/editorConfig.ts
- * @see packages/ui/src/components/RichTextEditor/StyledRichTextContent.tsx
- */
-const proseStyles = [
-  // Base prose typography
-  'prose prose-lg !text-base text-neutral-black',
-  // Link styles
-  '[&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
-  // List styles
-  '[&_li_p]:my-0',
-  // Blockquote styles
-  '[&_blockquote]:font-normal',
-  // Heading styles
-  '[&_:is(h1,h2)]:my-4 [&_:is(h1,h2)]:font-serif',
-  '[&_h1]:text-title-lg [&_h2]:text-title-md [&_h3]:text-title-base',
-  // Layout
-  'leading-5 max-w-none break-words overflow-wrap-anywhere',
-].join(' ');
-
-/**
- * Renders pre-sanitized HTML content for proposal view.
- * Replaces the read-only TipTap editor with zero JS overhead for initial render.
- *
- * HTML is sanitized server-side by `generateProposalHtml()` using DOMPurify.
- * This component applies the same typography styles as the TipTap editor
- * so the visual output is identical.
- *
- * Iframely embed nodes render as `<div data-iframely data-src="..."></div>`.
- * After mounting, these are hydrated into `LinkPreview` cards.
+ * Iframely embed nodes are output by `generateHTML` as empty
+ * `<div data-iframely data-src="..."></div>` placeholders. After mount, this
+ * component hydrates them into interactive `LinkPreview` cards.
  */
 export function ProposalHtmlContent({ html }: { html: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +54,7 @@ export function ProposalHtmlContent({ html }: { html: string }) {
   return (
     <div
       ref={containerRef}
-      className={proseStyles}
+      className={viewerProseStyles}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
