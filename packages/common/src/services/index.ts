@@ -19,7 +19,7 @@ export {
   listProfiles,
   inviteUsersToProfile,
   listProfileUsers,
-  listMyInvites,
+  listUserInvites,
   updateProfileUserRoles,
   removeProfileUser,
 } from './profile';

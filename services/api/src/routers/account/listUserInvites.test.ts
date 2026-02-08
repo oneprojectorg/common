@@ -11,7 +11,7 @@ import {
 import { createCallerFactory } from '../../trpcFactory';
 import accountRouter from './index';
 
-describe.concurrent('account.listMyInvites', () => {
+describe.concurrent('account.listUserInvites', () => {
   const createCaller = createCallerFactory(accountRouter);
 
   it('should return pending invites for the authenticated user', async ({
@@ -46,7 +46,7 @@ describe.concurrent('account.listMyInvites', () => {
     const { session } = await createIsolatedSession(invitee.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listMyInvites({ pending: true });
+    const result = await caller.listUserInvites({ pending: true });
 
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe(invite.id);
@@ -64,7 +64,7 @@ describe.concurrent('account.listMyInvites', () => {
     const { session } = await createIsolatedSession(user.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listMyInvites({ pending: true });
+    const result = await caller.listUserInvites({ pending: true });
 
     expect(result).toHaveLength(0);
   });
@@ -112,7 +112,7 @@ describe.concurrent('account.listMyInvites', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Filter for DECISION only
-    const decisionInvites = await caller.listMyInvites({
+    const decisionInvites = await caller.listUserInvites({
       entityType: EntityType.DECISION,
       pending: true,
     });
@@ -121,7 +121,7 @@ describe.concurrent('account.listMyInvites', () => {
     expect(decisionInvites[0]?.profileId).toBe(decisionProfile.id);
 
     // Filter for ORG only
-    const orgInvites = await caller.listMyInvites({
+    const orgInvites = await caller.listUserInvites({
       entityType: EntityType.ORG,
       pending: true,
     });
@@ -130,7 +130,7 @@ describe.concurrent('account.listMyInvites', () => {
     expect(orgInvites[0]?.profileId).toBe(orgProfile.id);
 
     // No filter returns both
-    const allInvites = await caller.listMyInvites({ pending: true });
+    const allInvites = await caller.listUserInvites({ pending: true });
 
     expect(allInvites).toHaveLength(2);
   });
@@ -177,19 +177,19 @@ describe.concurrent('account.listMyInvites', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // pending: true returns only the pending invite
-    const pendingInvites = await caller.listMyInvites({ pending: true });
+    const pendingInvites = await caller.listUserInvites({ pending: true });
 
     expect(pendingInvites).toHaveLength(1);
     expect(pendingInvites[0]?.profileId).toBe(profile.id);
 
     // pending: false returns only the accepted invite
-    const acceptedInvites = await caller.listMyInvites({ pending: false });
+    const acceptedInvites = await caller.listUserInvites({ pending: false });
 
     expect(acceptedInvites).toHaveLength(1);
     expect(acceptedInvites[0]?.profileId).toBe(profile2.id);
 
     // No pending filter returns both
-    const allInvites = await caller.listMyInvites({});
+    const allInvites = await caller.listUserInvites({});
 
     expect(allInvites).toHaveLength(2);
   });
@@ -221,7 +221,7 @@ describe.concurrent('account.listMyInvites', () => {
     const { session } = await createIsolatedSession(invitee.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listMyInvites({ pending: true });
+    const result = await caller.listUserInvites({ pending: true });
 
     expect(result).toHaveLength(1);
   });
@@ -251,7 +251,7 @@ describe.concurrent('account.listMyInvites', () => {
     const { session } = await createIsolatedSession(invitee.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listMyInvites({
+    const result = await caller.listUserInvites({
       entityType: EntityType.DECISION,
       pending: true,
     });
@@ -311,7 +311,7 @@ describe.concurrent('account.listMyInvites', () => {
     const { session } = await createIsolatedSession(otherUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listMyInvites({ pending: true });
+    const result = await caller.listUserInvites({ pending: true });
 
     expect(result).toHaveLength(0);
   });

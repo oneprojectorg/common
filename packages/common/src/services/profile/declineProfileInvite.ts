@@ -2,7 +2,11 @@ import { and, db, eq, isNull } from '@op/db/client';
 import { profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { CommonError, UnauthorizedError } from '../../utils/error';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../utils/error';
 
 /**
  * Decline a profile invite by hard-deleting the invite record.
@@ -24,7 +28,7 @@ export const declineProfileInvite = async ({
   });
 
   if (!invite) {
-    throw new CommonError('Invite not found or already processed');
+    throw new NotFoundError('Invite not found or already processed');
   }
 
   // Verify user email matches invite email (case-insensitive)

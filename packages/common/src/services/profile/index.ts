@@ -8,7 +8,7 @@ export * from './profileRelationships';
 export * from './inviteUsersToProfile';
 export * from './listProfileUsers';
 export * from './listProfileUserInvites';
-export * from './listMyInvites';
+export * from './listUserInvites';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
 export * from './getProfileUserWithRelations';
