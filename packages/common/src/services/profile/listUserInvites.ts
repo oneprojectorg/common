@@ -1,4 +1,5 @@
-import { db } from '@op/db/client';
+import { count, countDistinct, db, inArray } from '@op/db/client';
+import { proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 /**
@@ -37,12 +38,6 @@ export const listUserInvites = async ({
                   avatarImage: true,
                 },
               },
-              proposals: {
-                columns: {
-                  id: true,
-                  submittedByProfileId: true,
-                },
-              },
             },
           },
         },
@@ -58,30 +53,49 @@ export const listUserInvites = async ({
     },
   });
 
-  return invites.map((invite) => {
-    const proposals = invite.profile?.processInstance?.proposals;
-    const proposalCount = proposals?.length ?? 0;
-    const participantCount = new Set(
-      proposals?.map((p) => p.submittedByProfileId),
-    ).size;
+  // Collect processInstance IDs and fetch proposal counts at the DB level
+  const instanceIds = invites
+    .map((i) => i.profile?.processInstance?.id)
+    .filter((id): id is string => !!id);
 
-    const { proposals: _, ...processInstanceWithoutProposals } =
-      invite.profile?.processInstance ?? {};
+  const countsMap = new Map<
+    string,
+    { proposalCount: number; participantCount: number }
+  >();
+
+  if (instanceIds.length > 0) {
+    const counts = await db
+      .select({
+        processInstanceId: proposals.processInstanceId,
+        proposalCount: count(proposals.id),
+        participantCount: countDistinct(proposals.submittedByProfileId),
+      })
+      .from(proposals)
+      .where(inArray(proposals.processInstanceId, instanceIds))
+      .groupBy(proposals.processInstanceId);
+
+    for (const row of counts) {
+      countsMap.set(row.processInstanceId, {
+        proposalCount: row.proposalCount,
+        participantCount: row.participantCount,
+      });
+    }
+  }
+
+  return invites.map((invite) => {
+    const instanceId = invite.profile?.processInstance?.id;
+    const stats = instanceId
+      ? countsMap.get(instanceId)
+      : undefined;
 
     return {
       ...invite,
-      profile: invite.profile
-        ? {
-            ...invite.profile,
-            processInstance: invite.profile.processInstance
-              ? {
-                  ...processInstanceWithoutProposals,
-                  proposalCount,
-                  participantCount,
-                }
-              : null,
-          }
-        : invite.profile,
+      proposalCount: stats?.proposalCount ?? 0,
+      participantCount: stats?.participantCount ?? 0,
     };
   });
 };
+
+export type UserInvite = Awaited<
+  ReturnType<typeof listUserInvites>
+>[number];
