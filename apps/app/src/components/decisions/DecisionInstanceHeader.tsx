@@ -51,14 +51,14 @@ export const DecisionInstanceHeader = ({
         </Header1>
       </div>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 md:gap-4">
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
             color="secondary"
             size="small"
           >
-            <LuSettings className="size-4" />
+            <LuSettings className="size-4 text-neutral-black md:text-teal" />
             <span className="hidden md:inline">{t('Settings')}</span>
           </ButtonLink>
         )}
