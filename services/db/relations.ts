@@ -99,6 +99,10 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       alias: 'processInstance_steward',
     }),
+    proposals: r.many.proposals({
+      from: r.processInstances.id,
+      to: r.proposals.processInstanceId,
+    }),
   },
 
   /**

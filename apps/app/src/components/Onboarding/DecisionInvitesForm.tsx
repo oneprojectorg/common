@@ -5,7 +5,6 @@ import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
@@ -142,17 +141,28 @@ export const DecisionInvitesForm = ({
         <div className="flex flex-col gap-6">
           {invites.map((invite) => {
             const profile = invite.profile;
-            const steward = profile?.processInstance?.steward;
+            const processInstance = profile?.processInstance;
+            const steward = processInstance?.steward;
 
             return (
               <div key={invite.id} className="flex flex-col gap-2">
-                <Surface className="p-6">
+                <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
                   <DecisionCardHeader
                     name={profile?.name ?? ''}
                     stewardName={steward?.name}
                     stewardAvatarName={steward?.avatarImage?.name}
                   />
-                </Surface>
+                  <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+                    <DecisionStat
+                      number={processInstance?.participantCount ?? 0}
+                      label={t('Participants')}
+                    />
+                    <DecisionStat
+                      number={processInstance?.proposalCount ?? 0}
+                      label={t('Proposals')}
+                    />
+                  </div>
+                </div>
 
                 {/* Per-card decline link (only show if multiple invites) */}
                 {invites.length > 1 && (
@@ -199,6 +209,13 @@ export const DecisionInvitesForm = ({
     </div>
   );
 };
+
+const DecisionStat = ({ number, label }: { number: number; label: string }) => (
+  <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
+    <span className="font-serif text-title-base">{number}</span>
+    <span className="text-sm">{label}</span>
+  </div>
+);
 
 export const DecisionInvitesFormSuspense = (
   props: DecisionInvitesFormProps,

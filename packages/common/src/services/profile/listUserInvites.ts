@@ -37,6 +37,12 @@ export const listUserInvites = async ({
                   avatarImage: true,
                 },
               },
+              proposals: {
+                columns: {
+                  id: true,
+                  submittedByProfileId: true,
+                },
+              },
             },
           },
         },
@@ -52,5 +58,27 @@ export const listUserInvites = async ({
     },
   });
 
-  return invites;
+  return invites.map((invite) => {
+    const proposals = invite.profile?.processInstance?.proposals;
+    const proposalCount = proposals?.length ?? 0;
+    const participantCount = new Set(
+      proposals?.map((p) => p.submittedByProfileId),
+    ).size;
+
+    return {
+      ...invite,
+      profile: invite.profile
+        ? {
+            ...invite.profile,
+            processInstance: invite.profile.processInstance
+              ? {
+                  ...invite.profile.processInstance,
+                  proposalCount,
+                  participantCount,
+                }
+              : null,
+          }
+        : invite.profile,
+    };
+  });
 };
