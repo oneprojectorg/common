@@ -48,7 +48,7 @@ export const DecisionInvitesForm = ({
   const utils = trpc.useUtils();
   const [isLoading, setIsLoading] = useState(false);
 
-  const [invites, { refetch }] = trpc.account.listMyInvites.useSuspenseQuery(
+  const [invites, { refetch }] = trpc.account.listUserInvites.useSuspenseQuery(
     {
       entityType: EntityType.DECISION,
       pending: true,
