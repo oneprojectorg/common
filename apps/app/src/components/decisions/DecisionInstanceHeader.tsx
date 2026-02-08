@@ -59,7 +59,7 @@ export const DecisionInstanceHeader = ({
             size="small"
           >
             <LuSettings className="size-4" />
-            {t('Settings')}
+            <span className="hidden md:inline">{t('Settings')}</span>
           </ButtonLink>
         )}
         <LocaleChooser />
