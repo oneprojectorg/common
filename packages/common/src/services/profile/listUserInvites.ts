@@ -1,10 +1,9 @@
-import { and, db, eq, ilike, isNotNull, isNull } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   type AccessRole,
   type ObjectsInStorage,
   type Profile,
   type ProfileInvite,
-  profileInvites,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -35,21 +34,13 @@ export const listUserInvites = async ({
     return [];
   }
 
-  // Build where conditions
-  const conditions = [ilike(profileInvites.email, user.email)];
-
-  if (pending === true) {
-    conditions.push(isNull(profileInvites.acceptedOn));
-  } else if (pending === false) {
-    conditions.push(isNotNull(profileInvites.acceptedOn));
-  }
-
-  if (entityType) {
-    conditions.push(eq(profileInvites.profileEntityType, entityType));
-  }
-
-  const invites = (await db._query.profileInvites.findMany({
-    where: and(...conditions),
+  const invites = (await db.query.profileInvites.findMany({
+    where: {
+      email: { ilike: user.email },
+      ...(pending === true && { acceptedOn: { isNull: true } }),
+      ...(pending === false && { acceptedOn: { isNotNull: true } }),
+      ...(entityType && { profileEntityType: entityType }),
+    },
     with: {
       accessRole: true,
       profile: {
@@ -63,7 +54,9 @@ export const listUserInvites = async ({
         },
       },
     },
-    orderBy: (table, { desc }) => [desc(table.createdAt)],
+    orderBy: {
+      createdAt: 'desc',
+    },
   })) as ProfileInviteWithProfile[];
 
   return invites;

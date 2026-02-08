@@ -72,7 +72,7 @@ describe.concurrent('profile.declineInvite', () => {
         inviteId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'CommonError' },
+      cause: { name: 'NotFoundError' },
     });
   });
 
@@ -112,7 +112,7 @@ describe.concurrent('profile.declineInvite', () => {
     await expect(
       caller.declineInvite({ inviteId: invite.id }),
     ).rejects.toMatchObject({
-      cause: { name: 'CommonError' },
+      cause: { name: 'NotFoundError' },
     });
   });
 
