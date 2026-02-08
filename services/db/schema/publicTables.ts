@@ -195,3 +195,9 @@ export {
   profileModulesRelations,
 } from './tables/modules.sql';
 export type { Module, ProfileModule } from './tables/modules.sql';
+
+// Translation cache
+export {
+  contentTranslations,
+  type ContentTranslation,
+} from './tables/contentTranslations.sql';
