@@ -62,6 +62,9 @@
     "💻 ------ DEVELOPMENT VARS ------ 💻",
     "DB_MIGRATING",
     "DB_SEEDING",
-    "REDIS_URL"
+    "E2E",
+    "REDIS_URL",
+    "TIPTAP_SECRET",
+    "NEXT_PUBLIC_TIPTAP_APP_ID"
   ]
 }

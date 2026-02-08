@@ -2,11 +2,13 @@ import type { DecisionSchemaDefinition } from '@op/common';
 import {
   EntityType,
   ProcessStatus,
+  ProposalStatus,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
+  proposals,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
@@ -337,5 +339,95 @@ export async function getSeededTemplate(): Promise<{
     id: template.id,
     name: template.name,
     processSchema: template.processSchema as DecisionSchemaDefinition,
+  };
+}
+
+export interface CreateProposalOptions {
+  /** Process instance ID this proposal belongs to */
+  processInstanceId: string;
+  /** Profile ID of the user submitting the proposal */
+  submittedByProfileId: string;
+  /** Structured proposal data (title, description, collaborationDocId, etc.) */
+  proposalData: {
+    title: string;
+    description?: string;
+    collaborationDocId?: string;
+    budget?: number;
+    category?: string;
+  };
+  /** Proposal status (defaults to DRAFT to match production behavior) */
+  status?: ProposalStatus;
+}
+
+export interface CreateProposalResult {
+  id: string;
+  profileId: string;
+  processInstanceId: string;
+  proposalData: Record<string, unknown>;
+  status: string | null;
+}
+
+/**
+ * Creates a proposal with its own profile via direct DB insert.
+ * Mirrors the production code path in @op/common/createProposal as closely as possible:
+ * - Generates a collaborationDocId if not provided
+ * - Defaults to DRAFT status (matching production)
+ *
+ * NOTE: Cannot call @op/common directly because it lacks "type": "module"
+ * in package.json, causing CJS/ESM interop failures under Playwright's Node runtime.
+ */
+export async function createProposal(
+  opts: CreateProposalOptions,
+): Promise<CreateProposalResult> {
+  const {
+    processInstanceId,
+    submittedByProfileId,
+    proposalData,
+    status = ProposalStatus.DRAFT,
+  } = opts;
+
+  const proposalId = randomUUID();
+  const proposalSlug = `proposal-${randomUUID()}`;
+
+  // Generate collaborationDocId if not provided, matching production behavior
+  const collaborationDocId =
+    proposalData.collaborationDocId ?? `proposal-${proposalId}`;
+
+  // Create a profile for the proposal (needed for social features: likes, comments)
+  const [proposalProfile] = await db
+    .insert(profiles)
+    .values({
+      name: proposalData.title,
+      slug: proposalSlug,
+      type: EntityType.PROPOSAL,
+    })
+    .returning();
+
+  if (!proposalProfile) {
+    throw new Error('Failed to create proposal profile');
+  }
+
+  const [proposal] = await db
+    .insert(proposals)
+    .values({
+      id: proposalId,
+      processInstanceId,
+      submittedByProfileId,
+      profileId: proposalProfile.id,
+      proposalData: { ...proposalData, collaborationDocId },
+      status,
+    })
+    .returning();
+
+  if (!proposal) {
+    throw new Error('Failed to create proposal');
+  }
+
+  return {
+    id: proposal.id,
+    profileId: proposalProfile.id,
+    processInstanceId: proposal.processInstanceId,
+    proposalData: proposal.proposalData as Record<string, unknown>,
+    status: proposal.status,
   };
 }

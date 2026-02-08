@@ -5,15 +5,24 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load environment variables from .env.local
+// Load shared env (non-secret config like feature flags, API URLs, etc.)
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
-// Override Supabase ports for E2E isolation (56xxx instead of 54xxx)
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:56321';
-process.env.DATABASE_URL =
-  'postgresql://postgres:postgres@127.0.0.1:56322/postgres';
-process.env.S3_ASSET_ROOT =
-  'http://127.0.0.1:56321/storage/v1/object/public/assets';
+// E2E environment — all values are deterministic local-only keys from `supabase start`.
+// SUPABASE_SERVICE_ROLE comes from the `dev:e2e` script (cross-env) to avoid
+// GitHub push protection flagging the Supabase CLI key in tracked files.
+Object.assign(process.env, {
+  E2E: 'true',
+  NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:56321',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY:
+    'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
+  DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:56322/postgres',
+  S3_ASSET_ROOT: 'http://127.0.0.1:56321/storage/v1/object/public/assets',
+  // Dummy values — the e2e mock (@op/collab/e2e) ignores these, but
+  // getProposalDocumentsContent guards on their presence before calling the client.
+  TIPTAP_SECRET: 'e2e',
+  NEXT_PUBLIC_TIPTAP_APP_ID: 'e2e',
+});
 
 /**
  * Playwright configuration for e2e tests.
