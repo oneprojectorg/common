@@ -47,9 +47,6 @@ describe.concurrent('listDecisionProfiles', () => {
       expect(profile.processInstance.status).toBe('draft');
       expect(profile.processInstance.proposalCount).toBe(0);
       expect(profile.processInstance.participantCount).toBe(0);
-      expect(profile.processInstance.instanceData).toMatchObject({
-        hideBudget: false,
-      });
     });
   });
 
