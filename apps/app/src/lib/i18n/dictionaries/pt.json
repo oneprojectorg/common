@@ -243,6 +243,12 @@
   "Deleting...": "Excluindo...",
   "Failed to delete proposal": "Falha ao excluir a proposta",
   "Failed to create proposal": "Falha ao criar a proposta",
+  "Failed to update proposal": "Falha ao atualizar a proposta",
+  "Failed to submit proposal": "Falha ao enviar a proposta",
+  "Please fix the following issues:": "Por favor, corrija os seguintes problemas:",
+  "An unexpected error occurred": "Ocorreu um erro inesperado",
+  "Anonymous": "Anônimo",
+  "Unknown": "Desconhecido",
   "Proposal deleted successfully": "Proposta excluída com sucesso",
   "Draft": "Rascunho",
   "Not shortlisted": "Não pré-selecionada",
@@ -267,6 +273,8 @@
   "Current State": "Estado atual",
   "Checking transitions...": "Verificando transições...",
   "Select category": "Selecionar categoria",
+  "Add budget": "Adicionar orçamento",
+  "Enter amount": "Inserir valor",
   "Write your proposal here...": "Escreva sua proposta aqui...",
   "Undo": "Desfazer",
   "Redo": "Refazer",
@@ -529,5 +537,6 @@
   "Support your proposal with relevant documents like budgets or supporting research.": "Apoie sua proposta com documentos relevantes como orçamentos ou pesquisa de suporte.",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Aceita PDF, DOCX, XLSX até {size}MB",
   "{count}/{max} attachments added": "{count}/{max} anexos adicionados",
-  "Drag to reorder": "Arraste para reordenar"
+  "Drag to reorder": "Arraste para reordenar",
+  "Max {amount}": "Máx {amount}"
 }
