@@ -43,10 +43,8 @@ function isTipTapDocument(value: unknown): value is TipTapDocument {
  * @see https://tiptap.dev/docs/collaboration/documents/rest-api
  */
 export function createTipTapClient(config: TipTapClientConfig) {
-  const prefixUrl = `https://${config.appId}.collab.tiptap.cloud/api`;
-
   const api = ky.create({
-    prefixUrl,
+    prefixUrl: `https://${config.appId}.collab.tiptap.cloud/api`,
     headers: { Authorization: config.secret },
     retry: { limit: 2, methods: ['get'] },
     timeout: 3_000,

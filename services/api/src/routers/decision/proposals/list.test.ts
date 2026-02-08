@@ -636,6 +636,8 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
+    // Mock returns 404 by default for unknown docIds (no explicit setup needed)
+
     const [proposal, caller] = await Promise.all([
       testData.createProposal({
         callerEmail: setup.userEmail,
@@ -777,6 +779,7 @@ describe.concurrent('listProposals', () => {
         { type: 'paragraph', content: [{ type: 'text', text: 'TipTap' }] },
       ],
     };
+    // Only set up mock for the collab proposal (empty and legacy won't have valid responses)
     mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);

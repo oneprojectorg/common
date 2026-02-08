@@ -355,7 +355,7 @@ export interface CreateProposalOptions {
     budget?: number;
     category?: string;
   };
-  /** Proposal status (defaults to SUBMITTED) */
+  /** Proposal status (defaults to DRAFT to match production behavior) */
   status?: ProposalStatus;
 }
 
@@ -369,7 +369,12 @@ export interface CreateProposalResult {
 
 /**
  * Creates a proposal with its own profile via direct DB insert.
- * This is a lightweight helper for e2e seeding — no auth context required.
+ * Mirrors the production code path in @op/common/createProposal as closely as possible:
+ * - Generates a collaborationDocId if not provided
+ * - Defaults to DRAFT status (matching production)
+ *
+ * NOTE: Cannot call @op/common directly because it lacks "type": "module"
+ * in package.json, causing CJS/ESM interop failures under Playwright's Node runtime.
  */
 export async function createProposal(
   opts: CreateProposalOptions,
@@ -378,11 +383,17 @@ export async function createProposal(
     processInstanceId,
     submittedByProfileId,
     proposalData,
-    status = ProposalStatus.SUBMITTED,
+    status = ProposalStatus.DRAFT,
   } = opts;
 
-  // Create a profile for the proposal (needed for social features: likes, comments)
+  const proposalId = randomUUID();
   const proposalSlug = `proposal-${randomUUID()}`;
+
+  // Generate collaborationDocId if not provided, matching production behavior
+  const collaborationDocId =
+    proposalData.collaborationDocId ?? `proposal-${proposalId}`;
+
+  // Create a profile for the proposal (needed for social features: likes, comments)
   const [proposalProfile] = await db
     .insert(profiles)
     .values({
@@ -399,10 +410,11 @@ export async function createProposal(
   const [proposal] = await db
     .insert(proposals)
     .values({
+      id: proposalId,
       processInstanceId,
       submittedByProfileId,
       profileId: proposalProfile.id,
-      proposalData,
+      proposalData: { ...proposalData, collaborationDocId },
       status,
     })
     .returning();
