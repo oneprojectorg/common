@@ -24,6 +24,7 @@ import { PostUpdate } from '../PostUpdate';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
+import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { getProposalContent } from './proposalContentUtils';
 
@@ -103,7 +104,8 @@ export function ProposalView({
     currentProposal.proposalData,
   );
 
-  const proposalContent = getProposalContent(currentProposal.documentContent);
+  const bodyHtml = currentProposal.htmlContent?.default;
+  const fallbackContent = getProposalContent(currentProposal.documentContent);
 
   return (
     <ProposalViewLayout
@@ -215,10 +217,12 @@ export function ProposalView({
           </div>
 
           {/* Proposal Content */}
-          {proposalContent ? (
+          {bodyHtml ? (
+            <ProposalHtmlContent html={bodyHtml} />
+          ) : fallbackContent ? (
             <RichTextViewer
               extensions={getViewerExtensions()}
-              content={proposalContent}
+              content={fallbackContent}
               editorClassName="p-0"
             />
           ) : (

@@ -20,6 +20,7 @@ import { checkPermission, permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { generateProposalHtml } from './generateProposalHtml';
 import {
   type ProposalDocumentContent,
   getProposalDocumentsContent,
@@ -61,6 +62,7 @@ export const getProposal = async ({
     likesCount: number;
     followersCount: number;
     documentContent: ProposalDocumentContent | undefined;
+    htmlContent: Record<string, string> | undefined;
     attachments: ProposalAttachmentWithDetails[];
   }
 > => {
@@ -191,11 +193,24 @@ export const getProposal = async ({
     );
   }
 
+  const documentContent = documentContentMap.get(proposal.id);
+
+  let htmlContent: Record<string, string> | undefined;
+  if (documentContent?.type === 'json') {
+    htmlContent = generateProposalHtml(documentContent.fragments);
+  } else if (documentContent?.type === 'html') {
+    // Legacy HTML from proposalData.description — trusted content from our DB
+    htmlContent = {
+      default: documentContent.content,
+    };
+  }
+
   return {
     ...proposal,
     proposalData: parseProposalData(proposal.proposalData),
     ...engagementCounts,
-    documentContent: documentContentMap.get(proposal.id),
+    documentContent,
+    htmlContent,
     attachments: attachmentsWithUrls,
   };
 };
