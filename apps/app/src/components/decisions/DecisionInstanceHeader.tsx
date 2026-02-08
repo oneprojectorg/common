@@ -1,12 +1,12 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
-import { useUser } from '@/utils/UserProvider';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
