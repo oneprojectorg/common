@@ -22,18 +22,23 @@ export const getProposalRouter = router({
       const { profileId } = input;
 
       // Fetch proposal (includes documentContent)
-      const proposal = await cache({
-        type: 'profile',
-        params: [profileId],
-        fetch: () =>
-          getProposal({
-            profileId,
-            user,
-          }),
-        options: {
-          skipCacheWrite: (result) => result.status === ProposalStatus.DRAFT,
-        },
+      const proposal = await getProposal({
+        profileId,
+        user,
       });
+      // // Fetch proposal (includes documentContent)
+      // const proposal = await cache({
+      //   type: 'profile',
+      //   params: [profileId],
+      //   fetch: () =>
+      //     getProposal({
+      //       profileId,
+      //       user,
+      //     }),
+      //   options: {
+      //     skipCacheWrite: (result) => result.status === ProposalStatus.DRAFT,
+      //   },
+      // });
 
       // Fetch permissions
       const isEditable = await getPermissionsOnProposal({

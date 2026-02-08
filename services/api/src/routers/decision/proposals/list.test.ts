@@ -614,7 +614,9 @@ describe.concurrent('listProposals', () => {
     const foundProposal = result.proposals.find((p) => p.id === proposal.id);
     expect(foundProposal?.documentContent).toEqual({
       type: 'json',
-      content: mockTipTapContent.content,
+      fragments: {
+        default: mockTipTapContent,
+      },
     });
   });
 
@@ -720,11 +722,15 @@ describe.concurrent('listProposals', () => {
 
     expect(found1?.documentContent).toEqual({
       type: 'json',
-      content: mockContent1.content,
+      fragments: {
+        default: mockContent1,
+      },
     });
     expect(found2?.documentContent).toEqual({
       type: 'json',
-      content: mockContent2.content,
+      fragments: {
+        default: mockContent2,
+      },
     });
   });
 
@@ -792,7 +798,9 @@ describe.concurrent('listProposals', () => {
 
     expect(foundCollab?.documentContent).toEqual({
       type: 'json',
-      content: mockTipTapContent.content,
+      fragments: {
+        default: mockTipTapContent,
+      },
     });
     expect(foundLegacy?.documentContent).toEqual({
       type: 'html',

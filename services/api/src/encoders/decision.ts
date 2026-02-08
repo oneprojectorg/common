@@ -391,7 +391,13 @@ export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
 export const documentContentEncoder = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('json'),
-    content: z.array(z.unknown()),
+    fragments: z.record(
+      z.string(),
+      z.object({
+        type: z.string(),
+        content: z.array(z.unknown()).optional(),
+      }),
+    ),
   }),
   z.object({
     type: z.literal('html'),
