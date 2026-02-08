@@ -1,10 +1,12 @@
 'use client';
 
+import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
-import { LuArrowLeft } from 'react-icons/lu';
+import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
+import { useUser } from '@/utils/UserProvider';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
@@ -12,14 +14,23 @@ import { UserAvatarMenu } from '../SiteHeader';
 export const DecisionInstanceHeader = ({
   backTo,
   title,
+  decisionSlug,
+  decisionProfileId,
 }: {
   backTo: {
     label?: string;
     href: string;
   };
   title: string;
+  decisionSlug?: string;
+  decisionProfileId?: string | null;
 }) => {
   const t = useTranslations();
+  const access = useUser();
+  const isAdmin =
+    decisionProfileId &&
+    access.getPermissionsForProfile(decisionProfileId).admin;
+
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
       <div className="flex items-center gap-3">
@@ -41,6 +52,16 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2">
+        {isAdmin && decisionSlug && (
+          <ButtonLink
+            href={`/decisions/${decisionSlug}/edit`}
+            color="secondary"
+            size="small"
+          >
+            <LuSettings className="size-4" />
+            {t('Settings')}
+          </ButtonLink>
+        )}
         <LocaleChooser />
         <UserAvatarMenu />
       </div>

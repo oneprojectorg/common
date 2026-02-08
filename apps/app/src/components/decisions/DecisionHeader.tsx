@@ -12,6 +12,10 @@ interface DecisionHeaderProps {
   instanceId: string;
   slug: string;
   children?: ReactNode;
+  /** Decision profile slug for building the edit link */
+  decisionSlug?: string;
+  /** Decision profile ID for permission checking */
+  decisionProfileId?: string;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }
@@ -20,6 +24,8 @@ export async function DecisionHeader({
   instanceId,
   slug,
   children,
+  decisionSlug,
+  decisionProfileId,
   useLegacy = false,
 }: DecisionHeaderProps) {
   const client = await createClient();
@@ -74,6 +80,8 @@ export async function DecisionHeader({
           instanceData.templateName ||
           (instance as any).process?.name
         }
+        decisionSlug={decisionSlug}
+        decisionProfileId={decisionProfileId}
       />
 
       <div className="flex flex-col overflow-x-auto sm:items-center">
