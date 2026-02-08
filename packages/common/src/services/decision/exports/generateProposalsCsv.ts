@@ -1,24 +1,50 @@
+import { type JSONContent, generateText } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
 import { stringify } from 'csv-stringify/sync';
 
-import { listProposals } from '../listProposals';
+import type { listProposals } from '../listProposals';
+import { parseProposalData } from '../proposalDataSchema';
 
 // Infer the proposal type from the listProposals return value
 type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
 >['proposals'][number];
 
+/**
+ * Extract plain text description from a proposal's document content.
+ * Uses TipTap generateText for collab docs, falls back to proposalData.description for legacy.
+ */
+function getDocumentDescription(proposal: ProposalFromList): string {
+  const documentContent = proposal.documentContent;
+
+  if (documentContent?.type === 'json') {
+    try {
+      const doc: JSONContent = {
+        type: 'doc',
+        content: documentContent.content as JSONContent[],
+      };
+      return generateText(doc, [StarterKit]).trim();
+    } catch {
+      return '';
+    }
+  }
+
+  const proposalData = parseProposalData(proposal.proposalData);
+  return proposalData.description?.trim() || '';
+}
+
 export async function generateProposalsCsv(
   proposals: ProposalFromList[],
 ): Promise<string> {
   const rows = proposals.map((p) => {
-    const proposalData = (p.proposalData as any) || {};
+    const proposalData = parseProposalData(p.proposalData);
 
     return {
       'Proposal ID': p.id,
       Title: proposalData.title || '',
-      Description: proposalData.description || '',
-      Budget: proposalData.budget || '',
-      Category: proposalData.category || '',
+      Description: getDocumentDescription(p),
+      Budget: proposalData.budget ?? '',
+      Category: proposalData.category ?? '',
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',
       'Submitter Email': p.submittedBy?.email || '',
