@@ -334,7 +334,9 @@ describe.concurrent('getProposal', () => {
     });
     expect(result.documentContent).toEqual({
       type: 'json',
-      content: mockTipTapContent.content,
+      fragments: {
+        default: mockTipTapContent,
+      },
     });
   });
 

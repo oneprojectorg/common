@@ -213,10 +213,19 @@ export const listProposals = async ({
 
   const count = countResult[0]?.count || 0;
 
+  // TODO: Read proposalTemplate from process schema via processInstance/process join.
+  // Temporary hack while only the `default` fragment is used.
+  const proposalTemplate: Record<string, unknown> = {
+    type: 'object',
+    properties: {},
+  };
+
+  type ProposalListItem = (typeof proposalList)[number];
+
   // Get relationship data for all proposal profiles using optimized Drizzle queries
   const profileIds = proposalList
-    .map((p: any) => p.profileId)
-    .filter((id: any): id is string => Boolean(id));
+    .map((proposal) => proposal.profileId)
+    .filter((id): id is string => Boolean(id));
 
   const relationshipData = new Map<
     string,
@@ -277,9 +286,10 @@ export const listProposals = async ({
 
     // Get document contents for all proposals
     getProposalDocumentsContent(
-      proposalList.map((p: any) => ({
-        id: p.id,
-        proposalData: p.proposalData,
+      proposalList.map((proposal) => ({
+        id: proposal.id,
+        proposalData: proposal.proposalData,
+        proposalTemplate,
       })),
     ),
   ]);
@@ -331,7 +341,7 @@ export const listProposals = async ({
 
   // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
   // TODO: improve this with more streamlined types
-  const proposalsWithCounts = proposalList.map((proposal: any) => {
+  const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const submittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
       : proposal.submittedBy;

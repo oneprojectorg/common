@@ -41,5 +41,18 @@ export function createTipTapClient() {
       }
       return Promise.reject(new Error('404 Not Found'));
     },
+    getDocumentFragments: async (docName: string, fragments: string[]) => {
+      const handler = docResponses.get(docName);
+
+      if (!handler) {
+        return Promise.reject(new Error('404 Not Found'));
+      }
+
+      const doc = await handler();
+
+      return Object.fromEntries(
+        fragments.map((fragment) => [fragment, doc]),
+      ) as Record<string, unknown>;
+    },
   };
 }

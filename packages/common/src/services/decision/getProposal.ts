@@ -99,6 +99,13 @@ export const getProposal = async ({
   }
 
   // Run engagement counts and document fetch in parallel
+  // TODO: Read proposalTemplate from process schema via processInstance/process join.
+  // Temporary hack while only the `default` fragment is used.
+  const proposalTemplate: Record<string, unknown> = {
+    type: 'object',
+    properties: {},
+  };
+
   const [engagementCounts, documentContentMap] = await Promise.all([
     // Get engagement counts if proposal has a profile
     proposal.profileId
@@ -146,7 +153,11 @@ export const getProposal = async ({
 
     // Fetch document content
     getProposalDocumentsContent([
-      { id: proposal.id, proposalData: proposal.proposalData },
+      {
+        id: proposal.id,
+        proposalData: proposal.proposalData,
+        proposalTemplate,
+      },
     ]),
   ]);
 

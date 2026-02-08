@@ -43,6 +43,7 @@ export * from './exportProposals';
 export * from './getExportStatus';
 export * from './exports';
 export * from './getProposalDocumentsContent';
+export * from './getProposalFragmentNames';
 
 // Proposal attachments
 export * from './uploadProposalAttachment';

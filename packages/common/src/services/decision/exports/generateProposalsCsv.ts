@@ -27,8 +27,8 @@ export async function generateProposalsCsv(
       Likes: p.likesCount || 0,
       Comments: p.commentsCount || 0,
       Followers: p.followersCount || 0,
-      'Created At': new Date(p.createdAt).toISOString(),
-      'Updated At': new Date(p.updatedAt).toISOString(),
+      'Created At': p.createdAt ? new Date(p.createdAt).toISOString() : '',
+      'Updated At': p.updatedAt ? new Date(p.updatedAt).toISOString() : '',
     };
   });
 

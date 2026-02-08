@@ -20,9 +20,15 @@ export function getProposalContent(
   }
 
   if (documentContent.type === 'json') {
+    const defaultFragment = documentContent.fragments.default;
+
+    if (!defaultFragment?.content) {
+      return null;
+    }
+
     return {
       type: 'doc',
-      content: documentContent.content,
+      content: defaultFragment.content,
     } as JSONContent;
   }
 
@@ -38,10 +44,16 @@ export function getProposalContentPreview(
   }
 
   if (documentContent.type === 'json') {
+    const defaultFragment = documentContent.fragments.default;
+
+    if (!defaultFragment?.content) {
+      return null;
+    }
+
     try {
       const doc = {
         type: 'doc',
-        content: documentContent.content as JSONContent[],
+        content: defaultFragment.content as JSONContent[],
       };
       const text = generateText(doc, defaultViewerExtensions);
       return text.trim();

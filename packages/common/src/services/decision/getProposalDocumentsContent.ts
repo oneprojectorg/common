@@ -1,13 +1,14 @@
-import { createTipTapClient } from '@op/collab';
+import { type TipTapFragmentResponse, createTipTapClient } from '@op/collab';
 import pMap from 'p-map';
 
+import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 
 /**
  * Proposal document content can be either TipTap JSON or legacy HTML
  */
 export type ProposalDocumentContent =
-  | { type: 'json'; content: unknown[] }
+  | { type: 'json'; fragments: TipTapFragmentResponse }
   | { type: 'html'; content: string };
 
 /**
@@ -21,13 +22,18 @@ export type ProposalDocumentContent =
  * @returns Map of proposalId -> DocumentContent
  */
 export async function getProposalDocumentsContent(
-  proposals: Array<{ id: string; proposalData: unknown }>,
+  proposals: Array<{
+    id: string;
+    proposalData: unknown;
+    proposalTemplate?: Record<string, unknown> | null;
+  }>,
 ): Promise<Map<string, ProposalDocumentContent>> {
   const documentContentMap = new Map<string, ProposalDocumentContent>();
 
   const proposalsWithCollabDoc: Array<{
     id: string;
     collaborationDocId: string;
+    proposalTemplate?: Record<string, unknown> | null;
   }> = [];
 
   for (const proposal of proposals) {
@@ -37,6 +43,7 @@ export async function getProposalDocumentsContent(
       proposalsWithCollabDoc.push({
         id: proposal.id,
         collaborationDocId: parsed.collaborationDocId,
+        proposalTemplate: proposal.proposalTemplate,
       });
     } else if (parsed.description) {
       documentContentMap.set(proposal.id, {
@@ -62,24 +69,28 @@ export async function getProposalDocumentsContent(
 
     const results = await pMap(
       proposalsWithCollabDoc,
-      async ({ id, collaborationDocId }) => {
+      async ({ id, collaborationDocId, proposalTemplate }) => {
         try {
-          const doc = await client.getDocument(collaborationDocId);
-          return { id, doc };
+          const fragmentNames = getProposalFragmentNames(proposalTemplate);
+          const fragments = await client.getDocumentFragments(
+            collaborationDocId,
+            fragmentNames,
+          );
+          return { id, fragments };
         } catch (error) {
           console.warn('Failed to fetch TipTap document', {
             collaborationDocId,
             error: error instanceof Error ? error.message : String(error),
           });
-          return { id, doc: undefined };
+          return { id, fragments: undefined };
         }
       },
       { concurrency: 10 },
     );
 
-    for (const { id, doc } of results) {
-      if (doc?.content) {
-        documentContentMap.set(id, { type: 'json', content: doc.content });
+    for (const { id, fragments } of results) {
+      if (fragments) {
+        documentContentMap.set(id, { type: 'json', fragments });
       }
     }
   }
