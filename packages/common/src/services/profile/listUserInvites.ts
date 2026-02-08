@@ -1,21 +1,5 @@
 import { db } from '@op/db/client';
-import {
-  type AccessRole,
-  type ObjectsInStorage,
-  type Profile,
-  type ProfileInvite,
-} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-
-type ProfileWithAvatar = Profile & {
-  avatarImage: ObjectsInStorage | null;
-};
-
-type ProfileInviteWithProfile = ProfileInvite & {
-  accessRole: AccessRole | null;
-  profile: ProfileWithAvatar | null;
-  inviter: ProfileWithAvatar | null;
-};
 
 /**
  * List invites for the current user by email.
@@ -29,12 +13,12 @@ export const listUserInvites = async ({
   user: User;
   entityType?: string;
   pending?: boolean;
-}): Promise<ProfileInviteWithProfile[]> => {
+}) => {
   if (!user.email) {
     return [];
   }
 
-  const invites = (await db.query.profileInvites.findMany({
+  const invites = await db.query.profileInvites.findMany({
     where: {
       email: { ilike: user.email },
       ...(pending === true && { acceptedOn: { isNull: true } }),
@@ -46,6 +30,15 @@ export const listUserInvites = async ({
       profile: {
         with: {
           avatarImage: true,
+          processInstance: {
+            with: {
+              steward: {
+                with: {
+                  avatarImage: true,
+                },
+              },
+            },
+          },
         },
       },
       inviter: {
@@ -57,7 +50,7 @@ export const listUserInvites = async ({
     orderBy: {
       createdAt: 'desc',
     },
-  })) as ProfileInviteWithProfile[];
+  });
 
   return invites;
 };

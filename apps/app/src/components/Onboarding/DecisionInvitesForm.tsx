@@ -1,16 +1,13 @@
 'use client';
 
-import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
 import { z } from 'zod';
 
@@ -19,20 +16,9 @@ import { useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '../ErrorBoundary';
 import { ErrorMessage } from '../ErrorMessage';
 import { StepProps } from '../MultiStepForm';
+import { DecisionCardHeader } from '../decisions/DecisionCardHeader';
 import { FormContainer } from '../form/FormContainer';
 import { DecisionInvitesSkeleton } from './DecisionInvitesSkeleton';
-
-const DecisionStat = ({ number, label }: { number: number; label: string }) => {
-  const t = useTranslations();
-  return (
-    <div className="flex flex-col items-center justify-center">
-      <span className="font-serif text-title-base text-neutral-black">
-        {number}
-      </span>
-      <span className="text-xs text-neutral-black">{t(label)}</span>
-    </div>
-  );
-};
 
 export const validator = z.object({});
 
@@ -155,66 +141,17 @@ export const DecisionInvitesForm = ({
         {/* List of invite cards */}
         <div className="flex flex-col gap-6">
           {invites.map((invite) => {
-            // Handle potential array types from drizzle inference
-            const profile = Array.isArray(invite.profile)
-              ? invite.profile[0]
-              : invite.profile;
-
-            // Get processInstance data for participant/proposal counts
-            const processInstance = (
-              profile as typeof profile & {
-                processInstance?: {
-                  participantCount?: number | null;
-                  proposalCount?: number | null;
-                  owner?: {
-                    name?: string | null;
-                    avatarImage?: { name?: string | null } | null;
-                  } | null;
-                } | null;
-              }
-            )?.processInstance;
-
-            const owner = processInstance?.owner;
-            const profileName = profile?.name ?? '';
-            const ownerName = owner?.name ?? '';
-            const ownerAvatarName = owner?.avatarImage?.name;
-            const participantCount = processInstance?.participantCount ?? 0;
-            const proposalCount = processInstance?.proposalCount ?? 0;
+            const profile = invite.profile;
+            const steward = profile?.processInstance?.steward;
 
             return (
               <div key={invite.id} className="flex flex-col gap-2">
-                {/* Card - white bg, border, rounded, p-6, gap-6 */}
-                <Surface className="flex items-center gap-6 p-6">
-                  {/* Left: Name + Organization */}
-                  <div className="flex flex-1 flex-col gap-1">
-                    <span className="font-serif text-title-base tracking-tight text-neutral-black">
-                      {profileName}
-                    </span>
-                    <div className="flex items-center gap-1 pt-0.5 pb-1">
-                      <Avatar className="size-4" placeholder={ownerName}>
-                        {ownerAvatarName ? (
-                          <Image
-                            src={getPublicUrl(ownerAvatarName) ?? ''}
-                            alt={ownerName}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : null}
-                      </Avatar>
-                      <span className="text-xs text-neutral-black">
-                        {ownerName}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Right: Stats - gap-12 (48px) between stats */}
-                  <div className="flex gap-12 text-neutral-black">
-                    <DecisionStat
-                      number={participantCount}
-                      label="Participants"
-                    />
-                    <DecisionStat number={proposalCount} label="Proposals" />
-                  </div>
+                <Surface className="p-6">
+                  <DecisionCardHeader
+                    name={profile?.name ?? ''}
+                    stewardName={steward?.name}
+                    stewardAvatarName={steward?.avatarImage?.name}
+                  />
                 </Surface>
 
                 {/* Per-card decline link (only show if multiple invites) */}
