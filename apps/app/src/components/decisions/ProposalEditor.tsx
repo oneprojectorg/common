@@ -454,7 +454,7 @@ export function ProposalEditor({
             </div>
 
             <CollaborativeEditor
-              field="content"
+              field="default"
               extensions={editorExtensions}
               onEditorReady={handleEditorReady}
               placeholder={t('Write your proposal here...')}
