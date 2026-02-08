@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollaborativeField } from '@/hooks/useCollaborativeField';
+import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { Select, SelectItem } from '@op/ui/Select';
 import { useEffect, useRef } from 'react';
 
@@ -20,7 +20,7 @@ interface CollaborativeCategoryFieldProps {
 }
 
 /**
- * Collaborative category selector synced via Yjs Y.Map.
+ * Collaborative category selector synced via Yjs XmlFragment.
  * When one user picks a category, all connected users see it update in real time.
  */
 export function CollaborativeCategoryField({
@@ -31,9 +31,14 @@ export function CollaborativeCategoryField({
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
 
-  const [selectedCategory, setSelectedCategory] = useCollaborativeField<
-    string | null
-  >(ydoc, 'category', initialValue);
+  const [categoryText, setCategoryText] = useCollaborativeFragment(
+    ydoc,
+    'category',
+    initialValue ?? '',
+  );
+  const selectedCategory = categoryText || null;
+  const setSelectedCategory = (value: string | null) =>
+    setCategoryText(value ?? '');
 
   const onChangeRef = useRef(onChange);
   const lastEmittedValueRef = useRef<string | null | undefined>(undefined);

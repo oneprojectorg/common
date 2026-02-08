@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollaborativeField } from '@/hooks/useCollaborativeField';
+import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { useEffect, useRef, useState } from 'react';
@@ -37,9 +37,9 @@ interface CollaborativeBudgetFieldProps {
 }
 
 /**
- * Collaborative budget input synced via Yjs Y.Map.
- * Stores `{ currency, amount }` in the shared doc for future
- * multi-currency support.
+ * Collaborative budget input synced via Yjs XmlFragment.
+ * Stores `{ currency, amount }` as a JSON string in the shared doc
+ * for future multi-currency support.
  *
  * Displays as a pill when a value exists, switching to an inline
  * NumberField on click for editing.
@@ -58,11 +58,15 @@ export function CollaborativeBudgetField({
       ? { currency: DEFAULT_CURRENCY, amount: initialValue }
       : null;
 
-  const [budget, setBudget] = useCollaborativeField<BudgetValue | null>(
+  const [budgetText, setBudgetText] = useCollaborativeFragment(
     ydoc,
     'budget',
-    initialBudgetValue,
+    initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
+
+  const budget = budgetText ? (JSON.parse(budgetText) as BudgetValue) : null;
+  const setBudget = (value: BudgetValue | null) =>
+    setBudgetText(value ? JSON.stringify(value) : '');
 
   const onChangeRef = useRef(onChange);
   const lastEmittedAmountRef = useRef<number | null | undefined>(undefined);
