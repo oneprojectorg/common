@@ -17,7 +17,8 @@ import StarterKit from '@tiptap/starter-kit';
  * `renderHTML()`, so the React-dependent `addNodeView()` is not needed.
  *
  * Output: `<div data-iframely="" data-src="https://..."></div>`
- * The client-side viewer hydrates these into LinkPreview cards after mounting.
+ * The client-side viewer splits these out and renders `LinkPreview` components
+ * inline within the React tree.
  */
 const IframelyServerNode = Node.create({
   name: 'iframely',
