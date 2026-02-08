@@ -32,8 +32,6 @@ export interface PhaseInstanceData {
 export interface DecisionInstanceData {
   currentPhaseId: string;
   config?: ProcessConfig;
-  budget?: number;
-  hideBudget?: boolean;
   fieldValues?: Record<string, unknown>;
   templateId?: string;
   templateVersion?: string;

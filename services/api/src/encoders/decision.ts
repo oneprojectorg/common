@@ -123,8 +123,7 @@ export const decisionProcessWithSchemaListEncoder = z.object({
 
 /** Instance data encoder for new schema format */
 const instanceDataWithSchemaEncoder = z.object({
-  budget: z.number().optional(),
-  hideBudget: z.boolean().optional(),
+  config: processConfigEncoder.optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   currentPhaseId: z.string(),
   templateId: z.string().optional(),
