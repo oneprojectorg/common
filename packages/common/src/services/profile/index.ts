@@ -1,4 +1,5 @@
 export * from './acceptProfileInvite';
+export * from './declineProfileInvite';
 export * from './updateUserProfile';
 export * from './getProfile';
 export * from './searchProfiles';
@@ -7,6 +8,7 @@ export * from './profileRelationships';
 export * from './inviteUsersToProfile';
 export * from './listProfileUsers';
 export * from './listProfileUserInvites';
+export * from './listUserInvites';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
 export * from './getProfileUserWithRelations';
