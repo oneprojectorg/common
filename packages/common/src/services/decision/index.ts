@@ -57,3 +57,7 @@ export type { VoteData } from '@op/db/schema';
 
 // Types
 export * from './types';
+export type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';

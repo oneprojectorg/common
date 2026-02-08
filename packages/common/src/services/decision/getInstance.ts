@@ -5,6 +5,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
@@ -53,12 +54,18 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     );
     const participantCount = uniqueParticipants.size;
 
-    // Filter budget if hideBudget is true (for all users, including owner)
-    const instanceData = instance.instanceData as any;
-    const shouldHideBudget = instanceData?.hideBudget === true;
-
-    const filteredInstanceData = shouldHideBudget
-      ? { ...instanceData, budget: undefined }
+    // Filter budget from phase settings if hideBudget is true
+    const instanceData = instance.instanceData as DecisionInstanceData;
+    const filteredInstanceData = instanceData.config?.hideBudget
+      ? {
+          ...instanceData,
+          phases: instanceData.phases.map((phase) => ({
+            ...phase,
+            settings: phase.settings
+              ? { ...phase.settings, budget: undefined }
+              : phase.settings,
+          })),
+        }
       : instanceData;
 
     return {

@@ -22,8 +22,7 @@ import { assertOrganizationByProfileId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
-import type { DecisionSchemaDefinition } from './schemas/types';
-import type { InstanceData } from './types';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
 
 export interface CreateProposalInput {
@@ -44,21 +43,13 @@ export const createProposal = async ({
   }
 
   try {
-    // Verify the process instance exists and get the process schema
+    // Verify the process instance exists
     const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
-      },
     });
 
     if (!instance) {
       throw new NotFoundError('Process instance not found');
-    }
-
-    // Check if the current state allows proposals
-    if (!instance.process) {
-      throw new NotFoundError('Process definition not found');
     }
 
     const org = await assertOrganizationByProfileId(instance.ownerProfileId);
@@ -71,11 +62,7 @@ export const createProposal = async ({
 
     assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
 
-    const process = instance.process as {
-      processSchema: DecisionSchemaDefinition;
-    };
-    const processSchema = process.processSchema;
-    const instanceData = instance.instanceData as InstanceData;
+    const instanceData = instance.instanceData as DecisionInstanceData;
     const currentPhaseId = instanceData.currentPhaseId;
 
     if (!currentPhaseId) {
@@ -84,7 +71,7 @@ export const createProposal = async ({
 
     // Check if proposals are allowed in current phase
     const { allowed, phaseName } = checkProposalsAllowed(
-      processSchema,
+      instanceData.phases,
       currentPhaseId,
     );
 
