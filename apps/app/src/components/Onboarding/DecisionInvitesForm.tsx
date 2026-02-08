@@ -150,15 +150,15 @@ export const DecisionInvitesForm = ({
                   <DecisionCardHeader
                     name={profile?.name ?? ''}
                     stewardName={steward?.name}
-                    stewardAvatarName={steward?.avatarImage?.name}
+                    stewardAvatarPath={steward?.avatarImage?.name}
                   />
                   <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
                     <DecisionStat
-                      number={processInstance?.participantCount ?? 0}
+                      number={invite.participantCount}
                       label={t('Participants')}
                     />
                     <DecisionStat
-                      number={processInstance?.proposalCount ?? 0}
+                      number={invite.proposalCount}
                       label={t('Proposals')}
                     />
                   </div>

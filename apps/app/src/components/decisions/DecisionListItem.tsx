@@ -51,7 +51,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         name={processInstance.name || item.name}
         currentState={currentPhaseName}
         stewardName={steward?.name}
-        stewardAvatarName={steward?.avatarImage?.name}
+        stewardAvatarPath={steward?.avatarImage?.name}
       >
         {closingDate && (
           <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">

@@ -9,14 +9,14 @@ export const DecisionCardHeader = ({
   name,
   currentState,
   stewardName,
-  stewardAvatarName,
+  stewardAvatarPath,
   children,
   className,
 }: {
   name: string;
   currentState?: string | null;
   stewardName?: string | null;
-  stewardAvatarName?: string | null;
+  stewardAvatarPath?: string | null;
   children?: React.ReactNode;
   className?: string;
 }) => (
@@ -34,9 +34,9 @@ export const DecisionCardHeader = ({
     {stewardName ? (
       <div className="flex items-center gap-1">
         <Avatar placeholder={stewardName} className="size-4">
-          {stewardAvatarName ? (
+          {stewardAvatarPath ? (
             <Image
-              src={getPublicUrl(stewardAvatarName) ?? ''}
+              src={getPublicUrl(stewardAvatarPath) ?? ''}
               alt={stewardName}
               fill
               className="object-cover"
