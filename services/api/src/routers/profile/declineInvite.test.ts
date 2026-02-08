@@ -46,9 +46,7 @@ describe.concurrent('profile.declineInvite', () => {
     const { session } = await createIsolatedSession(invitee.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.declineInvite({ inviteId: invite.id });
-
-    expect(result).toEqual({ success: true });
+    await caller.declineInvite({ inviteId: invite.id });
 
     // Verify the invite was hard-deleted
     const deletedInvite = await db.query.profileInvites.findFirst({
@@ -199,8 +197,6 @@ describe.concurrent('profile.declineInvite', () => {
     const { session } = await createIsolatedSession(invitee.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.declineInvite({ inviteId: invite.id });
-
-    expect(result).toEqual({ success: true });
+    await caller.declineInvite({ inviteId: invite.id });
   });
 });

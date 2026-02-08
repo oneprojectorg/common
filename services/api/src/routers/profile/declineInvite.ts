@@ -11,11 +11,9 @@ export const declineInviteRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const result = await declineProfileInvite({
+      await declineProfileInvite({
         inviteId: input.inviteId,
         user: ctx.user,
       });
-
-      return result;
     }),
 });

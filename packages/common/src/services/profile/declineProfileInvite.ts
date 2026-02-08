@@ -47,6 +47,4 @@ export const declineProfileInvite = async ({
   if (!deleted) {
     throw new CommonError('Failed to decline invite');
   }
-
-  return { success: true };
 };
