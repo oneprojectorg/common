@@ -1,10 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { organizations, processInstances } from '@op/db/schema';
+import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getProfileAccessUser } from '../access';
 
 export interface GetInstanceInput {
   instanceId: string;
@@ -32,29 +32,19 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance not found');
     }
 
-    const instanceOrg = await db
-      .select({
-        id: organizations.id,
-      })
-      .from(organizations)
-      .where(eq(organizations.profileId, instance.ownerProfileId))
-      .limit(1);
-
-    if (!instanceOrg[0]) {
-      console.error('Could not find organization for process instance', {
-        orgProfileId: organizations.profileId,
-        instanceOwnerProfileId: instance.ownerProfileId,
-      });
-      throw new NotFoundError('Organization not found');
+    if (!instance.profileId) {
+      throw new NotFoundError(
+        'Process instance does not have an associated profile',
+      );
     }
 
-    // ASSERT VIEW ACCESS ON ORGUSER
-    const orgUser = await getOrgAccessUser({
+    // Assert view access via profileUser on the instance's profile
+    const profileUser = await getProfileAccessUser({
       user,
-      organizationId: instanceOrg[0].id,
+      profileId: instance.profileId,
     });
 
-    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+    assertAccess({ profile: permission.READ }, profileUser?.roles ?? []);
 
     // Calculate proposal and participant counts
     const proposalCount = instance.proposals?.length || 0;
