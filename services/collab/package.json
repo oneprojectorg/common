@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./testing": "./__mocks__/index.ts"
+    "./testing": "./__mocks__/index.ts",
+    "./e2e": "./__mocks__/e2e.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",

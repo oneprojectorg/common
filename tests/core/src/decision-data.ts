@@ -2,11 +2,13 @@ import type { DecisionSchemaDefinition } from '@op/common';
 import {
   EntityType,
   ProcessStatus,
+  ProposalStatus,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
+  proposals,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
@@ -337,5 +339,83 @@ export async function getSeededTemplate(): Promise<{
     id: template.id,
     name: template.name,
     processSchema: template.processSchema as DecisionSchemaDefinition,
+  };
+}
+
+export interface CreateProposalOptions {
+  /** Process instance ID this proposal belongs to */
+  processInstanceId: string;
+  /** Profile ID of the user submitting the proposal */
+  submittedByProfileId: string;
+  /** Structured proposal data (title, description, collaborationDocId, etc.) */
+  proposalData: {
+    title: string;
+    description?: string;
+    collaborationDocId?: string;
+    budget?: number;
+    category?: string;
+  };
+  /** Proposal status (defaults to SUBMITTED) */
+  status?: ProposalStatus;
+}
+
+export interface CreateProposalResult {
+  id: string;
+  profileId: string;
+  processInstanceId: string;
+  proposalData: Record<string, unknown>;
+  status: string | null;
+}
+
+/**
+ * Creates a proposal with its own profile via direct DB insert.
+ * This is a lightweight helper for e2e seeding — no auth context required.
+ */
+export async function createProposal(
+  opts: CreateProposalOptions,
+): Promise<CreateProposalResult> {
+  const {
+    processInstanceId,
+    submittedByProfileId,
+    proposalData,
+    status = ProposalStatus.SUBMITTED,
+  } = opts;
+
+  // Create a profile for the proposal (needed for social features: likes, comments)
+  const proposalSlug = `proposal-${randomUUID()}`;
+  const [proposalProfile] = await db
+    .insert(profiles)
+    .values({
+      name: proposalData.title,
+      slug: proposalSlug,
+      type: EntityType.PROPOSAL,
+    })
+    .returning();
+
+  if (!proposalProfile) {
+    throw new Error('Failed to create proposal profile');
+  }
+
+  const [proposal] = await db
+    .insert(proposals)
+    .values({
+      processInstanceId,
+      submittedByProfileId,
+      profileId: proposalProfile.id,
+      proposalData,
+      status,
+    })
+    .returning();
+
+  if (!proposal) {
+    throw new Error('Failed to create proposal');
+  }
+
+  return {
+    id: proposal.id,
+    profileId: proposalProfile.id,
+    processInstanceId: proposal.processInstanceId,
+    proposalData: proposal.proposalData as Record<string, unknown>,
+    status: proposal.status,
   };
 }

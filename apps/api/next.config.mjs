@@ -31,6 +31,15 @@ const config = {
     instrumentationHook: true,
   },
   webpack: (cfg) => {
+    // In e2e mode, swap the real TipTap client for an in-process mock
+    // so the API server never makes HTTP calls to TipTap Cloud.
+    if (process.env.E2E === 'true') {
+      cfg.resolve.alias = {
+        ...cfg.resolve.alias,
+        '@op/collab': '@op/collab/e2e',
+      };
+    }
+
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = cfg.module.rules.find((rule) =>
       rule.test?.test?.('.svg'),

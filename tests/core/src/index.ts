@@ -13,6 +13,7 @@ export {
 export {
   createDecisionInstance,
   createDecisionProcess,
+  createProposal,
   getSeededTemplate,
   grantDecisionProfileAccess,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
@@ -23,6 +24,8 @@ export {
   type CreateDecisionInstanceResult,
   type CreateDecisionProcessOptions,
   type CreateDecisionProcessResult,
+  type CreateProposalOptions,
+  type CreateProposalResult,
   type GrantDecisionProfileAccessOptions,
 } from './decision-data';
 
