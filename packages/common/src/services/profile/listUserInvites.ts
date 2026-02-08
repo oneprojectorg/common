@@ -93,5 +93,3 @@ export const listUserInvites = async ({
     };
   });
 };
-
-export type UserInvite = Awaited<ReturnType<typeof listUserInvites>>[number];

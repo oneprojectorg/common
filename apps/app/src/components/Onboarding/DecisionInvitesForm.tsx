@@ -58,19 +58,9 @@ export const DecisionInvitesForm = ({
   });
 
   // If no invites, automatically proceed to next step
-  // Use sessionStorage with TTL to prevent infinite loops on remount
   useEffect(() => {
     if (invites && invites.length === 0) {
-      const skipTimestamp = sessionStorage.getItem('decision-invites-skipped');
-      const now = Date.now();
-      // TTL of 5 seconds - just enough to prevent loop but allows retry later
-      const isWithinTTL =
-        skipTimestamp && now - parseInt(skipTimestamp, 10) < 5000;
-
-      if (!isWithinTTL) {
-        sessionStorage.setItem('decision-invites-skipped', now.toString());
-        onNext({});
-      }
+      onNext({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invites]);
