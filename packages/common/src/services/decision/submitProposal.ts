@@ -41,12 +41,7 @@ export const submitProposal = async ({
     );
   }
 
-  const instance = existingProposal.processInstance as
-    | ProcessInstance
-    | undefined;
-  if (!instance) {
-    throw new NotFoundError('Process instance not found');
-  }
+  const instance = existingProposal.processInstance as ProcessInstance;
 
   // Authorization check
   const org = await assertOrganizationByProfileId(instance.ownerProfileId);
