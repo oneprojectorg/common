@@ -356,8 +356,6 @@ describe.concurrent('getProposal', () => {
       throw new Error('No instance created');
     }
 
-    // 404 is the default behavior when docId not in docResponses
-
     const proposal = await testData.createProposal({
       callerEmail: setup.userEmail,
       processInstanceId: instance.instance.id,

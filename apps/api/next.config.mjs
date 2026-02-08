@@ -36,7 +36,7 @@ const config = {
     if (process.env.E2E === 'true') {
       cfg.resolve.alias = {
         ...cfg.resolve.alias,
-        '@op/collab': '@op/collab/e2e',
+        '@op/collab': '@op/collab/testing',
       };
     }
 

@@ -8,7 +8,7 @@ import { expect, test } from '../fixtures/index.js';
 
 /**
  * Any doc ID that doesn't contain "nonexistent" will return fixture content
- * from the e2e mock (@op/collab/e2e, aliased via webpack in next.config).
+ * from the mock (@op/collab/testing, aliased via webpack when E2E=true).
  */
 const MOCK_DOC_ID = 'test-proposal-doc';
 
