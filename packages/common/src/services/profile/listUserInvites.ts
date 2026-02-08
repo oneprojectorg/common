@@ -84,9 +84,7 @@ export const listUserInvites = async ({
 
   return invites.map((invite) => {
     const instanceId = invite.profile?.processInstance?.id;
-    const stats = instanceId
-      ? countsMap.get(instanceId)
-      : undefined;
+    const stats = instanceId ? countsMap.get(instanceId) : undefined;
 
     return {
       ...invite,
@@ -96,6 +94,4 @@ export const listUserInvites = async ({
   });
 };
 
-export type UserInvite = Awaited<
-  ReturnType<typeof listUserInvites>
->[number];
+export type UserInvite = Awaited<ReturnType<typeof listUserInvites>>[number];
