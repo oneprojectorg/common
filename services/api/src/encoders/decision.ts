@@ -526,6 +526,7 @@ export const updateDecisionInstanceInputSchema = z.object({
   name: z.string().min(3).max(256).optional(),
   description: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
+  stewardProfileId: z.string().uuid().optional(),
   /** Process-level configuration (e.g., hideBudget) */
   config: z
     .object({
