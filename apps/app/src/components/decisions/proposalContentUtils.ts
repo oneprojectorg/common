@@ -11,6 +11,9 @@ type DocumentContent = NonNullable<Proposal['documentContent']>;
 /**
  * Extracts content from proposal documentContent for use with RichTextViewer.
  * Returns Content for rendering, or null if no content available.
+ *
+ * @deprecated Use `htmlContent` from the proposal response instead.
+ * Kept temporarily for fallback rendering during transition to static HTML.
  */
 export function getProposalContent(
   documentContent?: DocumentContent,

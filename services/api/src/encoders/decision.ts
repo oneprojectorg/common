@@ -439,6 +439,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     voteCount: z.number().optional(),
     allocated: z.string().nullable().optional(),
     documentContent: documentContentEncoder.optional(),
+    htmlContent: z.record(z.string(), z.string()).optional(),
   });
 
 /** Proposal list encoder */
