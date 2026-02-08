@@ -39,8 +39,8 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   );
   const closingDate = currentPhase?.endDate;
 
-  // Owner organization info
-  const owner = processInstance.owner;
+  // Prefer steward, fall back to owner
+  const steward = processInstance.steward ?? processInstance.owner;
 
   return (
     <Link
@@ -50,8 +50,8 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
       <DecisionCardHeader
         name={processInstance.name || item.name}
         currentState={currentPhaseName}
-        stewardName={owner?.name}
-        stewardAvatarName={owner?.avatarImage?.name}
+        stewardName={steward?.name}
+        stewardAvatarName={steward?.avatarImage?.name}
       >
         {closingDate && (
           <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">

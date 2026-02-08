@@ -65,6 +65,9 @@ export const listUserInvites = async ({
       proposals?.map((p) => p.submittedByProfileId),
     ).size;
 
+    const { proposals: _, ...processInstanceWithoutProposals } =
+      invite.profile?.processInstance ?? {};
+
     return {
       ...invite,
       profile: invite.profile
@@ -72,7 +75,7 @@ export const listUserInvites = async ({
             ...invite.profile,
             processInstance: invite.profile.processInstance
               ? {
-                  ...invite.profile.processInstance,
+                  ...processInstanceWithoutProposals,
                   proposalCount,
                   participantCount,
                 }
