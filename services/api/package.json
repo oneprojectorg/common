@@ -48,6 +48,7 @@
     "access-zones": "catalog:",
     "ai": "^4.2.2",
     "cookie": "^1.0.2",
+    "deepl-node": "^1.24.0",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "1.0.0-beta.11-05230d9",
     "fast-xml-parser": "^5.2.1",

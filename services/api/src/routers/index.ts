@@ -9,6 +9,7 @@ import { postsRouter } from './posts';
 import profileRouter from './profile';
 import { realtimeRouter } from './realtime';
 import { taxonomyRouter } from './taxonomy';
+import { translationRouter } from './translation';
 
 export const appRouter = router({
   account: accountRouter,
@@ -21,6 +22,7 @@ export const appRouter = router({
   decision: decisionRouter,
   platform: platformRouter,
   realtime: realtimeRouter,
+  translation: translationRouter,
 });
 
 export type AppRouter = typeof appRouter;
