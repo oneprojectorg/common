@@ -48,12 +48,7 @@ export const ComboBox = <T extends object>({
         'group flex flex-col gap-1',
       )}
     >
-      {label && (
-        <Label className={props.labelClassName}>
-          {label}
-          {props.isRequired && <span className="text-functional-red"> *</span>}
-        </Label>
-      )}
+      <Label className={props.labelClassName}>{label}</Label>
       <FieldGroup className={cn('relative', props.fieldGroupClassName)}>
         <Input className={props.inputClassName} />
         <Button

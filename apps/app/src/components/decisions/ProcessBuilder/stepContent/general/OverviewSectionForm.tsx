@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { useDebounce } from '@op/hooks';
-import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { NumberField } from '@op/ui/NumberField';
+import { SelectItem } from '@op/ui/Select';
 import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -215,25 +215,24 @@ export function OverviewSectionForm({
             <form.AppField
               name="stewardProfileId"
               children={(field) => (
-                <ComboBox
+                <field.Select
                   label={t('Who is stewarding this process?')}
                   isRequired
+                  placeholder={t('Select')}
                   selectedKey={field.state.value || null}
-                  onSelectionChange={(key) =>
-                    field.handleChange((key as string) ?? '')
-                  }
+                  onSelectionChange={(key) => field.handleChange(key as string)}
+                  onBlur={field.handleBlur}
                   description={t(
                     'The organization, coalition, committee or individual responsible for running this process.',
                   )}
                   errorMessage={getFieldErrorMessage(field)}
-                  items={profileItems}
                 >
-                  {(item) => (
-                    <ComboBoxItem id={item.id} textValue={item.name}>
+                  {profileItems.map((item) => (
+                    <SelectItem key={item.id} id={item.id}>
                       {item.name}
-                    </ComboBoxItem>
-                  )}
-                </ComboBox>
+                    </SelectItem>
+                  ))}
+                </field.Select>
               )}
             />
 
