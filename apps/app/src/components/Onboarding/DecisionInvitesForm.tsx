@@ -110,7 +110,7 @@ export const DecisionInvitesForm = ({
   return (
     <div
       className={cn(
-        'flex min-h-[calc(100dvh-12rem)] w-full max-w-lg flex-col justify-center',
+        'flex w-full max-w-lg flex-1 flex-col justify-center',
         className,
       )}
     >
