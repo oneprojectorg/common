@@ -1,4 +1,5 @@
 import { createClient } from '@op/api/serverClient';
+import type { DecisionInstanceData } from '@op/common';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -31,15 +32,14 @@ export async function DecisionHeader({
     notFound();
   }
 
-  const instanceData = instance.instanceData as any;
-  const instancePhases = instanceData?.phases ?? [];
+  const instanceData = instance.instanceData as DecisionInstanceData;
+  const instancePhases = instanceData.phases ?? [];
 
-  // For new instances, phases contain name/description directly.
   // For legacy instances, fall back to process.processSchema states/phases for names.
   const processSchema = (instance as any).process?.processSchema;
   const templateStates = processSchema?.states || processSchema?.phases || [];
 
-  const phases: ProcessPhase[] = instancePhases.map((p: any) => {
+  const phases: ProcessPhase[] = instancePhases.map((p) => {
     const templateState = templateStates.find((s: any) => s.id === p.phaseId);
     return {
       id: p.phaseId,
@@ -71,7 +71,7 @@ export async function DecisionHeader({
         }}
         title={
           instance.name ||
-          instanceData?.templateName ||
+          instanceData.templateName ||
           (instance as any).process?.name
         }
       />

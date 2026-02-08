@@ -39,7 +39,7 @@ export const getLegacyInstanceRouter = router({
 
       return legacyProcessInstanceEncoder.parse({
         ...instance,
-        instanceData: instance.instanceData as Record<string, any>,
+        instanceData: instance.instanceData,
         process: instance.process
           ? {
               ...instance.process,

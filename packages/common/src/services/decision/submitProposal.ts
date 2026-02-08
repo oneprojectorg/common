@@ -3,8 +3,7 @@ import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { getOrgAccessUser } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
+import { getProfileAccessUser } from '../access';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
 
@@ -43,16 +42,17 @@ export const submitProposal = async ({
 
   const instance = existingProposal.processInstance as ProcessInstance;
 
-  // Authorization check
-  const org = await assertOrganizationByProfileId(instance.ownerProfileId);
-  const organizationId = org.id;
+  if (!instance.profileId) {
+    throw new NotFoundError('Decision profile not found');
+  }
 
-  const orgUser = await getOrgAccessUser({
+  // Authorization check - verify user has access to the decision profile
+  const profileUser = await getProfileAccessUser({
     user: { id: authUserId },
-    organizationId,
+    profileId: instance.profileId,
   });
 
-  assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+  assertAccess({ decisions: permission.CREATE }, profileUser?.roles ?? []);
 
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instanceData.currentPhaseId;

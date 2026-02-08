@@ -19,6 +19,7 @@ import { getIndividualProfileId, getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
+import type { DecisionInstanceData } from './schemas/instanceData';
 
 /**
  * Helper to find current phase and extract voting config.
@@ -31,23 +32,21 @@ function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
       allowDecisions: boolean;
     }
   | undefined {
-  const instanceData = processInstance.instanceData as any;
+  const instanceData = processInstance.instanceData as DecisionInstanceData;
 
   if (!instanceData?.currentPhaseId) {
     return undefined;
   }
 
-  const currentPhaseId = instanceData.currentPhaseId;
-  const phases = instanceData.phases;
+  const currentPhase = instanceData.phases.find(
+    (p) => p.phaseId === instanceData.currentPhaseId,
+  );
 
-  if (phases) {
-    const currentPhase = phases.find((p: any) => p.phaseId === currentPhaseId);
-    if (currentPhase) {
-      return {
-        allowProposals: currentPhase.rules?.proposals?.submit ?? false,
-        allowDecisions: currentPhase.rules?.voting?.submit ?? false,
-      };
-    }
+  if (currentPhase) {
+    return {
+      allowProposals: currentPhase.rules?.proposals?.submit ?? false,
+      allowDecisions: currentPhase.rules?.voting?.submit ?? false,
+    };
   }
 
   return undefined;
@@ -156,6 +155,8 @@ export const submitVote = async ({
       throw new NotFoundError('Process instance not found');
     }
 
+    const instanceData = processInstance.instanceData as DecisionInstanceData;
+
     // Get organization from owner profile
     const org = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
@@ -176,18 +177,13 @@ export const submitVote = async ({
       throw new ValidationError('Current state not found');
     }
 
-    console.log(
-      'VOTING VALIDATION: maxVotesPerMember',
-      (processInstance.instanceData as any)?.fieldValues?.maxVotesPerMember,
-    );
     // Build schema data for validation
     const schemaData = {
       allowProposals: phaseConfig.allowProposals,
       allowDecisions: phaseConfig.allowDecisions,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.fieldValues
-            ?.maxVotesPerMember || 5,
+          Number(instanceData.fieldValues?.maxVotesPerMember) || 5,
       },
       schemaType: 'simple',
     };
@@ -352,6 +348,8 @@ export const getVotingStatus = async ({
       throw new NotFoundError('Process instance not found');
     }
 
+    const instanceData = processInstance.instanceData as DecisionInstanceData;
+
     // Get organization from owner profile
     const org = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
@@ -378,8 +376,7 @@ export const getVotingStatus = async ({
       allowDecisions: phaseConfig.allowDecisions,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.fieldValues
-            ?.maxVotesPerMember || 3,
+          Number(instanceData.fieldValues?.maxVotesPerMember) || 3,
       },
       schemaType: 'simple',
     };
@@ -482,6 +479,8 @@ export const validateVoteSelectionService = async ({
       throw new NotFoundError('Process instance not found');
     }
 
+    const instanceData = processInstance.instanceData as DecisionInstanceData;
+
     // Get organization from owner profile
     const org = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
@@ -517,8 +516,7 @@ export const validateVoteSelectionService = async ({
       allowDecisions: phaseConfig.allowDecisions,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.fieldValues
-            ?.maxVotesPerMember || 3,
+          Number(instanceData.fieldValues?.maxVotesPerMember) || 3,
       },
       schemaType: 'simple',
     };
