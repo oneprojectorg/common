@@ -54,9 +54,13 @@ export const listUserInvites = async ({
   });
 
   // Collect processInstance IDs and fetch proposal counts at the DB level
-  const instanceIds = invites
-    .map((i) => i.profile?.processInstance?.id)
-    .filter((id): id is string => !!id);
+  const instanceIds = invites.reduce<string[]>((accum, invite) => {
+    const id = invite.profile?.processInstance?.id;
+    if (id) {
+      accum.push(id);
+    }
+    return accum;
+  }, []);
 
   const countsMap = new Map<
     string,
