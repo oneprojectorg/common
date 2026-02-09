@@ -612,5 +612,9 @@
   "Section divider": "সেকশন বিভাজক",
   "Proposal title": "প্রস্তাবের শিরোনাম",
   "Proposal summary": "প্রস্তাবের সারাংশ",
-  "Field label": "ফিল্ড লেবেল"
+  "Field label": "ফিল্ড লেবেল",
+  "Min": "সর্বনিম্ন",
+  "Max": "সর্বোচ্চ",
+  "Dollar amount?": "ডলারের পরিমাণ?",
+  "Dollar amount": "ডলারের পরিমাণ"
 }

@@ -8,21 +8,35 @@ import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { FieldConfigProps } from './fieldRegistry';
 import type { FieldOption } from './types';
 
-interface FieldConfigDropdownProps {
+/**
+ * Field config component for dropdown and multiple choice fields.
+ * Wraps FieldConfigDropdownOptions with the standard FieldConfigProps interface.
+ */
+export function FieldConfigDropdown({ field, onUpdate }: FieldConfigProps) {
+  return (
+    <FieldConfigDropdownOptions
+      options={field.options ?? []}
+      onOptionsChange={(options) => onUpdate({ options })}
+    />
+  );
+}
+
+interface FieldConfigDropdownOptionsProps {
   options: FieldOption[];
   onOptionsChange: (options: FieldOption[]) => void;
 }
 
 /**
- * Configuration UI for dropdown fields.
- * Allows adding, editing, reordering, and managing dropdown options.
+ * Configuration UI for dropdown/multiple choice options.
+ * Allows adding, editing, reordering, and managing options.
  */
-export function FieldConfigDropdown({
+function FieldConfigDropdownOptions({
   options,
   onOptionsChange,
-}: FieldConfigDropdownProps) {
+}: FieldConfigDropdownOptionsProps) {
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldFocusNewRef = useRef(false);

@@ -1,19 +1,31 @@
+import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
 import {
   LuAlignLeft,
   LuCalendar,
   LuChevronDown,
-  LuFilePlus,
   LuHash,
   LuLetterText,
   LuListChecks,
-  LuMic,
-  LuSquare,
   LuToggleLeft,
-  LuVideo,
 } from 'react-icons/lu';
 
-import type { FieldCategory, FieldType, FieldTypeConfig } from './types';
+import { FieldConfigDropdown } from './FieldConfigDropdown';
+import { FieldConfigNumber } from './FieldConfigNumber';
+import type {
+  FieldCategory,
+  FieldType,
+  FieldTypeConfig,
+  FormField,
+} from './types';
+
+/**
+ * Props passed to field config components.
+ */
+export interface FieldConfigProps {
+  field: FormField;
+  onUpdate: (updates: Partial<FormField>) => void;
+}
 
 /**
  * Configuration for each field type including icon and labels.
@@ -21,6 +33,8 @@ import type { FieldCategory, FieldType, FieldTypeConfig } from './types';
 interface FieldTypeRegistryEntry extends FieldTypeConfig {
   /** Icon component for the field type */
   icon: IconType;
+  /** Optional config component for field-specific settings */
+  ConfigComponent?: ComponentType<FieldConfigProps>;
 }
 
 /**
@@ -38,26 +52,18 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     labelKey: 'Long text',
     placeholderKey: 'Long answer text',
   },
-  video: {
-    icon: LuVideo,
-    labelKey: 'Video',
-    placeholderKey: 'Video URL',
-  },
-  audio: {
-    icon: LuMic,
-    labelKey: 'Audio',
-    placeholderKey: 'Audio URL',
-  },
   // Choice
   multiple_choice: {
     icon: LuListChecks,
     labelKey: 'Multiple choice',
     placeholderKey: 'Select options',
+    ConfigComponent: FieldConfigDropdown,
   },
   dropdown: {
     icon: LuChevronDown,
     labelKey: 'Dropdown',
     placeholderKey: 'Select an option',
+    ConfigComponent: FieldConfigDropdown,
   },
   yes_no: {
     icon: LuToggleLeft,
@@ -65,11 +71,6 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     placeholderKey: 'Yes or No',
   },
   // Other
-  attachments: {
-    icon: LuFilePlus,
-    labelKey: 'Attachments',
-    placeholderKey: 'Attach files',
-  },
   date: {
     icon: LuCalendar,
     labelKey: 'Date',
@@ -79,11 +80,7 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     icon: LuHash,
     labelKey: 'Number',
     placeholderKey: 'Enter a number',
-  },
-  section: {
-    icon: LuSquare,
-    labelKey: 'Section',
-    placeholderKey: 'Section divider',
+    ConfigComponent: FieldConfigNumber,
   },
 };
 
@@ -94,7 +91,7 @@ export const FIELD_CATEGORIES: FieldCategory[] = [
   {
     id: 'text_audio_video',
     labelKey: 'Text, audio and video',
-    types: ['short_text', 'long_text', 'video', 'audio'],
+    types: ['short_text', 'long_text'],
   },
   {
     id: 'choice',
@@ -104,7 +101,7 @@ export const FIELD_CATEGORIES: FieldCategory[] = [
   {
     id: 'other',
     labelKey: 'Other',
-    types: ['attachments', 'date', 'number', 'section'],
+    types: ['date', 'number'],
   },
 ];
 
@@ -127,4 +124,13 @@ export function getFieldLabelKey(type: FieldType): string {
  */
 export function getFieldPlaceholderKey(type: FieldType): string {
   return FIELD_TYPE_REGISTRY[type].placeholderKey;
+}
+
+/**
+ * Get the config component for a field type (if any).
+ */
+export function getFieldConfigComponent(
+  type: FieldType,
+): ComponentType<FieldConfigProps> | undefined {
+  return FIELD_TYPE_REGISTRY[type].ConfigComponent;
 }

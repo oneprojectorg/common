@@ -608,5 +608,9 @@
   "Section divider": "Divisor de seção",
   "Proposal title": "Título da proposta",
   "Proposal summary": "Resumo da proposta",
-  "Field label": "Rótulo do campo"
+  "Field label": "Rótulo do campo",
+  "Min": "Mín",
+  "Max": "Máx",
+  "Dollar amount?": "Valor em dólares?",
+  "Dollar amount": "Valor em dólares"
 }

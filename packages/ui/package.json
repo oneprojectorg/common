@@ -25,6 +25,7 @@
     "./DropDownButton": "./src/components/DropDownButton.tsx",
     "./EmptyState": "./src/components/EmptyState.tsx",
     "./Field": "./src/components/Field.tsx",
+    "./FieldConfigCard": "./src/components/FieldConfigCard.tsx",
     "./FileDropZone": "./src/components/FileDropZone.tsx",
     "./Form": "./src/components/Form.tsx",
     "./Header": "./src/components/Header.tsx",

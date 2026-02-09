@@ -612,5 +612,9 @@
   "Section divider": "Divisor de sección",
   "Proposal title": "Título de la propuesta",
   "Proposal summary": "Resumen de la propuesta",
-  "Field label": "Etiqueta del campo"
+  "Field label": "Etiqueta del campo",
+  "Min": "Mín",
+  "Max": "Máx",
+  "Dollar amount?": "¿Monto en dólares?",
+  "Dollar amount": "Monto en dólares"
 }

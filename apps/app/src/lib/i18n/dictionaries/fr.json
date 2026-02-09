@@ -612,5 +612,9 @@
   "Section divider": "Séparateur de section",
   "Proposal title": "Titre de la proposition",
   "Proposal summary": "Résumé de la proposition",
-  "Field label": "Libellé du champ"
+  "Field label": "Libellé du champ",
+  "Min": "Min",
+  "Max": "Max",
+  "Dollar amount?": "Montant en dollars ?",
+  "Dollar amount": "Montant en dollars"
 }

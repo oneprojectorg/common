@@ -613,5 +613,9 @@
   "Section divider": "Section divider",
   "Proposal title": "Proposal title",
   "Proposal summary": "Proposal summary",
-  "Field label": "Field label"
+  "Field label": "Field label",
+  "Min": "Min",
+  "Max": "Max",
+  "Dollar amount?": "Dollar amount?",
+  "Dollar amount": "Dollar amount"
 }

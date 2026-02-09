@@ -15,17 +15,13 @@ export type FieldType =
   // Text, audio and video
   | 'short_text'
   | 'long_text'
-  | 'video'
-  | 'audio'
   // Choice
   | 'multiple_choice'
   | 'dropdown'
   | 'yes_no'
   // Other
-  | 'attachments'
   | 'date'
-  | 'number'
-  | 'section';
+  | 'number';
 
 /**
  * An option for dropdown/multiple choice fields.
@@ -58,6 +54,12 @@ export interface FormField {
   placeholder?: string;
   /** Description/guidance text for participants */
   description?: string;
+  /** Minimum value for number fields */
+  min?: number;
+  /** Maximum value for number fields */
+  max?: number;
+  /** Whether the number field represents a dollar amount */
+  isCurrency?: boolean;
 }
 
 /**
