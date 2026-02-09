@@ -3,13 +3,14 @@
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
-import { ReactNode } from 'react';
-import { LuArrowLeft, LuCheck } from 'react-icons/lu';
+import { ReactNode, useState } from 'react';
+import { LuArrowLeft, LuCheck, LuShare2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { ShareProposalModal } from './ShareProposalModal';
 
 interface ProposalEditorLayoutProps {
   children: ReactNode;
@@ -21,6 +22,8 @@ interface ProposalEditorLayoutProps {
   isDraft?: boolean;
   /** Optional slot for presence indicators (avatar stack) */
   presenceSlot?: ReactNode;
+  /** The proposal's profile ID, used for the share modal */
+  proposalProfileId: string;
 }
 
 export function ProposalEditorLayout({
@@ -32,9 +35,11 @@ export function ProposalEditorLayout({
   isEditMode = false,
   isDraft = false,
   presenceSlot,
+  proposalProfileId,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -56,6 +61,15 @@ export function ProposalEditorLayout({
 
         <div className="flex items-center justify-end gap-4">
           {presenceSlot}
+          <Button
+            color="secondary"
+            variant="icon"
+            size="small"
+            onPress={() => setIsShareModalOpen(true)}
+          >
+            <LuShare2 className="size-4" />
+            <span className="hidden sm:inline">{t('Share')}</span>
+          </Button>
           <Button
             color="primary"
             variant="icon"
@@ -83,6 +97,13 @@ export function ProposalEditorLayout({
       </div>
 
       {children}
+
+      <ShareProposalModal
+        proposalProfileId={proposalProfileId}
+        proposalTitle={title}
+        isOpen={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
+      />
     </div>
   );
 }

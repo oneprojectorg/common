@@ -617,5 +617,13 @@
   "Min": "Min",
   "Max": "Max",
   "Dollar amount?": "Dollar amount?",
-  "Dollar amount": "Dollar amount"
+  "Dollar amount": "Dollar amount",
+  "Share": "Share",
+  "Share \"{title}\"": "Share \"{title}\"",
+  "Invite collaborators by name or email": "Invite collaborators by name or email",
+  "People with access": "People with access",
+  "Copy link": "Copy link",
+  "Link copied to clipboard": "Link copied to clipboard",
+  "Failed to copy link": "Failed to copy link",
+  "Failed to remove user": "Failed to remove user"
 }
