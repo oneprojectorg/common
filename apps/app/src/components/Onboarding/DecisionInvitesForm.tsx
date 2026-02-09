@@ -62,8 +62,7 @@ export const DecisionInvitesForm = ({
     if (invites && invites.length === 0) {
       onNext({});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invites]);
+  }, [invites, onNext]);
 
   const handleDecline = async (inviteId: string) => {
     try {
