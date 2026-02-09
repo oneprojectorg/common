@@ -121,6 +121,19 @@ export const decisionProcessWithSchemaListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
+/** Instance-specific phase data (overrides for dates, rules, settings) */
+export const instancePhaseDataEncoder = z.object({
+  phaseId: z.string(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  rules: phaseRulesEncoder.optional(),
+  selectionPipeline: selectionPipelineEncoder.optional(),
+  settingsSchema: jsonSchemaEncoder.optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
+});
+
 /** Instance data encoder for new schema format */
 const instanceDataWithSchemaEncoder = z.object({
   config: processConfigEncoder.optional(),
@@ -139,21 +152,7 @@ const instanceDataWithSchemaEncoder = z.object({
       }),
     )
     .optional(),
-  phases: z
-    .array(
-      z.object({
-        phaseId: z.string(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        rules: phaseRulesEncoder.optional(),
-        selectionPipeline: selectionPipelineEncoder.optional(),
-        settingsSchema: jsonSchemaEncoder.optional(),
-        startDate: z.string().optional(),
-        endDate: z.string().optional(),
-        settings: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
-    .optional(),
+  phases: z.array(instancePhaseDataEncoder).optional(),
 });
 
 /** Process instance encoder  */
@@ -172,6 +171,7 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
   })
   .extend({
     instanceData: instanceDataWithSchemaEncoder,
+    process: decisionProcessWithSchemaEncoder.optional(),
     owner: baseProfileEncoder.optional(),
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
@@ -533,6 +533,12 @@ export const createInstanceFromTemplateInputSchema = z.object({
     .optional(),
 });
 
+/** Input schema for phase overrides with datetime validation */
+const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
+  startDate: z.string().datetime({ offset: true }).optional(),
+  endDate: z.string().datetime({ offset: true }).optional(),
+});
+
 export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),
   name: z.string().min(3).max(256).optional(),
@@ -545,18 +551,8 @@ export const updateDecisionInstanceInputSchema = z.object({
       hideBudget: z.boolean().optional(),
     })
     .optional(),
-  /** Phase overrides for dates and settings */
-  phases: z
-    .array(
-      z.object({
-        phaseId: z.string(),
-        startDate: z.string().datetime({ offset: true }).optional(),
-        endDate: z.string().datetime({ offset: true }).optional(),
-        /** Phase-specific settings (e.g., budget, maxProposalsPerMember, maxVotesPerMember) */
-        settings: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
-    .optional(),
+  /** Phase overrides for dates, rules, and settings */
+  phases: z.array(instancePhaseDataInputEncoder).optional(),
 });
 
 export const updateInstanceInputSchema = createInstanceInputSchema
@@ -702,6 +698,10 @@ export type DecisionProfile = z.infer<typeof decisionProfileWithSchemaEncoder>;
 export type DecisionProfileList = z.infer<
   typeof decisionProfileWithSchemaListEncoder
 >;
+export type PhaseRules = z.infer<typeof phaseRulesEncoder>;
+export type PhaseDefinition = z.infer<typeof phaseDefinitionEncoder>;
+export type InstancePhaseData = z.infer<typeof instancePhaseDataEncoder>;
+export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
 
 // Legacy type exports (for backwards compatibility during migration)
 export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;

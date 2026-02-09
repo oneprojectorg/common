@@ -1,15 +1,13 @@
-import type { SectionProps } from '../../contentRegistry';
+import { Suspense } from 'react';
 
-export default function PhasesSection({
-  decisionProfileId,
-  decisionName,
-}: SectionProps) {
+import type { SectionProps } from '../../contentRegistry';
+import { PhasesSectionContent } from './PhasesSectionContent';
+import { PhasesSectionSkeleton } from './PhasesSectionSkeleton';
+
+export default function PhasesSection(props: SectionProps) {
   return (
-    <div className="p-4 sm:p-8">
-      <h2 className="text-xl font-semibold">Phases</h2>
-      <p className="text-neutral-gray4">Decision: {decisionName}</p>
-      <p className="text-neutral-gray4">ID: {decisionProfileId}</p>
-      {/* TODO: Implement phases configuration */}
-    </div>
+    <Suspense fallback={<PhasesSectionSkeleton />}>
+      <PhasesSectionContent {...props} />
+    </Suspense>
   );
 }
