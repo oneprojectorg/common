@@ -11,7 +11,7 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, checkPermission, permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
@@ -111,7 +111,7 @@ export const listProposals = async ({
       profileId: instance[0].profileId,
     });
 
-    assertInstanceProfileAccess({
+    await assertInstanceProfileAccess({
       user,
       instance: instance[0],
       profilePermissions: { profile: permission.READ },
