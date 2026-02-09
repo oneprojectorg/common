@@ -3,7 +3,8 @@ import { and, db, eq } from '@op/db/client';
 import type { Profile, ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import type { NormalizedRole } from 'access-zones';
+import type { AccessZonePermission, NormalizedRole } from 'access-zones';
+import { assertAccess, checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
@@ -144,6 +145,61 @@ export const getProfileAccessUser = async ({
       skipMemCache: true,
     },
   });
+};
+
+/**
+ * Asserts profile-level access, falling back to org-level access if the user
+ * doesn't have a profileUser role on the given profile.
+ *
+ * Uses `instance.profileId` for the profile-level check and
+ * `instance.ownerProfileId` for the org-level fallback lookup.
+ */
+export const assertInstanceProfileAccess = async ({
+  user,
+  instance,
+  profilePermissions,
+  orgFallbackPermissions,
+}: {
+  user: { id: string };
+  instance: { profileId: string | null; ownerProfileId: string | null };
+  profilePermissions: AccessZonePermission;
+  orgFallbackPermissions: AccessZonePermission;
+}) => {
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const profileUser = await getProfileAccessUser({
+    user,
+    profileId: instance.profileId,
+  });
+
+  const hasProfileAccess = checkPermission(
+    profilePermissions,
+    profileUser?.roles ?? [],
+  );
+
+  if (!hasProfileAccess) {
+    if (!instance.ownerProfileId) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+
+    const org = await db
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(eq(organizations.profileId, instance.ownerProfileId));
+
+    if (!org[0]?.id) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+
+    const orgUser = await getOrgAccessUser({
+      user,
+      organizationId: org[0].id,
+    });
+
+    assertAccess(orgFallbackPermissions, orgUser?.roles ?? []);
+  }
 };
 
 export const getCurrentProfileId = async (authUserId: string) => {

@@ -505,14 +505,26 @@ describe.concurrent('listProposals', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    // Create a user without access to the instance (member of the org but not the instance)
-    const unauthorizedUser = await testData.createMemberUser({
+    // Create a user who is not a member of the organization at all
+    const outsiderUser = await testData.createMemberUser({
       organization: setup.organization,
-      instanceProfileIds: [], // No access to any instance
+      instanceProfileIds: [],
     });
 
+    // Remove the user from the organization so they have no org-level access
+    const { db, eq, and } = await import('@op/db/client');
+    const { organizationUsers } = await import('@op/db/schema');
+    await db
+      .delete(organizationUsers)
+      .where(
+        and(
+          eq(organizationUsers.authUserId, outsiderUser.authUserId),
+          eq(organizationUsers.organizationId, setup.organization.id),
+        ),
+      );
+
     const unauthorizedCaller = await createAuthenticatedCaller(
-      unauthorizedUser.email,
+      outsiderUser.email,
     );
 
     await expect(
