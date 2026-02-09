@@ -20,7 +20,7 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 // Form data type
 interface OverviewFormData {
-  steward: string;
+  stewardProfileId: string;
   objective: string;
   name: string;
   description: string;
@@ -81,7 +81,7 @@ function AutoSaveHandler({
       name: debouncedValues.name,
       description: debouncedValues.description,
       config: {
-        steward: debouncedValues.steward,
+        stewardProfileId: debouncedValues.stewardProfileId,
         objective: debouncedValues.objective,
         budget: debouncedValues.budget,
         hideBudget: debouncedValues.hideBudget,
@@ -131,17 +131,17 @@ export function OverviewSectionForm({
   // Extract config for easier access
   const config = instanceData?.config;
 
-  // Mock options - these would come from API
-  const stewardOptions = [
-    { id: 'one-project', label: 'One Project' },
-    { id: 'committee', label: 'Committee' },
-    { id: 'coalition', label: 'Coalition' },
-  ];
+  // Fetch the current user's profiles (individual + organizations)
+  const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
+  const profileItems = (userProfiles ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+  }));
 
   const form = useAppForm({
     defaultValues: {
       // Config fields
-      steward: config?.steward ?? '',
+      stewardProfileId: config?.stewardProfileId ?? '',
       objective: config?.objective ?? '',
       budget: (config?.budget ?? null) as number | null,
       hideBudget: config?.hideBudget ?? true,
@@ -159,6 +159,7 @@ export function OverviewSectionForm({
           instanceId,
           name: value.name,
           description: value.description,
+          stewardProfileId: value.stewardProfileId || undefined,
           config: {
             hideBudget: value.hideBudget,
           },
@@ -207,13 +208,13 @@ export function OverviewSectionForm({
             </div>
 
             <form.AppField
-              name="steward"
+              name="stewardProfileId"
               children={(field) => (
                 <field.Select
                   label={t('Who is stewarding this process?')}
                   isRequired
                   placeholder={t('Select')}
-                  selectedKey={field.state.value}
+                  selectedKey={field.state.value || null}
                   onSelectionChange={(key) => field.handleChange(key as string)}
                   onBlur={field.handleBlur}
                   description={t(
@@ -221,9 +222,9 @@ export function OverviewSectionForm({
                   )}
                   errorMessage={getFieldErrorMessage(field)}
                 >
-                  {stewardOptions.map((option) => (
-                    <SelectItem key={option.id} id={option.id}>
-                      {option.label}
+                  {profileItems.map((item) => (
+                    <SelectItem key={item.id} id={item.id}>
+                      {item.name}
                     </SelectItem>
                   ))}
                 </field.Select>
