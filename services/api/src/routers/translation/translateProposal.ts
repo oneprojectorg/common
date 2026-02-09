@@ -1,4 +1,4 @@
-import { getProposal } from '@op/common';
+import { SUPPORTED_TARGET_LOCALES, getProposal } from '@op/common';
 import type { TranslatableEntry } from '@op/common';
 import { translateBatch } from '@op/common';
 import { DeepLClient } from 'deepl-node';
@@ -10,10 +10,8 @@ export const translateProposalRouter = router({
   translateProposal: commonAuthedProcedure()
     .input(
       z.object({
-        /** The proposal's profile ID (same as used in decision.getProposal) */
         profileId: z.uuid(),
-        /** Target language code, e.g. "ES", "FR", "PT-BR" */
-        targetLocale: z.string().min(2).max(10),
+        targetLocale: z.enum(SUPPORTED_TARGET_LOCALES),
       }),
     )
     .mutation(async ({ input, ctx }) => {
