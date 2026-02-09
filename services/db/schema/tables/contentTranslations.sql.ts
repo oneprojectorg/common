@@ -13,8 +13,6 @@ import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
  * Generic translation cache. Stores translated content for any entity type.
  *
  * Keyed by: contentKey + contentHash + targetLocale
- * (sourceLocale is stored but NOT part of the unique constraint — it's
- * auto-detected by DeepL and written after the API call.)
  *
  * @example contentKey values:
  *   "proposal:abc123:default"  — proposal body fragment
@@ -31,7 +29,7 @@ export const contentTranslations = pgTable(
     contentKey: varchar({ length: 512 }).notNull(),
     /** SHA-256 prefix (16 hex chars) of the source text */
     contentHash: varchar({ length: 16 }).notNull(),
-    /** Detected source language from DeepL, e.g. "EN" */
+    /** Detected source language, e.g. "EN" */
     sourceLocale: varchar({ length: 10 }),
     /** Target language, e.g. "ES" */
     targetLocale: varchar({ length: 10 }).notNull(),
