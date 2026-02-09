@@ -55,7 +55,11 @@ export async function translateBatch({
 
   let freshTranslations: FreshTranslation[] = [];
   if (misses.length > 0) {
-    freshTranslations = await translateMisses(misses, targetLocale, client);
+    freshTranslations = await translateCacheMisses(
+      misses,
+      targetLocale,
+      client,
+    );
     await writeCacheEntries(freshTranslations);
   }
 
@@ -104,7 +108,7 @@ async function lookupCached(
 }
 
 /** Call DeepL for entries that had no cache hit. */
-async function translateMisses(
+async function translateCacheMisses(
   misses: HashedEntry[],
   targetLocale: string,
   client: DeepLClient,
