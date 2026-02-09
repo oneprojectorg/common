@@ -1,10 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
-import Blockquote from '@tiptap/extension-blockquote';
 import Heading from '@tiptap/extension-heading';
-import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
-import Strike from '@tiptap/extension-strike';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
@@ -69,7 +66,12 @@ const IframelyServerNode = Node.create({
  * @see apps/app/src/components/decisions/IframelyExtension.tsx (client version)
  */
 export const serverExtensions = [
-  StarterKit,
+  StarterKit.configure({
+    heading: false,
+  }),
+  Heading.configure({
+    levels: [1, 2, 3],
+  }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
@@ -77,13 +79,7 @@ export const serverExtensions = [
     inline: true,
     allowBase64: true,
   }),
-  Heading.configure({
-    levels: [1, 2, 3],
-  }),
   Underline,
-  Strike,
-  Blockquote,
-  HorizontalRule,
   Link.configure({
     openOnClick: false,
   }),

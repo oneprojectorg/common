@@ -36,7 +36,7 @@
     "@tiptap/extension-strike": "catalog:",
     "@tiptap/extension-text-align": "catalog:",
     "@tiptap/extension-underline": "catalog:",
-    "@tiptap/html": "catalog:",
+    "@tiptap/html": "^3.17.1",
     "@tiptap/pm": "catalog:",
     "@tiptap/starter-kit": "catalog:",
     "@vercel/functions": "^2.1.0",
