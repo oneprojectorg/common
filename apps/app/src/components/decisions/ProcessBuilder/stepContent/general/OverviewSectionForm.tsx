@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { useDebounce } from '@op/hooks';
 import { NumberField } from '@op/ui/NumberField';
 import { SelectItem } from '@op/ui/Select';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -133,15 +133,10 @@ export function OverviewSectionForm({
 
   // Fetch the current user's profiles (individual + organizations)
   const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
-  const profileItems = useMemo(
-    () =>
-      (userProfiles ?? []).map((p) => ({
-        id: p.id,
-        name: p.name,
-        type: p.type,
-      })),
-    [userProfiles],
-  );
+  const profileItems = (userProfiles ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+  }));
 
   const form = useAppForm({
     defaultValues: {
