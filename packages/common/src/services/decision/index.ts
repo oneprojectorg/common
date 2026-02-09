@@ -45,6 +45,7 @@ export * from './exports';
 export * from './generateProposalHtml';
 export * from './getProposalDocumentsContent';
 export * from './getProposalFragmentNames';
+export * from './iframelyNode';
 export * from './tiptapExtensions';
 
 // Proposal attachments
