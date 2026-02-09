@@ -72,7 +72,6 @@ export async function teardown() {
     'access_zones',
     'buckets', // Supabase storage - created by seed
     'objects', // Supabase storage - files uploaded during tests
-    'content_translations', // Translation cache — populated by translation tests
   ]);
 
   // Get all table objects from schema (filter for actual PgTable instances)

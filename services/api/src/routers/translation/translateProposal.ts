@@ -27,7 +27,7 @@ export const translateProposalRouter = router({
       // 2. Build translatable entries
       const entries: TranslatableEntry[] = [];
       const proposalId = proposal.id;
-    proposal.htmlContent = { default:`<p>A proposal for a garden</p>` }
+      proposal.htmlContent = { default: `<p>A proposal for a garden</p>` };
       const { proposalData } = proposal;
 
       // Plain text fields
