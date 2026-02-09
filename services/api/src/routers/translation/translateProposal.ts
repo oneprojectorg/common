@@ -75,7 +75,6 @@ export const translateProposalRouter = router({
         entries,
         targetLocale: targetLocale.toUpperCase(),
         client,
-        tagHandling: 'html',
       });
 
       // 4. Build response as Record<string, string>
