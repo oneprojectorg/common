@@ -6,6 +6,16 @@ import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
+/**
+ * Generic output schema for all translation endpoints.
+ * Returns a map of field names to translated text, plus locale metadata.
+ */
+export const translateOutput = z.object({
+  translated: z.record(z.string(), z.string()),
+  sourceLocale: z.string(),
+  targetLocale: z.enum(SUPPORTED_TARGET_LOCALES),
+});
+
 export const translateProposalRouter = router({
   translateProposal: commonAuthedProcedure()
     .input(
@@ -14,6 +24,7 @@ export const translateProposalRouter = router({
         targetLocale: z.enum(SUPPORTED_TARGET_LOCALES),
       }),
     )
+    .output(translateOutput)
     .mutation(async ({ input, ctx }) => {
       const { profileId, targetLocale } = input;
       const { user } = ctx;
