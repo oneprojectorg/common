@@ -98,13 +98,17 @@ describe.concurrent('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES] Community Garden Project',
-        default: '[ES] <p>A proposal for a garden</p>',
+        default:
+          '[ES] <p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
       },
     });
 
     // Verify what was sent to DeepL
     expect(mockTranslateText).toHaveBeenCalledWith(
-      ['Community Garden Project', '<p>A proposal for a garden</p>'],
+      [
+        'Community Garden Project',
+        '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
+      ],
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
@@ -179,13 +183,14 @@ describe.concurrent('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES-CACHED] Community Garden Project',
-        default: '[ES] <p>A proposal for a garden</p>',
+        default:
+          '[ES] <p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
       },
     });
 
     // DeepL should only have been called with the body, not the title
     expect(mockTranslateText).toHaveBeenCalledWith(
-      ['<p>A proposal for a garden</p>'],
+      ['<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>'],
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),

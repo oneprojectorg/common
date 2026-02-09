@@ -1,4 +1,4 @@
-import { SUPPORTED_TARGET_LOCALES, getProposal } from '@op/common';
+import { CommonError, SUPPORTED_TARGET_LOCALES, getProposal } from '@op/common';
 import type { TranslatableEntry } from '@op/common';
 import { translateBatch } from '@op/common';
 import { DeepLClient } from 'deepl-node';
@@ -25,7 +25,6 @@ export const translateProposalRouter = router({
       // 2. Build translatable entries
       const entries: TranslatableEntry[] = [];
       const proposalId = proposal.id;
-      proposal.htmlContent = { default: `<p>A proposal for a garden</p>` };
       const { proposalData } = proposal;
 
       // Plain text fields
@@ -67,7 +66,7 @@ export const translateProposalRouter = router({
       // 3. Translate via DeepL with cache-through
       const apiKey = process.env.DEEPL_API_KEY;
       if (!apiKey) {
-        throw new Error('DEEPL_API_KEY is not configured');
+        throw new CommonError('DEEPL_API_KEY is not configured');
       }
 
       const client = new DeepLClient(apiKey);
