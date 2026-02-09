@@ -11,11 +11,15 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, checkPermission, permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
-import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getCurrentProfileId,
+  getProfileAccessUser,
+} from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 
@@ -86,6 +90,7 @@ export const listProposals = async ({
   const instance = await db
     .select({
       profileId: processInstances.profileId,
+      ownerProfileId: processInstances.ownerProfileId,
     })
     .from(processInstances)
     .where(eq(processInstances.id, processInstanceId))
@@ -106,7 +111,12 @@ export const listProposals = async ({
       profileId: instance[0].profileId,
     });
 
-    assertAccess({ profile: permission.READ }, profileUser?.roles ?? []);
+    await assertInstanceProfileAccess({
+      user,
+      instance: instance[0],
+      profilePermissions: { profile: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
+    });
 
     // Check if user can manage proposals (approve/reject)
     canManageProposals = checkPermission(

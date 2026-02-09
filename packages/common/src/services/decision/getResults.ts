@@ -4,11 +4,10 @@ import {
   decisionProcessResults,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  organizations,
   processInstances,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import {
@@ -17,7 +16,7 @@ import {
   decodeCursor,
   encodeCursor,
 } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { assertInstanceProfileAccess } from '../access';
 import { listProposals } from './listProposals';
 
 // Uses selectionRank with id as tiebreaker for stable ordering
@@ -42,31 +41,26 @@ export const getLatestResultWithProposals = async ({
   limit?: number;
   cursor?: string | null;
 }): Promise<PaginatedResult<ResultProposalItem> | null> => {
-  const instanceWithOrg = await db
+  const instance = await db
     .select({
-      instanceId: processInstances.id,
-      organizationId: organizations.id,
+      id: processInstances.id,
+      profileId: processInstances.profileId,
+      ownerProfileId: processInstances.ownerProfileId,
     })
     .from(processInstances)
-    .innerJoin(
-      organizations,
-      eq(organizations.profileId, processInstances.ownerProfileId),
-    )
     .where(eq(processInstances.id, processInstanceId))
     .limit(1);
 
-  if (!instanceWithOrg[0]) {
+  if (!instance[0]) {
     throw new NotFoundError('Process instance not found');
   }
 
-  const { organizationId } = instanceWithOrg[0];
-
-  const orgUser = await getOrgAccessUser({
+  await assertInstanceProfileAccess({
     user,
-    organizationId,
+    instance: instance[0],
+    profilePermissions: { profile: permission.READ },
+    orgFallbackPermissions: { decisions: permission.READ },
   });
-
-  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
   // Get the latest result (without loading all selections)
   const result = await db._query.decisionProcessResults.findFirst({

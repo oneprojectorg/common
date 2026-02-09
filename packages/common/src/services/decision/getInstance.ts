@@ -1,10 +1,10 @@
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertInstanceProfileAccess } from '../access';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
@@ -33,19 +33,12 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance not found');
     }
 
-    if (!instance.profileId) {
-      throw new NotFoundError(
-        'Process instance does not have an associated profile',
-      );
-    }
-
-    // Assert view access via profileUser on the instance's profile
-    const profileUser = await getProfileAccessUser({
+    await assertInstanceProfileAccess({
       user,
-      profileId: instance.profileId,
+      instance,
+      profilePermissions: { profile: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
     });
-
-    assertAccess({ profile: permission.READ }, profileUser?.roles ?? []);
 
     // Calculate proposal and participant counts
     const proposalCount = instance.proposals?.length || 0;
