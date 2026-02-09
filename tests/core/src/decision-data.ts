@@ -395,9 +395,15 @@ export async function createProposal(
   const proposalId = randomUUID();
   const proposalSlug = `proposal-${randomUUID()}`;
 
-  // Generate collaborationDocId if not provided, matching production behavior
-  const collaborationDocId =
-    proposalData.collaborationDocId ?? `proposal-${proposalId}`;
+  // For legacy proposals with a description field, don't generate a collaborationDocId.
+  // This mirrors pre-TipTap proposals that only had raw HTML in `description`.
+  const storedProposalData = proposalData.description
+    ? proposalData
+    : {
+        ...proposalData,
+        collaborationDocId:
+          proposalData.collaborationDocId ?? `proposal-${proposalId}`,
+      };
 
   // Create a profile for the proposal (needed for social features: likes, comments)
   const [proposalProfile] = await db
@@ -420,7 +426,7 @@ export async function createProposal(
       processInstanceId,
       submittedByProfileId,
       profileId: proposalProfile.id,
-      proposalData: { ...proposalData, collaborationDocId },
+      proposalData: storedProposalData,
       status,
     })
     .returning();

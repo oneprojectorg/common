@@ -76,6 +76,73 @@ test.describe('Proposal View', () => {
     ).toBeVisible();
   });
 
+  test('renders legacy HTML description when no collaborationDocId exists', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    // Legacy proposal: raw HTML in `description`, no collaborationDocId
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      proposalData: {
+        title: 'Legacy HTML Proposal',
+        description: [
+          '<h2>Project Overview</h2>',
+          '<p>This proposal has <strong>bold text</strong> and <em>italic text</em> in a legacy format.</p>',
+          '<ul><li>First legacy item</li><li>Second legacy item</li></ul>',
+          '<p>Contact us at <a href="https://example.org">our website</a>.</p>',
+        ].join(''),
+      },
+    });
+
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+    );
+
+    // Title renders
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        name: 'Legacy HTML Proposal',
+      }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // Subheading from legacy HTML
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Project Overview' }),
+    ).toBeVisible();
+
+    // Formatted text rendered with correct tags
+    await expect(
+      authenticatedPage.locator('strong', { hasText: 'bold text' }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.locator('em', { hasText: 'italic text' }),
+    ).toBeVisible();
+
+    // List items
+    await expect(
+      authenticatedPage.locator('li', { hasText: 'First legacy item' }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.locator('li', { hasText: 'Second legacy item' }),
+    ).toBeVisible();
+
+    // Link with correct href
+    const link = authenticatedPage.locator('a', { hasText: 'our website' });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', 'https://example.org');
+  });
+
   test('handles missing document gracefully', async ({
     authenticatedPage,
     org,
