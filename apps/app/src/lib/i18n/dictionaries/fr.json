@@ -627,5 +627,22 @@
   "Failed to remove user": "Échec de la suppression de l'utilisateur",
   "No one has been invited yet": "Personne n'a encore été invité",
   "Invited": "Invité",
-  "Failed to cancel invite": "\u00c9chec de l'annulation de l'invitation"
+  "Failed to cancel invite": "\u00c9chec de l'annulation de l'invitation",
+  "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "Définissez les catégories que les propositions de ce processus doivent faire avancer. Les proposants sélectionneront les catégories que leur proposition soutient.",
+  "No categories defined yet": "Aucune catégorie définie pour le moment",
+  "Categories help proposers understand what outcomes this process is trying to achieve.": "Les catégories aident les proposants à comprendre quels résultats ce processus cherche à atteindre.",
+  "Create first category": "Créer la première catégorie",
+  "Add category": "Ajouter une catégorie",
+  "Edit category": "Modifier la catégorie",
+  "Shorthand": "Abréviation",
+  "Full description": "Description complète",
+  "e.g., Education": "ex., Éducation",
+  "1-3 words. Appears in dropdowns and cards.": "1-3 mots. Apparaît dans les menus déroulants et les cartes.",
+  "e.g., Expand access to quality education and workforce development in underserved communities": "ex., Élargir l'accès à une éducation de qualité et au développement de la main-d'œuvre dans les communautés défavorisées",
+  "Help proposers understand what this category means": "Aidez les proposants à comprendre ce que cette catégorie signifie",
+  "Require category selection": "Exiger la sélection d'une catégorie",
+  "Proposers must select at least one category": "Les proposants doivent sélectionner au moins une catégorie",
+  "Allow multiple categories": "Autoriser plusieurs catégories",
+  "Proposers can select more than one category": "Les proposants peuvent sélectionner plus d'une catégorie",
+  "Save changes": "Enregistrer les modifications"
 }

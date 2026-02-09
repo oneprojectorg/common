@@ -627,5 +627,22 @@
   "Failed to remove user": "Error al eliminar usuario",
   "No one has been invited yet": "Nadie ha sido invitado todav\u00eda",
   "Invited": "Invitado",
-  "Failed to cancel invite": "Error al cancelar invitaci\u00f3n"
+  "Failed to cancel invite": "Error al cancelar invitaci\u00f3n",
+  "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "Define las categorías que las propuestas en este proceso deben avanzar. Los proponentes seleccionarán qué categorías apoya su propuesta.",
+  "No categories defined yet": "Aún no se han definido categorías",
+  "Categories help proposers understand what outcomes this process is trying to achieve.": "Las categorías ayudan a los proponentes a comprender qué resultados este proceso intenta lograr.",
+  "Create first category": "Crear primera categoría",
+  "Add category": "Agregar categoría",
+  "Edit category": "Editar categoría",
+  "Shorthand": "Abreviatura",
+  "Full description": "Descripción completa",
+  "e.g., Education": "ej., Educación",
+  "1-3 words. Appears in dropdowns and cards.": "1-3 palabras. Aparece en menús desplegables y tarjetas.",
+  "e.g., Expand access to quality education and workforce development in underserved communities": "ej., Ampliar el acceso a educación de calidad y desarrollo laboral en comunidades desatendidas",
+  "Help proposers understand what this category means": "Ayuda a los proponentes a entender qué significa esta categoría",
+  "Require category selection": "Requerir selección de categoría",
+  "Proposers must select at least one category": "Los proponentes deben seleccionar al menos una categoría",
+  "Allow multiple categories": "Permitir múltiples categorías",
+  "Proposers can select more than one category": "Los proponentes pueden seleccionar más de una categoría",
+  "Save changes": "Guardar cambios"
 }
