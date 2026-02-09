@@ -1,3 +1,5 @@
+import type { SortableItem } from '@op/ui/Sortable';
+
 /**
  * Form Builder Types
  *
@@ -26,6 +28,17 @@ export type FieldType =
   | 'section';
 
 /**
+ * An option for dropdown/multiple choice fields.
+ * Extends SortableItem for drag-and-drop reordering support.
+ */
+export interface FieldOption extends SortableItem {
+  /** Unique identifier for the option */
+  id: string;
+  /** Display value for the option */
+  value: string;
+}
+
+/**
  * Configuration for a single form field.
  */
 export interface FormField {
@@ -40,7 +53,7 @@ export interface FormField {
   /** Whether the field is a system field that cannot be removed */
   locked?: boolean;
   /** Options for dropdown/multiple choice fields */
-  options?: string[];
+  options?: FieldOption[];
   /** Placeholder text for text inputs */
   placeholder?: string;
   /** Description/guidance text for participants */
