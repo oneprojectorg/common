@@ -173,6 +173,30 @@ export const getUserByAuthId = async ({
             : undefined,
         },
       },
+      profileUsers: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+          roles: includePermissions
+            ? {
+                with: {
+                  accessRole: {
+                    with: {
+                      zonePermissions: {
+                        with: {
+                          accessZone: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              }
+            : undefined,
+        },
+      },
       currentOrganization: {
         with: {
           profile: {
@@ -231,6 +255,30 @@ export const getUserByAuthId = async ({
           permissions: globalPermissions,
         };
       });
+  }
+
+  if (userWithPermissions.profileUsers) {
+    userWithPermissions.profileUsers = userWithPermissions.profileUsers.map(
+      (profileUser) => {
+        if (!profileUser.roles) {
+          return profileUser;
+        }
+
+        const normalizedRoles = getNormalizedRoles(profileUser.roles);
+
+        const userForTransformation: UserWithRoles = {
+          id: profileUser.id,
+          roles: normalizedRoles,
+        };
+
+        const globalPermissions = getGlobalPermissions(userForTransformation);
+
+        return {
+          ...profileUser,
+          permissions: globalPermissions,
+        };
+      },
+    );
   }
 
   return userWithPermissions;

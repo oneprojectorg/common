@@ -65,12 +65,17 @@ export const UserProviderSuspense = ({
   const getPermissionsForProfile = (
     profileId: string,
   ): CommonZonePermissions => {
-    if (!user.organizationUsers) {
-      return defaultPermissions;
+    // First check profileUsers for a direct profile match
+    const matchingProfileUser = user.profileUsers?.find(
+      (profileUser) => profileUser.profileId === profileId,
+    );
+
+    if (matchingProfileUser?.permissions) {
+      return { ...defaultPermissions, ...matchingProfileUser.permissions };
     }
 
-    // Find the organizationUser that has an organization with a profile matching the profileId
-    const matchingOrgUser = user.organizationUsers.find(
+    // Fall back to organizationUsers by matching the org's profile
+    const matchingOrgUser = user.organizationUsers?.find(
       (orgUser) => orgUser.organization?.profile?.id === profileId,
     );
 
