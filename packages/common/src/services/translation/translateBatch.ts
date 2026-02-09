@@ -14,7 +14,7 @@ export type TranslatableEntry = {
 export type TranslationResult = {
   contentKey: string;
   translatedText: string;
-  sourceLocale: string;
+  sourceLocale: string | null;
   cached: boolean;
 };
 
@@ -123,7 +123,7 @@ export async function translateBatch({
     const rowsToInsert: Array<{
       contentKey: string;
       contentHash: string;
-      sourceLocale: string;
+      sourceLocale: string | null;
       targetLocale: string;
       translated: string;
     }> = [];
