@@ -1,4 +1,5 @@
 import { createClient } from '@op/api/serverClient';
+import type { DecisionInstanceData } from '@op/common';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -31,24 +32,27 @@ export async function DecisionHeader({
     notFound();
   }
 
-  const processSchema = instance.process?.processSchema as any;
+  const instanceData = instance.instanceData as DecisionInstanceData;
+  const instancePhases = instanceData.phases ?? [];
 
-  // Legacy format: uses 'states' with phase.startDate structure
-  // V2 format: uses 'phases' with startDate/endDate merged from backend
+  // For legacy instances, fall back to process.processSchema states/phases for names.
+  const processSchema = (instance as any).process?.processSchema;
   const templateStates = processSchema?.states || processSchema?.phases || [];
 
-  const phases: ProcessPhase[] = templateStates.map((state: any) => ({
-    id: state.id,
-    name: state.name,
-    description: state.description,
-    type: state.type,
-    config: state.config,
-    // V2 has startDate/endDate directly, legacy has them in phase object
-    phase: state.phase || {
-      startDate: state.startDate,
-      endDate: state.endDate,
-    },
-  }));
+  const phases: ProcessPhase[] = instancePhases.map((p) => {
+    const templateState = templateStates.find((s: any) => s.id === p.phaseId);
+    return {
+      id: p.phaseId,
+      name: p.name || templateState?.name,
+      description: p.description || templateState?.description,
+      type: templateState?.type,
+      config: templateState?.config,
+      phase: templateState?.phase || {
+        startDate: p.startDate,
+        endDate: p.endDate,
+      },
+    };
+  });
 
   const isResultsPhase = instance.currentStateId === 'results';
 
@@ -65,7 +69,11 @@ export async function DecisionHeader({
           label: instance.owner?.name,
           href: `/profile/${slug}?tab=decisions`,
         }}
-        title={instance.process?.name || instance.name}
+        title={
+          instance.name ||
+          instanceData.templateName ||
+          (instance as any).process?.name
+        }
       />
 
       <div className="flex flex-col overflow-x-auto sm:items-center">

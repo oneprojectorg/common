@@ -28,8 +28,9 @@ test.describe('Decisions', () => {
     });
 
     // 5. Wait for the page to load
+    // The heading shows the instance name (which takes priority over template name)
     await expect(
-      authenticatedPage.getByRole('heading', { name: template.name }),
+      authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
     // 6. Click the "Submit a proposal" button

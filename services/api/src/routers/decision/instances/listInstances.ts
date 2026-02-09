@@ -22,8 +22,7 @@ export const listInstancesRouter = router({
       return legacyProcessInstanceListEncoder.parse({
         instances: result.instances.map((instance) => ({
           ...instance,
-          instanceData: instance.instanceData as Record<string, any>,
-          // Some typechecking since these are unknown
+          instanceData: instance.instanceData,
           process: instance.process
             ? {
                 ...instance.process,
