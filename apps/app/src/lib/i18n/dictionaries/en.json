@@ -625,5 +625,7 @@
   "Copy link": "Copy link",
   "Link copied to clipboard": "Link copied to clipboard",
   "Failed to copy link": "Failed to copy link",
-  "Failed to remove user": "Failed to remove user"
+  "Failed to remove user": "Failed to remove user",
+  "No one has been invited yet": "No one has been invited yet",
+  "Invite pending": "Invite pending"
 }

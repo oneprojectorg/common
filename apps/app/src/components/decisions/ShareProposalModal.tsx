@@ -6,6 +6,7 @@ import { EntityType } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
+import { EmptyState } from '@op/ui/EmptyState';
 import { IconButton } from '@op/ui/IconButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -16,7 +17,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { ListBox, ListBoxItem } from 'react-aria-components';
 import { createPortal } from 'react-dom';
-import { LuLink, LuX } from 'react-icons/lu';
+import { LuLink, LuUsers, LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -65,6 +66,12 @@ export function ShareProposalModal({
     );
   const existingUsers = usersData?.items ?? [];
 
+  // Fetch pending (sent) invites for this profile
+  const { data: sentInvites = [] } = trpc.profile.listProfileInvites.useQuery(
+    { profileId: proposalProfileId },
+    { enabled: isOpen },
+  );
+
   // Fetch roles to find "Member" role
   const { data: rolesData } = trpc.profile.listRoles.useQuery(
     {},
@@ -110,28 +117,26 @@ export function ShareProposalModal({
       .sort((a, b) => b.rank - a.rank);
   }, [searchResults]);
 
-  // Filter out already selected and existing users
+  // Filter out already selected, existing users, and sent invites
   const filteredResults = useMemo(() => {
     const existingIds = new Set(existingUsers.map((u) => u.profileId));
     const pendingIds = new Set(
       pendingInvites.map((i) => i.profileId).filter(Boolean),
     );
-    const pendingEmails = new Set(
-      pendingInvites.map((i) => i.email.toLowerCase()),
-    );
-    const existingEmails = new Set(
-      existingUsers.map((u) => u.email.toLowerCase()),
-    );
+    const takenEmails = new Set([
+      ...pendingInvites.map((i) => i.email.toLowerCase()),
+      ...existingUsers.map((u) => u.email.toLowerCase()),
+      ...sentInvites.map((i) => i.email.toLowerCase()),
+    ]);
 
     return flattenedResults.filter(
       (result) =>
         !existingIds.has(result.id) &&
         !pendingIds.has(result.id) &&
         (!result.user?.email ||
-          (!pendingEmails.has(result.user.email.toLowerCase()) &&
-            !existingEmails.has(result.user.email.toLowerCase()))),
+          !takenEmails.has(result.user.email.toLowerCase())),
     );
-  }, [flattenedResults, existingUsers, pendingInvites]);
+  }, [flattenedResults, existingUsers, pendingInvites, sentInvites]);
 
   // Check if query is a valid email not already added
   const canAddEmail = useMemo(() => {
@@ -139,14 +144,13 @@ export function ShareProposalModal({
       return false;
     }
     const lowerQuery = debouncedQuery.toLowerCase();
-    const pendingEmails = new Set(
-      pendingInvites.map((i) => i.email.toLowerCase()),
-    );
-    const existingEmails = new Set(
-      existingUsers.map((u) => u.email.toLowerCase()),
-    );
-    return !pendingEmails.has(lowerQuery) && !existingEmails.has(lowerQuery);
-  }, [debouncedQuery, pendingInvites, existingUsers]);
+    const takenEmails = new Set([
+      ...pendingInvites.map((i) => i.email.toLowerCase()),
+      ...existingUsers.map((u) => u.email.toLowerCase()),
+      ...sentInvites.map((i) => i.email.toLowerCase()),
+    ]);
+    return !takenEmails.has(lowerQuery);
+  }, [debouncedQuery, pendingInvites, existingUsers, sentInvites]);
 
   const inviteMutation = trpc.profile.invite.useMutation();
   const removeUserMutation = trpc.profile.removeUser.useMutation();
@@ -234,6 +238,9 @@ export function ShareProposalModal({
         setSearchQuery('');
         onOpenChange(false);
         utils.profile.listUsers.invalidate({ profileId: proposalProfileId });
+        utils.profile.listProfileInvites.invalidate({
+          profileId: proposalProfileId,
+        });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to send invite');
@@ -358,7 +365,7 @@ export function ShareProposalModal({
 
         {/* People with access */}
         <div className="flex flex-col gap-2">
-          <span className="text-xs text-neutral-gray4">
+          <span className="text-sm text-neutral-black">
             {t('People with access')}
           </span>
 
@@ -384,10 +391,13 @@ export function ShareProposalModal({
                     </Avatar>
                   }
                   title={item.name}
-                  description={
-                    item.name !== item.email ? item.email : undefined
-                  }
-                />
+                >
+                  {item.name !== item.email && (
+                    <div className="text-sm text-neutral-gray4">
+                      {item.email}
+                    </div>
+                  )}
+                </ProfileItem>
                 <IconButton
                   size="small"
                   onPress={() => handleRemovePending(item.id)}
@@ -398,11 +408,40 @@ export function ShareProposalModal({
               </div>
             ))}
 
+            {/* Sent invites (pending acceptance) */}
+            {sentInvites.map((invite) => (
+              <div
+                key={invite.id}
+                className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+              >
+                <ProfileItem
+                  size="small"
+                  avatar={
+                    <Avatar
+                      placeholder={invite.email}
+                      className="size-6 shrink-0"
+                    />
+                  }
+                  title={invite.email}
+                >
+                  <div className="text-sm text-neutral-gray4">
+                    {t('Invite pending')}
+                  </div>
+                </ProfileItem>
+              </div>
+            ))}
+
             {/* Existing users with access */}
             {isLoadingUsers ? (
               <div className="flex items-center justify-center p-4">
                 <LoadingSpinner className="size-4" />
               </div>
+            ) : existingUsers.length === 0 &&
+              pendingInvites.length === 0 &&
+              sentInvites.length === 0 ? (
+              <EmptyState icon={<LuUsers />}>
+                {t('No one has been invited yet')}
+              </EmptyState>
             ) : (
               existingUsers.map((user) => (
                 <div
@@ -429,8 +468,13 @@ export function ShareProposalModal({
                       </Avatar>
                     }
                     title={user.name ?? user.email}
-                    description={user.name ? user.email : undefined}
-                  />
+                  >
+                    {user.name && (
+                      <div className="text-sm text-neutral-gray4">
+                        {user.email}
+                      </div>
+                    )}
+                  </ProfileItem>
                   <IconButton
                     size="small"
                     onPress={() => handleRemoveExistingUser(user.id)}

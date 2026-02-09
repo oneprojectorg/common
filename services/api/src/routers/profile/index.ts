@@ -5,6 +5,7 @@ import { declineInviteRouter } from './declineInvite';
 import { deleteRoleRouter } from './deleteRole';
 import { getProfileRouter } from './getProfile';
 import { inviteProfileUserRouter } from './invite';
+import { listProfileInvitesRouter } from './listProfileInvites';
 import { listRolesRouter } from './listRoles';
 import { profileRelationshipRouter } from './relationships';
 import {
@@ -25,6 +26,7 @@ const profileRouter = mergeRouters(
   searchProfilesRouter,
   profileRelationshipRouter,
   inviteProfileUserRouter,
+  listProfileInvitesRouter,
   usersRouter,
   listRolesRouter,
   createRoleRouter,

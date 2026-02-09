@@ -19,6 +19,7 @@ export {
   listProfiles,
   inviteUsersToProfile,
   listProfileUsers,
+  listProfileUserInvites,
   listUserInvites,
   updateProfileUserRoles,
   removeProfileUser,
