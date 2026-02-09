@@ -15,7 +15,11 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getIndividualProfileId, getOrgAccessUser } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getIndividualProfileId,
+  getOrgAccessUser,
+} from '../access';
 import { assertOrganizationByProfileId } from '../assert';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
@@ -34,7 +38,11 @@ function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
   | undefined {
   const instanceData = processInstance.instanceData as DecisionInstanceData;
 
-  if (!instanceData?.currentPhaseId) {
+  if (
+    !instanceData?.currentPhaseId &&
+    // @ts-expect-error - supporting legacy datatypes here that will be removed
+    !instanceData?.currentStateId
+  ) {
     return undefined;
   }
 
@@ -47,9 +55,22 @@ function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
       allowProposals: currentPhase.rules?.proposals?.submit ?? false,
       allowDecisions: currentPhase.rules?.voting?.submit ?? false,
     };
+  } else {
+    // Supports old data types before migration
+    const currentState = instanceData.phases.find(
+      // @ts-expect-error - supporting legacy datatypes here that will be removed
+      (p) => p.stateId! === instanceData.currentStateId,
+    );
+
+    if (currentState) {
+      return {
+        allowProposals: currentState.rules?.proposals?.submit ?? false,
+        allowDecisions: currentState.rules?.voting?.submit ?? false,
+      };
+    }
   }
 
-  return undefined;
+  return;
 }
 
 export type CustomData = Record<string, unknown>;
@@ -339,6 +360,7 @@ export const getVotingStatus = async ({
       where: eq(processInstances.id, data.processInstanceId),
       columns: {
         id: true,
+        profileId: true,
         ownerProfileId: true,
         instanceData: true,
       },
@@ -350,18 +372,12 @@ export const getVotingStatus = async ({
 
     const instanceData = processInstance.instanceData as DecisionInstanceData;
 
-    // Get organization from owner profile
-    const org = await assertOrganizationByProfileId(
-      processInstance.ownerProfileId,
-    );
-
-    // Check user permissions
-    const orgUser = await getOrgAccessUser({
+    await assertInstanceProfileAccess({
       user: { id: authUserId },
-      organizationId: org.id,
+      instance: processInstance,
+      profilePermissions: { profile: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
     });
-
-    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
