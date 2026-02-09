@@ -9,10 +9,26 @@ import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
 
 /**
+ * Prose typography styles shared between the TipTap editor/viewer and the
+ * static HTML proposal viewer (`ProposalHtmlContent`).
+ *
+ * Covers link colors, list spacing, blockquote weight, heading typography,
+ * and general text layout. Does NOT include focus or placeholder styles.
+ */
+export const viewerProseStyles = [
+  'prose prose-lg !text-base text-neutral-black',
+  '[&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
+  '[&_li_p]:my-0',
+  '[&_blockquote]:font-normal',
+  '[&_:is(h1,h2)]:my-4 [&_:is(h1,h2)]:font-serif',
+  '[&_h1]:text-title-lg [&_h2]:text-title-md [&_h3]:text-title-base',
+  'leading-5 max-w-none break-words overflow-wrap-anywhere',
+].join(' ');
+
+/**
  * Styles applied to the editor element
  */
-export const baseEditorStyles =
-  'overflow-wrap-anywhere max-w-none break-words focus:outline-hidden [&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline prose prose-lg !text-base text-neutral-black placeholder:text-neutral-gray2 [&_li_p]:my-0 [&_blockquote]:font-normal';
+export const baseEditorStyles = `${viewerProseStyles} focus:outline-hidden placeholder:text-neutral-gray2`;
 
 /**
  * Base extensions shared by both editor and viewer

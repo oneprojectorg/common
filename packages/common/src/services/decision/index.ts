@@ -42,8 +42,10 @@ export * from './getProcessCategories';
 export * from './exportProposals';
 export * from './getExportStatus';
 export * from './exports';
+export * from './generateProposalHtml';
 export * from './getProposalDocumentsContent';
 export * from './getProposalFragmentNames';
+export * from './tiptapExtensions';
 
 // Proposal attachments
 export * from './uploadProposalAttachment';
