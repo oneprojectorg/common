@@ -19,7 +19,6 @@ export const translateProposalRouter = router({
       const { user } = ctx;
 
       // 1. Fetch proposal (includes proposalData with title, category, etc.)
-      //    After the html-plan merge, this also includes htmlContent: Record<string, string>.
       const proposal = await getProposal({ profileId, user });
 
       // 2. Build translatable entries
@@ -27,7 +26,7 @@ export const translateProposalRouter = router({
       const proposalId = proposal.id;
       const { proposalData } = proposal;
 
-      // Plain text fields
+      // TODO: eventually use `htmlContent` for all fields
       if (proposalData.title) {
         entries.push({
           contentKey: `proposal:${proposalId}:title`,
@@ -42,12 +41,8 @@ export const translateProposalRouter = router({
         });
       }
 
-      // HTML fragments from TipTap (available after html-plan merge)
-      // proposal.htmlContent is the server-generated HTML (Record<string, string>)
-      //
-      // If htmlContent is not yet available (html-plan not merged), this section
-      // will be empty and only title/category will be translated.
-      if ('htmlContent' in proposal && proposal.htmlContent) {
+      // HTML fragments from TipTap proposal.htmlContent is the server-generated HTML (Record<string, string>)
+      if (proposal.htmlContent) {
         const htmlContent = proposal.htmlContent as Record<string, string>;
         for (const [fragmentName, html] of Object.entries(htmlContent)) {
           if (html) {
