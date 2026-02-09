@@ -20,25 +20,15 @@ export type TranslationResult = {
 
 type HashedEntry = TranslatableEntry & { hash: string };
 
-type FreshTranslation = {
-  contentKey: string;
-  contentHash: string;
-  sourceLocale: string;
-  targetLocale: string;
-  translatedText: string;
-};
-
 /** Translate a batch of text entries with cache-through semantics. */
 export async function translateBatch({
   entries,
   targetLocale,
   client,
-  tagHandling = 'html',
 }: {
   entries: TranslatableEntry[];
   targetLocale: string;
   client: DeepLClient;
-  tagHandling?: 'html' | 'xml';
 }): Promise<TranslationResult[]> {
   if (entries.length === 0) {
     return [];
@@ -57,22 +47,22 @@ export async function translateBatch({
 
   let freshTranslations: FreshTranslation[] = [];
   if (misses.length > 0) {
-    freshTranslations = await translateMisses(
-      misses,
-      targetLocale,
-      client,
-      tagHandling,
-    );
+    freshTranslations = await translateMisses(misses, targetLocale, client);
     await writeCacheEntries(freshTranslations);
   }
 
   return mergeResults(hashed, cacheHits, freshTranslations);
 }
 
-/**
- * Batch cache lookup using composite or() conditions.
- * Do NOT replace with separate inArray() calls — that creates a cross-product.
- */
+type FreshTranslation = {
+  contentKey: string;
+  contentHash: string;
+  sourceLocale: string;
+  targetLocale: string;
+  translatedText: string;
+};
+
+/** Batch-fetch cached translations by composite (key, hash, locale). */
 async function lookupCached(
   entries: HashedEntry[],
   targetLocale: string,
@@ -105,11 +95,11 @@ async function lookupCached(
   );
 }
 
+/** Call DeepL for entries that had no cache hit. */
 async function translateMisses(
   misses: HashedEntry[],
   targetLocale: string,
   client: DeepLClient,
-  tagHandling: 'html' | 'xml',
 ): Promise<FreshTranslation[]> {
   const texts = misses.map((m) => m.text);
 
@@ -117,7 +107,7 @@ async function translateMisses(
     texts,
     null,
     targetLocale as TargetLanguageCode,
-    { tagHandling },
+    { tagHandling: 'html' },
   );
 
   const results: TextResult[] = Array.isArray(deeplResults)
@@ -141,6 +131,7 @@ async function translateMisses(
   });
 }
 
+/** Upsert fresh translations into the cache table. */
 async function writeCacheEntries(rows: FreshTranslation[]): Promise<void> {
   if (rows.length === 0) {
     return;
@@ -171,6 +162,7 @@ async function writeCacheEntries(rows: FreshTranslation[]): Promise<void> {
     });
 }
 
+/** Combine cached and fresh results, preserving input order. */
 function mergeResults(
   entries: HashedEntry[],
   cacheHits: Map<string, TranslationResult>,
