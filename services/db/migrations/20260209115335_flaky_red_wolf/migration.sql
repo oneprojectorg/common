@@ -2,7 +2,7 @@ CREATE TABLE "content_translations" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"content_key" varchar(512) NOT NULL,
 	"content_hash" varchar(16) NOT NULL,
-	"source_locale" varchar(10) NOT NULL,
+	"source_locale" varchar(10),
 	"target_locale" varchar(10) NOT NULL,
 	"translated" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),

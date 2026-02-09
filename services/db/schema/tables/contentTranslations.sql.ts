@@ -30,7 +30,7 @@ export const contentTranslations = pgTable(
     /** SHA-256 prefix (16 hex chars) of the source text */
     contentHash: varchar({ length: 16 }).notNull(),
     /** Detected source language from DeepL, e.g. "EN" */
-    sourceLocale: varchar({ length: 10 }).notNull(),
+    sourceLocale: varchar({ length: 10 }),
     /** Target language, e.g. "ES" */
     targetLocale: varchar({ length: 10 }).notNull(),
     /** The translated content string */
