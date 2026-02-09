@@ -1,4 +1,4 @@
-import { organizationUsers, users } from '@op/db/schema';
+import { organizationUsers, profileUsers, users } from '@op/db/schema';
 import type { ZonePermissions } from 'access-zones';
 import { authUsers } from 'drizzle-orm/supabase';
 import { createSelectSchema } from 'drizzle-zod';
@@ -9,7 +9,7 @@ import {
   organizationsEncoder,
   organizationsWithProfileEncoder,
 } from './organizations';
-import { baseProfileEncoder } from './profiles';
+import { baseProfileEncoder, profileMinimalEncoder } from './profiles';
 import { storageItemEncoder } from './storageItem';
 
 const zonePermissionsSchema = z.record(
@@ -49,6 +49,14 @@ const organizationUserWithPermissionsEncoder = createSelectSchema(
   roles: z.array(roleJunctionSchema).nullish(),
 });
 
+const profileUserWithPermissionsEncoder = createSelectSchema(
+  profileUsers,
+).extend({
+  profile: profileMinimalEncoder.nullish(),
+  permissions: zonePermissionsSchema.nullish(),
+  roles: z.array(roleJunctionSchema).nullish(),
+});
+
 /**
  * Complete user data encoder with all relational data
  * Includes avatar, organization memberships, roles, and profile information
@@ -57,6 +65,7 @@ export const userEncoder = createSelectSchema(users).extend({
   authUser: createSelectSchema(authUsers).nullish(),
   avatarImage: storageItemEncoder.nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
+  profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
   currentOrganization: organizationsWithProfileEncoder.nullish(),
   currentProfile: baseProfileEncoder.nullish(),
   profile: baseProfileEncoder.nullish(),
