@@ -5,11 +5,9 @@ import { generateHTML } from '@tiptap/html';
 import { serverExtensions } from './tiptapExtensions';
 
 /**
- * Converts TipTap ProseMirror JSON fragments to HTML strings.
+ * Converts TipTap JSON fragments to HTML strings.
  *
- * Each fragment is independently converted via `generateHTML()` from `@tiptap/html`,
- * which includes a built-in virtual DOM for server-side rendering. The source data
- * is our own ProseMirror JSON from TipTap Cloud — not user-supplied HTML — so
+ * The source data is our own JSON from TipTap Cloud — not user-supplied HTML — so
  * the output is deterministic and does not require sanitization.
  *
  * @param fragments - TipTap fragment response from the collaboration service

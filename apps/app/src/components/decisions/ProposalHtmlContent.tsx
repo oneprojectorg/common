@@ -6,6 +6,44 @@ import { useMemo } from 'react';
 import { LinkPreview } from '../LinkPreview';
 
 /**
+ * Renders pre-generated HTML content for a proposal, replacing the read-only
+ * TipTap editor with zero JS overhead for the prose content.
+ *
+ * Typography styles are shared with the TipTap editor via `viewerProseStyles`.
+ *
+ * Iframely embed placeholders (`<div data-iframely data-src="..."></div>`) are
+ * replaced with `LinkPreview` components rendered within the same React tree,
+ * preserving access to tRPC and other providers.
+ */
+export function ProposalHtmlContent({ html }: { html: string }) {
+  const segments = useMemo(() => splitHtmlSegments(html), [html]);
+
+  const hasEmbeds = segments.some((s) => s.type === 'embed');
+
+  if (!hasEmbeds) {
+    return (
+      <div
+        className={viewerProseStyles}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  }
+
+  return (
+    <div className={viewerProseStyles}>
+      {segments.map((segment, i) => {
+        if (segment.type === 'embed') {
+          return <LinkPreview key={i} url={segment.url} className="my-4" />;
+        }
+        return (
+          <div key={i} dangerouslySetInnerHTML={{ __html: segment.content }} />
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * Regex matching iframely placeholder divs emitted by `IframelyServerNode.renderHTML()`.
  * Accounts for extra attributes like `xmlns` that `@tiptap/html` (happy-dom) injects.
  */
@@ -45,42 +83,4 @@ function splitHtmlSegments(html: string) {
   }
 
   return segments;
-}
-
-/**
- * Renders pre-generated HTML content for a proposal, replacing the read-only
- * TipTap editor with zero JS overhead for the prose content.
- *
- * Typography styles are shared with the TipTap editor via `viewerProseStyles`.
- *
- * Iframely embed placeholders (`<div data-iframely data-src="..."></div>`) are
- * replaced with `LinkPreview` components rendered within the same React tree,
- * preserving access to tRPC and other providers.
- */
-export function ProposalHtmlContent({ html }: { html: string }) {
-  const segments = useMemo(() => splitHtmlSegments(html), [html]);
-
-  const hasEmbeds = segments.some((s) => s.type === 'embed');
-
-  if (!hasEmbeds) {
-    return (
-      <div
-        className={viewerProseStyles}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    );
-  }
-
-  return (
-    <div className={viewerProseStyles}>
-      {segments.map((segment, i) => {
-        if (segment.type === 'embed') {
-          return <LinkPreview key={i} url={segment.url} className="my-4" />;
-        }
-        return (
-          <div key={i} dangerouslySetInnerHTML={{ __html: segment.content }} />
-        );
-      })}
-    </div>
-  );
 }
