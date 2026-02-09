@@ -17,9 +17,11 @@ import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
  * auto-detected by DeepL and written after the API call.)
  *
  * @example contentKey values:
- *   "proposal:abc123:default" — proposal body fragment
- *   "proposal:abc123:title"   — proposal title
- *   "template-label:field_1"  — template field label
+ *   "proposal:abc123:default"  — proposal body fragment
+ *   "proposal:abc123:title"    — proposal title
+ *   "post:abc123"               — post text content
+ *   "profile:abc123:bio"       — profile bio
+ *   "template-label:field_1"   — template field label
  */
 export const contentTranslations = pgTable(
   'content_translations',
