@@ -68,7 +68,6 @@ export const DecisionInvitesForm = ({
     try {
       await declineInvite.mutateAsync({ inviteId });
     } catch (error) {
-      console.error('Failed to decline invite:', error);
       toast.error({
         message: t('Failed to decline invitation'),
       });
@@ -94,7 +93,6 @@ export const DecisionInvitesForm = ({
       onNext({});
     } catch (error) {
       setIsLoading(false);
-      console.error('Failed to accept invitations:', error);
       toast.error({
         message: t('Failed to accept invitations'),
       });
