@@ -19,9 +19,11 @@ function getDocumentDescription(proposal: ProposalFromList): string {
 
   if (documentContent?.type === 'json') {
     try {
+      const content = documentContent.fragments.default?.content;
+      if (!content) return '';
       const doc: JSONContent = {
         type: 'doc',
-        content: documentContent.content as JSONContent[],
+        content: content as JSONContent[],
       };
       return generateText(doc, [StarterKit]).trim();
     } catch {
