@@ -4,6 +4,10 @@ import type { DeepLClient, TargetLanguageCode, TextResult } from 'deepl-node';
 
 import { hashContent } from './hashContent';
 
+/* ------------------------------------------------------------------ */
+/*  Types                                                             */
+/* ------------------------------------------------------------------ */
+
 export type TranslatableEntry = {
   /** Identifies the content source, e.g. "proposal:abc123:default" */
   contentKey: string;
@@ -14,18 +18,202 @@ export type TranslatableEntry = {
 export type TranslationResult = {
   contentKey: string;
   translatedText: string;
-  sourceLocale: string | null;
+  sourceLocale: string;
   cached: boolean;
 };
+
+type HashedEntry = TranslatableEntry & { hash: string };
+
+type FreshTranslation = {
+  contentKey: string;
+  contentHash: string;
+  sourceLocale: string;
+  targetLocale: string;
+  translatedText: string;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Cache lookup                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Batch cache lookup by (contentKey, contentHash, targetLocale).
+ *
+ * Uses or() with individual and() conditions to ensure row-level composite
+ * matching. Do NOT replace with separate inArray() calls — that creates a
+ * cross-product where key1+hash2 would falsely match.
+ */
+async function lookupCached(
+  entries: HashedEntry[],
+  targetLocale: string,
+): Promise<Map<string, TranslationResult>> {
+  const rows = await db
+    .select()
+    .from(contentTranslations)
+    .where(
+      or(
+        ...entries.map((e) =>
+          and(
+            eq(contentTranslations.contentKey, e.contentKey),
+            eq(contentTranslations.contentHash, e.hash),
+            eq(contentTranslations.targetLocale, targetLocale),
+          ),
+        ),
+      ),
+    );
+
+  return new Map(
+    rows.map((row) => [
+      `${row.contentKey}:${row.contentHash}`,
+      {
+        contentKey: row.contentKey,
+        translatedText: row.translated,
+        sourceLocale: row.sourceLocale ?? 'UNKNOWN',
+        cached: true,
+      },
+    ]),
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  DeepL translation                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Call DeepL for a list of entries that had no cache hit.
+ * Returns one FreshTranslation per entry, in the same order.
+ */
+async function translateMisses(
+  misses: HashedEntry[],
+  targetLocale: string,
+  client: DeepLClient,
+  tagHandling: 'html' | 'xml',
+): Promise<FreshTranslation[]> {
+  const texts = misses.map((m) => m.text);
+
+  const deeplResults = await client.translateText(
+    texts,
+    null, // auto-detect source language
+    targetLocale as TargetLanguageCode,
+    { tagHandling },
+  );
+
+  // translateText returns TextResult for a single string, TextResult[] for string[].
+  // We always pass string[], but normalise just in case.
+  const results: TextResult[] = Array.isArray(deeplResults)
+    ? deeplResults
+    : [deeplResults];
+
+  return results.map((result, i) => {
+    const miss = misses[i];
+    if (!miss) {
+      throw new Error(
+        `DeepL returned more results than entries — index ${i} out of bounds.`,
+      );
+    }
+    return {
+      contentKey: miss.contentKey,
+      contentHash: miss.hash,
+      sourceLocale: result.detectedSourceLang.toUpperCase(),
+      targetLocale,
+      translatedText: result.text,
+    };
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cache write-back                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Upsert fresh translations into the cache.
+ *
+ * The unique index is (contentKey, contentHash, targetLocale).
+ * sourceLocale is NOT part of the constraint — it's auto-detected by DeepL
+ * and only known after the API call. On conflict we update both translated
+ * text and detected sourceLocale.
+ */
+async function writeCacheEntries(rows: FreshTranslation[]): Promise<void> {
+  if (rows.length === 0) {
+    return;
+  }
+
+  await db
+    .insert(contentTranslations)
+    .values(
+      rows.map((r) => ({
+        contentKey: r.contentKey,
+        contentHash: r.contentHash,
+        sourceLocale: r.sourceLocale,
+        targetLocale: r.targetLocale,
+        translated: r.translatedText,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: [
+        contentTranslations.contentKey,
+        contentTranslations.contentHash,
+        contentTranslations.targetLocale,
+      ],
+      set: {
+        translated: sql`excluded.translated`,
+        sourceLocale: sql`excluded.source_locale`,
+        updatedAt: sql`now()`,
+      },
+    });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Merge results                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Merge cached hits and fresh translations into a single result array
+ * preserving the original input order.
+ */
+function mergeResults(
+  entries: HashedEntry[],
+  cacheHits: Map<string, TranslationResult>,
+  freshTranslations: FreshTranslation[],
+): TranslationResult[] {
+  const freshMap = new Map(
+    freshTranslations.map((t) => [
+      `${t.contentKey}:${t.contentHash}`,
+      {
+        contentKey: t.contentKey,
+        translatedText: t.translatedText,
+        sourceLocale: t.sourceLocale,
+        cached: false,
+      } satisfies TranslationResult,
+    ]),
+  );
+
+  return entries.map((entry) => {
+    const key = `${entry.contentKey}:${entry.hash}`;
+    const result = cacheHits.get(key) ?? freshMap.get(key);
+
+    if (!result) {
+      throw new Error(
+        `Translation result missing for key "${entry.contentKey}" — this is a bug.`,
+      );
+    }
+
+    return result;
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Orchestrator                                                      */
+/* ------------------------------------------------------------------ */
 
 /**
  * Translate a batch of text entries with cache-through semantics.
  *
  * 1. Hash each entry's source text
- * 2. Batch cache lookup by (contentKey, contentHash, targetLocale)
- * 3. Call DeepL for cache misses (single API call for all misses)
+ * 2. Batch cache lookup
+ * 3. Call DeepL for cache misses (single API call)
  * 4. Write new translations to cache
- * 5. Return results in the same order as input entries
+ * 5. Return results in the same order as input
  */
 export async function translateBatch({
   entries,
@@ -42,137 +230,27 @@ export async function translateBatch({
     return [];
   }
 
-  // 1. Hash each entry
-  const hashed = entries.map((entry) => ({
+  const hashed: HashedEntry[] = entries.map((entry) => ({
     ...entry,
     hash: hashContent(entry.text),
   }));
 
-  // 2. Batch cache lookup
-  // Each condition matches a specific (contentKey, contentHash, targetLocale) triple.
-  // Using or() with individual and() conditions ensures row-level composite matching.
-  // Do NOT use separate inArray() calls — that creates a cross-product
-  // (key1+hash2 would falsely match).
-  const cached = await db
-    .select()
-    .from(contentTranslations)
-    .where(
-      or(
-        ...hashed.map((h) =>
-          and(
-            eq(contentTranslations.contentKey, h.contentKey),
-            eq(contentTranslations.contentHash, h.hash),
-            eq(contentTranslations.targetLocale, targetLocale),
-          ),
-        ),
-      ),
-    );
+  const cacheHits = await lookupCached(hashed, targetLocale);
 
-  // Build lookup map: "contentKey:contentHash" → cached row
-  const cacheMap = new Map(
-    cached.map((row) => [`${row.contentKey}:${row.contentHash}`, row]),
+  const misses = hashed.filter(
+    (entry) => !cacheHits.has(`${entry.contentKey}:${entry.hash}`),
   );
 
-  // 3. Separate hits from misses
-  const results: (TranslationResult | null)[] = new Array(hashed.length).fill(
-    null,
-  );
-  const misses: Array<{
-    originalIndex: number;
-    entry: (typeof hashed)[number];
-  }> = [];
-
-  for (const [i, entry] of hashed.entries()) {
-    const cacheKey = `${entry.contentKey}:${entry.hash}`;
-    const hit = cacheMap.get(cacheKey);
-
-    if (hit) {
-      results[i] = {
-        contentKey: entry.contentKey,
-        translatedText: hit.translated,
-        sourceLocale: hit.sourceLocale,
-        cached: true,
-      };
-    } else {
-      misses.push({ originalIndex: i, entry });
-    }
-  }
-
-  // 4. Call DeepL for misses
+  let freshTranslations: FreshTranslation[] = [];
   if (misses.length > 0) {
-    const textsToTranslate = misses.map((m) => m.entry.text);
-
-    const deeplResults = await client.translateText(
-      textsToTranslate,
-      null, // auto-detect source language
-      targetLocale as TargetLanguageCode,
-      { tagHandling },
+    freshTranslations = await translateMisses(
+      misses,
+      targetLocale,
+      client,
+      tagHandling,
     );
-
-    // translateText returns TextResult when input is single string,
-    // TextResult[] when input is string[]. We always pass string[].
-    const translationArray: TextResult[] = Array.isArray(deeplResults)
-      ? deeplResults
-      : [deeplResults];
-
-    // 5. Write cache entries
-    // The unique index is (contentKey, contentHash, targetLocale) — 3 columns.
-    // sourceLocale is NOT part of the unique constraint because it's auto-detected
-    // by DeepL and only known after the API call. On conflict, we update both
-    // the translated text and the detected sourceLocale.
-    const rowsToInsert: Array<{
-      contentKey: string;
-      contentHash: string;
-      sourceLocale: string | null;
-      targetLocale: string;
-      translated: string;
-    }> = [];
-
-    for (const [i, result] of translationArray.entries()) {
-      const miss = misses[i];
-      if (miss) {
-        rowsToInsert.push({
-          contentKey: miss.entry.contentKey,
-          contentHash: miss.entry.hash,
-          sourceLocale: result.detectedSourceLang.toUpperCase(),
-          targetLocale,
-          translated: result.text,
-        });
-      }
-    }
-
-    if (rowsToInsert.length > 0) {
-      await db
-        .insert(contentTranslations)
-        .values(rowsToInsert)
-        .onConflictDoUpdate({
-          target: [
-            contentTranslations.contentKey,
-            contentTranslations.contentHash,
-            contentTranslations.targetLocale,
-          ],
-          set: {
-            translated: sql`excluded.translated`,
-            sourceLocale: sql`excluded.source_locale`,
-            updatedAt: sql`now()`,
-          },
-        });
-    }
-
-    // Fill results for misses
-    for (const [i, miss] of misses.entries()) {
-      const deeplResult = translationArray[i];
-      if (deeplResult) {
-        results[miss.originalIndex] = {
-          contentKey: miss.entry.contentKey,
-          translatedText: deeplResult.text,
-          sourceLocale: deeplResult.detectedSourceLang.toUpperCase(),
-          cached: false,
-        };
-      }
-    }
+    await writeCacheEntries(freshTranslations);
   }
 
-  // All slots should be filled — cast away the nulls
-  return results as TranslationResult[];
+  return mergeResults(hashed, cacheHits, freshTranslations);
 }
