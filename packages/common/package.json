@@ -24,6 +24,8 @@
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
+    "@tiptap/core": "catalog:",
+    "@tiptap/starter-kit": "catalog:",
     "@rjsf/utils": "catalog:",
     "@vercel/functions": "^2.1.0",
     "access-zones": "catalog:",
