@@ -12,6 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 // SUPABASE_SERVICE_ROLE comes from the `dev:e2e` script (cross-env) to avoid
 // GitHub push protection flagging the Supabase CLI key in tracked files.
 Object.assign(process.env, {
+  NODE_ENV: 'test',
   E2E: 'true',
   NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:56321',
   NEXT_PUBLIC_SUPABASE_ANON_KEY:
