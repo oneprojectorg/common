@@ -1,5 +1,4 @@
-import { IframelyNode } from '@op/common/client';
-import { nodeInputRule } from '@tiptap/core';
+import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import {
   NodeViewWrapper,
@@ -44,16 +43,59 @@ const IframelyComponent: React.FC<ReactNodeViewProps> = ({
   );
 };
 
-/**
- * Client-side Iframely extension with React node view, commands, input rules,
- * and paste handling. Extends the shared schema-only `IframelyNode` from
- * `@op/common` to ensure server and client stay in sync.
- */
-export const IframelyExtension = IframelyNode.extend<IframelyOptions>({
+export const IframelyExtension = Node.create<IframelyOptions>({
+  name: 'iframely',
+
   addOptions() {
     return {
       HTMLAttributes: {},
     };
+  },
+
+  group: 'block',
+
+  atom: true,
+
+  addAttributes() {
+    return {
+      src: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-src'),
+        renderHTML: (attributes) => {
+          if (!attributes.src) {
+            return {};
+          }
+
+          return {
+            'data-src': attributes.src,
+          };
+        },
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'div[data-iframely]',
+        getAttrs: (element) => {
+          if (typeof element === 'string') return false;
+          const src = element.getAttribute('data-src');
+          return src ? { src } : false;
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'div',
+      mergeAttributes(
+        { 'data-iframely': '' },
+        this.options.HTMLAttributes,
+        HTMLAttributes,
+      ),
+    ];
   },
 
   addCommands() {

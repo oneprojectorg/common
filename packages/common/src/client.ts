@@ -3,4 +3,3 @@
 
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/types';
-export * from './services/decision/iframelyNode';

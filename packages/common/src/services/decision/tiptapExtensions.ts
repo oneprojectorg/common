@@ -1,3 +1,4 @@
+import { Node, mergeAttributes } from '@tiptap/core';
 import Heading from '@tiptap/extension-heading';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -5,22 +6,64 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
 
-import { IframelyNode } from './iframelyNode';
+/**
+ * Server-safe Iframely node extension for `generateHTML()`.
+ *
+ * This is a pure schema definition (name, group, attributes, parseHTML, renderHTML)
+ * without any React node view renderer. TipTap's `generateHTML()` only uses
+ * `renderHTML()`, so the React-dependent `addNodeView()` is not needed.
+ *
+ * Output: `<div data-iframely="" data-src="https://..."></div>`
+ * The client-side viewer splits these out and renders `LinkPreview` components
+ * inline within the React tree.
+ */
+const IframelyServerNode = Node.create({
+  name: 'iframely',
+
+  group: 'block',
+
+  atom: true,
+
+  addAttributes() {
+    return {
+      src: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-src'),
+        renderHTML: (attributes) => {
+          if (!attributes.src) {
+            return {};
+          }
+
+          return {
+            'data-src': attributes.src,
+          };
+        },
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'div[data-iframely]',
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['div', mergeAttributes({ 'data-iframely': '' }, HTMLAttributes)];
+  },
+});
 
 /**
  * Server-side TipTap extensions for `generateHTML()`.
  *
  * These must match the editor/viewer extensions exactly (minus React-specific parts)
  * to ensure all node types are recognized during HTML generation. Any node type
- * present in the ProseMirror JSON that isn't registered here will throw a
- * `RangeError("Unknown node type: ...")` and cause the entire fragment to fail.
+ * present in the ProseMirror JSON that isn't registered here will be silently dropped.
  *
- * The `IframelyNode` is the shared schema-only base also used by the client
- * extension (`apps/app/.../IframelyExtension.tsx`), ensuring the server and
- * client schemas stay in sync.
- *
- * @see packages/ui/src/components/RichTextEditor/editorConfig.ts (client base extensions)
- * @see apps/app/src/components/decisions/IframelyExtension.tsx (client Iframely extension)
+ * @see packages/ui/src/components/RichTextEditor/editorConfig.ts (base extensions)
+ * @see apps/app/src/components/decisions/IframelyExtension.tsx (client version)
  */
 export const serverExtensions = [
   StarterKit.configure({
@@ -40,5 +83,5 @@ export const serverExtensions = [
   Link.configure({
     openOnClick: false,
   }),
-  IframelyNode,
+  IframelyServerNode,
 ];
