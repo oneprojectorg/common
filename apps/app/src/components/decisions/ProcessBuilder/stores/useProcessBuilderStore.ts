@@ -64,8 +64,6 @@ export interface FormInstanceData extends Partial<InstanceData> {
   budget?: number;
   /** Whether to hide budget from members */
   hideBudget?: boolean;
-  /** Whether to organize proposals into categories */
-  enableCategories?: boolean;
   /** Whether to include proposal review phase */
   includeReview?: boolean;
   /** Whether to keep process private */
