@@ -1,6 +1,6 @@
 import { and, db, eq, or, sql } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
-import type { DeepLClient, TargetLanguageCode, TextResult } from 'deepl-node';
+import type { DeepLClient, TargetLanguageCode } from 'deepl-node';
 
 import { hashContent } from './hashContent';
 
@@ -20,7 +20,15 @@ export type TranslationResult = {
 
 type HashedEntry = TranslatableEntry & { hash: string };
 
-/** Translate a batch of text entries with cache-through semantics. */
+/**
+ * Translate a batch of text entries with cache-through semantics.
+ *
+ * 1. Hash each entry's source text
+ * 2. Batch cache lookup
+ * 3. Call DeepL for cache misses
+ * 4. Write new translations to cache
+ * 5. Return results in the same order as input
+ */
 export async function translateBatch({
   entries,
   targetLocale,
@@ -34,7 +42,7 @@ export async function translateBatch({
     return [];
   }
 
-  const hashed: HashedEntry[] = entries.map((entry) => ({
+  const hashed = entries.map((entry) => ({
     ...entry,
     hash: hashContent(entry.text),
   }));
@@ -110,9 +118,7 @@ async function translateMisses(
     { tagHandling: 'html' },
   );
 
-  const results: TextResult[] = Array.isArray(deeplResults)
-    ? deeplResults
-    : [deeplResults];
+  const results = Array.isArray(deeplResults) ? deeplResults : [deeplResults];
 
   return results.map((result, i) => {
     const miss = misses[i];
@@ -176,7 +182,7 @@ function mergeResults(
         translatedText: t.translatedText,
         sourceLocale: t.sourceLocale,
         cached: false,
-      } satisfies TranslationResult,
+      },
     ]),
   );
 
