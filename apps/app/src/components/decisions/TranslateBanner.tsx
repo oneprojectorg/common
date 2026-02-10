@@ -5,17 +5,19 @@ import { TranslateBanner as UITranslateBanner } from '@op/ui/TranslateBanner';
 import { useTranslations } from '@/lib/i18n';
 
 /**
- * Floating banner that offers to translate proposal content to Spanish.
+ * Floating banner that offers to translate proposal content to the user's locale.
  * Shows at the bottom of the proposal view as a pill-shaped button.
  */
 export function TranslateBanner({
   onTranslate,
   onDismiss,
   isTranslating,
+  languageName,
 }: {
   onTranslate: () => void;
   onDismiss: () => void;
   isTranslating: boolean;
+  languageName: string;
 }) {
   const t = useTranslations();
 
@@ -25,9 +27,11 @@ export function TranslateBanner({
         onTranslate={onTranslate}
         onDismiss={onDismiss}
         isTranslating={isTranslating}
-        size="sm"
-        label={isTranslating ? t('Translating...') : t('Translate to Spanish')}
-        className="w-fit max-w-[90vw] pl-2 [&>button:first-child>span:last-child]:w-48"
+        label={
+          isTranslating
+            ? t('Translating...')
+            : t('Translate to {language}', { language: languageName })
+        }
       />
     </div>
   );

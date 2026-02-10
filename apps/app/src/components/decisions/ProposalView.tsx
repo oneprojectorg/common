@@ -6,13 +6,15 @@ import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import { type SupportedLocale, parseProposalData } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
+import { Link } from '@op/ui/Link';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { Heart, MessageCircle } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import { useCallback, useRef, useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
@@ -39,6 +41,7 @@ export function ProposalView({
   backHref: string;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: proposal } = trpc.decision.getProposal.useQuery({
@@ -100,7 +103,6 @@ export function ProposalView({
     }
   }, []);
 
-  // --- Translation state ---
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translatedData, setTranslatedData] = useState<{
     translated: Record<string, string>;
@@ -119,28 +121,30 @@ export function ProposalView({
   const handleTranslate = useCallback(() => {
     translateMutation.mutate({
       profileId: currentProposal.profileId,
-      targetLocale: 'es',
+      targetLocale: locale as SupportedLocale,
     });
-  }, [translateMutation, currentProposal.profileId]);
+  }, [translateMutation, currentProposal.profileId, locale]);
 
   const handleViewOriginal = useCallback(() => {
     setTranslatedData(null);
   }, []);
 
-  /** Map DeepL source locale codes to display names */
+  /** Map locale codes to display names */
   const LOCALE_NAMES: Record<string, string> = {
-    EN: 'English',
-    ES: 'Spanish',
-    FR: 'French',
-    PT: 'Portuguese',
-    BN: 'Bengali',
+    en: 'English',
+    es: 'Spanish',
+    fr: 'French',
+    pt: 'Portuguese',
+    bn: 'Bengali',
   };
 
   const sourceLanguageName = translatedData
     ? (LOCALE_NAMES[
-        translatedData.sourceLocale.toUpperCase().split('-')[0] ?? ''
+        translatedData.sourceLocale.toLowerCase().split('-')[0] ?? ''
       ] ?? translatedData.sourceLocale)
     : '';
+
+  const targetLanguageName = LOCALE_NAMES[locale] ?? locale;
 
   // Parse proposal data using shared utility
   const {
@@ -159,7 +163,7 @@ export function ProposalView({
     ? null
     : getProposalContent(currentProposal.documentContent);
 
-  const showBanner = !bannerDismissed && !translatedData;
+  const showBanner = locale !== 'en' && !bannerDismissed && !translatedData;
 
   return (
     <ProposalViewLayout
@@ -183,18 +187,17 @@ export function ProposalView({
 
             {/* Translation attribution */}
             {translatedData && (
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-neutral-gray3">
                 {t('Translated from {language}', {
                   language: t(sourceLanguageName),
                 })}{' '}
                 &middot;{' '}
-                <button
-                  type="button"
-                  onClick={handleViewOriginal}
-                  className="text-primary-blue font-medium hover:underline"
+                <Link
+                  onPress={handleViewOriginal}
+                  className="text-sm font-semibold"
                 >
                   {t('View original')}
-                </button>
+                </Link>
               </p>
             )}
 
@@ -382,6 +385,7 @@ export function ProposalView({
           onTranslate={handleTranslate}
           onDismiss={() => setBannerDismissed(true)}
           isTranslating={translateMutation.isPending}
+          languageName={t(targetLanguageName)}
         />
       )}
     </ProposalViewLayout>
