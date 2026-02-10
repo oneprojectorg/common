@@ -154,6 +154,7 @@ export function ShareProposalModal({
 
   const inviteMutation = trpc.profile.invite.useMutation();
   const removeUserMutation = trpc.profile.removeUser.useMutation();
+  const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     if (!result.user?.email) {
@@ -198,6 +199,23 @@ export function ShareProposalModal({
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to remove user');
+        toast.error({ message });
+      }
+    });
+  };
+
+  const handleDeleteInvite = (inviteId: string) => {
+    startTransition(async () => {
+      try {
+        await deleteInviteMutation.mutateAsync({ inviteId });
+        utils.profile.listProfileInvites.invalidate({
+          profileId: proposalProfileId,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : t('Failed to cancel invite');
         toast.error({ message });
       }
     });
@@ -428,6 +446,13 @@ export function ShareProposalModal({
                     {t('Invite pending')}
                   </div>
                 </ProfileItem>
+                <IconButton
+                  size="small"
+                  onPress={() => handleDeleteInvite(invite.id)}
+                  aria-label={t('Remove {name}', { name: invite.email })}
+                >
+                  <LuX className="size-4" />
+                </IconButton>
               </div>
             ))}
 

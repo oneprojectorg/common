@@ -13,6 +13,7 @@ export * from './platform';
 export {
   acceptProfileInvite,
   declineProfileInvite,
+  deleteProfileInvite,
   updateUserProfile,
   getProfile,
   searchProfiles,
