@@ -12,7 +12,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -20,7 +20,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
@@ -52,20 +52,12 @@ export const createProposal = async ({
       throw new NotFoundError('Process instance not found');
     }
 
-    if (!instance.profileId) {
-      throw new UnauthorizedError('Decision instance has no profile');
-    }
-
-    const profileUser = await getProfileAccessUser({
+    await assertInstanceProfileAccess({
       user: { id: authUserId },
-      profileId: instance.profileId,
+      instance,
+      profilePermissions: { profile: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
     });
-
-    if (!profileUser) {
-      throw new UnauthorizedError('You do not have access to this decision');
-    }
-
-    assertAccess({ profile: permission.UPDATE }, profileUser.roles ?? []);
 
     const instanceData = instance.instanceData as DecisionInstanceData;
     const currentPhaseId = instanceData.currentPhaseId;

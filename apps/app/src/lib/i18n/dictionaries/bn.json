@@ -626,6 +626,6 @@
   "Failed to copy link": "লিংক কপি করতে ব্যর্থ",
   "Failed to remove user": "ব্যবহারকারী সরাতে ব্যর্থ",
   "No one has been invited yet": "এখনও কাউকে আমন্ত্রণ করা হয়নি",
-  "Invite pending": "আমন্ত্রণ মুলতুবি",
+  "Invited": "আমন্ত্রিত",
   "Failed to cancel invite": "আমন্ত্রণ বাতিল করতে ব্যর্থ"
 }

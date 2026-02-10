@@ -22,6 +22,8 @@ import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Bullet } from '../Bullet';
+
 const emailSchema = z.string().email();
 const isValidEmail = (email: string) => emailSchema.safeParse(email).success;
 
@@ -425,34 +427,55 @@ export function ShareProposalModal({
             ))}
 
             {/* Sent invites (pending acceptance) */}
-            {sentInvites.map((invite) => (
-              <div
-                key={invite.id}
-                className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-              >
-                <ProfileItem
-                  size="small"
-                  avatar={
-                    <Avatar
-                      placeholder={invite.email}
-                      className="size-6 shrink-0"
-                    />
-                  }
-                  title={invite.email}
+            {sentInvites.map((invite) => {
+              const displayName = invite.inviteeProfile?.name ?? invite.email;
+              const avatarUrl = invite.inviteeProfile?.avatarImage?.name
+                ? getPublicUrl(invite.inviteeProfile.avatarImage.name)
+                : undefined;
+
+              return (
+                <div
+                  key={invite.id}
+                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
                 >
-                  <div className="text-sm text-neutral-gray4">
-                    {t('Invite pending')}
-                  </div>
-                </ProfileItem>
-                <IconButton
-                  size="small"
-                  onPress={() => handleDeleteInvite(invite.id)}
-                  aria-label={t('Remove {name}', { name: invite.email })}
-                >
-                  <LuX className="size-4" />
-                </IconButton>
-              </div>
-            ))}
+                  <ProfileItem
+                    size="small"
+                    avatar={
+                      <Avatar
+                        placeholder={displayName}
+                        className="size-6 shrink-0"
+                      >
+                        {avatarUrl ? (
+                          <Image
+                            src={avatarUrl}
+                            alt={displayName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : null}
+                      </Avatar>
+                    }
+                    title={displayName}
+                  >
+                    {invite.inviteeProfile?.name && (
+                      <div className="text-sm text-neutral-gray4">
+                        {invite.email} <Bullet />{' '}
+                        <span className="text-sm text-neutral-gray4">
+                          {t('Invited')}
+                        </span>
+                      </div>
+                    )}
+                  </ProfileItem>
+                  <IconButton
+                    size="small"
+                    onPress={() => handleDeleteInvite(invite.id)}
+                    aria-label={t('Remove {name}', { name: displayName })}
+                  >
+                    <LuX className="size-4" />
+                  </IconButton>
+                </div>
+              );
+            })}
 
             {/* Existing users with access */}
             {isLoadingUsers ? (
