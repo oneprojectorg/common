@@ -40,6 +40,9 @@ export const profileInvites = pgTable(
       .references(() => accessRoles.id, {
         onDelete: 'cascade',
       }),
+    inviteeProfileId: uuid('invitee_profile_id').references(() => profiles.id, {
+      onDelete: 'set null',
+    }),
     invitedBy: uuid('invited_by')
       .notNull()
       .references(() => profiles.id, {
@@ -75,6 +78,11 @@ export const profileInvitesRelations = relations(profileInvites, ({ one }) => ({
   accessRole: one(accessRoles, {
     fields: [profileInvites.accessRoleId],
     references: [accessRoles.id],
+  }),
+  inviteeProfile: one(profiles, {
+    fields: [profileInvites.inviteeProfileId],
+    references: [profiles.id],
+    relationName: 'profileInvite_invitee',
   }),
   inviter: one(profiles, {
     fields: [profileInvites.invitedBy],
