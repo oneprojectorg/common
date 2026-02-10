@@ -9,7 +9,7 @@ export const DecisionInvitesSkeleton = ({
 }: {
   className?: string;
 }) => (
-  <div className={cn('max-w-lg', className)}>
+  <div className={cn('flex w-full max-w-lg flex-1 flex-col justify-center', className)}>
     <FormContainer>
       <div className="flex flex-col gap-2 text-center">
         <Skeleton className="mx-auto h-8 w-3/4" />

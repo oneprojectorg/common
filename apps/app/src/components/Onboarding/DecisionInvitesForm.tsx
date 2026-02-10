@@ -12,24 +12,21 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { ErrorMessage } from '../ErrorMessage';
-import { StepProps } from '../MultiStepForm';
 import { FormContainer } from '../form/FormContainer';
 import { DecisionInvitesSkeleton } from './DecisionInvitesSkeleton';
 
-export const validator = z.object({});
-
-type DecisionInvitesFormProps = StepProps & {
+type DecisionInvitesFormProps = {
+  onComplete: () => void;
   className?: string;
 };
 
 export const DecisionInvitesForm = ({
-  onNext,
+  onComplete,
   className,
 }: DecisionInvitesFormProps): ReactNode => {
   const t = useTranslations();
@@ -60,12 +57,12 @@ export const DecisionInvitesForm = ({
     },
   });
 
-  // If no invites, automatically proceed to next step
+  // If no invites, automatically skip to the multi-step form
   useEffect(() => {
     if (invites && invites.length === 0) {
-      onNext({});
+      onComplete();
     }
-  }, [invites, onNext]);
+  }, [invites, onComplete]);
 
   const handleDecline = async (inviteId: string) => {
     try {
@@ -79,7 +76,7 @@ export const DecisionInvitesForm = ({
 
   const handleAcceptAll = async () => {
     if (!invites || invites.length === 0) {
-      onNext({});
+      onComplete();
       return;
     }
 
@@ -93,7 +90,7 @@ export const DecisionInvitesForm = ({
       );
       // Invalidate account data to refresh org memberships
       await utils.account.getMyAccount.invalidate();
-      onNext({});
+      onComplete();
     } catch (error) {
       setIsLoading(false);
       toast.error({
@@ -102,7 +99,6 @@ export const DecisionInvitesForm = ({
     }
   };
 
-  // Show skeleton while navigating away (useEffect will handle navigation)
   if (!invites || invites.length === 0) {
     return <DecisionInvitesSkeleton className={className} />;
   }
@@ -139,7 +135,7 @@ export const DecisionInvitesForm = ({
                 <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
                   <ProfileItem
                     size="small"
-                    className="gap-2 items-center"
+                    className="items-center gap-2"
                     avatar={
                       <Avatar
                         placeholder={steward?.name ?? ''}
@@ -147,9 +143,7 @@ export const DecisionInvitesForm = ({
                       >
                         {steward?.avatarImage?.name ? (
                           <Image
-                            src={
-                              getPublicUrl(steward.avatarImage.name) ?? ''
-                            }
+                            src={getPublicUrl(steward.avatarImage.name) ?? ''}
                             alt={steward.name ?? ''}
                             fill
                             className="object-cover"

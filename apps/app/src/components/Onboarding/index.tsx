@@ -11,10 +11,7 @@ import { z } from 'zod';
 
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
 import { Portal } from '../Portal';
-import {
-  DecisionInvitesFormSuspense,
-  validator as DecisionInvitesFormValidator,
-} from './DecisionInvitesForm';
+import { DecisionInvitesFormSuspense } from './DecisionInvitesForm';
 import {
   FundingInformationForm,
   validator as FundingInformationFormValidator,
@@ -61,6 +58,7 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 export const OnboardingFlow = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [hasHydrated, setHasHydrated] = useState(false);
+  const [invitesComplete, setInvitesComplete] = useState(false);
   const createOrganization = trpc.organization.create.useMutation();
   void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   const router = useRouter();
@@ -102,7 +100,6 @@ export const OnboardingFlow = () => {
   // Function to get current step values from the store
   const getStepValues = useCallback(() => {
     const values = [
-      {}, // DecisionInvitesForm expects empty object and handles its own logic
       personalDetails,
       {}, // MatchingOrganizationsForm expects empty object and handles its own logic
       organizationDetails,
@@ -182,10 +179,21 @@ export const OnboardingFlow = () => {
     return <LoadingSpinner />;
   }
 
-  return hasHydrated ? (
+  if (!hasHydrated) {
+    return <LoadingSpinner />;
+  }
+
+  if (!invitesComplete) {
+    return (
+      <DecisionInvitesFormSuspense
+        onComplete={() => setInvitesComplete(true)}
+      />
+    );
+  }
+
+  return (
     <MultiStepForm
       steps={[
-        DecisionInvitesFormSuspense,
         PersonalDetailsForm,
         MatchingOrganizationsFormSuspense,
         OrganizationDetailsForm,
@@ -194,7 +202,6 @@ export const OnboardingFlow = () => {
         PrivacyPolicyForm,
       ]}
       schemas={[
-        DecisionInvitesFormValidator,
         PersonalDetailsFormValidator,
         MatchingOrganizationsFormValidator,
         OrganizationDetailsFormValidator,
@@ -207,7 +214,5 @@ export const OnboardingFlow = () => {
       getStepValues={getStepValues}
       hasHydrated={hasHydrated}
     />
-  ) : (
-    <LoadingSpinner />
   );
 };

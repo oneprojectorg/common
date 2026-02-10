@@ -381,7 +381,7 @@ export const ProfileInviteModal = ({
               >
                 <ProfileItem
                   size="small"
-                  className="gap-2 items-center"
+                  className="items-center gap-2"
                   avatar={
                     <Avatar placeholder={item.name} className="size-6 shrink-0">
                       {item.avatarUrl ? (
