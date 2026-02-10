@@ -788,7 +788,7 @@ export function ProposalEditor({
         <div className="flex flex-1 flex-col gap-12">
           {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
 
-          <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
+          <div className="mx-auto flex max-w-4xl flex-col gap-4 px-6">
             <Form
               schema={proposalSchema}
               uiSchema={proposalUiSchema}
