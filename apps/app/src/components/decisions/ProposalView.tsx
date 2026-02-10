@@ -20,6 +20,7 @@ import { useCallback, useRef, useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { LOCALE_NAMES } from '@/lib/i18n/config';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
@@ -32,15 +33,6 @@ import { TranslateBanner } from './TranslateBanner';
 import { getProposalContent } from './proposalContentUtils';
 
 type Proposal = RouterOutput['decision']['getProposal'];
-
-/** Maps platform locale codes to translatable display names */
-const LOCALE_NAMES: Record<string, string> = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  pt: 'Portuguese',
-  bn: 'Bengali',
-};
 
 export function ProposalView({
   proposal: initialProposal,
@@ -138,13 +130,16 @@ export function ProposalView({
 
   const handleViewOriginal = () => setTranslatedHtmlContent(null);
 
+  const lookupLocaleName = (code: string) =>
+    LOCALE_NAMES[code as SupportedLocale] ?? code;
+
   const sourceLanguageName = translatedHtmlContent
-    ? (LOCALE_NAMES[
-        translatedHtmlContent.sourceLocale.toLowerCase().split('-')[0] ?? ''
-      ] ?? translatedHtmlContent.sourceLocale)
+    ? lookupLocaleName(
+        translatedHtmlContent.sourceLocale.toLowerCase().split('-')[0] ?? '',
+      )
     : '';
 
-  const targetLanguageName = LOCALE_NAMES[locale] ?? locale;
+  const targetLanguageName = lookupLocaleName(locale);
 
   // Parse proposal data using shared utility
   const {
@@ -165,6 +160,7 @@ export function ProposalView({
     ? null
     : getProposalContent(currentProposal.documentContent);
 
+  // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
   const showBanner =
     locale !== 'en' && !bannerDismissed && !translatedHtmlContent;
 
