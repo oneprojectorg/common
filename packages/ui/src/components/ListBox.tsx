@@ -135,7 +135,7 @@ export const DropdownItem = (
     >
       {composeRenderProps(props.children, (children, { isSelected }) => (
         <>
-          <span className="group-hover:bgt-neutral-gray1 flex h-full flex-1 items-center gap-2 truncate font-normal text-neutral-black">
+          <span className="group-hover:bgt-neutral-gray1 flex h-full flex-1 items-center gap-2 truncate font-normal text-inherit">
             {children}
           </span>
           <span className="flex w-5 items-center">

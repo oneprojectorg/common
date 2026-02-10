@@ -242,6 +242,12 @@
   "Deleting...": "Eliminando...",
   "Failed to delete proposal": "Error al eliminar la propuesta",
   "Failed to create proposal": "Error al crear la propuesta",
+  "Failed to update proposal": "Error al actualizar la propuesta",
+  "Failed to submit proposal": "Error al enviar la propuesta",
+  "Please fix the following issues:": "Por favor corrija los siguientes problemas:",
+  "An unexpected error occurred": "Ocurrió un error inesperado",
+  "Anonymous": "Anónimo",
+  "Unknown": "Desconocido",
   "Proposal deleted successfully": "Propuesta eliminada exitosamente",
   "Draft": "Borrador",
   "Not shortlisted": "No preseleccionada",
@@ -266,6 +272,8 @@
   "Current State": "Estado actual",
   "Checking transitions...": "Verificando transiciones...",
   "Select category": "Seleccionar categoría",
+  "Add budget": "Agregar presupuesto",
+  "Enter amount": "Ingrese monto",
   "Write your proposal here...": "Escribe tu propuesta aquí...",
   "Undo": "Deshacer",
   "Redo": "Rehacer",
@@ -552,5 +560,6 @@
   "Spanish": "español",
   "French": "francés",
   "Portuguese": "portugués",
-  "Bengali": "bengalí"
+  "Bengali": "bengalí",
+  "Max {amount}": "Máx {amount}"
 }

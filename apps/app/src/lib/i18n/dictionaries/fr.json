@@ -243,6 +243,12 @@
   "Deleting...": "Suppression en cours...",
   "Failed to delete proposal": "Échec de la suppression de la proposition",
   "Failed to create proposal": "Échec de la création de la proposition",
+  "Failed to update proposal": "Échec de la mise à jour de la proposition",
+  "Failed to submit proposal": "Échec de la soumission de la proposition",
+  "Please fix the following issues:": "Veuillez corriger les problèmes suivants :",
+  "An unexpected error occurred": "Une erreur inattendue s'est produite",
+  "Anonymous": "Anonyme",
+  "Unknown": "Inconnu",
   "Proposal deleted successfully": "Proposition supprimée avec succès",
   "Draft": "Brouillon",
   "Not shortlisted": "Non présélectionné",
@@ -267,6 +273,8 @@
   "Current State": "État actuel",
   "Checking transitions...": "Vérification des transitions...",
   "Select category": "Sélectionner une catégorie",
+  "Add budget": "Ajouter un budget",
+  "Enter amount": "Saisir le montant",
   "Write your proposal here...": "Écrivez votre proposition ici...",
   "Undo": "Annuler",
   "Redo": "Rétablir",
@@ -539,7 +547,6 @@
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepte PDF, DOCX, XLSX jusqu'à {size}Mo",
   "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées",
   "Drag to reorder": "Glisser pour réorganiser",
-  "Join decision-making processes": "Rejoignez les processus de prise de décision",
   "You've been invited to join the following decision-making processes": "Vous avez été invité à rejoindre les processus de prise de décision suivants",
   "I don't want to participate": "Je ne veux pas participer",
   "Failed to accept invitations": "Échec de l'acceptation des invitations",
@@ -554,5 +561,6 @@
   "Spanish": "espagnol",
   "French": "français",
   "Portuguese": "portugais",
-  "Bengali": "bengali"
+  "Bengali": "bengali",
+  "Max {amount}": "Max {amount}"
 }

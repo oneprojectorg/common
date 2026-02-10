@@ -9,9 +9,6 @@ import {
 } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { NumberField } from '@op/ui/NumberField';
-import { Select, SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
@@ -26,6 +23,8 @@ import {
   getProposalExtensions,
 } from '../RichTextEditor';
 import {
+  CollaborativeBudgetField,
+  CollaborativeCategoryField,
   CollaborativeDocProvider,
   CollaborativeEditor,
   CollaborativePresence,
@@ -38,10 +37,17 @@ import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
+interface ProposalDraftFields {
+  title: string;
+  category: string | null;
+  budget: number | null;
+}
+
 /** Handles tRPC validation errors from mutation responses */
 function handleMutationError(
   error: { data?: unknown; message?: string },
   operationType: 'create' | 'update' | 'submit',
+  t: (key: string, params?: Record<string, string | number>) => string,
 ) {
   console.error(`Failed to ${operationType} proposal:`, error);
 
@@ -57,14 +63,19 @@ function handleMutationError(
       toast.error({ message: errorMessages[0] });
     } else {
       toast.error({
-        title: 'Please fix the following issues:',
+        title: t('Please fix the following issues:'),
         message: errorMessages.join(', '),
       });
     }
   } else {
+    const titleMap = {
+      create: t('Failed to create proposal'),
+      update: t('Failed to update proposal'),
+      submit: t('Failed to submit proposal'),
+    } as const;
     toast.error({
-      title: `Failed to ${operationType} proposal`,
-      message: error.message || 'An unexpected error occurred',
+      title: titleMap[operationType],
+      message: error.message || t('An unexpected error occurred'),
     });
   }
 }
@@ -86,21 +97,31 @@ export function ProposalEditor({
   const utils = trpc.useUtils();
   const { user } = useUser();
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [budget, setBudget] = useState<number | null>(null);
-  const [showBudgetInput, setShowBudgetInput] = useState(false);
+  const parsedProposalData = useMemo(
+    () =>
+      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
+    [isEditMode, proposal],
+  );
+
+  const initialDraft = useMemo<ProposalDraftFields>(
+    () => ({
+      title: parsedProposalData?.title ?? '',
+      category: parsedProposalData?.category ?? null,
+      budget: parsedProposalData?.budget ?? null,
+    }),
+    [
+      parsedProposalData?.title,
+      parsedProposalData?.category,
+      parsedProposalData?.budget,
+    ],
+  );
+
+  const [draft, setDraft] = useState<ProposalDraftFields>(initialDraft);
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Refs
-  const budgetInputRef = useRef<HTMLInputElement>(null);
-  const initializedRef = useRef(false);
-
-  // Check if editing a draft (should show info modal and use submitProposal)
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
   const collaborationDocId = useMemo(() => {
@@ -113,30 +134,25 @@ export function ProposalEditor({
     return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
   }, [proposal?.proposalData, proposal?.id, instance.id]);
 
-  // Editor extensions - memoized with collaborative flag
   const editorExtensions = useMemo(
     () => getProposalExtensions({ collaborative: true }),
     [],
   );
 
-  // Extract template data from the instance
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
   const proposalInfoContent = instance.instanceData?.fieldValues
     ?.proposalInfoContent as string | undefined;
 
-  // Get categories from database
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId: instance.id,
   });
   const { categories } = categoriesData;
 
-  // Extract budget config from current phase settings or legacy template
   const { budgetCapAmount, isBudgetRequired } = useMemo(() => {
     let cap: number | undefined;
-    let required = true; // Default to required
+    let required = true;
 
-    // New schema: get budget from current phase settings
     const currentPhaseId = instance.instanceData?.currentPhaseId;
     const currentPhaseData = instance.instanceData?.phases?.find(
       (p) => p.phaseId === currentPhaseId,
@@ -150,6 +166,36 @@ export function ProposalEditor({
     }
 
     // Fallback to instance data fieldValues
+    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
+    if (
+      proposalTemplate &&
+      typeof proposalTemplate === 'object' &&
+      'properties' in proposalTemplate
+    ) {
+      const properties = proposalTemplate.properties;
+      if (
+        properties &&
+        typeof properties === 'object' &&
+        'budget' in properties
+      ) {
+        const budgetProp = properties.budget;
+        if (
+          budgetProp &&
+          typeof budgetProp === 'object' &&
+          'maximum' in budgetProp
+        ) {
+          cap = budgetProp.maximum as number;
+        }
+      }
+
+      if (
+        'required' in proposalTemplate &&
+        Array.isArray(proposalTemplate.required)
+      ) {
+        required = proposalTemplate.required.includes('budget');
+      }
+    }
+
     if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
       cap = instance.instanceData.fieldValues.budgetCapAmount as number;
     }
@@ -157,14 +203,6 @@ export function ProposalEditor({
     return { budgetCapAmount: cap, isBudgetRequired: required };
   }, [instance]);
 
-  // Parse existing proposal data for editing
-  const parsedProposalData = useMemo(
-    () =>
-      isEditMode && proposal ? parseProposalData(proposal.proposalData) : null,
-    [isEditMode, proposal],
-  );
-
-  // Mutations
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: async () => {
       posthog?.capture('submit_proposal_success', {
@@ -176,7 +214,7 @@ export function ProposalEditor({
       });
       router.push(backHref);
     },
-    onError: (error) => handleMutationError(error, 'submit'),
+    onError: (error) => handleMutationError(error, 'submit', t),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
@@ -189,7 +227,7 @@ export function ProposalEditor({
       });
       router.push(backHref);
     },
-    onError: (error) => handleMutationError(error, 'update'),
+    onError: (error) => handleMutationError(error, 'update', t),
   });
 
   const autoSaveMutation = trpc.decision.updateProposal.useMutation({
@@ -198,68 +236,55 @@ export function ProposalEditor({
     },
   });
 
-  // Persists to database while user types
-  const debouncedSaveTitle = useDebouncedCallback((newTitle: string) => {
-    if (!proposal) {
-      return;
-    }
+  const draftRef = useRef<ProposalDraftFields>(initialDraft);
 
-    const currentData = parseProposalData(proposal.proposalData);
-
-    autoSaveMutation.mutate({
-      proposalId: proposal.id,
-      data: {
-        proposalData: {
-          ...currentData,
-          collaborationDocId,
-          title: newTitle,
-        },
-      },
-    });
-  }, 1500);
-
-  // Initialize form with existing proposal data
   useEffect(() => {
-    if (
-      isEditMode &&
-      proposal &&
-      parsedProposalData &&
-      !initializedRef.current
-    ) {
-      const {
-        title: existingTitle,
-        category: existingCategory,
-        budget: existingBudget,
-      } = parsedProposalData;
+    draftRef.current = draft;
+  }, [draft]);
 
-      if (existingTitle) {
-        setTitle(existingTitle);
-      }
-      if (existingCategory) {
-        setSelectedCategory(existingCategory);
-      }
-      if (existingBudget !== undefined) {
-        setBudget(existingBudget);
-        setShowBudgetInput(true);
-      }
+  useEffect(() => {
+    draftRef.current = initialDraft;
+    setDraft(initialDraft);
+  }, [initialDraft]);
 
-      initializedRef.current = true;
-    }
-  }, [isEditMode, proposal, parsedProposalData]);
+  const buildProposalData = useCallback(
+    (nextDraft: ProposalDraftFields): ProposalDataInput => {
+      const serverData = parseProposalData(proposal?.proposalData);
+      return {
+        ...serverData,
+        collaborationDocId,
+        title: nextDraft.title,
+        category: nextDraft.category ?? undefined,
+        budget: nextDraft.budget ?? undefined,
+      };
+    },
+    [proposal?.proposalData, collaborationDocId],
+  );
 
-  // Show info modal for new proposals or drafts
+  const saveFields = useCallback(
+    (nextDraft?: ProposalDraftFields) => {
+      if (!proposal) {
+        return;
+      }
+      const draftToPersist = nextDraft ?? draftRef.current;
+
+      autoSaveMutation.mutate({
+        proposalId: proposal.id,
+        data: {
+          proposalData: buildProposalData(draftToPersist),
+        },
+      });
+    },
+    [proposal, autoSaveMutation, buildProposalData],
+  );
+
+  const debouncedAutoSave = useDebouncedCallback(saveFields, 1500);
+
   useEffect(() => {
     if ((!isEditMode || isDraft) && proposalInfoTitle && proposalInfoContent) {
       setShowInfoModal(true);
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
-
-  // Auto-focus budget input when shown
-  useEffect(() => {
-    if (showBudgetInput && budgetInputRef.current) {
-      budgetInputRef.current.focus();
-    }
-  }, [showBudgetInput]);
 
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
@@ -270,27 +295,28 @@ export function ProposalEditor({
   }, []);
 
   const handleSubmitProposal = useCallback(async () => {
-    // Validate required fields
-    const missingFields: string[] = [];
+    const currentDraft = draftRef.current;
 
-    if (!title || title.trim() === '') {
+    const missingFields: string[] = [];
+    if (!currentDraft.title || currentDraft.title.trim() === '') {
       missingFields.push(t('Title'));
     }
 
-    // Check for empty content in the editor
     if (editorInstance) {
-      const isEmpty = editorInstance.isEmpty;
-      if (isEmpty) {
+      if (editorInstance.isEmpty) {
         missingFields.push(t('Description'));
       }
     }
 
-    if (isBudgetRequired && budget === null) {
+    if (isBudgetRequired && currentDraft.budget === null) {
       missingFields.push(t('Budget'));
     }
 
-    // Validate budget cap
-    if (budget !== null && budgetCapAmount && budget > budgetCapAmount) {
+    if (
+      currentDraft.budget !== null &&
+      budgetCapAmount &&
+      currentDraft.budget > budgetCapAmount
+    ) {
       toast.error({
         message: t('Budget cannot exceed {amount}', {
           amount: budgetCapAmount.toLocaleString(),
@@ -317,15 +343,14 @@ export function ProposalEditor({
       const proposalData: ProposalDataInput = {
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
-        title,
+        title: currentDraft.title,
         category:
           categories && categories.length > 0
-            ? (selectedCategory ?? undefined)
+            ? (currentDraft.category ?? undefined)
             : undefined,
-        budget: budget ?? undefined,
+        budget: currentDraft.budget ?? undefined,
       };
 
-      // Update existing proposal
       await updateProposalMutation.mutateAsync({
         proposalId: proposal.id,
         data: {
@@ -333,7 +358,6 @@ export function ProposalEditor({
         },
       });
 
-      // If draft, also submit (transition to submitted status)
       if (isDraft) {
         await submitProposalMutation.mutateAsync({
           proposalId: proposal.id,
@@ -346,12 +370,9 @@ export function ProposalEditor({
     }
   }, [
     t,
-    title,
     editorInstance,
     isBudgetRequired,
-    budget,
     budgetCapAmount,
-    selectedCategory,
     collaborationDocId,
     categories,
     proposal,
@@ -360,19 +381,17 @@ export function ProposalEditor({
     updateProposalMutation,
   ]);
 
-  const userName = user.profile?.name ?? 'Anonymous';
-
-  const editorSkeleton = <ProposalEditorSkeleton />;
+  const userName = user.profile?.name ?? t('Anonymous');
 
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
       userName={userName}
-      fallback={editorSkeleton}
+      fallback={<ProposalEditorSkeleton />}
     >
       <ProposalEditorLayout
         backHref={backHref}
-        title={title}
+        title={draft.title}
         onSubmitProposal={handleSubmitProposal}
         isSubmitting={isSubmitting}
         isEditMode={isEditMode}
@@ -383,84 +402,73 @@ export function ProposalEditor({
           {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
 
           <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 sm:px-0">
-            {/* Title - Collaborative */}
             <CollaborativeTitleField
-              placeholder="Untitled Proposal"
+              placeholder={t('Untitled Proposal')}
               onChange={(text) => {
-                setTitle(text);
-                debouncedSaveTitle(text);
+                const nextDraft = {
+                  ...draftRef.current,
+                  title: text,
+                };
+                draftRef.current = nextDraft;
+                setDraft((currentDraft) => ({
+                  ...currentDraft,
+                  title: text,
+                }));
+                debouncedAutoSave(nextDraft);
               }}
             />
 
-            {/* Category and Budget */}
-            <div className="flex gap-6">
-              {categories && categories.length > 0 && (
-                <Select
-                  variant="pill"
-                  size="medium"
-                  placeholder={t('Select category')}
-                  selectedKey={selectedCategory}
-                  onSelectionChange={(key) =>
-                    setSelectedCategory(key as string)
-                  }
-                  className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-                  popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
-                >
-                  {categories.map((category) => (
-                    <SelectItem
-                      className="min-w-fit"
-                      key={category.id}
-                      id={category.name}
-                    >
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </Select>
-              )}
+            <div className="flex gap-2">
+              <CollaborativeCategoryField
+                categories={categories ?? []}
+                initialValue={parsedProposalData?.category ?? null}
+                onChange={(value) => {
+                  const nextDraft = {
+                    ...draftRef.current,
+                    category: value,
+                  };
+                  draftRef.current = nextDraft;
+                  setDraft((currentDraft) => ({
+                    ...currentDraft,
+                    category: value,
+                  }));
+                  saveFields(nextDraft);
+                }}
+              />
 
-              {!showBudgetInput && (
-                <Button
-                  variant="pill"
-                  color="pill"
-                  onPress={() => setShowBudgetInput(true)}
-                >
-                  Add budget
-                </Button>
-              )}
-
-              {showBudgetInput && (
-                <NumberField
-                  ref={budgetInputRef}
-                  value={budget}
-                  onChange={setBudget}
-                  prefixText="$"
-                  inputProps={{
-                    placeholder: budgetCapAmount
-                      ? `Max ${budgetCapAmount.toLocaleString()}`
-                      : 'Enter amount',
-                  }}
-                  fieldClassName="w-auto"
-                />
-              )}
+              <CollaborativeBudgetField
+                budgetCapAmount={budgetCapAmount}
+                initialValue={parsedProposalData?.budget ?? null}
+                onChange={(value) => {
+                  const nextDraft = {
+                    ...draftRef.current,
+                    budget: value,
+                  };
+                  draftRef.current = nextDraft;
+                  setDraft((currentDraft) => ({
+                    ...currentDraft,
+                    budget: value,
+                  }));
+                  debouncedAutoSave(nextDraft);
+                }}
+              />
             </div>
 
-            {/* Rich Text Editor with Collaboration */}
             <CollaborativeEditor
               field="default"
               extensions={editorExtensions}
               onEditorReady={handleEditorReady}
               placeholder={t('Write your proposal here...')}
-              editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[20rem] px-0 py-4"
+              editorClassName="w-full !max-w-128 sm:min-w-128 min-h-80 px-0 py-4"
             />
 
-            {/* Attachments */}
             <div className="border-t border-neutral-gray2 pt-8">
               <ProposalAttachments
                 proposalId={proposal.id}
                 attachments={
                   proposal.attachments?.map((pa) => ({
                     id: pa.attachmentId,
-                    fileName: pa.attachment?.fileName ?? 'Unknown',
+                    fileName: pa.attachment?.fileName ?? t('Unknown'),
                     fileSize: pa.attachment?.fileSize ?? null,
                     url: pa.attachment?.url,
                   })) ?? []
@@ -475,7 +483,6 @@ export function ProposalEditor({
           </div>
         </div>
 
-        {/* Proposal Info Modal */}
         {proposalInfoTitle && proposalInfoContent && (
           <ProposalInfoModal
             isOpen={showInfoModal}
