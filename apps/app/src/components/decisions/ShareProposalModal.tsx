@@ -325,7 +325,7 @@ function ShareProposalModalContent({
   return (
     <>
       <ModalBody className="space-y-6">
-<div ref={searchContainerRef}>
+        <div ref={searchContainerRef}>
           <SearchField
             placeholder={t('Invite collaborators by name or email')}
             value={searchQuery}
