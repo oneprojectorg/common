@@ -62,15 +62,11 @@ const SYSTEM_UI_MAP: Record<'title' | 'category' | 'budget', SystemUiFactory> =
  *   as a TipTap editor).
  *
  * @param proposalTemplate - JSON Schema 7 stored on processSchema.
- *   If null, a minimal schema with only a required `title` is produced.
- * @param overrides - Runtime overrides that take precedence over the template.
- *   Currently supports `budgetCapAmount` (from phase settings) which patches
- *   `budget.maximum`.
+ *   If null, a minimal schema with system fields using sensible defaults.
  * @param t - Translation function for field titles/placeholders.
  */
 export function compileProposalSchema(
   proposalTemplate: StrictRJSFSchema | null,
-  overrides: { budgetCapAmount?: number },
   t: (key: string, params?: Record<string, string | number>) => string,
 ): {
   schema: RJSFSchema;
@@ -103,19 +99,7 @@ export function compileProposalSchema(
 
     if (SYSTEM_FIELD_KEYS.has(key)) {
       // System field: preserve the template's data definition, add UI mapping.
-      let schema = { ...propSchema };
-
-      // Apply runtime overrides
-      if (key === 'budget' && overrides.budgetCapAmount != null) {
-        schema = { ...schema, maximum: overrides.budgetCapAmount };
-      }
-
-      // Add translated title if not already present
-      if (!schema.title) {
-        schema.title = t(key.charAt(0).toUpperCase() + key.slice(1));
-      }
-
-      schemaProperties[key] = schema;
+      schemaProperties[key] = propSchema;
 
       if (key in SYSTEM_UI_MAP) {
         const uiFactory = SYSTEM_UI_MAP[key as keyof typeof SYSTEM_UI_MAP];
@@ -154,9 +138,6 @@ export function compileProposalSchema(
       type: ['number', 'null'],
       title: t('Budget'),
       minimum: 0,
-      ...(overrides.budgetCapAmount != null
-        ? { maximum: overrides.budgetCapAmount }
-        : {}),
     };
     uiProperties.budget = SYSTEM_UI_MAP.budget(t);
   }

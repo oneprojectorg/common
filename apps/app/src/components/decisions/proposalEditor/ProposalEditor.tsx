@@ -139,13 +139,8 @@ export function ProposalEditor({
   }, [rawProposalTemplate]);
 
   const { schema: proposalSchema, uiSchema: proposalUiSchema } = useMemo(
-    () =>
-      compileProposalSchema(
-        proposalTemplateWithMockField,
-        { budgetCapAmount },
-        t,
-      ),
-    [proposalTemplateWithMockField, budgetCapAmount, t],
+    () => compileProposalSchema(proposalTemplateWithMockField, t),
+    [proposalTemplateWithMockField, t],
   );
 
   // -- Mutations -------------------------------------------------------------
