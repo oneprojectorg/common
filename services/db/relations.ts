@@ -100,6 +100,11 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.accessRoles.id,
       optional: false,
     }),
+    inviteeProfile: r.one.profiles({
+      from: r.profileInvites.inviteeProfileId,
+      to: r.profiles.id,
+      alias: 'profileInvite_invitee',
+    }),
     inviter: r.one.profiles({
       from: r.profileInvites.invitedBy,
       to: r.profiles.id,
