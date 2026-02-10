@@ -15,7 +15,15 @@ import { ListBox, ListBoxItem } from '@op/ui/RAC';
 import { SearchField } from '@op/ui/SearchField';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { LuLink, LuUsers, LuX } from 'react-icons/lu';
 import { z } from 'zod';
@@ -101,18 +109,26 @@ function ShareProposalModalContent({
     width: 0,
   });
 
-  // Fetch existing users with access
+  const [, startTransition] = useTransition();
+
   const [usersData] = trpc.profile.listUsers.useSuspenseQuery({
     profileId: proposalProfileId,
   });
-  const existingUsers = usersData.items;
-
-  // Fetch pending (sent) invites for this profile
-  const [sentInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
+  const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
     profileId: proposalProfileId,
   });
 
-  // Fetch roles to find "Member" role
+  const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
+    usersData.items,
+    (state, profileUserId: string) =>
+      state.filter((u) => u.id !== profileUserId),
+  );
+
+  const [optimisticInvites, dispatchRemoveInvite] = useOptimistic(
+    serverInvites,
+    (state, inviteId: string) => state.filter((i) => i.id !== inviteId),
+  );
+
   const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({});
   const memberRole = useMemo(() => {
     const roles = rolesData.items ?? [];
@@ -156,14 +172,14 @@ function ShareProposalModalContent({
 
   // Filter out already selected, existing users, and sent invites
   const filteredResults = useMemo(() => {
-    const existingIds = new Set(existingUsers.map((u) => u.profileId));
+    const existingIds = new Set(optimisticUsers.map((u) => u.profileId));
     const pendingIds = new Set(
       pendingInvites.map((i) => i.profileId).filter(Boolean),
     );
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...existingUsers.map((u) => u.email.toLowerCase()),
-      ...sentInvites.map((i) => i.email.toLowerCase()),
+      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
 
     return flattenedResults.filter(
@@ -173,7 +189,7 @@ function ShareProposalModalContent({
         (!result.user?.email ||
           !takenEmails.has(result.user.email.toLowerCase())),
     );
-  }, [flattenedResults, existingUsers, pendingInvites, sentInvites]);
+  }, [flattenedResults, optimisticUsers, pendingInvites, optimisticInvites]);
 
   // Check if query is a valid email not already added
   const canAddEmail = useMemo(() => {
@@ -183,72 +199,15 @@ function ShareProposalModalContent({
     const lowerQuery = debouncedQuery.toLowerCase();
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...existingUsers.map((u) => u.email.toLowerCase()),
-      ...sentInvites.map((i) => i.email.toLowerCase()),
+      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
     return !takenEmails.has(lowerQuery);
-  }, [debouncedQuery, pendingInvites, existingUsers, sentInvites]);
+  }, [debouncedQuery, pendingInvites, optimisticUsers, optimisticInvites]);
 
   const inviteMutation = trpc.profile.invite.useMutation();
-
-  const removeUserMutation = trpc.profile.removeUser.useMutation({
-    onMutate: async ({ profileUserId }) => {
-      await utils.profile.listUsers.cancel({ profileId: proposalProfileId });
-      const previousUsers = utils.profile.listUsers.getData({
-        profileId: proposalProfileId,
-      });
-      utils.profile.listUsers.setData(
-        { profileId: proposalProfileId },
-        (old) =>
-          old
-            ? { ...old, items: old.items.filter((u) => u.id !== profileUserId) }
-            : old,
-      );
-      return { previousUsers };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousUsers) {
-        utils.profile.listUsers.setData(
-          { profileId: proposalProfileId },
-          context.previousUsers,
-        );
-      }
-      toast.error({ message: t('Failed to remove user') });
-    },
-    onSettled: () => {
-      utils.profile.listUsers.invalidate({ profileId: proposalProfileId });
-    },
-  });
-
-  const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation({
-    onMutate: async ({ inviteId }) => {
-      await utils.profile.listProfileInvites.cancel({
-        profileId: proposalProfileId,
-      });
-      const previousInvites = utils.profile.listProfileInvites.getData({
-        profileId: proposalProfileId,
-      });
-      utils.profile.listProfileInvites.setData(
-        { profileId: proposalProfileId },
-        (old) => (old ? old.filter((i) => i.id !== inviteId) : old),
-      );
-      return { previousInvites };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousInvites) {
-        utils.profile.listProfileInvites.setData(
-          { profileId: proposalProfileId },
-          context.previousInvites,
-        );
-      }
-      toast.error({ message: t('Failed to cancel invite') });
-    },
-    onSettled: () => {
-      utils.profile.listProfileInvites.invalidate({
-        profileId: proposalProfileId,
-      });
-    },
-  });
+  const removeUserMutation = trpc.profile.removeUser.useMutation();
+  const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     if (!result.user?.email) {
@@ -286,11 +245,31 @@ function ShareProposalModalContent({
   };
 
   const handleRemoveExistingUser = (profileUserId: string) => {
-    removeUserMutation.mutate({ profileUserId });
+    startTransition(async () => {
+      dispatchRemoveUser(profileUserId);
+      try {
+        await removeUserMutation.mutateAsync({ profileUserId });
+      } catch {
+        toast.error({ message: t('Failed to remove user') });
+      }
+      await utils.profile.listUsers.invalidate({
+        profileId: proposalProfileId,
+      });
+    });
   };
 
   const handleDeleteInvite = (inviteId: string) => {
-    deleteInviteMutation.mutate({ inviteId });
+    startTransition(async () => {
+      dispatchRemoveInvite(inviteId);
+      try {
+        await deleteInviteMutation.mutateAsync({ inviteId });
+      } catch {
+        toast.error({ message: t('Failed to cancel invite') });
+      }
+      await utils.profile.listProfileInvites.invalidate({
+        profileId: proposalProfileId,
+      });
+    });
   };
 
   const handleCopyLink = async () => {
@@ -346,8 +325,7 @@ function ShareProposalModalContent({
   return (
     <>
       <ModalBody className="space-y-6">
-        {/* Search Input */}
-        <div ref={searchContainerRef}>
+<div ref={searchContainerRef}>
           <SearchField
             placeholder={t('Invite collaborators by name or email')}
             value={searchQuery}
@@ -356,7 +334,6 @@ function ShareProposalModalContent({
           />
         </div>
 
-        {/* Search Results Dropdown */}
         {debouncedQuery.length >= 2 &&
           typeof document !== 'undefined' &&
           createPortal(
@@ -442,14 +419,12 @@ function ShareProposalModalContent({
             document.body,
           )}
 
-        {/* People with access */}
         <div className="flex flex-col gap-2">
           <span className="text-sm text-neutral-black">
             {t('People with access')}
           </span>
 
           <div className="flex flex-col gap-2">
-            {/* Pending invites (not yet sent) */}
             {pendingInvites.map((item) => (
               <div
                 key={item.id}
@@ -487,8 +462,7 @@ function ShareProposalModalContent({
               </div>
             ))}
 
-            {/* Sent invites (pending acceptance) */}
-            {sentInvites.map((invite) => {
+            {optimisticInvites.map((invite) => {
               const displayName = invite.inviteeProfile?.name ?? invite.email;
               const avatarUrl = invite.inviteeProfile?.avatarImage?.name
                 ? getPublicUrl(invite.inviteeProfile.avatarImage.name)
@@ -538,15 +512,14 @@ function ShareProposalModalContent({
               );
             })}
 
-            {/* Existing users with access */}
-            {existingUsers.length === 0 &&
+            {optimisticUsers.length === 0 &&
             pendingInvites.length === 0 &&
-            sentInvites.length === 0 ? (
+            optimisticInvites.length === 0 ? (
               <EmptyState icon={<LuUsers />}>
                 {t('No one has been invited yet')}
               </EmptyState>
             ) : (
-              existingUsers.map((user) => (
+              optimisticUsers.map((user) => (
                 <div
                   key={user.id}
                   className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
