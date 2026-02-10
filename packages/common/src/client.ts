@@ -3,3 +3,10 @@
 
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/types';
+
+// Translation constants (no server dependencies)
+export {
+  SUPPORTED_LOCALES,
+  LOCALE_TO_DEEPL,
+} from './services/translation/locales';
+export type { SupportedLocale } from './services/translation/locales';

@@ -90,11 +90,11 @@ describe.concurrent('translation.translateProposal', () => {
 
     const result = await caller.translation.translateProposal({
       profileId: proposal.profileId,
-      targetLocale: 'ES',
+      targetLocale: 'es',
     });
 
     expect(result).toEqual({
-      targetLocale: 'ES',
+      targetLocale: 'es',
       sourceLocale: 'EN',
       translated: {
         title: '[ES] Community Garden Project',
@@ -103,7 +103,7 @@ describe.concurrent('translation.translateProposal', () => {
       },
     });
 
-    // Verify what was sent to DeepL
+    // Verify what was sent to DeepL (mapped from 'es' → 'ES')
     expect(mockTranslateText).toHaveBeenCalledWith(
       [
         'Community Garden Project',
@@ -175,11 +175,11 @@ describe.concurrent('translation.translateProposal', () => {
 
     const result = await caller.translation.translateProposal({
       profileId: proposal.profileId,
-      targetLocale: 'ES',
+      targetLocale: 'es',
     });
 
     expect(result).toEqual({
-      targetLocale: 'ES',
+      targetLocale: 'es',
       sourceLocale: 'EN',
       translated: {
         title: '[ES-CACHED] Community Garden Project',
@@ -188,9 +188,159 @@ describe.concurrent('translation.translateProposal', () => {
       },
     });
 
-    // DeepL should only have been called with the body, not the title
+    // DeepL should only have been called with the body, not the title (mapped 'es' → 'ES')
     expect(mockTranslateText).toHaveBeenCalledWith(
       ['<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>'],
+      null,
+      'ES',
+      expect.objectContaining({ tagHandling: 'html' }),
+    );
+  });
+
+  it('should skip DeepL entirely when all entries are cached', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const translationData = new TestTranslationDataManager(onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Fully Cached Proposal' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Already translated body' }],
+        },
+      ],
+    });
+
+    // Pre-seed both title and body in the cache
+    await translationData.seedTranslation({
+      contentKey: `proposal:${proposal.id}:title`,
+      sourceText: 'Fully Cached Proposal',
+      translatedText: '[ES-CACHED] Fully Cached Proposal',
+      sourceLocale: 'EN',
+      targetLocale: 'ES',
+    });
+
+    await translationData.seedTranslation({
+      contentKey: `proposal:${proposal.id}:default`,
+      sourceText:
+        '<p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+      translatedText:
+        '[ES-CACHED] <p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+      sourceLocale: 'EN',
+      targetLocale: 'ES',
+    });
+
+    // Clean up translations
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposal.id}:%`),
+        );
+    });
+
+    mockTranslateText.mockClear();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result).toEqual({
+      targetLocale: 'es',
+      sourceLocale: 'EN',
+      translated: {
+        title: '[ES-CACHED] Fully Cached Proposal',
+        default:
+          '[ES-CACHED] <p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+      },
+    });
+
+    // DeepL should never have been called — everything was cached
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('should translate legacy proposals with HTML description (no TipTap doc)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a legacy proposal with description instead of collaborationDocId
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Legacy Proposal',
+        description: '<p>Old-style HTML content</p>',
+      },
+    });
+
+    // Clean up translations
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    mockTranslateText.mockClear();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result).toEqual({
+      targetLocale: 'es',
+      sourceLocale: 'EN',
+      translated: {
+        title: '[ES] Legacy Proposal',
+        default: '[ES] <p>Old-style HTML content</p>',
+      },
+    });
+
+    // Both title and legacy body should be sent to DeepL in one batch
+    expect(mockTranslateText).toHaveBeenCalledWith(
+      ['Legacy Proposal', '<p>Old-style HTML content</p>'],
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
