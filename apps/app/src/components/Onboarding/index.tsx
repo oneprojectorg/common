@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
 import { Portal } from '../Portal';
 import { DecisionInvitesFormSuspense } from './DecisionInvitesForm';
+import { DecisionInvitesSkeleton } from './DecisionInvitesSkeleton';
 import {
   FundingInformationForm,
   validator as FundingInformationFormValidator,
@@ -180,7 +181,7 @@ export const OnboardingFlow = () => {
   }
 
   if (!hasHydrated) {
-    return <LoadingSpinner />;
+    return <DecisionInvitesSkeleton />;
   }
 
   if (!invitesComplete) {
