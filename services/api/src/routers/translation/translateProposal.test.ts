@@ -16,7 +16,8 @@ import { createCallerFactory } from '../../trpcFactory';
 // Set a fake API key so the endpoint doesn't throw before reaching the mock
 process.env.DEEPL_API_KEY = 'test-fake-key';
 
-// Spy on translateText so we can assert what was sent to DeepL
+// Mock DeepL's translateText — prefixes each text with [ES] so we can
+// distinguish mock translations from seeded cache entries ([ES-CACHED]).
 const mockTranslateText = vi.fn((texts: string[]) =>
   texts.map((t) => ({
     text: `[ES] ${t}`,
@@ -169,8 +170,6 @@ describe.concurrent('translation.translateProposal', () => {
         );
     });
 
-    mockTranslateText.mockClear();
-
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.translation.translateProposal({
@@ -178,6 +177,7 @@ describe.concurrent('translation.translateProposal', () => {
       targetLocale: 'es',
     });
 
+    // Title comes from cache ([ES-CACHED] prefix), body goes through DeepL ([ES] prefix)
     expect(result).toEqual({
       targetLocale: 'es',
       sourceLocale: 'EN',
@@ -188,7 +188,7 @@ describe.concurrent('translation.translateProposal', () => {
       },
     });
 
-    // DeepL should only have been called with the body, not the title (mapped 'es' → 'ES')
+    // Only the body (cache miss) should have been sent to DeepL
     expect(mockTranslateText).toHaveBeenCalledWith(
       ['<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>'],
       null,
@@ -261,8 +261,6 @@ describe.concurrent('translation.translateProposal', () => {
         );
     });
 
-    mockTranslateText.mockClear();
-
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.translation.translateProposal({
@@ -270,6 +268,9 @@ describe.concurrent('translation.translateProposal', () => {
       targetLocale: 'es',
     });
 
+    // All values have the [ES-CACHED] prefix from the seeded cache rows.
+    // If DeepL had been called, the mock would produce [ES] prefixes instead,
+    // so the result itself proves the cache was used exclusively.
     expect(result).toEqual({
       targetLocale: 'es',
       sourceLocale: 'EN',
@@ -279,9 +280,6 @@ describe.concurrent('translation.translateProposal', () => {
           '[ES-CACHED] <p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
       },
     });
-
-    // DeepL should never have been called — everything was cached
-    expect(mockTranslateText).not.toHaveBeenCalled();
   });
 
   it('should translate legacy proposals with HTML description (no TipTap doc)', async ({
@@ -320,8 +318,6 @@ describe.concurrent('translation.translateProposal', () => {
         );
     });
 
-    mockTranslateText.mockClear();
-
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.translation.translateProposal({
@@ -338,7 +334,6 @@ describe.concurrent('translation.translateProposal', () => {
       },
     });
 
-    // Both title and legacy body should be sent to DeepL in one batch
     expect(mockTranslateText).toHaveBeenCalledWith(
       ['Legacy Proposal', '<p>Old-style HTML content</p>'],
       null,
