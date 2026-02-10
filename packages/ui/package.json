@@ -58,6 +58,7 @@
     "./Stepper": "./src/components/Stepper/index.ts",
     "./Tabs": "./src/components/Tabs.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
+    "./TranslateBanner": "./src/components/TranslateBanner.tsx",
     "./TextField": "./src/components/TextField.tsx",
     "./Toast": "./src/components/Toast.tsx",
     "./ToggleButton": "./src/components/ToggleButton.tsx",

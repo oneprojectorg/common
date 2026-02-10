@@ -1,6 +1,6 @@
 'use client';
 
-import { Languages, X } from 'lucide-react';
+import { TranslateBanner as UITranslateBanner } from '@op/ui/TranslateBanner';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,27 +21,14 @@ export function TranslateBanner({
 
   return (
     <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
-      <div className="flex items-center gap-2 rounded-full border border-neutral-gray2 bg-white px-4 py-2.5 shadow-lg">
-        <button
-          type="button"
-          onClick={onTranslate}
-          disabled={isTranslating}
-          className="text-primary-blue flex items-center gap-2 text-sm font-medium disabled:opacity-60"
-        >
-          <Languages className="size-4" />
-          <span>
-            {isTranslating ? t('Translating...') : t('Translate to Spanish')}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="ml-1 text-neutral-gray4 hover:text-neutral-charcoal"
-          aria-label="Dismiss"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+      <UITranslateBanner
+        onTranslate={onTranslate}
+        onDismiss={onDismiss}
+        isTranslating={isTranslating}
+        size="sm"
+        label={isTranslating ? t('Translating...') : t('Translate to Spanish')}
+        className="w-fit max-w-[90vw] pl-2 [&>button:first-child>span:last-child]:w-48"
+      />
     </div>
   );
 }
