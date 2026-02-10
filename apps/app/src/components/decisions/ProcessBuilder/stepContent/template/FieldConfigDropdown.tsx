@@ -1,25 +1,69 @@
 'use client';
 
+import { getFieldOptions } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import type { FieldConfigProps } from './fieldRegistry';
-import type { FieldOption } from './types';
+
+interface FieldOption {
+  id: string;
+  value: string;
+}
 
 /**
  * Field config component for dropdown and multiple choice fields.
- * Wraps FieldConfigDropdownOptions with the standard FieldConfigProps interface.
+ * Reads options from the JSON Schema enum values + ui:enumIds.
  */
-export function FieldConfigDropdown({ field, onUpdate }: FieldConfigProps) {
+export function FieldConfigDropdown({
+  fieldId,
+  fieldSchema,
+  fieldUiSchema,
+  onUpdateJsonSchema,
+  onUpdateUiSchema,
+}: FieldConfigProps) {
+  // Build a fake template to use getFieldOptions helper
+  const options = useMemo(() => {
+    const template = {
+      properties: { [fieldId]: fieldSchema },
+      ui: { [fieldId]: fieldUiSchema },
+    };
+    return getFieldOptions(template, fieldId);
+  }, [fieldId, fieldSchema, fieldUiSchema]);
+
+  const handleOptionsChange = (newOptions: FieldOption[]) => {
+    const enumValues = newOptions.map((o) => o.value);
+    const enumIds = newOptions.map((o) => o.id);
+
+    // Update JSON Schema enum values
+    if (fieldSchema.type === 'array') {
+      // multiple_choice: enum is on items
+      const items =
+        typeof fieldSchema.items === 'object' &&
+        !Array.isArray(fieldSchema.items)
+          ? fieldSchema.items
+          : {};
+      onUpdateJsonSchema({
+        items: { ...items, enum: enumValues },
+      });
+    } else {
+      // dropdown: enum is on schema directly
+      onUpdateJsonSchema({ enum: enumValues });
+    }
+
+    // Update UI Schema with enum IDs
+    onUpdateUiSchema({ 'ui:enumIds': enumIds });
+  };
+
   return (
     <FieldConfigDropdownOptions
-      options={field.options ?? []}
-      onOptionsChange={(options) => onUpdate({ options })}
+      options={options}
+      onOptionsChange={handleOptionsChange}
     />
   );
 }
@@ -86,7 +130,6 @@ function FieldConfigDropdownOptions({
   const handleKeyDown = (e: React.KeyboardEvent, option: FieldOption) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Add new option if this is the last one and has content
       const isLastOption = options[options.length - 1]?.id === option.id;
       if (isLastOption && option.value.trim()) {
         handleAddOption();
@@ -98,7 +141,6 @@ function FieldConfigDropdownOptions({
     <div ref={containerRef} className="space-y-2">
       <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
 
-      {/* Sortable options */}
       <Sortable
         items={options}
         onChange={onOptionsChange}
@@ -140,7 +182,6 @@ function FieldConfigDropdownOptions({
         }}
       </Sortable>
 
-      {/* Add option link */}
       <Button
         color="ghost"
         size="small"

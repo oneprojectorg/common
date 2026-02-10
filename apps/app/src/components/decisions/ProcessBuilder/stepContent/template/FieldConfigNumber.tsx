@@ -11,22 +11,37 @@ import type { FieldConfigProps } from './fieldRegistry';
  * Field config component for number fields.
  * Allows setting min/max constraints and currency mode.
  */
-export function FieldConfigNumber({ field, onUpdate }: FieldConfigProps) {
+export function FieldConfigNumber({
+  fieldSchema,
+  fieldUiSchema,
+  onUpdateJsonSchema,
+  onUpdateUiSchema,
+}: FieldConfigProps) {
   const t = useTranslations();
+
+  const min = fieldSchema.minimum ?? null;
+  const max = fieldSchema.maximum ?? null;
+  const isCurrency =
+    (fieldUiSchema['ui:options'] as Record<string, unknown> | undefined)
+      ?.isCurrency === true;
 
   return (
     <div className="space-y-4">
       <div className="flex gap-4">
         <NumberField
           label={t('Min')}
-          value={field.min ?? null}
-          onChange={(value) => onUpdate({ min: value ?? undefined })}
+          value={min}
+          onChange={(value) =>
+            onUpdateJsonSchema({ minimum: value ?? undefined })
+          }
           className="flex-1"
         />
         <NumberField
           label={t('Max')}
-          value={field.max ?? null}
-          onChange={(value) => onUpdate({ max: value ?? undefined })}
+          value={max}
+          onChange={(value) =>
+            onUpdateJsonSchema({ maximum: value ?? undefined })
+          }
           className="flex-1"
         />
       </div>
@@ -34,8 +49,17 @@ export function FieldConfigNumber({ field, onUpdate }: FieldConfigProps) {
         <span className="text-neutral-charcoal">{t('Dollar amount?')}</span>
         <ToggleButton
           size="small"
-          isSelected={field.isCurrency ?? false}
-          onChange={(isSelected) => onUpdate({ isCurrency: isSelected })}
+          isSelected={isCurrency}
+          onChange={(isSelected) =>
+            onUpdateUiSchema({
+              'ui:options': {
+                ...(fieldUiSchema['ui:options'] as
+                  | Record<string, unknown>
+                  | undefined),
+                isCurrency: isSelected,
+              },
+            })
+          }
           aria-label={t('Dollar amount')}
         />
       </div>
