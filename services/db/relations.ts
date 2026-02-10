@@ -82,6 +82,27 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.headerImageId,
       to: r.objectsInStorage.id,
     }),
+    processInstance: r.one.processInstances({
+      from: r.profiles.id,
+      to: r.processInstances.profileId,
+    }),
+  },
+
+  /**
+   * Process instance relations
+   *
+   * stewardProfileId is nullable.
+   */
+  processInstances: {
+    steward: r.one.profiles({
+      from: r.processInstances.stewardProfileId,
+      to: r.profiles.id,
+      alias: 'processInstance_steward',
+    }),
+    proposals: r.many.proposals({
+      from: r.processInstances.id,
+      to: r.proposals.processInstanceId,
+    }),
   },
 
   /**

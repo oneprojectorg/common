@@ -1,15 +1,11 @@
-import { getPublicUrl } from '@/utils';
 import { DecisionProfile } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
-import Image from 'next/image';
 import { LuCalendar } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
 import { TranslatedText } from '../TranslatedText';
+import { DecisionCardHeader } from './DecisionCardHeader';
 
 const formatDateShort = (dateString: string) => {
   const date = new Date(dateString);
@@ -39,42 +35,26 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const currentPhaseName = currentPhase?.name;
   const closingDate = currentPhase?.endDate;
 
-  // Owner organization info
-  const owner = processInstance.owner;
+  // Prefer steward, fall back to owner
+  const steward = processInstance.steward ?? processInstance.owner;
 
   return (
     <Link
       href={`/decisions/${item.slug}`}
       className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
     >
-      <div className="flex flex-col gap-2">
-        {/* Process name and status chip */}
-        <DecisionProcessHeader
-          name={processInstance.name || item.name}
-          currentState={currentPhaseName}
-        />
-
-        {/* Organization and closing date */}
-        <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
-          {owner && (
-            <div className="flex items-center gap-1">
-              <Avatar placeholder={owner.name} className="size-4 border">
-                {owner.avatarImage?.name ? (
-                  <Image
-                    src={getPublicUrl(owner.avatarImage.name) ?? ''}
-                    alt={`${owner.name} avatar`}
-                    fill
-                    className="object-cover"
-                  />
-                ) : null}
-              </Avatar>
-              <span className="text-sm text-neutral-black">{owner.name}</span>
-            </div>
-          )}
-
-          {closingDate && <DecisionClosingDate closingDate={closingDate} />}
-        </div>
-      </div>
+      <DecisionCardHeader
+        name={processInstance.name || item.name}
+        currentState={currentPhaseName}
+        stewardName={steward?.name}
+        stewardAvatarPath={steward?.avatarImage?.name}
+      >
+        {closingDate && (
+          <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
+            <DecisionClosingDate closingDate={closingDate} />
+          </div>
+        )}
+      </DecisionCardHeader>
 
       <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
         <DecisionStat
@@ -111,14 +91,10 @@ export const ProfileDecisionListItem = ({
       href={`/decisions/${item.slug}`}
       className={cn('flex flex-col gap-4 pb-4 hover:no-underline', className)}
     >
-      <div className="flex flex-col gap-2">
-        {/* Process name and status chip */}
-        <DecisionProcessHeader
-          name={processInstance.name || item.name}
-          currentState={currentPhaseName}
-        />
-
-        {/* Organization and closing date */}
+      <DecisionCardHeader
+        name={processInstance.name || item.name}
+        currentState={currentPhaseName}
+      >
         <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
           {closingDate && <DecisionClosingDate closingDate={closingDate} />}
           <div className="flex items-end gap-4 text-neutral-black">
@@ -134,7 +110,7 @@ export const ProfileDecisionListItem = ({
             />
           </div>
         </div>
-      </div>
+      </DecisionCardHeader>
     </Link>
   );
 };
@@ -180,22 +156,3 @@ const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
     </div>
   );
 };
-
-const DecisionProcessHeader = ({
-  name,
-  currentState,
-}: {
-  name: string;
-  currentState?: string;
-}) => (
-  <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
-    <Header3 className="font-serif !text-title-base text-neutral-black">
-      {name}
-    </Header3>
-    {currentState ? (
-      <Chip className="bg-primary-tealWhite text-primary-tealBlack">
-        {currentState}
-      </Chip>
-    ) : null}
-  </div>
-);

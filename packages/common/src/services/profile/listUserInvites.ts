@@ -1,21 +1,6 @@
-import { db } from '@op/db/client';
-import {
-  type AccessRole,
-  type ObjectsInStorage,
-  type Profile,
-  type ProfileInvite,
-} from '@op/db/schema';
+import { count, countDistinct, db, inArray } from '@op/db/client';
+import { proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-
-type ProfileWithAvatar = Profile & {
-  avatarImage: ObjectsInStorage | null;
-};
-
-type ProfileInviteWithProfile = ProfileInvite & {
-  accessRole: AccessRole | null;
-  profile: ProfileWithAvatar | null;
-  inviter: ProfileWithAvatar | null;
-};
 
 /**
  * List invites for the current user by email.
@@ -29,12 +14,12 @@ export const listUserInvites = async ({
   user: User;
   entityType?: string;
   pending?: boolean;
-}): Promise<ProfileInviteWithProfile[]> => {
+}) => {
   if (!user.email) {
     return [];
   }
 
-  const invites = (await db.query.profileInvites.findMany({
+  const invites = await db.query.profileInvites.findMany({
     where: {
       email: { ilike: user.email },
       ...(pending === true && { acceptedOn: { isNull: true } }),
@@ -46,6 +31,15 @@ export const listUserInvites = async ({
       profile: {
         with: {
           avatarImage: true,
+          processInstance: {
+            with: {
+              steward: {
+                with: {
+                  avatarImage: true,
+                },
+              },
+            },
+          },
         },
       },
       inviter: {
@@ -57,7 +51,49 @@ export const listUserInvites = async ({
     orderBy: {
       createdAt: 'desc',
     },
-  })) as ProfileInviteWithProfile[];
+  });
 
-  return invites;
+  // Collect processInstance IDs and fetch proposal counts at the DB level
+  const instanceIds = invites.reduce<string[]>((accum, invite) => {
+    const id = invite.profile?.processInstance?.id;
+    if (id) {
+      accum.push(id);
+    }
+    return accum;
+  }, []);
+
+  const countsMap = new Map<
+    string,
+    { proposalCount: number; participantCount: number }
+  >();
+
+  if (instanceIds.length > 0) {
+    const counts = await db
+      .select({
+        processInstanceId: proposals.processInstanceId,
+        proposalCount: count(proposals.id),
+        participantCount: countDistinct(proposals.submittedByProfileId),
+      })
+      .from(proposals)
+      .where(inArray(proposals.processInstanceId, instanceIds))
+      .groupBy(proposals.processInstanceId);
+
+    for (const row of counts) {
+      countsMap.set(row.processInstanceId, {
+        proposalCount: row.proposalCount,
+        participantCount: row.participantCount,
+      });
+    }
+  }
+
+  return invites.map((invite) => {
+    const instanceId = invite.profile?.processInstance?.id;
+    const stats = instanceId ? countsMap.get(instanceId) : undefined;
+
+    return {
+      ...invite,
+      proposalCount: stats?.proposalCount ?? 0,
+      participantCount: stats?.participantCount ?? 0,
+    };
+  });
 };

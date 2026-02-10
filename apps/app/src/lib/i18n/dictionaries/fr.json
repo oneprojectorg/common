@@ -538,5 +538,12 @@
   "Support your proposal with relevant documents like budgets or supporting research.": "Soutenez votre proposition avec des documents pertinents comme des budgets ou des recherches de soutien.",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepte PDF, DOCX, XLSX jusqu'à {size}Mo",
   "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées",
-  "Drag to reorder": "Glisser pour réorganiser"
+  "Drag to reorder": "Glisser pour réorganiser",
+  "Join decision-making processes": "Rejoignez les processus de prise de décision",
+  "You've been invited to join the following decision-making processes": "Vous avez été invité à rejoindre les processus de prise de décision suivants",
+  "I don't want to participate": "Je ne veux pas participer",
+  "Failed to accept invitations": "Échec de l'acceptation des invitations",
+  "Failed to decline invitation": "Échec du refus de l'invitation",
+  "Participants": "Participants",
+  "Proposals": "Propositions"
 }

@@ -30,6 +30,11 @@ const decisionProfileQueryConfig = {
             organization: true,
           },
         },
+        steward: {
+          with: {
+            avatarImage: true,
+          },
+        },
         proposals: {
           columns: {
             id: true,

@@ -538,5 +538,12 @@
   "Support your proposal with relevant documents like budgets or supporting research.": "Support your proposal with relevant documents like budgets or supporting research.",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepts PDF, DOCX, XLSX up to {size}MB",
   "{count}/{max} attachments added": "{count}/{max} attachments added",
-  "Drag to reorder": "Drag to reorder"
+  "Drag to reorder": "Drag to reorder",
+  "Join decision-making processes": "Join decision-making processes",
+  "You've been invited to join the following decision-making processes": "You've been invited to join the following decision-making processes",
+  "I don't want to participate": "I don't want to participate",
+  "Failed to accept invitations": "Failed to accept invitations",
+  "Failed to decline invitation": "Failed to decline invitation",
+  "Participants": "Participants",
+  "Proposals": "Proposals"
 }
