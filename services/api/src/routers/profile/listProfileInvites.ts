@@ -1,6 +1,7 @@
 import { listProfileUserInvites } from '@op/common';
 import { z } from 'zod';
 
+import { profileMinimalEncoder } from '../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
@@ -13,6 +14,7 @@ const outputSchema = z.array(
     id: z.string(),
     email: z.string(),
     createdAt: z.string().nullable(),
+    inviteeProfile: profileMinimalEncoder.nullable(),
   }),
 );
 
@@ -31,6 +33,7 @@ export const listProfileInvitesRouter = router({
         id: invite.id,
         email: invite.email,
         createdAt: invite.createdAt,
+        inviteeProfile: invite.inviteeProfile ?? null,
       }));
     }),
 });
