@@ -61,6 +61,7 @@ export const profileInvites = pgTable(
     index('profile_invites_email_idx').on(table.email),
     index('profile_invites_profile_idx').on(table.profileId),
     index('profile_invites_entity_type_idx').on(table.profileEntityType),
+    index('profile_invites_invitee_profile_idx').on(table.inviteeProfileId),
     // Only one pending invite per email per profile
     uniqueIndex('profile_invites_email_profile_pending_idx')
       .on(table.email, table.profileId)
