@@ -8,12 +8,3 @@ export const i18nConfig = {
 } as const;
 
 export type Locale = SupportedLocale;
-
-/** Human-readable names for supported locales, used as translation keys */
-export const LOCALE_NAMES: Record<SupportedLocale, string> = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  pt: 'Portuguese',
-  bn: 'Bengali',
-};
