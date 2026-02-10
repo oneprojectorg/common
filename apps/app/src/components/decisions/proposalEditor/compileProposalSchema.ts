@@ -24,7 +24,7 @@ export interface ProposalFormContext {
  * provided in a sibling `x-format-options` object — the compiler merges them
  * into `ui:options` so the widget receives them at runtime.
  */
-export type XFormat = 'short-text' | 'long-text';
+export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
 
 // ---------------------------------------------------------------------------
 // x-format → RJSF ui mapping
@@ -45,6 +45,8 @@ interface FormatConfig {
 const FORMAT_REGISTRY: Record<XFormat, FormatConfig> = {
   'short-text': { widget: 'CollaborativeText' },
   'long-text': { widget: 'CollaborativeText', defaults: { multiline: true } },
+  money: { field: 'CollaborativeBudgetField' },
+  category: { field: 'CollaborativeCategoryField' },
 };
 
 /** Default `x-format` when a dynamic field omits the extension. */

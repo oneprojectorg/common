@@ -116,6 +116,7 @@ export function ProposalEditor({
   const rawProposalTemplate = (instance.process?.processSchema
     ?.proposalTemplate ?? null) as StrictRJSFSchema | null;
 
+  // Mock template — remove once template builder persists to server
   const proposalTemplateWithMockField = useMemo<StrictRJSFSchema>(() => {
     const base: StrictRJSFSchema = rawProposalTemplate ?? {
       type: 'object',
@@ -127,6 +128,26 @@ export function ProposalEditor({
       ...base,
       properties: {
         ...base.properties,
+        title: {
+          type: 'string',
+          title: t('Title'),
+          minLength: 1,
+          ...(base.properties?.title as Record<string, unknown>),
+          'x-format': 'short-text',
+        },
+        category: {
+          type: ['string', 'null'] as const,
+          title: t('Category'),
+          ...(base.properties?.category as Record<string, unknown>),
+          'x-format': 'category',
+        },
+        budget: {
+          type: ['number', 'null'] as const,
+          title: t('Budget'),
+          minimum: 0,
+          ...(base.properties?.budget as Record<string, unknown>),
+          'x-format': 'money',
+        },
         // Mock dynamic field — remove once template builder persists to server
         fld_need_assessment: {
           type: 'string',
@@ -136,8 +157,12 @@ export function ProposalEditor({
           'x-format': 'long-text',
         },
       },
+      required: [
+        'title',
+        ...(Array.isArray(base.required) ? base.required : []),
+      ],
     };
-  }, [rawProposalTemplate]);
+  }, [rawProposalTemplate, t]);
 
   const { schema: proposalSchema, uiSchema: proposalUiSchema } = useMemo(
     () => compileProposalSchema(proposalTemplateWithMockField, t),
