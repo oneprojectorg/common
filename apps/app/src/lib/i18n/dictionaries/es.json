@@ -544,5 +544,13 @@
   "Failed to accept invitations": "Error al aceptar las invitaciones",
   "Failed to decline invitation": "Error al rechazar la invitación",
   "Participants": "Participantes",
-  "Proposals": "Propuestas"
+  "Translate to {language}": "Traducir al {language}",
+  "Translated from {language}": "Traducido del {language}",
+  "View original": "Ver original",
+  "Translating...": "Traduciendo...",
+  "English": "inglés",
+  "Spanish": "español",
+  "French": "francés",
+  "Portuguese": "portugués",
+  "Bengali": "bengalí"
 }

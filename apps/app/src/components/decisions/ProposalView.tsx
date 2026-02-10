@@ -6,18 +6,21 @@ import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import { type SupportedLocale, parseProposalData } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
+import { Link } from '@op/ui/Link';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { Heart, MessageCircle } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import Image from 'next/image';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { LOCALE_NAMES } from '@/lib/i18n/config';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
@@ -26,6 +29,7 @@ import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
+import { TranslateBanner } from './TranslateBanner';
 import { getProposalContent } from './proposalContentUtils';
 
 type Proposal = RouterOutput['decision']['getProposal'];
@@ -38,6 +42,7 @@ export function ProposalView({
   backHref: string;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: proposal } = trpc.decision.getProposal.useQuery({
@@ -99,13 +104,65 @@ export function ProposalView({
     }
   }, []);
 
-  // Parse proposal data using shared utility
-  const { title, budget, category } = parseProposalData(
-    currentProposal.proposalData,
-  );
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  const bodyHtml = currentProposal.htmlContent?.default;
-  const fallbackContent = getProposalContent(currentProposal.documentContent);
+  /** Holds the translated HTML content + source locale after a successful translation request */
+  const [translatedHtmlContent, setTranslatedHtmlContent] = useState<{
+    translated: Record<string, string>;
+    sourceLocale: string;
+  } | null>(null);
+
+  const translateMutation = trpc.translation.translateProposal.useMutation({
+    onSuccess: (data) => {
+      setTranslatedHtmlContent({
+        translated: data.translated,
+        sourceLocale: data.sourceLocale,
+      });
+    },
+  });
+
+  const handleTranslate = useCallback(() => {
+    translateMutation.mutate({
+      profileId: currentProposal.profileId,
+      targetLocale: locale as SupportedLocale,
+    });
+  }, [translateMutation, currentProposal.profileId, locale]);
+
+  const handleViewOriginal = () => setTranslatedHtmlContent(null);
+
+  const lookupLocaleName = (code: string) =>
+    LOCALE_NAMES[code as SupportedLocale] ?? code;
+
+  const sourceLanguageName = translatedHtmlContent
+    ? lookupLocaleName(
+        translatedHtmlContent.sourceLocale.toLowerCase().split('-')[0] ?? '',
+      )
+    : '';
+
+  const targetLanguageName = lookupLocaleName(locale);
+
+  // Parse proposal data using shared utility
+  const {
+    title: originalTitle,
+    budget,
+    category: originalCategory,
+  } = parseProposalData(currentProposal.proposalData);
+
+  // Use translated values when available, otherwise originals
+  const title = translatedHtmlContent?.translated.title ?? originalTitle;
+  const category =
+    translatedHtmlContent?.translated.category ?? originalCategory;
+
+  const bodyHtml =
+    translatedHtmlContent?.translated.default ??
+    currentProposal.htmlContent?.default;
+  const fallbackContent = translatedHtmlContent
+    ? null
+    : getProposalContent(currentProposal.documentContent);
+
+  // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
+  const showBanner =
+    locale !== 'en' && !bannerDismissed && !translatedHtmlContent;
 
   return (
     <ProposalViewLayout
@@ -126,6 +183,23 @@ export function ProposalView({
             <Header1 className="font-serif text-title-lg">
               {title || t('Untitled Proposal')}
             </Header1>
+
+            {/* Translation attribution */}
+            {translatedHtmlContent && (
+              <p className="text-sm text-neutral-gray3">
+                {t('Translated from {language}', {
+                  language: t(sourceLanguageName),
+                })}{' '}
+                &middot;{' '}
+                <Link
+                  onPress={handleViewOriginal}
+                  className="text-sm font-semibold"
+                >
+                  {t('View original')}
+                </Link>
+              </p>
+            )}
+
             <div className="space-y-6">
               {/* Metadata Row */}
               <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
@@ -303,6 +377,16 @@ export function ProposalView({
           </div>
         </div>
       </div>
+
+      {/* Translation banner */}
+      {showBanner && (
+        <TranslateBanner
+          onTranslate={handleTranslate}
+          onDismiss={() => setBannerDismissed(true)}
+          isTranslating={translateMutation.isPending}
+          languageName={t(targetLanguageName)}
+        />
+      )}
     </ProposalViewLayout>
   );
 }
