@@ -1,0 +1,1 @@
+export { ProposalEditor } from './ProposalEditor';

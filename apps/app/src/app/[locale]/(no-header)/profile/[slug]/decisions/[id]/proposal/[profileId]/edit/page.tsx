@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { ProposalEditor } from '@/components/decisions/ProposalEditor';
+import { ProposalEditor } from '@/components/decisions/proposalEditor';
 
 function ProposalEditPageContent({
   profileId,
