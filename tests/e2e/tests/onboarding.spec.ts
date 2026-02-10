@@ -1,6 +1,6 @@
-import { EntityType, profileInvites } from '@op/db/schema';
+import { EntityType, profileInvites, users } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { db } from '@op/db/test';
+import { db, eq } from '@op/db/test';
 import { createDecisionInstance, getSeededTemplate } from '@op/test';
 import { randomUUID } from 'node:crypto';
 
@@ -48,11 +48,21 @@ test.describe('Onboarding', () => {
     const email = `e2e-onboard-invite-${randomUUID().slice(0, 6)}@oneproject.org`;
     const authUser = await createUser({ supabaseAdmin, email });
 
+    // Look up the profile created by the DB trigger
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    if (!userRecord?.profileId) {
+      throw new Error(`No profile found for user ${email}`);
+    }
+
     // Create a decision instance to invite the user to
     const template = await getSeededTemplate();
     const instance = await createDecisionInstance({
       processId: template.id,
-      ownerProfileId: authUser.id,
+      ownerProfileId: userRecord.profileId,
       authUserId: authUser.id,
       email,
       schema: template.processSchema,
