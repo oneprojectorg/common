@@ -1,12 +1,12 @@
 import type { User } from '@op/supabase/lib';
+import type { TranslatableEntry } from '@op/translation';
+import { translateBatch } from '@op/translation';
 import { DeepLClient } from 'deepl-node';
 
 import { CommonError } from '../../utils';
 import { getProposal } from '../decision/getProposal';
 import { LOCALE_TO_DEEPL } from './locales';
 import type { SupportedLocale } from './locales';
-import type { TranslatableEntry } from './translateBatch';
-import { translateBatch } from './translateBatch';
 
 /**
  * Translates a proposal's content (title, category, HTML fragments) into the

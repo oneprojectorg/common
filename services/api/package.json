@@ -35,6 +35,7 @@
     "@op/logging": "workspace:*",
     "@op/realtime": "workspace:^",
     "@op/supabase": "workspace:*",
+    "@op/translation": "workspace:*",
     "@op/types": "workspace:*",
     "@supabase/supabase-js": "^2.49.3",
     "@tanstack/query-sync-storage-persister": "5.66.11",

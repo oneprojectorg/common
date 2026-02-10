@@ -777,6 +777,9 @@ importers:
       '@op/events':
         specifier: workspace:*
         version: link:../../services/events
+      '@op/translation':
+        specifier: workspace:*
+        version: link:../../services/translation
       '@rjsf/utils':
         specifier: 'catalog:'
         version: 5.24.12(react@19.2.1)
@@ -1179,6 +1182,9 @@ importers:
       '@op/supabase':
         specifier: workspace:*
         version: link:../supabase
+      '@op/translation':
+        specifier: workspace:*
+        version: link:../translation
       '@op/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1483,6 +1489,25 @@ importers:
       next:
         specifier: 'catalog:'
         version: 15.3.8(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
+    devDependencies:
+      '@op/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript-config
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  services/translation:
+    dependencies:
+      '@op/db':
+        specifier: workspace:*
+        version: link:../db
+      deepl-node:
+        specifier: ^1.24.0
+        version: 1.24.0
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*

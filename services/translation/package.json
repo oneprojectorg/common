@@ -1,0 +1,23 @@
+{
+  "name": "@op/translation",
+  "version": "0.0.0",
+  "private": true,
+  "license": "SEE LICENSE in /LICENSE",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@op/db": "workspace:*",
+    "deepl-node": "^1.24.0",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

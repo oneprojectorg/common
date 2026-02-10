@@ -1,6 +1,6 @@
-import { hashContent } from '@op/common';
 import { db } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
+import { hashContent } from '@op/translation';
 import { inArray } from 'drizzle-orm';
 
 /**
