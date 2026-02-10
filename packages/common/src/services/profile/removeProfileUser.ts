@@ -3,7 +3,11 @@ import { profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils/error';
+import {
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfileUser } from '../assert';
 
@@ -30,6 +34,10 @@ export const removeProfileUser = async ({
   }
 
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
+
+  if (targetProfileUser.isOwner) {
+    throw new ValidationError('Cannot remove the owner of a profile');
+  }
 
   // Delete the profile user (this cascades to profileUserToAccessRoles)
   const [deletedUser] = await db

@@ -54,6 +54,36 @@ describe.concurrent('profile.users.removeUser', () => {
     expect(removedUser).toBeUndefined();
   });
 
+  it('should fail when trying to remove the profile owner', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { adminUser, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+
+    const memberUser = memberUsers[0];
+    if (!memberUser) {
+      throw new Error('Expected memberUser to be defined');
+    }
+
+    // Mark the member as the profile owner
+    await db
+      .update(profileUsers)
+      .set({ isOwner: true })
+      .where(eq(profileUsers.id, memberUser.profileUserId));
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.removeUser({
+        profileUserId: memberUser.profileUserId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
   it('should fail when non-admin tries to remove user', async ({
     task,
     onTestFinished,

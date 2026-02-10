@@ -3,12 +3,15 @@ import {
   EntityType,
   ProposalStatus,
   processInstances,
+  profileUserToAccessRoles,
+  profileUsers,
   profiles,
   proposalAttachments,
   proposalCategories,
   proposals,
   taxonomyTerms,
 } from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import {
@@ -33,14 +36,12 @@ export interface CreateProposalInput {
 
 export const createProposal = async ({
   data,
-  authUserId,
+  user,
 }: {
   data: CreateProposalInput;
-  authUserId: string;
+  user: User;
 }) => {
-  if (!authUserId) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
+  const authUserId = user.id;
 
   try {
     // Verify the process instance exists
@@ -130,6 +131,29 @@ export const createProposal = async ({
 
       if (!proposalProfile) {
         throw new CommonError('Failed to create proposal profile');
+      }
+
+      // Add the creator as a profile user with Admin role
+      const [[newProfileUser], adminRole] = await Promise.all([
+        tx
+          .insert(profileUsers)
+          .values({
+            profileId: proposalProfile.id,
+            authUserId,
+            email: user.email!,
+            isOwner: true,
+          })
+          .returning(),
+        tx.query.accessRoles.findFirst({
+          where: { name: 'Admin' },
+        }),
+      ]);
+
+      if (newProfileUser && adminRole) {
+        await tx.insert(profileUserToAccessRoles).values({
+          profileUserId: newProfileUser.id,
+          accessRoleId: adminRole.id,
+        });
       }
 
       const proposalId = crypto.randomUUID();

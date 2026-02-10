@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
+  boolean,
   index,
   pgTable,
   primaryKey,
@@ -28,6 +29,7 @@ export const profileUsers = pgTable(
     name: varchar({ length: 256 }),
     email: varchar().notNull(),
     about: text(),
+    isOwner: boolean().default(false).notNull(),
     profileId: uuid()
       .references(() => profiles.id, {
         onDelete: 'cascade',

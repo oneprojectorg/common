@@ -154,6 +154,7 @@ export const inviteUsersToProfile = async ({
     profileEntityType: string;
     accessRoleId: string;
     invitedBy: string;
+    inviteeProfileId?: string;
     message?: string;
   }> = [];
 
@@ -211,6 +212,7 @@ export const inviteUsersToProfile = async ({
       profileEntityType: profile.type,
       accessRoleId: targetRole.id,
       invitedBy: profileUser.profileId,
+      inviteeProfileId: existingUser?.profileId ?? undefined,
       message: personalMessage,
     });
 

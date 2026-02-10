@@ -40,6 +40,9 @@ export const profileInvites = pgTable(
       .references(() => accessRoles.id, {
         onDelete: 'cascade',
       }),
+    inviteeProfileId: uuid('invitee_profile_id').references(() => profiles.id, {
+      onDelete: 'set null',
+    }),
     invitedBy: uuid('invited_by')
       .notNull()
       .references(() => profiles.id, {
@@ -58,6 +61,7 @@ export const profileInvites = pgTable(
     index('profile_invites_email_idx').on(table.email),
     index('profile_invites_profile_idx').on(table.profileId),
     index('profile_invites_entity_type_idx').on(table.profileEntityType),
+    index('profile_invites_invitee_profile_idx').on(table.inviteeProfileId),
     // Only one pending invite per email per profile
     uniqueIndex('profile_invites_email_profile_pending_idx')
       .on(table.email, table.profileId)
@@ -75,6 +79,11 @@ export const profileInvitesRelations = relations(profileInvites, ({ one }) => ({
   accessRole: one(accessRoles, {
     fields: [profileInvites.accessRoleId],
     references: [accessRoles.id],
+  }),
+  inviteeProfile: one(profiles, {
+    fields: [profileInvites.inviteeProfileId],
+    references: [profiles.id],
+    relationName: 'profileInvite_invitee',
   }),
   inviter: one(profiles, {
     fields: [profileInvites.invitedBy],
