@@ -32,6 +32,7 @@
     "w:emails": "pnpm -C ./services/emails",
     "w:realtime": "pnpm -C ./services/realtime",
     "w:supabase": "pnpm -C ./services/supabase",
+    "w:translation": "pnpm -C ./services/translation",
     "w:ui": "pnpm -C ./packages/ui",
     "w:workflows": "pnpm -C ./services/workflows"
   },

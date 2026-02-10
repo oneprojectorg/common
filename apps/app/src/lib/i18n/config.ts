@@ -1,9 +1,10 @@
+import { SUPPORTED_LOCALES } from '@op/common/client';
+import type { SupportedLocale } from '@op/common/client';
+
 export const i18nConfig = {
-  defaultLocale: 'en',
-  locales: ['en', 'es', 'fr', 'pt', 'bn'],
+  defaultLocale: 'en' satisfies SupportedLocale,
+  locales: [...SUPPORTED_LOCALES],
   localeDetection: true,
-};
+} as const;
 
-export type Locale = (typeof i18nConfig)['locales'][number];
-
-export type SupportedLocale = (typeof i18nConfig.locales)[number];
+export type Locale = SupportedLocale;
