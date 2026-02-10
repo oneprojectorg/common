@@ -55,6 +55,7 @@ const profileUserWithPermissionsEncoder = createSelectSchema(
   profile: profileMinimalEncoder.nullish(),
   permissions: zonePermissionsSchema.nullish(),
   roles: z.array(roleJunctionSchema).nullish(),
+  isOwner: z.boolean().default(false),
 });
 
 /**
