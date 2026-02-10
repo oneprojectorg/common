@@ -1,12 +1,16 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
+import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { ProfileItem } from '@op/ui/ProfileItem';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
 import { z } from 'zod';
 
@@ -15,7 +19,6 @@ import { useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '../ErrorBoundary';
 import { ErrorMessage } from '../ErrorMessage';
 import { StepProps } from '../MultiStepForm';
-import { DecisionCardHeader } from '../decisions/DecisionCardHeader';
 import { FormContainer } from '../form/FormContainer';
 import { DecisionInvitesSkeleton } from './DecisionInvitesSkeleton';
 
@@ -134,11 +137,34 @@ export const DecisionInvitesForm = ({
             return (
               <div key={invite.id} className="flex flex-col gap-2">
                 <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <DecisionCardHeader
-                    name={profile?.name ?? ''}
-                    stewardName={steward?.name}
-                    stewardAvatarPath={steward?.avatarImage?.name}
-                  />
+                  <ProfileItem
+                    size="small"
+                    className="gap-2 items-center"
+                    avatar={
+                      <Avatar
+                        placeholder={steward?.name ?? ''}
+                        className="size-6 shrink-0"
+                      >
+                        {steward?.avatarImage?.name ? (
+                          <Image
+                            src={
+                              getPublicUrl(steward.avatarImage.name) ?? ''
+                            }
+                            alt={steward.name ?? ''}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : null}
+                      </Avatar>
+                    }
+                    title={profile?.name ?? ''}
+                  >
+                    {steward?.name ? (
+                      <span className="text-sm text-neutral-gray4">
+                        {steward.name}
+                      </span>
+                    ) : null}
+                  </ProfileItem>
                   <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
                     <DecisionStat
                       number={invite.participantCount}
