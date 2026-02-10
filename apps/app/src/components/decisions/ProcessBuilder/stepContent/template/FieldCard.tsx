@@ -1,6 +1,5 @@
 'use client';
 
-import type { FieldType } from '@op/common';
 import {
   FieldConfigCard,
   FieldConfigCardDragPreview,
@@ -11,6 +10,7 @@ import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { FieldView } from '../../../proposalTemplate';
 import {
   getFieldConfigComponent,
   getFieldIcon,
@@ -18,12 +18,9 @@ import {
 } from './fieldRegistry';
 
 interface FieldCardProps {
-  fieldId: string;
+  field: FieldView;
   fieldSchema: StrictRJSFSchema;
   fieldUiSchema: UiSchema;
-  fieldType: FieldType;
-  isLocked: boolean;
-  isRequired: boolean;
   controls?: SortableItemControls;
   onRemove?: (fieldId: string) => void;
   onUpdateLabel?: (fieldId: string, label: string) => void;
@@ -42,12 +39,9 @@ interface FieldCardProps {
  * For sortable fields: uses FieldConfigCard with drag handle, remove button, and config section
  */
 export function FieldCard({
-  fieldId,
+  field,
   fieldSchema,
   fieldUiSchema,
-  fieldType,
-  isLocked,
-  isRequired,
   controls,
   onRemove,
   onUpdateLabel,
@@ -58,17 +52,15 @@ export function FieldCard({
 }: FieldCardProps) {
   const t = useTranslations();
 
-  const Icon = getFieldIcon(fieldType);
-  const ConfigComponent = getFieldConfigComponent(fieldType);
-  const label = (fieldSchema.title as string) ?? '';
-  const description = fieldSchema.description;
+  const Icon = getFieldIcon(field.fieldType);
+  const ConfigComponent = getFieldConfigComponent(field.fieldType);
 
-  if (isLocked) {
+  if (field.locked) {
     return (
       <FieldConfigCard
         icon={Icon}
-        iconTooltip={t(getFieldLabelKey(fieldType))}
-        label={label}
+        iconTooltip={t(getFieldLabelKey(field.fieldType))}
+        label={field.label}
         locked
       />
     );
@@ -77,31 +69,35 @@ export function FieldCard({
   return (
     <FieldConfigCard
       icon={Icon}
-      iconTooltip={t(getFieldLabelKey(fieldType))}
-      label={label}
-      onLabelChange={(newLabel) => onUpdateLabel?.(fieldId, newLabel)}
+      iconTooltip={t(getFieldLabelKey(field.fieldType))}
+      label={field.label}
+      onLabelChange={(newLabel) => onUpdateLabel?.(field.id, newLabel)}
       labelInputAriaLabel={t('Field label')}
-      description={description}
-      onDescriptionChange={(desc) => onUpdateDescription?.(fieldId, desc)}
+      description={field.description}
+      onDescriptionChange={(desc) => onUpdateDescription?.(field.id, desc)}
       descriptionLabel={t('Description')}
       descriptionPlaceholder={t(
         'Provide additional guidance for participants...',
       )}
-      onRemove={onRemove ? () => onRemove(fieldId) : undefined}
+      onRemove={onRemove ? () => onRemove(field.id) : undefined}
       removeAriaLabel={t('Remove field')}
-      dragHandleAriaLabel={t('Drag to reorder {field}', { field: label })}
+      dragHandleAriaLabel={t('Drag to reorder {field}', {
+        field: field.label,
+      })}
       controls={controls}
     >
       {ConfigComponent && (
         <div className="mt-4">
           <ConfigComponent
-            fieldId={fieldId}
+            field={field}
             fieldSchema={fieldSchema}
             fieldUiSchema={fieldUiSchema}
             onUpdateJsonSchema={(updates) =>
-              onUpdateJsonSchema?.(fieldId, updates)
+              onUpdateJsonSchema?.(field.id, updates)
             }
-            onUpdateUiSchema={(updates) => onUpdateUiSchema?.(fieldId, updates)}
+            onUpdateUiSchema={(updates) =>
+              onUpdateUiSchema?.(field.id, updates)
+            }
           />
         </div>
       )}
@@ -110,8 +106,8 @@ export function FieldCard({
         <span className="text-neutral-charcoal">{t('Required?')}</span>
         <ToggleButton
           size="small"
-          isSelected={isRequired}
-          onChange={(isSelected) => onUpdateRequired?.(fieldId, isSelected)}
+          isSelected={field.required}
+          onChange={(isSelected) => onUpdateRequired?.(field.id, isSelected)}
           aria-label={t('Required')}
         />
       </div>
@@ -122,15 +118,9 @@ export function FieldCard({
 /**
  * Drag preview shown while dragging a field card.
  */
-export function FieldCardDragPreview({
-  fieldType,
-  label,
-}: {
-  fieldType: FieldType;
-  label: string;
-}) {
-  const Icon = getFieldIcon(fieldType);
-  return <FieldConfigCardDragPreview icon={Icon} label={label} />;
+export function FieldCardDragPreview({ field }: { field: FieldView }) {
+  const Icon = getFieldIcon(field.fieldType);
+  return <FieldConfigCardDragPreview icon={Icon} label={field.label} />;
 }
 
 /**

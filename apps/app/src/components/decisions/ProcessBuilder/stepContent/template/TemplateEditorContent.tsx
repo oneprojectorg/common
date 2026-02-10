@@ -1,24 +1,6 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  type FieldType,
-  type ProposalTemplate,
-  addField as addFieldToTemplate,
-  createDefaultTemplate,
-  getFieldLabel,
-  getFieldOrder,
-  getFieldSchema,
-  getFieldType,
-  getFieldUi,
-  isFieldLocked,
-  isFieldRequired,
-  removeField as removeFieldFromTemplate,
-  reorderFields as reorderTemplateFields,
-  setFieldRequired,
-  updateFieldDescription,
-  updateFieldLabel,
-} from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Header2 } from '@op/ui/Header';
@@ -29,6 +11,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import {
+  type FieldType,
+  type FieldView,
+  type ProposalTemplate,
+  addField as addFieldToTemplate,
+  createDefaultTemplate,
+  getFieldOrder,
+  getFieldSchema,
+  getFieldUi,
+  getFields,
+  isFieldLocked,
+  removeField as removeFieldFromTemplate,
+  reorderFields as reorderTemplateFields,
+  setFieldRequired,
+  updateFieldDescription,
+  updateFieldLabel,
+} from '../../../proposalTemplate';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { AddFieldMenu } from './AddFieldMenu';
 import {
@@ -45,13 +44,6 @@ import { getFieldLabelKey } from './fieldRegistry';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
-/**
- * Sortable item — just an id so the Sortable component can track them.
- */
-interface SortableFieldItem {
-  id: string;
-}
-
 export function TemplateEditorContent({
   decisionProfileId,
   instanceId,
@@ -61,7 +53,6 @@ export function TemplateEditorContent({
 }) {
   const t = useTranslations();
 
-  // Build default template with translated labels
   const defaultTemplate = useMemo(
     () =>
       createDefaultTemplate({
@@ -75,7 +66,6 @@ export function TemplateEditorContent({
   const [template, setTemplate] = useState<ProposalTemplate>(defaultTemplate);
   const [hasHydrated, setHasHydrated] = useState(false);
 
-  // Sidebar is always open on desktop, toggleable on mobile
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
@@ -83,45 +73,35 @@ export function TemplateEditorContent({
   const { getProposalTemplate, setProposalTemplate, setSaveStatus, markSaved } =
     useProcessBuilderStore();
 
-  // tRPC mutation for backend persistence
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
-
-  // Track whether we should skip the initial auto-save
   const isInitialLoadRef = useRef(true);
 
-  // Derive field order and split into locked vs sortable
-  const fieldOrder = useMemo(() => getFieldOrder(template), [template]);
-  const lockedFieldIds = useMemo(
-    () => fieldOrder.filter((id) => isFieldLocked(template, id)),
-    [fieldOrder, template],
+  // Derive all field views from the template
+  const allFields = useMemo(() => getFields(template), [template]);
+  const lockedFields = useMemo(
+    () => allFields.filter((f) => f.locked),
+    [allFields],
   );
-  const sortableFieldIds = useMemo(
-    () => fieldOrder.filter((id) => !isFieldLocked(template, id)),
-    [fieldOrder, template],
-  );
-  const sortableItems: SortableFieldItem[] = useMemo(
-    () => sortableFieldIds.map((id) => ({ id })),
-    [sortableFieldIds],
+  const sortableFields = useMemo(
+    () => allFields.filter((f) => !f.locked),
+    [allFields],
   );
 
-  // Derive sidebar field list
+  // Sidebar field list
   const sidebarFields = useMemo(
     () =>
-      fieldOrder.map((id) => ({
-        id,
-        label: getFieldLabel(template, id),
-        fieldType: getFieldType(template, id) ?? ('short_text' as FieldType),
+      allFields.map((f) => ({
+        id: f.id,
+        label: f.label,
+        fieldType: f.fieldType,
       })),
-    [fieldOrder, template],
+    [allFields],
   );
 
   // Debounced auto-save to localStorage AND backend
   const debouncedSave = useDebouncedCallback(
     (updatedTemplate: ProposalTemplate) => {
-      // Save to Zustand (localStorage)
       setProposalTemplate(decisionProfileId, updatedTemplate);
-
-      // Save to backend
       updateInstance.mutate(
         {
           instanceId,
@@ -147,7 +127,6 @@ export function TemplateEditorContent({
         setTemplate(savedTemplate);
       }
       setHasHydrated(true);
-      // After hydration, allow saves
       isInitialLoadRef.current = false;
     });
 
@@ -180,11 +159,14 @@ export function TemplateEditorContent({
   }, []);
 
   const handleReorderFields = useCallback(
-    (newItems: SortableFieldItem[]) => {
-      const newOrder = [...lockedFieldIds, ...newItems.map((item) => item.id)];
+    (newItems: FieldView[]) => {
+      const lockedIds = getFieldOrder(template).filter((id) =>
+        isFieldLocked(template, id),
+      );
+      const newOrder = [...lockedIds, ...newItems.map((item) => item.id)];
       setTemplate((prev) => reorderTemplateFields(prev, newOrder));
     },
-    [lockedFieldIds],
+    [template],
   );
 
   const handleUpdateLabel = useCallback((fieldId: string, label: string) => {
@@ -242,6 +224,26 @@ export function TemplateEditorContent({
     [],
   );
 
+  /** Render a FieldCard for a given field view. */
+  const renderFieldCard = (
+    field: FieldView,
+    controls?: Parameters<Parameters<typeof Sortable>[0]['children']>[1],
+  ) => (
+    <FieldCard
+      key={field.id}
+      field={field}
+      fieldSchema={getFieldSchema(template, field.id) ?? {}}
+      fieldUiSchema={getFieldUi(template, field.id)}
+      controls={controls}
+      onRemove={field.locked ? undefined : handleRemoveField}
+      onUpdateLabel={handleUpdateLabel}
+      onUpdateDescription={handleUpdateDescription}
+      onUpdateRequired={handleUpdateRequired}
+      onUpdateJsonSchema={handleUpdateJsonSchema}
+      onUpdateUiSchema={handleUpdateUiSchema}
+    />
+  );
+
   if (!hasHydrated) {
     return <TemplateEditorSkeleton />;
   }
@@ -249,7 +251,6 @@ export function TemplateEditorContent({
   return (
     <SidebarProvider isOpen={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
       <div className="flex h-full flex-col md:flex-row">
-        {/* Mobile header with sidebar trigger */}
         <div className="flex items-center justify-between gap-2 p-4 md:hidden">
           <Header2 className="font-serif text-title-sm">
             {t('Proposal template')}
@@ -257,14 +258,12 @@ export function TemplateEditorContent({
           <FieldListTrigger />
         </div>
 
-        {/* Sidebar */}
         <TemplateEditorSidebar
           fields={sidebarFields}
           onAddField={handleAddField}
           side={isMobile ? 'right' : 'left'}
         />
 
-        {/* Main content area */}
         <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
             <Header2 className="hidden font-serif text-title-sm md:mt-8 md:block">
@@ -282,76 +281,31 @@ export function TemplateEditorContent({
 
             {/* Locked fields */}
             <div className="mb-3 space-y-3">
-              {lockedFieldIds.map((fieldId) => {
-                const fieldSchema = getFieldSchema(template, fieldId) ?? {};
-                const fieldUiSchema = getFieldUi(template, fieldId);
-                const fieldType =
-                  getFieldType(template, fieldId) ?? 'short_text';
-                return (
-                  <FieldCard
-                    key={fieldId}
-                    fieldId={fieldId}
-                    fieldSchema={fieldSchema}
-                    fieldUiSchema={fieldUiSchema}
-                    fieldType={fieldType}
-                    isLocked
-                    isRequired={isFieldRequired(template, fieldId)}
-                  />
-                );
-              })}
+              {lockedFields.map((field) => renderFieldCard(field))}
             </div>
 
             {/* Sortable fields */}
             <Sortable
-              items={sortableItems}
+              items={sortableFields}
               onChange={handleReorderFields}
               dragTrigger="handle"
-              getItemLabel={(item) => getFieldLabel(template, item.id)}
+              getItemLabel={(field) => field.label}
               className="gap-3"
               renderDragPreview={(items) => {
-                const item = items[0];
-                if (!item) {
+                const field = items[0];
+                if (!field) {
                   return null;
                 }
-                const ft = getFieldType(template, item.id) ?? 'short_text';
-                return (
-                  <FieldCardDragPreview
-                    fieldType={ft}
-                    label={getFieldLabel(template, item.id)}
-                  />
-                );
+                return <FieldCardDragPreview field={field} />;
               }}
               renderDropIndicator={FieldCardDropIndicator}
               aria-label={t('Form fields')}
             >
-              {(item, controls) => {
-                const fieldSchema = getFieldSchema(template, item.id) ?? {};
-                const fieldUiSchema = getFieldUi(template, item.id);
-                const fieldType =
-                  getFieldType(template, item.id) ?? 'short_text';
-                return (
-                  <FieldCard
-                    fieldId={item.id}
-                    fieldSchema={fieldSchema}
-                    fieldUiSchema={fieldUiSchema}
-                    fieldType={fieldType}
-                    isLocked={false}
-                    isRequired={isFieldRequired(template, item.id)}
-                    controls={controls}
-                    onRemove={handleRemoveField}
-                    onUpdateLabel={handleUpdateLabel}
-                    onUpdateDescription={handleUpdateDescription}
-                    onUpdateRequired={handleUpdateRequired}
-                    onUpdateJsonSchema={handleUpdateJsonSchema}
-                    onUpdateUiSchema={handleUpdateUiSchema}
-                  />
-                );
-              }}
+              {(field, controls) => renderFieldCard(field, controls)}
             </Sortable>
           </div>
         </main>
 
-        {/* Mobile sticky footer with Add field button */}
         <div className="fixed inset-x-0 bottom-0 border-t bg-white p-4 md:hidden">
           <AddFieldMenu onAddField={handleAddField} />
         </div>

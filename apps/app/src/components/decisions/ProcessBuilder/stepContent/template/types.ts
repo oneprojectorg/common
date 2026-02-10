@@ -1,10 +1,10 @@
 /**
  * Template editor types.
  *
- * FieldType and ProposalTemplate are now defined in @op/common.
+ * FieldType and ProposalTemplate are defined in decisions/proposalTemplate.ts.
  * This file keeps UI-only types used by the builder (AddFieldMenu, registry).
  */
-export type { FieldType } from '@op/common';
+export type { FieldType } from '../../../proposalTemplate';
 
 /**
  * Field category for grouping in the add field menu.
@@ -12,7 +12,7 @@ export type { FieldType } from '@op/common';
 export interface FieldCategory {
   id: string;
   labelKey: string;
-  types: import('@op/common').FieldType[];
+  types: import('../../../proposalTemplate').FieldType[];
 }
 
 /**

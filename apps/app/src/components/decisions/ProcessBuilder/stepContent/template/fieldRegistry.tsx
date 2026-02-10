@@ -11,6 +11,7 @@ import {
   LuToggleLeft,
 } from 'react-icons/lu';
 
+import type { FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
 import { FieldConfigNumber } from './FieldConfigNumber';
 import type { FieldCategory, FieldType, FieldTypeConfig } from './types';
@@ -19,7 +20,7 @@ import type { FieldCategory, FieldType, FieldTypeConfig } from './types';
  * Props passed to field config components.
  */
 export interface FieldConfigProps {
-  fieldId: string;
+  field: FieldView;
   fieldSchema: StrictRJSFSchema;
   fieldUiSchema: UiSchema;
   onUpdateJsonSchema: (updates: Partial<StrictRJSFSchema>) => void;

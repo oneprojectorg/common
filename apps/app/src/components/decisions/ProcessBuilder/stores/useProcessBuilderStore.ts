@@ -32,9 +32,10 @@
  */
 import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
 import type { ProposalCategory } from '@op/common';
-import type { ProposalTemplate } from '@op/common';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+
+import type { ProposalTemplate } from '../../proposalTemplate';
 
 // ============ Store-specific Types ============
 

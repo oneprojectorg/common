@@ -12,25 +12,19 @@ import type { FieldConfigProps } from './fieldRegistry';
  * Allows setting min/max constraints and currency mode.
  */
 export function FieldConfigNumber({
-  fieldSchema,
+  field,
   fieldUiSchema,
   onUpdateJsonSchema,
   onUpdateUiSchema,
 }: FieldConfigProps) {
   const t = useTranslations();
 
-  const min = fieldSchema.minimum ?? null;
-  const max = fieldSchema.maximum ?? null;
-  const isCurrency =
-    (fieldUiSchema['ui:options'] as Record<string, unknown> | undefined)
-      ?.isCurrency === true;
-
   return (
     <div className="space-y-4">
       <div className="flex gap-4">
         <NumberField
           label={t('Min')}
-          value={min}
+          value={field.min ?? null}
           onChange={(value) =>
             onUpdateJsonSchema({ minimum: value ?? undefined })
           }
@@ -38,7 +32,7 @@ export function FieldConfigNumber({
         />
         <NumberField
           label={t('Max')}
-          value={max}
+          value={field.max ?? null}
           onChange={(value) =>
             onUpdateJsonSchema({ maximum: value ?? undefined })
           }
@@ -49,7 +43,7 @@ export function FieldConfigNumber({
         <span className="text-neutral-charcoal">{t('Dollar amount?')}</span>
         <ToggleButton
           size="small"
-          isSelected={isCurrency}
+          isSelected={field.isCurrency}
           onChange={(isSelected) =>
             onUpdateUiSchema({
               'ui:options': {

@@ -6,14 +6,13 @@
  * carries RJSF uiSchema data plus builder-only metadata (field type, locked
  * flag, enum IDs for sortable options).
  */
-import type { UiSchema } from '@rjsf/utils';
-import type { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
 
 // ---------------------------------------------------------------------------
 // Core types
 // ---------------------------------------------------------------------------
 
-export type ProposalTemplate = JSONSchema7 & { ui?: UiSchema };
+export type ProposalTemplate = StrictRJSFSchema & { ui?: UiSchema };
 
 export type FieldType =
   | 'short_text'
@@ -24,11 +23,29 @@ export type FieldType =
   | 'date'
   | 'number';
 
+/**
+ * Flat read-only view of a single field, derived from a ProposalTemplate.
+ * Gives builder/renderer code a friendly object instead of requiring
+ * multiple reader calls per field.
+ */
+export interface FieldView {
+  id: string;
+  fieldType: FieldType;
+  label: string;
+  description?: string;
+  locked: boolean;
+  required: boolean;
+  options: { id: string; value: string }[];
+  min?: number;
+  max?: number;
+  isCurrency: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Field type → JSON Schema / UI entry creators
 // ---------------------------------------------------------------------------
 
-export function createFieldJsonSchema(type: FieldType): JSONSchema7 {
+export function createFieldJsonSchema(type: FieldType): StrictRJSFSchema {
   switch (type) {
     case 'short_text':
       return { type: 'string' };
@@ -77,11 +94,9 @@ export function createFieldUiEntry(type: FieldType): UiSchema {
 // Readers
 // ---------------------------------------------------------------------------
 
-function asJsonSchema7(
-  def: JSONSchema7Definition | undefined,
-): JSONSchema7 | undefined {
-  if (typeof def === 'object') {
-    return def;
+function asSchema(def: unknown): StrictRJSFSchema | undefined {
+  if (typeof def === 'object' && def !== null) {
+    return def as StrictRJSFSchema;
   }
   return undefined;
 }
@@ -93,12 +108,12 @@ export function getFieldOrder(template: ProposalTemplate): string[] {
 export function getFieldSchema(
   template: ProposalTemplate,
   fieldId: string,
-): JSONSchema7 | undefined {
+): StrictRJSFSchema | undefined {
   const props = template.properties;
   if (!props) {
     return undefined;
   }
-  return asJsonSchema7(props[fieldId]);
+  return asSchema(props[fieldId]);
 }
 
 export function getFieldUi(
@@ -173,9 +188,7 @@ export function getFieldOptions(
 
   // multiple_choice: enum is on items
   if (schema.type === 'array') {
-    const items = asJsonSchema7(
-      schema.items as JSONSchema7Definition | undefined,
-    );
+    const items = asSchema(schema.items);
     if (items && Array.isArray(items.enum)) {
       return items.enum.map((val, i) => ({
         id: enumIds[i] ?? crypto.randomUUID(),
@@ -212,6 +225,45 @@ export function getFieldIsCurrency(
     (ui['ui:options'] as Record<string, unknown> | undefined)?.isCurrency ===
     true
   );
+}
+
+// ---------------------------------------------------------------------------
+// Composite readers
+// ---------------------------------------------------------------------------
+
+export function getField(
+  template: ProposalTemplate,
+  fieldId: string,
+): FieldView | undefined {
+  const fieldType = getFieldType(template, fieldId);
+  if (!fieldType) {
+    return undefined;
+  }
+
+  return {
+    id: fieldId,
+    fieldType,
+    label: getFieldLabel(template, fieldId),
+    description: getFieldDescription(template, fieldId),
+    locked: isFieldLocked(template, fieldId),
+    required: isFieldRequired(template, fieldId),
+    options: getFieldOptions(template, fieldId),
+    min: getFieldMin(template, fieldId),
+    max: getFieldMax(template, fieldId),
+    isCurrency: getFieldIsCurrency(template, fieldId),
+  };
+}
+
+export function getFields(template: ProposalTemplate): FieldView[] {
+  const order = getFieldOrder(template);
+  const fields: FieldView[] = [];
+  for (const id of order) {
+    const field = getField(template, id);
+    if (field) {
+      fields.push(field);
+    }
+  }
+  return fields;
 }
 
 // ---------------------------------------------------------------------------
@@ -359,12 +411,10 @@ export function updateFieldOptions(
   const enumIds = options.map((o) => o.id);
   const ui = getFieldUi(template, fieldId);
 
-  let updatedSchema: JSONSchema7;
+  let updatedSchema: StrictRJSFSchema;
   if (schema.type === 'array') {
     // multiple_choice
-    const items = asJsonSchema7(
-      schema.items as JSONSchema7Definition | undefined,
-    );
+    const items = asSchema(schema.items);
     updatedSchema = {
       ...schema,
       items: { ...items, enum: enumValues },

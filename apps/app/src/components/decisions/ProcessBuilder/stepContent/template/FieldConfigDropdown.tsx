@@ -1,10 +1,9 @@
 'use client';
 
-import { getFieldOptions } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -18,24 +17,14 @@ interface FieldOption {
 
 /**
  * Field config component for dropdown and multiple choice fields.
- * Reads options from the JSON Schema enum values + ui:enumIds.
+ * Reads options from field.options (derived from the FieldView).
  */
 export function FieldConfigDropdown({
-  fieldId,
+  field,
   fieldSchema,
-  fieldUiSchema,
   onUpdateJsonSchema,
   onUpdateUiSchema,
 }: FieldConfigProps) {
-  // Build a fake template to use getFieldOptions helper
-  const options = useMemo(() => {
-    const template = {
-      properties: { [fieldId]: fieldSchema },
-      ui: { [fieldId]: fieldUiSchema },
-    };
-    return getFieldOptions(template, fieldId);
-  }, [fieldId, fieldSchema, fieldUiSchema]);
-
   const handleOptionsChange = (newOptions: FieldOption[]) => {
     const enumValues = newOptions.map((o) => o.value);
     const enumIds = newOptions.map((o) => o.id);
@@ -62,7 +51,7 @@ export function FieldConfigDropdown({
 
   return (
     <FieldConfigDropdownOptions
-      options={options}
+      options={field.options}
       onOptionsChange={handleOptionsChange}
     />
   );
