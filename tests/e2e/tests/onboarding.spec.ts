@@ -2,7 +2,6 @@ import { EntityType, profileInvites } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
 import { createDecisionInstance, getSeededTemplate } from '@op/test';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -15,7 +14,7 @@ import {
 } from '../fixtures/index.js';
 
 test.describe('Onboarding', () => {
-  let supabaseAdmin: SupabaseClient;
+  let supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>;
 
   test.beforeAll(() => {
     supabaseAdmin = createSupabaseAdminClient();
