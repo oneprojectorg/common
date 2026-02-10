@@ -14,7 +14,7 @@ import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,6 +26,7 @@ import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
+import { TranslateBanner } from './TranslateBanner';
 import { getProposalContent } from './proposalContentUtils';
 
 type Proposal = RouterOutput['decision']['getProposal'];
@@ -99,13 +100,66 @@ export function ProposalView({
     }
   }, []);
 
-  // Parse proposal data using shared utility
-  const { title, budget, category } = parseProposalData(
-    currentProposal.proposalData,
-  );
+  // --- Translation state ---
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [translatedData, setTranslatedData] = useState<{
+    translated: Record<string, string>;
+    sourceLocale: string;
+  } | null>(null);
 
-  const bodyHtml = currentProposal.htmlContent?.default;
-  const fallbackContent = getProposalContent(currentProposal.documentContent);
+  const translateMutation = trpc.translation.translateProposal.useMutation({
+    onSuccess: (data) => {
+      setTranslatedData({
+        translated: data.translated,
+        sourceLocale: data.sourceLocale,
+      });
+    },
+  });
+
+  const handleTranslate = useCallback(() => {
+    translateMutation.mutate({
+      profileId: currentProposal.profileId,
+      targetLocale: 'es',
+    });
+  }, [translateMutation, currentProposal.profileId]);
+
+  const handleViewOriginal = useCallback(() => {
+    setTranslatedData(null);
+  }, []);
+
+  /** Map DeepL source locale codes to display names */
+  const LOCALE_NAMES: Record<string, string> = {
+    EN: 'English',
+    ES: 'Spanish',
+    FR: 'French',
+    PT: 'Portuguese',
+    BN: 'Bengali',
+  };
+
+  const sourceLanguageName = translatedData
+    ? (LOCALE_NAMES[
+        translatedData.sourceLocale.toUpperCase().split('-')[0] ?? ''
+      ] ?? translatedData.sourceLocale)
+    : '';
+
+  // Parse proposal data using shared utility
+  const {
+    title: originalTitle,
+    budget,
+    category: originalCategory,
+  } = parseProposalData(currentProposal.proposalData);
+
+  // Use translated values when available, otherwise originals
+  const title = translatedData?.translated.title ?? originalTitle;
+  const category = translatedData?.translated.category ?? originalCategory;
+
+  const bodyHtml =
+    translatedData?.translated.default ?? currentProposal.htmlContent?.default;
+  const fallbackContent = translatedData
+    ? null
+    : getProposalContent(currentProposal.documentContent);
+
+  const showBanner = !bannerDismissed && !translatedData;
 
   return (
     <ProposalViewLayout
@@ -126,6 +180,24 @@ export function ProposalView({
             <Header1 className="font-serif text-title-lg">
               {title || t('Untitled Proposal')}
             </Header1>
+
+            {/* Translation attribution */}
+            {translatedData && (
+              <p className="text-sm text-neutral-gray4">
+                {t('Translated from {language}', {
+                  language: t(sourceLanguageName),
+                })}{' '}
+                &middot;{' '}
+                <button
+                  type="button"
+                  onClick={handleViewOriginal}
+                  className="text-primary-blue font-medium hover:underline"
+                >
+                  {t('View original')}
+                </button>
+              </p>
+            )}
+
             <div className="space-y-6">
               {/* Metadata Row */}
               <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
@@ -303,6 +375,15 @@ export function ProposalView({
           </div>
         </div>
       </div>
+
+      {/* Translation banner */}
+      {showBanner && (
+        <TranslateBanner
+          onTranslate={handleTranslate}
+          onDismiss={() => setBannerDismissed(true)}
+          isTranslating={translateMutation.isPending}
+        />
+      )}
     </ProposalViewLayout>
   );
 }
