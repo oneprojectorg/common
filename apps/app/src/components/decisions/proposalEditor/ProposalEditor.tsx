@@ -10,6 +10,7 @@ import {
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
+import type { StrictRJSFSchema } from '@rjsf/utils';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
@@ -113,20 +114,19 @@ export function ProposalEditor({
   // -- RJSF schema compilation -----------------------------------------------
 
   const rawProposalTemplate = (instance.process?.processSchema
-    ?.proposalTemplate ?? null) as Record<string, unknown> | null;
+    ?.proposalTemplate ?? null) as StrictRJSFSchema | null;
 
-  const proposalTemplateWithMockField = useMemo(() => {
-    const base = rawProposalTemplate ?? {
+  const proposalTemplateWithMockField = useMemo<StrictRJSFSchema>(() => {
+    const base: StrictRJSFSchema = rawProposalTemplate ?? {
       type: 'object',
       properties: {},
       required: [],
     };
-    const properties = (base.properties ?? {}) as Record<string, unknown>;
 
     return {
       ...base,
       properties: {
-        ...properties,
+        ...base.properties,
         // Mock dynamic field — remove once template builder persists to server
         fld_need_assessment: {
           type: 'string',
@@ -140,7 +140,11 @@ export function ProposalEditor({
 
   const { schema: proposalSchema, uiSchema: proposalUiSchema } = useMemo(
     () =>
-      compileProposalSchema(proposalTemplateWithMockField, budgetCapAmount, t),
+      compileProposalSchema(
+        proposalTemplateWithMockField,
+        { budgetCapAmount },
+        t,
+      ),
     [proposalTemplateWithMockField, budgetCapAmount, t],
   );
 

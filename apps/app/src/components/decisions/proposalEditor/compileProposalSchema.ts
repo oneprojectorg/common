@@ -1,4 +1,4 @@
-import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -14,14 +14,13 @@ export interface ProposalFormContext {
 }
 
 // ---------------------------------------------------------------------------
-// Schema compilation — proposalTemplate (JSON Schema) -> RJSF schema + uiSchema
+// UI mapping for system fields
 // ---------------------------------------------------------------------------
 
 /**
- * Known system property keys in the proposal template schema.
- * These get special `ui:field` rendering (collaborative wrappers)
- * and are persisted to proposalData. Everything else is treated
- * as a dynamic template field rendered via `CollaborativeShortText`.
+ * System property keys that receive special collaborative UI wrappers.
+ * Their *data* definition comes from the template; only the rendering
+ * is overridden via `ui:field`.
  */
 export const SYSTEM_FIELD_KEYS = new Set([
   'title',
@@ -30,90 +29,101 @@ export const SYSTEM_FIELD_KEYS = new Set([
   'category',
 ]);
 
+type SystemUiFactory = (t: (key: string) => string) => Record<string, unknown>;
+
+/** Maps system field keys to their RJSF uiSchema entries. */
+const SYSTEM_UI_MAP: Record<'title' | 'category' | 'budget', SystemUiFactory> =
+  {
+    title: (t) => ({
+      'ui:field': 'CollaborativeTitleField',
+      'ui:placeholder': t('Untitled Proposal'),
+    }),
+    category: () => ({ 'ui:field': 'CollaborativeCategoryField' }),
+    budget: () => ({ 'ui:field': 'CollaborativeBudgetField' }),
+  };
+
+// ---------------------------------------------------------------------------
+// compileProposalSchema
+// ---------------------------------------------------------------------------
+
 /**
- * Builds the complete RJSF schema and uiSchema from the stored
- * `processSchema.proposalTemplate` (JSON Schema).
+ * Compiles a proposal template (JSON Schema 7) into an RJSF-ready schema
+ * pair: a data schema and a uiSchema.
  *
- * System fields (title, category, budget) get dedicated `ui:field`
- * wrappers that use our collaborative components.
- * Dynamic fields (user-created via template builder) get rendered
- * as `CollaborativeShortText` widgets backed by Yjs fragments.
- * Dynamic field values live exclusively in Yjs — they are NOT
- * persisted to proposalData.
+ * The template is the single source of truth for data shape — property
+ * types, constraints (`minimum`, `maximum`, `minLength`, etc.), and
+ * `required` arrays are preserved as-is.
  *
- * @param proposalTemplate - The raw JSON Schema stored on processSchema
- * @param budgetCapAmount - Optional budget ceiling from phase settings
- * @param t - Translation function
+ * This function only adds a UI layer:
+ * - System fields (title, category, budget) get `ui:field` wrappers
+ *   for collaborative editing components.
+ * - Dynamic fields (everything else) get `ui:widget: CollaborativeShortText`.
+ * - `description` is excluded from the RJSF form (rendered separately
+ *   as a TipTap editor).
+ *
+ * @param proposalTemplate - JSON Schema 7 stored on processSchema.
+ *   If null, a minimal schema with only a required `title` is produced.
+ * @param overrides - Runtime overrides that take precedence over the template.
+ *   Currently supports `budgetCapAmount` (from phase settings) which patches
+ *   `budget.maximum`.
+ * @param t - Translation function for field titles/placeholders.
  */
 export function compileProposalSchema(
-  proposalTemplate: Record<string, unknown> | null,
-  budgetCapAmount: number | undefined,
+  proposalTemplate: StrictRJSFSchema | null,
+  overrides: { budgetCapAmount?: number },
   t: (key: string, params?: Record<string, string | number>) => string,
 ): {
   schema: RJSFSchema;
   uiSchema: UiSchema<Record<string, unknown>, RJSFSchema, ProposalFormContext>;
 } {
-  // Pull required array from stored template
-  const templateRequired =
-    proposalTemplate &&
-    'required' in proposalTemplate &&
-    Array.isArray(proposalTemplate.required)
-      ? (proposalTemplate.required as string[])
-      : [];
-
-  const isCategoryRequired = templateRequired.includes('category');
-
-  // System fields — always present regardless of template contents
-  const schemaProperties: NonNullable<RJSFSchema['properties']> = {
-    title: { type: 'string', title: t('Title'), minLength: 1 },
-    category: {
-      type: isCategoryRequired ? 'string' : ['string', 'null'],
-      title: t('Category'),
-    },
-    budget: {
-      type: ['number', 'null'],
-      title: t('Budget'),
-      minimum: 0,
-      ...(budgetCapAmount ? { maximum: budgetCapAmount } : {}),
-    },
+  const template: StrictRJSFSchema = proposalTemplate ?? {
+    type: 'object',
+    properties: { title: { type: 'string', minLength: 1 } },
+    required: ['title'],
   };
 
-  const uiProperties: Record<string, unknown> = {
-    title: {
-      'ui:field': 'CollaborativeTitleField',
-      'ui:placeholder': t('Untitled Proposal'),
-    },
-    category: { 'ui:field': 'CollaborativeCategoryField' },
-    budget: { 'ui:field': 'CollaborativeBudgetField' },
-  };
+  const templateProperties = (template.properties ?? {}) as Record<
+    string,
+    StrictRJSFSchema
+  >;
+  const templateRequired = Array.isArray(template.required)
+    ? template.required
+    : [];
 
-  // Merge dynamic (non-system) properties from the stored template
-  if (
-    proposalTemplate &&
-    'properties' in proposalTemplate &&
-    proposalTemplate.properties &&
-    typeof proposalTemplate.properties === 'object'
-  ) {
-    const templateProps = proposalTemplate.properties as Record<
-      string,
-      Record<string, unknown>
-    >;
+  // -- Build schema properties and uiSchema in one pass ----------------------
 
-    for (const [key, propSchema] of Object.entries(templateProps)) {
-      if (SYSTEM_FIELD_KEYS.has(key)) {
-        continue;
+  const schemaProperties: Record<string, StrictRJSFSchema> = {};
+  const uiProperties: Record<string, unknown> = {};
+
+  for (const [key, propSchema] of Object.entries(templateProperties)) {
+    // `description` is rendered as a standalone TipTap editor, not in RJSF.
+    if (key === 'description') {
+      continue;
+    }
+
+    if (SYSTEM_FIELD_KEYS.has(key)) {
+      // System field: preserve the template's data definition, add UI mapping.
+      let schema = { ...propSchema };
+
+      // Apply runtime overrides
+      if (key === 'budget' && overrides.budgetCapAmount != null) {
+        schema = { ...schema, maximum: overrides.budgetCapAmount };
       }
 
-      // Dynamic field — add to schema and wire as collaborative short text.
-      // The field key is used as both the JSON Schema property name
-      // and the Yjs fragment name for collaborative editing.
-      schemaProperties[key] = {
-        type: 'string',
-        ...(propSchema.title ? { title: String(propSchema.title) } : {}),
-        ...(propSchema.description
-          ? { description: String(propSchema.description) }
-          : {}),
-      };
+      // Add translated title if not already present
+      if (!schema.title) {
+        schema.title = t(key.charAt(0).toUpperCase() + key.slice(1));
+      }
+
+      schemaProperties[key] = schema;
+
+      if (key in SYSTEM_UI_MAP) {
+        const uiFactory = SYSTEM_UI_MAP[key as keyof typeof SYSTEM_UI_MAP];
+        uiProperties[key] = uiFactory(t);
+      }
+    } else {
+      // Dynamic field: pass through schema as-is, wire collaborative widget.
+      schemaProperties[key] = propSchema;
 
       uiProperties[key] = {
         'ui:widget': 'CollaborativeShortText',
@@ -122,12 +132,46 @@ export function compileProposalSchema(
     }
   }
 
+  // Ensure system fields always exist (even if the template omitted them).
+  // Budget and category are nullable by default when not explicitly defined.
+  if (!schemaProperties.title) {
+    schemaProperties.title = {
+      type: 'string',
+      title: t('Title'),
+      minLength: 1,
+    };
+    uiProperties.title = SYSTEM_UI_MAP.title(t);
+  }
+  if (!schemaProperties.category) {
+    schemaProperties.category = {
+      type: ['string', 'null'],
+      title: t('Category'),
+    };
+    uiProperties.category = SYSTEM_UI_MAP.category(t);
+  }
+  if (!schemaProperties.budget) {
+    schemaProperties.budget = {
+      type: ['number', 'null'],
+      title: t('Budget'),
+      minimum: 0,
+      ...(overrides.budgetCapAmount != null
+        ? { maximum: overrides.budgetCapAmount }
+        : {}),
+    };
+    uiProperties.budget = SYSTEM_UI_MAP.budget(t);
+  }
+
+  // Ensure 'title' is always required
   const required = Array.from(new Set(['title', ...templateRequired])).filter(
     (key) => key in schemaProperties,
   );
 
   return {
-    schema: { type: 'object', required, properties: schemaProperties },
+    schema: {
+      type: 'object',
+      required,
+      properties: schemaProperties,
+    },
     uiSchema: uiProperties as UiSchema<
       Record<string, unknown>,
       RJSFSchema,
