@@ -170,9 +170,10 @@ export async function authenticateAsUser(
 
   await page.context().addCookies(cookies);
 
-  // Set localStorage so client-side Supabase picks up the session
-  await page.goto('about:blank');
-  await page.evaluate(
+  // Inject localStorage via an init script that runs before any page JS.
+  // This avoids SecurityError on about:blank in CI and ensures the value
+  // is available when the app's Supabase client initialises.
+  await page.context().addInitScript(
     ({ key, value }) => {
       localStorage.setItem(key, value);
     },
