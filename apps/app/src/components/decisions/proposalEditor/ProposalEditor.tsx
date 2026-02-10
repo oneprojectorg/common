@@ -133,6 +133,7 @@ export function ProposalEditor({
           title: 'Is there a high NEED for this project?',
           description:
             'Consider: Do the worker-owners clearly demonstrate a significant financial or operational need? Would this project address barriers the co-op faces to survival or growth?',
+          'x-format': 'long-text',
         },
       },
     };

@@ -13,6 +13,43 @@ export interface ProposalFormContext {
   budgetCapAmount?: number;
 }
 
+/**
+ * Supported values for the `x-format` vendor extension on template properties.
+ *
+ * `x-format` describes **how** a field should be presented, while JSON Schema's
+ * own keywords (`type`, `enum`, etc.) describe the data shape. The compiler
+ * maps each `x-format` to RJSF widget/field config via {@link FORMAT_REGISTRY}.
+ *
+ * Additional per-field presentation options (e.g. `rich`, `maxWords`) can be
+ * provided in a sibling `x-format-options` object — the compiler merges them
+ * into `ui:options` so the widget receives them at runtime.
+ */
+export type XFormat = 'short-text' | 'long-text';
+
+// ---------------------------------------------------------------------------
+// x-format → RJSF ui mapping
+// ---------------------------------------------------------------------------
+
+interface FormatConfig {
+  widget?: string;
+  field?: string;
+  /** Default `ui:options` merged with any `x-format-options` from the template. */
+  defaults?: Record<string, unknown>;
+}
+
+/**
+ * Registry mapping `x-format` values to RJSF uiSchema entries.
+ *
+ * Adding a new display type is a single line here + the widget/field component.
+ */
+const FORMAT_REGISTRY: Record<XFormat, FormatConfig> = {
+  'short-text': { widget: 'CollaborativeText' },
+  'long-text': { widget: 'CollaborativeText', defaults: { multiline: true } },
+};
+
+/** Default `x-format` when a dynamic field omits the extension. */
+const DEFAULT_X_FORMAT: XFormat = 'short-text';
+
 // ---------------------------------------------------------------------------
 // UI mapping for system fields
 // ---------------------------------------------------------------------------
@@ -43,6 +80,35 @@ const SYSTEM_UI_MAP: Record<'title' | 'category' | 'budget', SystemUiFactory> =
   };
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Reads `x-format` and `x-format-options` from a property schema and returns
+ * the corresponding RJSF uiSchema entry.
+ *
+ * @param key - Property key (used as the default Yjs fragment name).
+ * @param propSchema - The JSON Schema property definition (may include vendor extensions).
+ */
+function resolveFormatUi(
+  key: string,
+  propSchema: StrictRJSFSchema,
+): Record<string, unknown> {
+  const raw = propSchema as Record<string, unknown>;
+  const xFormat = (raw['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT;
+  const xFormatOptions =
+    (raw['x-format-options'] as Record<string, unknown>) ?? {};
+
+  const config = FORMAT_REGISTRY[xFormat] ?? FORMAT_REGISTRY[DEFAULT_X_FORMAT];
+
+  return {
+    ...(config.widget && { 'ui:widget': config.widget }),
+    ...(config.field && { 'ui:field': config.field }),
+    'ui:options': { field: key, ...config.defaults, ...xFormatOptions },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // compileProposalSchema
 // ---------------------------------------------------------------------------
 
@@ -57,7 +123,9 @@ const SYSTEM_UI_MAP: Record<'title' | 'category' | 'budget', SystemUiFactory> =
  * This function only adds a UI layer:
  * - System fields (title, category, budget) get `ui:field` wrappers
  *   for collaborative editing components.
- * - Dynamic fields (everything else) get `ui:widget: CollaborativeShortText`.
+ * - Dynamic fields use `x-format` (vendor extension) to look up the
+ *   appropriate widget/field from {@link FORMAT_REGISTRY}. Falls back
+ *   to `short-text` when `x-format` is absent.
  * - `description` is excluded from the RJSF form (rendered separately
  *   as a TipTap editor).
  *
@@ -97,22 +165,18 @@ export function compileProposalSchema(
       continue;
     }
 
-    if (SYSTEM_FIELD_KEYS.has(key)) {
-      // System field: preserve the template's data definition, add UI mapping.
-      schemaProperties[key] = propSchema;
+    // Always pass through the template's data definition.
+    schemaProperties[key] = propSchema;
 
+    if (SYSTEM_FIELD_KEYS.has(key)) {
+      // System field: fixed UI mapping.
       if (key in SYSTEM_UI_MAP) {
         const uiFactory = SYSTEM_UI_MAP[key as keyof typeof SYSTEM_UI_MAP];
         uiProperties[key] = uiFactory(t);
       }
     } else {
-      // Dynamic field: pass through schema as-is, wire collaborative widget.
-      schemaProperties[key] = propSchema;
-
-      uiProperties[key] = {
-        'ui:widget': 'CollaborativeShortText',
-        'ui:options': { field: key },
-      };
+      // Dynamic field: resolve UI from x-format.
+      uiProperties[key] = resolveFormatUi(key, propSchema);
     }
   }
 

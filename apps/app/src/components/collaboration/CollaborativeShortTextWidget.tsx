@@ -12,21 +12,31 @@ import { getProposalExtensions } from '../RichTextEditor';
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 /**
- * RJSF widget for collaborative short (plain) text fields.
- * Renders a TipTap editor bound to a named Y.Doc fragment,
- * pulling the shared ydoc/provider from CollaborativeDocProvider context.
+ * RJSF widget for collaborative text fields (short or long).
+ *
+ * Behaviour is controlled via `ui:options`:
+ * - `field`     – Yjs fragment name (falls back to slugified `schema.title`)
+ * - `multiline` – when true, renders a taller editor suitable for long text
+ *
+ * Future `x-format-options` from the template schema are forwarded here
+ * as `ui:options` by the compiler, so adding new knobs (e.g. `rich`,
+ * `maxWords`) only requires reading them from `uiSchema['ui:options']`.
  */
-export function CollaborativeShortTextWidget(props: WidgetProps) {
+export function CollaborativeTextWidget(props: WidgetProps) {
   const { onChange, schema, uiSchema, rawErrors } = props;
   const { ydoc, provider, user } = useCollaborativeDoc();
 
+  const options = (uiSchema?.['ui:options'] ?? {}) as Record<string, unknown>;
+
   const fragmentName =
-    (uiSchema?.['ui:options']?.field as string) ||
+    (options.field as string) ||
     schema.title?.toLowerCase().replace(/\s+/g, '_') ||
     'default_text';
 
   const placeholder =
     (uiSchema?.['ui:placeholder'] as string) || 'Start typing...';
+
+  const multiline = Boolean(options.multiline);
 
   const baseExtensions = useMemo(
     () => getProposalExtensions({ collaborative: true }),
@@ -57,7 +67,7 @@ export function CollaborativeShortTextWidget(props: WidgetProps) {
     extensions,
     editorProps: {
       attributes: {
-        class: 'min-h-8 text-base text-neutral-black focus:outline-none',
+        class: `${multiline ? 'min-h-32' : 'min-h-8'} text-base text-neutral-black focus:outline-none`,
       },
     },
     immediatelyRender: false,
@@ -79,7 +89,7 @@ export function CollaborativeShortTextWidget(props: WidgetProps) {
   }, [editor, onChange]);
 
   if (!editor) {
-    return <Skeleton className="h-8" />;
+    return <Skeleton className={multiline ? 'h-32' : 'h-8'} />;
   }
 
   return (
@@ -107,3 +117,6 @@ export function CollaborativeShortTextWidget(props: WidgetProps) {
     </div>
   );
 }
+
+/** @deprecated Use `CollaborativeTextWidget` instead. */
+export const CollaborativeShortTextWidget = CollaborativeTextWidget;

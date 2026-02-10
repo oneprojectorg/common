@@ -9,7 +9,7 @@ import validator from '@rjsf/validator-ajv8';
 import {
   CollaborativeBudgetField,
   CollaborativeCategoryField,
-  CollaborativeShortTextWidget,
+  CollaborativeTextWidget,
   CollaborativeTitleField,
 } from '../../collaboration';
 import type { ProposalFormContext } from './compileProposalSchema';
@@ -78,7 +78,7 @@ export const RJSF_FIELDS = {
 };
 
 export const RJSF_WIDGETS = {
-  CollaborativeShortText: CollaborativeShortTextWidget,
+  CollaborativeText: CollaborativeTextWidget,
 };
 
 // ---------------------------------------------------------------------------
