@@ -213,9 +213,7 @@ export function ShareProposalModal({
         });
       } catch (error) {
         const message =
-          error instanceof Error
-            ? error.message
-            : t('Failed to cancel invite');
+          error instanceof Error ? error.message : t('Failed to cancel invite');
         toast.error({ message });
       }
     });
