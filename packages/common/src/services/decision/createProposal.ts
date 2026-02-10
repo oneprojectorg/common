@@ -11,6 +11,7 @@ import {
   proposals,
   taxonomyTerms,
 } from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import {
@@ -20,7 +21,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
-import { assertOrganizationByProfileId, assertUserByAuthId } from '../assert';
+import { assertOrganizationByProfileId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
@@ -35,14 +36,12 @@ export interface CreateProposalInput {
 
 export const createProposal = async ({
   data,
-  authUserId,
+  user,
 }: {
   data: CreateProposalInput;
-  authUserId: string;
+  user: User;
 }) => {
-  if (!authUserId) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
+  const authUserId = user.id;
 
   try {
     // Verify the process instance exists
@@ -114,10 +113,7 @@ export const createProposal = async ({
       }
     }
 
-    const [profileId, creator] = await Promise.all([
-      getCurrentProfileId(authUserId),
-      assertUserByAuthId(authUserId),
-    ]);
+    const profileId = await getCurrentProfileId(authUserId);
     const proposal = await db.transaction(async (tx) => {
       const slug = await generateUniqueProfileSlug({
         name: proposalTitle,
@@ -144,12 +140,12 @@ export const createProposal = async ({
           .values({
             profileId: proposalProfile.id,
             authUserId,
-            email: creator.email,
+            email: user.email!,
             isOwner: true,
           })
           .returning(),
-        tx._query.accessRoles.findFirst({
-          where: (table, { eq }) => eq(table.name, 'Admin'),
+        tx.query.accessRoles.findFirst({
+          where: { name: 'Admin' },
         }),
       ]);
 
