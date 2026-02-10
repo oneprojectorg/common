@@ -1,5 +1,3 @@
-'use client';
-
 import { Languages, X } from 'lucide-react';
 
 import { cn } from '../lib/utils';
@@ -16,6 +14,9 @@ export interface TranslateBannerProps
 
 /**
  * Translation call-to-action banner used in proposal views.
+ *
+ * Displays a translate button with a language icon and a dismiss button.
+ * The `isTranslating` prop disables the translate button to prevent duplicate requests.
  */
 export const TranslateBanner = ({
   onTranslate,
@@ -40,31 +41,21 @@ export const TranslateBanner = ({
         onClick={onTranslate}
         disabled={isTranslating}
         aria-label={translateAriaLabel ?? label}
-        className={cn(
-          'group flex min-w-0 flex-1 items-center gap-2 rounded-full text-left text-primary-teal outline-hidden transition-opacity disabled:cursor-not-allowed disabled:opacity-60',
-        )}
+        className="group flex min-w-0 flex-1 items-center gap-2 rounded-full text-left text-primary-teal transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span
-          className={
-            'flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite text-primary-teal'
-          }
-        >
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite">
           <Languages className="size-4" strokeWidth={2.25} />
         </span>
-        <span className="text-sm leading-5 font-normal whitespace-nowrap">
-          {label}
-        </span>
+        <span className="text-sm leading-5 whitespace-nowrap">{label}</span>
       </button>
 
       <button
         type="button"
         onClick={onDismiss}
         aria-label={dismissAriaLabel}
-        className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-full text-neutral-gray4 outline-hidden transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
-        )}
+        className="flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-gray4 transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
       >
-        <X className="size-6" strokeWidth={1.75} />
+        <X className="size-5" strokeWidth={1.75} />
       </button>
     </div>
   );
