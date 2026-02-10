@@ -545,7 +545,7 @@
   "Failed to decline invitation": "আমন্ত্রণ প্রত্যাখ্যান করতে ব্যর্থ",
   "Participants": "অংশগ্রহণকারী",
   "Proposals": "প্রস্তাবনা",
-  "Translate to Spanish": "স্প্যানিশে অনুবাদ করুন",
+  "Translate to {language}": "{language}-তে অনুবাদ করুন",
   "Translated from {language}": "{language} থেকে অনূদিত",
   "View original": "মূল দেখুন",
   "Translating...": "অনুবাদ হচ্ছে...",

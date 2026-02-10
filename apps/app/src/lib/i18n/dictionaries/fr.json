@@ -546,7 +546,7 @@
   "Failed to decline invitation": "Échec du refus de l'invitation",
   "Participants": "Participants",
   "Proposals": "Propositions",
-  "Translate to Spanish": "Traduire en espagnol",
+  "Translate to {language}": "Traduire en {language}",
   "Translated from {language}": "Traduit de l'{language}",
   "View original": "Voir l'original",
   "Translating...": "Traduction en cours...",

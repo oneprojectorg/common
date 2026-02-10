@@ -33,6 +33,15 @@ import { getProposalContent } from './proposalContentUtils';
 
 type Proposal = RouterOutput['decision']['getProposal'];
 
+/** Maps platform locale codes to translatable display names */
+const LOCALE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  pt: 'Portuguese',
+  bn: 'Bengali',
+};
+
 export function ProposalView({
   proposal: initialProposal,
   backHref,
@@ -104,14 +113,16 @@ export function ProposalView({
   }, []);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [translatedData, setTranslatedData] = useState<{
+
+  /** Holds the translated HTML content + source locale after a successful translation request */
+  const [translatedHtmlContent, setTranslatedHtmlContent] = useState<{
     translated: Record<string, string>;
     sourceLocale: string;
   } | null>(null);
 
   const translateMutation = trpc.translation.translateProposal.useMutation({
     onSuccess: (data) => {
-      setTranslatedData({
+      setTranslatedHtmlContent({
         translated: data.translated,
         sourceLocale: data.sourceLocale,
       });
@@ -125,23 +136,12 @@ export function ProposalView({
     });
   }, [translateMutation, currentProposal.profileId, locale]);
 
-  const handleViewOriginal = useCallback(() => {
-    setTranslatedData(null);
-  }, []);
+  const handleViewOriginal = () => setTranslatedHtmlContent(null);
 
-  /** Map locale codes to display names */
-  const LOCALE_NAMES: Record<string, string> = {
-    en: 'English',
-    es: 'Spanish',
-    fr: 'French',
-    pt: 'Portuguese',
-    bn: 'Bengali',
-  };
-
-  const sourceLanguageName = translatedData
+  const sourceLanguageName = translatedHtmlContent
     ? (LOCALE_NAMES[
-        translatedData.sourceLocale.toLowerCase().split('-')[0] ?? ''
-      ] ?? translatedData.sourceLocale)
+        translatedHtmlContent.sourceLocale.toLowerCase().split('-')[0] ?? ''
+      ] ?? translatedHtmlContent.sourceLocale)
     : '';
 
   const targetLanguageName = LOCALE_NAMES[locale] ?? locale;
@@ -154,16 +154,19 @@ export function ProposalView({
   } = parseProposalData(currentProposal.proposalData);
 
   // Use translated values when available, otherwise originals
-  const title = translatedData?.translated.title ?? originalTitle;
-  const category = translatedData?.translated.category ?? originalCategory;
+  const title = translatedHtmlContent?.translated.title ?? originalTitle;
+  const category =
+    translatedHtmlContent?.translated.category ?? originalCategory;
 
   const bodyHtml =
-    translatedData?.translated.default ?? currentProposal.htmlContent?.default;
-  const fallbackContent = translatedData
+    translatedHtmlContent?.translated.default ??
+    currentProposal.htmlContent?.default;
+  const fallbackContent = translatedHtmlContent
     ? null
     : getProposalContent(currentProposal.documentContent);
 
-  const showBanner = locale !== 'en' && !bannerDismissed && !translatedData;
+  const showBanner =
+    locale !== 'en' && !bannerDismissed && !translatedHtmlContent;
 
   return (
     <ProposalViewLayout
@@ -186,7 +189,7 @@ export function ProposalView({
             </Header1>
 
             {/* Translation attribution */}
-            {translatedData && (
+            {translatedHtmlContent && (
               <p className="text-sm text-neutral-gray3">
                 {t('Translated from {language}', {
                   language: t(sourceLanguageName),
