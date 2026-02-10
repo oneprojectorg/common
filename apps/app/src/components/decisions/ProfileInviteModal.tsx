@@ -377,10 +377,11 @@ export const ProfileInviteModal = ({
             {currentRoleItems.map((item) => (
               <div
                 key={item.id}
-                className="flex h-14 items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+                className="flex h-14 items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
               >
                 <ProfileItem
                   size="small"
+                  className="items-center gap-2"
                   avatar={
                     <Avatar placeholder={item.name} className="size-6 shrink-0">
                       {item.avatarUrl ? (
@@ -394,7 +395,11 @@ export const ProfileInviteModal = ({
                     </Avatar>
                   }
                   title={item.name}
-                />
+                >
+                  <span className="text-sm text-neutral-gray4">
+                    {item.email}
+                  </span>
+                </ProfileItem>
                 <IconButton
                   size="small"
                   onPress={() => handleRemoveItem(item.id)}

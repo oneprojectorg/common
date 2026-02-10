@@ -15,7 +15,9 @@ const StartLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </section>
         <section className="flex size-full flex-col items-center">
-          <div className="py-7 sm:py-20">{children}</div>
+          <div className="flex flex-1 flex-col items-center py-7 sm:py-20">
+            {children}
+          </div>
         </section>
       </main>
     </div>

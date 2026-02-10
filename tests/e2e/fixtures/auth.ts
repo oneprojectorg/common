@@ -38,7 +38,7 @@ interface TestFixtures {
   org: CreateOrganizationResult;
 }
 
-function createSupabaseAdminClient(): SupabaseClient {
+export function createSupabaseAdminClient(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
 
@@ -123,6 +123,65 @@ async function signInViaApi(user: {
 }
 
 /**
+ * Build Supabase session cookies for a given session.
+ * Mirrors the chunked base64 cookie format that @supabase/ssr expects.
+ */
+function buildSessionCookies(session: Session) {
+  const storageKey = `sb-${getSupabaseProjectId()}-auth-token`;
+  const sessionJson = JSON.stringify(session);
+  const base64Encoded = Buffer.from(sessionJson)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  const base64Value = `base64-${base64Encoded}`;
+
+  const CHUNK_SIZE = 3180;
+  const chunks: string[] = [];
+  for (let i = 0; i < base64Value.length; i += CHUNK_SIZE) {
+    chunks.push(base64Value.slice(i, i + CHUNK_SIZE));
+  }
+
+  const cookies = chunks.map((chunk, i) => ({
+    name: chunks.length === 1 ? storageKey : `${storageKey}.${i}`,
+    value: chunk,
+    domain: 'localhost',
+    path: '/',
+    expires: -1,
+    httpOnly: false,
+    secure: false,
+    sameSite: 'Lax' as const,
+  }));
+
+  return { cookies, storageKey, sessionJson };
+}
+
+/**
+ * Authenticate a Playwright page as a given user.
+ * Signs in via Supabase REST API, then sets session cookies and localStorage
+ * so the app treats the browser as authenticated.
+ */
+export async function authenticateAsUser(
+  page: Page,
+  user: { email: string; password: string },
+) {
+  const session = await signInViaApi(user);
+  const { cookies, storageKey, sessionJson } = buildSessionCookies(session);
+
+  await page.context().addCookies(cookies);
+
+  // Inject localStorage via an init script that runs before any page JS.
+  // This avoids SecurityError on about:blank in CI and ensures the value
+  // is available when the app's Supabase client initialises.
+  await page.context().addInitScript(
+    ({ key, value }) => {
+      localStorage.setItem(key, value);
+    },
+    { key: storageKey, value: sessionJson },
+  );
+}
+
+/**
  * Extended test fixture with authenticated browser state.
  * Each worker gets a unique test account, authenticates once via API,
  * and saves session cookies to storageState for all tests to reuse.
@@ -173,32 +232,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
       }
 
       const session = await signInViaApi(workerAuthUser);
-
-      const storageKey = `sb-${getSupabaseProjectId()}-auth-token`;
-      const sessionJson = JSON.stringify(session);
-      const base64Encoded = Buffer.from(sessionJson)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const base64Value = `base64-${base64Encoded}`;
-
-      const CHUNK_SIZE = 3180;
-      const chunks: string[] = [];
-      for (let i = 0; i < base64Value.length; i += CHUNK_SIZE) {
-        chunks.push(base64Value.slice(i, i + CHUNK_SIZE));
-      }
-
-      const cookies = chunks.map((chunk, i) => ({
-        name: chunks.length === 1 ? storageKey : `${storageKey}.${i}`,
-        value: chunk,
-        domain: 'localhost',
-        path: '/',
-        expires: -1,
-        httpOnly: false,
-        secure: false,
-        sameSite: 'Lax' as const,
-      }));
+      const { cookies, storageKey, sessionJson } = buildSessionCookies(session);
 
       const storageState = {
         cookies,
