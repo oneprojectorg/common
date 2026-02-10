@@ -101,6 +101,7 @@ export const createInstanceFromTemplateCore = async ({
           profileId: instanceProfile.id,
           authUserId: creatorAuthUserId,
           email: creatorEmail,
+          isOwner: true,
         })
         .returning(),
       tx._query.accessRoles.findFirst({

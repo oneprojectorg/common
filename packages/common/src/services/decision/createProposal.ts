@@ -3,6 +3,8 @@ import {
   EntityType,
   ProposalStatus,
   processInstances,
+  profileUserToAccessRoles,
+  profileUsers,
   profiles,
   proposalAttachments,
   proposalCategories,
@@ -18,7 +20,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
+import { assertOrganizationByProfileId, assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
@@ -112,7 +114,10 @@ export const createProposal = async ({
       }
     }
 
-    const profileId = await getCurrentProfileId(authUserId);
+    const [profileId, creator] = await Promise.all([
+      getCurrentProfileId(authUserId),
+      assertUserByAuthId(authUserId),
+    ]);
     const proposal = await db.transaction(async (tx) => {
       const slug = await generateUniqueProfileSlug({
         name: proposalTitle,
@@ -130,6 +135,29 @@ export const createProposal = async ({
 
       if (!proposalProfile) {
         throw new CommonError('Failed to create proposal profile');
+      }
+
+      // Add the creator as a profile user with Admin role
+      const [[newProfileUser], adminRole] = await Promise.all([
+        tx
+          .insert(profileUsers)
+          .values({
+            profileId: proposalProfile.id,
+            authUserId,
+            email: creator.email,
+            isOwner: true,
+          })
+          .returning(),
+        tx._query.accessRoles.findFirst({
+          where: (table, { eq }) => eq(table.name, 'Admin'),
+        }),
+      ]);
+
+      if (newProfileUser && adminRole) {
+        await tx.insert(profileUserToAccessRoles).values({
+          profileUserId: newProfileUser.id,
+          accessRoleId: adminRole.id,
+        });
       }
 
       const proposalId = crypto.randomUUID();
