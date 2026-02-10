@@ -20,8 +20,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getCurrentProfileId, getOrgAccessUser } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
+import { getCurrentProfileId, getProfileAccessUser } from '../access';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
@@ -53,15 +52,20 @@ export const createProposal = async ({
       throw new NotFoundError('Process instance not found');
     }
 
-    const org = await assertOrganizationByProfileId(instance.ownerProfileId);
-    const organizationId = org.id;
+    if (!instance.profileId) {
+      throw new UnauthorizedError('Decision instance has no profile');
+    }
 
-    const orgUser = await getOrgAccessUser({
+    const profileUser = await getProfileAccessUser({
       user: { id: authUserId },
-      organizationId,
+      profileId: instance.profileId,
     });
 
-    assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+    if (!profileUser) {
+      throw new UnauthorizedError('You do not have access to this decision');
+    }
+
+    assertAccess({ profile: permission.UPDATE }, profileUser.roles ?? []);
 
     const instanceData = instance.instanceData as DecisionInstanceData;
     const currentPhaseId = instanceData.currentPhaseId;
