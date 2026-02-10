@@ -542,8 +542,16 @@ export function ShareProposalModal({
           <LuLink className="size-4" />
           {t('Copy link')}
         </Button>
-        <Button color="primary" onPress={handleDone} isPending={isSubmitting}>
-          {t('Done')}
+        <Button
+          color="primary"
+          onPress={handleDone}
+          isDisabled={inviteMutation.isPending}
+        >
+          {inviteMutation.isPending ? (
+            <LoadingSpinner className="size-4" />
+          ) : (
+            t('Done')
+          )}
         </Button>
       </ModalFooter>
     </Modal>
