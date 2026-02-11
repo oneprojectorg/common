@@ -331,7 +331,9 @@ export function ProposalEditor({
         isDraft={isDraft}
         presenceSlot={<CollaborativePresence />}
       >
-        <div className="flex flex-1 flex-col gap-12">
+        <div className="flex flex-1 flex-col gap-12 pt-12">
+          {/* TODO: Re-add RichTextEditorToolbar that tracks the currently-focused
+              editor instance so it works with multiple CollaborativeTextWidget fields. */}
           <div className="mx-auto flex max-w-4xl flex-col gap-4 px-6">
             <Form
               schema={proposalSchema}
