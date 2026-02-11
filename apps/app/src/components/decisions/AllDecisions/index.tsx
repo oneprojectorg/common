@@ -1,11 +1,14 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { DecisionProfileList, ProcessStatus } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Suspense } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -14,9 +17,11 @@ import { DecisionListItem } from '../DecisionListItem';
 const DecisionsListSuspense = ({
   status,
   initialData,
+  ownerProfileId,
 }: {
   status: ProcessStatus;
   initialData?: DecisionProfileList;
+  ownerProfileId?: string;
 }) => {
   const {
     data: paginatedData,
@@ -27,6 +32,7 @@ const DecisionsListSuspense = ({
     {
       limit: 20,
       status,
+      ownerProfileId,
     },
     initialData
       ? {
@@ -81,10 +87,16 @@ export const AllDecisions = ({
 }: {
   initialData?: DecisionProfileList;
 }) => {
+  const t = useTranslations();
+  const { user } = useUser();
+
   return (
     <ErrorBoundary fallback={<div>Could not load decisions</div>}>
-      <Tabs defaultSelectedKey="active">
+      <Tabs defaultSelectedKey="drafts">
         <TabList variant="pill" className="gap-4 border-none">
+          <Tab id="drafts" variant="pill">
+            {t('Your drafts')}
+          </Tab>
           <Tab id="active" variant="pill">
             Your active processes
           </Tab>
@@ -92,6 +104,14 @@ export const AllDecisions = ({
             Other processes
           </Tab>
         </TabList>
+        <TabPanel id="drafts" className="p-0 sm:p-0">
+          <Suspense fallback={<SkeletonLine lines={5} />}>
+            <DecisionsListSuspense
+              status={ProcessStatus.DRAFT}
+              ownerProfileId={user.currentProfile?.id}
+            />
+          </Suspense>
+        </TabPanel>
         <TabPanel id="active" className="p-0 sm:p-0">
           <Suspense fallback={<SkeletonLine lines={5} />}>
             <DecisionsListSuspense
