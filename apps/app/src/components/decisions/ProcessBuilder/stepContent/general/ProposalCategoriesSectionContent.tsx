@@ -5,7 +5,7 @@ import type { ProposalCategory } from '@op/common';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Header2 } from '@op/ui/Header';
+import { Header2, Header3 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
@@ -36,7 +36,6 @@ export function ProposalCategoriesSectionContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const serverConfig = instance.instanceData?.config;
 
-  // Zustand store
   const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
@@ -157,7 +156,6 @@ export function ProposalCategoriesSectionContent({
   };
 
   const showEmptyState = categories.length === 0 && !isFormVisible;
-  const showForm = isFormVisible;
   const showList = categories.length > 0;
 
   return (
@@ -233,7 +231,7 @@ export function ProposalCategoriesSectionContent({
               </div>
             </div>
           ))}
-          {!showForm && (
+          {!isFormVisible && (
             <Button
               color="ghost"
               className="mt-2 px-2 text-primary-tealBlack hover:text-primary-teal"
@@ -246,11 +244,11 @@ export function ProposalCategoriesSectionContent({
         </div>
       )}
 
-      {showForm && (
+      {isFormVisible && (
         <div className="rounded border p-4">
-          <h3 className="mb-4 font-serif text-title-xs">
+          <Header3 className="mb-4 font-serif text-title-xs">
             {editingId ? t('Edit category') : t('Add category')}
-          </h3>
+          </Header3>
           <div className="space-y-4">
             <div className="-space-y-4">
               <TextField
