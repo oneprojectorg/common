@@ -6,7 +6,8 @@ import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { type SupportedLocale, parseProposalData } from '@op/common/client';
+import { parseProposalData } from '@op/common/client';
+import type { SupportedLocale } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
@@ -20,7 +21,6 @@ import { useCallback, useRef, useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-import { LOCALE_NAMES } from '@/lib/i18n/config';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
@@ -130,16 +130,18 @@ export function ProposalView({
 
   const handleViewOriginal = () => setTranslatedHtmlContent(null);
 
-  const lookupLocaleName = (code: string) =>
-    LOCALE_NAMES[code as SupportedLocale] ?? code;
+  /** Use the browser's Intl API to get localized language names — no translation keys needed */
+  const languageNames = new Intl.DisplayNames([locale], { type: 'language' });
+  const getLanguageName = (langCode: string) =>
+    languageNames.of(langCode) ?? langCode;
 
   const sourceLanguageName = translatedHtmlContent
-    ? lookupLocaleName(
+    ? getLanguageName(
         translatedHtmlContent.sourceLocale.toLowerCase().split('-')[0] ?? '',
       )
     : '';
 
-  const targetLanguageName = lookupLocaleName(locale);
+  const targetLanguageName = getLanguageName(locale);
 
   // Parse proposal data using shared utility
   const {
@@ -188,7 +190,7 @@ export function ProposalView({
             {translatedHtmlContent && (
               <p className="text-sm text-neutral-gray3">
                 {t('Translated from {language}', {
-                  language: t(sourceLanguageName),
+                  language: sourceLanguageName,
                 })}{' '}
                 &middot;{' '}
                 <Link
@@ -384,7 +386,7 @@ export function ProposalView({
           onTranslate={handleTranslate}
           onDismiss={() => setBannerDismissed(true)}
           isTranslating={translateMutation.isPending}
-          languageName={t(targetLanguageName)}
+          languageName={targetLanguageName}
         />
       )}
     </ProposalViewLayout>

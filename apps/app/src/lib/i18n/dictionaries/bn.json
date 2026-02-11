@@ -557,14 +557,6 @@
   "Translated from {language}": "{language} থেকে অনূদিত",
   "View original": "মূল দেখুন",
   "Translating...": "অনুবাদ হচ্ছে...",
-  "English": "ইংরেজি",
-  "Spanish": "স্প্যানিশ",
-  "French": "ফরাসি",
-  "Portuguese": "পর্তুগিজ",
-  "Bengali": "বাংলা",
-  "Support your proposal with relevant documents like budgets or supporting research.": "বাজেট বা সহায়ক গবেষণার মতো প্রাসঙ্গিক ন�����ি দিয়ে আপনার প্রস্তাব সমর্থন করুন।",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "PDF, DOCX, XLSX {size}MB পর্যন্ত গ���রহণ করে",
-  "{count}/{max} attachments added": "{count}/{max} সংযুক্তি যোগ করা হয়েছে",
-  "Drag to reorder": "পুনর্বিন্যাস করতে টানুন",
   "Max {amount}": "সর্বোচ্চ {amount}"
 }

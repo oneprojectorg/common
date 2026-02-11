@@ -554,13 +554,8 @@
   "Participants": "Participants",
   "Proposals": "Propositions",
   "Translate to {language}": "Traduire en {language}",
-  "Translated from {language}": "Traduit de l'{language}",
+  "Translated from {language}": "Traduit de l''{language}",
   "View original": "Voir l'original",
   "Translating...": "Traduction en cours...",
-  "English": "anglais",
-  "Spanish": "espagnol",
-  "French": "français",
-  "Portuguese": "portugais",
-  "Bengali": "bengali",
   "Max {amount}": "Max {amount}"
 }
