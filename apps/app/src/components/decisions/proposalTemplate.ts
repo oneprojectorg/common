@@ -2,7 +2,7 @@
  * Proposal Template — JSON Schema utilities.
  *
  * A ProposalTemplate is a plain `RJSFSchema`. Field ordering is stored as a
- * top-level `x-order` array. Per-field widget selection is driven by `x-format`
+ * top-level `x-field-order` array. Per-field widget selection is driven by `x-format`
  * on each property (consumed by the renderer's FORMAT_REGISTRY).
  *
  * No separate uiSchema is stored — everything lives in the JSON Schema itself
@@ -103,7 +103,7 @@ function asSchema(def: unknown): RJSFSchema | undefined {
 }
 
 export function getFieldOrder(template: ProposalTemplate): string[] {
-  return (template['x-order'] as string[] | undefined) ?? [];
+  return (template['x-field-order'] as string[] | undefined) ?? [];
 }
 
 export function getFieldSchema(
@@ -307,7 +307,7 @@ export function addField(
       ...template.properties,
       [fieldId]: jsonSchema,
     },
-    'x-order': [...order, fieldId],
+    'x-field-order': [...order, fieldId],
   };
 }
 
@@ -323,7 +323,7 @@ export function removeField(
     ...template,
     properties: restProps,
     required: required.length > 0 ? required : undefined,
-    'x-order': order,
+    'x-field-order': order,
   };
 }
 
@@ -333,7 +333,7 @@ export function reorderFields(
 ): ProposalTemplate {
   return {
     ...template,
-    'x-order': newOrder,
+    'x-field-order': newOrder,
   };
 }
 
