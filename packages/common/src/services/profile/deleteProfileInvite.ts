@@ -1,4 +1,4 @@
-import { and, db, eq, isNull } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import { profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
