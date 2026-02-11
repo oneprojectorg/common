@@ -304,7 +304,7 @@ export function ProposalEditor({
         <div className="flex flex-1 flex-col gap-12 pt-12">
           {/* TODO: Re-add RichTextEditorToolbar that tracks the currently-focused
               editor instance so it works with multiple CollaborativeTextField fields. */}
-          <div className="mx-auto flex max-w-4xl flex-col gap-4 px-6">
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
             <Form
               schema={proposalSchema}
               uiSchema={proposalUiSchema}
