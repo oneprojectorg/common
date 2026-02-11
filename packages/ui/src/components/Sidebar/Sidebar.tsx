@@ -108,6 +108,7 @@ const Sidebar = ({
   };
 
   if (isMobile) {
+    const isRight = side === 'right';
     return (
       <AnimatePresence>
         {open && (
@@ -123,10 +124,13 @@ const Sidebar = ({
             transition={transition}
           >
             <MotionModal
-              className="fixed top-0 h-full w-64 bg-white"
-              initial={{ x: '-100%' }}
+              className={cn(
+                'fixed top-0 h-full w-64 bg-white',
+                isRight ? 'right-0' : 'left-0',
+              )}
+              initial={{ x: isRight ? '100%' : '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
+              exit={{ x: isRight ? '100%' : '-100%' }}
               transition={transition}
             >
               <Dialog aria-label={label}>{children}</Dialog>
