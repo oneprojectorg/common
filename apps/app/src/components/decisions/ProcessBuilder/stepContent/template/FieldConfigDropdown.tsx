@@ -23,13 +23,10 @@ export function FieldConfigDropdown({
   field,
   fieldSchema,
   onUpdateJsonSchema,
-  onUpdateUiSchema,
 }: FieldConfigProps) {
   const handleOptionsChange = (newOptions: FieldOption[]) => {
     const enumValues = newOptions.map((o) => o.value);
-    const enumIds = newOptions.map((o) => o.id);
 
-    // Update JSON Schema enum values
     if (fieldSchema.type === 'array') {
       // multiple_choice: enum is on items
       const items =
@@ -44,9 +41,6 @@ export function FieldConfigDropdown({
       // dropdown: enum is on schema directly
       onUpdateJsonSchema({ enum: enumValues });
     }
-
-    // Update UI Schema with enum IDs
-    onUpdateUiSchema({ 'ui:enumIds': enumIds });
   };
 
   return (

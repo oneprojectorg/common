@@ -1,18 +1,20 @@
 /**
- * Proposal Template — JSON Schema + UI Schema utilities.
+ * Proposal Template — JSON Schema utilities.
  *
- * A ProposalTemplate is `JSONSchema7 & { ui?: UiSchema }`, the same shape used
- * by PhaseDefinition.settings elsewhere in this codebase.  The `ui` property
- * carries RJSF uiSchema data plus builder-only metadata (field type, locked
- * flag, enum IDs for sortable options).
+ * A ProposalTemplate is a plain `RJSFSchema`. Field ordering is stored as a
+ * top-level `x-order` array. Per-field widget selection is driven by `x-format`
+ * on each property (consumed by the renderer's FORMAT_REGISTRY).
+ *
+ * No separate uiSchema is stored — everything lives in the JSON Schema itself
+ * via vendor extensions (`x-*` properties).
  */
-import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils';
 
 // ---------------------------------------------------------------------------
 // Core types
 // ---------------------------------------------------------------------------
 
-export type ProposalTemplate = StrictRJSFSchema & { ui?: UiSchema };
+export type ProposalTemplate = RJSFSchema;
 
 export type FieldType =
   | 'short_text'
@@ -33,7 +35,6 @@ export interface FieldView {
   fieldType: FieldType;
   label: string;
   description?: string;
-  locked: boolean;
   required: boolean;
   options: { id: string; value: string }[];
   min?: number;
@@ -42,51 +43,51 @@ export interface FieldView {
 }
 
 // ---------------------------------------------------------------------------
-// Field type → JSON Schema / UI entry creators
+// x-format ↔ FieldType mapping
 // ---------------------------------------------------------------------------
 
-export function createFieldJsonSchema(type: FieldType): StrictRJSFSchema {
-  switch (type) {
-    case 'short_text':
-      return { type: 'string' };
-    case 'long_text':
-      return { type: 'string' };
-    case 'multiple_choice':
-      return {
-        type: 'array',
-        items: { type: 'string', enum: [] },
-        uniqueItems: true,
-      };
-    case 'dropdown':
-      return { type: 'string', enum: [] };
-    case 'yes_no':
-      return { type: 'boolean' };
-    case 'date':
-      return { type: 'string', format: 'date' };
-    case 'number':
-      return { type: 'number' };
-  }
+const X_FORMAT_TO_FIELD_TYPE: Record<string, FieldType> = {
+  'short-text': 'short_text',
+  'long-text': 'long_text',
+  'multiple-choice': 'multiple_choice',
+  dropdown: 'dropdown',
+  'yes-no': 'yes_no',
+  date: 'date',
+  number: 'number',
+  money: 'number',
+};
+
+// ---------------------------------------------------------------------------
+// Field type → JSON Schema creator
+// ---------------------------------------------------------------------------
+
+function withXFormat(schema: RJSFSchema, xFormat: string): RJSFSchema {
+  return { ...schema, 'x-format': xFormat };
 }
 
-export function createFieldUiEntry(type: FieldType): UiSchema {
+export function createFieldJsonSchema(type: FieldType): RJSFSchema {
   switch (type) {
     case 'short_text':
-      return { 'ui:widget': 'text', 'ui:fieldType': 'short_text' };
+      return withXFormat({ type: 'string' }, 'short-text');
     case 'long_text':
-      return { 'ui:widget': 'textarea', 'ui:fieldType': 'long_text' };
+      return withXFormat({ type: 'string' }, 'long-text');
     case 'multiple_choice':
-      return {
-        'ui:widget': 'checkboxes',
-        'ui:fieldType': 'multiple_choice',
-      };
+      return withXFormat(
+        {
+          type: 'array',
+          items: { type: 'string', enum: [] },
+          uniqueItems: true,
+        },
+        'multiple-choice',
+      );
     case 'dropdown':
-      return { 'ui:widget': 'select', 'ui:fieldType': 'dropdown' };
+      return withXFormat({ type: 'string', enum: [] }, 'dropdown');
     case 'yes_no':
-      return { 'ui:widget': 'radio', 'ui:fieldType': 'yes_no' };
+      return withXFormat({ type: 'boolean' }, 'yes-no');
     case 'date':
-      return { 'ui:widget': 'date', 'ui:fieldType': 'date' };
+      return withXFormat({ type: 'string', format: 'date' }, 'date');
     case 'number':
-      return { 'ui:widget': 'updown', 'ui:fieldType': 'number' };
+      return withXFormat({ type: 'number' }, 'number');
   }
 }
 
@@ -94,21 +95,21 @@ export function createFieldUiEntry(type: FieldType): UiSchema {
 // Readers
 // ---------------------------------------------------------------------------
 
-function asSchema(def: unknown): StrictRJSFSchema | undefined {
+function asSchema(def: unknown): RJSFSchema | undefined {
   if (typeof def === 'object' && def !== null) {
-    return def as StrictRJSFSchema;
+    return def as RJSFSchema;
   }
   return undefined;
 }
 
 export function getFieldOrder(template: ProposalTemplate): string[] {
-  return (template.ui?.['ui:order'] as string[] | undefined) ?? [];
+  return (template['x-order'] as string[] | undefined) ?? [];
 }
 
 export function getFieldSchema(
   template: ProposalTemplate,
   fieldId: string,
-): StrictRJSFSchema | undefined {
+): RJSFSchema | undefined {
   const props = template.properties;
   if (!props) {
     return undefined;
@@ -116,19 +117,19 @@ export function getFieldSchema(
   return asSchema(props[fieldId]);
 }
 
-export function getFieldUi(
-  template: ProposalTemplate,
-  fieldId: string,
-): UiSchema {
-  return (template.ui?.[fieldId] as UiSchema | undefined) ?? {};
-}
-
 export function getFieldType(
   template: ProposalTemplate,
   fieldId: string,
 ): FieldType | undefined {
-  const ui = getFieldUi(template, fieldId);
-  return ui['ui:fieldType'] as FieldType | undefined;
+  const schema = getFieldSchema(template, fieldId);
+  if (!schema) {
+    return undefined;
+  }
+  const xFormat = schema['x-format'] as string | undefined;
+  if (!xFormat) {
+    return undefined;
+  }
+  return X_FORMAT_TO_FIELD_TYPE[xFormat];
 }
 
 export function getFieldLabel(
@@ -147,14 +148,6 @@ export function getFieldDescription(
   return schema?.description;
 }
 
-export function isFieldLocked(
-  template: ProposalTemplate,
-  fieldId: string,
-): boolean {
-  const ui = getFieldUi(template, fieldId);
-  return ui['ui:locked'] === true;
-}
-
 export function isFieldRequired(
   template: ProposalTemplate,
   fieldId: string,
@@ -171,17 +164,14 @@ export function getFieldOptions(
   fieldId: string,
 ): { id: string; value: string }[] {
   const schema = getFieldSchema(template, fieldId);
-  const ui = getFieldUi(template, fieldId);
   if (!schema) {
     return [];
   }
 
-  const enumIds = (ui['ui:enumIds'] as string[] | undefined) ?? [];
-
   // dropdown: enum is on schema directly
   if (schema.type === 'string' && Array.isArray(schema.enum)) {
     return schema.enum.map((val, i) => ({
-      id: enumIds[i] ?? `${fieldId}-opt-${i}`,
+      id: `${fieldId}-opt-${i}`,
       value: String(val ?? ''),
     }));
   }
@@ -191,7 +181,7 @@ export function getFieldOptions(
     const items = asSchema(schema.items);
     if (items && Array.isArray(items.enum)) {
       return items.enum.map((val, i) => ({
-        id: enumIds[i] ?? `${fieldId}-opt-${i}`,
+        id: `${fieldId}-opt-${i}`,
         value: String(val ?? ''),
       }));
     }
@@ -220,11 +210,8 @@ export function getFieldIsCurrency(
   template: ProposalTemplate,
   fieldId: string,
 ): boolean {
-  const ui = getFieldUi(template, fieldId);
-  return (
-    (ui['ui:options'] as Record<string, unknown> | undefined)?.isCurrency ===
-    true
-  );
+  const schema = getFieldSchema(template, fieldId);
+  return schema?.['x-format'] === 'money';
 }
 
 // ---------------------------------------------------------------------------
@@ -245,7 +232,6 @@ export function getField(
     fieldType,
     label: getFieldLabel(template, fieldId),
     description: getFieldDescription(template, fieldId),
-    locked: isFieldLocked(template, fieldId),
     required: isFieldRequired(template, fieldId),
     options: getFieldOptions(template, fieldId),
     min: getFieldMin(template, fieldId),
@@ -313,7 +299,6 @@ export function addField(
   label: string,
 ): ProposalTemplate {
   const jsonSchema = { ...createFieldJsonSchema(type), title: label };
-  const uiEntry = createFieldUiEntry(type);
   const order = getFieldOrder(template);
 
   return {
@@ -322,11 +307,7 @@ export function addField(
       ...template.properties,
       [fieldId]: jsonSchema,
     },
-    ui: {
-      ...template.ui,
-      'ui:order': [...order, fieldId],
-      [fieldId]: uiEntry,
-    },
+    'x-order': [...order, fieldId],
   };
 }
 
@@ -338,17 +319,11 @@ export function removeField(
   const order = getFieldOrder(template).filter((id) => id !== fieldId);
   const required = (template.required ?? []).filter((id) => id !== fieldId);
 
-  // Remove from ui
-  const { [fieldId]: _removedUi, ...restUi } = template.ui ?? {};
-
   return {
     ...template,
     properties: restProps,
     required: required.length > 0 ? required : undefined,
-    ui: {
-      ...restUi,
-      'ui:order': order,
-    },
+    'x-order': order,
   };
 }
 
@@ -356,20 +331,9 @@ export function reorderFields(
   template: ProposalTemplate,
   newOrder: string[],
 ): ProposalTemplate {
-  // Preserve locked fields at the start in their original order
-  const currentOrder = getFieldOrder(template);
-  const lockedIds = currentOrder.filter((id) => isFieldLocked(template, id));
-  const reordered = [
-    ...lockedIds,
-    ...newOrder.filter((id) => !lockedIds.includes(id)),
-  ];
-
   return {
     ...template,
-    ui: {
-      ...template.ui,
-      'ui:order': reordered,
-    },
+    'x-order': newOrder,
   };
 }
 
@@ -444,10 +408,8 @@ export function updateFieldOptions(
   }
 
   const enumValues = options.map((o) => o.value);
-  const enumIds = options.map((o) => o.id);
-  const ui = getFieldUi(template, fieldId);
 
-  let updatedSchema: StrictRJSFSchema;
+  let updatedSchema: RJSFSchema;
   if (schema.type === 'array') {
     // multiple_choice
     const items = asSchema(schema.items);
@@ -466,10 +428,6 @@ export function updateFieldOptions(
       ...template.properties,
       [fieldId]: updatedSchema,
     },
-    ui: {
-      ...template.ui,
-      [fieldId]: { ...ui, 'ui:enumIds': enumIds },
-    },
   };
 }
 
@@ -483,7 +441,7 @@ export function updateFieldNumberConfig(
     return template;
   }
 
-  const updatedSchema = { ...schema };
+  let updatedSchema = { ...schema };
   if (config.min !== undefined) {
     updatedSchema.minimum = config.min;
   } else {
@@ -494,14 +452,11 @@ export function updateFieldNumberConfig(
   } else {
     delete updatedSchema.maximum;
   }
-
-  const ui = getFieldUi(template, fieldId);
-  const updatedUi = { ...ui };
   if (config.isCurrency !== undefined) {
-    updatedUi['ui:options'] = {
-      ...(updatedUi['ui:options'] as Record<string, unknown> | undefined),
-      isCurrency: config.isCurrency,
-    };
+    updatedSchema = withXFormat(
+      updatedSchema,
+      config.isCurrency ? 'money' : 'number',
+    );
   }
 
   return {
@@ -510,9 +465,22 @@ export function updateFieldNumberConfig(
       ...template.properties,
       [fieldId]: updatedSchema,
     },
-    ui: {
-      ...template.ui,
-      [fieldId]: updatedUi,
-    },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a default template with a single "proposal summary" long-text field.
+ * The label must be passed in so it can be translated by the caller.
+ */
+export function createDefaultTemplate(summaryLabel: string): ProposalTemplate {
+  return addField(
+    {} as ProposalTemplate,
+    'proposal-summary',
+    'long_text',
+    summaryLabel,
+  );
 }

@@ -3,11 +3,13 @@
 import { trpc } from '@op/api/client';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { FieldConfigCard } from '@op/ui/FieldConfigCard';
 import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
-import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -16,13 +18,11 @@ import {
   type FieldView,
   type ProposalTemplate,
   addField as addFieldToTemplate,
+  createDefaultTemplate,
   getField,
   getFieldErrors,
-  getFieldOrder,
   getFieldSchema,
-  getFieldUi,
   getFields,
-  isFieldLocked,
   removeField as removeFieldFromTemplate,
   reorderFields as reorderTemplateFields,
   setFieldRequired,
@@ -53,8 +53,17 @@ export function TemplateEditorContent({
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const initialTemplate = (instance.instanceData?.proposalTemplate ??
-    {}) as ProposalTemplate;
+  const instanceData = instance.instanceData;
+
+  const initialTemplate = useMemo(() => {
+    const saved = instanceData?.proposalTemplate as
+      | ProposalTemplate
+      | undefined;
+    if (saved && Object.keys(saved.properties ?? {}).length > 0) {
+      return saved;
+    }
+    return createDefaultTemplate(t('Proposal summary'));
+  }, [instanceData?.proposalTemplate, t]);
 
   const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
   const isInitialLoadRef = useRef(true);
@@ -77,27 +86,44 @@ export function TemplateEditorContent({
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  // Derive all field views from the template
-  const allFields = useMemo(() => getFields(template), [template]);
-  const lockedFields = useMemo(
-    () => allFields.filter((f) => f.locked),
-    [allFields],
-  );
-  const sortableFields = useMemo(
-    () => allFields.filter((f) => !f.locked),
-    [allFields],
-  );
+  // Check if categories have been configured
+  const hasCategories =
+    Array.isArray(
+      (instanceData?.config as Record<string, unknown> | undefined)?.categories,
+    ) &&
+    ((instanceData?.config as Record<string, unknown>).categories as unknown[])
+      .length > 0;
 
-  // Sidebar field list
-  const sidebarFields = useMemo(
-    () =>
-      allFields.map((f) => ({
+  // Derive field views from the template (all fields are editable)
+  const fields = useMemo(() => getFields(template), [template]);
+
+  // Sidebar field list — includes visual-only locked fields at the top
+  const sidebarFields = useMemo(() => {
+    const locked = [
+      {
+        id: '_title',
+        label: t('Proposal title'),
+        fieldType: 'short_text' as const,
+      },
+      ...(hasCategories
+        ? [
+            {
+              id: '_category',
+              label: t('Category'),
+              fieldType: 'dropdown' as const,
+            },
+          ]
+        : []),
+    ];
+    return [
+      ...locked,
+      ...fields.map((f) => ({
         id: f.id,
         label: f.label,
         fieldType: f.fieldType,
       })),
-    [allFields],
-  );
+    ];
+  }, [fields, hasCategories, t]);
 
   // Debounced auto-save to localStorage and backend
   const debouncedSave = useDebouncedCallback(
@@ -150,13 +176,12 @@ export function TemplateEditorContent({
   }, []);
 
   const handleReorderFields = useCallback((newItems: FieldView[]) => {
-    setTemplate((prev) => {
-      const lockedIds = getFieldOrder(prev).filter((id) =>
-        isFieldLocked(prev, id),
-      );
-      const newOrder = [...lockedIds, ...newItems.map((item) => item.id)];
-      return reorderTemplateFields(prev, newOrder);
-    });
+    setTemplate((prev) =>
+      reorderTemplateFields(
+        prev,
+        newItems.map((item) => item.id),
+      ),
+    );
   }, []);
 
   const handleUpdateLabel = useCallback((fieldId: string, label: string) => {
@@ -192,7 +217,7 @@ export function TemplateEditorContent({
   );
 
   const handleUpdateJsonSchema = useCallback(
-    (fieldId: string, updates: Partial<StrictRJSFSchema>) => {
+    (fieldId: string, updates: Partial<RJSFSchema>) => {
       setTemplate((prev) => {
         const existing = getFieldSchema(prev, fieldId);
         if (!existing) {
@@ -210,29 +235,13 @@ export function TemplateEditorContent({
     [],
   );
 
-  const handleUpdateUiSchema = useCallback(
-    (fieldId: string, updates: Partial<UiSchema>) => {
-      setTemplate((prev) => {
-        const existing = getFieldUi(prev, fieldId);
-        return {
-          ...prev,
-          ui: {
-            ...prev.ui,
-            [fieldId]: { ...existing, ...updates },
-          },
-        };
-      });
-    },
-    [],
-  );
-
   /** Render a FieldCard for a given field view. */
   const renderFieldCard = (
     field: FieldView,
     controls?: Parameters<Parameters<typeof Sortable>[0]['children']>[1],
   ) => {
     const snapshotErrors = fieldErrors.get(field.id) ?? [];
-    const liveErrors = field.locked ? [] : getFieldErrors(field);
+    const liveErrors = getFieldErrors(field);
     const displayedErrors = snapshotErrors.filter((e) =>
       liveErrors.includes(e),
     );
@@ -242,16 +251,14 @@ export function TemplateEditorContent({
         key={field.id}
         field={field}
         fieldSchema={getFieldSchema(template, field.id) ?? {}}
-        fieldUiSchema={getFieldUi(template, field.id)}
         errors={displayedErrors}
         controls={controls}
-        onRemove={field.locked ? undefined : handleRemoveField}
+        onRemove={handleRemoveField}
         onBlur={handleFieldBlur}
         onUpdateLabel={handleUpdateLabel}
         onUpdateDescription={handleUpdateDescription}
         onUpdateRequired={handleUpdateRequired}
         onUpdateJsonSchema={handleUpdateJsonSchema}
-        onUpdateUiSchema={handleUpdateUiSchema}
       />
     );
   };
@@ -287,14 +294,27 @@ export function TemplateEditorContent({
             </p>
             <hr />
 
-            {/* Locked fields */}
+            {/* Visual-only locked fields (not in schema) */}
             <div className="mb-3 space-y-3">
-              {lockedFields.map((field) => renderFieldCard(field))}
+              <FieldConfigCard
+                icon={LuAlignLeft}
+                iconTooltip={t('Short text')}
+                label={t('Proposal title')}
+                locked
+              />
+              {hasCategories && (
+                <FieldConfigCard
+                  icon={LuChevronDown}
+                  iconTooltip={t('Dropdown')}
+                  label={t('Category')}
+                  locked
+                />
+              )}
             </div>
 
             {/* Sortable fields */}
             <Sortable
-              items={sortableFields}
+              items={fields}
               onChange={handleReorderFields}
               dragTrigger="handle"
               getItemLabel={(field) => field.label}

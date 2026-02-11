@@ -6,7 +6,7 @@ import {
 } from '@op/ui/FieldConfigCard';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils';
 import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -20,8 +20,7 @@ import {
 
 interface FieldCardProps {
   field: FieldView;
-  fieldSchema: StrictRJSFSchema;
-  fieldUiSchema: UiSchema;
+  fieldSchema: RJSFSchema;
   errors?: string[];
   controls?: SortableItemControls;
   onRemove?: (fieldId: string) => void;
@@ -29,22 +28,16 @@ interface FieldCardProps {
   onUpdateLabel?: (fieldId: string, label: string) => void;
   onUpdateDescription?: (fieldId: string, description: string) => void;
   onUpdateRequired?: (fieldId: string, isRequired: boolean) => void;
-  onUpdateJsonSchema?: (
-    fieldId: string,
-    updates: Partial<StrictRJSFSchema>,
-  ) => void;
-  onUpdateUiSchema?: (fieldId: string, updates: Partial<UiSchema>) => void;
+  onUpdateJsonSchema?: (fieldId: string, updates: Partial<RJSFSchema>) => void;
 }
 
 /**
  * A card representing a form field in the builder.
- * For locked fields: shows lock icon, no drag handle or remove button
- * For sortable fields: uses FieldConfigCard with drag handle, remove button, and config section
+ * Uses FieldConfigCard with drag handle, remove button, and config section.
  */
 export function FieldCard({
   field,
   fieldSchema,
-  fieldUiSchema,
   errors = [],
   controls,
   onRemove,
@@ -53,7 +46,6 @@ export function FieldCard({
   onUpdateDescription,
   onUpdateRequired,
   onUpdateJsonSchema,
-  onUpdateUiSchema,
 }: FieldCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -66,17 +58,6 @@ export function FieldCard({
       onBlur?.(field.id);
     }
   };
-
-  if (field.locked) {
-    return (
-      <FieldConfigCard
-        icon={Icon}
-        iconTooltip={t(getFieldLabelKey(field.fieldType))}
-        label={field.label}
-        locked
-      />
-    );
-  }
 
   return (
     <div ref={cardRef} onBlur={handleBlur}>
@@ -105,12 +86,8 @@ export function FieldCard({
             <ConfigComponent
               field={field}
               fieldSchema={fieldSchema}
-              fieldUiSchema={fieldUiSchema}
               onUpdateJsonSchema={(updates) =>
                 onUpdateJsonSchema?.(field.id, updates)
-              }
-              onUpdateUiSchema={(updates) =>
-                onUpdateUiSchema?.(field.id, updates)
               }
             />
           </div>

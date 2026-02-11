@@ -13,9 +13,7 @@ import type { FieldConfigProps } from './fieldRegistry';
  */
 export function FieldConfigNumber({
   field,
-  fieldUiSchema,
   onUpdateJsonSchema,
-  onUpdateUiSchema,
 }: FieldConfigProps) {
   const t = useTranslations();
 
@@ -45,13 +43,8 @@ export function FieldConfigNumber({
           size="small"
           isSelected={field.isCurrency}
           onChange={(isSelected) =>
-            onUpdateUiSchema({
-              'ui:options': {
-                ...(fieldUiSchema['ui:options'] as
-                  | Record<string, unknown>
-                  | undefined),
-                isCurrency: isSelected,
-              },
+            onUpdateJsonSchema({
+              'x-format': isSelected ? 'money' : 'number',
             })
           }
           aria-label={t('Dollar amount')}

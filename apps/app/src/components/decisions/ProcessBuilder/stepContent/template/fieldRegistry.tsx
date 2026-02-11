@@ -1,4 +1,4 @@
-import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils';
 import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
 import {
@@ -20,10 +20,8 @@ import { FieldConfigNumber } from './FieldConfigNumber';
  */
 export interface FieldConfigProps {
   field: FieldView;
-  fieldSchema: StrictRJSFSchema;
-  fieldUiSchema: UiSchema;
-  onUpdateJsonSchema: (updates: Partial<StrictRJSFSchema>) => void;
-  onUpdateUiSchema: (updates: Partial<UiSchema>) => void;
+  fieldSchema: RJSFSchema;
+  onUpdateJsonSchema: (updates: Partial<RJSFSchema>) => void;
 }
 
 /**
