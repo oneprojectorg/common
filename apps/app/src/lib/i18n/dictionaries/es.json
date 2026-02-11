@@ -638,5 +638,6 @@
   "Field label is required": "La etiqueta del campo es obligatoria",
   "Options cannot be empty": "Las opciones no pueden estar vacías",
   "Minimum must be less than or equal to maximum": "El mínimo debe ser menor o igual al máximo",
-  "These are the categories you defined in": "Estas son las categorías que definiste en"
+  "These are the categories you defined in": "Estas son las categorías que definiste en",
+  "Set maximum budget": "Establecer presupuesto máximo"
 }

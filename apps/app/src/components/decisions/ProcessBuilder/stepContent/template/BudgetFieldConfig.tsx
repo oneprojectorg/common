@@ -65,7 +65,7 @@ export function BudgetFieldConfig({
             ...prev.properties,
             budget: {
               type: 'number',
-              title: 'Budget',
+              title: t('Budget'),
               'x-format': 'money',
               'x-currency': 'USD',
             },
@@ -85,7 +85,7 @@ export function BudgetFieldConfig({
         });
       }
     },
-    [onTemplateChange],
+    [onTemplateChange, t],
   );
 
   const handleBudgetCurrencyChange = useCallback(
