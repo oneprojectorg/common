@@ -153,22 +153,15 @@ function ShareProposalModalContent({
       { q: debouncedQuery, types: [EntityType.INDIVIDUAL] },
       {
         enabled: debouncedQuery.length >= 2,
-        staleTime: 30_000,
         placeholderData: (prev) => prev,
       },
     );
 
-  // Flatten and sort search results
-  const flattenedResults = useMemo(() => {
-    if (!searchResults) {
-      return [];
-    }
-    return searchResults
-      .flatMap(({ type, results }) =>
-        results.map((result) => ({ ...result, entityType: type })),
-      )
-      .sort((a, b) => b.rank - a.rank);
-  }, [searchResults]);
+  // Results come pre-sorted by rank from the API
+  const flattenedResults = useMemo(
+    () => searchResults?.flatMap(({ results }) => results) ?? [],
+    [searchResults],
+  );
 
   // Filter out already selected, existing users, and sent invites
   const filteredResults = useMemo(() => {
