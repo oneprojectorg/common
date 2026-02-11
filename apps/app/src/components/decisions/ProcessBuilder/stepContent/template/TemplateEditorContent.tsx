@@ -88,11 +88,7 @@ export function TemplateEditorContent({
 
   // Check if categories have been configured
   const hasCategories =
-    Array.isArray(
-      (instanceData?.config as Record<string, unknown> | undefined)?.categories,
-    ) &&
-    ((instanceData?.config as Record<string, unknown>).categories as unknown[])
-      .length > 0;
+    (instanceData?.config?.categories?.length ?? 0) > 0;
 
   // Derive field views from the template (all fields are editable)
   const fields = useMemo(() => getFields(template), [template]);
