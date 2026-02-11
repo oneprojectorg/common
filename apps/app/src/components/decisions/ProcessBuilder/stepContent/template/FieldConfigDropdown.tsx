@@ -3,7 +3,7 @@
 import { Button } from '@op/ui/Button';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -45,28 +45,38 @@ export function FieldConfigDropdown({
 
   return (
     <FieldConfigDropdownOptions
-      options={field.options}
+      initialOptions={field.options}
       onOptionsChange={handleOptionsChange}
     />
   );
 }
 
 interface FieldConfigDropdownOptionsProps {
-  options: FieldOption[];
+  initialOptions: FieldOption[];
   onOptionsChange: (options: FieldOption[]) => void;
 }
 
 /**
  * Configuration UI for dropdown/multiple choice options.
- * Allows adding, editing, reordering, and managing options.
+ * Manages its own option state with stable IDs for Sortable,
+ * initialized from props on mount.
  */
 function FieldConfigDropdownOptions({
-  options,
+  initialOptions,
   onOptionsChange,
 }: FieldConfigDropdownOptionsProps) {
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldFocusNewRef = useRef(false);
+
+  const [options, setOptions] = useState<FieldOption[]>(() =>
+    initialOptions.map((o) => ({ ...o, id: crypto.randomUUID() })),
+  );
+
+  const updateOptions = (next: FieldOption[]) => {
+    setOptions(next);
+    onOptionsChange(next);
+  };
 
   // Focus the last input when a new option is added
   useEffect(() => {
@@ -97,17 +107,17 @@ function FieldConfigDropdownOptions({
 
   const handleAddOption = () => {
     shouldFocusNewRef.current = true;
-    onOptionsChange([...options, { id: crypto.randomUUID(), value: '' }]);
+    updateOptions([...options, { id: crypto.randomUUID(), value: '' }]);
   };
 
   const handleUpdateOption = (id: string, value: string) => {
-    onOptionsChange(
+    updateOptions(
       options.map((opt) => (opt.id === id ? { ...opt, value } : opt)),
     );
   };
 
   const handleRemoveOption = (id: string) => {
-    onOptionsChange(options.filter((opt) => opt.id !== id));
+    updateOptions(options.filter((opt) => opt.id !== id));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, option: FieldOption) => {
@@ -126,7 +136,7 @@ function FieldConfigDropdownOptions({
 
       <Sortable
         items={options}
-        onChange={onOptionsChange}
+        onChange={updateOptions}
         dragTrigger="handle"
         getItemLabel={(item) => item.value || t('Option')}
         renderDragPreview={renderDragPreview}
