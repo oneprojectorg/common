@@ -37,14 +37,27 @@ function CollaborativeTitleRjsfField(props: FieldProps) {
 
 /**
  * RJSF custom field: collaborative category selector.
- * Reads available categories from `formContext`.
+ * Reads `oneOf` from the property schema to derive selectable options.
+ *
+ * NOTE: `x-format: 'category'` may be replaced by a generic select/enum
+ * widget in the future.
  */
 function CollaborativeCategoryRjsfField(props: FieldProps) {
-  const { categories } = (props.formContext ?? {}) as ProposalFormContext;
+  const options = Array.isArray(props.schema.oneOf)
+    ? props.schema.oneOf
+        .filter(
+          (entry): entry is { const: string; title: string } =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            'const' in entry &&
+            'title' in entry,
+        )
+        .map((entry) => ({ value: entry.const, label: entry.title }))
+    : [];
 
   return (
     <CollaborativeCategoryField
-      categories={categories}
+      options={options}
       initialValue={(props.formData as string | null) ?? null}
       onChange={(value) => props.onChange(value)}
     />

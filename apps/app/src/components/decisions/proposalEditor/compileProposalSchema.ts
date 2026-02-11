@@ -6,11 +6,13 @@ import type { RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils';
 
 /**
  * Extra props passed to RJSF fields/widgets via `formContext`.
- * Contains runtime data that the schema alone can't express.
+ *
+ * Currently empty — all field data (categories, budget max, etc.) is
+ * expressed directly in the JSON Schema. Kept as a named type so the
+ * RJSF generic plumbing stays consistent if we need runtime context later.
  */
-export interface ProposalFormContext {
-  categories: Array<{ id: string; name: string }>;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ProposalFormContext extends Record<string, unknown> {}
 
 /**
  * Supported values for the `x-format` vendor extension on template properties.

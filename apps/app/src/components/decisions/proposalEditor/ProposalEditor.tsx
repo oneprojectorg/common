@@ -40,7 +40,6 @@ import {
   RJSF_WIDGETS,
   proposalValidator,
 } from './rjsfConfig';
-import { useInstanceConfig } from './useInstanceConfig';
 import { useProposalDraft } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
@@ -78,7 +77,11 @@ export function ProposalEditor({
 
   // -- Instance config -------------------------------------------------------
 
-  const { categories } = useInstanceConfig(instance);
+  // TODO: Remove once categories are baked into the proposal schema
+  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId: instance.id,
+  });
+  const categories = categoriesData.categories;
 
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
@@ -139,6 +142,12 @@ export function ProposalEditor({
           title: t('Category'),
           ...(base.properties?.category as Record<string, unknown>),
           'x-format': 'category',
+          ...(categories.length > 0 && {
+            oneOf: categories.map((c) => ({
+              const: c.name,
+              title: c.name,
+            })),
+          }),
         },
         budget: {
           type: ['number', 'null'] as const,
@@ -161,7 +170,7 @@ export function ProposalEditor({
         ...(Array.isArray(base.required) ? base.required : []),
       ],
     };
-  }, [rawProposalTemplate, t]);
+  }, [rawProposalTemplate, categories, t]);
 
   const { schema: proposalSchema, uiSchema: proposalUiSchema } = useMemo(
     () => compileProposalSchema(proposalTemplateWithMockField, t),
@@ -236,10 +245,14 @@ export function ProposalEditor({
       missingFields.push(t('Budget'));
     }
 
+    const categorySchema = proposalTemplateWithMockField.properties
+      ?.category as Record<string, unknown> | undefined;
+    const hasCategories =
+      Array.isArray(categorySchema?.oneOf) && categorySchema.oneOf.length > 0;
+
     if (
       templateRequired.includes('category') &&
-      categories &&
-      categories.length > 0 &&
+      hasCategories &&
       currentDraft.category === null
     ) {
       missingFields.push(t('Category'));
@@ -285,10 +298,9 @@ export function ProposalEditor({
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
         title: currentDraft.title,
-        category:
-          categories && categories.length > 0
-            ? (currentDraft.category ?? undefined)
-            : undefined,
+        category: hasCategories
+          ? (currentDraft.category ?? undefined)
+          : undefined,
         budget: currentDraft.budget ?? undefined,
       };
 
@@ -314,7 +326,6 @@ export function ProposalEditor({
     editorInstance,
     proposalTemplateWithMockField,
     collaborationDocId,
-    categories,
     proposal,
     isDraft,
     submitProposalMutation,
@@ -353,9 +364,6 @@ export function ProposalEditor({
               widgets={RJSF_WIDGETS}
               templates={RJSF_TEMPLATES}
               formData={draft}
-              formContext={{
-                categories: categories ?? [],
-              }}
               onChange={handleFormChange}
               showErrorList={false}
               liveValidate={false}
