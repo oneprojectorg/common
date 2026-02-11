@@ -5,7 +5,6 @@ import type {
   ValidatorType,
 } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
-import { ErrorBoundary } from 'react-error-boundary';
 
 import {
   CollaborativeBudgetField,
@@ -79,33 +78,6 @@ function CollaborativeBudgetRjsfField(props: FieldProps) {
   );
 }
 
-/** Wrapper that catches render errors from the collaborative text field. */
-function SafeCollaborativeTextField(props: FieldProps) {
-  return (
-    <ErrorBoundary
-      fallback={
-        <div className="rounded border border-functional-red/20 bg-functional-red/5 p-3">
-          <p className="text-sm text-functional-red">
-            Error rendering text field
-          </p>
-          <p className="mt-1 text-xs text-neutral-gray4">
-            Field: {props.schema?.title || 'Unknown'}
-          </p>
-        </div>
-      }
-      onError={(error, info) => {
-        console.error(
-          `[CollaborativeTextField] ${props.schema?.title ?? 'unknown'}:`,
-          error,
-          info,
-        );
-      }}
-    >
-      <CollaborativeTextField {...props} />
-    </ErrorBoundary>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // RJSF registry — all collaborative components registered as custom fields
 // ---------------------------------------------------------------------------
@@ -114,7 +86,7 @@ export const RJSF_FIELDS = {
   CollaborativeTitleField: CollaborativeTitleRjsfField,
   CollaborativeCategoryField: CollaborativeCategoryRjsfField,
   CollaborativeBudgetField: CollaborativeBudgetRjsfField,
-  CollaborativeTextField: SafeCollaborativeTextField,
+  CollaborativeTextField,
 };
 
 // ---------------------------------------------------------------------------

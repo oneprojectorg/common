@@ -103,7 +103,7 @@ function resolveFormatUi(
 
   return {
     'ui:field': config.field,
-    'ui:options': { field: key, ...config.defaults, ...xFormatOptions },
+    'ui:options': { fragmentName: key, ...config.defaults, ...xFormatOptions },
   };
 }
 

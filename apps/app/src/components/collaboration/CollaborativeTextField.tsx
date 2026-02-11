@@ -15,8 +15,8 @@ import { CollaborativeEditor } from './CollaborativeEditor';
  * styled content, and Yjs collaboration/snapshotting for free.
  *
  * Behaviour is controlled via `ui:options`:
- * - `field`     – Yjs fragment name (required, set by the template compiler)
- * - `multiline` – when true, renders a taller editor suitable for long text
+ * - `fragmentName` – Yjs fragment name (required, set by the template compiler)
+ * - `multiline`    – when true, renders a taller editor suitable for long text
  *
  * Future `x-format-options` from the template schema are forwarded here
  * as `ui:options` by the compiler, so adding new knobs (e.g. `rich`,
@@ -27,11 +27,11 @@ export function CollaborativeTextField(props: FieldProps) {
 
   const options = (uiSchema?.['ui:options'] ?? {}) as Record<string, unknown>;
 
-  const fragmentName = options.field as string | undefined;
+  const fragmentName = options.fragmentName as string | undefined;
 
   if (!fragmentName) {
     throw new Error(
-      `CollaborativeTextField requires a "field" ui:option but none was provided for "${schema.title ?? 'unknown'}".`,
+      `CollaborativeTextField requires a "fragmentName" ui:option but none was provided for "${schema.title ?? 'unknown'}".`,
     );
   }
 
