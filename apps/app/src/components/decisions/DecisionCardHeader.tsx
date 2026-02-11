@@ -10,6 +10,7 @@ export const DecisionCardHeader = ({
   currentState,
   stewardName,
   stewardAvatarPath,
+  chipClassName,
   children,
   className,
 }: {
@@ -17,6 +18,7 @@ export const DecisionCardHeader = ({
   currentState?: string | null;
   stewardName?: string | null;
   stewardAvatarPath?: string | null;
+  chipClassName?: string;
   children?: React.ReactNode;
   className?: string;
 }) => (
@@ -26,7 +28,11 @@ export const DecisionCardHeader = ({
         {name}
       </Header3>
       {currentState ? (
-        <Chip className="bg-primary-tealWhite text-primary-tealBlack">
+        <Chip
+          className={
+            chipClassName ?? 'bg-primary-tealWhite text-primary-tealBlack'
+          }
+        >
           {currentState}
         </Chip>
       ) : null}

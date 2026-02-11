@@ -1,4 +1,4 @@
-import { DecisionProfile } from '@op/api/encoders';
+import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { cn } from '@op/ui/utils';
 import { LuCalendar } from 'react-icons/lu';
 
@@ -27,27 +27,33 @@ const isClosingSoon = (dateString: string) => {
 
 export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
+  const isDraft = processInstance.status === ProcessStatus.DRAFT;
 
   // Get current phase from instanceData phases
   const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
-  const currentPhaseName = currentPhase?.name;
-  const closingDate = currentPhase?.endDate;
+  const currentPhaseName = isDraft ? 'Draft' : currentPhase?.name;
+  const closingDate = isDraft ? undefined : currentPhase?.endDate;
 
-  // Prefer steward, fall back to owner
-  const steward = processInstance.steward ?? processInstance.owner;
+  // For drafts show owner; for published prefer steward, fall back to owner
+  const displayProfile = isDraft
+    ? processInstance.owner
+    : (processInstance.steward ?? processInstance.owner);
 
   return (
     <Link
-      href={`/decisions/${item.slug}`}
+      href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
       className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
     >
       <DecisionCardHeader
         name={processInstance.name || item.name}
         currentState={currentPhaseName}
-        stewardName={steward?.name}
-        stewardAvatarPath={steward?.avatarImage?.name}
+        stewardName={displayProfile?.name}
+        stewardAvatarPath={displayProfile?.avatarImage?.name}
+        chipClassName={
+          isDraft ? 'bg-neutral-gray1 text-neutral-charcoal' : undefined
+        }
       >
         {closingDate && (
           <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">

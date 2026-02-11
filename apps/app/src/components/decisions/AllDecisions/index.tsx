@@ -1,11 +1,14 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { DecisionProfileList, ProcessStatus } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Suspense } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -14,9 +17,11 @@ import { DecisionListItem } from '../DecisionListItem';
 const DecisionsListSuspense = ({
   status,
   initialData,
+  ownerProfileId,
 }: {
   status: ProcessStatus;
   initialData?: DecisionProfileList;
+  ownerProfileId?: string;
 }) => {
   const {
     data: paginatedData,
@@ -27,6 +32,7 @@ const DecisionsListSuspense = ({
     {
       limit: 20,
       status,
+      ownerProfileId,
     },
     initialData
       ? {
@@ -76,36 +82,80 @@ const DecisionsListSuspense = ({
   );
 };
 
+const AllDecisionsTabs = ({
+  initialData,
+}: {
+  initialData?: DecisionProfileList;
+}) => {
+  const t = useTranslations();
+  const { user } = useUser();
+  const ownerProfileId = user.currentProfile?.id;
+
+  const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
+    limit: 1,
+    status: ProcessStatus.DRAFT,
+    ownerProfileId,
+  });
+
+  const hasDrafts = draftsCheck.items.length > 0;
+
+  return (
+    <Tabs defaultSelectedKey="active">
+      <TabList variant="pill" className="gap-4 border-none">
+        <Tab id="active" variant="pill">
+          Your active processes
+        </Tab>
+        {hasDrafts && (
+          <Tab id="drafts" variant="pill">
+            {t('Your drafts')}
+          </Tab>
+        )}
+        <Tab id="other" variant="pill">
+          Other processes
+        </Tab>
+      </TabList>
+      <TabPanel id="active" className="p-0 sm:p-0">
+        <Suspense fallback={<SkeletonLine lines={5} />}>
+          <DecisionsListSuspense
+            status={ProcessStatus.PUBLISHED}
+            initialData={initialData}
+          />
+        </Suspense>
+      </TabPanel>
+      {hasDrafts && (
+        <TabPanel id="drafts" className="p-0 sm:p-0">
+          <Suspense fallback={<SkeletonLine lines={5} />}>
+            <DecisionsListSuspense
+              status={ProcessStatus.DRAFT}
+              ownerProfileId={ownerProfileId}
+            />
+          </Suspense>
+        </TabPanel>
+      )}
+      <TabPanel id="other" className="p-0 sm:p-0">
+        <Suspense fallback={<SkeletonLine lines={5} />}>
+          <DecisionsListSuspense status={ProcessStatus.COMPLETED} />
+        </Suspense>
+      </TabPanel>
+    </Tabs>
+  );
+};
+
 export const AllDecisions = ({
   initialData,
 }: {
   initialData?: DecisionProfileList;
 }) => {
+  const { user } = useUser();
+
   return (
     <ErrorBoundary fallback={<div>Could not load decisions</div>}>
-      <Tabs defaultSelectedKey="active">
-        <TabList variant="pill" className="gap-4 border-none">
-          <Tab id="active" variant="pill">
-            Your active processes
-          </Tab>
-          <Tab id="other" variant="pill">
-            Other processes
-          </Tab>
-        </TabList>
-        <TabPanel id="active" className="p-0 sm:p-0">
-          <Suspense fallback={<SkeletonLine lines={5} />}>
-            <DecisionsListSuspense
-              status={ProcessStatus.PUBLISHED}
-              initialData={initialData}
-            />
-          </Suspense>
-        </TabPanel>
-        <TabPanel id="other" className="p-0 sm:p-0">
-          <Suspense fallback={<SkeletonLine lines={5} />}>
-            <DecisionsListSuspense status={ProcessStatus.COMPLETED} />
-          </Suspense>
-        </TabPanel>
-      </Tabs>
+      <Suspense fallback={<SkeletonLine lines={5} />}>
+        <AllDecisionsTabs
+          key={user.currentProfile?.id}
+          initialData={initialData}
+        />
+      </Suspense>
     </ErrorBoundary>
   );
 };
