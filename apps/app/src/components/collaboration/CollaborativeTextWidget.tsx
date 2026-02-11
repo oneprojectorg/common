@@ -117,6 +117,3 @@ export function CollaborativeTextWidget(props: WidgetProps) {
     </div>
   );
 }
-
-/** @deprecated Use `CollaborativeTextWidget` instead. */
-export const CollaborativeShortTextWidget = CollaborativeTextWidget;
