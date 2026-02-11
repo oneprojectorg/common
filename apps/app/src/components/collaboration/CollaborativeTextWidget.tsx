@@ -1,18 +1,18 @@
 'use client';
 
-import { Skeleton } from '@op/ui/Skeleton';
 import type { WidgetProps } from '@rjsf/utils';
-import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Placeholder from '@tiptap/extension-placeholder';
-import { EditorContent, useEditor } from '@tiptap/react';
-import { useEffect, useMemo } from 'react';
+import type { Editor } from '@tiptap/react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import { getProposalExtensions } from '../RichTextEditor';
-import { useCollaborativeDoc } from './CollaborativeDocContext';
+import { CollaborativeEditor } from './CollaborativeEditor';
 
 /**
  * RJSF widget for collaborative text fields (short or long).
+ *
+ * Composes {@link CollaborativeEditor} so we get consistent editor setup,
+ * styled content, and Yjs collaboration/snapshotting for free.
  *
  * Behaviour is controlled via `ui:options`:
  * - `field`     – Yjs fragment name (required, set by the template compiler)
@@ -24,7 +24,6 @@ import { useCollaborativeDoc } from './CollaborativeDocContext';
  */
 export function CollaborativeTextWidget(props: WidgetProps) {
   const { onChange, schema, uiSchema, rawErrors } = props;
-  const { ydoc, provider, user } = useCollaborativeDoc();
 
   const options = (uiSchema?.['ui:options'] ?? {}) as Record<string, unknown>;
 
@@ -41,59 +40,28 @@ export function CollaborativeTextWidget(props: WidgetProps) {
 
   const multiline = Boolean(options.multiline);
 
-  const baseExtensions = useMemo(
-    () => getProposalExtensions({ collaborative: true }),
-    [],
-  );
-
   const extensions = useMemo(
     () => [
-      ...baseExtensions,
+      ...getProposalExtensions({ collaborative: true }),
       Placeholder.configure({
         placeholder,
         emptyEditorClass:
           'before:content-[attr(data-placeholder)] before:text-neutral-gray3 before:float-left before:h-0 before:pointer-events-none',
       }),
-      Collaboration.configure({
-        document: ydoc,
-        field: fragmentName,
-      }),
-      CollaborationCaret.configure({
-        provider,
-        user,
-      }),
     ],
-    [baseExtensions, ydoc, provider, user, placeholder, fragmentName],
+    [placeholder],
   );
 
-  const editor = useEditor({
-    extensions,
-    editorProps: {
-      attributes: {
-        class: `${multiline ? 'min-h-32' : 'min-h-8'} text-base text-neutral-black focus:outline-none`,
-      },
-    },
-    immediatelyRender: false,
-  });
+  // Stable ref so the onEditorReady callback doesn't re-trigger on onChange identity changes
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  useEffect(() => {
-    if (!editor || !onChange) {
-      return;
-    }
-
+  const handleEditorReady = useCallback((editor: Editor) => {
     const handleUpdate = () => {
-      onChange(editor.getHTML());
+      onChangeRef.current?.(editor.getHTML());
     };
-
     editor.on('update', handleUpdate);
-    return () => {
-      editor.off('update', handleUpdate);
-    };
-  }, [editor, onChange]);
-
-  if (!editor) {
-    return <Skeleton className={multiline ? 'h-32' : 'h-8'} />;
-  }
+  }, []);
 
   return (
     <div className="flex flex-col gap-2">
@@ -111,7 +79,13 @@ export function CollaborativeTextWidget(props: WidgetProps) {
           )}
         </div>
       )}
-      <EditorContent editor={editor} />
+      <CollaborativeEditor
+        field={fragmentName}
+        extensions={extensions}
+        placeholder={placeholder}
+        onEditorReady={handleEditorReady}
+        editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
+      />
       {rawErrors && rawErrors.length > 0 && (
         <div className="text-sm text-functional-red">
           {rawErrors.join(', ')}
