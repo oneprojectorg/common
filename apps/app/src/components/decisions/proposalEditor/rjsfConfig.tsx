@@ -3,8 +3,10 @@ import type {
   ObjectFieldTemplateProps,
   RJSFSchema,
   ValidatorType,
+  WidgetProps,
 } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import {
   CollaborativeBudgetField,
@@ -88,8 +90,28 @@ export const RJSF_FIELDS = {
   CollaborativeBudgetField: CollaborativeBudgetRjsfField,
 };
 
+/** Wrapper that catches render errors from the collaborative text widget. */
+function SafeCollaborativeTextWidget(props: WidgetProps) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="rounded border border-functional-red/20 bg-functional-red/5 p-3">
+          <p className="text-sm text-functional-red">
+            Error rendering text field
+          </p>
+          <p className="mt-1 text-xs text-neutral-gray4">
+            Field: {props.schema?.title || 'Unknown'}
+          </p>
+        </div>
+      }
+    >
+      <CollaborativeTextWidget {...props} />
+    </ErrorBoundary>
+  );
+}
+
 export const RJSF_WIDGETS = {
-  CollaborativeText: CollaborativeTextWidget,
+  CollaborativeText: SafeCollaborativeTextWidget,
 };
 
 // ---------------------------------------------------------------------------

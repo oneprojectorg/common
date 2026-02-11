@@ -15,7 +15,7 @@ import { useCollaborativeDoc } from './CollaborativeDocContext';
  * RJSF widget for collaborative text fields (short or long).
  *
  * Behaviour is controlled via `ui:options`:
- * - `field`     – Yjs fragment name (falls back to slugified `schema.title`)
+ * - `field`     – Yjs fragment name (required, set by the template compiler)
  * - `multiline` – when true, renders a taller editor suitable for long text
  *
  * Future `x-format-options` from the template schema are forwarded here
@@ -28,10 +28,13 @@ export function CollaborativeTextWidget(props: WidgetProps) {
 
   const options = (uiSchema?.['ui:options'] ?? {}) as Record<string, unknown>;
 
-  const fragmentName =
-    (options.field as string) ||
-    schema.title?.toLowerCase().replace(/\s+/g, '_') ||
-    'default_text';
+  const fragmentName = options.field as string | undefined;
+
+  if (!fragmentName) {
+    throw new Error(
+      `CollaborativeTextWidget requires a "field" ui:option but none was provided for "${schema.title ?? 'unknown'}".`,
+    );
+  }
 
   const placeholder =
     (uiSchema?.['ui:placeholder'] as string) || 'Start typing...';
