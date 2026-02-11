@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import type { ProposalCategory } from '@op/common';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
@@ -13,8 +14,6 @@ import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-
-import type { ProposalCategory } from '@op/common';
 
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
@@ -49,8 +48,7 @@ export function ProposalCategoriesSectionContent({
   // Local state — immediate source of truth for UI
   // Seed from store (localStorage) first, then fall back to server data
   const [config, setConfig] = useState<CategoryConfig>(() => ({
-    categories:
-      storeData?.categories ?? serverConfig?.categories ?? [],
+    categories: storeData?.categories ?? serverConfig?.categories ?? [],
     requireCategorySelection:
       storeData?.requireCategorySelection ??
       serverConfig?.requireCategorySelection ??
