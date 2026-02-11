@@ -424,7 +424,12 @@ export function createDefaultTemplate(
       'proposal-title': createLockedFieldSchema('short-text', titleLabel),
     },
   };
-  const withSummary = addField(base, 'proposal-summary', 'long_text', summaryLabel);
+  const withSummary = addField(
+    base,
+    'proposal-summary',
+    'long_text',
+    summaryLabel,
+  );
   return setFieldRequired(withSummary, 'proposal-summary', true);
 }
 
