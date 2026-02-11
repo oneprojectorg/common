@@ -9,10 +9,12 @@ import { Header2 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import type { ProposalCategory } from '@op/common';
 
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
@@ -20,11 +22,10 @@ import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 const CATEGORY_TITLE_MAX_LENGTH = 40;
 
-interface CategoryItem {
-  id: string;
-  label: string;
-  description: string;
-  checked: boolean;
+interface CategoryConfig {
+  categories: ProposalCategory[];
+  requireCategorySelection: boolean;
+  allowMultipleCategories: boolean;
 }
 
 export function ProposalCategoriesSectionContent({
@@ -38,78 +39,56 @@ export function ProposalCategoriesSectionContent({
   const serverConfig = instance.instanceData?.config;
 
   // Zustand store
-  const instanceData = useProcessBuilderStore(
+  const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
-  // Seed store from server data on first mount if store has no categories
-  const hasSeeded = useRef(false);
-  useEffect(() => {
-    if (hasSeeded.current) {
-      return;
-    }
-    hasSeeded.current = true;
+  // Local state — immediate source of truth for UI
+  // Seed from store (localStorage) first, then fall back to server data
+  const [config, setConfig] = useState<CategoryConfig>(() => ({
+    categories:
+      storeData?.categories ?? serverConfig?.categories ?? [],
+    requireCategorySelection:
+      storeData?.requireCategorySelection ??
+      serverConfig?.requireCategorySelection ??
+      true,
+    allowMultipleCategories:
+      storeData?.allowMultipleCategories ??
+      serverConfig?.allowMultipleCategories ??
+      false,
+  }));
 
-    if (!instanceData?.categories && serverConfig?.categories) {
-      setInstanceData(decisionProfileId, {
-        categories: serverConfig.categories,
-        requireCategorySelection: serverConfig.requireCategorySelection,
-        allowMultipleCategories: serverConfig.allowMultipleCategories,
-      });
-    }
-  }, [
-    decisionProfileId,
-    instanceData?.categories,
-    serverConfig,
-    setInstanceData,
-  ]);
-
-  const categories: CategoryItem[] = instanceData?.categories ?? [];
-  const requireCategory = instanceData?.requireCategorySelection ?? true;
-  const allowMultiple = instanceData?.allowMultipleCategories ?? false;
+  const { categories, requireCategorySelection, allowMultipleCategories } =
+    config;
 
   // tRPC mutation
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  // Debounced auto-save (store update immediate, API call debounced)
-  const debouncedSave = useDebouncedCallback(
-    (data: {
-      categories: CategoryItem[];
-      requireCategorySelection: boolean;
-      allowMultipleCategories: boolean;
-    }) => {
-      setSaveStatus(decisionProfileId, 'saving');
-      setInstanceData(decisionProfileId, data);
-      updateInstance.mutate(
-        {
-          instanceId,
-          config: data,
-        },
-        {
-          onSuccess: () => markSaved(decisionProfileId),
-          onError: () => setSaveStatus(decisionProfileId, 'error'),
-        },
-      );
-    },
-    AUTOSAVE_DEBOUNCE_MS,
-  );
+  // Debounced auto-save: writes to Zustand store + API
+  const debouncedSave = useDebouncedCallback((data: CategoryConfig) => {
+    setSaveStatus(decisionProfileId, 'saving');
+    setInstanceData(decisionProfileId, data);
+    updateInstance.mutate(
+      {
+        instanceId,
+        config: data,
+      },
+      {
+        onSuccess: () => markSaved(decisionProfileId),
+        onError: () => setSaveStatus(decisionProfileId, 'error'),
+      },
+    );
+  }, AUTOSAVE_DEBOUNCE_MS);
 
-  const persist = (update: {
-    categories?: CategoryItem[];
-    requireCategorySelection?: boolean;
-    allowMultipleCategories?: boolean;
-  }) => {
-    // Update store immediately for responsive UI
-    setInstanceData(decisionProfileId, update);
-    // Debounce the API call
-    debouncedSave({
-      categories: update.categories ?? categories,
-      requireCategorySelection:
-        update.requireCategorySelection ?? requireCategory,
-      allowMultipleCategories: update.allowMultipleCategories ?? allowMultiple,
+  // Update local state and trigger debounced save
+  const updateConfig = (update: Partial<CategoryConfig>) => {
+    setConfig((prev) => {
+      const updated = { ...prev, ...update };
+      debouncedSave(updated);
+      return updated;
     });
   };
 
@@ -131,7 +110,7 @@ export function ProposalCategoriesSectionContent({
       return;
     }
 
-    let updatedCategories: CategoryItem[];
+    let updatedCategories: ProposalCategory[];
     if (editingId) {
       updatedCategories = categories.map((cat) =>
         cat.id === editingId
@@ -154,11 +133,11 @@ export function ProposalCategoriesSectionContent({
       ];
     }
 
-    persist({ categories: updatedCategories });
+    updateConfig({ categories: updatedCategories });
     resetForm();
   };
 
-  const handleEdit = (category: CategoryItem) => {
+  const handleEdit = (category: ProposalCategory) => {
     setFormLabel(category.label);
     setFormDescription(category.description);
     setEditingId(category.id);
@@ -167,7 +146,7 @@ export function ProposalCategoriesSectionContent({
 
   const handleDelete = (id: string) => {
     const updatedCategories = categories.filter((cat) => cat.id !== id);
-    persist({ categories: updatedCategories });
+    updateConfig({ categories: updatedCategories });
     if (editingId === id) {
       resetForm();
     }
@@ -177,15 +156,15 @@ export function ProposalCategoriesSectionContent({
     const updatedCategories = categories.map((cat) =>
       cat.id === id ? { ...cat, checked: !cat.checked } : cat,
     );
-    persist({ categories: updatedCategories });
+    updateConfig({ categories: updatedCategories });
   };
 
   const handleRequireCategoryChange = (value: boolean) => {
-    persist({ requireCategorySelection: value });
+    updateConfig({ requireCategorySelection: value });
   };
 
   const handleAllowMultipleChange = (value: boolean) => {
-    persist({ allowMultipleCategories: value });
+    updateConfig({ allowMultipleCategories: value });
   };
 
   const showEmptyState = categories.length === 0 && !isFormVisible;
@@ -355,7 +334,7 @@ export function ProposalCategoriesSectionContent({
               </p>
             </div>
             <ToggleButton
-              isSelected={requireCategory}
+              isSelected={requireCategorySelection}
               onChange={handleRequireCategoryChange}
               size="small"
             />
@@ -370,7 +349,7 @@ export function ProposalCategoriesSectionContent({
               </p>
             </div>
             <ToggleButton
-              isSelected={allowMultiple}
+              isSelected={allowMultipleCategories}
               onChange={handleAllowMultipleChange}
               size="small"
             />

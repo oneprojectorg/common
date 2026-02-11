@@ -31,6 +31,7 @@
  * - `saveStates[decisionId]` - UI save indicator state
  */
 import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
+import type { ProposalCategory } from '@op/common';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -46,7 +47,7 @@ import type { FormBuilderConfig } from '../stepContent/template/types';
  * - budget, hideBudget, fieldValues, currentPhaseId, stateData, phases
  *
  * Form-only fields (not yet in backend, stored in localStorage only):
- * - steward, objective, enableCategories, includeReview, isPrivate
+ * - steward, objective, includeReview, isPrivate
  */
 export interface FormInstanceData extends Partial<InstanceData> {
   /** Instance name (stored in processInstances.name, not instanceData) */
@@ -71,11 +72,7 @@ export interface FormInstanceData extends Partial<InstanceData> {
   /** Form builder configuration for proposal template */
   templateConfig?: FormBuilderConfig;
   /** Proposal categories */
-  categories?: Array<{
-    id: string;
-    label: string;
-    description: string;
-  }>;
+  categories?: ProposalCategory[];
   /** Whether proposers must select at least one category */
   requireCategorySelection?: boolean;
   /** Whether proposers can select more than one category */

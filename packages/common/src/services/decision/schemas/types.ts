@@ -49,14 +49,16 @@ export interface PhaseDefinition {
 /**
  * Process-level configuration that applies across all phases.
  */
+export interface ProposalCategory {
+  id: string;
+  label: string;
+  description: string;
+  checked: boolean;
+}
+
 export interface ProcessConfig {
   hideBudget?: boolean;
-  categories?: Array<{
-    id: string;
-    label: string;
-    description: string;
-    checked: boolean;
-  }>;
+  categories?: ProposalCategory[];
   requireCategorySelection?: boolean;
   allowMultipleCategories?: boolean;
 }
