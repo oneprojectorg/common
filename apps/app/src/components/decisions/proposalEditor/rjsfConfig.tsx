@@ -104,6 +104,13 @@ function SafeCollaborativeTextWidget(props: WidgetProps) {
           </p>
         </div>
       }
+      onError={(error, info) => {
+        console.error(
+          `[CollaborativeTextWidget] ${props.schema?.title ?? 'unknown'}:`,
+          error,
+          info,
+        );
+      }}
     >
       <CollaborativeTextWidget {...props} />
     </ErrorBoundary>
@@ -147,7 +154,9 @@ function ObjectFieldTemplate({ properties }: ObjectFieldTemplateProps) {
         </div>
       )}
 
-      {dynamicProps.map((prop) => prop.content)}
+      {dynamicProps.map((prop) => (
+        <div key={prop.name}>{prop.content}</div>
+      ))}
     </div>
   );
 }

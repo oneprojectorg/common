@@ -62,12 +62,7 @@ const DEFAULT_X_FORMAT: XFormat = 'short-text';
  * Their *data* definition comes from the template; only the rendering
  * is overridden via `ui:field`.
  */
-export const SYSTEM_FIELD_KEYS = new Set([
-  'title',
-  'description',
-  'budget',
-  'category',
-]);
+export const SYSTEM_FIELD_KEYS = new Set(['title', 'budget', 'category']);
 
 type SystemUiFactory = (t: (key: string) => string) => Record<string, unknown>;
 
