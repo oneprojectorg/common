@@ -4,7 +4,6 @@ import { trpc } from '@op/api/client';
 import type { ProposalCategory } from '@op/common';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
@@ -126,7 +125,6 @@ export function ProposalCategoriesSectionContent({
           id: crypto.randomUUID(),
           label: formLabel.trim(),
           description: formDescription.trim(),
-          checked: true,
         },
       ];
     }
@@ -148,13 +146,6 @@ export function ProposalCategoriesSectionContent({
     if (editingId === id) {
       resetForm();
     }
-  };
-
-  const handleToggleChecked = (id: string) => {
-    const updatedCategories = categories.map((cat) =>
-      cat.id === id ? { ...cat, checked: !cat.checked } : cat,
-    );
-    updateConfig({ categories: updatedCategories });
   };
 
   const handleRequireCategoryChange = (value: boolean) => {
@@ -212,15 +203,8 @@ export function ProposalCategoriesSectionContent({
           {categories.map((category) => (
             <div
               key={category.id}
-              className="group flex items-start gap-2 py-3"
+              className="group flex items-start gap-2 border-b py-3"
             >
-              <Checkbox
-                size="small"
-                isSelected={category.checked}
-                onChange={() => handleToggleChecked(category.id)}
-                aria-label={category.label}
-                className="mt-0.5"
-              />
               <div className="min-w-0 flex-1">
                 <span className="text-neutral-charcoal">{category.label}</span>
                 <p className="text-sm text-neutral-gray4">
@@ -252,7 +236,7 @@ export function ProposalCategoriesSectionContent({
           {!showForm && (
             <Button
               color="ghost"
-              className="px-2 text-primary-teal hover:text-primary-tealBlack"
+              className="mt-2 px-2 text-primary-tealBlack hover:text-primary-teal"
               onPress={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />

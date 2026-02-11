@@ -53,7 +53,6 @@ export interface ProposalCategory {
   id: string;
   label: string;
   description: string;
-  checked: boolean;
 }
 
 export interface ProcessConfig {

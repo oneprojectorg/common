@@ -13,7 +13,6 @@ export function ProposalCategoriesSectionSkeleton() {
       <div className="space-y-1">
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex items-start gap-2 py-3">
-            <Skeleton className="mt-0.5 size-4 rounded" />
             <div className="flex-1 space-y-1">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="h-4 w-64" />

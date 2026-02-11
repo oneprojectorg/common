@@ -86,7 +86,6 @@ const categoryEncoder = z.object({
   id: z.string(),
   label: z.string(),
   description: z.string(),
-  checked: z.boolean(),
 });
 
 /** Process-level configuration */
