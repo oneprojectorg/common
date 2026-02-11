@@ -6,7 +6,6 @@ import type { StepId } from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
 import PhasesSection from './stepContent/general/PhasesSection';
 import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
-import VotingSection from './stepContent/general/VotingSection';
 import MembersSection from './stepContent/members/MembersSection';
 import RolesSection from './stepContent/members/RolesSection';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
@@ -32,7 +31,6 @@ const CONTENT_REGISTRY: ContentRegistry = {
     overview: OverviewSection,
     phases: PhasesSection,
     proposalCategories: ProposalCategoriesSection,
-    voting: VotingSection,
   },
   template: {
     templateEditor: TemplateEditorSection,

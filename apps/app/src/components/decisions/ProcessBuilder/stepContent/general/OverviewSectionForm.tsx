@@ -26,7 +26,6 @@ interface OverviewFormData {
   description: string;
   budget: number | undefined;
   hideBudget: boolean;
-  enableCategories: boolean;
   includeReview: boolean;
   isPrivate: boolean;
 }
@@ -77,7 +76,6 @@ function AutoSaveHandler({
       objective: debouncedValues.objective,
       budget: debouncedValues.budget,
       hideBudget: debouncedValues.hideBudget,
-      enableCategories: debouncedValues.enableCategories,
       includeReview: debouncedValues.includeReview,
       isPrivate: debouncedValues.isPrivate,
     });
@@ -132,7 +130,6 @@ export function OverviewSectionForm({
       objective: instanceData?.objective ?? '',
       budget: instanceData?.budget,
       hideBudget: instanceData?.hideBudget ?? true,
-      enableCategories: instanceData?.enableCategories ?? true,
       includeReview: instanceData?.includeReview ?? true,
       isPrivate: instanceData?.isPrivate ?? false,
       // Instance-level fields
@@ -313,24 +310,6 @@ export function OverviewSectionForm({
                 name="hideBudget"
                 children={(field) => (
                   <ToggleRow label={t('Hide budget from members')}>
-                    <field.ToggleButton
-                      isSelected={field.state.value}
-                      onChange={field.handleChange}
-                      size="small"
-                    />
-                  </ToggleRow>
-                )}
-              />
-
-              <form.AppField
-                name="enableCategories"
-                children={(field) => (
-                  <ToggleRow
-                    label={t('Organize proposals into categories')}
-                    tooltip={t(
-                      'Group proposals by category to help reviewers and voters navigate submissions',
-                    )}
-                  >
                     <field.ToggleButton
                       isSelected={field.state.value}
                       onChange={field.handleChange}

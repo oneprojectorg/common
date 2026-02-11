@@ -1,15 +1,33 @@
-import type { SectionProps } from '../../contentRegistry';
+'use client';
 
-export default function ProposalCategoriesSection({
-  decisionProfileId,
-  decisionName,
-}: SectionProps) {
+import { Suspense, useEffect, useState } from 'react';
+
+import type { SectionProps } from '../../contentRegistry';
+import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { ProposalCategoriesSectionContent } from './ProposalCategoriesSectionContent';
+import { ProposalCategoriesSectionSkeleton } from './ProposalCategoriesSectionSkeleton';
+
+// Wrapper component that waits for Zustand hydration before rendering content
+export default function ProposalCategoriesSection(props: SectionProps) {
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+
+    void useProcessBuilderStore.persist.rehydrate();
+
+    return unsubscribe;
+  }, []);
+
+  if (!hasHydrated) {
+    return <ProposalCategoriesSectionSkeleton />;
+  }
+
   return (
-    <div className="p-4 sm:p-8">
-      <h2 className="text-xl font-semibold">Proposal Categories</h2>
-      <p className="text-neutral-gray4">Decision: {decisionName}</p>
-      <p className="text-neutral-gray4">ID: {decisionProfileId}</p>
-      {/* TODO: Implement proposal categories configuration */}
-    </div>
+    <Suspense fallback={<ProposalCategoriesSectionSkeleton />}>
+      <ProposalCategoriesSectionContent {...props} />
+    </Suspense>
   );
 }
