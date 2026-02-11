@@ -11,7 +11,6 @@ import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
 import type { StrictRJSFSchema } from '@rjsf/utils';
-import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -20,12 +19,7 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import {
-  RichTextEditorToolbar,
-  getProposalExtensions,
-} from '../../RichTextEditor';
-import {
   CollaborativeDocProvider,
-  CollaborativeEditor,
   CollaborativePresence,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
@@ -69,7 +63,6 @@ export function ProposalEditor({
   const posthog = usePostHog();
   const utils = trpc.useUtils();
 
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -99,11 +92,6 @@ export function ProposalEditor({
     }
     return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
   }, [proposal?.proposalData, proposal?.id, instance.id]);
-
-  const editorExtensions = useMemo(
-    () => getProposalExtensions({ collaborative: true }),
-    [],
-  );
 
   // -- Draft management ------------------------------------------------------
 
@@ -208,10 +196,6 @@ export function ProposalEditor({
 
   // -- UI state handlers -----------------------------------------------------
 
-  const handleEditorReady = useCallback((editor: Editor) => {
-    setEditorInstance(editor);
-  }, []);
-
   const handleCloseInfoModal = useCallback(() => {
     setShowInfoModal(false);
   }, []);
@@ -235,10 +219,6 @@ export function ProposalEditor({
 
     if (!currentDraft.title || currentDraft.title.trim() === '') {
       missingFields.push(t('Title'));
-    }
-
-    if (editorInstance?.isEmpty) {
-      missingFields.push(t('Description'));
     }
 
     if (templateRequired.includes('budget') && currentDraft.budget === null) {
@@ -323,7 +303,6 @@ export function ProposalEditor({
     }
   }, [
     t,
-    editorInstance,
     proposalTemplateWithMockField,
     collaborationDocId,
     proposal,
@@ -353,8 +332,6 @@ export function ProposalEditor({
         presenceSlot={<CollaborativePresence />}
       >
         <div className="flex flex-1 flex-col gap-12">
-          {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
-
           <div className="mx-auto flex max-w-4xl flex-col gap-4 px-6">
             <Form
               schema={proposalSchema}
@@ -372,14 +349,6 @@ export function ProposalEditor({
               {/* Hide default submit button — we use our own in the layout */}
               <div />
             </Form>
-
-            <CollaborativeEditor
-              field="default"
-              extensions={editorExtensions}
-              onEditorReady={handleEditorReady}
-              placeholder={t('Write your proposal here...')}
-              editorClassName="w-full !max-w-128 sm:min-w-128 min-h-80 px-0 py-4"
-            />
 
             <div className="border-t border-neutral-gray2 pt-8">
               <ProposalAttachments
