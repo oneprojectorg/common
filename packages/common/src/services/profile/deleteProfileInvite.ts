@@ -18,11 +18,11 @@ export const deleteProfileInvite = async ({
   user: User;
 }) => {
   // Find the invite
-  const invite = await db._query.profileInvites.findFirst({
-    where: and(
-      eq(profileInvites.id, inviteId),
-      isNull(profileInvites.acceptedOn),
-    ),
+  const invite = await db.query.profileInvites.findFirst({
+    where: {
+      id: inviteId,
+      acceptedOn: { isNull: true },
+    },
   });
 
   if (!invite) {
