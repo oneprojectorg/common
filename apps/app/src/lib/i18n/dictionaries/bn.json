@@ -616,5 +616,16 @@
   "Min": "সর্বনিম্ন",
   "Max": "সর্বোচ্চ",
   "Dollar amount?": "ডলারের পরিমাণ?",
-  "Dollar amount": "ডলারের পরিমাণ"
+  "Dollar amount": "ডলারের পরিমাণ",
+  "Share": "শেয়ার",
+  "Share \"{title}\"": "\"{title}\" শেয়ার করুন",
+  "Invite collaborators by name or email": "নাম বা ইমেইল দিয়ে সহযোগীদের আমন্ত্রণ করুন",
+  "People with access": "অ্যাক্সেস আছে যাদের",
+  "Copy link": "লিংক কপি করুন",
+  "Link copied to clipboard": "লিংক ক্লিপবোর্ডে কপি হয়েছে",
+  "Failed to copy link": "লিংক কপি করতে ব্যর্থ",
+  "Failed to remove user": "ব্যবহারকারী সরাতে ব্যর্থ",
+  "No one has been invited yet": "এখনও কাউকে আমন্ত্রণ করা হয়নি",
+  "Invited": "আমন্ত্রিত",
+  "Failed to cancel invite": "আমন্ত্রণ বাতিল করতে ব্যর্থ"
 }

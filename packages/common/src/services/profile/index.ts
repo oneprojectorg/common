@@ -1,5 +1,6 @@
 export * from './acceptProfileInvite';
 export * from './declineProfileInvite';
+export * from './deleteProfileInvite';
 export * from './updateUserProfile';
 export * from './getProfile';
 export * from './searchProfiles';

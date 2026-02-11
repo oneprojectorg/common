@@ -616,5 +616,16 @@
   "Min": "Min",
   "Max": "Max",
   "Dollar amount?": "Montant en dollars ?",
-  "Dollar amount": "Montant en dollars"
+  "Dollar amount": "Montant en dollars",
+  "Share": "Partager",
+  "Share \"{title}\"": "Partager \"{title}\"",
+  "Invite collaborators by name or email": "Inviter des collaborateurs par nom ou e-mail",
+  "People with access": "Personnes ayant accès",
+  "Copy link": "Copier le lien",
+  "Link copied to clipboard": "Lien copié dans le presse-papiers",
+  "Failed to copy link": "Échec de la copie du lien",
+  "Failed to remove user": "Échec de la suppression de l'utilisateur",
+  "No one has been invited yet": "Personne n'a encore été invité",
+  "Invited": "Invité",
+  "Failed to cancel invite": "\u00c9chec de l'annulation de l'invitation"
 }
