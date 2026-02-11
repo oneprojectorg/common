@@ -469,18 +469,78 @@ export function updateFieldNumberConfig(
 }
 
 // ---------------------------------------------------------------------------
+// Locked field helpers
+// ---------------------------------------------------------------------------
+
+function createLockedFieldSchema(xFormat: string, title: string): RJSFSchema {
+  return withXFormat({ type: 'string', title }, xFormat);
+}
+
+// ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a default template with a single "proposal summary" long-text field.
- * The label must be passed in so it can be translated by the caller.
+ * Creates a default template with a locked "proposal title" field
+ * and a single "proposal summary" long-text field.
+ * Labels must be passed in so they can be translated by the caller.
  */
-export function createDefaultTemplate(summaryLabel: string): ProposalTemplate {
-  return addField(
-    {} as ProposalTemplate,
-    'proposal-summary',
-    'long_text',
-    summaryLabel,
-  );
+export function createDefaultTemplate(
+  summaryLabel: string,
+  titleLabel: string,
+): ProposalTemplate {
+  const base: ProposalTemplate = {
+    type: 'object',
+    properties: {
+      'proposal-title': createLockedFieldSchema('short-text', titleLabel),
+    },
+  };
+  return addField(base, 'proposal-summary', 'long_text', summaryLabel);
+}
+
+/**
+ * Ensures locked system fields (proposal-title, category) exist in the
+ * template schema. Call this when hydrating a saved template to handle
+ * backward compatibility with templates created before locked fields
+ * were stored in the schema.
+ */
+export function ensureLockedFields(
+  template: ProposalTemplate,
+  options: {
+    titleLabel: string;
+    categoryLabel: string;
+    hasCategories: boolean;
+  },
+): ProposalTemplate {
+  let result = template;
+
+  // Ensure proposal-title exists
+  if (!getFieldSchema(result, 'proposal-title')) {
+    result = {
+      ...result,
+      properties: {
+        ...result.properties,
+        'proposal-title': createLockedFieldSchema(
+          'short-text',
+          options.titleLabel,
+        ),
+      },
+    };
+  }
+
+  // Sync category field with categories config
+  if (options.hasCategories && !getFieldSchema(result, 'category')) {
+    result = {
+      ...result,
+      properties: {
+        ...result.properties,
+        category: createLockedFieldSchema('dropdown', options.categoryLabel),
+      },
+    };
+  } else if (!options.hasCategories && getFieldSchema(result, 'category')) {
+    const { category: _, ...restProps } = result.properties ?? {};
+    result = { ...result, properties: restProps };
+  }
+
+  return result;
 }

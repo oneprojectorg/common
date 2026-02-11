@@ -24,6 +24,7 @@ import {
   type ProposalTemplate,
   addField as addFieldToTemplate,
   createDefaultTemplate,
+  ensureLockedFields,
   getField,
   getFieldErrors,
   getFieldSchema,
@@ -69,15 +70,25 @@ export function TemplateEditorContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instanceData = instance.instanceData;
 
+  // Check if categories have been configured
+  const hasCategories = (instanceData?.config?.categories?.length ?? 0) > 0;
+
   const initialTemplate = useMemo(() => {
     const saved = instanceData?.proposalTemplate as
       | ProposalTemplate
       | undefined;
-    if (saved && Object.keys(saved.properties ?? {}).length > 0) {
-      return saved;
-    }
-    return createDefaultTemplate(t('Proposal summary'));
-  }, [instanceData?.proposalTemplate, t]);
+    const base =
+      saved && Object.keys(saved.properties ?? {}).length > 0
+        ? saved
+        : createDefaultTemplate(t('Proposal summary'), t('Proposal title'));
+
+    // Ensure locked system fields are present (backward compat)
+    return ensureLockedFields(base, {
+      titleLabel: t('Proposal title'),
+      categoryLabel: t('Category'),
+      hasCategories,
+    });
+  }, [instanceData?.proposalTemplate, t, hasCategories]);
 
   const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
   const isInitialLoadRef = useRef(true);
@@ -99,9 +110,6 @@ export function TemplateEditorContent({
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
-
-  // Check if categories have been configured
-  const hasCategories = (instanceData?.config?.categories?.length ?? 0) > 0;
 
   // Derive field views from the template (all fields are editable)
   const fields = useMemo(() => getFields(template), [template]);
@@ -270,7 +278,6 @@ export function TemplateEditorContent({
             type: 'number',
             title: 'Budget',
             'x-format': 'money',
-            'x-locked': true,
             'x-currency': 'USD',
           },
         },
@@ -380,7 +387,7 @@ export function TemplateEditorContent({
             </p>
             <hr />
 
-            {/* Visual-only locked fields (not in schema) */}
+            {/* Locked system fields (stored in schema) */}
             <div className="mb-3 space-y-3">
               <FieldConfigCard
                 icon={LuAlignLeft}
