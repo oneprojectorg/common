@@ -1,6 +1,6 @@
 'use client';
 
-import type { WidgetProps } from '@rjsf/utils';
+import type { FieldProps } from '@rjsf/utils';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef } from 'react';
@@ -9,7 +9,7 @@ import { getProposalExtensions } from '../RichTextEditor';
 import { CollaborativeEditor } from './CollaborativeEditor';
 
 /**
- * RJSF widget for collaborative text fields (short or long).
+ * RJSF custom field for collaborative text (short or long).
  *
  * Composes {@link CollaborativeEditor} so we get consistent editor setup,
  * styled content, and Yjs collaboration/snapshotting for free.
@@ -22,7 +22,7 @@ import { CollaborativeEditor } from './CollaborativeEditor';
  * as `ui:options` by the compiler, so adding new knobs (e.g. `rich`,
  * `maxWords`) only requires reading them from `uiSchema['ui:options']`.
  */
-export function CollaborativeTextWidget(props: WidgetProps) {
+export function CollaborativeTextField(props: FieldProps) {
   const { onChange, schema, uiSchema, rawErrors } = props;
 
   const options = (uiSchema?.['ui:options'] ?? {}) as Record<string, unknown>;
@@ -31,7 +31,7 @@ export function CollaborativeTextWidget(props: WidgetProps) {
 
   if (!fragmentName) {
     throw new Error(
-      `CollaborativeTextWidget requires a "field" ui:option but none was provided for "${schema.title ?? 'unknown'}".`,
+      `CollaborativeTextField requires a "field" ui:option but none was provided for "${schema.title ?? 'unknown'}".`,
     );
   }
 

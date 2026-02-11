@@ -3,7 +3,6 @@ import type {
   ObjectFieldTemplateProps,
   RJSFSchema,
   ValidatorType,
-  WidgetProps,
 } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -11,7 +10,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import {
   CollaborativeBudgetField,
   CollaborativeCategoryField,
-  CollaborativeTextWidget,
+  CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
 import type { ProposalFormContext } from './compileProposalSchema';
@@ -80,18 +79,8 @@ function CollaborativeBudgetRjsfField(props: FieldProps) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// RJSF registries
-// ---------------------------------------------------------------------------
-
-export const RJSF_FIELDS = {
-  CollaborativeTitleField: CollaborativeTitleRjsfField,
-  CollaborativeCategoryField: CollaborativeCategoryRjsfField,
-  CollaborativeBudgetField: CollaborativeBudgetRjsfField,
-};
-
-/** Wrapper that catches render errors from the collaborative text widget. */
-function SafeCollaborativeTextWidget(props: WidgetProps) {
+/** Wrapper that catches render errors from the collaborative text field. */
+function SafeCollaborativeTextField(props: FieldProps) {
   return (
     <ErrorBoundary
       fallback={
@@ -106,19 +95,26 @@ function SafeCollaborativeTextWidget(props: WidgetProps) {
       }
       onError={(error, info) => {
         console.error(
-          `[CollaborativeTextWidget] ${props.schema?.title ?? 'unknown'}:`,
+          `[CollaborativeTextField] ${props.schema?.title ?? 'unknown'}:`,
           error,
           info,
         );
       }}
     >
-      <CollaborativeTextWidget {...props} />
+      <CollaborativeTextField {...props} />
     </ErrorBoundary>
   );
 }
 
-export const RJSF_WIDGETS = {
-  CollaborativeText: SafeCollaborativeTextWidget,
+// ---------------------------------------------------------------------------
+// RJSF registry — all collaborative components registered as custom fields
+// ---------------------------------------------------------------------------
+
+export const RJSF_FIELDS = {
+  CollaborativeTitleField: CollaborativeTitleRjsfField,
+  CollaborativeCategoryField: CollaborativeCategoryRjsfField,
+  CollaborativeBudgetField: CollaborativeBudgetRjsfField,
+  CollaborativeTextField: SafeCollaborativeTextField,
 };
 
 // ---------------------------------------------------------------------------

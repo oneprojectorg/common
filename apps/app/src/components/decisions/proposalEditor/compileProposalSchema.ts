@@ -32,8 +32,7 @@ export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
 // ---------------------------------------------------------------------------
 
 interface FormatConfig {
-  widget?: string;
-  field?: string;
+  field: string;
   /** Default `ui:options` merged with any `x-format-options` from the template. */
   defaults?: Record<string, unknown>;
 }
@@ -41,11 +40,14 @@ interface FormatConfig {
 /**
  * Registry mapping `x-format` values to RJSF uiSchema entries.
  *
- * Adding a new display type is a single line here + the widget/field component.
+ * Adding a new display type is a single line here + the field component.
  */
 const FORMAT_REGISTRY: Record<XFormat, FormatConfig> = {
-  'short-text': { widget: 'CollaborativeText' },
-  'long-text': { widget: 'CollaborativeText', defaults: { multiline: true } },
+  'short-text': { field: 'CollaborativeTextField' },
+  'long-text': {
+    field: 'CollaborativeTextField',
+    defaults: { multiline: true },
+  },
   money: { field: 'CollaborativeBudgetField' },
   category: { field: 'CollaborativeCategoryField' },
 };
@@ -100,8 +102,7 @@ function resolveFormatUi(
   const config = FORMAT_REGISTRY[xFormat] ?? FORMAT_REGISTRY[DEFAULT_X_FORMAT];
 
   return {
-    ...(config.widget && { 'ui:widget': config.widget }),
-    ...(config.field && { 'ui:field': config.field }),
+    'ui:field': config.field,
     'ui:options': { field: key, ...config.defaults, ...xFormatOptions },
   };
 }
