@@ -51,6 +51,14 @@ export interface PhaseDefinition {
  */
 export interface ProcessConfig {
   hideBudget?: boolean;
+  categories?: Array<{
+    id: string;
+    label: string;
+    description: string;
+    checked: boolean;
+  }>;
+  requireCategorySelection?: boolean;
+  allowMultipleCategories?: boolean;
 }
 
 /**

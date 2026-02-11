@@ -81,9 +81,20 @@ const phaseDefinitionEncoder = z.object({
   endDate: z.string().optional(),
 });
 
+/** Category item encoder */
+const categoryEncoder = z.object({
+  id: z.string(),
+  label: z.string(),
+  description: z.string(),
+  checked: z.boolean(),
+});
+
 /** Process-level configuration */
 const processConfigEncoder = z.object({
   hideBudget: z.boolean().optional(),
+  categories: z.array(categoryEncoder).optional(),
+  requireCategorySelection: z.boolean().optional(),
+  allowMultipleCategories: z.boolean().optional(),
 });
 
 /** DecisionSchemaDefinition encoder */
@@ -547,10 +558,13 @@ export const updateDecisionInstanceInputSchema = z.object({
   description: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
   stewardProfileId: z.string().uuid().optional(),
-  /** Process-level configuration (e.g., hideBudget) */
+  /** Process-level configuration (e.g., hideBudget, categories) */
   config: z
     .object({
       hideBudget: z.boolean().optional(),
+      categories: z.array(categoryEncoder).optional(),
+      requireCategorySelection: z.boolean().optional(),
+      allowMultipleCategories: z.boolean().optional(),
     })
     .optional(),
   /** Phase overrides for dates, rules, and settings */

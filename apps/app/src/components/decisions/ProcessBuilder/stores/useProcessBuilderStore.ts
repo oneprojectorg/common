@@ -70,6 +70,16 @@ export interface FormInstanceData extends Partial<InstanceData> {
   isPrivate?: boolean;
   /** Form builder configuration for proposal template */
   templateConfig?: FormBuilderConfig;
+  /** Proposal categories */
+  categories?: Array<{
+    id: string;
+    label: string;
+    description: string;
+  }>;
+  /** Whether proposers must select at least one category */
+  requireCategorySelection?: boolean;
+  /** Whether proposers can select more than one category */
+  allowMultipleCategories?: boolean;
 }
 
 // ============ UI-only Types ============
