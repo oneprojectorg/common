@@ -79,20 +79,23 @@ export function FieldConfigCard({
     return (
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border bg-neutral-offWhite p-4',
+          'space-y-2 rounded-lg border bg-neutral-offWhite px-3 py-4',
           className,
         )}
       >
-        <div className="flex size-6 items-center justify-center text-neutral-gray4">
-          <LuLock className="size-4" />
+        <div className={cn('flex items-center gap-2', className)}>
+          <div className="flex size-6 items-center justify-center text-neutral-gray4">
+            <LuLock className="size-4" />
+          </div>
+          <TooltipTrigger>
+            <AriaButton className="flex items-center text-neutral-gray4">
+              <Icon className="size-4" />
+            </AriaButton>
+            {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
+          </TooltipTrigger>
+          <span className="flex-1 text-neutral-charcoal">{label}</span>
         </div>
-        <TooltipTrigger>
-          <AriaButton className="flex items-center text-neutral-gray4">
-            <Icon className="size-4" />
-          </AriaButton>
-          {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
-        </TooltipTrigger>
-        <span className="flex-1 text-neutral-charcoal">{label}</span>
+        {children}
       </div>
     );
   }

@@ -8,6 +8,7 @@ import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
 import type { RJSFSchema } from '@rjsf/utils';
+import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
 
@@ -50,6 +51,8 @@ export function TemplateEditorContent({
   instanceId,
 }: SectionProps) {
   const t = useTranslations();
+  const [, setStep] = useQueryState('step', { history: 'push' });
+  const [, setSection] = useQueryState('section', { history: 'push' });
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
@@ -87,8 +90,7 @@ export function TemplateEditorContent({
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
   // Check if categories have been configured
-  const hasCategories =
-    (instanceData?.config?.categories?.length ?? 0) > 0;
+  const hasCategories = (instanceData?.config?.categories?.length ?? 0) > 0;
 
   // Derive field views from the template (all fields are editable)
   const fields = useMemo(() => getFields(template), [template]);
@@ -304,7 +306,22 @@ export function TemplateEditorContent({
                   iconTooltip={t('Dropdown')}
                   label={t('Category')}
                   locked
-                />
+                >
+                  <p className="text-neutral-charcoal">
+                    {t('These are the categories you defined in')}{' '}
+                    <button
+                      type="button"
+                      className="cursor-pointer text-primary-teal hover:underline"
+                      onClick={() => {
+                        void setStep('general');
+                        void setSection('proposalCategories');
+                      }}
+                    >
+                      {t('Proposal Categories')}
+                    </button>
+                    .
+                  </p>
+                </FieldConfigCard>
               )}
             </div>
 
