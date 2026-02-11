@@ -106,7 +106,12 @@ export function ProposalEditor({
   const rawProposalTemplate = (instance.process?.processSchema
     ?.proposalTemplate ?? null) as StrictRJSFSchema | null;
 
-  // Mock template — remove once template builder persists to server
+  // System fields (title, category, budget) are duplicated to proposalData
+  // for search, preview, and sorting. Yjs is the source of truth — the DB
+  // copy is a derived snapshot. Dynamic template fields live exclusively
+  // in Yjs and are NOT part of proposalData.
+  //
+  // TODO: Remove mock dynamic field once template builder persists to server.
   const proposalTemplateWithMockField = useMemo<StrictRJSFSchema>(() => {
     const base: StrictRJSFSchema = rawProposalTemplate ?? {
       type: 'object',

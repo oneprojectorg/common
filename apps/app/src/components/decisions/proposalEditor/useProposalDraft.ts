@@ -8,12 +8,10 @@ import type { z } from 'zod';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 /**
- * Draft state for the three system fields persisted to proposalData.
+ * Draft state for the three system fields duplicated to proposalData
+ * for search, preview, and sorting. Yjs is the source of truth — the
+ * DB copy is a derived snapshot.
  * Dynamic template fields live exclusively in Yjs and are NOT part of this.
  */
 export interface ProposalDraftFields extends Record<string, unknown> {
@@ -21,10 +19,6 @@ export interface ProposalDraftFields extends Record<string, unknown> {
   category: string | null;
   budget: number | null;
 }
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
 
 /**
  * Manages the proposal draft lifecycle: parsing server data into local state,
@@ -80,13 +74,7 @@ export function useProposalDraft({
     },
   });
 
-  // -- Helpers --------------------------------------------------------------
-
-  /**
-   * Builds the proposalData payload for server persistence.
-   * Only system fields (title, category, budget) are included —
-   * dynamic template field values live in Yjs exclusively.
-   */
+  /** Builds the proposalData payload for server persistence */
   const buildProposalData = useCallback(
     (nextDraft: ProposalDraftFields): ProposalDataInput => {
       const serverData = parseProposalData(proposal?.proposalData);
