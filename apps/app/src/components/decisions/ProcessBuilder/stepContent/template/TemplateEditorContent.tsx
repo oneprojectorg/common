@@ -17,6 +17,8 @@ import {
   type ProposalTemplate,
   addField as addFieldToTemplate,
   createDefaultTemplate,
+  getField,
+  getFieldErrors,
   getFieldOrder,
   getFieldSchema,
   getFieldUi,
@@ -67,6 +69,12 @@ export function TemplateEditorContent({
   const [hasHydrated, setHasHydrated] = useState(false);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
+  // "Show on blur, clear on change" validation: errors are snapshotted when
+  // a field card loses focus, but resolved errors disappear immediately
+  // while editing (see renderFieldCard intersection logic).
+  const [fieldErrors, setFieldErrors] = useState<Map<string, string[]>>(
+    new Map(),
+  );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
@@ -189,6 +197,18 @@ export function TemplateEditorContent({
     [],
   );
 
+  const handleFieldBlur = useCallback(
+    (fieldId: string) => {
+      const field = getField(template, fieldId);
+      if (field) {
+        setFieldErrors((prev) =>
+          new Map(prev).set(fieldId, getFieldErrors(field)),
+        );
+      }
+    },
+    [template],
+  );
+
   const handleUpdateJsonSchema = useCallback(
     (fieldId: string, updates: Record<string, unknown>) => {
       setTemplate((prev) => {
@@ -228,21 +248,31 @@ export function TemplateEditorContent({
   const renderFieldCard = (
     field: FieldView,
     controls?: Parameters<Parameters<typeof Sortable>[0]['children']>[1],
-  ) => (
-    <FieldCard
-      key={field.id}
-      field={field}
-      fieldSchema={getFieldSchema(template, field.id) ?? {}}
-      fieldUiSchema={getFieldUi(template, field.id)}
-      controls={controls}
-      onRemove={field.locked ? undefined : handleRemoveField}
-      onUpdateLabel={handleUpdateLabel}
-      onUpdateDescription={handleUpdateDescription}
-      onUpdateRequired={handleUpdateRequired}
-      onUpdateJsonSchema={handleUpdateJsonSchema}
-      onUpdateUiSchema={handleUpdateUiSchema}
-    />
-  );
+  ) => {
+    const snapshotErrors = fieldErrors.get(field.id) ?? [];
+    const liveErrors = field.locked ? [] : getFieldErrors(field);
+    const displayedErrors = snapshotErrors.filter((e) =>
+      liveErrors.includes(e),
+    );
+
+    return (
+      <FieldCard
+        key={field.id}
+        field={field}
+        fieldSchema={getFieldSchema(template, field.id) ?? {}}
+        fieldUiSchema={getFieldUi(template, field.id)}
+        errors={displayedErrors}
+        controls={controls}
+        onRemove={field.locked ? undefined : handleRemoveField}
+        onBlur={handleFieldBlur}
+        onUpdateLabel={handleUpdateLabel}
+        onUpdateDescription={handleUpdateDescription}
+        onUpdateRequired={handleUpdateRequired}
+        onUpdateJsonSchema={handleUpdateJsonSchema}
+        onUpdateUiSchema={handleUpdateUiSchema}
+      />
+    );
+  };
 
   if (!hasHydrated) {
     return <TemplateEditorSkeleton />;

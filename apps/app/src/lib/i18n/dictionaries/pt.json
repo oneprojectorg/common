@@ -639,5 +639,9 @@
   "Proposers must select at least one category": "Os proponentes devem selecionar pelo menos uma categoria",
   "Allow multiple categories": "Permitir múltiplas categorias",
   "Proposers can select more than one category": "Os proponentes podem selecionar mais de uma categoria",
-  "Save changes": "Salvar alterações"
+  "Save changes": "Salvar alterações",
+  "At least two options are required": "São necessárias pelo menos duas opções",
+  "Field label is required": "O rótulo do campo é obrigatório",
+  "Options cannot be empty": "As opções não podem estar vazias",
+  "Minimum must be less than or equal to maximum": "O mínimo deve ser menor ou igual ao máximo"
 }

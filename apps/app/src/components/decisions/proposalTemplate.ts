@@ -267,6 +267,42 @@ export function getFields(template: ProposalTemplate): FieldView[] {
 }
 
 // ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns translation keys for validation errors on a field.
+ * Pass each key through `t()` in the UI layer.
+ */
+export function getFieldErrors(field: FieldView): string[] {
+  const errors: string[] = [];
+
+  if (!field.label.trim()) {
+    errors.push('Field label is required');
+  }
+
+  if (field.fieldType === 'dropdown' || field.fieldType === 'multiple_choice') {
+    if (field.options.length < 2) {
+      errors.push('At least two options are required');
+    }
+    if (field.options.some((o) => !o.value.trim())) {
+      errors.push('Options cannot be empty');
+    }
+  }
+
+  if (
+    field.fieldType === 'number' &&
+    field.min !== undefined &&
+    field.max !== undefined &&
+    field.min > field.max
+  ) {
+    errors.push('Minimum must be less than or equal to maximum');
+  }
+
+  return errors;
+}
+
+// ---------------------------------------------------------------------------
 // Immutable mutators — each returns a new ProposalTemplate
 // ---------------------------------------------------------------------------
 

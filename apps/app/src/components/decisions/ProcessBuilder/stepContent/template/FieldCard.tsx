@@ -7,6 +7,7 @@ import {
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
+import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,8 +22,10 @@ interface FieldCardProps {
   field: FieldView;
   fieldSchema: StrictRJSFSchema;
   fieldUiSchema: UiSchema;
+  errors?: string[];
   controls?: SortableItemControls;
   onRemove?: (fieldId: string) => void;
+  onBlur?: (fieldId: string) => void;
   onUpdateLabel?: (fieldId: string, label: string) => void;
   onUpdateDescription?: (fieldId: string, description: string) => void;
   onUpdateRequired?: (fieldId: string, isRequired: boolean) => void;
@@ -42,8 +45,10 @@ export function FieldCard({
   field,
   fieldSchema,
   fieldUiSchema,
+  errors = [],
   controls,
   onRemove,
+  onBlur,
   onUpdateLabel,
   onUpdateDescription,
   onUpdateRequired,
@@ -51,9 +56,19 @@ export function FieldCard({
   onUpdateUiSchema,
 }: FieldCardProps) {
   const t = useTranslations();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const Icon = getFieldIcon(field.fieldType);
   const ConfigComponent = getFieldConfigComponent(field.fieldType);
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (
+      cardRef.current &&
+      !cardRef.current.contains(e.relatedTarget as Node)
+    ) {
+      onBlur?.(field.id);
+    }
+  };
 
   if (field.locked) {
     return (
@@ -67,51 +82,64 @@ export function FieldCard({
   }
 
   return (
-    <FieldConfigCard
-      icon={Icon}
-      iconTooltip={t(getFieldLabelKey(field.fieldType))}
-      label={field.label}
-      onLabelChange={(newLabel) => onUpdateLabel?.(field.id, newLabel)}
-      labelInputAriaLabel={t('Field label')}
-      description={field.description}
-      onDescriptionChange={(desc) => onUpdateDescription?.(field.id, desc)}
-      descriptionLabel={t('Description')}
-      descriptionPlaceholder={t(
-        'Provide additional guidance for participants...',
-      )}
-      onRemove={onRemove ? () => onRemove(field.id) : undefined}
-      removeAriaLabel={t('Remove field')}
-      dragHandleAriaLabel={t('Drag to reorder {field}', {
-        field: field.label,
-      })}
-      controls={controls}
-    >
-      {ConfigComponent && (
-        <div className="mt-4">
-          <ConfigComponent
-            field={field}
-            fieldSchema={fieldSchema}
-            fieldUiSchema={fieldUiSchema}
-            onUpdateJsonSchema={(updates) =>
-              onUpdateJsonSchema?.(field.id, updates)
-            }
-            onUpdateUiSchema={(updates) =>
-              onUpdateUiSchema?.(field.id, updates)
-            }
+    <div ref={cardRef} onBlur={handleBlur}>
+      <FieldConfigCard
+        icon={Icon}
+        iconTooltip={t(getFieldLabelKey(field.fieldType))}
+        label={field.label}
+        onLabelChange={(newLabel) => onUpdateLabel?.(field.id, newLabel)}
+        labelInputAriaLabel={t('Field label')}
+        description={field.description}
+        onDescriptionChange={(desc) => onUpdateDescription?.(field.id, desc)}
+        descriptionLabel={t('Description')}
+        descriptionPlaceholder={t(
+          'Provide additional guidance for participants...',
+        )}
+        onRemove={onRemove ? () => onRemove(field.id) : undefined}
+        removeAriaLabel={t('Remove field')}
+        dragHandleAriaLabel={t('Drag to reorder {field}', {
+          field: field.label,
+        })}
+        controls={controls}
+        className={errors.length > 0 ? 'border-functional-red' : undefined}
+      >
+        {ConfigComponent && (
+          <div className="mt-4">
+            <ConfigComponent
+              field={field}
+              fieldSchema={fieldSchema}
+              fieldUiSchema={fieldUiSchema}
+              onUpdateJsonSchema={(updates) =>
+                onUpdateJsonSchema?.(field.id, updates)
+              }
+              onUpdateUiSchema={(updates) =>
+                onUpdateUiSchema?.(field.id, updates)
+              }
+            />
+          </div>
+        )}
+
+        {errors.length > 0 && (
+          <div className="mt-4 space-y-1">
+            {errors.map((error) => (
+              <p key={error} className="text-functional-red">
+                {t(error)}
+              </p>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-neutral-charcoal">{t('Required?')}</span>
+          <ToggleButton
+            size="small"
+            isSelected={field.required}
+            onChange={(isSelected) => onUpdateRequired?.(field.id, isSelected)}
+            aria-label={t('Required')}
           />
         </div>
-      )}
-
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-neutral-charcoal">{t('Required?')}</span>
-        <ToggleButton
-          size="small"
-          isSelected={field.required}
-          onChange={(isSelected) => onUpdateRequired?.(field.id, isSelected)}
-          aria-label={t('Required')}
-        />
-      </div>
-    </FieldConfigCard>
+      </FieldConfigCard>
+    </div>
   );
 }
 
