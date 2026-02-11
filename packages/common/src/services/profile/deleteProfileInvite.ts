@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { profileInvites } from '@op/db/schema';
+import { type ProfileInvite, profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -16,7 +16,7 @@ export const deleteProfileInvite = async ({
 }: {
   inviteId: string;
   user: User;
-}) => {
+}): Promise<ProfileInvite> => {
   // Find the invite
   const invite = await db.query.profileInvites.findFirst({
     where: {
