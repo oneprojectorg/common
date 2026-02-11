@@ -78,8 +78,7 @@ export function ProposalEditor({
 
   // -- Instance config -------------------------------------------------------
 
-  const { categories, budgetCapAmount, isBudgetRequired, isCategoryRequired } =
-    useInstanceConfig(instance);
+  const { categories, budgetCapAmount } = useInstanceConfig(instance);
 
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
@@ -217,24 +216,28 @@ export function ProposalEditor({
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
+    const templateRequired = Array.isArray(
+      proposalTemplateWithMockField.required,
+    )
+      ? proposalTemplateWithMockField.required
+      : [];
 
     const missingFields: string[] = [];
+
     if (!currentDraft.title || currentDraft.title.trim() === '') {
       missingFields.push(t('Title'));
     }
 
-    if (editorInstance) {
-      if (editorInstance.isEmpty) {
-        missingFields.push(t('Description'));
-      }
+    if (editorInstance?.isEmpty) {
+      missingFields.push(t('Description'));
     }
 
-    if (isBudgetRequired && currentDraft.budget === null) {
+    if (templateRequired.includes('budget') && currentDraft.budget === null) {
       missingFields.push(t('Budget'));
     }
 
     if (
-      isCategoryRequired &&
+      templateRequired.includes('category') &&
       categories &&
       categories.length > 0 &&
       currentDraft.category === null
@@ -301,8 +304,7 @@ export function ProposalEditor({
   }, [
     t,
     editorInstance,
-    isBudgetRequired,
-    isCategoryRequired,
+    proposalTemplateWithMockField,
     budgetCapAmount,
     collaborationDocId,
     categories,

@@ -3,8 +3,12 @@ import type { ProcessInstance } from '@op/api/encoders';
 import { useMemo } from 'react';
 
 /**
- * Extracts budget cap, required-field flags, and categories from
- * instance phase settings and the stored proposal template.
+ * Extracts the budget cap and categories from instance phase settings
+ * and the stored proposal template.
+ *
+ * Required-field logic is intentionally omitted — the proposal template
+ * schema (via its `required` array) is the single source of truth for
+ * which fields are mandatory.
  */
 export function useInstanceConfig(instance: ProcessInstance) {
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
@@ -12,70 +16,51 @@ export function useInstanceConfig(instance: ProcessInstance) {
   });
   const { categories } = categoriesData;
 
-  const { budgetCapAmount, isBudgetRequired, isCategoryRequired } =
-    useMemo(() => {
-      let cap: number | undefined;
-      let budgetRequired = true;
-      let categoryRequired = true;
+  const budgetCapAmount = useMemo(() => {
+    // 1. Phase-level budget takes precedence.
+    const currentPhaseId = instance.instanceData?.currentPhaseId;
+    const currentPhaseData = instance.instanceData?.phases?.find(
+      (p) => p.phaseId === currentPhaseId,
+    );
+    const phaseBudget = currentPhaseData?.settings?.budget as
+      | number
+      | undefined;
 
-      const currentPhaseId = instance.instanceData?.currentPhaseId;
-      const currentPhaseData = instance.instanceData?.phases?.find(
-        (p) => p.phaseId === currentPhaseId,
-      );
-      const phaseBudget = currentPhaseData?.settings?.budget as
-        | number
-        | undefined;
+    if (phaseBudget != null) {
+      return phaseBudget;
+    }
 
-      if (phaseBudget != null) {
-        return {
-          budgetCapAmount: phaseBudget,
-          isBudgetRequired: budgetRequired,
-          isCategoryRequired: categoryRequired,
-        };
-      }
-
-      const proposalTemplate =
-        instance.process?.processSchema?.proposalTemplate;
+    // 2. Template-level budget maximum.
+    const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
+    if (
+      proposalTemplate &&
+      typeof proposalTemplate === 'object' &&
+      'properties' in proposalTemplate
+    ) {
+      const properties = proposalTemplate.properties;
       if (
-        proposalTemplate &&
-        typeof proposalTemplate === 'object' &&
-        'properties' in proposalTemplate
+        properties &&
+        typeof properties === 'object' &&
+        'budget' in properties
       ) {
-        const properties = proposalTemplate.properties;
+        const budgetProp = properties.budget;
         if (
-          properties &&
-          typeof properties === 'object' &&
-          'budget' in properties
+          budgetProp &&
+          typeof budgetProp === 'object' &&
+          'maximum' in budgetProp
         ) {
-          const budgetProp = properties.budget;
-          if (
-            budgetProp &&
-            typeof budgetProp === 'object' &&
-            'maximum' in budgetProp
-          ) {
-            cap = budgetProp.maximum as number;
-          }
-        }
-
-        if (
-          'required' in proposalTemplate &&
-          Array.isArray(proposalTemplate.required)
-        ) {
-          budgetRequired = proposalTemplate.required.includes('budget');
-          categoryRequired = proposalTemplate.required.includes('category');
+          return budgetProp.maximum as number;
         }
       }
+    }
 
-      if (!cap && instance.instanceData?.fieldValues?.budgetCapAmount) {
-        cap = instance.instanceData.fieldValues.budgetCapAmount as number;
-      }
+    // 3. Legacy fieldValues fallback.
+    if (instance.instanceData?.fieldValues?.budgetCapAmount) {
+      return instance.instanceData.fieldValues.budgetCapAmount as number;
+    }
 
-      return {
-        budgetCapAmount: cap,
-        isBudgetRequired: budgetRequired,
-        isCategoryRequired: categoryRequired,
-      };
-    }, [instance]);
+    return undefined;
+  }, [instance]);
 
-  return { categories, budgetCapAmount, isBudgetRequired, isCategoryRequired };
+  return { categories, budgetCapAmount };
 }

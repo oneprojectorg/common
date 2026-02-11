@@ -208,10 +208,8 @@ export function compileProposalSchema(
     uiProperties.budget = SYSTEM_UI_MAP.budget(t);
   }
 
-  // Ensure 'title' is always required
-  const required = Array.from(new Set(['title', ...templateRequired])).filter(
-    (key) => key in schemaProperties,
-  );
+  // Pass through the template's required array, filtered to existing properties.
+  const required = templateRequired.filter((key) => key in schemaProperties);
 
   return {
     schema: {
