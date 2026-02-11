@@ -103,37 +103,27 @@ export function ProposalEditor({
 
   // -- RJSF schema compilation -----------------------------------------------
 
-  const rawProposalTemplate = (instance.process?.processSchema
-    ?.proposalTemplate ?? null) as StrictRJSFSchema | null;
+  // TODO: Wire up to the real template source. For now we hardcode a mock.
+  // const rawProposalTemplate = (instance.process?.processSchema
+  //   ?.proposalTemplate ?? null) as StrictRJSFSchema | null;
 
   // System fields (title, category, budget) are duplicated to proposalData
   // for search, preview, and sorting. Yjs is the source of truth — the DB
   // copy is a derived snapshot. Dynamic template fields live exclusively
   // in Yjs and are NOT part of proposalData.
-  //
-  // TODO: Remove mock dynamic field once template builder persists to server.
   const proposalTemplateWithMockField = useMemo<StrictRJSFSchema>(() => {
-    const base: StrictRJSFSchema = rawProposalTemplate ?? {
-      type: 'object',
-      properties: {},
-      required: [],
-    };
-
     return {
-      ...base,
+      type: 'object',
       properties: {
-        ...base.properties,
         title: {
           type: 'string',
           title: t('Title'),
           minLength: 1,
-          ...(base.properties?.title as Record<string, unknown>),
           'x-format': 'short-text',
         },
         category: {
           type: ['string', 'null'] as const,
           title: t('Category'),
-          ...(base.properties?.category as Record<string, unknown>),
           'x-format': 'category',
           ...(categories.length > 0 && {
             oneOf: categories.map((c) => ({
@@ -146,24 +136,17 @@ export function ProposalEditor({
           type: ['number', 'null'] as const,
           title: t('Budget'),
           minimum: 0,
-          ...(base.properties?.budget as Record<string, unknown>),
           'x-format': 'money',
         },
-        // Mock dynamic field — remove once template builder persists to server
-        fld_need_assessment: {
+        summary: {
           type: 'string',
-          title: 'Is there a high NEED for this project?',
-          description:
-            'Consider: Do the worker-owners clearly demonstrate a significant financial or operational need? Would this project address barriers the co-op faces to survival or growth?',
+          title: t('Summary'),
           'x-format': 'long-text',
         },
       },
-      required: [
-        'title',
-        ...(Array.isArray(base.required) ? base.required : []),
-      ],
+      required: ['title'],
     };
-  }, [rawProposalTemplate, categories, t]);
+  }, [categories, t]);
 
   const { schema: proposalSchema, uiSchema: proposalUiSchema } = useMemo(
     () => compileProposalSchema(proposalTemplateWithMockField, t),
