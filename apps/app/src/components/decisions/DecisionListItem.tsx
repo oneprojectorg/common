@@ -43,7 +43,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   return (
     <Link
-      href={`/decisions/${item.slug}`}
+      href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
       className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
     >
       <DecisionCardHeader
