@@ -1,4 +1,4 @@
-import type { RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -90,12 +90,12 @@ const SYSTEM_UI_MAP: Record<'title' | 'category' | 'budget', SystemUiFactory> =
  */
 function resolveFormatUi(
   key: string,
-  propSchema: StrictRJSFSchema,
+  propSchema: RJSFSchema,
 ): Record<string, unknown> {
-  const raw = propSchema as Record<string, unknown>;
-  const xFormat = (raw['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT;
+  const xFormat =
+    (propSchema['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT;
   const xFormatOptions =
-    (raw['x-format-options'] as Record<string, unknown>) ?? {};
+    (propSchema['x-format-options'] as Record<string, unknown>) ?? {};
 
   const config = FORMAT_REGISTRY[xFormat] ?? FORMAT_REGISTRY[DEFAULT_X_FORMAT];
 
@@ -132,13 +132,13 @@ function resolveFormatUi(
  * @param t - Translation function for field titles/placeholders.
  */
 export function compileProposalSchema(
-  proposalTemplate: StrictRJSFSchema | null,
+  proposalTemplate: RJSFSchema | null,
   t: (key: string, params?: Record<string, string | number>) => string,
 ): {
   schema: RJSFSchema;
   uiSchema: UiSchema<Record<string, unknown>, RJSFSchema, ProposalFormContext>;
 } {
-  const template: StrictRJSFSchema = proposalTemplate ?? {
+  const template: RJSFSchema = proposalTemplate ?? {
     type: 'object',
     properties: { title: { type: 'string', minLength: 1 } },
     required: ['title'],
@@ -146,7 +146,7 @@ export function compileProposalSchema(
 
   const templateProperties = (template.properties ?? {}) as Record<
     string,
-    StrictRJSFSchema
+    RJSFSchema
   >;
   const templateRequired = Array.isArray(template.required)
     ? template.required
@@ -154,7 +154,7 @@ export function compileProposalSchema(
 
   // -- Build schema properties and uiSchema in one pass ----------------------
 
-  const schemaProperties: Record<string, StrictRJSFSchema> = {};
+  const schemaProperties: Record<string, RJSFSchema> = {};
   const uiProperties: Record<string, unknown> = {};
 
   for (const [key, propSchema] of Object.entries(templateProperties)) {

@@ -10,10 +10,10 @@ import {
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
-import type { StrictRJSFSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -105,53 +105,52 @@ export function ProposalEditor({
 
   // TODO: Wire up to the real template source. For now we hardcode a mock.
   // const rawProposalTemplate = (instance.process?.processSchema
-  //   ?.proposalTemplate ?? null) as StrictRJSFSchema | null;
+  //   ?.proposalTemplate ?? null) as RJSFSchema | null;
 
   // System fields (title, category, budget) are duplicated to proposalData
   // for search, preview, and sorting. Yjs is the source of truth — the DB
   // copy is a derived snapshot. Dynamic template fields live exclusively
   // in Yjs and are NOT part of proposalData.
-  const proposalTemplateWithMockField = useMemo<StrictRJSFSchema>(() => {
-    return {
-      type: 'object',
-      properties: {
-        title: {
-          type: 'string',
-          title: t('Title'),
-          minLength: 1,
-          'x-format': 'short-text',
-        },
-        category: {
-          type: ['string', 'null'] as const,
-          title: t('Category'),
-          'x-format': 'category',
-          ...(categories.length > 0 && {
-            oneOf: categories.map((c) => ({
-              const: c.name,
-              title: c.name,
-            })),
-          }),
-        },
-        budget: {
-          type: ['number', 'null'] as const,
-          title: t('Budget'),
-          minimum: 0,
-          'x-format': 'money',
-        },
-        summary: {
-          type: 'string',
-          title: t('Summary'),
-          'x-format': 'long-text',
-        },
+  const proposalTemplate = {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        title: t('Title'),
+        minLength: 1,
+        'x-format': 'short-text',
       },
-      required: ['title'],
-    };
-  }, [categories, t]);
+      category: {
+        type: ['string', 'null'],
+        title: t('Category'),
+        'x-format': 'category',
+        ...(categories.length > 0 && {
+          oneOf: categories.map((c) => ({
+            const: c.name,
+            title: c.name,
+          })),
+        }),
+      },
+      budget: {
+        type: ['number', 'null'],
+        title: t('Budget'),
+        minimum: 0,
+        'x-format': 'money',
+      },
+      summary: {
+        type: 'string',
+        title: t('Summary'),
+        'x-format': 'long-text',
+      },
+    },
+    required: ['title'],
+  } as RJSFSchema;
 
-  const { schema: proposalSchema, uiSchema: proposalUiSchema } = useMemo(
-    () => compileProposalSchema(proposalTemplateWithMockField, t),
-    [proposalTemplateWithMockField, t],
-  );
+  const templateRef = useRef(proposalTemplate);
+  templateRef.current = proposalTemplate;
+
+  const { schema: proposalSchema, uiSchema: proposalUiSchema } =
+    compileProposalSchema(proposalTemplate, t);
 
   // -- Mutations -------------------------------------------------------------
 
@@ -184,9 +183,7 @@ export function ProposalEditor({
 
   // -- UI state handlers -----------------------------------------------------
 
-  const handleCloseInfoModal = useCallback(() => {
-    setShowInfoModal(false);
-  }, []);
+  const handleCloseInfoModal = () => setShowInfoModal(false);
 
   // Show info modal on mount for new/draft proposals
   useEffect(() => {
@@ -197,10 +194,9 @@ export function ProposalEditor({
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
-    const templateRequired = Array.isArray(
-      proposalTemplateWithMockField.required,
-    )
-      ? proposalTemplateWithMockField.required
+    const template = templateRef.current;
+    const templateRequired = Array.isArray(template.required)
+      ? template.required
       : [];
 
     const missingFields: string[] = [];
@@ -213,10 +209,11 @@ export function ProposalEditor({
       missingFields.push(t('Budget'));
     }
 
-    const categorySchema = proposalTemplateWithMockField.properties
-      ?.category as Record<string, unknown> | undefined;
+    const categorySchema = template.properties?.category;
     const hasCategories =
-      Array.isArray(categorySchema?.oneOf) && categorySchema.oneOf.length > 0;
+      typeof categorySchema === 'object' &&
+      Array.isArray(categorySchema?.oneOf) &&
+      categorySchema.oneOf.length > 0;
 
     if (
       templateRequired.includes('category') &&
@@ -226,10 +223,9 @@ export function ProposalEditor({
       missingFields.push(t('Category'));
     }
 
-    const budgetSchema = proposalTemplateWithMockField.properties?.budget as
-      | Record<string, unknown>
-      | undefined;
+    const budgetSchema = template.properties?.budget;
     const budgetMax =
+      typeof budgetSchema === 'object' &&
       typeof budgetSchema?.maximum === 'number'
         ? budgetSchema.maximum
         : undefined;
@@ -291,7 +287,6 @@ export function ProposalEditor({
     }
   }, [
     t,
-    proposalTemplateWithMockField,
     collaborationDocId,
     proposal,
     isDraft,
