@@ -62,10 +62,7 @@ export function FieldCard({
   const ConfigComponent = getFieldConfigComponent(field.fieldType);
 
   const handleBlur = (e: React.FocusEvent) => {
-    if (
-      cardRef.current &&
-      !cardRef.current.contains(e.relatedTarget as Node)
-    ) {
+    if (cardRef.current && !cardRef.current.contains(e.relatedTarget as Node)) {
       onBlur?.(field.id);
     }
   };

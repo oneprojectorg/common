@@ -1,16 +1,15 @@
 'use client';
 
+import { Suspense } from 'react';
+
 import type { SectionProps } from '../../contentRegistry';
 import { TemplateEditorContent } from './TemplateEditorContent';
+import { TemplateEditorSkeleton } from './TemplateEditorSkeleton';
 
-export default function TemplateEditorSection({
-  decisionProfileId,
-  instanceId,
-}: SectionProps) {
+export default function TemplateEditorSection(props: SectionProps) {
   return (
-    <TemplateEditorContent
-      decisionProfileId={decisionProfileId}
-      instanceId={instanceId}
-    />
+    <Suspense fallback={<TemplateEditorSkeleton />}>
+      <TemplateEditorContent {...props} />
+    </Suspense>
   );
 }

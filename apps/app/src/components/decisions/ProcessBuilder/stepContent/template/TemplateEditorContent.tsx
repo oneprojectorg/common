@@ -16,7 +16,6 @@ import {
   type FieldView,
   type ProposalTemplate,
   addField as addFieldToTemplate,
-  createDefaultTemplate,
   getField,
   getFieldErrors,
   getFieldOrder,
@@ -30,6 +29,7 @@ import {
   updateFieldDescription,
   updateFieldLabel,
 } from '../../../proposalTemplate';
+import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { AddFieldMenu } from './AddFieldMenu';
 import {
@@ -41,7 +41,6 @@ import {
   FieldListTrigger,
   TemplateEditorSidebar,
 } from './TemplateEditorSidebar';
-import { TemplateEditorSkeleton } from './TemplateEditorSkeleton';
 import { getFieldLabelKey } from './fieldRegistry';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
@@ -49,24 +48,16 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 export function TemplateEditorContent({
   decisionProfileId,
   instanceId,
-}: {
-  decisionProfileId: string;
-  instanceId: string;
-}) {
+}: SectionProps) {
   const t = useTranslations();
 
-  const defaultTemplate = useMemo(
-    () =>
-      createDefaultTemplate({
-        proposalTitle: t('Proposal title'),
-        category: t('Category'),
-        proposalSummary: t('Proposal summary'),
-      }),
-    [t],
-  );
+  // Load instance data from the backend
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const initialTemplate = (instance.instanceData?.proposalTemplate ??
+    {}) as ProposalTemplate;
 
-  const [template, setTemplate] = useState<ProposalTemplate>(defaultTemplate);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
+  const isInitialLoadRef = useRef(true);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
@@ -78,11 +69,13 @@ export function TemplateEditorContent({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
-  const { getProposalTemplate, setProposalTemplate, setSaveStatus, markSaved } =
-    useProcessBuilderStore();
+  const setProposalTemplate = useProcessBuilderStore(
+    (s) => s.setProposalTemplate,
+  );
+  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
+  const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
-  const isInitialLoadRef = useRef(true);
 
   // Derive all field views from the template
   const allFields = useMemo(() => getFields(template), [template]);
@@ -106,7 +99,7 @@ export function TemplateEditorContent({
     [allFields],
   );
 
-  // Debounced auto-save to localStorage AND backend
+  // Debounced auto-save to localStorage and backend
   const debouncedSave = useDebouncedCallback(
     (updatedTemplate: ProposalTemplate) => {
       setProposalTemplate(decisionProfileId, updatedTemplate);
@@ -127,31 +120,16 @@ export function TemplateEditorContent({
     AUTOSAVE_DEBOUNCE_MS,
   );
 
-  // Hydrate from store on mount
+  // Trigger debounced save when template changes (skip initial load)
   useEffect(() => {
-    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
-      const savedTemplate = getProposalTemplate(decisionProfileId);
-      if (savedTemplate && savedTemplate.properties) {
-        setTemplate(savedTemplate);
-      }
-      setHasHydrated(true);
+    if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
-    });
-
-    void useProcessBuilderStore.persist.rehydrate();
-
-    return unsubscribe;
-  }, [decisionProfileId, getProposalTemplate]);
-
-  // Trigger debounced save when template changes
-  useEffect(() => {
-    if (!hasHydrated || isInitialLoadRef.current) {
       return;
     }
 
     setSaveStatus(decisionProfileId, 'saving');
     debouncedSave(template);
-  }, [template, hasHydrated, decisionProfileId, setSaveStatus, debouncedSave]);
+  }, [template, decisionProfileId, setSaveStatus, debouncedSave]);
 
   const handleAddField = useCallback(
     (type: FieldType) => {
@@ -273,10 +251,6 @@ export function TemplateEditorContent({
       />
     );
   };
-
-  if (!hasHydrated) {
-    return <TemplateEditorSkeleton />;
-  }
 
   return (
     <SidebarProvider isOpen={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
