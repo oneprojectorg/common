@@ -78,7 +78,7 @@ export function ProposalEditor({
 
   // -- Instance config -------------------------------------------------------
 
-  const { categories, budgetCapAmount } = useInstanceConfig(instance);
+  const { categories } = useInstanceConfig(instance);
 
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
@@ -245,14 +245,22 @@ export function ProposalEditor({
       missingFields.push(t('Category'));
     }
 
+    const budgetSchema = proposalTemplateWithMockField.properties?.budget as
+      | Record<string, unknown>
+      | undefined;
+    const budgetMax =
+      typeof budgetSchema?.maximum === 'number'
+        ? budgetSchema.maximum
+        : undefined;
+
     if (
       currentDraft.budget !== null &&
-      budgetCapAmount &&
-      currentDraft.budget > budgetCapAmount
+      budgetMax !== undefined &&
+      currentDraft.budget > budgetMax
     ) {
       toast.error({
         message: t('Budget cannot exceed {amount}', {
-          amount: budgetCapAmount.toLocaleString(),
+          amount: budgetMax.toLocaleString(),
         }),
       });
       return;
@@ -305,7 +313,6 @@ export function ProposalEditor({
     t,
     editorInstance,
     proposalTemplateWithMockField,
-    budgetCapAmount,
     collaborationDocId,
     categories,
     proposal,
@@ -348,7 +355,6 @@ export function ProposalEditor({
               formData={draft}
               formContext={{
                 categories: categories ?? [],
-                budgetCapAmount,
               }}
               onChange={handleFormChange}
               showErrorList={false}

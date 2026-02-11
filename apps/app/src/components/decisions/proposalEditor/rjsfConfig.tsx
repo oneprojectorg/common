@@ -53,14 +53,12 @@ function CollaborativeCategoryRjsfField(props: FieldProps) {
 
 /**
  * RJSF custom field: collaborative budget input.
- * Reads `budgetCapAmount` from `formContext`.
+ * Reads `maximum` from the property schema for the budget cap.
  */
 function CollaborativeBudgetRjsfField(props: FieldProps) {
-  const { budgetCapAmount } = (props.formContext ?? {}) as ProposalFormContext;
-
   return (
     <CollaborativeBudgetField
-      budgetCapAmount={budgetCapAmount}
+      maxAmount={props.schema.maximum}
       initialValue={(props.formData as number | null) ?? null}
       onChange={(value) => props.onChange(value)}
     />

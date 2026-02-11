@@ -10,7 +10,6 @@ import type { RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils';
  */
 export interface ProposalFormContext {
   categories: Array<{ id: string; name: string }>;
-  budgetCapAmount?: number;
 }
 
 /**
