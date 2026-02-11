@@ -8,8 +8,8 @@ import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { FieldType } from '../../../proposalTemplate';
 import { FIELD_CATEGORIES, FIELD_TYPE_REGISTRY } from './fieldRegistry';
-import type { FieldType } from './types';
 
 interface AddFieldMenuProps {
   onAddField: (type: FieldType) => void;

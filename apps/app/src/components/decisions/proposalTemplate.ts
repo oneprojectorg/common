@@ -181,7 +181,7 @@ export function getFieldOptions(
   // dropdown: enum is on schema directly
   if (schema.type === 'string' && Array.isArray(schema.enum)) {
     return schema.enum.map((val, i) => ({
-      id: enumIds[i] ?? crypto.randomUUID(),
+      id: enumIds[i] ?? `${fieldId}-opt-${i}`,
       value: String(val ?? ''),
     }));
   }
@@ -191,7 +191,7 @@ export function getFieldOptions(
     const items = asSchema(schema.items);
     if (items && Array.isArray(items.enum)) {
       return items.enum.map((val, i) => ({
-        id: enumIds[i] ?? crypto.randomUUID(),
+        id: enumIds[i] ?? `${fieldId}-opt-${i}`,
         value: String(val ?? ''),
       }));
     }

@@ -6,9 +6,9 @@ import { LuAlignJustify } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { FieldType } from '../../../proposalTemplate';
 import { AddFieldMenu } from './AddFieldMenu';
 import { getFieldIcon } from './fieldRegistry';
-import type { FieldType } from './types';
 
 export interface SidebarFieldItem {
   id: string;

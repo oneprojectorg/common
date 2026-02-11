@@ -6,7 +6,7 @@ import { screens } from '@op/styles/constants';
 import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
-import type { UiSchema } from '@rjsf/utils';
+import type { StrictRJSFSchema, UiSchema } from '@rjsf/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -142,18 +142,22 @@ export function TemplateEditorContent({
 
   const handleRemoveField = useCallback((fieldId: string) => {
     setTemplate((prev) => removeFieldFromTemplate(prev, fieldId));
+    setFieldErrors((prev) => {
+      const next = new Map(prev);
+      next.delete(fieldId);
+      return next;
+    });
   }, []);
 
-  const handleReorderFields = useCallback(
-    (newItems: FieldView[]) => {
-      const lockedIds = getFieldOrder(template).filter((id) =>
-        isFieldLocked(template, id),
+  const handleReorderFields = useCallback((newItems: FieldView[]) => {
+    setTemplate((prev) => {
+      const lockedIds = getFieldOrder(prev).filter((id) =>
+        isFieldLocked(prev, id),
       );
       const newOrder = [...lockedIds, ...newItems.map((item) => item.id)];
-      setTemplate((prev) => reorderTemplateFields(prev, newOrder));
-    },
-    [template],
-  );
+      return reorderTemplateFields(prev, newOrder);
+    });
+  }, []);
 
   const handleUpdateLabel = useCallback((fieldId: string, label: string) => {
     setTemplate((prev) => updateFieldLabel(prev, fieldId, label));
@@ -188,7 +192,7 @@ export function TemplateEditorContent({
   );
 
   const handleUpdateJsonSchema = useCallback(
-    (fieldId: string, updates: Record<string, unknown>) => {
+    (fieldId: string, updates: Partial<StrictRJSFSchema>) => {
       setTemplate((prev) => {
         const existing = getFieldSchema(prev, fieldId);
         if (!existing) {

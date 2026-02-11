@@ -11,10 +11,9 @@ import {
   LuToggleLeft,
 } from 'react-icons/lu';
 
-import type { FieldView } from '../../../proposalTemplate';
+import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
 import { FieldConfigNumber } from './FieldConfigNumber';
-import type { FieldCategory, FieldType, FieldTypeConfig } from './types';
 
 /**
  * Props passed to field config components.
@@ -30,8 +29,10 @@ export interface FieldConfigProps {
 /**
  * Configuration for each field type including icon and labels.
  */
-interface FieldTypeRegistryEntry extends FieldTypeConfig {
+interface FieldTypeRegistryEntry {
   icon: IconType;
+  labelKey: string;
+  placeholderKey: string;
   ConfigComponent?: ComponentType<FieldConfigProps>;
 }
 
@@ -82,7 +83,11 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
 /**
  * Categories for organizing field types in the add menu.
  */
-export const FIELD_CATEGORIES: FieldCategory[] = [
+export const FIELD_CATEGORIES: {
+  id: string;
+  labelKey: string;
+  types: FieldType[];
+}[] = [
   {
     id: 'text_audio_video',
     labelKey: 'Text, audio and video',
