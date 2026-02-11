@@ -5,12 +5,16 @@ import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { FieldConfigCard } from '@op/ui/FieldConfigCard';
 import { Header2 } from '@op/ui/Header';
+import { NumberField } from '@op/ui/NumberField';
+import { Select, SelectItem } from '@op/ui/Select';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
+import { ToggleButton } from '@op/ui/ToggleButton';
 import type { RJSFSchema } from '@rjsf/utils';
 import { useQueryState } from 'nuqs';
+import type { Key } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
+import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -24,6 +28,7 @@ import {
   getFieldErrors,
   getFieldSchema,
   getFields,
+  isFieldRequired,
   removeField as removeFieldFromTemplate,
   reorderFields as reorderTemplateFields,
   setFieldRequired,
@@ -45,6 +50,12 @@ import {
 import { getFieldLabelKey } from './fieldRegistry';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+};
 
 export function TemplateEditorContent({
   decisionProfileId,
@@ -112,6 +123,11 @@ export function TemplateEditorContent({
             },
           ]
         : []),
+      {
+        id: '_budget',
+        label: t('Budget'),
+        fieldType: 'number' as const,
+      },
     ];
     return [
       ...locked,
@@ -233,6 +249,78 @@ export function TemplateEditorContent({
     [],
   );
 
+  // ---------------------------------------------------------------------------
+  // Budget (locked field) — stored in template.properties.budget
+  // ---------------------------------------------------------------------------
+  const budgetSchema = getFieldSchema(template, 'budget');
+  const showBudget = !!budgetSchema;
+  const budgetCurrency =
+    (budgetSchema?.['x-currency'] as string | undefined) ?? 'USD';
+  const budgetCurrencySymbol = CURRENCY_SYMBOLS[budgetCurrency] ?? '$';
+  const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
+  const budgetRequired = isFieldRequired(template, 'budget');
+
+  const handleShowBudgetChange = useCallback((show: boolean) => {
+    if (show) {
+      setTemplate((prev) => ({
+        ...prev,
+        properties: {
+          ...prev.properties,
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            'x-format': 'money',
+            'x-locked': true,
+            'x-currency': 'USD',
+          },
+        },
+      }));
+    } else {
+      setTemplate((prev) => {
+        const { budget: _, ...restProps } = prev.properties ?? {};
+        const required = (prev.required ?? []).filter((id) => id !== 'budget');
+        return {
+          ...prev,
+          properties: restProps,
+          required: required.length > 0 ? required : undefined,
+        };
+      });
+    }
+  }, []);
+
+  const handleBudgetCurrencyChange = useCallback(
+    (key: Key) => {
+      handleUpdateJsonSchema('budget', { 'x-currency': String(key) });
+    },
+    [handleUpdateJsonSchema],
+  );
+
+  const handleBudgetMaxChange = useCallback((value: number | null) => {
+    setTemplate((prev) => {
+      const existing = getFieldSchema(prev, 'budget');
+      if (!existing) {
+        return prev;
+      }
+      const updated = { ...existing };
+      if (value != null) {
+        updated.maximum = value;
+      } else {
+        delete updated.maximum;
+      }
+      return {
+        ...prev,
+        properties: { ...prev.properties, budget: updated },
+      };
+    });
+  }, []);
+
+  const handleBudgetRequiredChange = useCallback(
+    (required: boolean) => {
+      handleUpdateRequired('budget', required);
+    },
+    [handleUpdateRequired],
+  );
+
   /** Render a FieldCard for a given field view. */
   const renderFieldCard = (
     field: FieldView,
@@ -323,6 +411,61 @@ export function TemplateEditorContent({
                   </p>
                 </FieldConfigCard>
               )}
+
+              <FieldConfigCard
+                icon={LuHash}
+                iconTooltip={t('Number')}
+                label={t('Budget')}
+                locked
+              >
+                <div className="space-y-4 px-8">
+                  <div className="flex items-center justify-between">
+                    <span className="text-neutral-charcoal">
+                      {t('Show in template?')}
+                    </span>
+                    <ToggleButton
+                      size="small"
+                      isSelected={showBudget}
+                      onChange={handleShowBudgetChange}
+                      aria-label={t('Show in template?')}
+                    />
+                  </div>
+                  {showBudget && (
+                    <>
+                      <Select
+                        label={t('Currency')}
+                        selectedKey={budgetCurrency}
+                        onSelectionChange={handleBudgetCurrencyChange}
+                        buttonClassName="bg-white"
+                      >
+                        <SelectItem id="USD">USD $</SelectItem>
+                        <SelectItem id="EUR">EUR €</SelectItem>
+                        <SelectItem id="GBP">GBP £</SelectItem>
+                      </Select>
+                      <NumberField
+                        label={t('Max budget')}
+                        value={budgetMaxAmount ?? null}
+                        onChange={handleBudgetMaxChange}
+                        prefixText={budgetCurrencySymbol}
+                        inputProps={{
+                          placeholder: t('Set maximum budget'),
+                        }}
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-charcoal">
+                          {t('Required?')}
+                        </span>
+                        <ToggleButton
+                          size="small"
+                          isSelected={budgetRequired}
+                          onChange={handleBudgetRequiredChange}
+                          aria-label={t('Required?')}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </FieldConfigCard>
             </div>
 
             {/* Sortable fields */}
