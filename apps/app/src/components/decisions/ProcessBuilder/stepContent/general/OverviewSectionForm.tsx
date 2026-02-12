@@ -44,19 +44,12 @@ function FormValueWatcher({
   values: OverviewFormData;
   onValuesChange: (values: OverviewFormData) => void;
 }) {
-  const isInitialMount = useRef(true);
   const previousValues = useRef<string | null>(null);
 
   useEffect(() => {
     const valuesString = JSON.stringify(values);
 
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      previousValues.current = valuesString;
-      return;
-    }
-
-    // Skip if values haven't changed
+    // Skip if values haven't changed (deduplicates both initial mount and subsequent renders)
     if (valuesString === previousValues.current) {
       return;
     }
