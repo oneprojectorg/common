@@ -291,7 +291,6 @@ export function ProposalView({
           {/* Proposal Content */}
           {resolvedHtmlContent ? (
             <ProposalContentRenderer
-              mode="view"
               proposalTemplate={proposalTemplate}
               htmlContent={resolvedHtmlContent}
             />
