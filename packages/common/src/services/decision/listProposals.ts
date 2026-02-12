@@ -22,6 +22,7 @@ import {
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -205,25 +206,10 @@ export const listProposals = async ({
   const count = countResult[0]?.count || 0;
 
   // Resolve proposalTemplate from instanceData, falling back to processSchema
-  const instanceData = instance[0].instanceData as Record<
-    string,
-    unknown
-  > | null;
-  let proposalTemplate =
-    (instanceData?.proposalTemplate as Record<string, unknown>) ?? null;
-
-  if (!proposalTemplate) {
-    const process = await db.query.decisionProcesses.findFirst({
-      where: { id: instance[0].processId },
-      columns: { processSchema: true },
-    });
-    const processSchema = process?.processSchema as Record<
-      string,
-      unknown
-    > | null;
-    proposalTemplate =
-      (processSchema?.proposalTemplate as Record<string, unknown>) ?? null;
-  }
+  const proposalTemplate = await resolveProposalTemplate(
+    instance[0].instanceData as Record<string, unknown> | null,
+    instance[0].processId,
+  );
 
   type ProposalListItem = (typeof proposalList)[number];
 

@@ -26,6 +26,7 @@ import {
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -102,25 +103,10 @@ export const getProposal = async ({
   }
 
   // Read proposalTemplate from instanceData (new path) or processSchema (legacy path)
-  const instanceData = proposal.processInstance.instanceData as Record<
-    string,
-    unknown
-  > | null;
-  let proposalTemplate =
-    (instanceData?.proposalTemplate as Record<string, unknown>) ?? null;
-
-  if (!proposalTemplate) {
-    const process = await db.query.decisionProcesses.findFirst({
-      where: { id: proposal.processInstance.processId },
-      columns: { processSchema: true },
-    });
-    const processSchema = process?.processSchema as Record<
-      string,
-      unknown
-    > | null;
-    proposalTemplate =
-      (processSchema?.proposalTemplate as Record<string, unknown>) ?? null;
-  }
+  const proposalTemplate = await resolveProposalTemplate(
+    proposal.processInstance.instanceData as Record<string, unknown> | null,
+    proposal.processInstance.processId,
+  );
 
   // Run engagement counts and document fetch in parallel
   const [engagementCounts, documentContentMap] = await Promise.all([
