@@ -660,5 +660,7 @@
   "Options cannot be empty": "বিকল্পগুলি খালি হতে পারে না",
   "Minimum must be less than or equal to maximum": "সর্বনিম্ন অবশ্যই সর্বোচ্চের সমান বা কম হতে হবে",
   "These are the categories you defined in": "এগুলি আপনার সংজ্ঞায়িত বিভাগগুলি",
-  "Set maximum budget": "সর্বোচ্চ বাজেট নির্ধারণ করুন"
+  "Set maximum budget": "সর্বোচ্চ বাজেট নির্ধারণ করুন",
+  "This invite is no longer valid": "এই আমন্ত্রণটি আর বৈধ নয়",
+  "Go back to home": "হোমে ফিরে যান"
 }
