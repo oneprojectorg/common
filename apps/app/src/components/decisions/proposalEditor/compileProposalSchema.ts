@@ -1,4 +1,7 @@
-import { SYSTEM_FIELD_KEYS, getProposalTemplateFieldOrder } from '@op/common';
+import {
+  SYSTEM_FIELD_KEYS,
+  getProposalTemplateFieldOrder,
+} from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
 
 // ---------------------------------------------------------------------------
