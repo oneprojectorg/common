@@ -9,7 +9,6 @@ import {
   proposalAttachments,
   proposalCategories,
   proposals,
-  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -26,6 +25,7 @@ import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { ensureProposalTaxonomyTerm } from './utils/ensureProposalTaxonomyTerm';
 import { checkProposalsAllowed } from './utils/proposal';
 
 export interface CreateProposalInput {
@@ -85,33 +85,9 @@ export const createProposal = async ({
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
 
-    // Pre-fetch category term if specified to avoid lookup inside transaction
+    // Ensure category taxonomy term exists (creates if missing)
     const categoryLabel = (data.proposalData as any)?.category;
-    let categoryTermId: string | null = null;
-
-    if (categoryLabel?.trim()) {
-      try {
-        const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-          where: eq(taxonomyTerms.label, categoryLabel.trim()),
-          with: {
-            taxonomy: true,
-          },
-        });
-
-        if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
-          categoryTermId = taxonomyTerm.id;
-        } else {
-          console.warn(
-            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
-          );
-        }
-      } catch (error) {
-        console.warn(
-          'Error fetching category term, proceeding without category:',
-          error,
-        );
-      }
-    }
+    const categoryTermId = await ensureProposalTaxonomyTerm(categoryLabel);
 
     const profileId = await getCurrentProfileId(authUserId);
     const proposal = await db.transaction(async (tx) => {
