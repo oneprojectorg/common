@@ -1,5 +1,6 @@
 'use client';
 
+import { isSafeRedirectPath } from '@op/common/client';
 import { useAuthUser } from '@op/hooks';
 import { redirect, usePathname } from 'next/navigation';
 
@@ -7,10 +8,9 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthUser();
   const pathname = usePathname();
 
-  const loginUrl =
-    pathname && pathname !== '/'
-      ? `/login?redirect=${encodeURIComponent(pathname)}`
-      : '/login';
+  const loginUrl = isSafeRedirectPath(pathname)
+    ? `/login?redirect=${encodeURIComponent(pathname)}`
+    : '/login';
 
   if (user?.data?.error) {
     redirect(loginUrl);
