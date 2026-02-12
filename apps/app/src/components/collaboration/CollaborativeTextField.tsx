@@ -73,7 +73,7 @@ export function CollaborativeTextField({
       {(title || description) && (
         <div className="flex flex-col gap-0.5">
           {title && (
-            <span className="font-serif text-title-xs text-neutral-charcoal">
+            <span className="font-serif text-title-sm text-neutral-charcoal">
               {title}
             </span>
           )}

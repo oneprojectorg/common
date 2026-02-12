@@ -1,5 +1,6 @@
 'use client';
 
+import { FileDropZone } from '@op/ui/FileDropZone';
 import { useMemo } from 'react';
 import { LuEye } from 'react-icons/lu';
 
@@ -18,8 +19,6 @@ const EMPTY_DRAFT: ProposalDraftFields = {
   category: null,
   budget: null,
 };
-
-const noop = () => {};
 
 /**
  * Live participant preview panel shown alongside the template builder.
@@ -51,10 +50,27 @@ export function ParticipantPreview({
         <ProposalFormRenderer
           fields={fields}
           draft={EMPTY_DRAFT}
-          onFieldChange={noop}
+          onFieldChange={() => {}}
           t={t}
           previewMode
         />
+
+        <div className="pointer-events-none border-t border-neutral-gray2 pt-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-serif text-title-sm text-neutral-charcoal">
+                {t('Attachments (optional)')}
+              </span>
+              <p className="text-body-sm text-neutral-charcoal">
+                {t(
+                  'Support your proposal with relevant documents like budgets or supporting research.',
+                )}
+              </p>
+            </div>
+
+            <FileDropZone onSelectFiles={() => {}} />
+          </div>
+        </div>
       </div>
     </aside>
   );

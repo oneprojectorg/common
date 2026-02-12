@@ -152,7 +152,7 @@ function renderField(
             {(schema.title || schema.description) && (
               <div className="flex flex-col gap-0.5">
                 {schema.title && (
-                  <span className="font-serif text-title-xs text-neutral-charcoal">
+                  <span className="font-serif text-title-sm text-neutral-charcoal">
                     {schema.title}
                   </span>
                 )}
