@@ -106,23 +106,34 @@ export const updateDecisionInstance = async ({
       };
     }
 
-    // Apply phase updates — replace the full phases array
+    // Apply phase updates — replaces the full phases array to accommodate
+    // adding, removing, and reordering phases from the phase editor.
+    // Existing phase data (selectionPipeline, settingsSchema, etc.) is
+    // preserved by merging with the previous phase when a match exists.
     if (hasPhaseUpdates) {
-      updatedInstanceData.phases = phases.map((phase) => ({
-        phaseId: phase.phaseId,
-        ...(phase.name !== undefined && { name: phase.name }),
-        ...(phase.description !== undefined && {
-          description: phase.description,
-        }),
-        ...(phase.headline !== undefined && { headline: phase.headline }),
-        ...(phase.additionalInfo !== undefined && {
-          additionalInfo: phase.additionalInfo,
-        }),
-        ...(phase.rules !== undefined && { rules: phase.rules }),
-        ...(phase.startDate !== undefined && { startDate: phase.startDate }),
-        ...(phase.endDate !== undefined && { endDate: phase.endDate }),
-        ...(phase.settings !== undefined && { settings: phase.settings }),
-      }));
+      const existingPhaseMap = new Map(
+        existingInstanceData.phases.map((p) => [p.phaseId, p]),
+      );
+
+      updatedInstanceData.phases = phases.map((phase) => {
+        const existing = existingPhaseMap.get(phase.phaseId);
+        return {
+          ...existing,
+          phaseId: phase.phaseId,
+          ...(phase.name !== undefined && { name: phase.name }),
+          ...(phase.description !== undefined && {
+            description: phase.description,
+          }),
+          ...(phase.headline !== undefined && { headline: phase.headline }),
+          ...(phase.additionalInfo !== undefined && {
+            additionalInfo: phase.additionalInfo,
+          }),
+          ...(phase.rules !== undefined && { rules: phase.rules }),
+          ...(phase.startDate !== undefined && { startDate: phase.startDate }),
+          ...(phase.endDate !== undefined && { endDate: phase.endDate }),
+          ...(phase.settings !== undefined && { settings: phase.settings }),
+        };
+      });
     }
 
     // Apply proposal template update (replace entirely)
