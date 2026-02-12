@@ -19,9 +19,11 @@ import {
  */
 export const acceptProposalInvite = async ({
   inviteId,
+  profileId: proposalProfileId,
   user,
 }: {
-  inviteId: string;
+  inviteId?: string;
+  profileId?: string;
   user: User;
 }) => {
   const email = user.email;
@@ -30,12 +32,25 @@ export const acceptProposalInvite = async ({
     throw new UnauthorizedError('User must have an email address');
   }
 
-  const invite = await db.query.profileInvites.findFirst({
-    where: { id: inviteId },
-  });
+  let invite;
+  if (inviteId) {
+    invite = await db.query.profileInvites.findFirst({
+      where: { id: inviteId },
+    });
+  } else if (proposalProfileId) {
+    invite = await db.query.profileInvites.findFirst({
+      where: {
+        profileId: proposalProfileId,
+        email: email.toLowerCase(),
+        acceptedOn: { isNull: true },
+      },
+    });
+  } else {
+    throw new CommonError('Either inviteId or profileId is required');
+  }
 
   if (!invite) {
-    throw new NotFoundError('Invite', inviteId);
+    throw new NotFoundError('Invite', inviteId ?? proposalProfileId);
   }
 
   if (invite.acceptedOn) {
@@ -140,7 +155,7 @@ export const acceptProposalInvite = async ({
       tx
         .update(profileInvites)
         .set({ acceptedOn: now })
-        .where(eq(profileInvites.id, inviteId)),
+        .where(eq(profileInvites.id, invite.id)),
     ];
 
     if (decisionProfileUser) {

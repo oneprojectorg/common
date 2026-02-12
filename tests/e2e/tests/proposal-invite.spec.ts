@@ -48,20 +48,13 @@ test.describe('Proposal Invite', () => {
     await createUser({ supabaseAdmin, email: inviteeEmail });
 
     // Insert a pending proposal invite for the new user
-    const [invite] = await db
-      .insert(profileInvites)
-      .values({
-        email: inviteeEmail,
-        profileId: proposal.profileId,
-        profileEntityType: EntityType.PROPOSAL,
-        accessRoleId: ROLES.MEMBER.id,
-        invitedBy: instance.profileId,
-      })
-      .returning();
-
-    if (!invite) {
-      throw new Error('Failed to create invite');
-    }
+    await db.insert(profileInvites).values({
+      email: inviteeEmail,
+      profileId: proposal.profileId,
+      profileEntityType: EntityType.PROPOSAL,
+      accessRoleId: ROLES.MEMBER.id,
+      invitedBy: instance.profileId,
+    });
 
     // Authenticate as the invitee
     await authenticateAsUser(page, {
@@ -69,12 +62,12 @@ test.describe('Proposal Invite', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    // Navigate to the invite accept page
+    // Navigate to the invite accept page (no inviteId needed — looks up by email)
     await page.goto(
-      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/invite/${invite.id}`,
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/invite`,
     );
 
-    // Should redirect to the proposal page (no /invite/ in URL)
+    // Should redirect to the proposal page (no /invite in URL)
     await expect(page).toHaveURL(
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
       { timeout: 15000 },
@@ -83,7 +76,7 @@ test.describe('Proposal Invite', () => {
 
   test('invalid invite shows error state', async ({ authenticatedPage }) => {
     await authenticatedPage.goto(
-      `/en/decisions/fake-slug/proposal/fake-profile/invite/00000000-0000-0000-0000-000000000000`,
+      `/en/decisions/fake-slug/proposal/fake-profile/invite`,
     );
 
     await expect(
