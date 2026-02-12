@@ -1,6 +1,5 @@
 'use client';
 
-import type { FieldProps } from '@rjsf/utils';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef } from 'react';
@@ -9,37 +8,43 @@ import { getProposalExtensions } from '../RichTextEditor';
 import { CollaborativeEditor } from './CollaborativeEditor';
 
 /**
- * RJSF custom field for collaborative text (short or long).
+ * Props for the collaborative text field.
+ *
+ * @param fragmentName - Yjs fragment name (required). Each field in the
+ *   proposal schema maps to a unique fragment in the shared Y.Doc.
+ * @param title - Optional label rendered above the editor.
+ * @param description - Optional description rendered below the title.
+ * @param placeholder - Placeholder text shown when the editor is empty.
+ * @param multiline - When true, renders a taller editor suitable for long text.
+ * @param onChange - Called with the editor's HTML content on every update.
+ */
+interface CollaborativeTextFieldProps {
+  fragmentName: string;
+  title?: string;
+  description?: string;
+  placeholder?: string;
+  multiline?: boolean;
+  onChange?: (html: string) => void;
+}
+
+/**
+ * Collaborative text field backed by TipTap + Yjs.
  *
  * Composes {@link CollaborativeEditor} so we get consistent editor setup,
  * styled content, and Yjs collaboration/snapshotting for free.
  *
- * Behaviour is controlled via `ui:options`:
- * - `fragmentName` – Yjs fragment name (required, set by the template compiler)
- * - `multiline`    – when true, renders a taller editor suitable for long text
- *
- * Future `x-format-options` from the template schema are forwarded here
- * as `ui:options` by the compiler, so adding new knobs (e.g. `rich`,
- * `maxWords`) only requires reading them from `uiSchema['ui:options']`.
+ * Future `x-format-options` from the template schema are forwarded as
+ * direct props, so adding new knobs (e.g. `rich`, `maxWords`) only
+ * requires extending the props interface.
  */
-export function CollaborativeTextField(props: FieldProps) {
-  const { onChange, schema, uiSchema, rawErrors } = props;
-
-  const options = (uiSchema?.['ui:options'] ?? {}) as Record<string, unknown>;
-
-  const fragmentName = options.fragmentName as string | undefined;
-
-  if (!fragmentName) {
-    throw new Error(
-      `CollaborativeTextField requires a "fragmentName" ui:option but none was provided for "${schema.title ?? 'unknown'}".`,
-    );
-  }
-
-  const placeholder =
-    (uiSchema?.['ui:placeholder'] as string) || 'Start typing...';
-
-  const multiline = Boolean(options.multiline);
-
+export function CollaborativeTextField({
+  fragmentName,
+  title,
+  description,
+  placeholder = 'Start typing...',
+  multiline = false,
+  onChange,
+}: CollaborativeTextFieldProps) {
   const extensions = useMemo(
     () => [
       ...getProposalExtensions({ collaborative: true }),
@@ -65,17 +70,15 @@ export function CollaborativeTextField(props: FieldProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      {(schema.title || schema.description) && (
+      {(title || description) && (
         <div className="flex flex-col gap-0.5">
-          {schema.title && (
+          {title && (
             <span className="font-serif text-title-xs text-neutral-charcoal">
-              {schema.title}
+              {title}
             </span>
           )}
-          {schema.description && (
-            <p className="text-body-sm text-neutral-charcoal">
-              {schema.description}
-            </p>
+          {description && (
+            <p className="text-body-sm text-neutral-charcoal">{description}</p>
           )}
         </div>
       )}
@@ -86,11 +89,6 @@ export function CollaborativeTextField(props: FieldProps) {
         onEditorReady={handleEditorReady}
         editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
       />
-      {rawErrors && rawErrors.length > 0 && (
-        <div className="text-sm text-functional-red">
-          {rawErrors.join(', ')}
-        </div>
-      )}
     </div>
   );
 }

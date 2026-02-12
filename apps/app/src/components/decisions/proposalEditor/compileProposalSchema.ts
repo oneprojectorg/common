@@ -1,110 +1,62 @@
-import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+import type { JSONSchema7 } from 'json-schema';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 /**
- * Extra props passed to RJSF fields/widgets via `formContext`.
- *
- * Currently empty — all field data (categories, budget max, etc.) is
- * expressed directly in the JSON Schema. Kept as a named type so the
- * RJSF generic plumbing stays consistent if we need runtime context later.
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ProposalFormContext extends Record<string, unknown> {}
-
-/**
  * Supported values for the `x-format` vendor extension on template properties.
  *
  * `x-format` describes **how** a field should be presented, while JSON Schema's
- * own keywords (`type`, `enum`, etc.) describe the data shape. The compiler
- * maps each `x-format` to RJSF widget/field config via {@link FORMAT_REGISTRY}.
+ * own keywords (`type`, `enum`, etc.) describe the data shape.
  *
  * Additional per-field presentation options (e.g. `rich`, `maxWords`) can be
- * provided in a sibling `x-format-options` object — the compiler merges them
- * into `ui:options` so the widget receives them at runtime.
+ * provided in a sibling `x-format-options` object.
  */
 export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
 
-// ---------------------------------------------------------------------------
-// x-format → RJSF ui mapping
-// ---------------------------------------------------------------------------
+/**
+ * JSON Schema 7 extended with proposal-specific vendor extensions.
+ */
+export interface ProposalPropertySchema extends JSONSchema7 {
+  'x-format'?: XFormat;
+  'x-format-options'?: Record<string, unknown>;
+}
 
-interface FormatConfig {
-  field: string;
-  /** Default `ui:options` merged with any `x-format-options` from the template. */
-  defaults?: Record<string, unknown>;
+export interface ProposalTemplateSchema extends JSONSchema7 {
+  properties?: Record<string, ProposalPropertySchema>;
 }
 
 /**
- * Registry mapping `x-format` values to RJSF uiSchema entries.
- *
- * Adding a new display type is a single line here + the field component.
+ * System property keys that receive special collaborative UI wrappers.
+ * Their *data* definition comes from the template; only the rendering
+ * is overridden.
  */
-const FORMAT_REGISTRY: Record<XFormat, FormatConfig> = {
-  'short-text': { field: 'CollaborativeTextField' },
-  'long-text': {
-    field: 'CollaborativeTextField',
-    defaults: { multiline: true },
-  },
-  money: { field: 'CollaborativeBudgetField' },
-  category: { field: 'CollaborativeCategoryField' },
-};
+export const SYSTEM_FIELD_KEYS = new Set(['title', 'budget', 'category']);
 
 /** Default `x-format` when a dynamic field omits the extension. */
 const DEFAULT_X_FORMAT: XFormat = 'short-text';
 
 // ---------------------------------------------------------------------------
-// UI mapping for system fields
+// Compiled field descriptor
 // ---------------------------------------------------------------------------
 
 /**
- * System property keys that receive special collaborative UI wrappers.
- * Their *data* definition comes from the template; only the rendering
- * is overridden via `ui:field`.
+ * A field descriptor produced by the schema compiler. Each entry describes
+ * a single field in the proposal form, with all the information needed to
+ * render the correct collaborative component.
  */
-export const SYSTEM_FIELD_KEYS = new Set(['title', 'budget', 'category']);
-
-type SystemUiFactory = (t: (key: string) => string) => Record<string, unknown>;
-
-/** Maps system field keys to their RJSF uiSchema entries. */
-const SYSTEM_UI_MAP: Record<'title' | 'category' | 'budget', SystemUiFactory> =
-  {
-    title: (t) => ({
-      'ui:field': 'CollaborativeTitleField',
-      'ui:placeholder': t('Untitled Proposal'),
-    }),
-    category: () => ({ 'ui:field': 'CollaborativeCategoryField' }),
-    budget: () => ({ 'ui:field': 'CollaborativeBudgetField' }),
-  };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Reads `x-format` and `x-format-options` from a property schema and returns
- * the corresponding RJSF uiSchema entry.
- *
- * @param key - Property key (used as the default Yjs fragment name).
- * @param propSchema - The JSON Schema property definition (may include vendor extensions).
- */
-function resolveFormatUi(
-  key: string,
-  propSchema: RJSFSchema,
-): Record<string, unknown> {
-  const xFormat =
-    (propSchema['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT;
-  const xFormatOptions =
-    (propSchema['x-format-options'] as Record<string, unknown>) ?? {};
-
-  const config = FORMAT_REGISTRY[xFormat] ?? FORMAT_REGISTRY[DEFAULT_X_FORMAT];
-
-  return {
-    'ui:field': config.field,
-    'ui:options': { fragmentName: key, ...config.defaults, ...xFormatOptions },
-  };
+export interface ProposalFieldDescriptor {
+  /** Property key in the schema (e.g. "title", "summary"). */
+  key: string;
+  /** Resolved display format. */
+  format: XFormat;
+  /** Whether this is a system field (title, category, budget). */
+  isSystem: boolean;
+  /** The raw property schema definition for this field. */
+  schema: ProposalPropertySchema;
+  /** Merged format options from `x-format-options`. */
+  formatOptions: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -112,112 +64,45 @@ function resolveFormatUi(
 // ---------------------------------------------------------------------------
 
 /**
- * Compiles a proposal template (JSON Schema 7) into an RJSF-ready schema
- * pair: a data schema and a uiSchema.
+ * Compiles a proposal template into an array of field descriptors that the
+ * renderer can iterate over.
  *
  * The template is the single source of truth for data shape — property
  * types, constraints (`minimum`, `maximum`, `minLength`, etc.), and
  * `required` arrays are preserved as-is.
  *
- * This function only adds a UI layer:
- * - System fields (title, category, budget) get `ui:field` wrappers
- *   for collaborative editing components.
- * - Dynamic fields use `x-format` (vendor extension) to look up the
- *   appropriate widget/field from {@link FORMAT_REGISTRY}. Falls back
- *   to `short-text` when `x-format` is absent.
- * - `description` is excluded from the RJSF form (rendered separately
- *   as a TipTap editor).
+ * This function resolves the `x-format` vendor extension on each property
+ * into a typed descriptor. The template is expected to include system fields
+ * (title, category, budget) — missing ones are logged as errors.
  *
- * @param proposalTemplate - JSON Schema 7 stored on processSchema.
- *   If null, a minimal schema with system fields using sensible defaults.
+ * @param proposalTemplate - Proposal template schema stored on processSchema.
  * @param t - Translation function for field titles/placeholders.
  */
 export function compileProposalSchema(
-  proposalTemplate: RJSFSchema | null,
-  t: (key: string, params?: Record<string, string | number>) => string,
-): {
-  schema: RJSFSchema;
-  uiSchema: UiSchema<Record<string, unknown>, RJSFSchema, ProposalFormContext>;
-} {
-  const template: RJSFSchema = proposalTemplate ?? {
-    type: 'object',
-    properties: { title: { type: 'string', minLength: 1 } },
-    required: ['title'],
-  };
+  proposalTemplate: ProposalTemplateSchema,
+): ProposalFieldDescriptor[] {
+  const templateProperties = proposalTemplate.properties ?? {};
 
-  const templateProperties = (template.properties ?? {}) as Record<
-    string,
-    RJSFSchema
-  >;
-  const templateRequired = Array.isArray(template.required)
-    ? template.required
-    : [];
+  for (const key of SYSTEM_FIELD_KEYS) {
+    if (!templateProperties[key]) {
+      console.error(`[compileProposalSchema] Missing system field "${key}"`);
+    }
+  }
 
-  // -- Build schema properties and uiSchema in one pass ----------------------
-
-  const schemaProperties: Record<string, RJSFSchema> = {};
-  const uiProperties: Record<string, unknown> = {};
+  const fields: ProposalFieldDescriptor[] = [];
 
   for (const [key, propSchema] of Object.entries(templateProperties)) {
-    // `description` is rendered as a standalone TipTap editor, not in RJSF.
-    if (key === 'description') {
-      continue;
-    }
+    const xFormat = propSchema['x-format'] ?? DEFAULT_X_FORMAT;
+    const xFormatOptions = propSchema['x-format-options'] ?? {};
 
-    // Always pass through the template's data definition.
-    schemaProperties[key] = propSchema;
-
-    if (SYSTEM_FIELD_KEYS.has(key)) {
-      // System field: fixed UI mapping.
-      if (key in SYSTEM_UI_MAP) {
-        const uiFactory = SYSTEM_UI_MAP[key as keyof typeof SYSTEM_UI_MAP];
-        uiProperties[key] = uiFactory(t);
-      }
-    } else {
-      // Dynamic field: resolve UI from x-format.
-      uiProperties[key] = resolveFormatUi(key, propSchema);
-    }
+    fields.push({
+      key,
+      format: xFormat,
+      isSystem: SYSTEM_FIELD_KEYS.has(key),
+      schema: propSchema,
+      formatOptions: xFormatOptions,
+    });
   }
 
-  // Ensure system fields always exist (even if the template omitted them).
-  // Budget and category are nullable by default when not explicitly defined.
-  if (!schemaProperties.title) {
-    schemaProperties.title = {
-      type: 'string',
-      title: t('Title'),
-      minLength: 1,
-    };
-    uiProperties.title = SYSTEM_UI_MAP.title(t);
-  }
-  if (!schemaProperties.category) {
-    schemaProperties.category = {
-      type: ['string', 'null'],
-      title: t('Category'),
-    };
-    uiProperties.category = SYSTEM_UI_MAP.category(t);
-  }
-  if (!schemaProperties.budget) {
-    schemaProperties.budget = {
-      type: ['number', 'null'],
-      title: t('Budget'),
-      minimum: 0,
-    };
-    uiProperties.budget = SYSTEM_UI_MAP.budget(t);
-  }
-
-  // Pass through the template's required array, filtered to existing properties.
-  const required = templateRequired.filter((key) => key in schemaProperties);
-
-  return {
-    schema: {
-      type: 'object',
-      required,
-      properties: schemaProperties,
-    },
-    uiSchema: uiProperties as UiSchema<
-      Record<string, unknown>,
-      RJSFSchema,
-      ProposalFormContext
-    >,
-  };
+  return fields;
 }

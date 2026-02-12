@@ -2,7 +2,6 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
-import type { IChangeEvent } from '@rjsf/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
@@ -22,7 +21,7 @@ export interface ProposalDraftFields extends Record<string, unknown> {
 
 /**
  * Manages the proposal draft lifecycle: parsing server data into local state,
- * syncing RJSF form changes, and debounced auto-save back to the server.
+ * syncing field changes, and debounced auto-save back to the server.
  */
 export function useProposalDraft({
   proposal,
@@ -89,20 +88,6 @@ export function useProposalDraft({
     [proposal?.proposalData, collaborationDocId],
   );
 
-  /**
-   * Extracts system draft fields from RJSF formData.
-   * Dynamic field values are ignored — they sync via Yjs only.
-   */
-  const toProposalDraft = useCallback(
-    (formData: Record<string, unknown>): ProposalDraftFields => ({
-      title: typeof formData.title === 'string' ? formData.title : '',
-      category:
-        typeof formData.category === 'string' ? formData.category : null,
-      budget: typeof formData.budget === 'number' ? formData.budget : null,
-    }),
-    [],
-  );
-
   const saveFields = useCallback(
     (nextDraft?: ProposalDraftFields) => {
       if (!proposal) {
@@ -123,25 +108,39 @@ export function useProposalDraft({
   const debouncedAutoSave = useDebouncedCallback(saveFields, 1500);
 
   /**
-   * Handles RJSF form changes. Extracts system fields into the draft
-   * and triggers debounced autosave for persistence.
+   * Handles a single field change. Updates the draft state for system
+   * fields (title, category, budget) and triggers debounced autosave.
+   *
+   * Dynamic field values are managed exclusively by Yjs — calling this
+   * for dynamic fields is a no-op for persistence but still triggers
+   * autosave of the current system field snapshot.
    */
-  const handleFormChange = useCallback(
-    (event: IChangeEvent<Record<string, unknown>>) => {
-      const nextDraft = toProposalDraft(
-        (event.formData ?? {}) as Record<string, unknown>,
-      );
-      draftRef.current = nextDraft;
-      setDraft(nextDraft);
-      debouncedAutoSave(nextDraft);
+  const handleFieldChange = useCallback(
+    (key: string, value: unknown) => {
+      setDraft((prev) => {
+        const next = { ...prev };
+
+        if (key === 'title') {
+          next.title = typeof value === 'string' ? value : '';
+        } else if (key === 'category') {
+          next.category = typeof value === 'string' ? value : null;
+        } else if (key === 'budget') {
+          next.budget = typeof value === 'number' ? value : null;
+        }
+        // Dynamic fields are Yjs-only — we don't store them in draft state.
+
+        draftRef.current = next;
+        debouncedAutoSave(next);
+        return next;
+      });
     },
-    [toProposalDraft, debouncedAutoSave],
+    [debouncedAutoSave],
   );
 
   return {
     draft,
     draftRef,
     buildProposalData,
-    handleFormChange,
+    handleFieldChange,
   };
 }

@@ -9,8 +9,6 @@ import {
 } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
-import Form from '@rjsf/core';
-import type { RJSFSchema } from '@rjsf/utils';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,9 +24,12 @@ import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
 import { ProposalEditorLayout } from '../layout';
-import { compileProposalSchema } from './compileProposalSchema';
+import { ProposalFormRenderer } from './ProposalFormRenderer';
+import {
+  type ProposalTemplateSchema,
+  compileProposalSchema,
+} from './compileProposalSchema';
 import { handleMutationError } from './handleMutationError';
-import { RJSF_FIELDS, RJSF_TEMPLATES, proposalValidator } from './rjsfConfig';
 import { useProposalDraft } from './useProposalDraft';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -82,23 +83,23 @@ export function ProposalEditor({
 
   // -- Draft management ------------------------------------------------------
 
-  const { draft, draftRef, handleFormChange } = useProposalDraft({
+  const { draft, draftRef, handleFieldChange } = useProposalDraft({
     proposal,
     isEditMode,
     collaborationDocId,
   });
 
-  // -- RJSF schema compilation -----------------------------------------------
+  // -- Schema compilation ----------------------------------------------------
 
   // TODO: Wire up to the real template source. For now we hardcode a mock.
   // const rawProposalTemplate = (instance.process?.processSchema
-  //   ?.proposalTemplate ?? null) as RJSFSchema | null;
+  //   ?.proposalTemplate ?? null) as ProposalTemplateSchema | null;
 
   // System fields (title, category, budget) are duplicated to proposalData
   // for search, preview, and sorting. Yjs is the source of truth — the DB
   // copy is a derived snapshot. Dynamic template fields live exclusively
   // in Yjs and are NOT part of proposalData.
-  const proposalTemplate = {
+  const proposalTemplate: ProposalTemplateSchema = {
     type: 'object',
     properties: {
       title: {
@@ -131,13 +132,12 @@ export function ProposalEditor({
       },
     },
     required: ['title'],
-  } as RJSFSchema;
+  };
 
   const templateRef = useRef(proposalTemplate);
   templateRef.current = proposalTemplate;
 
-  const { schema: proposalSchema, uiSchema: proposalUiSchema } =
-    compileProposalSchema(proposalTemplate, t);
+  const proposalFields = compileProposalSchema(proposalTemplate);
 
   // -- Mutations -------------------------------------------------------------
 
@@ -305,21 +305,12 @@ export function ProposalEditor({
           {/* TODO: Re-add RichTextEditorToolbar that tracks the currently-focused
               editor instance so it works with multiple CollaborativeTextField fields. */}
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
-            <Form
-              schema={proposalSchema}
-              uiSchema={proposalUiSchema}
-              fields={RJSF_FIELDS}
-              validator={proposalValidator}
-              templates={RJSF_TEMPLATES}
-              formData={draft}
-              onChange={handleFormChange}
-              showErrorList={false}
-              liveValidate={false}
-              noHtml5Validate
-            >
-              {/* Hide default submit button — we use our own in the layout */}
-              <div />
-            </Form>
+            <ProposalFormRenderer
+              fields={proposalFields}
+              draft={draft}
+              onFieldChange={handleFieldChange}
+              t={t}
+            />
 
             <div className="border-t border-neutral-gray2 pt-8">
               <ProposalAttachments
