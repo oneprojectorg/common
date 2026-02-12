@@ -8,13 +8,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
-interface CategoryOption {
-  id: string;
-  name: string;
-}
-
 interface CollaborativeCategoryFieldProps {
-  categories: CategoryOption[];
+  options: Array<{ value: string; label: string }>;
   initialValue?: string | null;
   onChange?: (category: string | null) => void;
 }
@@ -22,9 +17,12 @@ interface CollaborativeCategoryFieldProps {
 /**
  * Collaborative category selector synced via Yjs XmlFragment.
  * When one user picks a category, all connected users see it update in real time.
+ *
+ * NOTE: `x-format: 'category'` may be replaced by a generic select/enum
+ * widget in the future — keep this as a thin wrapper for now.
  */
 export function CollaborativeCategoryField({
-  categories,
+  options,
   initialValue = null,
   onChange,
 }: CollaborativeCategoryFieldProps) {
@@ -56,7 +54,7 @@ export function CollaborativeCategoryField({
     onChangeRef.current?.(selectedCategory);
   }, [selectedCategory]);
 
-  if (categories.length === 0) {
+  if (options.length === 0) {
     return null;
   }
 
@@ -76,9 +74,9 @@ export function CollaborativeCategoryField({
       className="w-auto max-w-36 overflow-hidden sm:max-w-96"
       popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
     >
-      {categories.map((category) => (
-        <SelectItem className="min-w-fit" key={category.id} id={category.name}>
-          {category.name}
+      {options.map((opt) => (
+        <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
+          {opt.label}
         </SelectItem>
       ))}
     </Select>

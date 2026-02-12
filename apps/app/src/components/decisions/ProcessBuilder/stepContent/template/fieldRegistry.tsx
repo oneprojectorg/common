@@ -1,4 +1,3 @@
-import type { RJSFSchema } from '@rjsf/utils';
 import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
 import {
@@ -11,6 +10,7 @@ import {
   LuToggleLeft,
 } from 'react-icons/lu';
 
+import type { ProposalPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
 import { FieldConfigNumber } from './FieldConfigNumber';
@@ -20,8 +20,8 @@ import { FieldConfigNumber } from './FieldConfigNumber';
  */
 export interface FieldConfigProps {
   field: FieldView;
-  fieldSchema: RJSFSchema;
-  onUpdateJsonSchema: (updates: Partial<RJSFSchema>) => void;
+  fieldSchema: ProposalPropertySchema;
+  onUpdateJsonSchema: (updates: Partial<ProposalPropertySchema>) => void;
 }
 
 /**

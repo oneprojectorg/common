@@ -248,6 +248,28 @@ export async function createDecisionInstance(
         Date.now() + (index + 1) * 7 * 24 * 60 * 60 * 1000,
       ).toISOString(),
     })),
+    proposalTemplate: {
+      type: 'object' as const,
+      required: ['title'],
+      'x-field-order': ['title', 'budget', 'summary'],
+      properties: {
+        title: {
+          type: 'string' as const,
+          title: 'Title',
+          'x-format': 'short-text',
+        },
+        budget: {
+          type: 'number' as const,
+          title: 'Budget',
+          'x-format': 'money',
+        },
+        summary: {
+          type: 'string' as const,
+          title: 'Summary',
+          'x-format': 'long-text',
+        },
+      },
+    },
   };
 
   const [processInstance] = await db

@@ -31,7 +31,7 @@ function formatBudgetDisplay(amount: number, currencySymbol: string): string {
 }
 
 interface CollaborativeBudgetFieldProps {
-  budgetCapAmount?: number;
+  maxAmount?: number;
   initialValue?: number | null;
   onChange?: (budget: number | null) => void;
 }
@@ -45,7 +45,7 @@ interface CollaborativeBudgetFieldProps {
  * NumberField on click for editing.
  */
 export function CollaborativeBudgetField({
-  budgetCapAmount,
+  maxAmount,
   initialValue = null,
   onChange,
 }: CollaborativeBudgetFieldProps) {
@@ -142,9 +142,9 @@ export function CollaborativeBudgetField({
       onChange={handleChange}
       prefixText={currencySymbol}
       inputProps={{
-        placeholder: budgetCapAmount
+        placeholder: maxAmount
           ? t('Max {amount}', {
-              amount: budgetCapAmount.toLocaleString(),
+              amount: maxAmount.toLocaleString(),
             })
           : t('Enter amount'),
         onBlur: handleBlur,

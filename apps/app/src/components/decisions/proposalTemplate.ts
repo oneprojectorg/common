@@ -421,20 +421,15 @@ export function createDefaultTemplate(
   const base: ProposalTemplate = {
     type: 'object',
     properties: {
-      'proposal-title': createLockedFieldSchema('short-text', titleLabel),
+      title: createLockedFieldSchema('short-text', titleLabel),
     },
   };
-  const withSummary = addField(
-    base,
-    'proposal-summary',
-    'long_text',
-    summaryLabel,
-  );
-  return setFieldRequired(withSummary, 'proposal-summary', true);
+  const withSummary = addField(base, 'summary', 'long_text', summaryLabel);
+  return setFieldRequired(withSummary, 'summary', true);
 }
 
 /**
- * Ensures locked system fields (proposal-title, category) exist in the
+ * Ensures locked system fields (title, category) exist in the
  * template schema. Call this when hydrating a saved template to handle
  * backward compatibility with templates created before locked fields
  * were stored in the schema.
@@ -449,16 +444,13 @@ export function ensureLockedFields(
 ): ProposalTemplate {
   let result = template;
 
-  // Ensure proposal-title exists
-  if (!getFieldSchema(result, 'proposal-title')) {
+  // Ensure title exists
+  if (!getFieldSchema(result, 'title')) {
     result = {
       ...result,
       properties: {
         ...result.properties,
-        'proposal-title': createLockedFieldSchema(
-          'short-text',
-          options.titleLabel,
-        ),
+        title: createLockedFieldSchema('short-text', options.titleLabel),
       },
     };
   }
