@@ -4,7 +4,6 @@ import {
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
-import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
 
 import {
@@ -56,11 +55,20 @@ export const acceptProposalInvite = async ({
     throw new CommonError('You are already a member of this profile');
   }
 
-  // Find the proposal and its process instance
-  const proposal = await db.query.proposals.findFirst({
-    where: { profileId: invite.profileId },
-    with: { processInstance: true },
-  });
+  // Find the proposal (and its process instance) and the Member role in parallel
+  const [proposal, memberRole] = await Promise.all([
+    db.query.proposals.findFirst({
+      where: { profileId: invite.profileId },
+      with: { processInstance: true },
+    }),
+    db._query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.name, 'Member'),
+    }),
+  ]);
+
+  if (!memberRole) {
+    throw new CommonError('Member role not found');
+  }
 
   // Check if we need to add the user to the parent decision process
   let decisionProfileIdToAdd: string | null = null;
@@ -139,7 +147,7 @@ export const acceptProposalInvite = async ({
       followUpWrites.push(
         tx.insert(profileUserToAccessRoles).values({
           profileUserId: decisionProfileUser.id,
-          accessRoleId: pendingDecisionInvite?.accessRoleId ?? ROLES.MEMBER.id,
+          accessRoleId: pendingDecisionInvite?.accessRoleId ?? memberRole.id,
         }),
       );
 
