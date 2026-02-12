@@ -12,7 +12,7 @@ export const InviteError = () => {
   return (
     <EmptyState icon={<LuCircleAlert />}>
       <p>{t('This invite is no longer valid')}</p>
-      <ButtonLink href="/">{t('Go back to home')}</ButtonLink>
+      <ButtonLink href="/">{t('Go back')}</ButtonLink>
     </EmptyState>
   );
 };
