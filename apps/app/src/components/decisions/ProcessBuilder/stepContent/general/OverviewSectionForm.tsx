@@ -1,14 +1,12 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { useDebounce } from '@op/hooks';
-import { NumberField } from '@op/ui/NumberField';
+import { useDebouncedCallback } from '@op/hooks';
 import { SelectItem } from '@op/ui/Select';
 import { useEffect, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
@@ -21,76 +19,39 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 // Form data type
 interface OverviewFormData {
   stewardProfileId: string;
-  objective: string;
   name: string;
   description: string;
-  budget: number | undefined;
-  hideBudget: boolean;
-  includeReview: boolean;
+  organizeByCategories: boolean;
+  requireCollaborativeProposals: boolean;
   isPrivate: boolean;
 }
 
-// Auto-save component that subscribes to form values
-function AutoSaveHandler({
+// Watches form values and triggers debounced save on changes
+function FormValueWatcher({
   values,
-  decisionProfileId,
-  setInstanceData,
-  setSaveStatus,
-  markSaved,
+  onValuesChange,
 }: {
   values: OverviewFormData;
-  decisionProfileId: string;
-  setInstanceData: (id: string, data: Partial<OverviewFormData>) => void;
-  setSaveStatus: (
-    id: string,
-    status: 'idle' | 'saving' | 'saved' | 'error',
-  ) => void;
-  markSaved: (id: string) => void;
+  onValuesChange: (values: OverviewFormData) => void;
 }) {
-  const [debouncedValues] = useDebounce(values, AUTOSAVE_DEBOUNCE_MS);
   const isInitialMount = useRef(true);
   const previousValues = useRef<string | null>(null);
 
   useEffect(() => {
-    const valuesString = JSON.stringify(debouncedValues);
+    const valuesString = JSON.stringify(values);
 
-    // Skip initial mount
     if (isInitialMount.current) {
       isInitialMount.current = false;
       previousValues.current = valuesString;
       return;
     }
 
-    // Skip if values haven't changed
     if (valuesString === previousValues.current) {
       return;
     }
     previousValues.current = valuesString;
-
-    // Update Zustand store (persists to localStorage)
-    setSaveStatus(decisionProfileId, 'saving');
-    setInstanceData(decisionProfileId, {
-      name: debouncedValues.name,
-      description: debouncedValues.description,
-      stewardProfileId: debouncedValues.stewardProfileId,
-      objective: debouncedValues.objective,
-      budget: debouncedValues.budget,
-      hideBudget: debouncedValues.hideBudget,
-      includeReview: debouncedValues.includeReview,
-      isPrivate: debouncedValues.isPrivate,
-    });
-
-    // Mark as saved with timestamp
-    markSaved(decisionProfileId);
-
-    // TODO: Add API mutation here once storage location is decided
-  }, [
-    debouncedValues,
-    decisionProfileId,
-    setInstanceData,
-    setSaveStatus,
-    markSaved,
-  ]);
+    onValuesChange(values);
+  }, [values, onValuesChange]);
 
   return null;
 }
@@ -102,11 +63,12 @@ export function OverviewSectionForm({
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
+  const utils = trpc.useUtils();
 
-  // tRPC mutation
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const isDraft = instance.status === 'draft';
 
-  // Zustand store - using new instanceData structure
+  // Store: used as a localStorage buffer for non-draft edits only
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
@@ -117,6 +79,15 @@ export function OverviewSectionForm({
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
+  // tRPC mutation with cache invalidation (matches phase editor pattern)
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+    onSuccess: () => markSaved(decisionProfileId),
+    onError: () => setSaveStatus(decisionProfileId, 'error'),
+    onSettled: () => {
+      void utils.decision.getInstance.invalidate({ instanceId });
+    },
+  });
+
   // Fetch the current user's profiles (individual + organizations)
   const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
   const profileItems = (userProfiles ?? []).map((p) => ({
@@ -124,35 +95,52 @@ export function OverviewSectionForm({
     name: p.name,
   }));
 
+  // Debounced save: draft persists to API, non-draft buffers in localStorage
+  const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
+    setSaveStatus(decisionProfileId, 'saving');
+
+    if (isDraft) {
+      // Draft: persist to API
+      updateInstance.mutate({
+        instanceId,
+        name: values.name,
+        description: values.description,
+        stewardProfileId: values.stewardProfileId || undefined,
+      });
+    } else {
+      // Non-draft: buffer in localStorage
+      setInstanceData(decisionProfileId, {
+        name: values.name,
+        description: values.description,
+        stewardProfileId: values.stewardProfileId,
+        organizeByCategories: values.organizeByCategories,
+        requireCollaborativeProposals: values.requireCollaborativeProposals,
+        isPrivate: values.isPrivate,
+      });
+      markSaved(decisionProfileId);
+    }
+  }, AUTOSAVE_DEBOUNCE_MS);
+
+  // Non-draft: prefer store (localStorage buffer) over API data.
+  // Draft: use API data (query cache kept fresh via onSettled invalidation).
+  const initialName =
+    !isDraft && instanceData?.name
+      ? instanceData.name
+      : (instance.name ?? decisionName ?? '');
+  const initialDescription =
+    !isDraft && instanceData?.description
+      ? instanceData.description
+      : (instance.description ?? '');
+
   const form = useAppForm({
     defaultValues: {
       stewardProfileId: instanceData?.stewardProfileId ?? '',
-      objective: instanceData?.objective ?? '',
-      budget: instanceData?.budget,
-      hideBudget: instanceData?.hideBudget ?? true,
-      includeReview: instanceData?.includeReview ?? true,
+      name: initialName,
+      description: initialDescription,
+      organizeByCategories: instanceData?.organizeByCategories ?? true,
+      requireCollaborativeProposals:
+        instanceData?.requireCollaborativeProposals ?? true,
       isPrivate: instanceData?.isPrivate ?? false,
-      // Instance-level fields
-      name: instanceData?.name ?? decisionName ?? '',
-      description: instanceData?.description ?? '',
-    },
-    onSubmit: ({ value }) => {
-      setSaveStatus(decisionProfileId, 'saving');
-      updateInstance.mutate(
-        {
-          instanceId,
-          name: value.name,
-          description: value.description,
-          stewardProfileId: value.stewardProfileId || undefined,
-          config: {
-            hideBudget: value.hideBudget,
-          },
-        },
-        {
-          onSuccess: () => markSaved(decisionProfileId),
-          onError: () => setSaveStatus(decisionProfileId, 'error'),
-        },
-      );
     },
   });
 
@@ -161,34 +149,35 @@ export function OverviewSectionForm({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void form.handleSubmit();
         }}
       >
-        {/* Auto-save handler - subscribes to form values */}
+        {/* Watch form values and trigger debounced save */}
         <form.Subscribe
           selector={(state) => state.values}
           children={(values) => (
-            <AutoSaveHandler
+            <FormValueWatcher
               values={values as OverviewFormData}
-              decisionProfileId={decisionProfileId}
-              setInstanceData={setInstanceData}
-              setSaveStatus={setSaveStatus}
-              markSaved={markSaved}
+              onValuesChange={debouncedSave}
             />
           )}
         />
 
         <div className="mx-auto w-full max-w-160 space-y-8 p-4 md:p-8">
-          {/* Process Stewardship Section */}
+          {/* Process Overview Section */}
           <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif text-title-sm">
-                {t('Process Overview')}
-              </h2>
-              <SaveStatusIndicator
-                status={saveState.status}
-                savedAt={saveState.savedAt}
-              />
+            <div>
+              <div className="flex items-center justify-between">
+                <h2 className="font-serif text-title-sm">
+                  {t('Process Overview')}
+                </h2>
+                <SaveStatusIndicator
+                  status={saveState.status}
+                  savedAt={saveState.savedAt}
+                />
+              </div>
+              <p className="mt-2 text-neutral-gray4">
+                {t('Define the key details for your decision process.')}
+              </p>
             </div>
 
             <form.AppField
@@ -233,20 +222,18 @@ export function OverviewSectionForm({
             />
 
             <form.AppField
-              name="objective"
+              name="description"
               children={(field) => (
                 <div className="space-y-2">
                   <field.TextField
                     useTextArea
-                    label={t(
-                      'Define the objective this process will accomplish',
-                    )}
+                    label={t('Description')}
                     isRequired
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={field.handleChange}
                     textareaProps={{
-                      placeholder: t('Add a broad outcome'),
+                      placeholder: t('A description about my process'),
                     }}
                     errorMessage={getFieldErrorMessage(field)}
                   />
@@ -259,73 +246,15 @@ export function OverviewSectionForm({
               )}
             />
 
-            <form.AppField
-              name="description"
-              children={(field) => (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    {t('Description')}
-                    <span className="text-functional-red"> *</span>
-                  </label>
-                  <RichTextEditorWithToolbar
-                    content={field.state.value}
-                    onChange={field.handleChange}
-                    placeholder={t('A description about my process')}
-                    toolbarPosition="bottom"
-                    className="rounded-md border border-offWhite"
-                    editorClassName="min-h-24 p-3"
-                  />
-                  <p className="text-sm text-neutral-gray4">
-                    {t(
-                      'This information appears when participants want to learn more about the process',
-                    )}
-                  </p>
-                </div>
-              )}
-            />
-
-            <form.AppField
-              name="budget"
-              children={(field) => (
-                <div>
-                  <NumberField
-                    label={t('Total Budget Available')}
-                    value={field.state.value ?? null}
-                    onChange={(value) => field.handleChange(value ?? undefined)}
-                    prefixText="$"
-                    inputProps={{
-                      placeholder: '0.00',
-                    }}
-                  />
-                  <p className="mt-1 text-sm text-neutral-gray4">
-                    {t('The total amount available this funding round.')}
-                  </p>
-                </div>
-              )}
-            />
-
             {/* Toggle Options */}
-            <div className="space-y-4">
+            <div className="space-y-8">
               <form.AppField
-                name="hideBudget"
-                children={(field) => (
-                  <ToggleRow label={t('Hide budget from members')}>
-                    <field.ToggleButton
-                      isSelected={field.state.value}
-                      onChange={field.handleChange}
-                      size="small"
-                    />
-                  </ToggleRow>
-                )}
-              />
-
-              <form.AppField
-                name="includeReview"
+                name="organizeByCategories"
                 children={(field) => (
                   <ToggleRow
-                    label={t('Include proposal review phase')}
+                    label={t('Organize proposals into categories')}
                     tooltip={t(
-                      'Add a review stage where designated reviewers evaluate proposals before voting',
+                      'Group proposals into categories for better organization and evaluation',
                     )}
                   >
                     <field.ToggleButton
@@ -338,12 +267,12 @@ export function OverviewSectionForm({
               />
 
               <form.AppField
-                name="isPrivate"
+                name="requireCollaborativeProposals"
                 children={(field) => (
                   <ToggleRow
-                    label={t('Keep this process private')}
+                    label={t('Require collaborative proposals')}
                     tooltip={t(
-                      'Only invited members can view and participate in this process',
+                      'Require proposals to be co-authored by multiple participants',
                     )}
                   >
                     <field.ToggleButton
@@ -356,7 +285,29 @@ export function OverviewSectionForm({
               />
             </div>
           </section>
-          <form.SubmitButton>{t('Save')}</form.SubmitButton>
+
+          {/* Visibility Section */}
+          <section className="space-y-6">
+            <h2 className="font-serif text-title-sm">{t('Visibility')}</h2>
+
+            <form.AppField
+              name="isPrivate"
+              children={(field) => (
+                <ToggleRow
+                  label={t('Keep this process private')}
+                  tooltip={t(
+                    'Only invited members can view and participate in this process',
+                  )}
+                >
+                  <field.ToggleButton
+                    isSelected={field.state.value}
+                    onChange={field.handleChange}
+                    size="small"
+                  />
+                </ToggleRow>
+              )}
+            />
+          </section>
         </div>
       </form>
     </div>
