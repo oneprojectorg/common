@@ -11,7 +11,10 @@ import type { FieldConfigProps } from './fieldRegistry';
  * Field config component for number fields.
  * Allows setting min/max constraints and currency mode.
  */
-export function FieldConfigNumber({ field, onUpdate }: FieldConfigProps) {
+export function FieldConfigNumber({
+  field,
+  onUpdateJsonSchema,
+}: FieldConfigProps) {
   const t = useTranslations();
 
   return (
@@ -20,13 +23,17 @@ export function FieldConfigNumber({ field, onUpdate }: FieldConfigProps) {
         <NumberField
           label={t('Min')}
           value={field.min ?? null}
-          onChange={(value) => onUpdate({ min: value ?? undefined })}
+          onChange={(value) =>
+            onUpdateJsonSchema({ minimum: value ?? undefined })
+          }
           className="flex-1"
         />
         <NumberField
           label={t('Max')}
           value={field.max ?? null}
-          onChange={(value) => onUpdate({ max: value ?? undefined })}
+          onChange={(value) =>
+            onUpdateJsonSchema({ maximum: value ?? undefined })
+          }
           className="flex-1"
         />
       </div>
@@ -34,8 +41,12 @@ export function FieldConfigNumber({ field, onUpdate }: FieldConfigProps) {
         <span className="text-neutral-charcoal">{t('Dollar amount?')}</span>
         <ToggleButton
           size="small"
-          isSelected={field.isCurrency ?? false}
-          onChange={(isSelected) => onUpdate({ isCurrency: isSelected })}
+          isSelected={field.isCurrency}
+          onChange={(isSelected) =>
+            onUpdateJsonSchema({
+              'x-format': isSelected ? 'money' : 'number',
+            })
+          }
           aria-label={t('Dollar amount')}
         />
       </div>

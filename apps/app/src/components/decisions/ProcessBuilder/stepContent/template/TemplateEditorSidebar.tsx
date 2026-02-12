@@ -6,12 +6,18 @@ import { LuAlignJustify } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { FieldType } from '../../../proposalTemplate';
 import { AddFieldMenu } from './AddFieldMenu';
 import { getFieldIcon } from './fieldRegistry';
-import type { FieldType, FormField } from './types';
+
+export interface SidebarFieldItem {
+  id: string;
+  label: string;
+  fieldType: FieldType;
+}
 
 interface TemplateEditorSidebarProps {
-  fields: FormField[];
+  fields: SidebarFieldItem[];
   onAddField: (type: FieldType) => void;
   side?: 'left' | 'right';
 }
@@ -91,7 +97,7 @@ function SidebarContent({
         </h3>
         <ul className="space-y-1">
           {fields.map((field) => {
-            const Icon = getFieldIcon(field.type);
+            const Icon = getFieldIcon(field.fieldType);
             return (
               <li key={field.id}>
                 <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-neutral-charcoal">

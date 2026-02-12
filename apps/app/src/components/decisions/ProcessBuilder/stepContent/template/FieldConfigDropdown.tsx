@@ -3,43 +3,80 @@
 import { Button } from '@op/ui/Button';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import type { FieldConfigProps } from './fieldRegistry';
-import type { FieldOption } from './types';
+
+interface FieldOption {
+  id: string;
+  value: string;
+}
 
 /**
  * Field config component for dropdown and multiple choice fields.
- * Wraps FieldConfigDropdownOptions with the standard FieldConfigProps interface.
+ * Reads options from field.options (derived from the FieldView).
  */
-export function FieldConfigDropdown({ field, onUpdate }: FieldConfigProps) {
+export function FieldConfigDropdown({
+  field,
+  fieldSchema,
+  onUpdateJsonSchema,
+}: FieldConfigProps) {
+  const handleOptionsChange = (newOptions: FieldOption[]) => {
+    const enumValues = newOptions.map((o) => o.value);
+
+    if (fieldSchema.type === 'array') {
+      // multiple_choice: enum is on items
+      const items =
+        typeof fieldSchema.items === 'object' &&
+        !Array.isArray(fieldSchema.items)
+          ? fieldSchema.items
+          : {};
+      onUpdateJsonSchema({
+        items: { ...items, enum: enumValues },
+      });
+    } else {
+      // dropdown: enum is on schema directly
+      onUpdateJsonSchema({ enum: enumValues });
+    }
+  };
+
   return (
     <FieldConfigDropdownOptions
-      options={field.options ?? []}
-      onOptionsChange={(options) => onUpdate({ options })}
+      initialOptions={field.options}
+      onOptionsChange={handleOptionsChange}
     />
   );
 }
 
 interface FieldConfigDropdownOptionsProps {
-  options: FieldOption[];
+  initialOptions: FieldOption[];
   onOptionsChange: (options: FieldOption[]) => void;
 }
 
 /**
  * Configuration UI for dropdown/multiple choice options.
- * Allows adding, editing, reordering, and managing options.
+ * Manages its own option state with stable IDs for Sortable,
+ * initialized from props on mount.
  */
 function FieldConfigDropdownOptions({
-  options,
+  initialOptions,
   onOptionsChange,
 }: FieldConfigDropdownOptionsProps) {
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldFocusNewRef = useRef(false);
+
+  const [options, setOptions] = useState<FieldOption[]>(() =>
+    initialOptions.map((o) => ({ ...o, id: crypto.randomUUID() })),
+  );
+
+  const updateOptions = (next: FieldOption[]) => {
+    setOptions(next);
+    onOptionsChange(next);
+  };
 
   // Focus the last input when a new option is added
   useEffect(() => {
@@ -70,23 +107,22 @@ function FieldConfigDropdownOptions({
 
   const handleAddOption = () => {
     shouldFocusNewRef.current = true;
-    onOptionsChange([...options, { id: crypto.randomUUID(), value: '' }]);
+    updateOptions([...options, { id: crypto.randomUUID(), value: '' }]);
   };
 
   const handleUpdateOption = (id: string, value: string) => {
-    onOptionsChange(
+    updateOptions(
       options.map((opt) => (opt.id === id ? { ...opt, value } : opt)),
     );
   };
 
   const handleRemoveOption = (id: string) => {
-    onOptionsChange(options.filter((opt) => opt.id !== id));
+    updateOptions(options.filter((opt) => opt.id !== id));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, option: FieldOption) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Add new option if this is the last one and has content
       const isLastOption = options[options.length - 1]?.id === option.id;
       if (isLastOption && option.value.trim()) {
         handleAddOption();
@@ -98,10 +134,9 @@ function FieldConfigDropdownOptions({
     <div ref={containerRef} className="space-y-2">
       <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
 
-      {/* Sortable options */}
       <Sortable
         items={options}
-        onChange={onOptionsChange}
+        onChange={updateOptions}
         dragTrigger="handle"
         getItemLabel={(item) => item.value || t('Option')}
         renderDragPreview={renderDragPreview}
@@ -140,7 +175,6 @@ function FieldConfigDropdownOptions({
         }}
       </Sortable>
 
-      {/* Add option link */}
       <Button
         color="ghost"
         size="small"

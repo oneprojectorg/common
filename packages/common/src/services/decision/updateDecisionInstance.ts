@@ -28,6 +28,7 @@ export const updateDecisionInstance = async ({
   stewardProfileId,
   config,
   phases,
+  proposalTemplate,
   user,
 }: {
   instanceId: string;
@@ -39,6 +40,8 @@ export const updateDecisionInstance = async ({
   config?: ProcessConfig;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
+  /** Proposal template (JSON Schema + embedded UI Schema) */
+  proposalTemplate?: Record<string, unknown>;
   user: User;
 }) => {
   // Fetch existing instance
@@ -84,11 +87,12 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
-  // Apply config and/or phase overrides to existing instanceData
+  // Apply config, phase overrides, and/or proposalTemplate to existing instanceData
   const hasConfigUpdate = config !== undefined;
   const hasPhaseUpdates = phases && phases.length > 0;
+  const hasProposalTemplateUpdate = proposalTemplate !== undefined;
 
-  if (hasConfigUpdate || hasPhaseUpdates) {
+  if (hasConfigUpdate || hasPhaseUpdates || hasProposalTemplateUpdate) {
     const existingInstanceData =
       existingInstance.instanceData as DecisionInstanceData;
 
@@ -130,6 +134,14 @@ export const updateDecisionInstance = async ({
           }),
         };
       });
+    }
+
+    // Apply proposal template update (replace entirely)
+    if (hasProposalTemplateUpdate) {
+      updatedInstanceData = {
+        ...updatedInstanceData,
+        proposalTemplate,
+      } as DecisionInstanceData;
     }
 
     updateData.instanceData = updatedInstanceData;

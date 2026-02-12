@@ -38,6 +38,8 @@ export interface DecisionInstanceData {
   templateName?: string;
   templateDescription?: string;
   phases: PhaseInstanceData[];
+  /** Proposal template (JSON Schema + embedded UI Schema) */
+  proposalTemplate?: JSONSchema7 & { ui?: UiSchema };
 }
 
 export interface PhaseOverride {

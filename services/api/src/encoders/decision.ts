@@ -163,6 +163,7 @@ const instanceDataWithSchemaEncoder = z.object({
     )
     .optional(),
   phases: z.array(instancePhaseDataEncoder).optional(),
+  proposalTemplate: jsonSchemaEncoder.optional(),
 });
 
 /** Process instance encoder  */
@@ -568,6 +569,8 @@ export const updateDecisionInstanceInputSchema = z.object({
     .optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
+  /** Proposal template (JSON Schema + embedded UI Schema) */
+  proposalTemplate: jsonSchemaEncoder.optional(),
 });
 
 export const updateInstanceInputSchema = createInstanceInputSchema

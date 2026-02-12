@@ -35,7 +35,7 @@ import type { ProposalCategory } from '@op/common';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { FormBuilderConfig } from '../stepContent/template/types';
+import type { ProposalTemplate } from '../../proposalTemplate';
 
 // ============ Store-specific Types ============
 
@@ -49,7 +49,8 @@ import type { FormBuilderConfig } from '../stepContent/template/types';
  * Form-only fields (not yet in backend, stored in localStorage only):
  * - steward, objective, includeReview, isPrivate
  */
-export interface FormInstanceData extends Partial<InstanceData> {
+export interface FormInstanceData
+  extends Omit<Partial<InstanceData>, 'proposalTemplate'> {
   /** Instance name (stored in processInstances.name, not instanceData) */
   name?: string;
   /** Instance description (stored in processInstances.description, not instanceData) */
@@ -69,8 +70,8 @@ export interface FormInstanceData extends Partial<InstanceData> {
   includeReview?: boolean;
   /** Whether to keep process private */
   isPrivate?: boolean;
-  /** Form builder configuration for proposal template */
-  templateConfig?: FormBuilderConfig;
+  /** Proposal template (JSON Schema) */
+  proposalTemplate?: ProposalTemplate;
   /** Proposal categories */
   categories?: ProposalCategory[];
   /** Whether proposers must select at least one category */
@@ -114,9 +115,9 @@ interface ProcessBuilderState {
     phaseId: string,
   ) => InstancePhaseData | undefined;
 
-  // Actions for template config (form builder)
-  setTemplateConfig: (decisionId: string, config: FormBuilderConfig) => void;
-  getTemplateConfig: (decisionId: string) => FormBuilderConfig | undefined;
+  // Actions for proposal template
+  setProposalTemplate: (decisionId: string, template: ProposalTemplate) => void;
+  getProposalTemplate: (decisionId: string) => ProposalTemplate | undefined;
 
   // Actions for save state
   setSaveStatus: (decisionId: string, status: SaveStatus) => void;
@@ -188,20 +189,20 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
         return phases?.find((p) => p.phaseId === phaseId);
       },
 
-      // Template config actions
-      setTemplateConfig: (decisionId, config) =>
+      // Proposal template actions
+      setProposalTemplate: (decisionId, template) =>
         set((state) => ({
           instances: {
             ...state.instances,
             [decisionId]: {
               ...state.instances[decisionId],
-              templateConfig: config,
+              proposalTemplate: template,
             },
           },
         })),
 
-      getTemplateConfig: (decisionId) =>
-        get().instances[decisionId]?.templateConfig,
+      getProposalTemplate: (decisionId) =>
+        get().instances[decisionId]?.proposalTemplate,
 
       // Save state actions
       setSaveStatus: (decisionId, status) =>

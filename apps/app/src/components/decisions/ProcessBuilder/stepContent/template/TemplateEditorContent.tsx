@@ -1,16 +1,40 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { FieldConfigCard } from '@op/ui/FieldConfigCard';
 import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { RJSFSchema } from '@rjsf/utils';
+import { useQueryState } from 'nuqs';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import {
+  type FieldType,
+  type FieldView,
+  type ProposalTemplate,
+  addField as addFieldToTemplate,
+  createDefaultTemplate,
+  ensureLockedFields,
+  getField,
+  getFieldErrors,
+  getFieldSchema,
+  getFields,
+  removeField as removeFieldFromTemplate,
+  reorderFields as reorderTemplateFields,
+  setFieldRequired,
+  updateFieldDescription,
+  updateFieldLabel,
+} from '../../../proposalTemplate';
+import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { AddFieldMenu } from './AddFieldMenu';
+import { BudgetFieldConfig } from './BudgetFieldConfig';
 import {
   FieldCard,
   FieldCardDragPreview,
@@ -20,167 +44,240 @@ import {
   FieldListTrigger,
   TemplateEditorSidebar,
 } from './TemplateEditorSidebar';
-import { TemplateEditorSkeleton } from './TemplateEditorSkeleton';
 import { getFieldLabelKey } from './fieldRegistry';
-import type { FieldType, FormField } from './types';
-
-/**
- * Locked field definitions (without labels - labels are added with translations).
- * TODO: Replace with RJSF schema from database.
- */
-const LOCKED_FIELD_DEFINITIONS = [
-  {
-    id: 'proposal-title',
-    type: 'short_text' as const,
-    labelKey: 'Proposal title',
-  },
-  { id: 'category', type: 'dropdown' as const, labelKey: 'Category' },
-] as const;
-
-/**
- * Default sortable field definitions (without labels - labels are added with translations).
- * TODO: Replace with RJSF schema from database.
- */
-const DEFAULT_SORTABLE_FIELD_DEFINITIONS = [
-  {
-    id: 'proposal-summary',
-    type: 'long_text' as const,
-    labelKey: 'Proposal summary',
-  },
-] as const;
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 export function TemplateEditorContent({
   decisionProfileId,
-}: {
-  decisionProfileId: string;
-}) {
+  instanceId,
+}: SectionProps) {
   const t = useTranslations();
+  const [, setStep] = useQueryState('step', { history: 'push' });
+  const [, setSection] = useQueryState('section', { history: 'push' });
 
-  // Build locked fields with translated labels
-  const lockedFields = useMemo<FormField[]>(
-    () =>
-      LOCKED_FIELD_DEFINITIONS.map((def) => ({
-        id: def.id,
-        type: def.type,
-        label: t(def.labelKey),
-        required: true,
-        locked: true,
-      })),
-    [t],
-  );
+  // Load instance data from the backend
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const instanceData = instance.instanceData;
 
-  // Build default sortable fields with translated labels
-  const defaultSortableFields = useMemo<FormField[]>(
-    () =>
-      DEFAULT_SORTABLE_FIELD_DEFINITIONS.map((def) => ({
-        id: def.id,
-        type: def.type,
-        label: t(def.labelKey),
-        required: false,
-        locked: false,
-      })),
-    [t],
-  );
+  // Check if categories have been configured
+  const hasCategories = (instanceData?.config?.categories?.length ?? 0) > 0;
 
-  const [sortableFields, setSortableFields] = useState<FormField[]>(
-    defaultSortableFields,
-  );
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const initialTemplate = useMemo(() => {
+    const saved = instanceData?.proposalTemplate as
+      | ProposalTemplate
+      | undefined;
+    const base =
+      saved && Object.keys(saved.properties ?? {}).length > 0
+        ? saved
+        : createDefaultTemplate(t('Proposal summary'), t('Proposal title'));
 
-  // Sidebar is always open on desktop, toggleable on mobile
+    // Ensure locked system fields are present (backward compat)
+    return ensureLockedFields(base, {
+      titleLabel: t('Proposal title'),
+      categoryLabel: t('Category'),
+      hasCategories,
+    });
+  }, [instanceData?.proposalTemplate, t, hasCategories]);
+
+  const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
+  const isInitialLoadRef = useRef(true);
+
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
+  // "Show on blur, clear on change" validation: errors are snapshotted when
+  // a field card loses focus, but resolved errors disappear immediately
+  // while editing (see renderFieldCard intersection logic).
+  const [fieldErrors, setFieldErrors] = useState<Map<string, string[]>>(
+    new Map(),
+  );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
-  const { getTemplateConfig, setTemplateConfig, setSaveStatus, markSaved } =
-    useProcessBuilderStore();
+  const setProposalTemplate = useProcessBuilderStore(
+    (s) => s.setProposalTemplate,
+  );
+  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
+  const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
-  // Combine locked + sortable fields for display and persistence
-  const allFields = useMemo(
-    () => [...lockedFields, ...sortableFields],
-    [lockedFields, sortableFields],
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+
+  // Derive field views from the template (all fields are editable)
+  const fields = useMemo(() => getFields(template), [template]);
+
+  // Sidebar field list — includes visual-only locked fields at the top
+  const sidebarFields = useMemo(() => {
+    const locked = [
+      {
+        id: '_title',
+        label: t('Proposal title'),
+        fieldType: 'short_text' as const,
+      },
+      ...(hasCategories
+        ? [
+            {
+              id: '_category',
+              label: t('Category'),
+              fieldType: 'dropdown' as const,
+            },
+          ]
+        : []),
+      {
+        id: '_budget',
+        label: t('Budget'),
+        fieldType: 'number' as const,
+      },
+    ];
+    return [
+      ...locked,
+      ...fields.map((f) => ({
+        id: f.id,
+        label: f.label,
+        fieldType: f.fieldType,
+      })),
+    ];
+  }, [fields, hasCategories, t]);
+
+  // Debounced auto-save to localStorage and backend
+  const debouncedSave = useDebouncedCallback(
+    (updatedTemplate: ProposalTemplate) => {
+      setProposalTemplate(decisionProfileId, updatedTemplate);
+      updateInstance.mutate(
+        {
+          instanceId,
+          proposalTemplate: updatedTemplate as unknown as Record<
+            string,
+            unknown
+          >,
+        },
+        {
+          onSuccess: () => markSaved(decisionProfileId),
+          onError: () => setSaveStatus(decisionProfileId, 'error'),
+        },
+      );
+    },
+    AUTOSAVE_DEBOUNCE_MS,
   );
 
-  // Debounced auto-save function
-  const debouncedSave = useDebouncedCallback((fields: FormField[]) => {
-    setTemplateConfig(decisionProfileId, { fields });
-    markSaved(decisionProfileId);
-  }, AUTOSAVE_DEBOUNCE_MS);
-
-  // Hydrate from store on mount
+  // Trigger debounced save when template changes (skip initial load)
   useEffect(() => {
-    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
-      const savedConfig = getTemplateConfig(decisionProfileId);
-      if (savedConfig?.fields) {
-        // Filter out locked fields from saved config (we always use the constant)
-        const savedSortableFields = savedConfig.fields.filter((f) => !f.locked);
-        if (savedSortableFields.length > 0) {
-          setSortableFields(savedSortableFields);
-        }
-      }
-      setHasHydrated(true);
-    });
-
-    void useProcessBuilderStore.persist.rehydrate();
-
-    return unsubscribe;
-  }, [decisionProfileId, getTemplateConfig]);
-
-  // Trigger debounced save when fields change
-  useEffect(() => {
-    if (!hasHydrated) {
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
       return;
     }
 
     setSaveStatus(decisionProfileId, 'saving');
-    debouncedSave(allFields);
-  }, [allFields, hasHydrated, decisionProfileId, setSaveStatus, debouncedSave]);
+    debouncedSave(template);
+  }, [template, decisionProfileId, setSaveStatus, debouncedSave]);
 
   const handleAddField = useCallback(
     (type: FieldType) => {
-      const newField: FormField = {
-        id: crypto.randomUUID(),
-        type,
-        label: t(getFieldLabelKey(type)),
-        required: false,
-        locked: false,
-      };
-
-      setSortableFields((prev) => [...prev, newField]);
+      const fieldId = crypto.randomUUID();
+      const label = t(getFieldLabelKey(type));
+      setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
     },
     [t],
   );
 
   const handleRemoveField = useCallback((fieldId: string) => {
-    setSortableFields((prev) => prev.filter((f) => f.id !== fieldId));
+    setTemplate((prev) => removeFieldFromTemplate(prev, fieldId));
+    setFieldErrors((prev) => {
+      const next = new Map(prev);
+      next.delete(fieldId);
+      return next;
+    });
   }, []);
 
-  const handleReorderFields = useCallback((newFields: FormField[]) => {
-    setSortableFields(newFields);
+  const handleReorderFields = useCallback((newItems: FieldView[]) => {
+    setTemplate((prev) =>
+      reorderTemplateFields(
+        prev,
+        newItems.map((item) => item.id),
+      ),
+    );
   }, []);
 
-  const handleUpdateField = useCallback(
-    (fieldId: string, updates: Partial<FormField>) => {
-      setSortableFields((prev) =>
-        prev.map((field) =>
-          field.id === fieldId ? { ...field, ...updates } : field,
-        ),
+  const handleUpdateLabel = useCallback((fieldId: string, label: string) => {
+    setTemplate((prev) => updateFieldLabel(prev, fieldId, label));
+  }, []);
+
+  const handleUpdateDescription = useCallback(
+    (fieldId: string, description: string) => {
+      setTemplate((prev) =>
+        updateFieldDescription(prev, fieldId, description || undefined),
       );
     },
     [],
   );
 
-  // Show skeleton while store is hydrating
-  if (!hasHydrated) {
-    return <TemplateEditorSkeleton />;
-  }
+  const handleUpdateRequired = useCallback(
+    (fieldId: string, required: boolean) => {
+      setTemplate((prev) => setFieldRequired(prev, fieldId, required));
+    },
+    [],
+  );
+
+  const handleFieldBlur = useCallback(
+    (fieldId: string) => {
+      const field = getField(template, fieldId);
+      if (field) {
+        setFieldErrors((prev) =>
+          new Map(prev).set(fieldId, getFieldErrors(field)),
+        );
+      }
+    },
+    [template],
+  );
+
+  const handleUpdateJsonSchema = useCallback(
+    (fieldId: string, updates: Partial<RJSFSchema>) => {
+      setTemplate((prev) => {
+        const existing = getFieldSchema(prev, fieldId);
+        if (!existing) {
+          return prev;
+        }
+        return {
+          ...prev,
+          properties: {
+            ...prev.properties,
+            [fieldId]: { ...existing, ...updates },
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  /** Render a FieldCard for a given field view. */
+  const renderFieldCard = (
+    field: FieldView,
+    controls?: Parameters<Parameters<typeof Sortable>[0]['children']>[1],
+  ) => {
+    const snapshotErrors = fieldErrors.get(field.id) ?? [];
+    const liveErrors = getFieldErrors(field);
+    const displayedErrors = snapshotErrors.filter((e) =>
+      liveErrors.includes(e),
+    );
+
+    return (
+      <FieldCard
+        key={field.id}
+        field={field}
+        fieldSchema={getFieldSchema(template, field.id) ?? {}}
+        errors={displayedErrors}
+        controls={controls}
+        onRemove={handleRemoveField}
+        onBlur={handleFieldBlur}
+        onUpdateLabel={handleUpdateLabel}
+        onUpdateDescription={handleUpdateDescription}
+        onUpdateRequired={handleUpdateRequired}
+        onUpdateJsonSchema={handleUpdateJsonSchema}
+      />
+    );
+  };
 
   return (
     <SidebarProvider isOpen={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
       <div className="flex h-full flex-col md:flex-row">
-        {/* Mobile header with sidebar trigger */}
         <div className="flex items-center justify-between gap-2 p-4 md:hidden">
           <Header2 className="font-serif text-title-sm">
             {t('Proposal template')}
@@ -188,21 +285,17 @@ export function TemplateEditorContent({
           <FieldListTrigger />
         </div>
 
-        {/* Sidebar - hidden on mobile, slides in as drawer */}
         <TemplateEditorSidebar
-          fields={allFields}
+          fields={sidebarFields}
           onAddField={handleAddField}
           side={isMobile ? 'right' : 'left'}
         />
 
-        {/* Main content area */}
         <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
-            {/* Desktop title - hidden on mobile (shown in mobile header) */}
             <Header2 className="hidden font-serif text-title-sm md:mt-8 md:block">
               {t('Proposal template')}
             </Header2>
-            {/* Responsive subtitle */}
             <p className="text-neutral-charcoal">
               <span className="hidden md:inline">
                 {t('Build your proposal using the tools on the left')}
@@ -212,39 +305,67 @@ export function TemplateEditorContent({
               </span>
             </p>
             <hr />
-            {/* Locked fields - rendered statically outside Sortable */}
+
+            {/* Locked system fields (stored in schema) */}
             <div className="mb-3 space-y-3">
-              {lockedFields.map((field) => (
-                <FieldCard key={field.id} field={field} />
-              ))}
+              <FieldConfigCard
+                icon={LuAlignLeft}
+                iconTooltip={t('Short text')}
+                label={t('Proposal title')}
+                locked
+              />
+              {hasCategories && (
+                <FieldConfigCard
+                  icon={LuChevronDown}
+                  iconTooltip={t('Dropdown')}
+                  label={t('Category')}
+                  locked
+                >
+                  <p className="text-neutral-charcoal">
+                    {t('These are the categories you defined in')}{' '}
+                    <button
+                      type="button"
+                      className="cursor-pointer text-primary-teal hover:underline"
+                      onClick={() => {
+                        void setStep('general');
+                        void setSection('proposalCategories');
+                      }}
+                    >
+                      {t('Proposal Categories')}
+                    </button>
+                    .
+                  </p>
+                </FieldConfigCard>
+              )}
+
+              <BudgetFieldConfig
+                template={template}
+                onTemplateChange={setTemplate}
+              />
             </div>
 
             {/* Sortable fields */}
             <Sortable
-              items={sortableFields}
+              items={fields}
               onChange={handleReorderFields}
               dragTrigger="handle"
               getItemLabel={(field) => field.label}
               className="gap-3"
-              renderDragPreview={(items) =>
-                items[0] ? <FieldCardDragPreview field={items[0]} /> : null
-              }
+              renderDragPreview={(items) => {
+                const field = items[0];
+                if (!field) {
+                  return null;
+                }
+                return <FieldCardDragPreview field={field} />;
+              }}
               renderDropIndicator={FieldCardDropIndicator}
               aria-label={t('Form fields')}
             >
-              {(field, controls) => (
-                <FieldCard
-                  field={field}
-                  controls={controls}
-                  onRemove={handleRemoveField}
-                  onUpdate={handleUpdateField}
-                />
-              )}
+              {(field, controls) => renderFieldCard(field, controls)}
             </Sortable>
           </div>
         </main>
 
-        {/* Mobile sticky footer with Add field button */}
         <div className="fixed inset-x-0 bottom-0 border-t bg-white p-4 md:hidden">
           <AddFieldMenu onAddField={handleAddField} />
         </div>
