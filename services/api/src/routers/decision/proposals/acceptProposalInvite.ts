@@ -13,14 +13,12 @@ export const acceptProposalInviteRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const result = await acceptProposalInvite({
+      await acceptProposalInvite({
         inviteId: input.inviteId,
         user: ctx.user,
       });
 
       // Invalidate user cache so they see the new profile memberships
       waitUntil(invalidate({ type: 'user', params: [ctx.user.id] }));
-
-      return result.profileUser;
     }),
 });

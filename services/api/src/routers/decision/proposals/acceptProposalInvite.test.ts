@@ -63,14 +63,20 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     profileData.trackProfileInvite(invitee.email, proposal.profileId);
 
     const caller = await createAuthenticatedCaller(invitee.email);
-    const result = await caller.decision.acceptProposalInvite({
+    await caller.decision.acceptProposalInvite({
       inviteId: invite.id,
     });
 
     // Assert: user is a profileUser of the proposal profile
-    expect(result).toBeDefined();
-    expect(result.profileId).toBe(proposal.profileId);
-    expect(result.authUserId).toBe(invitee.authUserId);
+    const proposalProfileUser = await db.query.profileUsers.findFirst({
+      where: {
+        profileId: proposal.profileId,
+        authUserId: invitee.authUserId,
+      },
+    });
+    expect(proposalProfileUser).toBeDefined();
+    expect(proposalProfileUser?.profileId).toBe(proposal.profileId);
+    expect(proposalProfileUser?.authUserId).toBe(invitee.authUserId);
 
     // Assert: proposal invite was marked as accepted
     const updatedInvite = await db.query.profileInvites.findFirst({
@@ -148,13 +154,19 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     profileData.trackProfileInvite(invitee.email, proposal.profileId);
 
     const caller = await createAuthenticatedCaller(invitee.email);
-    const result = await caller.decision.acceptProposalInvite({
+    await caller.decision.acceptProposalInvite({
       inviteId: invite.id,
     });
 
     // Assert: proposal profileUser was still created
-    expect(result).toBeDefined();
-    expect(result.profileId).toBe(proposal.profileId);
+    const proposalProfileUser = await db.query.profileUsers.findFirst({
+      where: {
+        profileId: proposal.profileId,
+        authUserId: invitee.authUserId,
+      },
+    });
+    expect(proposalProfileUser).toBeDefined();
+    expect(proposalProfileUser?.profileId).toBe(proposal.profileId);
 
     // Assert: proposal invite was marked as accepted
     const updatedInvite = await db.query.profileInvites.findFirst({
