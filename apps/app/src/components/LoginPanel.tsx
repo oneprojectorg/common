@@ -81,9 +81,9 @@ export const LoginPanel = () => {
     const callbackUrl = new URL('/api/auth/callback', location.origin);
 
     if (
-      redirectParam &&
-      redirectParam.startsWith('/') &&
-      !redirectParam.startsWith('//')
+      redirectParam?.startsWith('/') &&
+      !redirectParam.startsWith('//') &&
+      !redirectParam.startsWith('/login')
     ) {
       callbackUrl.searchParams.set('redirect', redirectParam);
     }
@@ -134,9 +134,9 @@ export const LoginPanel = () => {
 
     if (data.user && data.session && data.user.role === 'authenticated') {
       if (
-        redirectParam &&
-        redirectParam.startsWith('/') &&
-        !redirectParam.startsWith('//')
+        redirectParam?.startsWith('/') &&
+        !redirectParam.startsWith('//') &&
+        !redirectParam.startsWith('/login')
       ) {
         window.location.href = redirectParam;
       } else {

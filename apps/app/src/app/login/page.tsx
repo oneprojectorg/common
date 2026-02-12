@@ -23,9 +23,9 @@ const LoginPage = () => {
   }
 
   if (
-    redirectParam &&
-    redirectParam.startsWith('/') &&
-    !redirectParam.startsWith('//')
+    redirectParam?.startsWith('/') &&
+    !redirectParam.startsWith('//') &&
+    !redirectParam.startsWith('/login')
   ) {
     redirect(redirectParam);
   }

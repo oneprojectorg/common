@@ -34,6 +34,25 @@ test.describe('Redirect on login', () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
+  test('redirect param of /login does not cause an infinite loop', async ({
+    authenticatedPage,
+  }) => {
+    await authenticatedPage.goto('/login?redirect=%2Flogin');
+
+    // Should NOT stay on /login — must break the loop and land on /
+    await expect(authenticatedPage).not.toHaveURL(/\/login/, {
+      timeout: 15000,
+    });
+
+    // Should land on a working page, not an error
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        level: 1,
+        name: /Welcome back/,
+      }),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
   test('redirect param with protocol-relative URL is rejected', async ({
     authenticatedPage,
   }) => {

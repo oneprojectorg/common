@@ -66,9 +66,9 @@ export const GET = async (request: NextRequest) => {
   const redirectPath = searchParams.get('redirect');
 
   if (
-    redirectPath &&
-    redirectPath.startsWith('/') &&
-    !redirectPath.startsWith('//')
+    redirectPath?.startsWith('/') &&
+    !redirectPath.startsWith('//') &&
+    !redirectPath.startsWith('/login')
   ) {
     return NextResponse.redirect(new URL(redirectPath, useUrl.ENV_URL));
   }
