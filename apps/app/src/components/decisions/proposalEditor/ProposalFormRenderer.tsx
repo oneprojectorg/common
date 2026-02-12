@@ -22,6 +22,8 @@ interface ProposalFormRendererProps {
   onFieldChange: (key: string, value: unknown) => void;
   /** Translation function for placeholders. */
   t: (key: string, params?: Record<string, string | number>) => string;
+  /** When true, renders the form as a non-interactive preview. */
+  previewMode?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,13 +182,14 @@ export function ProposalFormRenderer({
   draft,
   onFieldChange,
   t,
+  previewMode = false,
 }: ProposalFormRendererProps) {
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
   const dynamicFields = fields.filter((f) => !f.isSystem);
 
-  return (
+  const content = (
     <div className="space-y-4">
       {titleField && renderField(titleField, draft, onFieldChange, t)}
 
@@ -202,4 +205,10 @@ export function ProposalFormRenderer({
       ))}
     </div>
   );
+
+  if (previewMode) {
+    return <div className="pointer-events-none select-none">{content}</div>;
+  }
+
+  return content;
 }
