@@ -80,7 +80,11 @@ export const LoginPanel = () => {
   const handleLogin = async () => {
     const callbackUrl = new URL('/api/auth/callback', location.origin);
 
-    if (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) {
+    if (
+      redirectParam &&
+      redirectParam.startsWith('/') &&
+      !redirectParam.startsWith('//')
+    ) {
       callbackUrl.searchParams.set('redirect', redirectParam);
     }
 
@@ -129,7 +133,11 @@ export const LoginPanel = () => {
     });
 
     if (data.user && data.session && data.user.role === 'authenticated') {
-      if (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) {
+      if (
+        redirectParam &&
+        redirectParam.startsWith('/') &&
+        !redirectParam.startsWith('//')
+      ) {
         window.location.href = redirectParam;
       } else {
         window.location.reload();
