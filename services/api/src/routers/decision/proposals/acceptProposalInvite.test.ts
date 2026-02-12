@@ -382,7 +382,10 @@ describe.concurrent('decision.acceptProposalInvite', () => {
       throw new Error('Failed to create invite');
     }
 
-    profileData.trackProfileInvite('different-email@oneproject.org', proposal.profileId);
+    profileData.trackProfileInvite(
+      'different-email@oneproject.org',
+      proposal.profileId,
+    );
 
     const caller = await createAuthenticatedCaller(invitee.email);
 
