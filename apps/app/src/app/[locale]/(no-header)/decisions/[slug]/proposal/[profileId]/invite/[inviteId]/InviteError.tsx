@@ -1,18 +1,18 @@
-'use client';
-
 import { ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { LuCircleAlert } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n/routing';
+import { TranslatedText } from '@/components/TranslatedText';
 
 export const InviteError = () => {
-  const t = useTranslations();
-
   return (
     <EmptyState icon={<LuCircleAlert />}>
-      <p>{t('This invite is no longer valid')}</p>
-      <ButtonLink href="/">{t('Go back')}</ButtonLink>
+      <p>
+        <TranslatedText text="This invite is no longer valid" />
+      </p>
+      <ButtonLink href="/">
+        <TranslatedText text="Go back" />
+      </ButtonLink>
     </EmptyState>
   );
 };
