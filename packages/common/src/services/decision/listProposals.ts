@@ -22,6 +22,7 @@ import {
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -86,11 +87,13 @@ export const listProposals = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  // Get the instance's profile for access checks
+  // Get the instance's profile for access checks + template resolution
   const instance = await db
     .select({
       profileId: processInstances.profileId,
       ownerProfileId: processInstances.ownerProfileId,
+      instanceData: processInstances.instanceData,
+      processId: processInstances.processId,
     })
     .from(processInstances)
     .where(eq(processInstances.id, processInstanceId))
@@ -202,12 +205,11 @@ export const listProposals = async ({
 
   const count = countResult[0]?.count || 0;
 
-  // TODO: Read proposalTemplate from process schema via processInstance/process join.
-  // Temporary hack while only the `default` fragment is used.
-  const proposalTemplate: Record<string, unknown> = {
-    type: 'object',
-    properties: {},
-  };
+  // Resolve proposalTemplate from instanceData, falling back to processSchema
+  const proposalTemplate = await resolveProposalTemplate(
+    instance[0].instanceData as Record<string, unknown> | null,
+    instance[0].processId,
+  );
 
   type ProposalListItem = (typeof proposalList)[number];
 

@@ -26,6 +26,7 @@ import {
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -61,6 +62,7 @@ export const getProposal = async ({
     commentsCount: number;
     likesCount: number;
     followersCount: number;
+    proposalTemplate: Record<string, unknown> | null;
     documentContent: ProposalDocumentContent | undefined;
     htmlContent: Record<string, string> | undefined;
     attachments: ProposalAttachmentWithDetails[];
@@ -100,14 +102,13 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal not found');
   }
 
-  // Run engagement counts and document fetch in parallel
-  // TODO: Read proposalTemplate from process schema via processInstance/process join.
-  // Temporary hack while only the `default` fragment is used.
-  const proposalTemplate: Record<string, unknown> = {
-    type: 'object',
-    properties: {},
-  };
+  // Read proposalTemplate from instanceData (new path) or processSchema (legacy path)
+  const proposalTemplate = await resolveProposalTemplate(
+    proposal.processInstance.instanceData as Record<string, unknown> | null,
+    proposal.processInstance.processId,
+  );
 
+  // Run engagement counts and document fetch in parallel
   const [engagementCounts, documentContentMap] = await Promise.all([
     // Get engagement counts if proposal has a profile
     proposal.profileId
@@ -208,6 +209,7 @@ export const getProposal = async ({
   return {
     ...proposal,
     proposalData: parseProposalData(proposal.proposalData),
+    proposalTemplate,
     ...engagementCounts,
     documentContent,
     htmlContent,

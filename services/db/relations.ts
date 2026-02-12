@@ -94,6 +94,11 @@ export const relations = defineRelations(schema, (r) => ({
    * stewardProfileId is nullable.
    */
   processInstances: {
+    process: r.one.decisionProcesses({
+      from: r.processInstances.processId,
+      to: r.decisionProcesses.id,
+      optional: false,
+    }),
     steward: r.one.profiles({
       from: r.processInstances.stewardProfileId,
       to: r.profiles.id,

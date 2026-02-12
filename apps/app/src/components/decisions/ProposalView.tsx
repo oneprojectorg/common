@@ -11,7 +11,6 @@ import type { SupportedLocale } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { Heart, MessageCircle } from 'lucide-react';
@@ -24,13 +23,13 @@ import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
-import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
+import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
-import { getProposalContent } from './proposalContentUtils';
+import type { ProposalTemplateSchema } from './proposalEditor/compileProposalSchema';
 
 type Proposal = RouterOutput['decision']['getProposal'];
 
@@ -155,12 +154,14 @@ export function ProposalView({
   const category =
     translatedHtmlContent?.translated.category ?? originalCategory;
 
-  const bodyHtml =
-    translatedHtmlContent?.translated.default ??
-    currentProposal.htmlContent?.default;
-  const fallbackContent = translatedHtmlContent
-    ? null
-    : getProposalContent(currentProposal.documentContent);
+  const resolvedHtmlContent =
+    translatedHtmlContent?.translated ?? currentProposal.htmlContent;
+  const proposalTemplate =
+    (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
+
+  // Legacy proposals store HTML under a single "default" key with no collab doc.
+  // Render them directly instead of going through the template-driven renderer.
+  const legacyHtml = resolvedHtmlContent?.default as string | undefined;
 
   // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
   const showBanner =
@@ -293,13 +294,12 @@ export function ProposalView({
           </div>
 
           {/* Proposal Content */}
-          {bodyHtml ? (
-            <ProposalHtmlContent html={bodyHtml} />
-          ) : fallbackContent ? (
-            <RichTextViewer
-              extensions={getViewerExtensions()}
-              content={fallbackContent}
-              editorClassName="p-0"
+          {legacyHtml ? (
+            <ProposalHtmlContent html={legacyHtml} />
+          ) : resolvedHtmlContent ? (
+            <ProposalContentRenderer
+              proposalTemplate={proposalTemplate}
+              htmlContent={resolvedHtmlContent}
             />
           ) : (
             <DocumentNotAvailable />

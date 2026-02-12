@@ -172,7 +172,7 @@ export function TemplateEditorContent({
 
   const handleAddField = useCallback(
     (type: FieldType) => {
-      const fieldId = crypto.randomUUID();
+      const fieldId = crypto.randomUUID().slice(0, 8);
       const label = t(getFieldLabelKey(type));
       setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
     },

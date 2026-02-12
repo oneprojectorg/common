@@ -9,9 +9,6 @@ import type { JSONSchema7 } from 'json-schema';
  *
  * `x-format` describes **how** a field should be presented, while JSON Schema's
  * own keywords (`type`, `enum`, etc.) describe the data shape.
- *
- * Additional per-field presentation options (e.g. `rich`, `maxWords`) can be
- * provided in a sibling `x-format-options` object.
  */
 export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
 
@@ -20,7 +17,6 @@ export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
  */
 export interface ProposalPropertySchema extends JSONSchema7 {
   'x-format'?: string;
-  'x-format-options'?: Record<string, unknown>;
   'x-currency'?: string;
 }
 
@@ -60,8 +56,6 @@ export interface ProposalFieldDescriptor {
   isSystem: boolean;
   /** The raw property schema definition for this field. */
   schema: ProposalPropertySchema;
-  /** Merged format options from `x-format-options`. */
-  formatOptions: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +101,6 @@ export function compileProposalSchema(
         (propSchema['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT,
       isSystem: SYSTEM_FIELD_KEYS.has(key),
       schema: propSchema,
-      formatOptions: propSchema['x-format-options'] ?? {},
     };
   }
 

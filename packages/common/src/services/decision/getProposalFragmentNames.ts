@@ -1,12 +1,50 @@
 /**
  * Derives Y.Doc fragment names from a proposal template schema.
  *
- * Current collaboration documents store proposal content in a single `default`
- * fragment. This utility keeps the call-site contract stable while additional
- * fragments are introduced.
+ * When no template is provided, falls back to `['default']` for backward
+ * compatibility with legacy single-fragment documents.
  */
 export function getProposalFragmentNames(
-  _proposalTemplate: Record<string, unknown> | null | undefined,
+  proposalTemplate: Record<string, unknown>,
 ): string[] {
-  return ['default'];
+  const properties = proposalTemplate.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+
+  if (!properties || Object.keys(properties).length === 0) {
+    return ['default'];
+  }
+
+  const fieldOrder = (proposalTemplate['x-field-order'] as string[]) ?? [];
+  const fragments: string[] = [];
+  const seen = new Set<string>();
+
+  // Respect x-field-order first, then pick up any remaining properties
+  const orderedKeys = [
+    ...fieldOrder,
+    ...Object.keys(properties).filter((k) => !fieldOrder.includes(k)),
+  ];
+
+  for (const key of orderedKeys) {
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    const prop = properties[key];
+    if (!prop) {
+      continue;
+    }
+
+    const format = prop['x-format'] as string | undefined;
+
+    // Only text-based fields produce collaborative fragments.
+    // title is always a collaborative field (rendered as CollaborativeTitleField).
+    // short-text and long-text are rendered as CollaborativeTextField.
+    if (key === 'title' || format === 'short-text' || format === 'long-text') {
+      fragments.push(key);
+    }
+  }
+
+  return fragments.length > 0 ? fragments : ['default'];
 }
