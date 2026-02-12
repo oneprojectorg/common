@@ -2,6 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -43,7 +45,7 @@ export default function RolesSection({
   decisionName,
 }: SectionProps) {
   return (
-    <div className="px-24 py-16">
+    <div className="px-4 md:px-24 md:py-16">
       <div className="mx-auto max-w-5xl">
         <RolesSectionContent
           decisionProfileId={decisionProfileId}
@@ -99,6 +101,60 @@ function RolesSectionContent({
   );
 }
 
+function MobileRoleCard({
+  role,
+  isGlobal,
+  onTogglePermission,
+  onDelete,
+}: {
+  role: Role;
+  isGlobal: boolean;
+  onTogglePermission: (role: Role, key: PermissionKey) => void;
+  onDelete?: (role: Role) => void;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div
+      className={`flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4 ${isGlobal ? 'opacity-50' : ''}`}
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="font-serif text-sm font-light text-neutral-black">
+          {role.name}
+        </h3>
+        {!isGlobal && onDelete && (
+          <OptionMenu variant="outline" className="rounded-md">
+            <Menu className="min-w-28 p-2">
+              <MenuItem
+                key="delete"
+                onAction={() => onDelete(role)}
+                className="text-functional-red"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </MenuItem>
+            </Menu>
+          </OptionMenu>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        {PERMISSION_COLUMNS.map(({ key, label }) => (
+          <Checkbox
+            key={key}
+            size="small"
+            isSelected={role.permissions?.[key] ?? false}
+            isDisabled={isGlobal}
+            onChange={() => onTogglePermission(role, key)}
+            aria-label={`${label} permission for ${role.name}`}
+          >
+            {t(label)}
+          </Checkbox>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RolesTable({
   decisionProfileId,
   decisionName,
@@ -110,6 +166,7 @@ function RolesTable({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
   const [[{ items: globalRoles }, { items: profileRoles }]] =
@@ -222,68 +279,90 @@ function RolesTable({
 
   return (
     <>
-      <Table aria-label={t('Roles & permissions')}>
-        <TableHeader>
-          <TableColumn isRowHeader>{t('Role')}</TableColumn>
-          {PERMISSION_COLUMNS.map(({ key, label }) => (
-            <TableColumn key={key} className="text-center">
-              {t(label)}
-            </TableColumn>
-          ))}
-          <TableColumn className="w-12" />
-        </TableHeader>
-        <TableBody>
+      {isMobile ? (
+        <div className="flex flex-col gap-4">
           {globalRoles.map((role) => (
-            <TableRow key={role.id} className="opacity-50">
-              <TableCell className="font-medium">{role.name}</TableCell>
-              {PERMISSION_COLUMNS.map(({ key, label }) => (
-                <TableCell key={key} className="text-center">
-                  <div className="flex justify-center">
-                    <Checkbox
-                      size="small"
-                      isSelected={role.permissions?.[key] ?? false}
-                      isDisabled
-                      aria-label={`${label} permission for ${role.name}`}
-                    />
-                  </div>
-                </TableCell>
-              ))}
-              <TableCell />
-            </TableRow>
+            <MobileRoleCard
+              key={role.id}
+              role={role}
+              isGlobal
+              onTogglePermission={togglePermission}
+            />
           ))}
           {profileRoles.map((role) => (
-            <TableRow key={role.id}>
-              <TableCell className="font-medium">{role.name}</TableCell>
-              {PERMISSION_COLUMNS.map(({ key, label }) => (
-                <TableCell key={key} className="text-center">
-                  <div className="flex justify-center">
-                    <Checkbox
-                      size="small"
-                      isSelected={role.permissions?.[key] ?? false}
-                      onChange={() => togglePermission(role, key)}
-                      aria-label={`${label} permission for ${role.name}`}
-                    />
-                  </div>
-                </TableCell>
-              ))}
-              <TableCell>
-                <OptionMenu variant="outline" className="rounded-md">
-                  <Menu className="min-w-28 p-2">
-                    <MenuItem
-                      key="delete"
-                      onAction={() => setRoleToDelete(role)}
-                      className="text-functional-red"
-                    >
-                      <LuTrash2 className="size-4" />
-                      {t('Delete')}
-                    </MenuItem>
-                  </Menu>
-                </OptionMenu>
-              </TableCell>
-            </TableRow>
+            <MobileRoleCard
+              key={role.id}
+              role={role}
+              isGlobal={false}
+              onTogglePermission={togglePermission}
+              onDelete={setRoleToDelete}
+            />
           ))}
-        </TableBody>
-      </Table>
+        </div>
+      ) : (
+        <Table aria-label={t('Roles & permissions')}>
+          <TableHeader>
+            <TableColumn isRowHeader>{t('Role')}</TableColumn>
+            {PERMISSION_COLUMNS.map(({ key, label }) => (
+              <TableColumn key={key} className="text-center">
+                {t(label)}
+              </TableColumn>
+            ))}
+            <TableColumn className="w-12" />
+          </TableHeader>
+          <TableBody>
+            {globalRoles.map((role) => (
+              <TableRow key={role.id} className="opacity-50">
+                <TableCell className="font-medium">{role.name}</TableCell>
+                {PERMISSION_COLUMNS.map(({ key, label }) => (
+                  <TableCell key={key} className="text-center">
+                    <div className="flex justify-center">
+                      <Checkbox
+                        size="small"
+                        isSelected={role.permissions?.[key] ?? false}
+                        isDisabled
+                        aria-label={`${label} permission for ${role.name}`}
+                      />
+                    </div>
+                  </TableCell>
+                ))}
+                <TableCell />
+              </TableRow>
+            ))}
+            {profileRoles.map((role) => (
+              <TableRow key={role.id}>
+                <TableCell className="font-medium">{role.name}</TableCell>
+                {PERMISSION_COLUMNS.map(({ key, label }) => (
+                  <TableCell key={key} className="text-center">
+                    <div className="flex justify-center">
+                      <Checkbox
+                        size="small"
+                        isSelected={role.permissions?.[key] ?? false}
+                        onChange={() => togglePermission(role, key)}
+                        aria-label={`${label} permission for ${role.name}`}
+                      />
+                    </div>
+                  </TableCell>
+                ))}
+                <TableCell>
+                  <OptionMenu variant="outline" className="rounded-md">
+                    <Menu className="min-w-28 p-2">
+                      <MenuItem
+                        key="delete"
+                        onAction={() => setRoleToDelete(role)}
+                        className="text-functional-red"
+                      >
+                        <LuTrash2 className="size-4" />
+                        {t('Delete')}
+                      </MenuItem>
+                    </Menu>
+                  </OptionMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <DialogTrigger
         isOpen={roleToDelete !== null}

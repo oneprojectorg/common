@@ -80,18 +80,10 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   return (
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-4">
-        <h2 className="font-serif text-title-sm font-light text-neutral-black">
-          {t('Members')}
-        </h2>
-
-        <div className="flex items-start justify-between gap-4">
-          <SearchField
-            placeholder={t('Search')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-            size={isMobile ? 'small' : undefined}
-            className="w-full md:max-w-96"
-          />
+        <div className="flex items-center justify-between">
+          <h2 className="font-serif text-title-sm font-light text-neutral-black">
+            {t('Members')}
+          </h2>
           <Button
             color="secondary"
             size="small"
@@ -101,6 +93,14 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
             {t('Invite')}
           </Button>
         </div>
+
+        <SearchField
+          placeholder={t('Search')}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          size={isMobile ? 'small' : undefined}
+          className="w-full md:max-w-96"
+        />
 
         <ProfileUsersAccessTable
           profileUsers={profileUsers}
