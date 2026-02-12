@@ -306,19 +306,18 @@ export const PhaseEditor = ({
           {(phase, { dragHandleProps, isDragging }) => {
             const errors = getPhaseErrors(phase);
             return (
-            <AccordionItem
-              id={phase.id}
-              className={cn(
-                'rounded-lg border bg-white',
-                isDragging && 'opacity-50',
-              )}
-            >
-              <AccordionHeader className="flex items-center gap-2 px-3 py-2">
-                <DragHandle {...dragHandleProps} />
-                <AccordionTrigger className="flex cursor-pointer items-center">
-                  <AccordionIndicator />
-                </AccordionTrigger>
-                <div className="grow">
+              <AccordionItem
+                id={phase.id}
+                className={cn(
+                  'rounded-lg border bg-white',
+                  isDragging && 'opacity-50',
+                )}
+              >
+                <AccordionHeader className="flex items-center gap-2 px-3 py-2">
+                  <DragHandle {...dragHandleProps} />
+                  <AccordionTrigger className="flex cursor-pointer items-center">
+                    <AccordionIndicator />
+                  </AccordionTrigger>
                   <AccordionTitleInput
                     value={phase.name}
                     onChange={(name) => updatePhase(phase.id, { name })}
@@ -328,112 +327,111 @@ export const PhaseEditor = ({
                     autoFocus={autoFocusPhaseId === phase.id}
                     onAutoFocused={() => setAutoFocusPhaseId(null)}
                   />
-                </div>
-                {phaseHasVisibleErrors(phase.id) && <PhaseErrorIndicator />}
-                <RemovePhaseButton
-                  onPress={() => removePhase(phase.id)}
-                  isDisabled={phases.length <= 1}
-                />
-              </AccordionHeader>
-              <AccordionContent>
-                <hr />
-                <div className="space-y-4 p-4">
-                  <TextField
-                    label={t('Headline')}
-                    isRequired
-                    value={phase.headline ?? ''}
-                    onChange={(value) =>
-                      updatePhase(phase.id, { headline: value })
-                    }
-                    onBlur={() => markTouched(phase.id, 'headline')}
-                    errorMessage={getErrorMessage(
-                      phase.id,
-                      'headline',
-                      errors,
-                    )}
-                    description={t(
-                      'This text appears as the header of the page.',
-                    )}
+                  {phaseHasVisibleErrors(phase.id) && <PhaseErrorIndicator />}
+                  <RemovePhaseButton
+                    onPress={() => removePhase(phase.id)}
+                    isDisabled={phases.length <= 1}
                   />
-                  <TextField
-                    label={t('Description')}
-                    isRequired
-                    useTextArea
-                    value={phase.description ?? ''}
-                    onChange={(value) =>
-                      updatePhase(phase.id, { description: value })
-                    }
-                    onBlur={() => markTouched(phase.id, 'description')}
-                    errorMessage={getErrorMessage(
-                      phase.id,
-                      'description',
-                      errors,
-                    )}
-                    textareaProps={{ rows: 3 }}
-                    description={t(
-                      'This text appears below the headline on the phase page.',
-                    )}
-                  />
-                  <div className="space-y-2">
-                    <label className="block text-sm">
-                      {t('Additional information')}
-                    </label>
-                    <RichTextEditorWithToolbar
-                      content={phase.additionalInfo ?? ''}
-                      onChange={(content) =>
-                        updatePhase(phase.id, { additionalInfo: content })
+                </AccordionHeader>
+                <AccordionContent>
+                  <hr />
+                  <div className="space-y-4 p-4">
+                    <TextField
+                      label={t('Headline')}
+                      isRequired
+                      value={phase.headline ?? ''}
+                      onChange={(value) =>
+                        updatePhase(phase.id, { headline: value })
                       }
-                      toolbarPosition="bottom"
-                      className="rounded-md border border-border"
-                      editorClassName="min-h-24 p-3"
-                    />
-                    <p className="text-sm text-neutral-gray4">
-                      {t(
-                        'Any additional information will appear in a modal titled "About the process"',
+                      onBlur={() => markTouched(phase.id, 'headline')}
+                      errorMessage={getErrorMessage(
+                        phase.id,
+                        'headline',
+                        errors,
                       )}
-                    </p>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <DatePicker
-                        label={t('Start date')}
-                        value={safeParseDateString(phase.startDate)}
-                        onChange={(date) =>
-                          updatePhase(phase.id, {
-                            startDate: formatDateValue(date),
-                          })
+                      description={t(
+                        'This text appears as the header of the page.',
+                      )}
+                    />
+                    <TextField
+                      label={t('Description')}
+                      isRequired
+                      useTextArea
+                      value={phase.description ?? ''}
+                      onChange={(value) =>
+                        updatePhase(phase.id, { description: value })
+                      }
+                      onBlur={() => markTouched(phase.id, 'description')}
+                      errorMessage={getErrorMessage(
+                        phase.id,
+                        'description',
+                        errors,
+                      )}
+                      textareaProps={{ rows: 3 }}
+                      description={t(
+                        'This text appears below the headline on the phase page.',
+                      )}
+                    />
+                    <div className="space-y-2">
+                      <label className="block text-sm">
+                        {t('Additional information')}
+                      </label>
+                      <RichTextEditorWithToolbar
+                        content={phase.additionalInfo ?? ''}
+                        onChange={(content) =>
+                          updatePhase(phase.id, { additionalInfo: content })
                         }
+                        toolbarPosition="bottom"
+                        className="rounded-md border border-border"
+                        editorClassName="min-h-24 p-3"
                       />
-                    </div>
-                    <div
-                      className="flex-1"
-                      onBlur={() => markTouched(phase.id, 'endDate')}
-                    >
-                      <DatePicker
-                        label={t('End date')}
-                        isRequired
-                        value={safeParseDateString(phase.endDate)}
-                        onChange={(date) => {
-                          updatePhase(phase.id, {
-                            endDate: formatDateValue(date),
-                          });
-                          markTouched(phase.id, 'endDate');
-                        }}
-                        errorMessage={getErrorMessage(
-                          phase.id,
-                          'endDate',
-                          errors,
+                      <p className="text-sm text-neutral-gray4">
+                        {t(
+                          'Any additional information will appear in a modal titled "About the process"',
                         )}
-                      />
+                      </p>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <DatePicker
+                          label={t('Start date')}
+                          value={safeParseDateString(phase.startDate)}
+                          onChange={(date) =>
+                            updatePhase(phase.id, {
+                              startDate: formatDateValue(date),
+                            })
+                          }
+                        />
+                      </div>
+                      <div
+                        className="flex-1"
+                        onBlur={() => markTouched(phase.id, 'endDate')}
+                      >
+                        <DatePicker
+                          label={t('End date')}
+                          isRequired
+                          value={safeParseDateString(phase.endDate)}
+                          onChange={(date) => {
+                            updatePhase(phase.id, {
+                              endDate: formatDateValue(date),
+                            });
+                            markTouched(phase.id, 'endDate');
+                          }}
+                          errorMessage={getErrorMessage(
+                            phase.id,
+                            'endDate',
+                            errors,
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <PhaseControls
-                  phase={phase}
-                  onUpdate={(updates) => updatePhase(phase.id, updates)}
-                />
-              </AccordionContent>
-            </AccordionItem>
+                  <PhaseControls
+                    phase={phase}
+                    onUpdate={(updates) => updatePhase(phase.id, updates)}
+                  />
+                </AccordionContent>
+              </AccordionItem>
             );
           }}
         </Sortable>
@@ -574,19 +572,24 @@ const AccordionTitleInput = ({
   }
 
   return (
-    <AutoSizeInput
-      inputRef={inputRef}
-      value={value}
-      onChange={onChange}
-      onBlur={onBlur}
-      className={cn(
-        'rounded border px-2 py-1 font-serif text-title-sm focus-within:bg-white',
-        hasError
-          ? 'border-functional-red bg-white'
-          : 'border-neutral-gray1 bg-neutral-gray1 focus-within:border-neutral-gray3',
+    <div className="flex grow items-center justify-between gap-2">
+      <AutoSizeInput
+        inputRef={inputRef}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        className={cn(
+          'rounded border px-2 py-1 font-serif text-title-sm focus-within:bg-white',
+          hasError
+            ? 'border-functional-red bg-white'
+            : 'border-neutral-gray1 bg-neutral-gray1 focus-within:border-neutral-gray3',
+        )}
+        aria-label={ariaLabel ?? ''}
+      />
+      {hasError && (
+        <p className="text-functional-red">Add a label for this phase.</p>
       )}
-      aria-label={ariaLabel ?? ''}
-    />
+    </div>
   );
 };
 
