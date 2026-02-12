@@ -31,7 +31,7 @@ export const acceptProfileInvite = async ({
   });
 
   if (!invite) {
-    throw new NotFoundError('Invite', inviteId);
+    throw new NotFoundError('Invite not found', inviteId);
   }
 
   if (invite.acceptedOn) {

@@ -30,6 +30,9 @@ export * from './getResultsStats';
 // Selection pipeline
 export * from './selectionPipeline';
 
+// Proposal invites
+export * from './acceptProposalInvite';
+
 // Proposal management
 export * from './proposalDataSchema';
 export * from './createProposal';
