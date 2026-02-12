@@ -192,7 +192,7 @@ function renderField(
       return (
         <CollaborativeBudgetField
           maxAmount={schema.maximum}
-          initialValue={(draft[key] as number | null) ?? null}
+          initialValue={null}
           onChange={(value) => onFieldChange(key, value)}
         />
       );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
+import type { BudgetData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { useEffect, useRef, useState } from 'react';
@@ -10,8 +11,8 @@ import { useTranslations } from '@/lib/i18n';
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 /**
- * Yjs-synced budget shape — currency + amount as an atomic value
- * TODO: the backend part will be done separately once we have more clarity how it's going to be used.
+ * Yjs-synced budget shape — currency + amount as an atomic value.
+ * Stored in Yjs as JSON `{ currency, amount }`.
  */
 interface BudgetValue {
   currency: string;
@@ -32,8 +33,8 @@ function formatBudgetDisplay(amount: number, currencySymbol: string): string {
 
 interface CollaborativeBudgetFieldProps {
   maxAmount?: number;
-  initialValue?: number | null;
-  onChange?: (budget: number | null) => void;
+  initialValue?: BudgetData | null;
+  onChange?: (budget: BudgetData | null) => void;
 }
 
 /**
@@ -55,7 +56,7 @@ export function CollaborativeBudgetField({
 
   const initialBudgetValue =
     initialValue !== null
-      ? { currency: DEFAULT_CURRENCY, amount: initialValue }
+      ? { currency: initialValue.currency, amount: initialValue.value }
       : null;
 
   const [budgetText, setBudgetText] = useCollaborativeFragment(
@@ -69,7 +70,7 @@ export function CollaborativeBudgetField({
     setBudgetText(value ? JSON.stringify(value) : '');
 
   const onChangeRef = useRef(onChange);
-  const lastEmittedAmountRef = useRef<number | null | undefined>(undefined);
+  const lastEmittedRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -100,13 +101,18 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    if (lastEmittedAmountRef.current === budgetAmount) {
+    const emitted: BudgetData | null = budget
+      ? { value: budget.amount, currency: budget.currency }
+      : null;
+    const key = emitted ? `${emitted.value}:${emitted.currency}` : null;
+
+    if (lastEmittedRef.current === key) {
       return;
     }
 
-    lastEmittedAmountRef.current = budgetAmount;
-    onChangeRef.current?.(budgetAmount);
-  }, [budgetAmount]);
+    lastEmittedRef.current = key ?? undefined;
+    onChangeRef.current?.(emitted);
+  }, [budget]);
 
   const handleStartEditing = () => {
     setIsEditing(true);
