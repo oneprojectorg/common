@@ -52,6 +52,7 @@ const EditDecisionPage = async ({
       <ProcessBuilderHeader
         processName={decisionProfile.name}
         instanceId={instanceId}
+        slug={slug}
       />
       <div className="flex grow flex-col overflow-y-auto sm:flex-row">
         <ProcessBuilderSidebar instanceId={instanceId} />
