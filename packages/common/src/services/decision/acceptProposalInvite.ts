@@ -18,12 +18,10 @@ import {
  * of the parent decision process
  */
 export const acceptProposalInvite = async ({
-  inviteId,
   profileId: proposalProfileId,
   user,
 }: {
-  inviteId?: string;
-  profileId?: string;
+  profileId: string;
   user: User;
 }) => {
   const email = user.email;
@@ -32,33 +30,20 @@ export const acceptProposalInvite = async ({
     throw new UnauthorizedError('User must have an email address');
   }
 
-  let invite;
-  if (inviteId) {
-    invite = await db.query.profileInvites.findFirst({
-      where: { id: inviteId },
-    });
-  } else if (proposalProfileId) {
-    invite = await db.query.profileInvites.findFirst({
-      where: {
-        profileId: proposalProfileId,
-        email: email.toLowerCase(),
-        acceptedOn: { isNull: true },
-      },
-    });
-  } else {
-    throw new CommonError('Either inviteId or profileId is required');
-  }
+  const invite = await db.query.profileInvites.findFirst({
+    where: {
+      profileId: proposalProfileId,
+      email: email.toLowerCase(),
+      acceptedOn: { isNull: true },
+    },
+  });
 
   if (!invite) {
-    throw new NotFoundError('Invite', inviteId ?? proposalProfileId);
+    throw new NotFoundError('Invite', proposalProfileId);
   }
 
   if (invite.acceptedOn) {
     throw new ConflictError('This invite has already been accepted');
-  }
-
-  if (invite.email.toLowerCase() !== email.toLowerCase()) {
-    throw new UnauthorizedError('This invite is for a different email address');
   }
 
   // Check user isn't already a member of the proposal profile

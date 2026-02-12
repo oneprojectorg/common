@@ -74,17 +74,17 @@ test.describe('Proposal Invite', () => {
     );
   });
 
-  test('invalid invite shows error state', async ({ authenticatedPage }) => {
+  test('invalid invite redirects to proposal page', async ({
+    authenticatedPage,
+  }) => {
     await authenticatedPage.goto(
       `/en/decisions/fake-slug/proposal/fake-profile/invite`,
     );
 
-    await expect(
-      authenticatedPage.getByText('This invite is no longer valid'),
-    ).toBeVisible({ timeout: 15000 });
-
-    await expect(
-      authenticatedPage.getByRole('link', { name: 'Go back' }),
-    ).toBeVisible();
+    // Should redirect to the proposal page (without /invite)
+    await expect(authenticatedPage).toHaveURL(
+      `/en/decisions/fake-slug/proposal/fake-profile`,
+      { timeout: 15000 },
+    );
   });
 });

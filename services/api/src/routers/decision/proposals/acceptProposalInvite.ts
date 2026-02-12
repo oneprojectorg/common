@@ -7,19 +7,9 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const acceptProposalInviteRouter = router({
   acceptProposalInvite: commonAuthedProcedure()
-    .input(
-      z
-        .object({
-          inviteId: z.string().uuid().optional(),
-          profileId: z.string().uuid().optional(),
-        })
-        .refine((data) => data.inviteId || data.profileId, {
-          message: 'Either inviteId or profileId is required',
-        }),
-    )
+    .input(z.object({ profileId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await acceptProposalInvite({
-        inviteId: input.inviteId,
         profileId: input.profileId,
         user: ctx.user,
       });
