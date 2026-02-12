@@ -29,6 +29,7 @@ const phaseRulesEncoder = z.object({
     .object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
+      review: z.boolean().optional(),
     })
     .optional(),
   voting: z

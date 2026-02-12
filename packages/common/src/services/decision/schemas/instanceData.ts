@@ -44,6 +44,9 @@ export interface DecisionInstanceData {
 
 export interface PhaseOverride {
   phaseId: string;
+  name?: string;
+  description?: string;
+  rules?: PhaseRules;
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;

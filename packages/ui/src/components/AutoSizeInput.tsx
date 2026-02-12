@@ -8,7 +8,7 @@ export interface AutoSizeInputProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
-  inputRef?: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
   minWidth?: number;
   'aria-label': string;
 }
@@ -49,11 +49,11 @@ export function AutoSizeInput({
   }, [value, minWidth, inputRef]);
 
   return (
-    <div className="relative inline-block">
+    <div className={cn(className, 'relative inline-block')}>
       {/* Hidden span to measure text width */}
       <span
         ref={measureRef}
-        className={cn(className, 'invisible absolute whitespace-pre')}
+        className="invisible absolute whitespace-pre"
         aria-hidden="true"
       >
         {value || ''}
@@ -63,7 +63,7 @@ export function AutoSizeInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={cn(className, 'border-none bg-transparent outline-none')}
+        className="border-none bg-transparent outline-none"
         style={{ width }}
         aria-label={ariaLabel}
       />

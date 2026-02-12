@@ -106,34 +106,19 @@ export const updateDecisionInstance = async ({
       };
     }
 
-    // Apply phase overrides
+    // Apply phase updates — replace the full phases array
     if (hasPhaseUpdates) {
-      // Create a map of phase overrides for quick lookup
-      const overrideMap = new Map(
-        phases.map((override) => [override.phaseId, override]),
-      );
-
-      // Apply overrides to existing phases (merge settings, don't replace)
-      updatedInstanceData.phases = existingInstanceData.phases.map((phase) => {
-        const override = overrideMap.get(phase.phaseId);
-        if (!override) {
-          return phase;
-        }
-
-        return {
-          ...phase,
-          ...(override.startDate !== undefined && {
-            startDate: override.startDate,
-          }),
-          ...(override.endDate !== undefined && { endDate: override.endDate }),
-          ...(override.settings !== undefined && {
-            settings: {
-              ...phase.settings,
-              ...override.settings,
-            },
-          }),
-        };
-      });
+      updatedInstanceData.phases = phases.map((phase) => ({
+        phaseId: phase.phaseId,
+        ...(phase.name !== undefined && { name: phase.name }),
+        ...(phase.description !== undefined && {
+          description: phase.description,
+        }),
+        ...(phase.rules !== undefined && { rules: phase.rules }),
+        ...(phase.startDate !== undefined && { startDate: phase.startDate }),
+        ...(phase.endDate !== undefined && { endDate: phase.endDate }),
+        ...(phase.settings !== undefined && { settings: phase.settings }),
+      }));
     }
 
     // Apply proposal template update (replace entirely)

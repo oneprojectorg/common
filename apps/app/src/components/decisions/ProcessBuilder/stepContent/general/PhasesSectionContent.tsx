@@ -12,13 +12,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@op/ui/Accordion';
+import { AutoSizeInput } from '@op/ui/AutoSizeInput';
+import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
+import type { Key } from '@op/ui/RAC';
+import { DisclosureStateContext } from '@op/ui/RAC';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
-import { use, useState } from 'react';
-import { DisclosureStateContext } from 'react-aria-components';
-import { LuChevronRight, LuGripVertical } from 'react-icons/lu';
+import { use, useEffect, useRef, useState } from 'react';
+import { LuChevronRight, LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -34,57 +37,68 @@ export function PhasesSectionContent({
   decisionProfileId,
 }: SectionProps) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const initialPhases = instance.process?.processSchema?.phases ?? [];
-  const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
-  const t = useTranslations();
+  const instancePhases = instance.instanceData?.phases;
+  const templatePhases = instance.process?.processSchema?.phases;
+  const isDraft = instance.status === 'draft';
 
-  // Store and mutation for saving
-  const setPhaseData = useProcessBuilderStore((s) => s.setPhaseData);
+  // Store: used as a localStorage buffer for non-draft edits only
+  const storePhases = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId]?.phases,
+  );
+  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
   const saveState = useProcessBuilderStore((s) =>
     s.getSaveState(decisionProfileId),
   );
 
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+  // Non-draft: prefer store (localStorage buffer) over API data.
+  // Draft: use API data (query cache kept fresh via onSettled invalidation).
+  const initialPhases: PhaseDefinition[] = (() => {
+    const source =
+      !isDraft && storePhases?.length ? storePhases : instancePhases;
+    return (
+      source?.map((p) => ({
+        id: p.phaseId,
+        name: p.name ?? '',
+        description: p.description,
+        rules: p.rules ?? {},
+        startDate: p.startDate,
+        endDate: p.endDate,
+      })) ??
+      templatePhases ??
+      []
+    );
+  })();
+  const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
+  const t = useTranslations();
 
-  // Only auto-save to API when in draft mode
-  const isDraft = instance.status === 'draft';
+  const utils = trpc.useUtils();
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+    onSuccess: () => markSaved(decisionProfileId),
+    onError: () => setSaveStatus(decisionProfileId, 'error'),
+    onSettled: () => {
+      void utils.decision.getInstance.invalidate({ instanceId });
+    },
+  });
 
-  // Debounced auto-save function (similar to ProposalEditor pattern)
+  // Debounced save: draft persists to API, non-draft buffers in localStorage.
   const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
     setSaveStatus(decisionProfileId, 'saving');
-    for (const phase of data) {
-      setPhaseData(decisionProfileId, phase.id, {
-        name: phase.name,
-        description: phase.description,
-        startDate: phase.startDate,
-        endDate: phase.endDate,
-        rules: phase.rules,
-      });
-    }
 
-    // Save to API if in draft mode
+    const phasesPayload = data.map((phase) => ({
+      phaseId: phase.id,
+      name: phase.name,
+      description: phase.description,
+      startDate: phase.startDate,
+      endDate: phase.endDate,
+      rules: phase.rules,
+    }));
+
     if (isDraft) {
-      updateInstance.mutate(
-        {
-          instanceId,
-          phases: data.map((phase) => ({
-            phaseId: phase.id,
-            name: phase.name,
-            description: phase.description,
-            startDate: phase.startDate,
-            endDate: phase.endDate,
-            rules: phase.rules,
-          })),
-        },
-        {
-          onSuccess: () => markSaved(decisionProfileId),
-          onError: () => setSaveStatus(decisionProfileId, 'error'),
-        },
-      );
+      updateInstance.mutate({ instanceId, phases: phasesPayload });
     } else {
-      // Just mark as saved for localStorage
+      setInstanceData(decisionProfileId, { phases: phasesPayload });
       markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);
@@ -165,97 +179,147 @@ export const PhaseEditor = ({
     return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
+  const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
+  const [autoFocusPhaseId, setAutoFocusPhaseId] = useState<string | null>(null);
+
+  const addPhase = () => {
+    const newPhase: PhaseDefinition = {
+      id: crypto.randomUUID(),
+      name: t('New phase'),
+      rules: {},
+    };
+    setPhases([...phases, newPhase]);
+    setExpandedKeys((prev) => new Set([...prev, newPhase.id]));
+    setAutoFocusPhaseId(newPhase.id);
+  };
+
+  const removePhase = (phaseId: string) => {
+    setPhases(phases.filter((p) => p.id !== phaseId));
+  };
+
   if (phases.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
-        <p className="text-neutral-gray4">{t('No phases defined')}</p>
+      <div className="space-y-4">
+        <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
+          <p className="text-neutral-gray4">{t('No phases defined')}</p>
+        </div>
+        <Button
+          color="ghost"
+          className="text-primary-teal hover:text-primary-tealBlack"
+          onPress={addPhase}
+        >
+          <LuPlus className="size-4" />
+          {t('Add phase')}
+        </Button>
       </div>
     );
   }
 
   return (
-    <Accordion allowsMultipleExpanded variant="unstyled">
-      <Sortable
-        items={phases}
-        onChange={setPhases}
-        dragTrigger="handle"
-        getItemLabel={(phase) => phase.name}
-        className="gap-2"
-        renderDragPreview={(items) => (
-          <PhaseDragPreview name={items[0]?.name} />
-        )}
-        renderDropIndicator={PhaseDropIndicator}
+    <div className="space-y-4">
+      <Accordion
+        allowsMultipleExpanded
+        variant="unstyled"
+        expandedKeys={expandedKeys}
+        onExpandedChange={setExpandedKeys}
       >
-        {(phase, { dragHandleProps, isDragging }) => (
-          <AccordionItem
-            id={phase.id}
-            className={cn(
-              'rounded-lg border bg-white',
-              isDragging && 'opacity-50',
-            )}
-          >
-            <AccordionHeader className="flex items-center gap-2 px-3 py-2">
-              <DragHandle {...dragHandleProps} />
-              <AccordionTrigger className="flex items-center gap-2">
-                <AccordionIndicator />
-              </AccordionTrigger>
-              <AccordionTitleInput
-                value={phase.name}
-                onChange={(name) => updatePhase(phase.id, { name })}
-                aria-label={t('Phase name')}
-              />
-            </AccordionHeader>
-            <AccordionContent>
-              <hr />
-              <div className="space-y-4 p-4">
-                <div>
-                  <label className="mb-1 block text-sm">
-                    {t('Description')}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={phase.description ?? ''}
-                    onChange={(e) =>
-                      updatePhase(phase.id, { description: e.target.value })
-                    }
-                    className="w-full rounded-md border border-border px-3 py-2"
+        <Sortable
+          items={phases}
+          onChange={setPhases}
+          dragTrigger="handle"
+          getItemLabel={(phase) => phase.name}
+          className="gap-2"
+          renderDragPreview={(items) => (
+            <PhaseDragPreview name={items[0]?.name} />
+          )}
+          renderDropIndicator={PhaseDropIndicator}
+        >
+          {(phase, { dragHandleProps, isDragging }) => (
+            <AccordionItem
+              id={phase.id}
+              className={cn(
+                'rounded-lg border bg-white',
+                isDragging && 'opacity-50',
+              )}
+            >
+              <AccordionHeader className="flex items-center gap-2 px-3 py-2">
+                <DragHandle {...dragHandleProps} />
+                <AccordionTrigger className="flex cursor-pointer items-center">
+                  <AccordionIndicator />
+                </AccordionTrigger>
+                <div className="grow">
+                  <AccordionTitleInput
+                    value={phase.name}
+                    onChange={(name) => updatePhase(phase.id, { name })}
+                    aria-label={t('Phase name')}
+                    autoFocus={autoFocusPhaseId === phase.id}
+                    onAutoFocused={() => setAutoFocusPhaseId(null)}
                   />
                 </div>
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <DatePicker
-                      label={t('Start date')}
-                      value={safeParseDateString(phase.startDate)}
-                      onChange={(date) =>
-                        updatePhase(phase.id, {
-                          startDate: formatDateValue(date),
-                        })
+                <RemovePhaseButton
+                  onPress={() => removePhase(phase.id)}
+                  isDisabled={phases.length <= 1}
+                />
+              </AccordionHeader>
+              <AccordionContent>
+                <hr />
+                <div className="space-y-4 p-4">
+                  <div>
+                    <label className="mb-1 block text-sm">
+                      {t('Description')}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={phase.description ?? ''}
+                      onChange={(e) =>
+                        updatePhase(phase.id, { description: e.target.value })
                       }
+                      className="w-full rounded-md border border-border px-3 py-2"
                     />
                   </div>
-                  <div className="flex-1">
-                    <DatePicker
-                      label={t('End date')}
-                      value={safeParseDateString(phase.endDate)}
-                      onChange={(date) =>
-                        updatePhase(phase.id, {
-                          endDate: formatDateValue(date),
-                        })
-                      }
-                    />
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <DatePicker
+                        label={t('Start date')}
+                        value={safeParseDateString(phase.startDate)}
+                        onChange={(date) =>
+                          updatePhase(phase.id, {
+                            startDate: formatDateValue(date),
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <DatePicker
+                        label={t('End date')}
+                        value={safeParseDateString(phase.endDate)}
+                        onChange={(date) =>
+                          updatePhase(phase.id, {
+                            endDate: formatDateValue(date),
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-              <hr />
-              <PhaseControls
-                phase={phase}
-                onUpdate={(updates) => updatePhase(phase.id, updates)}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        )}
-      </Sortable>
-    </Accordion>
+                <PhaseControls
+                  phase={phase}
+                  onUpdate={(updates) => updatePhase(phase.id, updates)}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Sortable>
+      </Accordion>
+      <Button
+        color="secondary"
+        className="w-full text-primary-teal hover:text-primary-tealBlack"
+        onPress={addPhase}
+      >
+        <LuPlus className="size-4" />
+        {t('Add phase')}
+      </Button>
+    </div>
   );
 };
 
@@ -279,7 +343,7 @@ const PhaseControls = ({
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-6 p-4">
       <ToggleRow label={t('Enable proposal submission')}>
         <ToggleButton
           isSelected={phase.rules?.proposals?.submit ?? false}
@@ -294,22 +358,34 @@ const PhaseControls = ({
           size="small"
         />
       </ToggleRow>
-      {phase.rules?.proposals?.submit && (
-        <ToggleRow label={t('Allow proposal editing')}>
-          <ToggleButton
-            isSelected={phase.rules?.proposals?.edit ?? false}
-            onChange={(val) =>
-              updateRules({
-                proposals: {
-                  ...phase.rules?.proposals,
-                  edit: val,
-                },
-              })
-            }
-            size="small"
-          />
-        </ToggleRow>
-      )}
+      <ToggleRow label={t('Enable proposal editing')}>
+        <ToggleButton
+          isSelected={phase.rules?.proposals?.edit ?? false}
+          onChange={(val) =>
+            updateRules({
+              proposals: {
+                ...phase.rules?.proposals,
+                edit: val,
+              },
+            })
+          }
+          size="small"
+        />
+      </ToggleRow>
+      <ToggleRow label={t('Enable proposal review')}>
+        <ToggleButton
+          isSelected={phase.rules?.proposals?.review ?? false}
+          onChange={(val) =>
+            updateRules({
+              proposals: {
+                ...phase.rules?.proposals,
+                review: val,
+              },
+            })
+          }
+          size="small"
+        />
+      </ToggleRow>
       <ToggleRow label={t('Enable voting')}>
         <ToggleButton
           isSelected={phase.rules?.voting?.submit ?? false}
@@ -324,22 +400,6 @@ const PhaseControls = ({
           size="small"
         />
       </ToggleRow>
-      {phase.rules?.voting?.submit && (
-        <ToggleRow label={t('Allow vote changes')}>
-          <ToggleButton
-            isSelected={phase.rules?.voting?.edit ?? false}
-            onChange={(val) =>
-              updateRules({
-                voting: {
-                  ...phase.rules?.voting,
-                  edit: val,
-                },
-              })
-            }
-            size="small"
-          />
-        </ToggleRow>
-      )}
     </div>
   );
 };
@@ -348,31 +408,78 @@ const PhaseControls = ({
 const AccordionTitleInput = ({
   value,
   onChange,
-  className,
+  autoFocus,
+  onAutoFocused,
   'aria-label': ariaLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
-  className?: string;
+  autoFocus?: boolean;
+  onAutoFocused?: () => void;
   'aria-label'?: string;
 }) => {
   const state = use(DisclosureStateContext);
   const isExpanded = state?.isExpanded ?? false;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus && isExpanded && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+      onAutoFocused?.();
+    }
+  }, [autoFocus, isExpanded, onAutoFocused]);
+
+  if (!isExpanded) {
+    return (
+      <button
+        type="button"
+        className="w-full cursor-pointer rounded border border-transparent px-2 py-1 text-left font-serif text-title-sm"
+        onClick={() => state?.expand()}
+      >
+        {value}
+      </button>
+    );
+  }
 
   return (
-    <input
-      type="text"
+    <AutoSizeInput
+      inputRef={inputRef}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={!isExpanded}
-      aria-label={ariaLabel}
-      className={cn(
-        'flex-1 rounded border bg-transparent px-2 py-1 font-serif text-title-sm',
-        'disabled:cursor-default disabled:border-transparent',
-        'enabled:bg-neutral-gray1 enabled:focus:border enabled:focus:bg-white',
-        className,
-      )}
+      onChange={onChange}
+      className="rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1 font-serif text-title-sm focus-within:border-neutral-gray3 focus-within:bg-white"
+      aria-label={ariaLabel ?? ''}
     />
+  );
+};
+
+/** Remove button that only appears when the accordion item is expanded */
+const RemovePhaseButton = ({
+  onPress,
+  isDisabled,
+}: {
+  onPress: () => void;
+  isDisabled: boolean;
+}) => {
+  const t = useTranslations();
+  const state = use(DisclosureStateContext);
+  const isExpanded = state?.isExpanded ?? false;
+
+  if (!isExpanded) {
+    return null;
+  }
+
+  return (
+    <Button
+      color="ghost"
+      size="small"
+      className="text-neutral-gray4 hover:text-red-600"
+      onPress={onPress}
+      isDisabled={isDisabled}
+      aria-label={t('Remove')}
+    >
+      <LuX className="size-4" />
+    </Button>
   );
 };
 
