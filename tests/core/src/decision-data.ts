@@ -182,6 +182,8 @@ export interface CreateDecisionInstanceOptions {
   status?: ProcessStatus;
   /** Whether to grant admin access (defaults to true) */
   grantAdminAccess?: boolean;
+  /** Optional override for proposalTemplate in instanceData (for testing legacy templates) */
+  proposalTemplate?: Record<string, unknown>;
 }
 
 export interface CreateDecisionInstanceResult {
@@ -210,6 +212,7 @@ export async function createDecisionInstance(
     schema = testSimpleVotingSchema,
     status = ProcessStatus.PUBLISHED,
     grantAdminAccess = true,
+    proposalTemplate: proposalTemplateOverride,
   } = opts;
 
   const instanceSlug = `test-instance-${randomUUID()}`;
@@ -248,7 +251,7 @@ export async function createDecisionInstance(
         Date.now() + (index + 1) * 7 * 24 * 60 * 60 * 1000,
       ).toISOString(),
     })),
-    proposalTemplate: {
+    proposalTemplate: proposalTemplateOverride ?? {
       type: 'object' as const,
       required: ['title'],
       'x-field-order': ['title', 'budget', 'summary'],

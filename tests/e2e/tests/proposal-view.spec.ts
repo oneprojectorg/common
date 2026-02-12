@@ -143,6 +143,82 @@ test.describe('Proposal View', () => {
     await expect(link).toHaveAttribute('href', 'https://example.org');
   });
 
+  test('renders legacy proposal with old template format and description field', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    // Legacy template shape: no x-format, no x-field-order, has a `description` property
+    const legacyProposalTemplate = {
+      type: 'object',
+      required: ['title', 'description', 'budget'],
+      properties: {
+        title: { type: 'string' },
+        budget: { type: 'number', maximum: 100000 },
+        category: {
+          enum: ['Ai. Direct funding to worker-owned co-ops.', 'other', null],
+          type: ['string', 'null'],
+        },
+        description: { type: 'string' },
+      },
+    };
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+      proposalTemplate: legacyProposalTemplate,
+    });
+
+    // Legacy proposal: raw HTML in `description`, no collaborationDocId
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      proposalData: {
+        title: 'Legacy Template Proposal',
+        description: [
+          '<h2>Worker Co-op Plan</h2>',
+          '<p>This proposal uses the <strong>old template format</strong> with a plain description field.</p>',
+          '<ul><li>Support co-ops</li><li>Build sustainability</li></ul>',
+        ].join(''),
+      },
+    });
+
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+    );
+
+    // Title renders
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        name: 'Legacy Template Proposal',
+      }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // Subheading from legacy HTML
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Worker Co-op Plan' }),
+    ).toBeVisible();
+
+    // Formatted text rendered correctly
+    await expect(
+      authenticatedPage.locator('strong', {
+        hasText: 'old template format',
+      }),
+    ).toBeVisible();
+
+    // List items
+    await expect(
+      authenticatedPage.locator('li', { hasText: 'Support co-ops' }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.locator('li', { hasText: 'Build sustainability' }),
+    ).toBeVisible();
+  });
+
   test('handles missing document gracefully', async ({
     authenticatedPage,
     org,

@@ -26,6 +26,7 @@ import { PostUpdate } from '../PostUpdate';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
+import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalTemplateSchema } from './proposalEditor/compileProposalSchema';
@@ -158,6 +159,10 @@ export function ProposalView({
   const proposalTemplate =
     (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
 
+  // Legacy proposals store HTML under a single "default" key with no collab doc.
+  // Render them directly instead of going through the template-driven renderer.
+  const legacyHtml = resolvedHtmlContent?.default as string | undefined;
+
   // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
   const showBanner =
     locale !== 'en' && !bannerDismissed && !translatedHtmlContent;
@@ -289,7 +294,9 @@ export function ProposalView({
           </div>
 
           {/* Proposal Content */}
-          {resolvedHtmlContent ? (
+          {legacyHtml ? (
+            <ProposalHtmlContent html={legacyHtml} />
+          ) : resolvedHtmlContent ? (
             <ProposalContentRenderer
               proposalTemplate={proposalTemplate}
               htmlContent={resolvedHtmlContent}
