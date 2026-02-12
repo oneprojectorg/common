@@ -86,11 +86,13 @@ export const listProposals = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  // Get the instance's profile for access checks
+  // Get the instance's profile for access checks + template resolution
   const instance = await db
     .select({
       profileId: processInstances.profileId,
       ownerProfileId: processInstances.ownerProfileId,
+      instanceData: processInstances.instanceData,
+      processId: processInstances.processId,
     })
     .from(processInstances)
     .where(eq(processInstances.id, processInstanceId))
@@ -202,12 +204,26 @@ export const listProposals = async ({
 
   const count = countResult[0]?.count || 0;
 
-  // TODO: Read proposalTemplate from process schema via processInstance/process join.
-  // Temporary hack while only the `default` fragment is used.
-  const proposalTemplate: Record<string, unknown> = {
-    type: 'object',
-    properties: {},
-  };
+  // Resolve proposalTemplate from instanceData, falling back to processSchema
+  const instanceData = instance[0].instanceData as Record<
+    string,
+    unknown
+  > | null;
+  let proposalTemplate =
+    (instanceData?.proposalTemplate as Record<string, unknown>) ?? null;
+
+  if (!proposalTemplate) {
+    const process = await db.query.decisionProcesses.findFirst({
+      where: { id: instance[0].processId },
+      columns: { processSchema: true },
+    });
+    const processSchema = process?.processSchema as Record<
+      string,
+      unknown
+    > | null;
+    proposalTemplate =
+      (processSchema?.proposalTemplate as Record<string, unknown>) ?? null;
+  }
 
   type ProposalListItem = (typeof proposalList)[number];
 
