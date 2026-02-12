@@ -22,7 +22,13 @@ import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { use, useEffect, useRef, useState } from 'react';
-import { LuChevronRight, LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
+import {
+  LuChevronRight,
+  LuCircleAlert,
+  LuGripVertical,
+  LuPlus,
+  LuX,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -186,6 +192,57 @@ export const PhaseEditor = ({
     return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
+  // Validation: track which fields have been blurred per phase
+  const [touchedFields, setTouchedFields] = useState<
+    Record<string, Set<string>>
+  >({});
+
+  const markTouched = (phaseId: string, fieldName: string) => {
+    setTouchedFields((prev) => {
+      const phaseSet = new Set(prev[phaseId]);
+      phaseSet.add(fieldName);
+      return { ...prev, [phaseId]: phaseSet };
+    });
+  };
+
+  const getPhaseErrors = (phase: PhaseDefinition) => {
+    const errors: Record<string, string> = {};
+    if (!phase.name?.trim()) {
+      errors.name = t('Phase name is required');
+    }
+    if (!phase.headline?.trim()) {
+      errors.headline = t('Headline is required');
+    }
+    if (!phase.description?.trim()) {
+      errors.description = t('Description is required');
+    }
+    if (!phase.endDate) {
+      errors.endDate = t('End date is required');
+    }
+    return errors;
+  };
+
+  const getErrorMessage = (
+    phaseId: string,
+    field: string,
+    errors: Record<string, string>,
+  ) => {
+    return touchedFields[phaseId]?.has(field) ? errors[field] : undefined;
+  };
+
+  const phaseHasVisibleErrors = (phaseId: string) => {
+    const phase = phases.find((p) => p.id === phaseId);
+    if (!phase) {
+      return false;
+    }
+    const errors = getPhaseErrors(phase);
+    const touched = touchedFields[phaseId];
+    if (!touched) {
+      return false;
+    }
+    return Object.keys(errors).some((field) => touched.has(field));
+  };
+
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
   const [autoFocusPhaseId, setAutoFocusPhaseId] = useState<string | null>(null);
 
@@ -202,6 +259,11 @@ export const PhaseEditor = ({
 
   const removePhase = (phaseId: string) => {
     setPhases(phases.filter((p) => p.id !== phaseId));
+    setTouchedFields((prev) => {
+      const next = { ...prev };
+      delete next[phaseId];
+      return next;
+    });
   };
 
   if (phases.length === 0) {
@@ -241,7 +303,9 @@ export const PhaseEditor = ({
           )}
           renderDropIndicator={PhaseDropIndicator}
         >
-          {(phase, { dragHandleProps, isDragging }) => (
+          {(phase, { dragHandleProps, isDragging }) => {
+            const errors = getPhaseErrors(phase);
+            return (
             <AccordionItem
               id={phase.id}
               className={cn(
@@ -258,11 +322,14 @@ export const PhaseEditor = ({
                   <AccordionTitleInput
                     value={phase.name}
                     onChange={(name) => updatePhase(phase.id, { name })}
+                    onBlur={() => markTouched(phase.id, 'name')}
+                    hasError={!!getErrorMessage(phase.id, 'name', errors)}
                     aria-label={t('Phase name')}
                     autoFocus={autoFocusPhaseId === phase.id}
                     onAutoFocused={() => setAutoFocusPhaseId(null)}
                   />
                 </div>
+                {phaseHasVisibleErrors(phase.id) && <PhaseErrorIndicator />}
                 <RemovePhaseButton
                   onPress={() => removePhase(phase.id)}
                   isDisabled={phases.length <= 1}
@@ -278,6 +345,12 @@ export const PhaseEditor = ({
                     onChange={(value) =>
                       updatePhase(phase.id, { headline: value })
                     }
+                    onBlur={() => markTouched(phase.id, 'headline')}
+                    errorMessage={getErrorMessage(
+                      phase.id,
+                      'headline',
+                      errors,
+                    )}
                     description={t(
                       'This text appears as the header of the page.',
                     )}
@@ -290,6 +363,12 @@ export const PhaseEditor = ({
                     onChange={(value) =>
                       updatePhase(phase.id, { description: value })
                     }
+                    onBlur={() => markTouched(phase.id, 'description')}
+                    errorMessage={getErrorMessage(
+                      phase.id,
+                      'description',
+                      errors,
+                    )}
                     textareaProps={{ rows: 3 }}
                     description={t(
                       'This text appears below the headline on the phase page.',
@@ -326,16 +405,25 @@ export const PhaseEditor = ({
                         }
                       />
                     </div>
-                    <div className="flex-1">
+                    <div
+                      className="flex-1"
+                      onBlur={() => markTouched(phase.id, 'endDate')}
+                    >
                       <DatePicker
                         label={t('End date')}
                         isRequired
                         value={safeParseDateString(phase.endDate)}
-                        onChange={(date) =>
+                        onChange={(date) => {
                           updatePhase(phase.id, {
                             endDate: formatDateValue(date),
-                          })
-                        }
+                          });
+                          markTouched(phase.id, 'endDate');
+                        }}
+                        errorMessage={getErrorMessage(
+                          phase.id,
+                          'endDate',
+                          errors,
+                        )}
                       />
                     </div>
                   </div>
@@ -346,7 +434,8 @@ export const PhaseEditor = ({
                 />
               </AccordionContent>
             </AccordionItem>
-          )}
+            );
+          }}
         </Sortable>
       </Accordion>
       <Button
@@ -446,12 +535,16 @@ const PhaseControls = ({
 const AccordionTitleInput = ({
   value,
   onChange,
+  onBlur,
+  hasError,
   autoFocus,
   onAutoFocused,
   'aria-label': ariaLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
+  hasError?: boolean;
   autoFocus?: boolean;
   onAutoFocused?: () => void;
   'aria-label'?: string;
@@ -485,7 +578,13 @@ const AccordionTitleInput = ({
       inputRef={inputRef}
       value={value}
       onChange={onChange}
-      className="rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1 font-serif text-title-sm focus-within:border-neutral-gray3 focus-within:bg-white"
+      onBlur={onBlur}
+      className={cn(
+        'rounded border px-2 py-1 font-serif text-title-sm focus-within:bg-white',
+        hasError
+          ? 'border-functional-red bg-white'
+          : 'border-neutral-gray1 bg-neutral-gray1 focus-within:border-neutral-gray3',
+      )}
       aria-label={ariaLabel ?? ''}
     />
   );
@@ -518,6 +617,26 @@ const RemovePhaseButton = ({
     >
       <LuX className="size-4" />
     </Button>
+  );
+};
+
+/** Warning icon shown on collapsed accordion headers when a phase has validation errors */
+const PhaseErrorIndicator = () => {
+  const t = useTranslations();
+  const state = use(DisclosureStateContext);
+  const isExpanded = state?.isExpanded ?? false;
+
+  if (isExpanded) {
+    return null;
+  }
+
+  return (
+    <span
+      className="text-functional-red"
+      aria-label={t('This phase has validation errors')}
+    >
+      <LuCircleAlert className="size-4" />
+    </span>
   );
 };
 

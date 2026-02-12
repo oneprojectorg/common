@@ -7,6 +7,7 @@ import { cn } from '../lib/utils';
 export interface AutoSizeInputProps {
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
   minWidth?: number;
@@ -20,6 +21,7 @@ export interface AutoSizeInputProps {
 export function AutoSizeInput({
   value,
   onChange,
+  onBlur,
   className,
   inputRef,
   minWidth = 20,
@@ -63,6 +65,7 @@ export function AutoSizeInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         className="border-none bg-transparent outline-none"
         style={{ width }}
         aria-label={ariaLabel}
