@@ -114,6 +114,10 @@ export const updateDecisionInstance = async ({
         ...(phase.description !== undefined && {
           description: phase.description,
         }),
+        ...(phase.headline !== undefined && { headline: phase.headline }),
+        ...(phase.additionalInfo !== undefined && {
+          additionalInfo: phase.additionalInfo,
+        }),
         ...(phase.rules !== undefined && { rules: phase.rules }),
         ...(phase.startDate !== undefined && { startDate: phase.startDate }),
         ...(phase.endDate !== undefined && { endDate: phase.endDate }),

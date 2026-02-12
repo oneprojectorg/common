@@ -17,6 +17,8 @@ export interface PhaseInstanceData {
   phaseId: string;
   name?: string;
   description?: string;
+  headline?: string;
+  additionalInfo?: string;
   rules?: PhaseRules;
   selectionPipeline?: SelectionPipeline;
   settingsSchema?: JSONSchema7 & { ui?: UiSchema };
@@ -46,6 +48,8 @@ export interface PhaseOverride {
   phaseId: string;
   name?: string;
   description?: string;
+  headline?: string;
+  additionalInfo?: string;
   rules?: PhaseRules;
   startDate?: string;
   endDate?: string;

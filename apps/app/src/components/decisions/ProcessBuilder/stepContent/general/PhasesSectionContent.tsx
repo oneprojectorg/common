@@ -18,12 +18,15 @@ import { DatePicker } from '@op/ui/DatePicker';
 import type { Key } from '@op/ui/RAC';
 import { DisclosureStateContext } from '@op/ui/RAC';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
+import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { use, useEffect, useRef, useState } from 'react';
 import { LuChevronRight, LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
 
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
@@ -62,6 +65,8 @@ export function PhasesSectionContent({
         id: p.phaseId,
         name: p.name ?? '',
         description: p.description,
+        headline: p.headline,
+        additionalInfo: p.additionalInfo,
         rules: p.rules ?? {},
         startDate: p.startDate,
         endDate: p.endDate,
@@ -90,6 +95,8 @@ export function PhasesSectionContent({
       phaseId: phase.id,
       name: phase.name,
       description: phase.description,
+      headline: phase.headline,
+      additionalInfo: phase.additionalInfo,
       startDate: phase.startDate,
       endDate: phase.endDate,
       rules: phase.rules,
@@ -264,18 +271,48 @@ export const PhaseEditor = ({
               <AccordionContent>
                 <hr />
                 <div className="space-y-4 p-4">
-                  <div>
-                    <label className="mb-1 block text-sm">
-                      {t('Description')}
+                  <TextField
+                    label={t('Headline')}
+                    isRequired
+                    value={phase.headline ?? ''}
+                    onChange={(value) =>
+                      updatePhase(phase.id, { headline: value })
+                    }
+                    description={t(
+                      'This text appears as the header of the page.',
+                    )}
+                  />
+                  <TextField
+                    label={t('Description')}
+                    isRequired
+                    useTextArea
+                    value={phase.description ?? ''}
+                    onChange={(value) =>
+                      updatePhase(phase.id, { description: value })
+                    }
+                    textareaProps={{ rows: 3 }}
+                    description={t(
+                      'This text appears below the headline on the phase page.',
+                    )}
+                  />
+                  <div className="space-y-2">
+                    <label className="block text-sm">
+                      {t('Additional information')}
                     </label>
-                    <textarea
-                      rows={3}
-                      value={phase.description ?? ''}
-                      onChange={(e) =>
-                        updatePhase(phase.id, { description: e.target.value })
+                    <RichTextEditorWithToolbar
+                      content={phase.additionalInfo ?? ''}
+                      onChange={(content) =>
+                        updatePhase(phase.id, { additionalInfo: content })
                       }
-                      className="w-full rounded-md border border-border px-3 py-2"
+                      toolbarPosition="bottom"
+                      className="rounded-md border border-border"
+                      editorClassName="min-h-24 p-3"
                     />
+                    <p className="text-sm text-neutral-gray4">
+                      {t(
+                        'Any additional information will appear in a modal titled "About the process"',
+                      )}
+                    </p>
                   </div>
                   <div className="flex gap-4">
                     <div className="flex-1">
@@ -292,6 +329,7 @@ export const PhaseEditor = ({
                     <div className="flex-1">
                       <DatePicker
                         label={t('End date')}
+                        isRequired
                         value={safeParseDateString(phase.endDate)}
                         onChange={(date) =>
                           updatePhase(phase.id, {
