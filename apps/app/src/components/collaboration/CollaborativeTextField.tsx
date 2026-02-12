@@ -64,11 +64,6 @@ export function CollaborativeTextField({
     editor.on('update', handleUpdate);
   }, []);
 
-  console.log(
-    '[CollaborativeTextField] binding to Yjs fragment:',
-    fragmentName,
-  );
-
   return (
     <div className="flex flex-col gap-2">
       {(title || description) && (

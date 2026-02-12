@@ -57,8 +57,6 @@ export const CollaborativeEditor = forwardRef<
   ) => {
     const { ydoc, provider, status, isSynced, user } = useCollaborativeDoc();
 
-    console.log('[CollaborativeEditor] binding to Yjs fragment:', field);
-
     // Build collaborative extensions with cursor support
     const collaborativeExtensions = useMemo(
       () => [
