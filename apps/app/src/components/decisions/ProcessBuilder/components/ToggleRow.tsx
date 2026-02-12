@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { LuInfo } from 'react-icons/lu';
