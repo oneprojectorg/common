@@ -5,15 +5,16 @@ import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { type NavigationConfig } from './navigationConfig';
+import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
 export const ProcessBuilderSidebar = ({
-  navigationConfig,
+  instanceId,
 }: {
-  navigationConfig?: NavigationConfig;
+  instanceId: string;
 }) => {
   const t = useTranslations();
+  const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSections, currentSection, currentStep, setSection } =
     useProcessNavigation(navigationConfig);
 

@@ -15,36 +15,37 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
-import { type NavigationConfig } from './navigationConfig';
+import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
 export const ProcessBuilderHeader = ({
   processName,
-  navigationConfig,
+  instanceId,
 }: {
   processName?: string;
-  navigationConfig?: NavigationConfig;
+  instanceId?: string;
 }) => {
   return (
     <SidebarProvider>
       <ProcessBuilderHeaderContent
         processName={processName}
-        navigationConfig={navigationConfig}
+        instanceId={instanceId}
       />
 
-      <MobileSidebar navigationConfig={navigationConfig} />
+      <MobileSidebar instanceId={instanceId} />
     </SidebarProvider>
   );
 };
 
 const ProcessBuilderHeaderContent = ({
   processName,
-  navigationConfig,
+  instanceId,
 }: {
   processName?: string;
-  navigationConfig?: NavigationConfig;
+  instanceId?: string;
 }) => {
   const t = useTranslations();
+  const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
@@ -122,12 +123,9 @@ const ProcessBuilderHeaderContent = ({
   );
 };
 
-const MobileSidebar = ({
-  navigationConfig,
-}: {
-  navigationConfig?: NavigationConfig;
-}) => {
+const MobileSidebar = ({ instanceId }: { instanceId?: string }) => {
   const t = useTranslations();
+  const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;

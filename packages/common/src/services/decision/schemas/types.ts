@@ -14,6 +14,7 @@ export interface PhaseRules {
   proposals?: {
     submit?: boolean;
     edit?: boolean;
+    review?: boolean;
   };
   voting?: {
     submit?: boolean;

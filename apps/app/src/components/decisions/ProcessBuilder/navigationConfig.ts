@@ -45,7 +45,7 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
   steps: {
     general: true,
     template: true,
-    rubric: true,
+    rubric: false,
     members: true,
   },
   sections: {
