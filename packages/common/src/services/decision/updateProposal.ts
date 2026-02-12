@@ -10,7 +10,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -18,7 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
+import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
@@ -116,51 +116,12 @@ export const updateProposal = async ({
     const processInstance =
       existingProposal.processInstance as ProcessInstanceWithProcess;
 
-    // Assert read access (profile-first, org-fallback)
     await assertInstanceProfileAccess({
       user: { id: user.id },
       instance: processInstance,
-      profilePermissions: { profile: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
+      profilePermissions: { profile: permission.UPDATE },
+      orgFallbackPermissions: { decisions: permission.UPDATE },
     });
-
-    // Check edit permissions (profileUser is cached from assert above)
-    const profileUser = processInstance.profileId
-      ? await getProfileAccessUser({
-          user: { id: user.id },
-          profileId: processInstance.profileId,
-        })
-      : undefined;
-
-    const hasPermissions = checkPermission(
-      { profile: permission.UPDATE },
-      profileUser?.roles ?? [],
-    );
-
-    // Only the submitter or process owner can update the proposal
-    const isSubmitter =
-      existingProposal.submittedByProfileId === dbUser.currentProfileId;
-    const canUpdateProposal =
-      processInstance.ownerProfileId === dbUser.currentProfileId ||
-      hasPermissions;
-
-    if (!isSubmitter && !canUpdateProposal) {
-      throw new UnauthorizedError('Not authorized to update this proposal');
-    }
-
-    if (data.status) {
-      // Only process editors can approve/reject (NOT proposal OWNER)
-      if (['approved', 'rejected'].includes(data.status) && !hasPermissions) {
-        throw new UnauthorizedError(
-          'Only process owner can approve or reject proposals',
-        );
-      }
-    }
-
-    // Only admins can change visibility
-    if (data.visibility && !hasPermissions) {
-      throw new UnauthorizedError('Only admins can change proposal visibility');
-    }
 
     // Validate proposal data against schema if updating proposalData
     if (data.proposalData && processInstance.process) {
