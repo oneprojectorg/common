@@ -123,6 +123,16 @@ export const updateProposal = async ({
       orgFallbackPermissions: { decisions: permission.UPDATE },
     });
 
+    // Status and visibility changes require ADMIN
+    if (data.status || data.visibility) {
+      await assertInstanceProfileAccess({
+        user: { id: user.id },
+        instance: processInstance,
+        profilePermissions: { profile: permission.ADMIN },
+        orgFallbackPermissions: { decisions: permission.ADMIN },
+      });
+    }
+
     // Validate proposal data against schema if updating proposalData
     if (data.proposalData && processInstance.process) {
       const process = processInstance.process as any;
