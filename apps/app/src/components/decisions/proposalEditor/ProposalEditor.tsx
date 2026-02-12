@@ -21,9 +21,9 @@ import {
   CollaborativePresence,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
+import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
-import { ProposalEditorLayout } from '../layout';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import {
   type ProposalTemplateSchema,
@@ -300,6 +300,7 @@ export function ProposalEditor({
         isEditMode={isEditMode}
         isDraft={isDraft}
         presenceSlot={<CollaborativePresence />}
+        proposalProfileId={proposal.profileId}
       >
         <div className="flex flex-1 flex-col gap-12 pt-12">
           {/* TODO: Re-add RichTextEditorToolbar that tracks the currently-focused
