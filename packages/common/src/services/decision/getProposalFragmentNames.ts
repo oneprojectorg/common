@@ -1,11 +1,6 @@
 /**
  * Derives Y.Doc fragment names from a proposal template schema.
  *
- * The frontend stores each text-based field (short-text, long-text) as a
- * separate named fragment inside a single shared Y.Doc. The title field
- * always uses the fragment name `'title'`. Non-collaborative fields (money,
- * category) store scalar values in proposalData and have no fragment.
- *
  * When no template is provided, falls back to `['default']` for backward
  * compatibility with legacy single-fragment documents.
  */
