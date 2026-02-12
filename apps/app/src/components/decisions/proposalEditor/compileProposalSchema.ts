@@ -1,3 +1,4 @@
+import { SYSTEM_FIELD_KEYS, getProposalTemplateFieldOrder } from '@op/common';
 import type { JSONSchema7 } from 'json-schema';
 
 // ---------------------------------------------------------------------------
@@ -24,13 +25,6 @@ export interface ProposalTemplateSchema extends JSONSchema7 {
   properties?: Record<string, ProposalPropertySchema>;
   'x-field-order'?: string[];
 }
-
-/**
- * System property keys that receive special collaborative UI wrappers.
- * Their *data* definition comes from the template; only the rendering
- * is overridden.
- */
-export const SYSTEM_FIELD_KEYS = new Set(['title', 'budget', 'category']);
 
 /** System fields that must always be present. Others are conditionally added. */
 const REQUIRED_SYSTEM_FIELDS = new Set(['title']);
@@ -75,7 +69,6 @@ export interface ProposalFieldDescriptor {
  * (title, category, budget) — missing ones are logged as errors.
  *
  * @param proposalTemplate - Proposal template schema stored on processSchema.
- * @param t - Translation function for field titles/placeholders.
  */
 export function compileProposalSchema(
   proposalTemplate: ProposalTemplateSchema,
@@ -88,52 +81,23 @@ export function compileProposalSchema(
     }
   }
 
-  const fieldOrder = proposalTemplate['x-field-order'] ?? [];
+  const { all } = getProposalTemplateFieldOrder(
+    proposalTemplate as Record<string, unknown>,
+  );
 
-  /** Build a descriptor for a single property key. */
-  function buildDescriptor(
-    key: string,
-    propSchema: ProposalPropertySchema,
-  ): ProposalFieldDescriptor {
-    return {
-      key,
-      format:
-        (propSchema['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT,
-      isSystem: SYSTEM_FIELD_KEYS.has(key),
-      schema: propSchema,
-    };
-  }
-
-  const fields: ProposalFieldDescriptor[] = [];
-  const seen = new Set<string>();
-
-  // System fields first (title, then category/budget if present)
-  for (const sysKey of SYSTEM_FIELD_KEYS) {
-    const propSchema = templateProperties[sysKey];
-    if (propSchema) {
-      fields.push(buildDescriptor(sysKey, propSchema));
-      seen.add(sysKey);
-    }
-  }
-
-  // Dynamic fields in x-field-order sequence
-  for (const key of fieldOrder) {
-    if (seen.has(key)) {
-      continue;
-    }
-    const propSchema = templateProperties[key];
-    if (propSchema) {
-      fields.push(buildDescriptor(key, propSchema));
-      seen.add(key);
-    }
-  }
-
-  // Any remaining properties not in x-field-order (fallback)
-  for (const [key, propSchema] of Object.entries(templateProperties)) {
-    if (!seen.has(key)) {
-      fields.push(buildDescriptor(key, propSchema));
-    }
-  }
-
-  return fields;
+  return all
+    .map((key) => {
+      const propSchema = templateProperties[key];
+      if (!propSchema) {
+        return null;
+      }
+      return {
+        key,
+        format:
+          (propSchema['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT,
+        isSystem: SYSTEM_FIELD_KEYS.has(key),
+        schema: propSchema,
+      };
+    })
+    .filter((d): d is ProposalFieldDescriptor => d !== null);
 }
