@@ -71,7 +71,9 @@ export async function getProposalDocumentsContent(
       proposalsWithCollabDoc,
       async ({ id, collaborationDocId, proposalTemplate }) => {
         try {
-          const fragmentNames = getProposalFragmentNames(proposalTemplate);
+          const fragmentNames = proposalTemplate
+            ? getProposalFragmentNames(proposalTemplate)
+            : ['default'];
           const fragments = await client.getDocumentFragments(
             collaborationDocId,
             fragmentNames,
