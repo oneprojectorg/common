@@ -271,6 +271,64 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     expect(decisionProfileUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
   });
 
+  it('should fail when user is already a member of the proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const profileData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal' },
+    });
+
+    // Create invitee and grant them access to the proposal profile first
+    const invitee = await profileData.createStandaloneUser();
+    await testData.grantProfileAccess(
+      proposal.profileId,
+      invitee.authUserId,
+      invitee.email,
+      false,
+    );
+
+    const [invite] = await db
+      .insert(profileInvites)
+      .values({
+        email: invitee.email,
+        profileId: proposal.profileId,
+        profileEntityType: EntityType.PROPOSAL,
+        accessRoleId: ROLES.MEMBER.id,
+        invitedBy: setup.organization.profileId,
+      })
+      .returning();
+
+    if (!invite) {
+      throw new Error('Failed to create invite');
+    }
+
+    profileData.trackProfileInvite(invitee.email, proposal.profileId);
+
+    const caller = await createAuthenticatedCaller(invitee.email);
+
+    await expect(
+      caller.decision.acceptProposalInvite({ inviteId: invite.id }),
+    ).rejects.toMatchObject({
+      cause: { name: 'CommonError' },
+    });
+  });
+
   it('should fail when invite does not exist', async ({
     task,
     onTestFinished,
