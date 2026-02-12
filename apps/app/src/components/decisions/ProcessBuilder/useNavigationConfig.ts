@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-
 import { trpc } from '@op/api/client';
+import { useMemo } from 'react';
 
 import {
   DEFAULT_NAVIGATION_CONFIG,
