@@ -70,7 +70,7 @@ export const GET = async (request: NextRequest) => {
     redirectPath.startsWith('/') &&
     !redirectPath.startsWith('//')
   ) {
-    return NextResponse.redirect(new URL(redirectPath, request.nextUrl.origin));
+    return NextResponse.redirect(new URL(redirectPath, useUrl.ENV_URL));
   }
 
   return NextResponse.redirect(useUrl.ENV_URL);
