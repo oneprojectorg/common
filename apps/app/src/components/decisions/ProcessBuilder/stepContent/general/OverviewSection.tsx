@@ -9,9 +9,7 @@ import { OverviewSectionSkeleton } from './OverviewSectionSkeleton';
 
 // Wrapper component that waits for Zustand hydration before rendering the form
 export default function OverviewSection(props: SectionProps) {
-  const [hasHydrated, setHasHydrated] = useState(() =>
-    useProcessBuilderStore.persist.hasHydrated(),
-  );
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
     const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {

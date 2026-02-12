@@ -79,6 +79,11 @@ export function OverviewSectionForm({
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
+  // Reset stale save status from previous sessions
+  useEffect(() => {
+    setSaveStatus(decisionProfileId, 'idle');
+  }, [decisionProfileId, setSaveStatus]);
+
   // tRPC mutation with cache invalidation (matches phase editor pattern)
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: () => markSaved(decisionProfileId),
@@ -95,29 +100,29 @@ export function OverviewSectionForm({
     name: p.name,
   }));
 
-  // Debounced save: draft persists to API, non-draft buffers in localStorage
+  // Debounced save: always persist to localStorage, additionally to API for drafts
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
     setSaveStatus(decisionProfileId, 'saving');
 
+    // Always save to localStorage
+    setInstanceData(decisionProfileId, {
+      name: values.name,
+      description: values.description,
+      stewardProfileId: values.stewardProfileId,
+      organizeByCategories: values.organizeByCategories,
+      requireCollaborativeProposals: values.requireCollaborativeProposals,
+      isPrivate: values.isPrivate,
+    });
+    markSaved(decisionProfileId);
+
     if (isDraft) {
-      // Draft: persist to API
+      // Draft: also persist to API
       updateInstance.mutate({
         instanceId,
         name: values.name,
         description: values.description,
         stewardProfileId: values.stewardProfileId || undefined,
       });
-    } else {
-      // Non-draft: buffer in localStorage
-      setInstanceData(decisionProfileId, {
-        name: values.name,
-        description: values.description,
-        stewardProfileId: values.stewardProfileId,
-        organizeByCategories: values.organizeByCategories,
-        requireCollaborativeProposals: values.requireCollaborativeProposals,
-        isPrivate: values.isPrivate,
-      });
-      markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);
 
