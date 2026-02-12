@@ -4,8 +4,6 @@ import {
   ProcessInstance,
   ProposalStatus,
   Visibility,
-  organizations,
-  processInstances,
   proposalCategories,
   proposals,
   taxonomies,
@@ -20,7 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
@@ -115,38 +113,33 @@ export const updateProposal = async ({
       throw new NotFoundError('Proposal not found');
     }
 
-    // join the process table to the org table via ownerId to get the org id
-    const instanceOrg = await db
-      .select({
-        id: organizations.id,
-      })
-      .from(organizations)
-      .leftJoin(
-        processInstances,
-        eq(organizations.profileId, processInstances.ownerProfileId),
-      )
-      .where(eq(processInstances.id, existingProposal.processInstanceId))
-      .limit(1);
+    const processInstance =
+      existingProposal.processInstance as ProcessInstanceWithProcess;
 
-    if (!instanceOrg[0]) {
-      throw new UnauthorizedError('User does not have access to this process');
-    }
-
-    const orgUser = await getOrgAccessUser({
-      user,
-      organizationId: instanceOrg[0].id,
+    // Assert read access (profile-first, org-fallback)
+    await assertInstanceProfileAccess({
+      user: { id: user.id },
+      instance: processInstance,
+      profilePermissions: { profile: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
     });
 
+    // Check edit permissions (profileUser is cached from assert above)
+    const profileUser = processInstance.profileId
+      ? await getProfileAccessUser({
+          user: { id: user.id },
+          profileId: processInstance.profileId,
+        })
+      : undefined;
+
     const hasPermissions = checkPermission(
-      { decisions: permission.ADMIN },
-      orgUser?.roles ?? [],
+      { profile: permission.UPDATE },
+      profileUser?.roles ?? [],
     );
 
     // Only the submitter or process owner can update the proposal
     const isSubmitter =
       existingProposal.submittedByProfileId === dbUser.currentProfileId;
-    const processInstance =
-      existingProposal.processInstance as ProcessInstanceWithProcess;
     const canUpdateProposal =
       processInstance.ownerProfileId === dbUser.currentProfileId ||
       hasPermissions;
