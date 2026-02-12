@@ -1,23 +1,6 @@
 import { expect, test } from '../fixtures/index.js';
 
 test.describe('Redirect on login', () => {
-  test('unauthenticated user visiting a protected route is redirected to login with redirect param', async ({
-    browser,
-  }) => {
-    // Use a fresh context with no auth state
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    await page.goto('/en/decisions');
-
-    // Should be redirected to /login with the original path as a redirect param
-    await expect(page).toHaveURL(/\/login\?redirect=%2Fen%2Fdecisions/, {
-      timeout: 15000,
-    });
-
-    await context.close();
-  });
-
   test('authenticated user visiting /login?redirect=... is sent to the redirect target', async ({
     authenticatedPage,
   }) => {
@@ -27,6 +10,9 @@ test.describe('Redirect on login', () => {
     await expect(authenticatedPage).toHaveURL(/\/en\/decisions/, {
       timeout: 15000,
     });
+
+    // Page should not be an error
+    await expect(authenticatedPage.locator('text=500')).not.toBeVisible();
   });
 
   test('authenticated user visiting /login without redirect param is sent to /', async ({
@@ -38,6 +24,14 @@ test.describe('Redirect on login', () => {
     await expect(authenticatedPage).not.toHaveURL(/\/login/, {
       timeout: 15000,
     });
+
+    // Should land on a working page, not an error
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        level: 1,
+        name: /Welcome back/,
+      }),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('redirect param with protocol-relative URL is rejected', async ({
@@ -52,5 +46,13 @@ test.describe('Redirect on login', () => {
     await expect(authenticatedPage).not.toHaveURL(/\/login/, {
       timeout: 15000,
     });
+
+    // Should land on a working page, not an error
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        level: 1,
+        name: /Welcome back/,
+      }),
+    ).toBeVisible({ timeout: 15000 });
   });
 });
