@@ -478,6 +478,8 @@
   "Template Editor": "Editor de modelo",
   "Criteria": "Critérios",
   "Settings": "Configurações",
+  "We're almost there with this!": "Estamos quase lá com isso!",
+  "Coming soon": "Em breve",
   "Roles & permissions": "Funções e permissões",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 passo restante} other {# passos restantes}}",
   "Process steps": "Passos do processo",

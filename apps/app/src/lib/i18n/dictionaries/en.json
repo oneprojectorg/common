@@ -478,6 +478,8 @@
   "Template Editor": "Template Editor",
   "Criteria": "Criteria",
   "Settings": "Settings",
+  "We're almost there with this!": "We're almost there with this!",
+  "Coming soon": "Coming soon",
   "Roles & permissions": "Roles & permissions",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 step} other {# steps}} remaining",
   "Process steps": "Process steps",

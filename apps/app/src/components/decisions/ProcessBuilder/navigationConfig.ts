@@ -18,10 +18,7 @@ export const SECTIONS_BY_STEP = {
     { id: 'proposalCategories', labelKey: 'Proposal Categories' },
   ],
   template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
-  rubric: [
-    { id: 'criteria', labelKey: 'Criteria' },
-    { id: 'settings', labelKey: 'Settings' },
-  ],
+  rubric: [{ id: 'criteria', labelKey: 'Criteria' }],
   members: [
     { id: 'roles', labelKey: 'Roles & permissions' },
     { id: 'members', labelKey: 'Members' },
@@ -51,7 +48,7 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
   sections: {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
-    rubric: ['criteria', 'settings'],
+    rubric: ['criteria'],
     members: ['roles', 'members'],
   },
 };
