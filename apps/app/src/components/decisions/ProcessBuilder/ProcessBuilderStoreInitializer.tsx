@@ -24,18 +24,16 @@ export function ProcessBuilderStoreInitializer({
   serverData: FormInstanceData;
 }) {
   useEffect(() => {
-    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(
-      () => {
-        const existing =
-          useProcessBuilderStore.getState().instances[decisionProfileId];
+    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
+      const existing =
+        useProcessBuilderStore.getState().instances[decisionProfileId];
 
-        // Server data as base, localStorage edits on top
-        const merged = { ...serverData, ...existing };
-        useProcessBuilderStore
-          .getState()
-          .setInstanceData(decisionProfileId, merged);
-      },
-    );
+      // Server data as base, localStorage edits on top
+      const merged = { ...serverData, ...existing };
+      useProcessBuilderStore
+        .getState()
+        .setInstanceData(decisionProfileId, merged);
+    });
 
     void useProcessBuilderStore.persist.rehydrate();
     return unsubscribe;

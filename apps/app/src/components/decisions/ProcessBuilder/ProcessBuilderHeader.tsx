@@ -182,7 +182,6 @@ const ProcessBuilderHeaderContent = ({
         )}
         <UserAvatarMenu className="hidden md:block" />
       </div>
-
     </header>
   );
 };
@@ -264,15 +263,15 @@ const StepsRemainingPopover = ({
       >
         <LuCircleAlert className="size-4 shrink-0" />
         <span className="hidden md:block">
-          {t(
-            '{stepCount, plural, =1 {1 step} other {# steps}} remaining',
-            {
-              stepCount: validation.stepsRemaining,
-            },
-          )}
+          {t('{stepCount, plural, =1 {1 step} other {# steps}} remaining', {
+            stepCount: validation.stepsRemaining,
+          })}
         </span>
       </Button>
-      <Popover placement="bottom end" className="w-72 rounded-lg border bg-white p-4 shadow-lg">
+      <Popover
+        placement="bottom end"
+        className="w-72 rounded-lg border bg-white p-4 shadow-lg"
+      >
         <p className="mb-3 font-medium text-neutral-black">
           {t('Complete these steps to launch')}
         </p>
@@ -286,9 +285,7 @@ const StepsRemainingPopover = ({
               )}
               <span
                 className={
-                  item.isValid
-                    ? 'text-functional-green'
-                    : 'text-neutral-black'
+                  item.isValid ? 'text-functional-green' : 'text-neutral-black'
                 }
               >
                 {t(item.labelKey)}

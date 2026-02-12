@@ -36,7 +36,8 @@ const EditDecisionPage = async ({
     description: processInstance.description ?? undefined,
     stewardProfileId: processInstance.steward?.id,
     phases: instanceData.phases,
-    proposalTemplate: instanceData.proposalTemplate as FormInstanceData['proposalTemplate'],
+    proposalTemplate:
+      instanceData.proposalTemplate as FormInstanceData['proposalTemplate'],
     hideBudget: instanceData.config?.hideBudget,
     categories: instanceData.config?.categories,
     requireCategorySelection: instanceData.config?.requireCategorySelection,

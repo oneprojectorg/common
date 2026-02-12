@@ -71,9 +71,7 @@ function validatePhases(
 
   for (const phase of phases) {
     if (!phase.name?.trim()) {
-      errors.push(
-        `Phase "${phase.phaseId}" is missing a name`,
-      );
+      errors.push(`Phase "${phase.phaseId}" is missing a name`);
     }
     if (!phase.endDate) {
       errors.push(
@@ -130,13 +128,13 @@ export const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
   {
     id: 'phaseDetails',
-    labelKey: 'Ensure all phases have a title and end date',
+    labelKey: 'Ensure all phases have a headline and end date',
     validate: (data) => {
       const phases = data?.phases;
       if (!phases?.length) {
         return false;
       }
-      return phases.every((p) => !!p.name?.trim() && !!p.endDate);
+      return phases.every((p) => !!p.headline?.trim() && !!p.endDate);
     },
   },
   {
@@ -180,13 +178,13 @@ export function validateAllSteps(
     steps[step.id] = validateStep(step.id, data);
   }
 
-  const stepsRemaining = Object.values(steps).filter((s) => !s.isValid).length;
-
   const checklist = LAUNCH_CHECKLIST.map((item) => ({
     id: item.id,
     labelKey: item.labelKey,
     isValid: item.validate(data),
   }));
+
+  const stepsRemaining = checklist.filter((item) => !item.isValid).length;
 
   return {
     steps,
