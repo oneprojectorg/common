@@ -63,5 +63,11 @@ export const GET = async (request: NextRequest) => {
     }
   }
 
+  const redirectPath = searchParams.get('redirect');
+
+  if (redirectPath && redirectPath.startsWith('/') && !redirectPath.startsWith('//')) {
+    return NextResponse.redirect(new URL(redirectPath, request.nextUrl.origin));
+  }
+
   return NextResponse.redirect(useUrl.ENV_URL);
 };

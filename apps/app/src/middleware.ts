@@ -118,10 +118,13 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     !request.nextUrl.pathname.startsWith('/login') &&
     !(request.nextUrl.pathname === '/')
   ) {
-    // no user, respond by redirecting the user to the waitlist page
+    // no user, redirect to login with the original path preserved
     const url = request.nextUrl.clone();
 
-    url.pathname = '/';
+    url.pathname = '/login';
+    if (pathname !== '/') {
+      url.searchParams.set('redirect', pathname);
+    }
 
     return NextResponse.redirect(url);
   }

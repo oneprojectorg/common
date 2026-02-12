@@ -1,13 +1,19 @@
 'use client';
 
 import { useAuthUser } from '@op/hooks';
-import { redirect } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 
 export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthUser();
+  const pathname = usePathname();
+
+  const loginUrl =
+    pathname && pathname !== '/'
+      ? `/login?redirect=${encodeURIComponent(pathname)}`
+      : '/login';
 
   if (user?.data?.error) {
-    redirect('/login');
+    redirect(loginUrl);
   }
 
   if (!user || user.isFetching || user.isPending) {
@@ -15,7 +21,7 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user.isFetchedAfterMount && !user.isFetching && !user.data?.user) {
-    redirect('/login');
+    redirect(loginUrl);
   }
 
   return children;
