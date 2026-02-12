@@ -32,10 +32,6 @@ interface CollaborativeTextFieldProps {
  *
  * Composes {@link CollaborativeEditor} so we get consistent editor setup,
  * styled content, and Yjs collaboration/snapshotting for free.
- *
- * Future `x-format-options` from the template schema are forwarded as
- * direct props, so adding new knobs (e.g. `rich`, `maxWords`) only
- * requires extending the props interface.
  */
 export function CollaborativeTextField({
   fragmentName,
@@ -67,6 +63,11 @@ export function CollaborativeTextField({
     };
     editor.on('update', handleUpdate);
   }, []);
+
+  console.log(
+    '[CollaborativeTextField] binding to Yjs fragment:',
+    fragmentName,
+  );
 
   return (
     <div className="flex flex-col gap-2">

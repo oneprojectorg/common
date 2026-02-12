@@ -20,15 +20,31 @@ export function getProposalContent(
   }
 
   if (documentContent.type === 'json') {
-    const defaultFragment = documentContent.fragments.default;
+    // Merge all fragment contents (excluding title, rendered separately) into a single doc
+    const allContent: unknown[] = [];
+    for (const [key, fragment] of Object.entries(documentContent.fragments)) {
+      if (key === 'title' || !fragment?.content) {
+        continue;
+      }
+      allContent.push(...fragment.content);
+    }
 
-    if (!defaultFragment?.content) {
+    // Fall back to legacy `default` fragment if no keyed fragments matched
+    if (allContent.length === 0) {
+      const defaultFragment = documentContent.fragments.default;
+      if (!defaultFragment?.content) {
+        return null;
+      }
+      allContent.push(...defaultFragment.content);
+    }
+
+    if (allContent.length === 0) {
       return null;
     }
 
     return {
       type: 'doc',
-      content: defaultFragment.content,
+      content: allContent,
     } as JSONContent;
   }
 
@@ -44,18 +60,17 @@ export function getProposalContentPreview(
   }
 
   if (documentContent.type === 'json') {
-    const defaultFragment = documentContent.fragments.default;
+    const content = getProposalContent(documentContent);
 
-    if (!defaultFragment?.content) {
+    if (!content || typeof content === 'string') {
       return null;
     }
 
     try {
-      const doc = {
-        type: 'doc',
-        content: defaultFragment.content as JSONContent[],
-      };
-      const text = generateText(doc, defaultViewerExtensions);
+      const text = generateText(
+        content as JSONContent,
+        defaultViewerExtensions,
+      );
       return text.trim();
     } catch {
       return null;

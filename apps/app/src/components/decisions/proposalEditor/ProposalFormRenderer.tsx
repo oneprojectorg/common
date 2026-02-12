@@ -67,7 +67,7 @@ function renderField(
   t: (key: string, params?: Record<string, string | number>) => string,
   preview: boolean,
 ): React.ReactNode {
-  const { key, format, schema, formatOptions } = field;
+  const { key, format, schema } = field;
 
   // -- Title ------------------------------------------------------------------
 
@@ -142,9 +142,7 @@ function renderField(
   switch (format) {
     case 'short-text':
     case 'long-text': {
-      const placeholder =
-        (formatOptions.placeholder as string | undefined) ??
-        t('Start typing...');
+      const placeholder = t('Start typing...');
 
       if (preview) {
         return (

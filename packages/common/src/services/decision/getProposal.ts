@@ -61,6 +61,7 @@ export const getProposal = async ({
     commentsCount: number;
     likesCount: number;
     followersCount: number;
+    proposalTemplate: Record<string, unknown> | null;
     documentContent: ProposalDocumentContent | undefined;
     htmlContent: Record<string, string> | undefined;
     attachments: ProposalAttachmentWithDetails[];
@@ -100,14 +101,30 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal not found');
   }
 
-  // Run engagement counts and document fetch in parallel
-  // TODO: Read proposalTemplate from process schema via processInstance/process join.
-  // Temporary hack while only the `default` fragment is used.
-  const proposalTemplate: Record<string, unknown> = {
-    type: 'object',
-    properties: {},
-  };
+  // Read proposalTemplate from instanceData (new path) or processSchema (legacy path)
+  const instanceData = proposal.processInstance.instanceData as Record<
+    string,
+    unknown
+  > | null;
+  let proposalTemplate =
+    (instanceData?.proposalTemplate as Record<string, unknown>) ?? null;
 
+  console.log('=== Proposal Template ===', proposalTemplate);
+
+  if (!proposalTemplate) {
+    const process = await db.query.decisionProcesses.findFirst({
+      where: { id: proposal.processInstance.processId },
+      columns: { processSchema: true },
+    });
+    const processSchema = process?.processSchema as Record<
+      string,
+      unknown
+    > | null;
+    proposalTemplate =
+      (processSchema?.proposalTemplate as Record<string, unknown>) ?? null;
+  }
+
+  // Run engagement counts and document fetch in parallel
   const [engagementCounts, documentContentMap] = await Promise.all([
     // Get engagement counts if proposal has a profile
     proposal.profileId
@@ -208,6 +225,7 @@ export const getProposal = async ({
   return {
     ...proposal,
     proposalData: parseProposalData(proposal.proposalData),
+    proposalTemplate,
     ...engagementCounts,
     documentContent,
     htmlContent,

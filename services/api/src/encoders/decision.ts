@@ -450,6 +450,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     selectionRank: z.number().nullable().optional(),
     voteCount: z.number().optional(),
     allocated: z.string().nullable().optional(),
+    proposalTemplate: jsonSchemaEncoder.nullable().optional(),
     documentContent: documentContentEncoder.optional(),
     htmlContent: z.record(z.string(), z.string()).optional(),
   });
