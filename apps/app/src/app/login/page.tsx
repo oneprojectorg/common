@@ -1,5 +1,6 @@
 'use client';
 
+import { isSafeRedirectPath } from '@op/common/client';
 import { useAuthUser } from '@op/hooks';
 import { redirect, useSearchParams } from 'next/navigation';
 
@@ -22,11 +23,7 @@ const LoginPage = () => {
     return <LoginPageWithLayout />;
   }
 
-  if (
-    redirectParam?.startsWith('/') &&
-    !redirectParam.startsWith('//') &&
-    !redirectParam.startsWith('/login')
-  ) {
+  if (isSafeRedirectPath(redirectParam)) {
     redirect(redirectParam);
   }
 

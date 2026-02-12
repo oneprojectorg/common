@@ -53,6 +53,47 @@ test.describe('Redirect on login', () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
+  test('redirect param of locale-prefixed /login does not cause an infinite loop', async ({
+    authenticatedPage,
+  }) => {
+    await authenticatedPage.goto('/login?redirect=%2Fen%2Flogin');
+
+    // Should NOT redirect to /en/login
+    await expect(authenticatedPage).not.toHaveURL(/\/login/, {
+      timeout: 15000,
+    });
+
+    // Should land on a working page, not an error
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        level: 1,
+        name: /Welcome back/,
+      }),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
+  test('redirect param of /api/ path is rejected', async ({
+    authenticatedPage,
+  }) => {
+    await authenticatedPage.goto('/login?redirect=%2Fapi%2Fauth%2Fcallback');
+
+    // Should NOT redirect to /api/auth/callback
+    await expect(authenticatedPage).not.toHaveURL(/\/api\//, {
+      timeout: 15000,
+    });
+    await expect(authenticatedPage).not.toHaveURL(/\/login/, {
+      timeout: 15000,
+    });
+
+    // Should land on a working page, not an error
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        level: 1,
+        name: /Welcome back/,
+      }),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
   test('redirect param with protocol-relative URL is rejected', async ({
     authenticatedPage,
   }) => {
