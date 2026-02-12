@@ -248,7 +248,7 @@ export const PhaseEditor = ({
 
   const addPhase = () => {
     const newPhase: PhaseDefinition = {
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID().slice(0, 8),
       name: t('New phase'),
       rules: {},
     };
