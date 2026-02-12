@@ -2,6 +2,7 @@
  * This route is used to handle the callback from OAuth providers.
  */
 import { trpcVanilla } from '@op/api/serverClient';
+import { isSafeRedirectPath } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
 import { NextResponse } from 'next/server';
@@ -61,6 +62,12 @@ export const GET = async (request: NextRequest) => {
         `${errorRedirect}?error=${'Unable to verify your email address. Please try again.'}`,
       );
     }
+  }
+
+  const redirectPath = searchParams.get('redirect');
+
+  if (isSafeRedirectPath(redirectPath)) {
+    return NextResponse.redirect(new URL(redirectPath, useUrl.ENV_URL));
   }
 
   return NextResponse.redirect(useUrl.ENV_URL);

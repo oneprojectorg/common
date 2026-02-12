@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { isSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
@@ -62,6 +63,7 @@ export const LoginPanel = () => {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const isSignup = searchParams.get('signup');
+  const redirectParam = searchParams.get('redirect');
 
   const {
     email,
@@ -77,10 +79,16 @@ export const LoginPanel = () => {
   } = useLoginStore();
 
   const handleLogin = async () => {
+    const callbackUrl = new URL('/api/auth/callback', location.origin);
+
+    if (isSafeRedirectPath(redirectParam)) {
+      callbackUrl.searchParams.set('redirect', redirectParam);
+    }
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${location.origin}/api/auth/callback`,
+        redirectTo: callbackUrl.toString(),
       },
     });
   };
@@ -122,7 +130,11 @@ export const LoginPanel = () => {
     });
 
     if (data.user && data.session && data.user.role === 'authenticated') {
-      window.location.reload();
+      if (isSafeRedirectPath(redirectParam)) {
+        window.location.href = redirectParam;
+      } else {
+        window.location.reload();
+      }
     } else {
       setTokenError(error?.message ?? 'Failed to verify code');
     }

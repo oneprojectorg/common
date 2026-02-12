@@ -10,3 +10,21 @@ export {
   LOCALE_TO_DEEPL,
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';
+
+const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
+
+export function isSafeRedirectPath(path: string | null): path is string {
+  if (!path?.startsWith('/')) {
+    return false;
+  }
+  if (path.startsWith('//')) {
+    return false;
+  }
+  if (LOGIN_PATH_RE.test(path)) {
+    return false;
+  }
+  if (path.startsWith('/api/')) {
+    return false;
+  }
+  return true;
+}
