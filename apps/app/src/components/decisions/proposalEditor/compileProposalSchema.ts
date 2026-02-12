@@ -19,12 +19,14 @@ export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
  * JSON Schema 7 extended with proposal-specific vendor extensions.
  */
 export interface ProposalPropertySchema extends JSONSchema7 {
-  'x-format'?: XFormat;
+  'x-format'?: string;
   'x-format-options'?: Record<string, unknown>;
+  'x-currency'?: string;
 }
 
 export interface ProposalTemplateSchema extends JSONSchema7 {
   properties?: Record<string, ProposalPropertySchema>;
+  'x-field-order'?: string[];
 }
 
 /**
@@ -33,6 +35,9 @@ export interface ProposalTemplateSchema extends JSONSchema7 {
  * is overridden.
  */
 export const SYSTEM_FIELD_KEYS = new Set(['title', 'budget', 'category']);
+
+/** System fields that must always be present. Others are conditionally added. */
+const REQUIRED_SYSTEM_FIELDS = new Set(['title']);
 
 /** Default `x-format` when a dynamic field omits the extension. */
 const DEFAULT_X_FORMAT: XFormat = 'short-text';
@@ -83,25 +88,58 @@ export function compileProposalSchema(
 ): ProposalFieldDescriptor[] {
   const templateProperties = proposalTemplate.properties ?? {};
 
-  for (const key of SYSTEM_FIELD_KEYS) {
+  for (const key of REQUIRED_SYSTEM_FIELDS) {
     if (!templateProperties[key]) {
       console.error(`[compileProposalSchema] Missing system field "${key}"`);
     }
   }
 
-  const fields: ProposalFieldDescriptor[] = [];
+  const fieldOrder = proposalTemplate['x-field-order'] ?? [];
 
-  for (const [key, propSchema] of Object.entries(templateProperties)) {
-    const xFormat = propSchema['x-format'] ?? DEFAULT_X_FORMAT;
-    const xFormatOptions = propSchema['x-format-options'] ?? {};
-
-    fields.push({
+  /** Build a descriptor for a single property key. */
+  function buildDescriptor(
+    key: string,
+    propSchema: ProposalPropertySchema,
+  ): ProposalFieldDescriptor {
+    return {
       key,
-      format: xFormat,
+      format:
+        (propSchema['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT,
       isSystem: SYSTEM_FIELD_KEYS.has(key),
       schema: propSchema,
-      formatOptions: xFormatOptions,
-    });
+      formatOptions: propSchema['x-format-options'] ?? {},
+    };
+  }
+
+  const fields: ProposalFieldDescriptor[] = [];
+  const seen = new Set<string>();
+
+  // System fields first (title, then category/budget if present)
+  for (const sysKey of SYSTEM_FIELD_KEYS) {
+    const propSchema = templateProperties[sysKey];
+    if (propSchema) {
+      fields.push(buildDescriptor(sysKey, propSchema));
+      seen.add(sysKey);
+    }
+  }
+
+  // Dynamic fields in x-field-order sequence
+  for (const key of fieldOrder) {
+    if (seen.has(key)) {
+      continue;
+    }
+    const propSchema = templateProperties[key];
+    if (propSchema) {
+      fields.push(buildDescriptor(key, propSchema));
+      seen.add(key);
+    }
+  }
+
+  // Any remaining properties not in x-field-order (fallback)
+  for (const [key, propSchema] of Object.entries(templateProperties)) {
+    if (!seen.has(key)) {
+      fields.push(buildDescriptor(key, propSchema));
+    }
   }
 
   return fields;

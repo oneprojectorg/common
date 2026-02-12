@@ -7,13 +7,13 @@ import { FieldConfigCard } from '@op/ui/FieldConfigCard';
 import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
-import type { RJSFSchema } from '@rjsf/utils';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { ProposalPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import {
   type FieldType,
   type FieldView,
@@ -40,6 +40,7 @@ import {
   FieldCardDragPreview,
   FieldCardDropIndicator,
 } from './FieldCard';
+import { ParticipantPreview } from './ParticipantPreview';
 import {
   FieldListTrigger,
   TemplateEditorSidebar,
@@ -108,21 +109,21 @@ export function TemplateEditorContent({
   const sidebarFields = useMemo(() => {
     const locked = [
       {
-        id: '_title',
+        id: 'title',
         label: t('Proposal title'),
         fieldType: 'short_text' as const,
       },
       ...(hasCategories
         ? [
             {
-              id: '_category',
+              id: 'category',
               label: t('Category'),
               fieldType: 'dropdown' as const,
             },
           ]
         : []),
       {
-        id: '_budget',
+        id: 'budget',
         label: t('Budget'),
         fieldType: 'number' as const,
       },
@@ -229,7 +230,7 @@ export function TemplateEditorContent({
   );
 
   const handleUpdateJsonSchema = useCallback(
-    (fieldId: string, updates: Partial<RJSFSchema>) => {
+    (fieldId: string, updates: Partial<ProposalPropertySchema>) => {
       setTemplate((prev) => {
         const existing = getFieldSchema(prev, fieldId);
         if (!existing) {
@@ -291,7 +292,7 @@ export function TemplateEditorContent({
           side={isMobile ? 'right' : 'left'}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
+        <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
             <Header2 className="hidden font-serif text-title-sm md:mt-8 md:block">
               {t('Proposal template')}
@@ -365,6 +366,8 @@ export function TemplateEditorContent({
             </Sortable>
           </div>
         </main>
+
+        <ParticipantPreview template={template} />
 
         <div className="fixed inset-x-0 bottom-0 border-t bg-white p-4 md:hidden">
           <AddFieldMenu onAddField={handleAddField} />

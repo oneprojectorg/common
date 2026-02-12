@@ -1,5 +1,8 @@
 'use client';
 
+import { Button } from '@op/ui/Button';
+import { Select, SelectItem } from '@op/ui/Select';
+
 import {
   CollaborativeBudgetField,
   CollaborativeCategoryField,
@@ -22,55 +25,92 @@ interface ProposalFormRendererProps {
   onFieldChange: (key: string, value: unknown) => void;
   /** Translation function for placeholders. */
   t: (key: string, params?: Record<string, string | number>) => string;
-  /** When true, renders the form as a non-interactive preview. */
+  /** When true, renders the form as a non-interactive static preview. */
   previewMode?: boolean;
 }
 
 // ---------------------------------------------------------------------------
-// Field renderers
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Extract `{ value, label }` options from a JSON Schema `oneOf` array. */
+function extractOneOfOptions(
+  schema: ProposalFieldDescriptor['schema'],
+): { value: string; label: string }[] {
+  if (!Array.isArray(schema.oneOf)) {
+    return [];
+  }
+  return schema.oneOf
+    .filter(
+      (entry): entry is { const: string; title: string } =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        'const' in entry &&
+        'title' in entry,
+    )
+    .map((entry) => ({ value: entry.const, label: entry.title }));
+}
+
+// ---------------------------------------------------------------------------
+// Field renderer
 // ---------------------------------------------------------------------------
 
 /**
- * Renders a single field descriptor into the appropriate collaborative
- * component. System fields (title, category, budget) get their specialised
- * wrappers; dynamic fields resolve via `x-format`.
+ * Renders a single field descriptor. In preview mode, uses the same UI
+ * components (`Button pill`, `Select pill`, identical label/description
+ * markup) but without any Yjs/TipTap collaboration dependencies.
  */
 function renderField(
   field: ProposalFieldDescriptor,
   draft: ProposalDraftFields,
   onFieldChange: (key: string, value: unknown) => void,
   t: (key: string, params?: Record<string, string | number>) => string,
+  preview: boolean,
 ): React.ReactNode {
   const { key, format, schema, formatOptions } = field;
 
-  // -- System fields with dedicated components --------------------------------
+  // -- Title ------------------------------------------------------------------
 
   if (key === 'title') {
+    if (preview) {
+      return (
+        <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-gray3">
+          {t('Proposal Title')}
+        </div>
+      );
+    }
     return (
       <CollaborativeTitleField
-        key={key}
         placeholder={t('Untitled Proposal')}
         onChange={(value) => onFieldChange('title', value)}
       />
     );
   }
 
-  if (key === 'category') {
-    const options = Array.isArray(schema.oneOf)
-      ? schema.oneOf
-          .filter(
-            (entry): entry is { const: string; title: string } =>
-              typeof entry === 'object' &&
-              entry !== null &&
-              'const' in entry &&
-              'title' in entry,
-          )
-          .map((entry) => ({ value: entry.const, label: entry.title }))
-      : [];
+  // -- Category (system) ------------------------------------------------------
 
+  if (key === 'category') {
+    const options = extractOneOfOptions(schema);
+
+    if (preview) {
+      return (
+        <Select
+          variant="pill"
+          size="medium"
+          placeholder={t('Select category')}
+          selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
+          className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+        >
+          {options.map((opt) => (
+            <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </Select>
+      );
+    }
     return (
       <CollaborativeCategoryField
-        key={key}
         options={options}
         initialValue={draft.category}
         onChange={(value) => onFieldChange('category', value)}
@@ -78,10 +118,18 @@ function renderField(
     );
   }
 
+  // -- Budget (system) --------------------------------------------------------
+
   if (key === 'budget') {
+    if (preview) {
+      return (
+        <Button variant="pill" color="pill">
+          {t('Add budget')}
+        </Button>
+      );
+    }
     return (
       <CollaborativeBudgetField
-        key={key}
         maxAmount={schema.maximum}
         initialValue={draft.budget}
         onChange={(value) => onFieldChange('budget', value)}
@@ -93,67 +141,93 @@ function renderField(
 
   switch (format) {
     case 'short-text':
+    case 'long-text': {
+      const placeholder =
+        (formatOptions.placeholder as string | undefined) ??
+        t('Start typing...');
+
+      if (preview) {
+        return (
+          <div className="flex flex-col gap-2">
+            {(schema.title || schema.description) && (
+              <div className="flex flex-col gap-0.5">
+                {schema.title && (
+                  <span className="font-serif text-title-xs text-neutral-charcoal">
+                    {schema.title}
+                  </span>
+                )}
+                {schema.description && (
+                  <p className="text-body-sm text-neutral-charcoal">
+                    {schema.description}
+                  </p>
+                )}
+              </div>
+            )}
+            <div
+              className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
+            >
+              {placeholder}
+            </div>
+          </div>
+        );
+      }
       return (
         <CollaborativeTextField
-          key={key}
           fragmentName={key}
           title={schema.title}
           description={schema.description}
-          placeholder={
-            (formatOptions.placeholder as string | undefined) ??
-            t('Start typing...')
-          }
+          placeholder={placeholder}
+          multiline={format === 'long-text'}
           onChange={(html) => onFieldChange(key, html)}
         />
       );
+    }
 
-    case 'long-text':
-      return (
-        <CollaborativeTextField
-          key={key}
-          fragmentName={key}
-          title={schema.title}
-          description={schema.description}
-          placeholder={
-            (formatOptions.placeholder as string | undefined) ??
-            t('Start typing...')
-          }
-          multiline
-          onChange={(html) => onFieldChange(key, html)}
-        />
-      );
-
-    case 'money':
+    case 'money': {
+      if (preview) {
+        return (
+          <Button variant="pill" color="pill">
+            {t('Add budget')}
+          </Button>
+        );
+      }
       return (
         <CollaborativeBudgetField
-          key={key}
           maxAmount={schema.maximum}
           initialValue={(draft[key] as number | null) ?? null}
           onChange={(value) => onFieldChange(key, value)}
         />
       );
+    }
 
-    case 'category':
+    case 'category': {
+      const options = extractOneOfOptions(schema);
+
+      if (preview) {
+        return (
+          <Select
+            variant="pill"
+            size="medium"
+            placeholder={t('Select option')}
+            selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
+            className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+          >
+            {options.map((opt) => (
+              <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </Select>
+        );
+      }
       return (
         <CollaborativeCategoryField
-          key={key}
-          options={
-            Array.isArray(schema.oneOf)
-              ? schema.oneOf
-                  .filter(
-                    (entry): entry is { const: string; title: string } =>
-                      typeof entry === 'object' &&
-                      entry !== null &&
-                      'const' in entry &&
-                      'title' in entry,
-                  )
-                  .map((entry) => ({ value: entry.const, label: entry.title }))
-              : []
-          }
+          options={options}
           initialValue={(draft[key] as string | null) ?? null}
           onChange={(value) => onFieldChange(key, value)}
         />
       );
+    }
 
     default: {
       const _exhaustive: never = format;
@@ -170,8 +244,12 @@ function renderField(
 /**
  * Schema-driven form renderer for proposal editing.
  *
- * Takes compiled field descriptors and renders the correct collaborative
- * component for each field. Layout:
+ * Takes compiled field descriptors and renders the correct component for
+ * each field. In preview mode the same structure is rendered using static
+ * `@op/ui` components instead of collaborative editors — no Yjs, TipTap,
+ * or collaboration providers are needed.
+ *
+ * Layout:
  * - Title at full width
  * - Category + Budget side-by-side
  * - Dynamic template fields stacked below
@@ -188,26 +266,23 @@ export function ProposalFormRenderer({
   const budgetField = fields.find((f) => f.key === 'budget');
   const dynamicFields = fields.filter((f) => !f.isSystem);
 
-  const content = (
-    <div className="space-y-4">
-      {titleField && renderField(titleField, draft, onFieldChange, t)}
+  const render = (field: ProposalFieldDescriptor) =>
+    renderField(field, draft, onFieldChange, t, previewMode);
+
+  return (
+    <div className={`space-y-4 ${previewMode ? 'pointer-events-none' : ''}`}>
+      {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
         <div className="flex gap-2">
-          {categoryField && renderField(categoryField, draft, onFieldChange, t)}
-          {budgetField && renderField(budgetField, draft, onFieldChange, t)}
+          {categoryField && render(categoryField)}
+          {budgetField && render(budgetField)}
         </div>
       )}
 
       {dynamicFields.map((field) => (
-        <div key={field.key}>{renderField(field, draft, onFieldChange, t)}</div>
+        <div key={field.key}>{render(field)}</div>
       ))}
     </div>
   );
-
-  if (previewMode) {
-    return <div className="pointer-events-none select-none">{content}</div>;
-  }
-
-  return content;
 }

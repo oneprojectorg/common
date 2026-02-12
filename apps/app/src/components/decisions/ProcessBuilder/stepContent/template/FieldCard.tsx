@@ -6,11 +6,11 @@ import {
 } from '@op/ui/FieldConfigCard';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import type { RJSFSchema } from '@rjsf/utils';
 import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { ProposalPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import type { FieldView } from '../../../proposalTemplate';
 import {
   getFieldConfigComponent,
@@ -20,7 +20,7 @@ import {
 
 interface FieldCardProps {
   field: FieldView;
-  fieldSchema: RJSFSchema;
+  fieldSchema: ProposalPropertySchema;
   errors?: string[];
   controls?: SortableItemControls;
   onRemove?: (fieldId: string) => void;
@@ -28,7 +28,10 @@ interface FieldCardProps {
   onUpdateLabel?: (fieldId: string, label: string) => void;
   onUpdateDescription?: (fieldId: string, description: string) => void;
   onUpdateRequired?: (fieldId: string, isRequired: boolean) => void;
-  onUpdateJsonSchema?: (fieldId: string, updates: Partial<RJSFSchema>) => void;
+  onUpdateJsonSchema?: (
+    fieldId: string,
+    updates: Partial<ProposalPropertySchema>,
+  ) => void;
 }
 
 /**
