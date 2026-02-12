@@ -22,7 +22,11 @@ const LoginPage = () => {
     return <LoginPageWithLayout />;
   }
 
-  if (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) {
+  if (
+    redirectParam &&
+    redirectParam.startsWith('/') &&
+    !redirectParam.startsWith('//')
+  ) {
     redirect(redirectParam);
   }
 
