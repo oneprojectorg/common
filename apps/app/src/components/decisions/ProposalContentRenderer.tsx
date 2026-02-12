@@ -36,18 +36,7 @@ export function ProposalContentRenderer({
     return compileProposalSchema(proposalTemplate).filter((f) => !f.isSystem);
   }, [proposalTemplate]);
 
-  // No template or no dynamic fields — fall back to concatenated HTML
   if (dynamicFields.length === 0) {
-    const allHtml = htmlContent
-      ? Object.entries(htmlContent)
-          .filter(([key]) => key !== 'title')
-          .map(([, html]) => html)
-          .join('')
-      : undefined;
-
-    if (allHtml) {
-      return <ProposalHtmlContent html={allHtml} />;
-    }
     return null;
   }
 
