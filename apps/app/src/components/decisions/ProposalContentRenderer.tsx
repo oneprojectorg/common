@@ -64,7 +64,6 @@ function ViewField({
  * proposal template, then renders each dynamic field with its pre-rendered
  * HTML content. System fields (title, budget, category) are skipped here
  * — they are rendered by the parent layout (e.g. ProposalView header).
- *
  */
 export function ProposalContentRenderer({
   proposalTemplate,
