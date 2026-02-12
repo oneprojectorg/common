@@ -168,11 +168,10 @@ function renderField(
 // ---------------------------------------------------------------------------
 
 /**
- * Schema-driven form renderer that replaces RJSF's `<Form>` component.
+ * Schema-driven form renderer for proposal editing.
  *
  * Takes compiled field descriptors and renders the correct collaborative
- * component for each field. Layout follows the same pattern as the previous
- * RJSF ObjectFieldTemplate:
+ * component for each field. Layout:
  * - Title at full width
  * - Category + Budget side-by-side
  * - Dynamic template fields stacked below
