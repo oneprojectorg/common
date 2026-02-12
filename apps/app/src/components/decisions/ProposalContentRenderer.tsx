@@ -10,10 +10,6 @@ import {
   compileProposalSchema,
 } from './proposalEditor/compileProposalSchema';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type ProposalContentRendererMode = 'view';
 
 interface ProposalContentRendererProps {
@@ -24,10 +20,6 @@ interface ProposalContentRendererProps {
   /** Pre-rendered HTML per fragment key (from getProposal). */
   htmlContent?: Record<string, string>;
 }
-
-// ---------------------------------------------------------------------------
-// Field renderers
-// ---------------------------------------------------------------------------
 
 /**
  * Renders a single field in view mode: label + description chrome,

@@ -109,8 +109,6 @@ export const getProposal = async ({
   let proposalTemplate =
     (instanceData?.proposalTemplate as Record<string, unknown>) ?? null;
 
-  console.log('=== Proposal Template ===', proposalTemplate);
-
   if (!proposalTemplate) {
     const process = await db.query.decisionProcesses.findFirst({
       where: { id: proposal.processInstance.processId },
