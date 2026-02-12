@@ -106,32 +106,32 @@ export const updateDecisionInstance = async ({
       };
     }
 
-    // Apply phase overrides
+    // Apply phase updates — replaces the full phases array to accommodate
+    // adding, removing, and reordering phases from the phase editor.
+    // Existing phase data (selectionPipeline, settingsSchema, etc.) is
+    // preserved by merging with the previous phase when a match exists.
     if (hasPhaseUpdates) {
-      // Create a map of phase overrides for quick lookup
-      const overrideMap = new Map(
-        phases.map((override) => [override.phaseId, override]),
+      const existingPhaseMap = new Map(
+        existingInstanceData.phases.map((p) => [p.phaseId, p]),
       );
 
-      // Apply overrides to existing phases (merge settings, don't replace)
-      updatedInstanceData.phases = existingInstanceData.phases.map((phase) => {
-        const override = overrideMap.get(phase.phaseId);
-        if (!override) {
-          return phase;
-        }
-
+      updatedInstanceData.phases = phases.map((phase) => {
+        const existing = existingPhaseMap.get(phase.phaseId);
         return {
-          ...phase,
-          ...(override.startDate !== undefined && {
-            startDate: override.startDate,
+          ...existing,
+          phaseId: phase.phaseId,
+          ...(phase.name !== undefined && { name: phase.name }),
+          ...(phase.description !== undefined && {
+            description: phase.description,
           }),
-          ...(override.endDate !== undefined && { endDate: override.endDate }),
-          ...(override.settings !== undefined && {
-            settings: {
-              ...phase.settings,
-              ...override.settings,
-            },
+          ...(phase.headline !== undefined && { headline: phase.headline }),
+          ...(phase.additionalInfo !== undefined && {
+            additionalInfo: phase.additionalInfo,
           }),
+          ...(phase.rules !== undefined && { rules: phase.rules }),
+          ...(phase.startDate !== undefined && { startDate: phase.startDate }),
+          ...(phase.endDate !== undefined && { endDate: phase.endDate }),
+          ...(phase.settings !== undefined && { settings: phase.settings }),
         };
       });
     }

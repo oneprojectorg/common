@@ -12,15 +12,27 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@op/ui/Accordion';
+import { AutoSizeInput } from '@op/ui/AutoSizeInput';
+import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
+import type { Key } from '@op/ui/RAC';
+import { DisclosureStateContext } from '@op/ui/RAC';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
+import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
-import { use, useState } from 'react';
-import { DisclosureStateContext } from 'react-aria-components';
-import { LuChevronRight, LuGripVertical } from 'react-icons/lu';
+import { use, useEffect, useRef, useState } from 'react';
+import {
+  LuChevronRight,
+  LuCircleAlert,
+  LuGripVertical,
+  LuPlus,
+  LuX,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
 
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
@@ -34,57 +46,72 @@ export function PhasesSectionContent({
   decisionProfileId,
 }: SectionProps) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const initialPhases = instance.process?.processSchema?.phases ?? [];
-  const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
-  const t = useTranslations();
+  const instancePhases = instance.instanceData?.phases;
+  const templatePhases = instance.process?.processSchema?.phases;
+  const isDraft = instance.status === 'draft';
 
-  // Store and mutation for saving
-  const setPhaseData = useProcessBuilderStore((s) => s.setPhaseData);
+  // Store: used as a localStorage buffer for non-draft edits only
+  const storePhases = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId]?.phases,
+  );
+  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
   const saveState = useProcessBuilderStore((s) =>
     s.getSaveState(decisionProfileId),
   );
 
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+  // Non-draft: prefer store (localStorage buffer) over API data.
+  // Draft: use API data (query cache kept fresh via onSettled invalidation).
+  const initialPhases: PhaseDefinition[] = (() => {
+    const source =
+      !isDraft && storePhases?.length ? storePhases : instancePhases;
+    return (
+      source?.map((p) => ({
+        id: p.phaseId,
+        name: p.name ?? '',
+        description: p.description,
+        headline: p.headline,
+        additionalInfo: p.additionalInfo,
+        rules: p.rules ?? {},
+        startDate: p.startDate,
+        endDate: p.endDate,
+      })) ??
+      templatePhases ??
+      []
+    );
+  })();
+  const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
+  const t = useTranslations();
 
-  // Only auto-save to API when in draft mode
-  const isDraft = instance.status === 'draft';
+  const utils = trpc.useUtils();
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+    onSuccess: () => markSaved(decisionProfileId),
+    onError: () => setSaveStatus(decisionProfileId, 'error'),
+    onSettled: () => {
+      void utils.decision.getInstance.invalidate({ instanceId });
+    },
+  });
 
-  // Debounced auto-save function (similar to ProposalEditor pattern)
+  // Debounced save: draft persists to API, non-draft buffers in localStorage.
   const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
     setSaveStatus(decisionProfileId, 'saving');
-    for (const phase of data) {
-      setPhaseData(decisionProfileId, phase.id, {
-        name: phase.name,
-        description: phase.description,
-        startDate: phase.startDate,
-        endDate: phase.endDate,
-        rules: phase.rules,
-      });
-    }
 
-    // Save to API if in draft mode
+    const phasesPayload = data.map((phase) => ({
+      phaseId: phase.id,
+      name: phase.name,
+      description: phase.description,
+      headline: phase.headline,
+      additionalInfo: phase.additionalInfo,
+      startDate: phase.startDate,
+      endDate: phase.endDate,
+      rules: phase.rules,
+    }));
+
     if (isDraft) {
-      updateInstance.mutate(
-        {
-          instanceId,
-          phases: data.map((phase) => ({
-            phaseId: phase.id,
-            name: phase.name,
-            description: phase.description,
-            startDate: phase.startDate,
-            endDate: phase.endDate,
-            rules: phase.rules,
-          })),
-        },
-        {
-          onSuccess: () => markSaved(decisionProfileId),
-          onError: () => setSaveStatus(decisionProfileId, 'error'),
-        },
-      );
+      updateInstance.mutate({ instanceId, phases: phasesPayload });
     } else {
-      // Just mark as saved for localStorage
+      setInstanceData(decisionProfileId, { phases: phasesPayload });
       markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);
@@ -165,97 +192,259 @@ export const PhaseEditor = ({
     return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
+  // Validation: track which fields have been blurred per phase
+  const [touchedFields, setTouchedFields] = useState<
+    Record<string, Set<string>>
+  >({});
+
+  const markTouched = (phaseId: string, fieldName: string) => {
+    setTouchedFields((prev) => {
+      const phaseSet = new Set(prev[phaseId]);
+      phaseSet.add(fieldName);
+      return { ...prev, [phaseId]: phaseSet };
+    });
+  };
+
+  const getPhaseErrors = (phase: PhaseDefinition) => {
+    const errors: Record<string, string> = {};
+    if (!phase.name?.trim()) {
+      errors.name = t('Phase name is required');
+    }
+    if (!phase.headline?.trim()) {
+      errors.headline = t('Headline is required');
+    }
+    if (!phase.description?.trim()) {
+      errors.description = t('Description is required');
+    }
+    if (!phase.endDate) {
+      errors.endDate = t('End date is required');
+    }
+    return errors;
+  };
+
+  const getErrorMessage = (
+    phaseId: string,
+    field: string,
+    errors: Record<string, string>,
+  ) => {
+    return touchedFields[phaseId]?.has(field) ? errors[field] : undefined;
+  };
+
+  const phaseHasVisibleErrors = (phaseId: string) => {
+    const phase = phases.find((p) => p.id === phaseId);
+    if (!phase) {
+      return false;
+    }
+    const errors = getPhaseErrors(phase);
+    const touched = touchedFields[phaseId];
+    if (!touched) {
+      return false;
+    }
+    return Object.keys(errors).some((field) => touched.has(field));
+  };
+
+  const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
+  const [autoFocusPhaseId, setAutoFocusPhaseId] = useState<string | null>(null);
+
+  const addPhase = () => {
+    const newPhase: PhaseDefinition = {
+      id: crypto.randomUUID().slice(0, 8),
+      name: t('New phase'),
+      rules: {},
+    };
+    setPhases([...phases, newPhase]);
+    setExpandedKeys((prev) => new Set([...prev, newPhase.id]));
+    setAutoFocusPhaseId(newPhase.id);
+  };
+
+  const removePhase = (phaseId: string) => {
+    setPhases(phases.filter((p) => p.id !== phaseId));
+    setTouchedFields((prev) => {
+      const next = { ...prev };
+      delete next[phaseId];
+      return next;
+    });
+  };
+
   if (phases.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
-        <p className="text-neutral-gray4">{t('No phases defined')}</p>
+      <div className="space-y-4">
+        <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
+          <p className="text-neutral-gray4">{t('No phases defined')}</p>
+        </div>
+        <Button
+          color="ghost"
+          className="text-primary-teal hover:text-primary-tealBlack"
+          onPress={addPhase}
+        >
+          <LuPlus className="size-4" />
+          {t('Add phase')}
+        </Button>
       </div>
     );
   }
 
   return (
-    <Accordion allowsMultipleExpanded variant="unstyled">
-      <Sortable
-        items={phases}
-        onChange={setPhases}
-        dragTrigger="handle"
-        getItemLabel={(phase) => phase.name}
-        className="gap-2"
-        renderDragPreview={(items) => (
-          <PhaseDragPreview name={items[0]?.name} />
-        )}
-        renderDropIndicator={PhaseDropIndicator}
+    <div className="space-y-4">
+      <Accordion
+        allowsMultipleExpanded
+        variant="unstyled"
+        expandedKeys={expandedKeys}
+        onExpandedChange={setExpandedKeys}
       >
-        {(phase, { dragHandleProps, isDragging }) => (
-          <AccordionItem
-            id={phase.id}
-            className={cn(
-              'rounded-lg border bg-white',
-              isDragging && 'opacity-50',
-            )}
-          >
-            <AccordionHeader className="flex items-center gap-2 px-3 py-2">
-              <DragHandle {...dragHandleProps} />
-              <AccordionTrigger className="flex items-center gap-2">
-                <AccordionIndicator />
-              </AccordionTrigger>
-              <AccordionTitleInput
-                value={phase.name}
-                onChange={(name) => updatePhase(phase.id, { name })}
-                aria-label={t('Phase name')}
-              />
-            </AccordionHeader>
-            <AccordionContent>
-              <hr />
-              <div className="space-y-4 p-4">
-                <div>
-                  <label className="mb-1 block text-sm">
-                    {t('Description')}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={phase.description ?? ''}
-                    onChange={(e) =>
-                      updatePhase(phase.id, { description: e.target.value })
-                    }
-                    className="w-full rounded-md border border-border px-3 py-2"
+        <Sortable
+          items={phases}
+          onChange={setPhases}
+          dragTrigger="handle"
+          getItemLabel={(phase) => phase.name}
+          className="gap-2"
+          renderDragPreview={(items) => (
+            <PhaseDragPreview name={items[0]?.name} />
+          )}
+          renderDropIndicator={PhaseDropIndicator}
+        >
+          {(phase, { dragHandleProps, isDragging }) => {
+            const errors = getPhaseErrors(phase);
+            return (
+              <AccordionItem
+                id={phase.id}
+                className={cn(
+                  'rounded-lg border bg-white',
+                  isDragging && 'opacity-50',
+                )}
+              >
+                <AccordionHeader className="flex items-center gap-2 px-3 py-2">
+                  <DragHandle {...dragHandleProps} />
+                  <AccordionTrigger className="flex cursor-pointer items-center">
+                    <AccordionIndicator />
+                  </AccordionTrigger>
+                  <AccordionTitleInput
+                    value={phase.name}
+                    onChange={(name) => updatePhase(phase.id, { name })}
+                    onBlur={() => markTouched(phase.id, 'name')}
+                    hasError={!!getErrorMessage(phase.id, 'name', errors)}
+                    aria-label={t('Phase name')}
+                    autoFocus={autoFocusPhaseId === phase.id}
+                    onAutoFocused={() => setAutoFocusPhaseId(null)}
                   />
-                </div>
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <DatePicker
-                      label={t('Start date')}
-                      value={safeParseDateString(phase.startDate)}
-                      onChange={(date) =>
-                        updatePhase(phase.id, {
-                          startDate: formatDateValue(date),
-                        })
+                  {phaseHasVisibleErrors(phase.id) && <PhaseErrorIndicator />}
+                  <RemovePhaseButton
+                    onPress={() => removePhase(phase.id)}
+                    isDisabled={phases.length <= 1}
+                  />
+                </AccordionHeader>
+                <AccordionContent>
+                  <hr />
+                  <div className="space-y-4 p-4">
+                    <TextField
+                      label={t('Headline')}
+                      isRequired
+                      value={phase.headline ?? ''}
+                      onChange={(value) =>
+                        updatePhase(phase.id, { headline: value })
                       }
+                      onBlur={() => markTouched(phase.id, 'headline')}
+                      errorMessage={getErrorMessage(
+                        phase.id,
+                        'headline',
+                        errors,
+                      )}
+                      description={t(
+                        'This text appears as the header of the page.',
+                      )}
                     />
-                  </div>
-                  <div className="flex-1">
-                    <DatePicker
-                      label={t('End date')}
-                      value={safeParseDateString(phase.endDate)}
-                      onChange={(date) =>
-                        updatePhase(phase.id, {
-                          endDate: formatDateValue(date),
-                        })
+                    <TextField
+                      label={t('Description')}
+                      isRequired
+                      useTextArea
+                      value={phase.description ?? ''}
+                      onChange={(value) =>
+                        updatePhase(phase.id, { description: value })
                       }
+                      onBlur={() => markTouched(phase.id, 'description')}
+                      errorMessage={getErrorMessage(
+                        phase.id,
+                        'description',
+                        errors,
+                      )}
+                      textareaProps={{ rows: 3 }}
+                      description={t(
+                        'This text appears below the headline on the phase page.',
+                      )}
                     />
+                    <div className="space-y-2">
+                      <label className="block text-sm">
+                        {t('Additional information')}
+                      </label>
+                      <RichTextEditorWithToolbar
+                        content={phase.additionalInfo ?? ''}
+                        onChange={(content) =>
+                          updatePhase(phase.id, { additionalInfo: content })
+                        }
+                        toolbarPosition="bottom"
+                        className="rounded-md border border-border"
+                        editorClassName="min-h-24 p-3"
+                      />
+                      <p className="text-sm text-neutral-gray4">
+                        {t(
+                          'Any additional information will appear in a modal titled "About the process"',
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <DatePicker
+                          label={t('Start date')}
+                          value={safeParseDateString(phase.startDate)}
+                          onChange={(date) =>
+                            updatePhase(phase.id, {
+                              startDate: formatDateValue(date),
+                            })
+                          }
+                        />
+                      </div>
+                      <div
+                        className="flex-1"
+                        onBlur={() => markTouched(phase.id, 'endDate')}
+                      >
+                        <DatePicker
+                          label={t('End date')}
+                          isRequired
+                          value={safeParseDateString(phase.endDate)}
+                          onChange={(date) => {
+                            updatePhase(phase.id, {
+                              endDate: formatDateValue(date),
+                            });
+                            markTouched(phase.id, 'endDate');
+                          }}
+                          errorMessage={getErrorMessage(
+                            phase.id,
+                            'endDate',
+                            errors,
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <hr />
-              <PhaseControls
-                phase={phase}
-                onUpdate={(updates) => updatePhase(phase.id, updates)}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        )}
-      </Sortable>
-    </Accordion>
+                  <PhaseControls
+                    phase={phase}
+                    onUpdate={(updates) => updatePhase(phase.id, updates)}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            );
+          }}
+        </Sortable>
+      </Accordion>
+      <Button
+        color="secondary"
+        className="w-full text-primary-teal hover:text-primary-tealBlack"
+        onPress={addPhase}
+      >
+        <LuPlus className="size-4" />
+        {t('Add phase')}
+      </Button>
+    </div>
   );
 };
 
@@ -279,7 +468,7 @@ const PhaseControls = ({
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-6 p-4">
       <ToggleRow label={t('Enable proposal submission')}>
         <ToggleButton
           isSelected={phase.rules?.proposals?.submit ?? false}
@@ -294,22 +483,34 @@ const PhaseControls = ({
           size="small"
         />
       </ToggleRow>
-      {phase.rules?.proposals?.submit && (
-        <ToggleRow label={t('Allow proposal editing')}>
-          <ToggleButton
-            isSelected={phase.rules?.proposals?.edit ?? false}
-            onChange={(val) =>
-              updateRules({
-                proposals: {
-                  ...phase.rules?.proposals,
-                  edit: val,
-                },
-              })
-            }
-            size="small"
-          />
-        </ToggleRow>
-      )}
+      <ToggleRow label={t('Enable proposal editing')}>
+        <ToggleButton
+          isSelected={phase.rules?.proposals?.edit ?? false}
+          onChange={(val) =>
+            updateRules({
+              proposals: {
+                ...phase.rules?.proposals,
+                edit: val,
+              },
+            })
+          }
+          size="small"
+        />
+      </ToggleRow>
+      <ToggleRow label={t('Enable proposal review')}>
+        <ToggleButton
+          isSelected={phase.rules?.proposals?.review ?? false}
+          onChange={(val) =>
+            updateRules({
+              proposals: {
+                ...phase.rules?.proposals,
+                review: val,
+              },
+            })
+          }
+          size="small"
+        />
+      </ToggleRow>
       <ToggleRow label={t('Enable voting')}>
         <ToggleButton
           isSelected={phase.rules?.voting?.submit ?? false}
@@ -324,22 +525,6 @@ const PhaseControls = ({
           size="small"
         />
       </ToggleRow>
-      {phase.rules?.voting?.submit && (
-        <ToggleRow label={t('Allow vote changes')}>
-          <ToggleButton
-            isSelected={phase.rules?.voting?.edit ?? false}
-            onChange={(val) =>
-              updateRules({
-                voting: {
-                  ...phase.rules?.voting,
-                  edit: val,
-                },
-              })
-            }
-            size="small"
-          />
-        </ToggleRow>
-      )}
     </div>
   );
 };
@@ -348,31 +533,116 @@ const PhaseControls = ({
 const AccordionTitleInput = ({
   value,
   onChange,
-  className,
+  onBlur,
+  hasError,
+  autoFocus,
+  onAutoFocused,
   'aria-label': ariaLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
-  className?: string;
+  onBlur?: () => void;
+  hasError?: boolean;
+  autoFocus?: boolean;
+  onAutoFocused?: () => void;
   'aria-label'?: string;
 }) => {
+  const t = useTranslations();
+  const state = use(DisclosureStateContext);
+  const isExpanded = state?.isExpanded ?? false;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus && isExpanded && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+      onAutoFocused?.();
+    }
+  }, [autoFocus, isExpanded, onAutoFocused]);
+
+  if (!isExpanded) {
+    return (
+      <button
+        type="button"
+        className="w-full cursor-pointer rounded border border-transparent px-2 py-1 text-left font-serif text-title-sm"
+        onClick={() => state?.expand()}
+      >
+        {value}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex grow items-center justify-between gap-2">
+      <AutoSizeInput
+        inputRef={inputRef}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        className={cn(
+          'rounded border px-2 py-1 font-serif text-title-sm focus-within:bg-white',
+          hasError
+            ? 'border-functional-red bg-white'
+            : 'border-neutral-gray1 bg-neutral-gray1 focus-within:border-neutral-gray3',
+        )}
+        aria-label={ariaLabel ?? ''}
+      />
+      {hasError && (
+        <p className="text-functional-red">
+          {t('Add a label for this phase.')}
+        </p>
+      )}
+    </div>
+  );
+};
+
+/** Remove button that only appears when the accordion item is expanded */
+const RemovePhaseButton = ({
+  onPress,
+  isDisabled,
+}: {
+  onPress: () => void;
+  isDisabled: boolean;
+}) => {
+  const t = useTranslations();
   const state = use(DisclosureStateContext);
   const isExpanded = state?.isExpanded ?? false;
 
+  if (!isExpanded) {
+    return null;
+  }
+
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={!isExpanded}
-      aria-label={ariaLabel}
-      className={cn(
-        'flex-1 rounded border bg-transparent px-2 py-1 font-serif text-title-sm',
-        'disabled:cursor-default disabled:border-transparent',
-        'enabled:bg-neutral-gray1 enabled:focus:border enabled:focus:bg-white',
-        className,
-      )}
-    />
+    <Button
+      color="ghost"
+      size="small"
+      className="text-neutral-gray4 hover:text-red-600"
+      onPress={onPress}
+      isDisabled={isDisabled}
+      aria-label={t('Remove')}
+    >
+      <LuX className="size-4" />
+    </Button>
+  );
+};
+
+/** Warning icon shown on collapsed accordion headers when a phase has validation errors */
+const PhaseErrorIndicator = () => {
+  const t = useTranslations();
+  const state = use(DisclosureStateContext);
+  const isExpanded = state?.isExpanded ?? false;
+
+  if (isExpanded) {
+    return null;
+  }
+
+  return (
+    <span
+      className="text-functional-red"
+      aria-label={t('This phase has validation errors')}
+    >
+      <LuCircleAlert className="size-4" />
+    </span>
   );
 };
 

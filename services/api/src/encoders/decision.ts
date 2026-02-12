@@ -29,6 +29,7 @@ const phaseRulesEncoder = z.object({
     .object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
+      review: z.boolean().optional(),
     })
     .optional(),
   voting: z
@@ -73,6 +74,8 @@ const phaseDefinitionEncoder = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
+  headline: z.string().optional(),
+  additionalInfo: z.string().optional(),
   rules: phaseRulesEncoder,
   selectionPipeline: selectionPipelineEncoder.optional(),
   settings: jsonSchemaEncoder.optional(),
@@ -136,6 +139,8 @@ export const instancePhaseDataEncoder = z.object({
   phaseId: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),
+  headline: z.string().optional(),
+  additionalInfo: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   rules: phaseRulesEncoder.optional(),
