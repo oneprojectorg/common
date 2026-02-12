@@ -5,6 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { DocumentNotAvailable } from '@/components/decisions/DocumentNotAvailable';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 
 function ProposalEditPageContent({
@@ -71,7 +72,7 @@ const ProposalEditPage = () => {
   }>();
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary fallback={<DocumentNotAvailable />}>
       <Suspense fallback={<ProposalEditPageSkeleton />}>
         <ProposalEditPageContent
           profileId={profileId}

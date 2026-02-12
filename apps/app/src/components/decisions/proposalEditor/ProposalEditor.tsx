@@ -58,12 +58,6 @@ export function ProposalEditor({
 
   // -- Instance config -------------------------------------------------------
 
-  // TODO: Remove once categories are baked into the proposal schema
-  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId: instance.id,
-  });
-  const categories = categoriesData.categories;
-
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
   const proposalInfoContent = instance.instanceData?.fieldValues
@@ -91,48 +85,12 @@ export function ProposalEditor({
 
   // -- Schema compilation ----------------------------------------------------
 
-  // TODO: Wire up to the real template source. For now we hardcode a mock.
-  // const rawProposalTemplate = (instance.process?.processSchema
-  //   ?.proposalTemplate ?? null) as ProposalTemplateSchema | null;
+  const proposalTemplate = instance.instanceData
+    ?.proposalTemplate as ProposalTemplateSchema | null;
 
-  // System fields (title, category, budget) are duplicated to proposalData
-  // for search, preview, and sorting. Yjs is the source of truth — the DB
-  // copy is a derived snapshot. Dynamic template fields live exclusively
-  // in Yjs and are NOT part of proposalData.
-  const proposalTemplate: ProposalTemplateSchema = {
-    type: 'object',
-    properties: {
-      title: {
-        type: 'string',
-        title: t('Title'),
-        minLength: 1,
-        'x-format': 'short-text',
-      },
-      category: {
-        type: ['string', 'null'],
-        title: t('Category'),
-        'x-format': 'category',
-        ...(categories.length > 0 && {
-          oneOf: categories.map((c) => ({
-            const: c.name,
-            title: c.name,
-          })),
-        }),
-      },
-      budget: {
-        type: ['number', 'null'],
-        title: t('Budget'),
-        minimum: 0,
-        'x-format': 'money',
-      },
-      summary: {
-        type: 'string',
-        title: t('Summary'),
-        'x-format': 'long-text',
-      },
-    },
-    required: ['title'],
-  };
+  if (!proposalTemplate) {
+    throw new Error('Proposal template not found on instance');
+  }
 
   const templateRef = useRef(proposalTemplate);
   templateRef.current = proposalTemplate;
