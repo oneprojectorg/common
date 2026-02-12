@@ -475,6 +475,7 @@
   "Description is required": "বিবরণ আবশ্যক",
   "End date is required": "শেষ তারিখ আবশ্যক",
   "This phase has validation errors": "এই পর্যায়ে বৈধতা ত্রুটি রয়েছে",
+  "Add a label for this phase.": "এই পর্যায়ের জন্য একটি লেবেল যোগ করুন।",
   "Phase name": "পর্যায়ের নাম",
   "No phases defined": "কোনো পর্যায় নির্ধারিত নেই",
   "Add phase": "পর্যায় যোগ করুন",

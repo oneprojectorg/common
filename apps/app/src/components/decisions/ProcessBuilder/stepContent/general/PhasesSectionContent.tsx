@@ -547,6 +547,7 @@ const AccordionTitleInput = ({
   onAutoFocused?: () => void;
   'aria-label'?: string;
 }) => {
+  const t = useTranslations();
   const state = use(DisclosureStateContext);
   const isExpanded = state?.isExpanded ?? false;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -587,7 +588,9 @@ const AccordionTitleInput = ({
         aria-label={ariaLabel ?? ''}
       />
       {hasError && (
-        <p className="text-functional-red">Add a label for this phase.</p>
+        <p className="text-functional-red">
+          {t('Add a label for this phase.')}
+        </p>
       )}
     </div>
   );

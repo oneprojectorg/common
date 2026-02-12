@@ -467,6 +467,7 @@
   "Description is required": "La descripción es obligatoria",
   "End date is required": "La fecha de fin es obligatoria",
   "This phase has validation errors": "Esta fase tiene errores de validación",
+  "Add a label for this phase.": "Añade una etiqueta para esta fase.",
   "Phase name": "Nombre de fase",
   "No phases defined": "No hay fases definidas",
   "Add phase": "Agregar fase",
