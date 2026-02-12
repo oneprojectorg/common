@@ -12,45 +12,9 @@ import {
 
 interface ProposalContentRendererProps {
   /** The proposal template schema (from processSchema or instanceData). */
-  proposalTemplate: ProposalTemplateSchema;
+  proposalTemplate: ProposalTemplateSchema | null;
   /** Pre-rendered HTML per fragment key (from getProposal). */
   htmlContent?: Record<string, string>;
-}
-
-/**
- * Template-aware proposal content renderer for read-only viewing.
- *
- * Uses {@link compileProposalSchema} to derive field descriptors from the
- * proposal template, then renders each dynamic field with its pre-rendered
- * HTML content. System fields (title, budget, category) are skipped here
- * — they are rendered by the parent layout (e.g. ProposalView header).
- */
-export function ProposalContentRenderer({
-  proposalTemplate,
-  htmlContent,
-}: ProposalContentRendererProps) {
-  const dynamicFields = useMemo(() => {
-    if (!proposalTemplate) {
-      return [];
-    }
-    return compileProposalSchema(proposalTemplate).filter((f) => !f.isSystem);
-  }, [proposalTemplate]);
-
-  if (dynamicFields.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="space-y-8">
-      {dynamicFields.map((field) => (
-        <ViewField
-          key={field.key}
-          field={field}
-          html={htmlContent?.[field.key]}
-        />
-      ))}
-    </div>
-  );
 }
 
 /**
@@ -89,6 +53,43 @@ function ViewField({
           <p className="text-neutral-gray3 italic">—</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Template-aware proposal content renderer for read-only viewing.
+ *
+ * Uses {@link compileProposalSchema} to derive field descriptors from the
+ * proposal template, then renders each dynamic field with its pre-rendered
+ * HTML content. System fields (title, budget, category) are skipped here
+ * — they are rendered by the parent layout (e.g. ProposalView header).
+ *
+ */
+export function ProposalContentRenderer({
+  proposalTemplate,
+  htmlContent,
+}: ProposalContentRendererProps) {
+  const dynamicFields = useMemo(() => {
+    if (!proposalTemplate) {
+      return [];
+    }
+    return compileProposalSchema(proposalTemplate).filter((f) => !f.isSystem);
+  }, [proposalTemplate]);
+
+  if (dynamicFields.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-8">
+      {dynamicFields.map((field) => (
+        <ViewField
+          key={field.key}
+          field={field}
+          html={htmlContent?.[field.key]}
+        />
+      ))}
     </div>
   );
 }

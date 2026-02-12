@@ -26,6 +26,8 @@ export function CollaborativeTitleField({
 }: CollaborativeTitleFieldProps) {
   const { ydoc, provider, user } = useCollaborativeDoc();
 
+  console.log('[CollaborativeTitleField] binding to Yjs fragment: title');
+
   // Build collaborative extensions for the title field
   const extensions = useMemo(
     () => [

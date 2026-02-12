@@ -5,8 +5,12 @@
  * compatibility with legacy single-fragment documents.
  */
 export function getProposalFragmentNames(
-  proposalTemplate: Record<string, unknown>,
+  proposalTemplate: Record<string, unknown> | null | undefined,
 ): string[] {
+  if (!proposalTemplate) {
+    return ['default'];
+  }
+
   const properties = proposalTemplate.properties as
     | Record<string, Record<string, unknown>>
     | undefined;
