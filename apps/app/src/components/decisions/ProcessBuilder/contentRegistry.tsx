@@ -9,7 +9,6 @@ import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesS
 import MembersSection from './stepContent/members/MembersSection';
 import RolesSection from './stepContent/members/RolesSection';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
-import SettingsSection from './stepContent/rubric/SettingsSection';
 import TemplateEditorSection from './stepContent/template/TemplateEditorSection';
 
 // Props that all section components receive
@@ -37,7 +36,6 @@ const CONTENT_REGISTRY: ContentRegistry = {
   },
   rubric: {
     criteria: CriteriaSection,
-    settings: SettingsSection,
   },
   members: {
     roles: RolesSection,

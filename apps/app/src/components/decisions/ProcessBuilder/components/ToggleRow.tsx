@@ -1,8 +1,6 @@
-'use client';
-
 import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { LuCircleHelp } from 'react-icons/lu';
+import { LuInfo } from 'react-icons/lu';
 
 // Toggle row component for consistent styling
 export function ToggleRow({
@@ -20,8 +18,8 @@ export function ToggleRow({
         <span className="text-base">{label}</span>
         {tooltip && (
           <TooltipTrigger>
-            <Button unstyled className="text-neutral-gray4">
-              <LuCircleHelp className="size-4" />
+            <Button unstyled className="text-primary-teal">
+              <LuInfo className="size-4" />
             </Button>
             <Tooltip>{tooltip}</Tooltip>
           </TooltipTrigger>

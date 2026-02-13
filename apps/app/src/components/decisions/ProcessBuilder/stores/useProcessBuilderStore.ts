@@ -70,6 +70,10 @@ export interface FormInstanceData
   includeReview?: boolean;
   /** Whether to keep process private */
   isPrivate?: boolean;
+  /** Whether to organize proposals into categories */
+  organizeByCategories?: boolean;
+  /** Whether to require collaborative proposals */
+  requireCollaborativeProposals?: boolean;
   /** Proposal template (JSON Schema) */
   proposalTemplate?: ProposalTemplate;
   /** Proposal categories */

@@ -1,5 +1,3 @@
-'use client';
-
 import { Skeleton } from '@op/ui/Skeleton';
 
 // Skeleton shown while Zustand hydrates from localStorage

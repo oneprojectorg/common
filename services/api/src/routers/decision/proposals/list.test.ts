@@ -531,7 +531,7 @@ describe.concurrent('listProposals', () => {
       unauthorizedCaller.decision.listProposals({
         processInstanceId: instance.instance.id,
       }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should return html documentContent for legacy proposals with description', async ({

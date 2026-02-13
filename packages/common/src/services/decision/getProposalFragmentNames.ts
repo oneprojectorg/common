@@ -1,5 +1,7 @@
+import { getProposalTemplateFieldOrder } from './getProposalTemplateFieldOrder';
+
 /**
- * Derives Y.Doc fragment names from a proposal template schema.
+ * Derives the TipTap Cloud fragment names to fetch server-side from a proposal template schema.
  *
  * When no template is provided, falls back to `['default']` for backward
  * compatibility with legacy single-fragment documents.
@@ -15,22 +17,10 @@ export function getProposalFragmentNames(
     return ['default'];
   }
 
-  const fieldOrder = (proposalTemplate['x-field-order'] as string[]) ?? [];
+  const { all } = getProposalTemplateFieldOrder(proposalTemplate);
   const fragments: string[] = [];
-  const seen = new Set<string>();
 
-  // Respect x-field-order first, then pick up any remaining properties
-  const orderedKeys = [
-    ...fieldOrder,
-    ...Object.keys(properties).filter((k) => !fieldOrder.includes(k)),
-  ];
-
-  for (const key of orderedKeys) {
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-
+  for (const key of all) {
     const prop = properties[key];
     if (!prop) {
       continue;

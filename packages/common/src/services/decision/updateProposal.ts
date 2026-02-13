@@ -4,15 +4,13 @@ import {
   ProcessInstance,
   ProposalStatus,
   Visibility,
-  organizations,
-  processInstances,
   proposalCategories,
   proposals,
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -20,7 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
@@ -115,58 +113,24 @@ export const updateProposal = async ({
       throw new NotFoundError('Proposal not found');
     }
 
-    // join the process table to the org table via ownerId to get the org id
-    const instanceOrg = await db
-      .select({
-        id: organizations.id,
-      })
-      .from(organizations)
-      .leftJoin(
-        processInstances,
-        eq(organizations.profileId, processInstances.ownerProfileId),
-      )
-      .where(eq(processInstances.id, existingProposal.processInstanceId))
-      .limit(1);
-
-    if (!instanceOrg[0]) {
-      throw new UnauthorizedError('User does not have access to this process');
-    }
-
-    const orgUser = await getOrgAccessUser({
-      user,
-      organizationId: instanceOrg[0].id,
-    });
-
-    const hasPermissions = checkPermission(
-      { decisions: permission.ADMIN },
-      orgUser?.roles ?? [],
-    );
-
-    // Only the submitter or process owner can update the proposal
-    const isSubmitter =
-      existingProposal.submittedByProfileId === dbUser.currentProfileId;
     const processInstance =
       existingProposal.processInstance as ProcessInstanceWithProcess;
-    const canUpdateProposal =
-      processInstance.ownerProfileId === dbUser.currentProfileId ||
-      hasPermissions;
 
-    if (!isSubmitter && !canUpdateProposal) {
-      throw new UnauthorizedError('Not authorized to update this proposal');
-    }
+    await assertInstanceProfileAccess({
+      user: { id: user.id },
+      instance: processInstance,
+      profilePermissions: { profile: permission.UPDATE },
+      orgFallbackPermissions: { decisions: permission.UPDATE },
+    });
 
-    if (data.status) {
-      // Only process editors can approve/reject (NOT proposal OWNER)
-      if (['approved', 'rejected'].includes(data.status) && !hasPermissions) {
-        throw new UnauthorizedError(
-          'Only process owner can approve or reject proposals',
-        );
-      }
-    }
-
-    // Only admins can change visibility
-    if (data.visibility && !hasPermissions) {
-      throw new UnauthorizedError('Only admins can change proposal visibility');
+    // Status and visibility changes require ADMIN
+    if (data.status || data.visibility) {
+      await assertInstanceProfileAccess({
+        user: { id: user.id },
+        instance: processInstance,
+        profilePermissions: { profile: permission.ADMIN },
+        orgFallbackPermissions: { decisions: permission.ADMIN },
+      });
     }
 
     // Validate proposal data against schema if updating proposalData

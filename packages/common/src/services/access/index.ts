@@ -4,7 +4,7 @@ import type { Profile, ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { AccessZonePermission, NormalizedRole } from 'access-zones';
-import { assertAccess, checkPermission } from 'access-zones';
+import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
@@ -198,7 +198,9 @@ export const assertInstanceProfileAccess = async ({
       organizationId: org[0].id,
     });
 
-    assertAccess(orgFallbackPermissions, orgUser?.roles ?? []);
+    if (!checkPermission(orgFallbackPermissions, orgUser?.roles ?? [])) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
   }
 };
 

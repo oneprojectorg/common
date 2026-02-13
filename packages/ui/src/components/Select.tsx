@@ -120,7 +120,7 @@ export const Select = <T extends object>({
           <span className="flex h-full w-full flex-1 items-center justify-between gap-1">
             <SelectValue
               className={cn(
-                'flex h-full min-w-0 flex-1 items-center text-ellipsis text-neutral-gray4',
+                'flex h-full min-w-0 flex-1 items-center text-ellipsis data-[placeholder]:text-neutral-gray4',
                 props.selectValueClassName,
               )}
             />

@@ -4,10 +4,8 @@ import { notFound } from 'next/navigation';
 import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSectionNav';
-import {
-  DEFAULT_NAVIGATION_CONFIG,
-  type NavigationConfig,
-} from '@/components/decisions/ProcessBuilder/navigationConfig';
+import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
+import type { FormInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 
 const EditDecisionPage = async ({
   params,
@@ -26,23 +24,43 @@ const EditDecisionPage = async ({
     notFound();
   }
 
-  // TODO: Get navigation config from process instance or process type
-  const navigationConfig: NavigationConfig = DEFAULT_NAVIGATION_CONFIG;
+  const { processInstance } = decisionProfile;
+  const instanceId = processInstance.id;
+  const instanceData = processInstance.instanceData;
+
+  // Map server data into the shape the store expects so validation works
+  // immediately — even before the user visits any section.
+  const serverData: FormInstanceData = {
+    name: processInstance.name ?? undefined,
+    description: processInstance.description ?? undefined,
+    stewardProfileId: processInstance.steward?.id,
+    phases: instanceData.phases,
+    proposalTemplate:
+      instanceData.proposalTemplate as FormInstanceData['proposalTemplate'],
+    hideBudget: instanceData.config?.hideBudget,
+    categories: instanceData.config?.categories,
+    requireCategorySelection: instanceData.config?.requireCategorySelection,
+    allowMultipleCategories: instanceData.config?.allowMultipleCategories,
+  };
 
   return (
     <div className="bg-background relative flex size-full flex-1 flex-col">
+      <ProcessBuilderStoreInitializer
+        decisionProfileId={decisionProfile.id}
+        serverData={serverData}
+      />
       <ProcessBuilderHeader
         processName={decisionProfile.name}
-        navigationConfig={navigationConfig}
+        instanceId={instanceId}
+        slug={slug}
       />
       <div className="flex grow flex-col overflow-y-auto sm:flex-row">
-        <ProcessBuilderSidebar navigationConfig={navigationConfig} />
+        <ProcessBuilderSidebar instanceId={instanceId} />
         <main className="grow">
           <ProcessBuilderContent
             decisionProfileId={decisionProfile.id}
-            instanceId={decisionProfile.processInstance.id}
+            instanceId={instanceId}
             decisionName={decisionProfile.name}
-            navigationConfig={navigationConfig}
           />
         </main>
       </div>
