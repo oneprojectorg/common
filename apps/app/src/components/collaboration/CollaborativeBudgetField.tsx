@@ -10,15 +10,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
-/**
- * Yjs-synced budget shape — currency + amount as an atomic value.
- * Stored in Yjs as JSON `{ currency, amount }`.
- */
-interface BudgetValue {
-  currency: string;
-  amount: number;
-}
-
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_CURRENCY_SYMBOL = '$';
 
@@ -39,7 +30,7 @@ interface CollaborativeBudgetFieldProps {
 
 /**
  * Collaborative budget input synced via Yjs XmlFragment.
- * Stores `{ currency, amount }` as a JSON string in the shared doc
+ * Stores `BudgetData` (`{ value, currency }`) as a JSON string in the shared doc
  * for future multi-currency support.
  *
  * Displays as a pill when a value exists, switching to an inline
@@ -56,7 +47,7 @@ export function CollaborativeBudgetField({
 
   const initialBudgetValue =
     initialValue !== null
-      ? { currency: initialValue.currency, amount: initialValue.value }
+      ? { currency: initialValue.currency, value: initialValue.value }
       : null;
 
   const [budgetText, setBudgetText] = useCollaborativeFragment(
@@ -65,9 +56,9 @@ export function CollaborativeBudgetField({
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
 
-  const budget = budgetText ? (JSON.parse(budgetText) as BudgetValue) : null;
-  const setBudget = (value: BudgetValue | null) =>
-    setBudgetText(value ? JSON.stringify(value) : '');
+  const budget = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+  const setBudget = (newBudget: BudgetData | null) =>
+    setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
   const onChangeRef = useRef(onChange);
   const lastEmittedRef = useRef<string | undefined>(undefined);
@@ -77,7 +68,7 @@ export function CollaborativeBudgetField({
   }, [onChange]);
 
   const [isEditing, setIsEditing] = useState(false);
-  const budgetAmount = budget?.amount ?? null;
+  const budgetAmount = budget?.value ?? null;
   const currencySymbol =
     CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ??
     DEFAULT_CURRENCY_SYMBOL;
@@ -95,15 +86,13 @@ export function CollaborativeBudgetField({
     } else {
       setBudget({
         currency: budget?.currency ?? DEFAULT_CURRENCY,
-        amount: value,
+        value,
       });
     }
   };
 
   useEffect(() => {
-    const emitted: BudgetData | null = budget
-      ? { value: budget.amount, currency: budget.currency }
-      : null;
+    const emitted: BudgetData | null = budget;
     const key = emitted ? `${emitted.value}:${emitted.currency}` : null;
 
     if (lastEmittedRef.current === key) {
