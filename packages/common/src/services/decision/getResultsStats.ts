@@ -11,6 +11,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { extractBudgetValue } from './proposalDataSchema';
 
 export const getResultsStats = async ({
   instanceId,
@@ -96,17 +97,7 @@ export const getResultsStats = async ({
       return sum + (Number.isNaN(allocatedNum) ? 0 : allocatedNum);
     }
     const proposalData = item.proposalData as Record<string, unknown>;
-    const rawBudget = proposalData?.budget;
-    // Handle both legacy (plain number) and new ({ value, currency }) shapes
-    const budgetValue =
-      typeof rawBudget === 'number'
-        ? rawBudget
-        : typeof rawBudget === 'object' &&
-            rawBudget !== null &&
-            'value' in rawBudget
-          ? Number((rawBudget as { value: unknown }).value)
-          : 0;
-    return sum + (Number.isNaN(budgetValue) ? 0 : budgetValue);
+    return sum + extractBudgetValue(proposalData?.budget);
   }, 0);
 
   return {

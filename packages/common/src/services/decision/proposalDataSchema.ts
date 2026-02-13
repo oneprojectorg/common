@@ -53,19 +53,24 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 /** Input type for proposal data (before parsing/defaults) */
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
 
-/** Normalize a raw budget value into the canonical `{ value, currency }` shape */
-function normalizeBudget(raw: unknown): BudgetData | undefined {
-  if (raw == null) {
-    return undefined;
-  }
-  if (typeof raw === 'object' && 'value' in raw && 'currency' in raw) {
-    return raw as BudgetData;
-  }
-  const num = Number(raw);
-  if (!Number.isNaN(num)) {
-    return { value: num, currency: 'USD' };
-  }
-  return undefined;
+/**
+ * Normalize a raw budget value into the canonical `BudgetData` shape
+ * using `budgetValueSchema`. Accepts `{ value, currency }`, a plain number,
+ * or a numeric string and returns `BudgetData | undefined`.
+ */
+export function normalizeBudget(raw: unknown): BudgetData | undefined {
+  const result = budgetValueSchema.safeParse(raw);
+  return result.success ? (result.data ?? undefined) : undefined;
+}
+
+/**
+ * Extract the numeric value from any budget representation.
+ * Handles `BudgetData`, legacy plain numbers, and numeric strings.
+ * Returns 0 when the input can't be parsed.
+ */
+export function extractBudgetValue(raw: unknown): number {
+  const budget = normalizeBudget(raw);
+  return budget?.value ?? 0;
 }
 
 /**

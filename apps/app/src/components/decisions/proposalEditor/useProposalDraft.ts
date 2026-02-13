@@ -3,6 +3,7 @@ import type { proposalEncoder } from '@op/api/encoders';
 import {
   type BudgetData,
   type ProposalDataInput,
+  normalizeBudget,
   parseProposalData,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
@@ -129,13 +130,7 @@ export function useProposalDraft({
         } else if (key === 'category') {
           next.category = typeof value === 'string' ? value : null;
         } else if (key === 'budget') {
-          next.budget =
-            value !== null &&
-            typeof value === 'object' &&
-            'value' in value &&
-            'currency' in value
-              ? (value as BudgetData)
-              : null;
+          next.budget = normalizeBudget(value) ?? null;
         }
         // Dynamic fields are Yjs-only — we don't store them in draft state.
 
