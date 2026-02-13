@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react';
 import { useProcessBuilderStore } from '../stores/useProcessBuilderStore';
 import {
   type ValidationSummary,
-  validateAllSteps,
+  validateAll,
 } from './processBuilderValidation';
 
 export function useProcessBuilderValidation(
@@ -19,5 +19,5 @@ export function useProcessBuilderValidation(
     decisionProfileId ? state.instances[decisionProfileId] : undefined,
   );
 
-  return useMemo(() => validateAllSteps(instanceData), [instanceData]);
+  return useMemo(() => validateAll(instanceData), [instanceData]);
 }

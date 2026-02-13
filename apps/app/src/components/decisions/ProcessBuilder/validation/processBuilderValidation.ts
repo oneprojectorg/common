@@ -1,22 +1,11 @@
 import {
-  SECTIONS_BY_STEP,
-  STEPS,
-  type SectionId,
-  type StepId,
-} from '../navigationConfig';
+  getFieldErrors,
+  getFields,
+} from '../../proposalTemplate';
+import type { SectionId } from '../navigationConfig';
 import type { FormInstanceData } from '../stores/useProcessBuilderStore';
 
 // ============ Types ============
-
-export interface SectionValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
-
-export interface StepValidationResult {
-  isValid: boolean;
-  sections: Partial<Record<SectionId, SectionValidationResult>>;
-}
 
 export interface ChecklistItem {
   id: string;
@@ -25,7 +14,7 @@ export interface ChecklistItem {
 }
 
 export interface ValidationSummary {
-  steps: Record<StepId, StepValidationResult>;
+  sections: Record<SectionId, boolean>;
   stepsRemaining: number;
   isReadyToLaunch: boolean;
   checklist: { id: string; labelKey: string; isValid: boolean }[];
@@ -33,75 +22,47 @@ export interface ValidationSummary {
 
 // ============ Section Validators ============
 
-type SectionValidator = (
-  data: FormInstanceData | undefined,
-) => SectionValidationResult;
+type SectionValidator = (data: FormInstanceData | undefined) => boolean;
 
-function validateOverview(
-  data: FormInstanceData | undefined,
-): SectionValidationResult {
-  const errors: string[] = [];
-
-  if (!data?.name?.trim()) {
-    errors.push('Name is required');
-  }
-  if (!data?.stewardProfileId) {
-    errors.push('Steward is required');
-  }
-  if (!data?.objective?.trim()) {
-    errors.push('Objective is required');
-  }
-  if (!data?.description?.trim()) {
-    errors.push('Description is required');
-  }
-
-  return { isValid: errors.length === 0, errors };
+function validateOverview(data: FormInstanceData | undefined): boolean {
+  return (
+    !!data?.name?.trim() &&
+    !!data?.stewardProfileId &&
+    !!data?.description?.trim()
+  );
 }
 
-function validatePhases(
-  data: FormInstanceData | undefined,
-): SectionValidationResult {
-  const errors: string[] = [];
+function validatePhases(data: FormInstanceData | undefined): boolean {
   const phases = data?.phases;
-
-  if (!phases || phases.length === 0) {
-    errors.push('At least one phase is required');
-    return { isValid: false, errors };
+  if (!phases?.length) {
+    return false;
   }
+  return phases.every((p) => !!p.headline?.trim() && !!p.endDate);
+}
 
-  for (const phase of phases) {
-    if (!phase.name?.trim()) {
-      errors.push(`Phase "${phase.phaseId}" is missing a name`);
-    }
-    if (!phase.endDate) {
-      errors.push(
-        `Phase "${phase.name ?? phase.phaseId}" is missing an end date`,
-      );
-    }
+function validateProposalCategories(): boolean {
+  return true;
+}
+
+function validateTemplateEditor(
+  data: FormInstanceData | undefined,
+): boolean {
+  if (!data?.proposalTemplate) {
+    return false;
   }
-
-  return { isValid: errors.length === 0, errors };
+  const fields = getFields(data.proposalTemplate);
+  return fields.every((field) => getFieldErrors(field).length === 0);
 }
 
-function placeholderValidator(): SectionValidationResult {
-  return { isValid: false, errors: ['Not yet configured'] };
-}
-
-function alwaysValidValidator(): SectionValidationResult {
-  return { isValid: true, errors: [] };
-}
-
-// ============ Validator Registry ============
-
-const VALIDATOR_REGISTRY: Record<SectionId, SectionValidator> = {
+const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   overview: validateOverview,
   phases: validatePhases,
-  proposalCategories: placeholderValidator,
-  templateEditor: placeholderValidator,
-  criteria: placeholderValidator,
-  settings: alwaysValidValidator,
-  roles: alwaysValidValidator,
-  members: alwaysValidValidator,
+  proposalCategories: validateProposalCategories,
+  templateEditor: validateTemplateEditor,
+  criteria: () => true,
+  settings: () => true,
+  roles: () => true,
+  members: () => true,
 };
 
 // ============ Checklist Items ============
@@ -118,7 +79,6 @@ export const LAUNCH_CHECKLIST: ChecklistItem[] = [
     validate: (data) =>
       !!data?.name?.trim() &&
       !!data?.stewardProfileId &&
-      !!data?.objective?.trim() &&
       !!data?.description?.trim(),
   },
   {
@@ -140,7 +100,19 @@ export const LAUNCH_CHECKLIST: ChecklistItem[] = [
   {
     id: 'proposalTemplate',
     labelKey: 'Create a proposal template',
-    validate: (data) => !!data?.proposalTemplate,
+    validate: (data) =>
+      !!data?.proposalTemplate && getFields(data.proposalTemplate).length > 0,
+  },
+  {
+    id: 'proposalTemplateErrors',
+    labelKey: 'Fix errors in the proposal template',
+    validate: (data) => {
+      if (!data?.proposalTemplate) {
+        return true;
+      }
+      const fields = getFields(data.proposalTemplate);
+      return fields.every((field) => getFieldErrors(field).length === 0);
+    },
   },
   {
     id: 'inviteMembers',
@@ -149,33 +121,14 @@ export const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
 ];
 
-// ============ Step & Summary Validation ============
+// ============ Validation ============
 
-function validateStep(
-  stepId: StepId,
-  data: FormInstanceData | undefined,
-): StepValidationResult {
-  const sectionDefs = SECTIONS_BY_STEP[stepId];
-  const sections: Partial<Record<SectionId, SectionValidationResult>> = {};
-
-  for (const section of sectionDefs) {
-    const sectionId = section.id as SectionId;
-    const validator = VALIDATOR_REGISTRY[sectionId];
-    sections[sectionId] = validator(data);
-  }
-
-  const isValid = Object.values(sections).every((s) => s.isValid);
-
-  return { isValid, sections };
-}
-
-export function validateAllSteps(
+export function validateAll(
   data: FormInstanceData | undefined,
 ): ValidationSummary {
-  const steps = {} as Record<StepId, StepValidationResult>;
-
-  for (const step of STEPS) {
-    steps[step.id] = validateStep(step.id, data);
+  const sections = {} as Record<SectionId, boolean>;
+  for (const [sectionId, validator] of Object.entries(SECTION_VALIDATORS)) {
+    sections[sectionId as SectionId] = validator(data);
   }
 
   const checklist = LAUNCH_CHECKLIST.map((item) => ({
@@ -187,7 +140,7 @@ export function validateAllSteps(
   const stepsRemaining = checklist.filter((item) => !item.isValid).length;
 
   return {
-    steps,
+    sections,
     stepsRemaining,
     isReadyToLaunch: stepsRemaining === 0,
     checklist,
