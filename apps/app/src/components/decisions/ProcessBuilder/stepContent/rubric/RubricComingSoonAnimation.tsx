@@ -81,14 +81,13 @@ const ANIMATION_BLOCKS: AnimationBlock[] = [
     pause: 1100,
     deleteIndices: [3],
     insertions: [
-      { html: `requireReasoning = ${keyword('true')} ${comment('// yes plz')}` },
+      {
+        html: `requireReasoning = ${keyword('true')} ${comment('// yes plz')}`,
+      },
     ],
   },
   {
-    lines: [
-      { html: '' },
-      { html: comment('// brb getting coffee ☕') },
-    ],
+    lines: [{ html: '' }, { html: comment('// brb getting coffee ☕') }],
     pause: 2000,
     deleteIndices: [],
     insertions: [],
@@ -343,9 +342,7 @@ export function CodeAnimation() {
                 dangerouslySetInnerHTML={{
                   __html:
                     line.html +
-                    (cursorLine === i
-                      ? '<span class="ce-cursor"></span>'
-                      : ''),
+                    (cursorLine === i ? '<span class="ce-cursor"></span>' : ''),
                 }}
               />
             ))}
