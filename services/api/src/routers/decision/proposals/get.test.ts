@@ -58,7 +58,12 @@ describe.concurrent('getProposal', () => {
     expect(result.id).toBe(proposal.id);
     expect(result.profileId).toBe(proposal.profileId);
     expect(result.processInstanceId).toBe(instance.instance.id);
-    expect(result.proposalData).toMatchObject(proposalData);
+    expect(result.proposalData).toMatchObject({
+      title: 'Community Garden Project',
+      description: 'A proposal to create a community garden in the park',
+      budget: { value: 5000, currency: 'USD' },
+      timeline: '3 months',
+    });
   });
 
   it('should include isEditable for admin users', async ({
