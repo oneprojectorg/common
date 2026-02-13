@@ -1,7 +1,9 @@
-import { EntityType, profileInvites } from '@op/db/schema';
+import { eq } from '@op/db/client';
+import { EntityType, profileInvites, users } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
 import {
+  addUserToOrganization,
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
@@ -43,9 +45,20 @@ test.describe('Proposal Invite', () => {
       },
     });
 
-    // Create a new user to receive the invite
+    // Create a new user to receive the invite and add them to the org
     const inviteeEmail = `e2e-invite-${randomUUID().slice(0, 6)}@oneproject.org`;
-    await createUser({ supabaseAdmin, email: inviteeEmail });
+    const invitee = await createUser({ supabaseAdmin, email: inviteeEmail });
+    await addUserToOrganization({
+      authUserId: invitee.id,
+      organizationId: org.organization.id,
+      email: inviteeEmail,
+    });
+
+    // Set the user's active profile so they can view proposals
+    await db
+      .update(users)
+      .set({ currentProfileId: org.organizationProfile.id })
+      .where(eq(users.authUserId, invitee.id));
 
     // Insert a pending proposal invite for the new user
     await db.insert(profileInvites).values({
