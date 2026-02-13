@@ -652,5 +652,6 @@
   "Options cannot be empty": "Les options ne peuvent pas être vides",
   "Minimum must be less than or equal to maximum": "Le minimum doit être inférieur ou égal au maximum",
   "These are the categories you defined in": "Ce sont les catégories que vous avez définies dans",
-  "Set maximum budget": "Définir le budget maximum"
+  "Set maximum budget": "Définir le budget maximum",
+  "This invite is no longer valid": "Cette invitation n'est plus valide"
 }
