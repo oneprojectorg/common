@@ -61,7 +61,6 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   proposalCategories: validateProposalCategories,
   templateEditor: validateTemplateEditor,
   criteria: () => true,
-  settings: () => true,
   roles: () => true,
   members: () => true,
 };
