@@ -1,5 +1,32 @@
 import { z } from 'zod';
 
+import { type MoneyAmount, moneyAmountSchema } from '../../money';
+
+/**
+ * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
+ *
+ * Accepts two input shapes and normalizes to `MoneyAmount`:
+ * - `{ amount, currency }` — canonical
+ * - plain number or numeric string — legacy, defaults to USD
+ */
+export const budgetValueSchema = z
+  .union([
+    // Canonical shape
+    moneyAmountSchema,
+    // Legacy: plain number → { amount, currency: 'USD' }
+    z
+      .union([z.string(), z.number()])
+      .pipe(z.coerce.number())
+      .transform((n) => ({ amount: n, currency: 'USD' })),
+  ])
+  .nullish();
+
+/**
+ * Canonical budget shape — an alias for `MoneyAmount`.
+ * @deprecated Prefer `MoneyAmount` for new code.
+ */
+export type BudgetData = MoneyAmount;
+
 /**
  * Zod schema for proposal data with known fields.
  * Uses looseObject to allow additional fields from custom proposal templates.
@@ -11,7 +38,7 @@ export const proposalDataSchema = z
     description: z.string().nullish(),
     content: z.string().nullish(), // backward compatibility
     category: z.string().nullish(),
-    budget: z.union([z.string(), z.number()]).pipe(z.coerce.number()).nullish(),
+    budget: budgetValueSchema,
     attachmentIds: z
       .array(z.string())
       .nullish()
@@ -32,6 +59,26 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 
 /** Input type for proposal data (before parsing/defaults) */
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
+
+/**
+ * Normalize a raw budget value into a `MoneyAmount` using `budgetValueSchema`.
+ * Accepts `{ amount, currency }`, `{ value, currency }` (legacy), a plain
+ * number, or a numeric string.
+ */
+export function normalizeBudget(raw: unknown): BudgetData | undefined {
+  const result = budgetValueSchema.safeParse(raw);
+  return result.success ? (result.data ?? undefined) : undefined;
+}
+
+/**
+ * Extract the numeric value from any budget representation.
+ * Handles `BudgetData`, legacy plain numbers, and numeric strings.
+ * Returns 0 when the input can't be parsed.
+ */
+export function extractBudgetValue(raw: unknown): number {
+  const budget = normalizeBudget(raw);
+  return budget?.amount ?? 0;
+}
 
 /**
  * Safely parse proposal data with fallback.
@@ -55,7 +102,7 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     description: (raw.description as string) ?? undefined,
     content: (raw.content as string) ?? undefined,
     category: (raw.category as string) ?? undefined,
-    budget: (raw.budget as number) ?? undefined,
+    budget: normalizeBudget(raw.budget),
     attachmentIds: (raw.attachmentIds as string[]) ?? [],
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
   };

@@ -21,7 +21,6 @@ export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
  */
 export interface ProposalPropertySchema extends JSONSchema7 {
   'x-format'?: string;
-  'x-currency'?: string;
 }
 
 export interface ProposalTemplateSchema extends JSONSchema7 {

@@ -1,6 +1,11 @@
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
-import { type ProposalDataInput, parseProposalData } from '@op/common/client';
+import {
+  type BudgetData,
+  type ProposalDataInput,
+  normalizeBudget,
+  parseProposalData,
+} from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
@@ -16,7 +21,7 @@ type Proposal = z.infer<typeof proposalEncoder>;
 export interface ProposalDraftFields extends Record<string, unknown> {
   title: string;
   category: string | null;
-  budget: number | null;
+  budget: BudgetData | null;
 }
 
 /**
@@ -125,7 +130,7 @@ export function useProposalDraft({
         } else if (key === 'category') {
           next.category = typeof value === 'string' ? value : null;
         } else if (key === 'budget') {
-          next.budget = typeof value === 'number' ? value : null;
+          next.budget = normalizeBudget(value) ?? null;
         }
         // Dynamic fields are Yjs-only — we don't store them in draft state.
 

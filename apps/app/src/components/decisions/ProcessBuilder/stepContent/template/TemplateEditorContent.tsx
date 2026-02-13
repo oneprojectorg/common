@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { FieldConfigCard } from '@op/ui/FieldConfigCard';
@@ -102,8 +103,12 @@ export function TemplateEditorContent({
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  // Derive field views from the template (all fields are editable)
-  const fields = useMemo(() => getFields(template), [template]);
+  // Derive field views from the template, excluding locked system fields
+  // that are always rendered separately above the sortable list.
+  const fields = useMemo(
+    () => getFields(template).filter((f) => !SYSTEM_FIELD_KEYS.has(f.id)),
+    [template],
+  );
 
   // Sidebar field list — includes visual-only locked fields at the top
   const sidebarFields = useMemo(() => {

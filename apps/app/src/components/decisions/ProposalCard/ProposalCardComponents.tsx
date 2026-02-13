@@ -150,9 +150,24 @@ export function ProposalCardBudget({
   const { budget } = parseProposalData(proposal.proposalData);
 
   // Use allocated amount if provided, otherwise fall back to budget
-  const displayAmount = !isNullish(allocated) ? Number(allocated) : budget;
+  if (!isNullish(allocated)) {
+    return (
+      <span
+        className={cn(
+          'font-serif text-title-base text-neutral-charcoal',
+          className,
+        )}
+      >
+        {formatCurrency(
+          Number(allocated),
+          undefined,
+          budget?.currency ?? 'USD',
+        )}
+      </span>
+    );
+  }
 
-  if (!displayAmount) {
+  if (!budget) {
     return null;
   }
 
@@ -163,7 +178,7 @@ export function ProposalCardBudget({
         className,
       )}
     >
-      {formatCurrency(displayAmount)}
+      {formatCurrency(budget.amount, undefined, budget.currency)}
     </span>
   );
 }

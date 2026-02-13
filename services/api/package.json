@@ -68,6 +68,7 @@
   "devDependencies": {
     "@op/test": "workspace:*",
     "@op/typescript-config": "workspace:*",
+    "@rjsf/utils": "^6.3.1",
     "@types/jsonwebtoken": "^9.0.10",
     "jsonwebtoken": "^9.0.2",
     "typescript": "5.7.3",

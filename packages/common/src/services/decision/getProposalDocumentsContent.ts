@@ -74,10 +74,12 @@ export async function getProposalDocumentsContent(
           const fragmentNames = proposalTemplate
             ? getProposalFragmentNames(proposalTemplate)
             : ['default'];
+
           const fragments = await client.getDocumentFragments(
             collaborationDocId,
             fragmentNames,
           );
+
           return { id, fragments };
         } catch (error) {
           console.warn('Failed to fetch TipTap document', {

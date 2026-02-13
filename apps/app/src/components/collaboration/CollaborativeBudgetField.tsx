@@ -1,6 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
+import type { BudgetData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { useEffect, useRef, useState } from 'react';
@@ -8,15 +9,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
-
-/**
- * Yjs-synced budget shape — currency + amount as an atomic value
- * TODO: the backend part will be done separately once we have more clarity how it's going to be used.
- */
-interface BudgetValue {
-  currency: string;
-  amount: number;
-}
 
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_CURRENCY_SYMBOL = '$';
@@ -32,13 +24,13 @@ function formatBudgetDisplay(amount: number, currencySymbol: string): string {
 
 interface CollaborativeBudgetFieldProps {
   maxAmount?: number;
-  initialValue?: number | null;
-  onChange?: (budget: number | null) => void;
+  initialValue?: BudgetData | null;
+  onChange?: (budget: BudgetData | null) => void;
 }
 
 /**
  * Collaborative budget input synced via Yjs XmlFragment.
- * Stores `{ currency, amount }` as a JSON string in the shared doc
+ * Stores `MoneyAmount` (`{ amount, currency }`) as a JSON string in the shared doc
  * for future multi-currency support.
  *
  * Displays as a pill when a value exists, switching to an inline
@@ -55,7 +47,7 @@ export function CollaborativeBudgetField({
 
   const initialBudgetValue =
     initialValue !== null
-      ? { currency: DEFAULT_CURRENCY, amount: initialValue }
+      ? { currency: initialValue.currency, amount: initialValue.amount }
       : null;
 
   const [budgetText, setBudgetText] = useCollaborativeFragment(
@@ -64,12 +56,12 @@ export function CollaborativeBudgetField({
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
 
-  const budget = budgetText ? (JSON.parse(budgetText) as BudgetValue) : null;
-  const setBudget = (value: BudgetValue | null) =>
-    setBudgetText(value ? JSON.stringify(value) : '');
+  const budget = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+  const setBudget = (newBudget: BudgetData | null) =>
+    setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
   const onChangeRef = useRef(onChange);
-  const lastEmittedAmountRef = useRef<number | null | undefined>(undefined);
+  const lastEmittedRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -100,13 +92,16 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    if (lastEmittedAmountRef.current === budgetAmount) {
+    const emitted: BudgetData | null = budget;
+    const key = emitted ? `${emitted.amount}:${emitted.currency}` : null;
+
+    if (lastEmittedRef.current === key) {
       return;
     }
 
-    lastEmittedAmountRef.current = budgetAmount;
-    onChangeRef.current?.(budgetAmount);
-  }, [budgetAmount]);
+    lastEmittedRef.current = key ?? undefined;
+    onChangeRef.current?.(emitted);
+  }, [budget]);
 
   const handleStartEditing = () => {
     setIsEditing(true);

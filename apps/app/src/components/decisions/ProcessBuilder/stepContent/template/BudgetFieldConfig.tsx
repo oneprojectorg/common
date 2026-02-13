@@ -51,7 +51,8 @@ export function BudgetFieldConfig({
   const budgetSchema = getFieldSchema(template, 'budget');
   const showBudget = !!budgetSchema;
   const budgetCurrency =
-    (budgetSchema?.['x-currency'] as string | undefined) ?? 'USD';
+    (budgetSchema?.properties?.currency as { default?: string } | undefined)
+      ?.default ?? 'USD';
   const budgetCurrencySymbol = CURRENCY_SYMBOL_MAP.get(budgetCurrency) ?? '$';
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
@@ -64,10 +65,13 @@ export function BudgetFieldConfig({
           properties: {
             ...prev.properties,
             budget: {
-              type: 'number',
+              type: 'object',
               title: t('Budget'),
               'x-format': 'money',
-              'x-currency': 'USD',
+              properties: {
+                amount: { type: 'number' },
+                currency: { type: 'string', default: 'USD' },
+              },
             },
           },
         }));
@@ -95,11 +99,24 @@ export function BudgetFieldConfig({
         if (!existing) {
           return prev;
         }
+        const existingProps = (existing.properties ?? {}) as Record<
+          string,
+          Record<string, unknown>
+        >;
         return {
           ...prev,
           properties: {
             ...prev.properties,
-            budget: { ...existing, 'x-currency': String(key) },
+            budget: {
+              ...existing,
+              properties: {
+                ...existingProps,
+                currency: {
+                  ...(existingProps.currency ?? { type: 'string' }),
+                  default: String(key),
+                },
+              },
+            },
           },
         };
       });

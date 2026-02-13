@@ -150,7 +150,7 @@ export function ProposalEditor({
       missingFields.push(t('Title'));
     }
 
-    if (templateRequired.includes('budget') && currentDraft.budget === null) {
+    if (templateRequired.includes('budget') && !currentDraft.budget) {
       missingFields.push(t('Budget'));
     }
 
@@ -178,7 +178,7 @@ export function ProposalEditor({
     if (
       currentDraft.budget !== null &&
       budgetMax !== undefined &&
-      currentDraft.budget > budgetMax
+      currentDraft.budget.amount > budgetMax
     ) {
       toast.error({
         message: t('Budget cannot exceed {amount}', {

@@ -11,6 +11,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { extractBudgetValue } from './proposalDataSchema';
 
 export const getResultsStats = async ({
   instanceId,
@@ -93,11 +94,10 @@ export const getResultsStats = async ({
     // Use allocated amount if it exists, otherwise fall back to budget
     if (item.allocated !== null) {
       const allocatedNum = Number(item.allocated);
-      return sum + (isNaN(allocatedNum) ? 0 : allocatedNum);
+      return sum + (Number.isNaN(allocatedNum) ? 0 : allocatedNum);
     }
-    const proposalData = item.proposalData as any;
-    const budget = proposalData?.budget ?? 0;
-    return sum + (typeof budget === 'number' ? budget : 0);
+    const proposalData = item.proposalData as Record<string, unknown>;
+    return sum + extractBudgetValue(proposalData?.budget);
   }, 0);
 
   return {
