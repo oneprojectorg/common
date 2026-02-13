@@ -100,11 +100,10 @@ export function OverviewSectionForm({
     name: p.name,
   }));
 
-  // Debounced save: always persist to localStorage, additionally to API for drafts
+  // Debounced save: always buffer in localStorage; draft also persists to API.
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
     setSaveStatus(decisionProfileId, 'saving');
 
-    // Always save to localStorage
     setInstanceData(decisionProfileId, {
       name: values.name,
       description: values.description,
@@ -113,16 +112,16 @@ export function OverviewSectionForm({
       requireCollaborativeProposals: values.requireCollaborativeProposals,
       isPrivate: values.isPrivate,
     });
-    markSaved(decisionProfileId);
 
     if (isDraft) {
-      // Draft: also persist to API
       updateInstance.mutate({
         instanceId,
         name: values.name,
         description: values.description,
         stewardProfileId: values.stewardProfileId || undefined,
       });
+    } else {
+      markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);
 
