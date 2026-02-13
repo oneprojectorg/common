@@ -37,7 +37,13 @@ function validatePhases(data: FormInstanceData | undefined): boolean {
   if (!phases?.length) {
     return false;
   }
-  return phases.every((p) => !!p.headline?.trim() && !!p.endDate);
+  return phases.every(
+    (p) =>
+      !!p.name?.trim() &&
+      !!p.headline?.trim() &&
+      !!p.description?.trim() &&
+      !!p.endDate,
+  );
 }
 
 function validateProposalCategories(): boolean {
@@ -88,13 +94,19 @@ export const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
   {
     id: 'phaseDetails',
-    labelKey: 'Ensure all phases have a headline and end date',
+    labelKey: 'Complete all required phase fields',
     validate: (data) => {
       const phases = data?.phases;
       if (!phases?.length) {
         return false;
       }
-      return phases.every((p) => !!p.headline?.trim() && !!p.endDate);
+      return phases.every(
+        (p) =>
+          !!p.name?.trim() &&
+          !!p.headline?.trim() &&
+          !!p.description?.trim() &&
+          !!p.endDate,
+      );
     },
   },
   {
