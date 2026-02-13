@@ -36,21 +36,15 @@ import { useProcessBuilderValidation } from './validation/useProcessBuilderValid
 export const ProcessBuilderHeader = ({
   processName,
   instanceId,
-  decisionProfileId,
-  instanceStatus,
 }: {
   processName?: string;
   instanceId?: string;
-  decisionProfileId?: string;
-  instanceStatus?: ProcessStatus;
 }) => {
   return (
     <SidebarProvider>
       <ProcessBuilderHeaderContent
         processName={processName}
         instanceId={instanceId}
-        decisionProfileId={decisionProfileId}
-        instanceStatus={instanceStatus}
       />
 
       <MobileSidebar instanceId={instanceId} />
@@ -61,19 +55,23 @@ export const ProcessBuilderHeader = ({
 const ProcessBuilderHeaderContent = ({
   processName,
   instanceId,
-  decisionProfileId,
-  instanceStatus,
 }: {
   processName?: string;
   instanceId?: string;
-  decisionProfileId?: string;
-  instanceStatus?: ProcessStatus;
 }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
+
+  const { data: instance } = trpc.decision.getInstance.useQuery(
+    { instanceId: instanceId! },
+    { enabled: !!instanceId },
+  );
+
+  const instanceStatus = instance?.status as ProcessStatus | undefined;
+  const decisionProfileId = instance?.profileId ?? undefined;
   const validation = useProcessBuilderValidation(decisionProfileId);
 
   const { setOpen } = useSidebar();

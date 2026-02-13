@@ -177,6 +177,7 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
 )
   .pick({
     id: true,
+    profileId: true,
     name: true,
     description: true,
     instanceData: true,

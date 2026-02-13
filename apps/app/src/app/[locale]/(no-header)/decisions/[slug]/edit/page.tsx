@@ -1,4 +1,3 @@
-import { ProcessStatus } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 import { notFound } from 'next/navigation';
 
@@ -53,11 +52,6 @@ const EditDecisionPage = async ({
       <ProcessBuilderHeader
         processName={decisionProfile.name}
         instanceId={instanceId}
-        decisionProfileId={decisionProfile.id}
-        instanceStatus={
-          (decisionProfile.processInstance.status as ProcessStatus) ??
-          ProcessStatus.DRAFT
-        }
       />
       <div className="flex grow flex-col overflow-y-auto sm:flex-row">
         <ProcessBuilderSidebar instanceId={instanceId} />
