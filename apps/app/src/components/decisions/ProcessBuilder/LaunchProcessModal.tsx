@@ -10,27 +10,32 @@ import { LuInfo } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
+
 export const LaunchProcessModal = ({
   isOpen,
   onOpenChange,
   instanceId,
   processName,
   slug,
-  phasesCount = 0,
-  categoriesCount = 0,
-  participantsInvitedCount = 0,
+  decisionProfileId,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   instanceId: string;
   processName: string;
   slug: string;
-  phasesCount?: number;
-  categoriesCount?: number;
-  participantsInvitedCount?: number;
+  decisionProfileId: string;
 }) => {
   const t = useTranslations();
   const router = useRouter();
+  const instanceData = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId],
+  );
+
+  const phasesCount = instanceData?.phases?.length ?? 0;
+  const categoriesCount = instanceData?.categories?.length ?? 0;
+  const showNoCategoriesWarning = categoriesCount === 0;
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: () => {
@@ -52,9 +57,6 @@ export const LaunchProcessModal = ({
     });
   };
 
-  const showNoParticipantsWarning = participantsInvitedCount === 0;
-  const showNoCategoriesWarning = categoriesCount === 0;
-
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
       <ModalHeader>{t('Launch Process')}</ModalHeader>
@@ -72,20 +74,10 @@ export const LaunchProcessModal = ({
             <span className="text-neutral-gray4">{t('Phases')}</span>
             <span className="text-neutral-charcoal">{phasesCount}</span>
           </div>
-          <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
+          <div className="flex items-center justify-between">
             <span className="text-neutral-gray4">{t('Categories')}</span>
             <span className="text-neutral-charcoal">
               {categoriesCount === 0 ? t('None') : categoriesCount}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-neutral-gray4">
-              {t('Participants Invited')}
-            </span>
-            <span className="text-neutral-charcoal">
-              {participantsInvitedCount === 0
-                ? t('0 invited')
-                : t('{count} invited', { count: participantsInvitedCount })}
             </span>
           </div>
         </div>
@@ -93,18 +85,6 @@ export const LaunchProcessModal = ({
         <p className="text-xs text-neutral-charcoal">
           {t('You can edit settings and advance phases after launching.')}
         </p>
-
-        {/* Warning boxes */}
-        {showNoParticipantsWarning && (
-          <div className="flex items-start gap-1 rounded-lg border border-primary-orange1 bg-primary-orange1/[0.08] p-4">
-            <LuInfo className="mt-0.5 size-4 shrink-0 text-primary-orange1" />
-            <p className="text-xs text-primary-orange1">
-              {t(
-                'No participants invited yet. No one will be notified when this process launches.',
-              )}
-            </p>
-          </div>
-        )}
 
         {showNoCategoriesWarning && (
           <div className="flex items-start gap-1 rounded-lg border border-primary-orange1 bg-primary-orange1/[0.08] p-4">

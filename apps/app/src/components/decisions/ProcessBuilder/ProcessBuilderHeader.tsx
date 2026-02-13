@@ -189,13 +189,14 @@ const ProcessBuilderHeaderContent = ({
         <UserAvatarMenu className="hidden md:block" />
       </div>
 
-      {instanceId && slug && processName && (
+      {instanceId && slug && processName && decisionProfileId && (
         <LaunchProcessModal
           isOpen={isLaunchModalOpen}
           onOpenChange={setIsLaunchModalOpen}
           instanceId={instanceId}
           processName={processName}
           slug={slug}
+          decisionProfileId={decisionProfileId}
         />
       )}
     </header>
