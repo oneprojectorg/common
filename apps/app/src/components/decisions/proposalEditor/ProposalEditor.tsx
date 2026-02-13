@@ -178,7 +178,7 @@ export function ProposalEditor({
     if (
       currentDraft.budget !== null &&
       budgetMax !== undefined &&
-      currentDraft.budget.value > budgetMax
+      currentDraft.budget.amount > budgetMax
     ) {
       toast.error({
         message: t('Budget cannot exceed {amount}', {

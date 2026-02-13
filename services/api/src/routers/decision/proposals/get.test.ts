@@ -61,7 +61,7 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Community Garden Project',
       description: 'A proposal to create a community garden in the park',
-      budget: { value: 5000, currency: 'USD' },
+      budget: { amount: 5000, currency: 'USD' },
       timeline: '3 months',
     });
   });

@@ -1,24 +1,31 @@
 import { z } from 'zod';
 
+import { type MoneyAmount, moneyAmountSchema } from '../../money';
+
 /**
- * Budget stored as `{ value, currency }` in proposalData.
- * Legacy proposals stored budget as a plain number — the schema normalizes
- * both shapes into this canonical form.
+ * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
+ *
+ * Accepts two input shapes and normalizes to `MoneyAmount`:
+ * - `{ amount, currency }` — canonical
+ * - plain number or numeric string — legacy, defaults to USD
  */
 export const budgetValueSchema = z
   .union([
-    // New canonical shape
-    z.object({ value: z.number(), currency: z.string() }),
-    // Legacy: plain number → normalise to { value, currency: 'USD' }
+    // Canonical shape
+    moneyAmountSchema,
+    // Legacy: plain number → { amount, currency: 'USD' }
     z
       .union([z.string(), z.number()])
       .pipe(z.coerce.number())
-      .transform((n) => ({ value: n, currency: 'USD' })),
+      .transform((n) => ({ amount: n, currency: 'USD' })),
   ])
   .nullish();
 
-/** Canonical budget shape inferred from `budgetValueSchema` */
-export type BudgetData = NonNullable<z.infer<typeof budgetValueSchema>>;
+/**
+ * Canonical budget shape — an alias for `MoneyAmount`.
+ * @deprecated Prefer `MoneyAmount` for new code.
+ */
+export type BudgetData = MoneyAmount;
 
 /**
  * Zod schema for proposal data with known fields.
@@ -54,9 +61,9 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
 
 /**
- * Normalize a raw budget value into the canonical `BudgetData` shape
- * using `budgetValueSchema`. Accepts `{ value, currency }`, a plain number,
- * or a numeric string and returns `BudgetData | undefined`.
+ * Normalize a raw budget value into a `MoneyAmount` using `budgetValueSchema`.
+ * Accepts `{ amount, currency }`, `{ value, currency }` (legacy), a plain
+ * number, or a numeric string.
  */
 export function normalizeBudget(raw: unknown): BudgetData | undefined {
   const result = budgetValueSchema.safeParse(raw);
@@ -70,7 +77,7 @@ export function normalizeBudget(raw: unknown): BudgetData | undefined {
  */
 export function extractBudgetValue(raw: unknown): number {
   const budget = normalizeBudget(raw);
-  return budget?.value ?? 0;
+  return budget?.amount ?? 0;
 }
 
 /**

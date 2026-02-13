@@ -504,7 +504,7 @@ export const transformFormDataToProcessSchema = (
           'x-format': 'money',
           maximum: data.budgetCapAmount,
           properties: {
-            value: { type: 'number' },
+            amount: { type: 'number' },
             currency: { type: 'string', default: 'USD' },
           },
         },

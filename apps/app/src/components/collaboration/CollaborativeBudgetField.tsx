@@ -30,7 +30,7 @@ interface CollaborativeBudgetFieldProps {
 
 /**
  * Collaborative budget input synced via Yjs XmlFragment.
- * Stores `BudgetData` (`{ value, currency }`) as a JSON string in the shared doc
+ * Stores `MoneyAmount` (`{ amount, currency }`) as a JSON string in the shared doc
  * for future multi-currency support.
  *
  * Displays as a pill when a value exists, switching to an inline
@@ -47,7 +47,7 @@ export function CollaborativeBudgetField({
 
   const initialBudgetValue =
     initialValue !== null
-      ? { currency: initialValue.currency, value: initialValue.value }
+      ? { currency: initialValue.currency, amount: initialValue.amount }
       : null;
 
   const [budgetText, setBudgetText] = useCollaborativeFragment(
@@ -68,7 +68,7 @@ export function CollaborativeBudgetField({
   }, [onChange]);
 
   const [isEditing, setIsEditing] = useState(false);
-  const budgetAmount = budget?.value ?? null;
+  const budgetAmount = budget?.amount ?? null;
   const currencySymbol =
     CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ??
     DEFAULT_CURRENCY_SYMBOL;
@@ -86,14 +86,14 @@ export function CollaborativeBudgetField({
     } else {
       setBudget({
         currency: budget?.currency ?? DEFAULT_CURRENCY,
-        value,
+        amount: value,
       });
     }
   };
 
   useEffect(() => {
     const emitted: BudgetData | null = budget;
-    const key = emitted ? `${emitted.value}:${emitted.currency}` : null;
+    const key = emitted ? `${emitted.amount}:${emitted.currency}` : null;
 
     if (lastEmittedRef.current === key) {
       return;

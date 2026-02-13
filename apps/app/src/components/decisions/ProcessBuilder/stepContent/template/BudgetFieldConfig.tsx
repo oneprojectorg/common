@@ -69,7 +69,7 @@ export function BudgetFieldConfig({
               title: t('Budget'),
               'x-format': 'money',
               properties: {
-                value: { type: 'number' },
+                amount: { type: 'number' },
                 currency: { type: 'string', default: 'USD' },
               },
             },

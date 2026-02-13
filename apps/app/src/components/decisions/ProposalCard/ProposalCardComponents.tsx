@@ -178,7 +178,7 @@ export function ProposalCardBudget({
         className,
       )}
     >
-      {formatCurrency(budget.value, undefined, budget.currency)}
+      {formatCurrency(budget.amount, undefined, budget.currency)}
     </span>
   );
 }

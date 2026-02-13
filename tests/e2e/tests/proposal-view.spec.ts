@@ -33,7 +33,7 @@ test.describe('Proposal View', () => {
       proposalData: {
         title: 'Community Solar Initiative',
         collaborationDocId: MOCK_DOC_ID,
-        budget: { value: 10000, currency: 'EUR' },
+        budget: { amount: 10000, currency: 'EUR' },
       },
     });
 

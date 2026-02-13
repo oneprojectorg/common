@@ -215,7 +215,7 @@ export function ProposalView({
                 )}
                 {budget && (
                   <span className="font-serif text-title-base text-neutral-black">
-                    {formatCurrency(budget.value, undefined, budget.currency)}
+                    {formatCurrency(budget.amount, undefined, budget.currency)}
                   </span>
                 )}
               </div>

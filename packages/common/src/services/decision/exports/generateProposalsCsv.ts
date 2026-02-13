@@ -45,7 +45,7 @@ export async function generateProposalsCsv(
       'Proposal ID': p.id,
       Title: proposalData.title || '',
       Description: getDocumentDescription(p),
-      Budget: proposalData.budget?.value ?? '',
+      Budget: proposalData.budget?.amount ?? '',
       Currency: proposalData.budget?.currency ?? '',
       Category: proposalData.category ?? '',
       Status: p.status,
