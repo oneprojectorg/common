@@ -19,10 +19,10 @@ const DecisionListItemSkeleton = () => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <Skeleton className="h-5 w-48" />
-        <Skeleton className="h-5 w-16 rounded-full" />
+        <Skeleton className="h-5 w-16 rounded" />
       </div>
       <div className="flex items-center gap-1">
-        <Skeleton className="size-4 rounded-full" />
+        <Skeleton className="size-4 rounded" />
         <Skeleton className="h-3.5 w-24" />
       </div>
     </div>
