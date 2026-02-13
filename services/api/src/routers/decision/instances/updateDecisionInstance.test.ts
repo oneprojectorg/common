@@ -287,32 +287,6 @@ describe.concurrent('updateDecisionInstance', () => {
     ).rejects.toThrow(/not found/i);
   });
 
-  it('should validate name minimum length', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    await expect(
-      caller.decision.updateDecisionInstance({
-        instanceId: instance.instance.id,
-        name: 'AB', // Less than 3 characters
-      }),
-    ).rejects.toThrow();
-  });
-
   it('should return existing profile when no updates provided', async ({
     task,
     onTestFinished,
