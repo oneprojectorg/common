@@ -14,6 +14,7 @@ import {
 } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
+import { useState } from 'react';
 import {
   LuCheck,
   LuChevronRight,
@@ -28,6 +29,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
+import { LaunchProcessModal } from './LaunchProcessModal';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import type { ValidationSummary } from './validation/processBuilderValidation';
@@ -36,15 +38,18 @@ import { useProcessBuilderValidation } from './validation/useProcessBuilderValid
 export const ProcessBuilderHeader = ({
   processName,
   instanceId,
+  slug,
 }: {
   processName?: string;
   instanceId?: string;
+  slug?: string;
 }) => {
   return (
     <SidebarProvider>
       <ProcessBuilderHeaderContent
         processName={processName}
         instanceId={instanceId}
+        slug={slug}
       />
 
       <MobileSidebar instanceId={instanceId} />
@@ -55,9 +60,11 @@ export const ProcessBuilderHeader = ({
 const ProcessBuilderHeaderContent = ({
   processName,
   instanceId,
+  slug,
 }: {
   processName?: string;
   instanceId?: string;
+  slug?: string;
 }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
@@ -75,6 +82,7 @@ const ProcessBuilderHeaderContent = ({
   const validation = useProcessBuilderValidation(decisionProfileId);
 
   const { setOpen } = useSidebar();
+  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
 
   const isDraft = instanceStatus === ProcessStatus.DRAFT;
   const isTerminalStatus =
@@ -99,7 +107,7 @@ const ProcessBuilderHeaderContent = ({
       return;
     }
     if (isDraft) {
-      // TODO: Open LaunchProcessModal
+      setIsLaunchModalOpen(true);
     } else {
       updateInstance.mutate({ instanceId });
     }
@@ -162,7 +170,7 @@ const ProcessBuilderHeaderContent = ({
               onPress={handleLaunchOrSave}
               isDisabled={
                 updateInstance.isPending ||
-                (isDraft && !validation.isReadyToLaunch) ||
+                !validation.isReadyToLaunch ||
                 isTerminalStatus
               }
             >
@@ -171,15 +179,28 @@ const ProcessBuilderHeaderContent = ({
               ) : (
                 <LuSave className="size-4" />
               )}
-              {isDraft ? t('Launch') : t('Save')}
-              {isDraft && (
-                <span className="hidden md:inline"> {t('Process')}</span>
-              )}
+              <span className="md:hidden">
+                {isDraft ? t('Launch') : t('Update')}
+              </span>
+              <span className="hidden md:inline">
+                {isDraft ? t('Launch Process') : t('Update Process')}
+              </span>
             </Button>
           </div>
         )}
         <UserAvatarMenu className="hidden md:block" />
       </div>
+
+      {instanceId && slug && processName && decisionProfileId && (
+        <LaunchProcessModal
+          isOpen={isLaunchModalOpen}
+          onOpenChange={setIsLaunchModalOpen}
+          instanceId={instanceId}
+          processName={processName}
+          slug={slug}
+          decisionProfileId={decisionProfileId}
+        />
+      )}
     </header>
   );
 };
