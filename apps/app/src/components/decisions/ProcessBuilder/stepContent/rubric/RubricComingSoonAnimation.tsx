@@ -1,158 +1,177 @@
 import { useEffect, useRef, useState } from 'react';
 
-const S = (c: string, t: string) => `<span class="${c}">${t}</span>`;
-const kw = (t: string) => S('kw', t),
-  str = (t: string) => S('str', t),
-  cm = (t: string) => S('cm', t),
-  n = (t: string) => S('num', t);
+// ---------------------------------------------------------------------------
+// Syntax highlighting helpers — wrap text in colored <span> tags for the
+// code editor animation. These produce raw HTML strings that are later
+// rendered via dangerouslySetInnerHTML. All inputs are hardcoded literals
+// defined in ANIMATION_BLOCKS below, so there is no XSS risk.
+// ---------------------------------------------------------------------------
 
-// plaintext versions for character-by-character deletion
-const blocks = [
+const highlight = (className: string, text: string) =>
+  `<span class="${className}">${text}</span>`;
+
+const keyword = (text: string) => highlight('kw', text);
+const string = (text: string) => highlight('str', text);
+const comment = (text: string) => highlight('cm', text);
+const number = (text: string) => highlight('num', text);
+
+// ---------------------------------------------------------------------------
+// Animation script — each block describes a group of lines to type in,
+// an optional set of lines to delete, and replacement lines to type in
+// character-by-character after deletion.
+// ---------------------------------------------------------------------------
+
+interface AnimationLine {
+  html: string;
+}
+
+interface AnimationBlock {
+  /** Lines to type in one by one */
+  lines: AnimationLine[];
+  /** Pause (ms) after all lines are typed before edits begin */
+  pause: number;
+  /** Indices (relative to this block's lines) to delete character-by-character */
+  deleteIndices: number[];
+  /** Replacement lines to type in after deletion */
+  insertions: AnimationLine[];
+}
+
+const ANIMATION_BLOCKS: AnimationBlock[] = [
   {
     lines: [
-      {
-        html: `${cm('// COWOP review rubric')}`,
-        raw: '// COWOP review rubric',
-      },
-      {
-        html: `rubric = ${str('"Proposal Review"')}`,
-        raw: 'rubric = "Proposal Review"',
-      },
-      { html: ``, raw: '' },
-      { html: `${cm('// screening')}`, raw: '// screening' },
-      { html: `isWorkerCoop = ${kw('true')}`, raw: 'isWorkerCoop = true' },
-      { html: `registeredInMA = ${kw('true')}`, raw: 'registeredInMA = true' },
-      { html: `minWorkerOwners = ${n('3')}`, raw: 'minWorkerOwners = 3' },
+      { html: comment('// COWOP review rubric') },
+      { html: `rubric = ${string('"Proposal Review"')}` },
+      { html: '' },
+      { html: comment('// screening') },
+      { html: `isWorkerCoop = ${keyword('true')}` },
+      { html: `registeredInMA = ${keyword('true')}` },
+      { html: `minWorkerOwners = ${number('3')}` },
     ],
     pause: 1400,
-    del: [6],
-    delRaw: ['minWorkerOwners = 3'],
-    ins: [
-      {
-        html: `minWorkerOwners = ${n('3')} ${cm('// ✓ qualified')}`,
-        raw: 'minWorkerOwners = 3 // ✓ qualified',
-      },
+    deleteIndices: [6],
+    insertions: [
+      { html: `minWorkerOwners = ${number('3')} ${comment('// ✓ qualified')}` },
     ],
   },
   {
     lines: [
-      { html: ``, raw: '' },
-      {
-        html: `${cm('// evaluation criteria')}`,
-        raw: '// evaluation criteria',
-      },
-      { html: `criteria = [`, raw: 'criteria = [' },
-      { html: `  ${str('"Need"')},`, raw: '  "Need",' },
-      { html: `  ${str('"Feasibility"')},`, raw: '  "Feasibility",' },
-      { html: `  ${str('"Co-op Impact"')},`, raw: '  "Co-op Impact",' },
-      { html: `  ${str('"Community Impact"')},`, raw: '  "Community Impact",' },
-      { html: `]`, raw: ']' },
+      { html: '' },
+      { html: comment('// evaluation criteria') },
+      { html: 'criteria = [' },
+      { html: `  ${string('"Need"')},` },
+      { html: `  ${string('"Feasibility"')},` },
+      { html: `  ${string('"Co-op Impact"')},` },
+      { html: `  ${string('"Community Impact"')},` },
+      { html: ']' },
     ],
     pause: 1200,
-    del: [7],
-    delRaw: [']'],
-    ins: [
-      {
-        html: `  ${str('"Equity & Alignment"')},`,
-        raw: '  "Equity & Alignment",',
-      },
-      {
-        html: `] ${cm('// almost forgot one')}`,
-        raw: '] // almost forgot one',
-      },
+    deleteIndices: [7],
+    insertions: [
+      { html: `  ${string('"Equity & Alignment"')},` },
+      { html: `] ${comment('// almost forgot one')}` },
     ],
   },
   {
     lines: [
-      { html: ``, raw: '' },
-      { html: `${cm('// scoring')}`, raw: '// scoring' },
-      {
-        html: `scoreRange = ${n('0')} to ${n('5')}`,
-        raw: 'scoreRange = 0 to 5',
-      },
-      {
-        html: `requireReasoning = ${kw('false')}`,
-        raw: 'requireReasoning = false',
-      },
+      { html: '' },
+      { html: comment('// scoring') },
+      { html: `scoreRange = ${number('0')} to ${number('5')}` },
+      { html: `requireReasoning = ${keyword('false')}` },
     ],
     pause: 1100,
-    del: [3],
-    delRaw: ['requireReasoning = false'],
-    ins: [
-      {
-        html: `requireReasoning = ${kw('true')} ${cm('// yes plz')}`,
-        raw: 'requireReasoning = true // yes plz',
-      },
+    deleteIndices: [3],
+    insertions: [
+      { html: `requireReasoning = ${keyword('true')} ${comment('// yes plz')}` },
     ],
   },
   {
     lines: [
-      { html: ``, raw: '' },
-      {
-        html: `${cm('// brb getting coffee ☕')}`,
-        raw: '// brb getting coffee ☕',
-      },
+      { html: '' },
+      { html: comment('// brb getting coffee ☕') },
     ],
     pause: 2000,
-    del: [],
-    delRaw: [],
-    ins: [],
+    deleteIndices: [],
+    insertions: [],
   },
 ];
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-// strip html tags to get visible char count
-function stripTags(html: string) {
-  return html.replace(/<[^>]*>/g, '');
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Strip HTML tags to get the visible character count of an HTML string. */
+function getVisibleLength(html: string): number {
+  return html.replace(/<[^>]*>/g, '').length;
 }
 
-// rebuild html truncated to n visible characters
-function truncateHtml(html: string, maxChars: number) {
-  let visible = 0,
-    result = '',
-    inTag = false;
+/**
+ * Truncate an HTML string to `maxChars` visible characters while keeping
+ * tags intact. Unclosed <span> tags are automatically closed.
+ */
+function truncateHtml(html: string, maxChars: number): string {
+  let visibleCount = 0;
+  let result = '';
+  let insideTag = false;
+
   for (let i = 0; i < html.length; i++) {
-    const ch = html[i];
-    if (ch === '<') {
-      inTag = true;
-      result += ch;
+    const char = html[i];
+    if (char === '<') {
+      insideTag = true;
+      result += char;
       continue;
     }
-    if (ch === '>') {
-      inTag = false;
-      result += ch;
+    if (char === '>') {
+      insideTag = false;
+      result += char;
       continue;
     }
-    if (inTag) {
-      result += ch;
+    if (insideTag) {
+      result += char;
       continue;
     }
-    if (visible >= maxChars) break;
-    result += ch;
-    visible++;
+    if (visibleCount >= maxChars) {
+      break;
+    }
+    result += char;
+    visibleCount++;
   }
-  // close any open spans
-  const opens = (result.match(/<span[^>]*>/g) || []).length;
-  const closes = (result.match(/<\/span>/g) || []).length;
-  for (let i = 0; i < opens - closes; i++) result += '</span>';
+
+  // Close any unclosed <span> tags
+  const openCount = (result.match(/<span[^>]*>/g) || []).length;
+  const closeCount = (result.match(/<\/span>/g) || []).length;
+  for (let i = 0; i < openCount - closeCount; i++) {
+    result += '</span>';
+  }
+
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+interface LineState {
+  id: string;
+  html: string;
+  animationClass: 'adding' | 'removing' | '';
+}
+
 export function CodeAnimation() {
-  const [lines, setLines] = useState<
-    { id: string; html: string; state: string }[]
-  >([]);
+  const [lines, setLines] = useState<LineState[]>([]);
   const [cursorLine, setCursorLine] = useState(-1);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const areaRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    if (!scrollRef.current || !areaRef.current) return;
-    const scrollH = scrollRef.current.scrollHeight;
-    const viewH = areaRef.current.clientHeight;
+    if (!scrollRef.current || !viewportRef.current) {
+      return;
+    }
+    const contentHeight = scrollRef.current.scrollHeight;
+    const viewportHeight = viewportRef.current.clientHeight;
     const padding = 20;
-    const overflow = scrollH - viewH + padding;
+    const overflow = contentHeight - viewportHeight + padding;
     scrollRef.current.style.transform =
       overflow > 0 ? `translateY(${-overflow}px)` : 'translateY(0)';
   };
@@ -160,55 +179,63 @@ export function CodeAnimation() {
   useEffect(() => {
     let cancelled = false;
 
-    async function run() {
+    async function runAnimation() {
       while (!cancelled) {
-        let current: { id: string; html: string; state: string }[] = [];
+        let currentLines: LineState[] = [];
         setLines([]);
         setCursorLine(-1);
-        if (scrollRef.current)
+        if (scrollRef.current) {
           scrollRef.current.style.transform = 'translateY(0)';
+        }
         await sleep(400);
 
-        for (const b of blocks) {
-          if (cancelled) return;
-          // type lines in
-          for (let i = 0; i < b.lines.length; i++) {
-            if (cancelled) return;
-            const id = Date.now() + '-' + Math.random();
-            current = [
-              ...current,
-              { id, html: b.lines[i]!.html, state: 'adding' },
+        for (const block of ANIMATION_BLOCKS) {
+          if (cancelled) {
+            return;
+          }
+
+          // Phase 1: Type in lines one by one
+          for (let i = 0; i < block.lines.length; i++) {
+            if (cancelled) {
+              return;
+            }
+            const id = `${Date.now()}-${Math.random()}`;
+            currentLines = [
+              ...currentLines,
+              { id, html: block.lines[i]!.html, animationClass: 'adding' },
             ];
-            setLines([...current]);
+            setLines([...currentLines]);
             await sleep(110 + Math.random() * 80);
             setTimeout(scrollToBottom, 10);
           }
 
-          // show cursor
-          setCursorLine(current.length - 1);
-          await sleep(b.pause);
+          // Phase 2: Pause with cursor blinking on the last line
+          setCursorLine(currentLines.length - 1);
+          await sleep(block.pause);
 
-          // backspace delete character by character
-          const base = current.length - b.lines.length;
-          for (const di of b.del) {
-            const idx = base + di;
-            const fullHtml = current[idx]!.html;
-            const totalChars = stripTags(fullHtml).length;
+          // Phase 3: Delete specified lines character by character
+          const blockStartIndex = currentLines.length - block.lines.length;
+          for (const relativeIndex of block.deleteIndices) {
+            const lineIndex = blockStartIndex + relativeIndex;
+            const fullHtml = currentLines[lineIndex]!.html;
+            const totalChars = getVisibleLength(fullHtml);
 
-            for (let c = totalChars; c >= 0; c--) {
-              if (cancelled) return;
-              const truncated = truncateHtml(fullHtml, c);
-              current = current.map((l, i) =>
-                i === idx ? { ...l, html: truncated } : l,
+            for (let charCount = totalChars; charCount >= 0; charCount--) {
+              if (cancelled) {
+                return;
+              }
+              const truncated = truncateHtml(fullHtml, charCount);
+              currentLines = currentLines.map((line, i) =>
+                i === lineIndex ? { ...line, html: truncated } : line,
               );
-              setCursorLine(idx);
-              setLines([...current]);
+              setCursorLine(lineIndex);
+              setLines([...currentLines]);
               await sleep(25 + Math.random() * 15);
             }
 
-            // remove empty line
-            current = current.filter((_, i) => i !== idx);
-            setLines([...current]);
+            // Remove the now-empty line
+            currentLines = currentLines.filter((_, i) => i !== lineIndex);
+            setLines([...currentLines]);
             setCursorLine(-1);
             setTimeout(scrollToBottom, 10);
             await sleep(150);
@@ -216,25 +243,32 @@ export function CodeAnimation() {
 
           await sleep(200);
 
-          // type in replacements character by character
-          for (const ins of b.ins) {
-            if (cancelled) return;
-            const id = Date.now() + '-' + Math.random();
-            const totalChars = stripTags(ins.html).length;
+          // Phase 4: Type in replacement lines character by character
+          for (const insertion of block.insertions) {
+            if (cancelled) {
+              return;
+            }
+            const id = `${Date.now()}-${Math.random()}`;
+            const totalChars = getVisibleLength(insertion.html);
 
-            // add empty line first
-            current = [...current, { id, html: '', state: 'adding' }];
-            setLines([...current]);
-            const lineIdx = current.length - 1;
-            setCursorLine(lineIdx);
+            // Add an empty line, then fill it in character by character
+            currentLines = [
+              ...currentLines,
+              { id, html: '', animationClass: 'adding' },
+            ];
+            setLines([...currentLines]);
+            const lineIndex = currentLines.length - 1;
+            setCursorLine(lineIndex);
 
-            for (let c = 1; c <= totalChars; c++) {
-              if (cancelled) return;
-              const truncated = truncateHtml(ins.html, c);
-              current = current.map((l, i) =>
-                i === lineIdx ? { ...l, html: truncated } : l,
+            for (let charCount = 1; charCount <= totalChars; charCount++) {
+              if (cancelled) {
+                return;
+              }
+              const truncated = truncateHtml(insertion.html, charCount);
+              currentLines = currentLines.map((line, i) =>
+                i === lineIndex ? { ...line, html: truncated } : line,
               );
-              setLines([...current]);
+              setLines([...currentLines]);
               await sleep(30 + Math.random() * 20);
               setTimeout(scrollToBottom, 10);
             }
@@ -244,26 +278,30 @@ export function CodeAnimation() {
           await sleep(500);
         }
 
+        // Fade out all lines and reset
         await sleep(2000);
-        // fade out
-        current = current.map((l) => ({ ...l, state: 'removing' }));
-        setLines([...current]);
+        currentLines = currentLines.map((line) => ({
+          ...line,
+          animationClass: 'removing',
+        }));
+        setLines([...currentLines]);
         await sleep(400);
         setLines([]);
-        if (scrollRef.current)
+        if (scrollRef.current) {
           scrollRef.current.style.transform = 'translateY(0)';
+        }
         await sleep(800);
       }
     }
 
-    run();
+    runAnimation();
     return () => {
       cancelled = true;
     };
   }, []);
 
   return (
-    <div style={{ background: 'transparent' }}>
+    <div className="bg-transparent">
       <style>{`
         .ce-line { white-space: pre; min-height: 1.65em; }
         .ce-line.removing { animation: ceRemove 0.15s ease forwards; }
@@ -281,56 +319,33 @@ export function CodeAnimation() {
         .kw { color: #2BA880; } .str { color: #48B5A0; }
         .cm { color: #C0C0C0; font-style: italic; } .num { color: #E8913A; }
       `}</style>
-      <div
-        style={{
-          width: 300,
-          height: 200,
-          background: '#fff',
-          borderRadius: 8,
-          boxShadow: '0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          fontFamily: "'Roboto Mono', monospace",
-        }}
-      >
-        <div
-          style={{
-            padding: '8px 10px',
-            borderBottom: '1px solid #F0F0F0',
-            fontFamily: "'Roboto', sans-serif",
-            fontSize: 10,
-            color: '#999',
-            flexShrink: 0,
-            background: '#fff',
-          }}
-        >
-          review-rubric.tsx
+      <div className="flex h-[200px] w-[300px] flex-col overflow-hidden rounded-xl border bg-white font-mono shadow-md shadow-teal/5">
+        <div className="flex shrink-0 items-center gap-2 border-b border-neutral-gray1 bg-white px-2 py-1.5 font-sans text-xs text-neutral-gray4">
+          <div className="flex gap-0.75">
+            <div className="size-2 rounded-full bg-neutral-gray2/60" />
+            <div className="size-2 rounded-full bg-neutral-gray2/60" />
+            <div className="size-2 rounded-full bg-neutral-gray2/60" />
+          </div>
+          <span>review-rubric.tsx</span>
         </div>
         <div
-          ref={areaRef}
-          style={{
-            flex: 1,
-            padding: '10px 12px',
-            overflow: 'hidden',
-            fontSize: 10,
-            lineHeight: 1.65,
-            color: '#999',
-            background: '#F5FBFB',
-          }}
+          ref={viewportRef}
+          className="flex-1 overflow-hidden bg-[#F5FBFB] px-3 py-2.5 text-xs/2 text-neutral-gray4"
         >
           <div
             ref={scrollRef}
-            style={{ transition: 'transform 0.3s ease-out' }}
+            className="transition-transform duration-300 ease-out"
           >
-            {lines.map((l, i) => (
+            {lines.map((line, i) => (
               <div
-                key={l.id}
-                className={`ce-line ${l.state}`}
+                key={line.id}
+                className={`ce-line ${line.animationClass}`}
                 dangerouslySetInnerHTML={{
                   __html:
-                    l.html +
-                    (cursorLine === i ? '<span class="ce-cursor"></span>' : ''),
+                    line.html +
+                    (cursorLine === i
+                      ? '<span class="ce-cursor"></span>'
+                      : ''),
                 }}
               />
             ))}
