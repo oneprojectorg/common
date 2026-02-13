@@ -44,6 +44,7 @@ function FormValueWatcher({
   values: OverviewFormData;
   onValuesChange: (values: OverviewFormData) => void;
 }) {
+  const isInitialMount = useRef(true);
   const previousValues = useRef<string | null>(null);
 
   useEffect(() => {

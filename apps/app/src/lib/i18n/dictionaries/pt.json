@@ -674,5 +674,12 @@
   "Select a steward for this process": "Selecione um responsável para este processo",
   "Enter a process name": "Digite um nome para o processo",
   "Enter a description": "Digite uma descrição",
-  "This invite is no longer valid": "Este convite não é mais válido"
+  "This invite is no longer valid": "Este convite não é mais válido",
+  "Complete these steps to launch": "Complete these steps to launch",
+  "Process name & description": "Process name & description",
+  "Add at least one phase": "Add at least one phase",
+  "Ensure all phases have a headline and end date": "Ensure all phases have a headline and end date",
+  "Create a proposal template": "Create a proposal template",
+  "Fix errors in the proposal template": "Fix errors in the proposal template",
+  "Invite members": "Invite members"
 }
