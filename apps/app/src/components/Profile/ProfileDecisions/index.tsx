@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
+import { VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -23,11 +23,7 @@ import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
   const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
     stewardProfileId: profileId,
-    status: [
-      ProcessStatus.PUBLISHED,
-      ProcessStatus.COMPLETED,
-      ProcessStatus.CANCELLED,
-    ],
+    status: VISIBLE_DECISION_STATUSES,
   });
 
   if (!data.items.length) {
@@ -229,19 +225,19 @@ const DecisionProcessList = ({
   profileId: string;
   schema?: SchemaType;
 }) => {
+  const access = useUser();
+  const canReadDecisions =
+    access.getPermissionsForProfile(profileId).decisions.read;
+
   const [decisionProfiles] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({
       stewardProfileId: profileId,
-      status: [
-        ProcessStatus.PUBLISHED,
-        ProcessStatus.COMPLETED,
-        ProcessStatus.CANCELLED,
-      ],
+      status: VISIBLE_DECISION_STATUSES,
     });
 
   const legacyInstances = trpc.decision.listInstances.useQuery(
     { stewardProfileId: profileId, limit: 20, offset: 0 },
-    { retry: false },
+    { retry: false, enabled: canReadDecisions },
   );
 
   const hasDecisionProfiles = decisionProfiles.items.length > 0;

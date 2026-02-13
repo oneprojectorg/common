@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
+import { ProcessStatus, VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
@@ -21,11 +21,7 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
 
   const decisionProfiles = trpc.decision.listDecisionProfiles.useQuery({
     stewardProfileId: profileId,
-    status: [
-      ProcessStatus.PUBLISHED,
-      ProcessStatus.COMPLETED,
-      ProcessStatus.CANCELLED,
-    ],
+    status: VISIBLE_DECISION_STATUSES,
   });
 
   const legacyInstances = trpc.decision.listInstances.useQuery(
