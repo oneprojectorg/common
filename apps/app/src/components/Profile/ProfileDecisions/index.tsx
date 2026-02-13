@@ -23,7 +23,11 @@ import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
   const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
     stewardProfileId: profileId,
-    status: ProcessStatus.PUBLISHED,
+    status: [
+      ProcessStatus.PUBLISHED,
+      ProcessStatus.COMPLETED,
+      ProcessStatus.CANCELLED,
+    ],
   });
 
   if (!data.items.length) {
@@ -228,7 +232,11 @@ const DecisionProcessList = ({
   const [decisionProfiles] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({
       stewardProfileId: profileId,
-      status: ProcessStatus.PUBLISHED,
+      status: [
+        ProcessStatus.PUBLISHED,
+        ProcessStatus.COMPLETED,
+        ProcessStatus.CANCELLED,
+      ],
     });
 
   const legacyInstances = trpc.decision.listInstances.useQuery(

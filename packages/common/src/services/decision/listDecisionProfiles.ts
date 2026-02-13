@@ -77,7 +77,7 @@ export const listDecisionProfiles = async ({
 }: {
   user: User;
   search?: string;
-  status?: ProcessStatus;
+  status?: ProcessStatus[];
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
@@ -106,7 +106,7 @@ export const listDecisionProfiles = async ({
 
   // Build process instance filter conditions
   const processInstanceConditions = [
-    status ? eq(processInstances.status, status) : undefined,
+    status?.length ? inArray(processInstances.status, status) : undefined,
     ownerProfileId
       ? eq(processInstances.ownerProfileId, ownerProfileId)
       : undefined,

@@ -21,8 +21,11 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
 
   const decisionProfiles = trpc.decision.listDecisionProfiles.useQuery({
     stewardProfileId: profileId,
-    limit: 1,
-    status: ProcessStatus.PUBLISHED,
+    status: [
+      ProcessStatus.PUBLISHED,
+      ProcessStatus.COMPLETED,
+      ProcessStatus.CANCELLED,
+    ],
   });
 
   const legacyInstances = trpc.decision.listInstances.useQuery(
@@ -32,16 +35,18 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
 
   const hasDecisionProfiles = (decisionProfiles.data?.items?.length ?? 0) > 0;
   const hasLegacyInstances = (legacyInstances.data?.instances?.length ?? 0) > 0;
-  const hasActiveDecisions = hasDecisionProfiles || hasLegacyInstances;
+  const hasPublishedDecisions = decisionProfiles.data?.items?.some(
+    (item) => item.processInstance.status === ProcessStatus.PUBLISHED,
+  );
 
-  if (!hasActiveDecisions) {
+  if (!hasDecisionProfiles && !hasLegacyInstances) {
     return null;
   }
 
   return (
     <Tab id="decisions">
       {t('Decisions')}
-      {hasDecisionProfiles && (
+      {hasPublishedDecisions && (
         <span className="ml-1.5 inline-block size-1 rounded-full bg-functional-green" />
       )}
     </Tab>

@@ -51,7 +51,7 @@ const DecisionsListSuspense = ({
   status,
   ownerProfileId,
 }: {
-  status: ProcessStatus;
+  status: ProcessStatus[];
   ownerProfileId?: string;
 }) => {
   const {
@@ -112,7 +112,7 @@ const AllDecisionsTabs = () => {
 
   const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
     limit: 1,
-    status: ProcessStatus.DRAFT,
+    status: [ProcessStatus.DRAFT],
     ownerProfileId,
   });
 
@@ -136,7 +136,7 @@ const AllDecisionsTabs = () => {
       <TabPanel id="active" className="p-0 sm:p-0">
         <Suspense fallback={<DecisionsListSkeleton />}>
           <DecisionsListSuspense
-            status={ProcessStatus.PUBLISHED}
+            status={[ProcessStatus.PUBLISHED]}
             ownerProfileId={ownerProfileId}
           />
         </Suspense>
@@ -145,7 +145,7 @@ const AllDecisionsTabs = () => {
         <TabPanel id="drafts" className="p-0 sm:p-0">
           <Suspense fallback={<DecisionsListSkeleton />}>
             <DecisionsListSuspense
-              status={ProcessStatus.DRAFT}
+              status={[ProcessStatus.DRAFT]}
               ownerProfileId={ownerProfileId}
             />
           </Suspense>
@@ -153,7 +153,7 @@ const AllDecisionsTabs = () => {
       )}
       <TabPanel id="other" className="p-0 sm:p-0">
         <Suspense fallback={<DecisionsListSkeleton />}>
-          <DecisionsListSuspense status={ProcessStatus.COMPLETED} />
+          <DecisionsListSuspense status={[ProcessStatus.COMPLETED]} />
         </Suspense>
       </TabPanel>
     </Tabs>

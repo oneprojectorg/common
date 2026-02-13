@@ -213,7 +213,7 @@ export const decisionProfileWithSchemaFilterSchema = z.object({
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),
-  status: z.enum(ProcessStatus).optional(),
+  status: z.array(z.enum(ProcessStatus)).optional(),
   ownerProfileId: z.uuid().optional(),
   stewardProfileId: z.uuid().optional(),
 });
