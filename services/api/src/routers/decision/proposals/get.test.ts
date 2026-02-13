@@ -1,10 +1,18 @@
 import { mockCollab } from '@op/collab/testing';
 import { db } from '@op/db/client';
-import { Visibility, proposals } from '@op/db/schema';
+import {
+  Visibility,
+  decisionProcesses,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
+import { transformFormDataToProcessSchema as horizonSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/horizon';
+import { transformFormDataToProcessSchema as simpleSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/simple';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
@@ -448,6 +456,341 @@ describe.concurrent('getProposal', () => {
       attachmentIds: [],
       collaborationDocId: null,
       customLegacyField: 'preserved', // looseObject preserves extra fields
+    });
+  });
+
+  /**
+   * Legacy schema compatibility tests.
+   *
+   * The cowop, horizon, and simple decision templates store the proposalTemplate
+   * in `decision_processes.process_schema` (not in `instanceData`). The template
+   * defines budget as `{ type: 'number' }` with no `x-field-order`. The resolver
+   * (`resolveProposalTemplate`) falls back to `process_schema.proposalTemplate`
+   * when `instanceData.proposalTemplate` is absent.
+   *
+   * These tests simulate the production layout: legacy process_schema with
+   * proposalTemplate, no proposalTemplate in instanceData, and proposal data
+   * stored as either a plain number or an `{ amount, currency }` object.
+   *
+   * @see https://github.com/oneprojectorg/common/pull/601#discussion_r2803602140
+   */
+  it('should parse legacy cowop proposal via process_schema fallback', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // 1. Generate the legacy cowop process_schema using the actual schema function.
+    //    Budget is { type: 'number' }, no x-field-order — matching production.
+    const cowopProcessSchema = cowopSchema({
+      processName: 'COWOP Democratic Budgeting',
+      totalBudget: 100000,
+      budgetCapAmount: 10000,
+      requireBudget: true,
+      categories: ['Infrastructure', 'Education'],
+    });
+
+    await db
+      .update(decisionProcesses)
+      .set({ processSchema: cowopProcessSchema })
+      .where(eq(decisionProcesses.id, setup.process.id));
+
+    // 2. Remove proposalTemplate from instanceData so resolveProposalTemplate
+    //    falls back to process_schema (matching how legacy instances work).
+    const instanceRecord = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const { proposalTemplate: _, ...instanceDataWithoutTemplate } =
+      instanceRecord.instanceData as Record<string, unknown>;
+
+    await db
+      .update(processInstances)
+      .set({ instanceData: instanceDataWithoutTemplate })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    // 3. Create proposal and simulate legacy data with budget as plain number
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Cowop Legacy Proposal' },
+    });
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Cowop Legacy Proposal',
+          description: 'A community garden project',
+          budget: 7500,
+          category: 'Infrastructure',
+          collaborationDocId: null,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.proposalData).toMatchObject({
+      title: 'Cowop Legacy Proposal',
+      description: 'A community garden project',
+      budget: { amount: 7500, currency: 'USD' },
+      category: 'Infrastructure',
+    });
+
+    // Verify the proposalTemplate was resolved from process_schema
+    expect(result.proposalTemplate).toMatchObject({
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        budget: { type: 'number', maximum: 10000 },
+      },
+    });
+  });
+
+  it('should parse legacy horizon proposal via process_schema fallback', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Generate the legacy horizon process_schema using the actual schema function.
+    // Horizon: no categories, budget not required.
+    const horizonProcessSchema = horizonSchema({
+      processName: 'Horizon Scanning',
+      totalBudget: 50000,
+      budgetCapAmount: 50000,
+      requireBudget: false,
+      categories: [],
+    });
+
+    await db
+      .update(decisionProcesses)
+      .set({ processSchema: horizonProcessSchema })
+      .where(eq(decisionProcesses.id, setup.process.id));
+
+    const instanceRecord = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const { proposalTemplate: _, ...instanceDataWithoutTemplate } =
+      instanceRecord.instanceData as Record<string, unknown>;
+
+    await db
+      .update(processInstances)
+      .set({ instanceData: instanceDataWithoutTemplate })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Horizon Legacy Proposal' },
+    });
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Horizon Legacy Proposal',
+          description: 'A horizon scanning project',
+          budget: 25000,
+          collaborationDocId: null,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.proposalData).toMatchObject({
+      title: 'Horizon Legacy Proposal',
+      description: 'A horizon scanning project',
+      budget: { amount: 25000, currency: 'USD' },
+    });
+
+    // Verify the proposalTemplate was resolved from process_schema
+    expect(result.proposalTemplate).toMatchObject({
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        budget: { type: 'number', maximum: 50000 },
+      },
+    });
+  });
+
+  it('should parse legacy simple proposal via process_schema fallback', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Generate the legacy simple process_schema using the actual schema function.
+    // Simple: has categories, budget required.
+    const simpleProcessSchema = simpleSchema({
+      processName: 'Simple Voting',
+      totalBudget: 25000,
+      budgetCapAmount: 25000,
+      requireBudget: true,
+      categories: ['Community', 'Environment'],
+    });
+
+    await db
+      .update(decisionProcesses)
+      .set({ processSchema: simpleProcessSchema })
+      .where(eq(decisionProcesses.id, setup.process.id));
+
+    const instanceRecord = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const { proposalTemplate: _, ...instanceDataWithoutTemplate } =
+      instanceRecord.instanceData as Record<string, unknown>;
+
+    await db
+      .update(processInstances)
+      .set({ instanceData: instanceDataWithoutTemplate })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Simple Legacy Proposal' },
+    });
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Simple Legacy Proposal',
+          description: 'A simple voting proposal',
+          budget: 12000,
+          category: 'Community',
+          collaborationDocId: null,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.proposalData).toMatchObject({
+      title: 'Simple Legacy Proposal',
+      description: 'A simple voting proposal',
+      budget: { amount: 12000, currency: 'USD' },
+      category: 'Community',
+    });
+
+    // Verify the proposalTemplate was resolved from process_schema
+    expect(result.proposalTemplate).toMatchObject({
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        budget: { type: 'number', maximum: 25000 },
+      },
+    });
+  });
+
+  it('should normalize legacy plain-number budget to {amount, currency} object', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Plain Number Budget' },
+    });
+
+    // Simulate a legacy proposal where budget was stored as a plain number
+    // (the shape legacy schemas produce with budget: { type: 'number' })
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Plain Number Budget',
+          description: 'Budget stored as raw number',
+          budget: 3000,
+          collaborationDocId: null,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    // Plain number should be normalized to { amount, currency: 'USD' }
+    expect(result.proposalData).toMatchObject({
+      title: 'Plain Number Budget',
+      budget: { amount: 3000, currency: 'USD' },
     });
   });
 
