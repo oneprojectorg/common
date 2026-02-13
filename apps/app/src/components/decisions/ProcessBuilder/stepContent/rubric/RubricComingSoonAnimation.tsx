@@ -102,7 +102,13 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Strip HTML tags to get the visible character count of an HTML string. */
 function getVisibleLength(html: string): number {
-  return html.replace(/<[^>]*>/g, '').length;
+  let stripped = html;
+  let previous;
+  do {
+    previous = stripped;
+    stripped = stripped.replace(/<[^>]*>/g, '');
+  } while (stripped !== previous);
+  return stripped.length;
 }
 
 /**
