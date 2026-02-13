@@ -1,6 +1,10 @@
 'use client';
 
+import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
+import { DialogTrigger } from '@op/ui/Dialog';
+import { Popover } from '@op/ui/Popover';
 import { Key } from '@op/ui/RAC';
 import {
   Sidebar,
@@ -9,7 +13,16 @@ import {
   useSidebar,
 } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { LuChevronRight, LuCircleAlert, LuHouse, LuPlus } from 'react-icons/lu';
+import { toast } from '@op/ui/Toast';
+import {
+  LuCheck,
+  LuChevronRight,
+  LuCircle,
+  LuCircleAlert,
+  LuHouse,
+  LuPlus,
+  LuSave,
+} from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -17,6 +30,8 @@ import { UserAvatarMenu } from '@/components/SiteHeader';
 
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
+import type { ValidationSummary } from './validation/processBuilderValidation';
+import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderHeader = ({
   processName,
@@ -50,7 +65,45 @@ const ProcessBuilderHeaderContent = ({
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
 
+  const { data: instance } = trpc.decision.getInstance.useQuery(
+    { instanceId: instanceId! },
+    { enabled: !!instanceId },
+  );
+
+  const instanceStatus = instance?.status as ProcessStatus | undefined;
+  const decisionProfileId = instance?.profileId ?? undefined;
+  const validation = useProcessBuilderValidation(decisionProfileId);
+
   const { setOpen } = useSidebar();
+
+  const isDraft = instanceStatus === ProcessStatus.DRAFT;
+  const isTerminalStatus =
+    instanceStatus === ProcessStatus.COMPLETED ||
+    instanceStatus === ProcessStatus.CANCELLED;
+
+  // Save mutation for non-draft states
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Changes saved successfully') });
+    },
+    onError: (error) => {
+      toast.error({
+        message: t('Failed to save changes'),
+        title: error.message,
+      });
+    },
+  });
+
+  const handleLaunchOrSave = () => {
+    if (!instanceId) {
+      return;
+    }
+    if (isDraft) {
+      // TODO: Open LaunchProcessModal
+    } else {
+      updateInstance.mutate({ instanceId });
+    }
+  };
 
   const handleSelectionChange = (key: Key) => {
     setStep(String(key));
@@ -101,24 +154,27 @@ const ProcessBuilderHeaderContent = ({
       <div className="relative z-10 flex gap-4 pr-4 md:pr-8">
         {hasSteps && (
           <div className="flex gap-2">
+            {validation.stepsRemaining > 0 && (
+              <StepsRemainingPopover validation={validation} />
+            )}
             <Button
-              className="flex aspect-square h-8 gap-2 rounded-sm md:aspect-auto"
-              color="warn"
+              className="h-8 rounded-sm"
+              onPress={handleLaunchOrSave}
+              isDisabled={
+                updateInstance.isPending ||
+                (isDraft && !validation.isReadyToLaunch) ||
+                isTerminalStatus
+              }
             >
-              <LuCircleAlert className="size-4 shrink-0" />
-              <span className="hidden md:block">
-                {t(
-                  '{stepCount, plural, =1 {1 step} other {# steps}} remaining',
-                  {
-                    stepCount: 3,
-                  },
-                )}
-              </span>
-            </Button>
-            <Button className="h-8 rounded-sm">
-              <LuPlus className="size-4" />
-              {t('Launch')}
-              <span className="hidden md:inline"> {t('Process')}</span>
+              {isDraft ? (
+                <LuPlus className="size-4" />
+              ) : (
+                <LuSave className="size-4" />
+              )}
+              {isDraft ? t('Launch') : t('Save')}
+              {isDraft && (
+                <span className="hidden md:inline"> {t('Process')}</span>
+              )}
             </Button>
           </div>
         )}
@@ -187,5 +243,55 @@ const ComingSoonIndicator = () => {
     <span className="rounded-full bg-neutral-gray1 px-2 py-0.5 text-sm text-neutral-gray4">
       {t('Coming soon')}
     </span>
+  );
+};
+
+const StepsRemainingPopover = ({
+  validation,
+}: {
+  validation: ValidationSummary;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <DialogTrigger>
+      <Button
+        className="flex aspect-square h-8 gap-2 rounded-sm md:aspect-auto"
+        color="warn"
+      >
+        <LuCircleAlert className="size-4 shrink-0" />
+        <span className="hidden md:block">
+          {t('{stepCount, plural, =1 {1 step} other {# steps}} remaining', {
+            stepCount: validation.stepsRemaining,
+          })}
+        </span>
+      </Button>
+      <Popover
+        placement="bottom end"
+        className="w-72 rounded-lg border bg-white p-4 shadow-lg"
+      >
+        <p className="mb-3 font-medium text-neutral-black">
+          {t('Complete these steps to launch')}
+        </p>
+        <ul className="space-y-3">
+          {validation.checklist.map((item) => (
+            <li key={item.id} className="flex items-center gap-2">
+              {item.isValid ? (
+                <LuCheck className="size-5 shrink-0 text-functional-green" />
+              ) : (
+                <LuCircle className="size-5 shrink-0 text-neutral-gray4" />
+              )}
+              <span
+                className={
+                  item.isValid ? 'text-functional-green' : 'text-neutral-black'
+                }
+              >
+                {t(item.labelKey)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Popover>
+    </DialogTrigger>
   );
 };

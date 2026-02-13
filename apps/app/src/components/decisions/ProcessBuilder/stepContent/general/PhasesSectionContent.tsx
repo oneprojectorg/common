@@ -115,10 +115,12 @@ export function PhasesSectionContent({
       rules: phase.rules,
     }));
 
+    // Always update the store so validation stays reactive
+    setInstanceData(decisionProfileId, { phases: phasesPayload });
+
     if (isDraft) {
       updateInstance.mutate({ instanceId, phases: phasesPayload });
     } else {
-      setInstanceData(decisionProfileId, { phases: phasesPayload });
       markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);

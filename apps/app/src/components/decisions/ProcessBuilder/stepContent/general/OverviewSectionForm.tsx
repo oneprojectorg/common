@@ -127,8 +127,8 @@ export function OverviewSectionForm({
     if (isDraft) {
       updateInstance.mutate({
         instanceId,
-        name: values.name || undefined,
-        description: values.description || undefined,
+        name: values.name,
+        description: values.description,
         stewardProfileId: values.stewardProfileId || undefined,
       });
     } else {
