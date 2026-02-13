@@ -50,7 +50,13 @@ function FormValueWatcher({
   useEffect(() => {
     const valuesString = JSON.stringify(values);
 
-    // Skip if values haven't changed (deduplicates both initial mount and subsequent renders)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      previousValues.current = valuesString;
+      return;
+    }
+
+    // Skip if values haven't changed
     if (valuesString === previousValues.current) {
       return;
     }
