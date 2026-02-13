@@ -15,36 +15,37 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
-import { type NavigationConfig } from './navigationConfig';
+import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
 export const ProcessBuilderHeader = ({
   processName,
-  navigationConfig,
+  instanceId,
 }: {
   processName?: string;
-  navigationConfig?: NavigationConfig;
+  instanceId?: string;
 }) => {
   return (
     <SidebarProvider>
       <ProcessBuilderHeaderContent
         processName={processName}
-        navigationConfig={navigationConfig}
+        instanceId={instanceId}
       />
 
-      <MobileSidebar navigationConfig={navigationConfig} />
+      <MobileSidebar instanceId={instanceId} />
     </SidebarProvider>
   );
 };
 
 const ProcessBuilderHeaderContent = ({
   processName,
-  navigationConfig,
+  instanceId,
 }: {
   processName?: string;
-  navigationConfig?: NavigationConfig;
+  instanceId?: string;
 }) => {
   const t = useTranslations();
+  const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
@@ -84,8 +85,13 @@ const ProcessBuilderHeaderContent = ({
               className="h-full border-none"
             >
               {visibleSteps.map((step) => (
-                <Tab key={step.id} id={step.id} className="h-full">
+                <Tab
+                  key={step.id}
+                  id={step.id}
+                  className="flex h-full items-center gap-2"
+                >
                   {t(step.labelKey)}
+                  {step.id === 'rubric' && <ComingSoonIndicator />}
                 </Tab>
               ))}
             </TabList>
@@ -122,12 +128,9 @@ const ProcessBuilderHeaderContent = ({
   );
 };
 
-const MobileSidebar = ({
-  navigationConfig,
-}: {
-  navigationConfig?: NavigationConfig;
-}) => {
+const MobileSidebar = ({ instanceId }: { instanceId?: string }) => {
   const t = useTranslations();
+  const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
@@ -165,14 +168,24 @@ const MobileSidebar = ({
                 key={step.id}
                 id={step.id}
                 variant="pill"
-                className="h-8 bg-transparent selected:bg-neutral-offWhite"
+                className="flex h-8 items-center gap-2 bg-transparent selected:bg-neutral-offWhite"
               >
                 {t(step.labelKey)}
+                {step.id === 'rubric' && <ComingSoonIndicator />}
               </Tab>
             ))}
           </TabList>
         </Tabs>
       </nav>
     </Sidebar>
+  );
+};
+
+const ComingSoonIndicator = () => {
+  const t = useTranslations();
+  return (
+    <span className="rounded-full bg-neutral-gray1 px-2 py-0.5 text-sm text-neutral-gray4">
+      {t('Coming soon')}
+    </span>
   );
 };

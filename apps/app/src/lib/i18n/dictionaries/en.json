@@ -478,6 +478,8 @@
   "Template Editor": "Template Editor",
   "Criteria": "Criteria",
   "Settings": "Settings",
+  "We are currently working on this, stay tuned!": "We are currently working on this, stay tuned!",
+  "Coming soon": "Coming soon",
   "Roles & permissions": "Roles & permissions",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 step} other {# steps}} remaining",
   "Process steps": "Process steps",
@@ -515,6 +517,12 @@
   "Add a review stage where designated reviewers evaluate proposals before voting": "Add a review stage where designated reviewers evaluate proposals before voting",
   "Keep this process private": "Keep this process private",
   "Only invited members can view and participate in this process": "Only invited members can view and participate in this process",
+  "Process Overview": "Process Overview",
+  "Organize proposals into categories": "Organize proposals into categories",
+  "Group proposals into categories for better organization and evaluation": "Group proposals into categories for better organization and evaluation",
+  "Require collaborative proposals": "Require collaborative proposals",
+  "Require proposals to be co-authored by multiple participants": "Require proposals to be co-authored by multiple participants",
+  "Visibility": "Visibility",
   "Save": "Save",
   "Saving...": "Saving...",
   "Saved": "Saved",
@@ -653,5 +661,9 @@
   "Options cannot be empty": "Options cannot be empty",
   "Minimum must be less than or equal to maximum": "Minimum must be less than or equal to maximum",
   "These are the categories you defined in": "These are the categories you defined in",
-  "Set maximum budget": "Set maximum budget"
+  "Set maximum budget": "Set maximum budget",
+  "Select a steward for this process": "Select a steward for this process",
+  "Enter a process name": "Enter a process name",
+  "Enter a description": "Enter a description",
+  "This invite is no longer valid": "This invite is no longer valid"
 }

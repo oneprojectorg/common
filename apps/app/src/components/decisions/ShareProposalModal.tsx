@@ -267,7 +267,18 @@ function ShareProposalModalContent({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      // Build the invite link from the current URL up to /proposal/{profileId}
+      const path = window.location.pathname;
+      const proposalIndex = path.indexOf(`/proposal/${proposalProfileId}`);
+      const basePath =
+        proposalIndex !== -1
+          ? path.slice(
+              0,
+              proposalIndex + `/proposal/${proposalProfileId}`.length,
+            )
+          : path;
+      const inviteUrl = `${window.location.origin}${basePath}/invite`;
+      await navigator.clipboard.writeText(inviteUrl);
       toast.success({ message: t('Link copied to clipboard') });
     } catch {
       toast.error({ message: t('Failed to copy link') });

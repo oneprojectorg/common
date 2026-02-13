@@ -7,10 +7,8 @@ import type {
 } from '@op/db/schema';
 import {
   ProfileRelationshipType,
-  organizations,
   posts,
   postsToProfiles,
-  processInstances,
   profileRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -18,7 +16,7 @@ import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
@@ -242,36 +240,17 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  // If it's not already editable, then check admin permissions to see if we can still make it editable
-  if (
-    !isEditable &&
-    proposal.processInstance &&
-    'id' in proposal.processInstance
-  ) {
-    // Get the organization for the process instance
-    const instanceOrg = await db
-      .select({
-        id: organizations.id,
-      })
-      .from(organizations)
-      .leftJoin(
-        processInstances,
-        eq(organizations.profileId, processInstances.ownerProfileId),
-      )
-      .where(eq(processInstances.id, proposal.processInstance.id))
-      .limit(1);
+  // If it's not already editable, check profile-level edit permission
+  if (!isEditable && proposal.processInstance?.profileId) {
+    const profileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.processInstance.profileId,
+    });
 
-    if (instanceOrg[0]) {
-      const orgUser = await getOrgAccessUser({
-        user,
-        organizationId: instanceOrg[0].id,
-      });
-
-      isEditable = checkPermission(
-        { decisions: permission.ADMIN },
-        orgUser?.roles ?? [],
-      );
-    }
+    isEditable = checkPermission(
+      { profile: permission.UPDATE },
+      profileUser?.roles ?? [],
+    );
   }
 
   return isEditable;

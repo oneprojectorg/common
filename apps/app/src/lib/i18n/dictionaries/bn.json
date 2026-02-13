@@ -485,6 +485,8 @@
   "Template Editor": "টেমপ্লেট এডিটর",
   "Criteria": "মানদণ্ড",
   "Settings": "সেটিংস",
+  "We are currently working on this, stay tuned!": "আমরা বর্তমানে এটিতে কাজ করছি, সাথে থাকুন!",
+  "Coming soon": "শীঘ্রই আসছে",
   "Roles & permissions": "ভূমিকা ও অনুমতিসমূহ",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount}টি ধাপ বাকি",
   "Process steps": "প্রক্রিয়ার ধাপসমূহ",
@@ -522,6 +524,12 @@
   "Add a review stage where designated reviewers evaluate proposals before voting": "একটি পর্যালোচনা পর্যায় যোগ করুন যেখানে মনোনীত পর্যালোচকরা ভোট দেওয়ার আগে প্রস্তাবগুলি মূল্যায়ন করে",
   "Keep this process private": "এই প্রক্রিয়াটি ব্যক্তিগত রাখুন",
   "Only invited members can view and participate in this process": "শুধুমাত্র আমন্ত্রিত সদস্যরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন",
+  "Process Overview": "প্রক্রিয়া সংক্ষেপ",
+  "Organize proposals into categories": "প্রস্তাবগুলি বিভাগে সংগঠিত করুন",
+  "Group proposals into categories for better organization and evaluation": "ভালো সংগঠন এবং মূল্যায়নের জন্য প্রস্তাবগুলি বিভাগে গোষ্ঠীবদ্ধ করুন",
+  "Require collaborative proposals": "সহযোগী প্রস্তাব প্রয়োজন",
+  "Require proposals to be co-authored by multiple participants": "একাধিক অংশগ্রহণকারীদের দ্বারা প্রস্তাবগুলি সহ-রচনা করা প্রয়োজন",
+  "Visibility": "দৃশ্যমানতা",
   "Save": "সংরক্ষণ",
   "Saving...": "���ংরক্ষণ হচ্ছে...",
   "Saved": "সংরক্ষিত",
@@ -660,5 +668,9 @@
   "Options cannot be empty": "বিকল্পগুলি খালি হতে পারে না",
   "Minimum must be less than or equal to maximum": "সর্বনিম্ন অবশ্যই সর্বোচ্চের সমান বা কম হতে হবে",
   "These are the categories you defined in": "এগুলি আপনার সংজ্ঞায়িত বিভাগগুলি",
-  "Set maximum budget": "সর্বোচ্চ বাজেট নির্ধারণ করুন"
+  "Set maximum budget": "সর্বোচ্চ বাজেট নির্ধারণ করুন",
+  "Select a steward for this process": "এই প্রক্রিয়ার জন্য একজন তত্ত্বাবধায়ক নির্বাচন করুন",
+  "Enter a process name": "একটি প্রক্রিয়ার নাম লিখুন",
+  "Enter a description": "একটি বিবরণ লিখুন",
+  "This invite is no longer valid": "এই আমন্ত্রণটি আর বৈধ নয়"
 }

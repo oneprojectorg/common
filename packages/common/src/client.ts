@@ -3,6 +3,11 @@
 
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/types';
+export {
+  SYSTEM_FIELD_KEYS,
+  getProposalTemplateFieldOrder,
+  type ProposalTemplateFieldOrder,
+} from './services/decision/getProposalTemplateFieldOrder';
 
 // Translation constants (no server dependencies)
 export {

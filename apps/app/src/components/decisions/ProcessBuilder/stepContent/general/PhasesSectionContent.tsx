@@ -85,10 +85,17 @@ export function PhasesSectionContent({
   const t = useTranslations();
 
   const utils = trpc.useUtils();
+  const debouncedSaveRef = useRef<() => boolean>(null);
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: () => markSaved(decisionProfileId),
     onError: () => setSaveStatus(decisionProfileId, 'error'),
     onSettled: () => {
+      // Skip invalidation if another debounced save is pending — that save's
+      // onSettled will reconcile. This prevents a stale refetch from overwriting
+      // optimistic cache updates made between the two saves.
+      if (debouncedSaveRef.current?.()) {
+        return;
+      }
       void utils.decision.getInstance.invalidate({ instanceId });
     },
   });
@@ -115,6 +122,7 @@ export function PhasesSectionContent({
       markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);
+  debouncedSaveRef.current = () => debouncedSave.isPending();
 
   // Update phases and trigger debounced save
   const updatePhases = (
@@ -153,6 +161,7 @@ export function PhasesSectionContent({
         phases={phases}
         setPhases={updatePhases}
         updatePhase={updatePhase}
+        instanceId={instanceId}
       />
     </div>
   );
@@ -162,10 +171,12 @@ export const PhaseEditor = ({
   phases,
   setPhases,
   updatePhase,
+  instanceId,
 }: {
   phases: PhaseDefinition[];
   setPhases: (phases: PhaseDefinition[]) => void;
   updatePhase: (phaseId: string, updates: Partial<PhaseDefinition>) => void;
+  instanceId: string;
 }) => {
   const t = useTranslations();
 
@@ -428,6 +439,7 @@ export const PhaseEditor = ({
                   </div>
                   <PhaseControls
                     phase={phase}
+                    instanceId={instanceId}
                     onUpdate={(updates) => updatePhase(phase.id, updates)}
                   />
                 </AccordionContent>
@@ -451,19 +463,34 @@ export const PhaseEditor = ({
 /** Controls for configuring phase behavior (proposals, voting) */
 const PhaseControls = ({
   phase,
+  instanceId,
   onUpdate,
 }: {
   phase: PhaseDefinition;
+  instanceId: string;
   onUpdate: (updates: Partial<PhaseDefinition>) => void;
 }) => {
   const t = useTranslations();
+  const utils = trpc.useUtils();
 
   const updateRules = (updates: Partial<PhaseRules>) => {
-    onUpdate({
-      rules: {
-        ...phase.rules,
-        ...updates,
-      },
+    const newRules = { ...phase.rules, ...updates };
+    onUpdate({ rules: newRules });
+
+    // Optimistically update getInstance cache so useNavigationConfig reacts instantly
+    utils.decision.getInstance.setData({ instanceId }, (old) => {
+      if (!old?.instanceData?.phases) {
+        return old;
+      }
+      return {
+        ...old,
+        instanceData: {
+          ...old.instanceData,
+          phases: old.instanceData.phases.map((p) =>
+            p.phaseId === phase.id ? { ...p, rules: newRules } : p,
+          ),
+        },
+      };
     });
   };
 
