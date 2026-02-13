@@ -170,7 +170,7 @@ const ProcessBuilderHeaderContent = ({
               onPress={handleLaunchOrSave}
               isDisabled={
                 updateInstance.isPending ||
-                (isDraft && !validation.isReadyToLaunch) ||
+                !validation.isReadyToLaunch ||
                 isTerminalStatus
               }
             >
@@ -179,10 +179,12 @@ const ProcessBuilderHeaderContent = ({
               ) : (
                 <LuSave className="size-4" />
               )}
-              {isDraft ? t('Launch') : t('Save')}
-              {isDraft && (
-                <span className="hidden md:inline"> {t('Process')}</span>
-              )}
+              <span className="md:hidden">
+                {isDraft ? t('Launch') : t('Update')}
+              </span>
+              <span className="hidden md:inline">
+                {isDraft ? t('Launch Process') : t('Update Process')}
+              </span>
             </Button>
           </div>
         )}

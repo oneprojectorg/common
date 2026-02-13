@@ -248,6 +248,7 @@
   "Changes saved successfully": "Alterações salvas com sucesso",
   "Failed to save changes": "Falha ao salvar as alterações",
   "Launch Process": "Lançar Processo",
+  "Update Process": "Atualizar Processo",
   "This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.": "Isso abrirá {processName} para envio de propostas. Os participantes serão notificados e poderão começar a enviar propostas.",
   "You can edit settings and advance phases after launching.": "Você pode editar as configurações e avançar as fases após o lançamento.",
   "Categories": "Categorias",

@@ -247,6 +247,7 @@
   "Changes saved successfully": "Cambios guardados exitosamente",
   "Failed to save changes": "Error al guardar los cambios",
   "Launch Process": "Lanzar Proceso",
+  "Update Process": "Actualizar Proceso",
   "This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.": "Esto abrirá {processName} para envío de propuestas. Los participantes serán notificados y podrán comenzar a enviar propuestas.",
   "You can edit settings and advance phases after launching.": "Puedes editar la configuración y avanzar las fases después de lanzar.",
   "Categories": "Categorías",
