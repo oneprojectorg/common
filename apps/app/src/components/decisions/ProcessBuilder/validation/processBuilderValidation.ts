@@ -1,7 +1,4 @@
-import {
-  getFieldErrors,
-  getFields,
-} from '../../proposalTemplate';
+import { getFieldErrors, getFields } from '../../proposalTemplate';
 import type { SectionId } from '../navigationConfig';
 import type { FormInstanceData } from '../stores/useProcessBuilderStore';
 
@@ -50,9 +47,7 @@ function validateProposalCategories(): boolean {
   return true;
 }
 
-function validateTemplateEditor(
-  data: FormInstanceData | undefined,
-): boolean {
+function validateTemplateEditor(data: FormInstanceData | undefined): boolean {
   if (!data?.proposalTemplate) {
     return false;
   }

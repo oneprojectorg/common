@@ -560,7 +560,7 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
 
 export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),
-  name: z.string().min(3).max(256).optional(),
+  name: z.string().max(256).optional(),
   description: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
   stewardProfileId: z.string().uuid().optional(),
