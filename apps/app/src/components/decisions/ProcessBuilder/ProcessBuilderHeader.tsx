@@ -37,11 +37,9 @@ import type { ValidationSummary } from './validation/processBuilderValidation';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderHeader = ({
-  processName,
   instanceId,
   slug,
 }: {
-  processName?: string;
   instanceId?: string;
   slug?: string;
 }) => {
@@ -51,12 +49,7 @@ export const ProcessBuilderHeader = ({
 
   return (
     <SidebarProvider>
-      <ProcessBuilderHeaderContent
-        processName={processName}
-        instanceId={instanceId}
-        slug={slug}
-      />
-
+      <ProcessBuilderHeaderContent instanceId={instanceId} slug={slug} />
       <MobileSidebar instanceId={instanceId} />
     </SidebarProvider>
   );
@@ -86,11 +79,9 @@ const CreateModeHeader = () => {
 };
 
 const ProcessBuilderHeaderContent = ({
-  processName,
   instanceId,
   slug,
 }: {
-  processName?: string;
   instanceId: string;
   slug?: string;
 }) => {
@@ -112,7 +103,7 @@ const ProcessBuilderHeaderContent = ({
   const storeInstanceName = useProcessBuilderStore((state) =>
     decisionProfileId ? state.instances[decisionProfileId]?.name : undefined,
   );
-  const displayName = storeInstanceName || processName || t('New process');
+  const displayName = instance?.name || storeInstanceName || t('New process');
 
   const { setOpen } = useSidebar();
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
