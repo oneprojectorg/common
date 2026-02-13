@@ -34,7 +34,9 @@ export const listInstances = async ({
 }: ListInstancesInput) => {
   const filterProfileId = stewardProfileId ?? ownerProfileId;
   if (!filterProfileId) {
-    throw new UnauthorizedError('Either ownerProfileId or stewardProfileId is required');
+    throw new UnauthorizedError(
+      'Either ownerProfileId or stewardProfileId is required',
+    );
   }
 
   // ASSERT VIEW ACCESS ON ORGUSER
