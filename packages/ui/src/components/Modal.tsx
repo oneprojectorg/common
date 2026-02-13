@@ -21,7 +21,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out',
+  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding outline-hidden backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out',
 });
 
 type ModalContextType = {
@@ -58,7 +58,7 @@ export const ModalHeader = ({
             aria-label="Close modal"
             onClick={handleClose}
             className={cn(
-              'absolute left-6 flex h-6 w-6',
+              'absolute right-6 flex h-6 w-6',
               'items-center justify-center',
               'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 focus:outline-hidden',
               'text-neutral-charcoal',
