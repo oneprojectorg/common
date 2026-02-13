@@ -88,8 +88,8 @@ export const LaunchProcessModal = ({
 
         {showNoCategoriesWarning && (
           <div className="flex items-start gap-1 rounded-lg border border-primary-orange1 bg-primary-orange1/[0.08] p-4">
-            <LuInfo className="mt-0.5 size-4 shrink-0 text-primary-orange1" />
-            <p className="text-primary-orange1">
+            <LuInfo className="mt-0.5 size-4 shrink-0 text-yellow-700" />
+            <p className="text-yellow-700">
               {t(
                 "No proposal categories defined. Proposers won't be able to categorize their submissions.",
               )}
