@@ -79,9 +79,9 @@ test.describe('Proposal Invite', () => {
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/invite`,
     );
 
-    // Should redirect to the proposal page (no /invite in URL)
+    // Should redirect to the proposal edit page
     await expect(page).toHaveURL(
-      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
       { timeout: 15000 },
     );
   });
@@ -93,9 +93,9 @@ test.describe('Proposal Invite', () => {
       `/en/decisions/fake-slug/proposal/fake-profile/invite`,
     );
 
-    // Should redirect to the proposal page (without /invite)
+    // Should redirect to the proposal edit page (without /invite)
     await expect(authenticatedPage).toHaveURL(
-      `/en/decisions/fake-slug/proposal/fake-profile`,
+      `/en/decisions/fake-slug/proposal/fake-profile/edit`,
       { timeout: 15000 },
     );
   });
