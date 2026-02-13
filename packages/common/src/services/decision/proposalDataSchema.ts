@@ -17,8 +17,8 @@ export const budgetValueSchema = z
   ])
   .nullish();
 
-/** Canonical budget shape used throughout the app */
-export type BudgetData = { value: number; currency: string };
+/** Canonical budget shape inferred from `budgetValueSchema` */
+export type BudgetData = NonNullable<z.infer<typeof budgetValueSchema>>;
 
 /**
  * Zod schema for proposal data with known fields.
