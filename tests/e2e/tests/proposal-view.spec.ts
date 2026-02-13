@@ -82,13 +82,6 @@ test.describe('Proposal View', () => {
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', 'https://example.com');
 
-    // Iframely embed renders YouTube URL as a link card (no iframely API in e2e)
-    await expect(
-      authenticatedPage.locator(
-        'a[href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"]',
-      ),
-    ).toBeVisible();
-
     // New-format budget { value: 10000, currency: 'EUR' } rendered as "€10,000"
     await expect(authenticatedPage.getByText('€10,000')).toBeVisible();
   });

@@ -147,7 +147,7 @@ test.describe('Proposal Listing', () => {
         'x-field-order': ['title', 'summary', 'budget'],
         properties: {
           title: { type: 'string' },
-          summary: { type: 'string', 'x-format': 'richtext' },
+          summary: { type: 'string', 'x-format': 'long-text' },
           budget: {
             type: 'object',
             'x-format': 'money',
