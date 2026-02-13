@@ -478,6 +478,8 @@
   "Template Editor": "Éditeur de modèle",
   "Criteria": "Critères",
   "Settings": "Paramètres",
+  "We are currently working on this, stay tuned!": "Nous travaillons actuellement sur cette fonctionnalité, restez à l'écoute !",
+  "Coming soon": "Bientôt disponible",
   "Roles & permissions": "Rôles et permissions",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 étape restante} other {# étapes restantes}}",
   "Process steps": "Étapes du processus",
@@ -661,5 +663,6 @@
   "Set maximum budget": "Définir le budget maximum",
   "Select a steward for this process": "Sélectionnez un responsable pour ce processus",
   "Enter a process name": "Entrez un nom de processus",
-  "Enter a description": "Entrez une description"
+  "Enter a description": "Entrez une description",
+  "This invite is no longer valid": "Cette invitation n'est plus valide"
 }

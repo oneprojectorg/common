@@ -4,10 +4,6 @@ import { notFound } from 'next/navigation';
 import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSectionNav';
-import {
-  DEFAULT_NAVIGATION_CONFIG,
-  type NavigationConfig,
-} from '@/components/decisions/ProcessBuilder/navigationConfig';
 
 const EditDecisionPage = async ({
   params,
@@ -26,23 +22,21 @@ const EditDecisionPage = async ({
     notFound();
   }
 
-  // TODO: Get navigation config from process instance or process type
-  const navigationConfig: NavigationConfig = DEFAULT_NAVIGATION_CONFIG;
+  const instanceId = decisionProfile.processInstance.id;
 
   return (
     <div className="bg-background relative flex size-full flex-1 flex-col">
       <ProcessBuilderHeader
         processName={decisionProfile.name}
-        navigationConfig={navigationConfig}
+        instanceId={instanceId}
       />
       <div className="flex grow flex-col overflow-y-auto sm:flex-row">
-        <ProcessBuilderSidebar navigationConfig={navigationConfig} />
+        <ProcessBuilderSidebar instanceId={instanceId} />
         <main className="grow">
           <ProcessBuilderContent
             decisionProfileId={decisionProfile.id}
-            instanceId={decisionProfile.processInstance.id}
+            instanceId={instanceId}
             decisionName={decisionProfile.name}
-            navigationConfig={navigationConfig}
           />
         </main>
       </div>

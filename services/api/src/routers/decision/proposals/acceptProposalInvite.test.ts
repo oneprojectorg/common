@@ -64,7 +64,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
 
     const caller = await createAuthenticatedCaller(invitee.email);
     await caller.decision.acceptProposalInvite({
-      inviteId: invite.id,
+      profileId: proposal.profileId,
     });
 
     // Assert: user is a profileUser of the proposal profile
@@ -155,7 +155,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
 
     const caller = await createAuthenticatedCaller(invitee.email);
     await caller.decision.acceptProposalInvite({
-      inviteId: invite.id,
+      profileId: proposal.profileId,
     });
 
     // Assert: proposal profileUser was still created
@@ -248,7 +248,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
 
     const caller = await createAuthenticatedCaller(invitee.email);
     await caller.decision.acceptProposalInvite({
-      inviteId: proposalInvite.id,
+      profileId: proposal.profileId,
     });
 
     // Assert: proposal invite was marked as accepted
@@ -335,7 +335,9 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     const caller = await createAuthenticatedCaller(invitee.email);
 
     await expect(
-      caller.decision.acceptProposalInvite({ inviteId: invite.id }),
+      caller.decision.acceptProposalInvite({
+        profileId: proposal.profileId,
+      }),
     ).rejects.toMatchObject({
       cause: { name: 'CommonError' },
     });
@@ -352,7 +354,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
 
     await expect(
       caller.decision.acceptProposalInvite({
-        inviteId: '00000000-0000-0000-0000-000000000000',
+        profileId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
       cause: { name: 'NotFoundError' },
@@ -405,64 +407,11 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     const caller = await createAuthenticatedCaller(invitee.email);
 
     await expect(
-      caller.decision.acceptProposalInvite({ inviteId: invite.id }),
-    ).rejects.toMatchObject({
-      cause: { name: 'ConflictError' },
-    });
-  });
-
-  it('should fail when user email does not match invite email', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const profileData = new TestProfileUserDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Test Proposal' },
-    });
-
-    const invitee = await profileData.createStandaloneUser();
-
-    // Create invite for a different email
-    const [invite] = await db
-      .insert(profileInvites)
-      .values({
-        email: 'different-email@oneproject.org',
+      caller.decision.acceptProposalInvite({
         profileId: proposal.profileId,
-        profileEntityType: EntityType.PROPOSAL,
-        accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
-      })
-      .returning();
-
-    if (!invite) {
-      throw new Error('Failed to create invite');
-    }
-
-    profileData.trackProfileInvite(
-      'different-email@oneproject.org',
-      proposal.profileId,
-    );
-
-    const caller = await createAuthenticatedCaller(invitee.email);
-
-    await expect(
-      caller.decision.acceptProposalInvite({ inviteId: invite.id }),
+      }),
     ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
+      cause: { name: 'NotFoundError' },
     });
   });
 });

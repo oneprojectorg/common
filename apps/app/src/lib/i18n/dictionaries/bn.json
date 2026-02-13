@@ -485,6 +485,8 @@
   "Template Editor": "টেমপ্লেট এডিটর",
   "Criteria": "মানদণ্ড",
   "Settings": "সেটিংস",
+  "We are currently working on this, stay tuned!": "আমরা বর্তমানে এটিতে কাজ করছি, সাথে থাকুন!",
+  "Coming soon": "শীঘ্রই আসছে",
   "Roles & permissions": "ভূমিকা ও অনুমতিসমূহ",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount}টি ধাপ বাকি",
   "Process steps": "প্রক্রিয়ার ধাপসমূহ",
@@ -669,5 +671,6 @@
   "Set maximum budget": "সর্বোচ্চ বাজেট নির্ধারণ করুন",
   "Select a steward for this process": "এই প্রক্রিয়ার জন্য একজন তত্ত্বাবধায়ক নির্বাচন করুন",
   "Enter a process name": "একটি প্রক্রিয়ার নাম লিখুন",
-  "Enter a description": "একটি বিবরণ লিখুন"
+  "Enter a description": "একটি বিবরণ লিখুন",
+  "This invite is no longer valid": "এই আমন্ত্রণটি আর বৈধ নয়"
 }
