@@ -1,7 +1,6 @@
-import { eq } from '@op/db/client';
 import { EntityType, profileInvites, users } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { db } from '@op/db/test';
+import { db, eq } from '@op/db/test';
 import {
   addUserToOrganization,
   createDecisionInstance,
