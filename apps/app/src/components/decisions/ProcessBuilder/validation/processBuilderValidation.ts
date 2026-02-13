@@ -1,14 +1,10 @@
+import { z } from 'zod';
+
 import { getFieldErrors, getFields } from '../../proposalTemplate';
 import type { SectionId } from '../navigationConfig';
 import type { FormInstanceData } from '../stores/useProcessBuilderStore';
 
 // ============ Types ============
-
-export interface ChecklistItem {
-  id: string;
-  labelKey: string;
-  validate: (data: FormInstanceData | undefined) => boolean;
-}
 
 export interface ValidationSummary {
   sections: Record<SectionId, boolean>;
@@ -17,35 +13,30 @@ export interface ValidationSummary {
   checklist: { id: string; labelKey: string; isValid: boolean }[];
 }
 
+// ============ Zod Schemas ============
+
+const nonEmptyString = z.string().trim().min(1);
+
+const overviewSchema = z.object({
+  name: nonEmptyString,
+  stewardProfileId: nonEmptyString,
+  description: nonEmptyString,
+});
+
+const phaseSchema = z.object({
+  name: nonEmptyString,
+  headline: nonEmptyString,
+  description: nonEmptyString,
+  endDate: nonEmptyString,
+});
+
+const phasesSchema = z.object({
+  phases: z.array(phaseSchema).min(1),
+});
+
 // ============ Section Validators ============
 
 type SectionValidator = (data: FormInstanceData | undefined) => boolean;
-
-function validateOverview(data: FormInstanceData | undefined): boolean {
-  return (
-    !!data?.name?.trim() &&
-    !!data?.stewardProfileId &&
-    !!data?.description?.trim()
-  );
-}
-
-function validatePhases(data: FormInstanceData | undefined): boolean {
-  const phases = data?.phases;
-  if (!phases?.length) {
-    return false;
-  }
-  return phases.every(
-    (p) =>
-      !!p.name?.trim() &&
-      !!p.headline?.trim() &&
-      !!p.description?.trim() &&
-      !!p.endDate,
-  );
-}
-
-function validateProposalCategories(): boolean {
-  return true;
-}
 
 function validateTemplateEditor(data: FormInstanceData | undefined): boolean {
   if (!data?.proposalTemplate) {
@@ -56,9 +47,9 @@ function validateTemplateEditor(data: FormInstanceData | undefined): boolean {
 }
 
 const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
-  overview: validateOverview,
-  phases: validatePhases,
-  proposalCategories: validateProposalCategories,
+  overview: (data) => overviewSchema.safeParse(data).success,
+  phases: (data) => phasesSchema.safeParse(data).success,
+  proposalCategories: () => true,
   templateEditor: validateTemplateEditor,
   criteria: () => true,
   roles: () => true,
@@ -67,19 +58,22 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
 
 // ============ Checklist Items ============
 
+interface ChecklistItem {
+  id: string;
+  labelKey: string;
+  validate: (data: FormInstanceData | undefined) => boolean;
+}
+
 /**
  * User-facing checklist items for the "steps remaining" popover.
  * Each item has its own validator — independent of the section structure —
  * so one section can map to multiple checklist items with different granularity.
  */
-export const LAUNCH_CHECKLIST: ChecklistItem[] = [
+const LAUNCH_CHECKLIST: ChecklistItem[] = [
   {
     id: 'processNameDescription',
     labelKey: 'Process name & description',
-    validate: (data) =>
-      !!data?.name?.trim() &&
-      !!data?.stewardProfileId &&
-      !!data?.description?.trim(),
+    validate: (data) => overviewSchema.safeParse(data).success,
   },
   {
     id: 'atLeastOnePhase',
@@ -92,15 +86,9 @@ export const LAUNCH_CHECKLIST: ChecklistItem[] = [
     validate: (data) => {
       const phases = data?.phases;
       if (!phases?.length) {
-        return false;
+        return true;
       }
-      return phases.every(
-        (p) =>
-          !!p.name?.trim() &&
-          !!p.headline?.trim() &&
-          !!p.description?.trim() &&
-          !!p.endDate,
-      );
+      return z.array(phaseSchema).safeParse(phases).success;
     },
   },
   {
