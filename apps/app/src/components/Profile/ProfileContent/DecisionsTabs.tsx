@@ -1,24 +1,42 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProfileOrganizations } from '@/components/screens/ProfileOrganizations';
 
 import { MembersList } from './MembersList';
 
-export const DecisionsTab = ({ profileId }: { profileId: string }) => {
+const DecisionsTabInner = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  const access = useUser();
-  const permission = access.getPermissionsForProfile(profileId);
+  const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
+    stewardProfileId: profileId,
+    limit: 1,
+    status: ProcessStatus.PUBLISHED,
+  });
 
-  return permission.decisions.read ? (
-    <Tab id="decisions">{t('Decisions')}</Tab>
-  ) : null;
+  if (!data.items.length) {
+    return null;
+  }
+
+  return <Tab id="decisions">{t('Decisions')}</Tab>;
+};
+
+export const DecisionsTab = ({ profileId }: { profileId: string }) => {
+  return (
+    <ErrorBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <DecisionsTabInner profileId={profileId} />
+      </Suspense>
+    </ErrorBoundary>
+  );
 };
 
 export const DecisionsTabPanel = ({

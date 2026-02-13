@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { checkModuleEnabled } from '@/utils/modules';
 import { trpc } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
@@ -393,10 +392,6 @@ export const ProfileTabsMobile = ({
 }) => {
   const t = useTranslations();
   const isIndividual = profile.orgType === null || profile.orgType === '';
-  const decisionsEnabled = checkModuleEnabled(
-    profile.profile.modules,
-    'decisions',
-  );
 
   // Determine valid tabs and default tab based on profile type
   const validTabs = [
@@ -425,9 +420,7 @@ export const ProfileTabsMobile = ({
             <Tab id="updates">{t('Updates')}</Tab>
             <FollowersTab />
             <MembersTab profileId={profile.profile.id} />
-            {decisionsEnabled && (
-              <DecisionsTab profileId={profile.profile.id} />
-            )}
+            <DecisionsTab profileId={profile.profile.id} />
           </>
         ) : (
           <>
@@ -490,14 +483,10 @@ export const ProfileTabsMobile = ({
       {!isIndividual && (
         <>
           <FollowersTabPanel>{followersContent}</FollowersTabPanel>
-          {decisionsEnabled && (
-            <MembersTabPanel profileId={profile.profile.id} />
-          )}
+          <MembersTabPanel profileId={profile.profile.id} />
         </>
       )}
-      {decisionsEnabled && (
-        <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>
-      )}
+      <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>
     </ProfileTabsWithQuery>
   );
 };
