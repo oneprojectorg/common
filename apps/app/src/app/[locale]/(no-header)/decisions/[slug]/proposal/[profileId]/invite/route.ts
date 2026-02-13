@@ -10,8 +10,8 @@ export const GET = async (
     params: Promise<{ locale: string; slug: string; profileId: string }>;
   },
 ) => {
-  const { locale, slug, profileId } = await params;
-  const proposalUrl = `${OPURLConfig('APP').ENV_URL}/${locale}/decisions/${slug}/proposal/${profileId}`;
+  const { slug, profileId } = await params;
+  const proposalUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${slug}/proposal/${profileId}/edit`;
 
   try {
     const client = await createClient();
