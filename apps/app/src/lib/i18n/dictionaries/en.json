@@ -659,5 +659,8 @@
   "Options cannot be empty": "Options cannot be empty",
   "Minimum must be less than or equal to maximum": "Minimum must be less than or equal to maximum",
   "These are the categories you defined in": "These are the categories you defined in",
-  "Set maximum budget": "Set maximum budget"
+  "Set maximum budget": "Set maximum budget",
+  "Select a steward for this process": "Select a steward for this process",
+  "Enter a process name": "Enter a process name",
+  "Enter a description": "Enter a description"
 }

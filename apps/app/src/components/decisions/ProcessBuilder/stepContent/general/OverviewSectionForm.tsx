@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { SelectItem } from '@op/ui/Select';
 import { useEffect, useRef } from 'react';
+import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -16,15 +17,24 @@ import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
+const createOverviewValidator = (t: (key: string) => string) =>
+  z.object({
+    stewardProfileId: z
+      .string({ message: t('Select a steward for this process') })
+      .min(1, { message: t('Select a steward for this process') }),
+    name: z
+      .string({ message: t('Enter a process name') })
+      .min(1, { message: t('Enter a process name') }),
+    description: z
+      .string({ message: t('Enter a description') })
+      .min(1, { message: t('Enter a description') }),
+    organizeByCategories: z.boolean(),
+    requireCollaborativeProposals: z.boolean(),
+    isPrivate: z.boolean(),
+  });
+
 // Form data type
-interface OverviewFormData {
-  stewardProfileId: string;
-  name: string;
-  description: string;
-  organizeByCategories: boolean;
-  requireCollaborativeProposals: boolean;
-  isPrivate: boolean;
-}
+type OverviewFormData = z.infer<ReturnType<typeof createOverviewValidator>>;
 
 // Watches form values and triggers debounced save on changes
 function FormValueWatcher({
@@ -46,6 +56,7 @@ function FormValueWatcher({
       return;
     }
 
+    // Skip if values haven't changed
     if (valuesString === previousValues.current) {
       return;
     }
@@ -116,8 +127,8 @@ export function OverviewSectionForm({
     if (isDraft) {
       updateInstance.mutate({
         instanceId,
-        name: values.name,
-        description: values.description,
+        name: values.name || undefined,
+        description: values.description || undefined,
         stewardProfileId: values.stewardProfileId || undefined,
       });
     } else {
@@ -145,6 +156,10 @@ export function OverviewSectionForm({
       requireCollaborativeProposals:
         instanceData?.requireCollaborativeProposals ?? true,
       isPrivate: instanceData?.isPrivate ?? false,
+    },
+    validators: {
+      onBlur: createOverviewValidator(t),
+      onChange: createOverviewValidator(t),
     },
   });
 

@@ -654,5 +654,8 @@
   "Options cannot be empty": "As opções não podem estar vazias",
   "Minimum must be less than or equal to maximum": "O mínimo deve ser menor ou igual ao máximo",
   "These are the categories you defined in": "Estas são as categorias que você definiu em",
-  "Set maximum budget": "Definir orçamento máximo"
+  "Set maximum budget": "Definir orçamento máximo",
+  "Select a steward for this process": "Selecione um responsável para este processo",
+  "Enter a process name": "Digite um nome para o processo",
+  "Enter a description": "Digite uma descrição"
 }

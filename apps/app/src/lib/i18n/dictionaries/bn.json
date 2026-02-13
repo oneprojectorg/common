@@ -666,5 +666,8 @@
   "Options cannot be empty": "বিকল্পগুলি খালি হতে পারে না",
   "Minimum must be less than or equal to maximum": "সর্বনিম্ন অবশ্যই সর্বোচ্চের সমান বা কম হতে হবে",
   "These are the categories you defined in": "এগুলি আপনার সংজ্ঞায়িত বিভাগগুলি",
-  "Set maximum budget": "সর্বোচ্চ বাজেট নির্ধারণ করুন"
+  "Set maximum budget": "সর্বোচ্চ বাজেট নির্ধারণ করুন",
+  "Select a steward for this process": "এই প্রক্রিয়ার জন্য একজন তত্ত্বাবধায়ক নির্বাচন করুন",
+  "Enter a process name": "একটি প্রক্রিয়ার নাম লিখুন",
+  "Enter a description": "একটি বিবরণ লিখুন"
 }
