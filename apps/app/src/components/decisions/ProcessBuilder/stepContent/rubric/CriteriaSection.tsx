@@ -7,13 +7,11 @@ export default function CriteriaSection(_props: SectionProps) {
   const t = useTranslations();
 
   return (
-    <div className="mx-auto w-full max-w-160 p-4 md:p-8">
-      <div className="py-16">
-        <CodeAnimation />
-        <span className="text-neutral-gray4">
-          {t("We're almost there with this!")}
-        </span>
-      </div>
+    <div className="mx-auto flex h-full w-full max-w-160 flex-col items-center justify-center gap-4 p-4 py-16 md:p-8">
+      <CodeAnimation />
+      <span className="text-neutral-gray4">
+        {t('We are currently working on this, stay tuned!')}
+      </span>
     </div>
   );
 }

@@ -478,7 +478,7 @@
   "Template Editor": "Éditeur de modèle",
   "Criteria": "Critères",
   "Settings": "Paramètres",
-  "We're almost there with this!": "On y est presque !",
+  "We are currently working on this, stay tuned!": "Nous travaillons actuellement sur cette fonctionnalité, restez à l'écoute !",
   "Coming soon": "Bientôt disponible",
   "Roles & permissions": "Rôles et permissions",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount, plural, =1 {1 étape restante} other {# étapes restantes}}",

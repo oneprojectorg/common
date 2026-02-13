@@ -485,7 +485,7 @@
   "Template Editor": "টেমপ্লেট এডিটর",
   "Criteria": "মানদণ্ড",
   "Settings": "সেটিংস",
-  "We're almost there with this!": "আমরা প্রায় সেখানে পৌঁছে গেছি!",
+  "We are currently working on this, stay tuned!": "আমরা বর্তমানে এটিতে কাজ করছি, সাথে থাকুন!",
   "Coming soon": "শীঘ্রই আসছে",
   "Roles & permissions": "ভূমিকা ও অনুমতিসমূহ",
   "{stepCount, plural, =1 {1 step} other {# steps}} remaining": "{stepCount}টি ধাপ বাকি",
