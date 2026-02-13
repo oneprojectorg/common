@@ -33,6 +33,7 @@ test.describe('Proposal View', () => {
       proposalData: {
         title: 'Community Solar Initiative',
         collaborationDocId: MOCK_DOC_ID,
+        budget: { value: 10000, currency: 'EUR' },
       },
     });
 
@@ -74,6 +75,9 @@ test.describe('Proposal View', () => {
         'a[href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"]',
       ),
     ).toBeVisible();
+
+    // New-format budget { value: 10000, currency: 'EUR' } rendered as "€10,000"
+    await expect(authenticatedPage.getByText('€10,000')).toBeVisible();
   });
 
   test('renders legacy HTML description when no collaborationDocId exists', async ({
@@ -90,7 +94,8 @@ test.describe('Proposal View', () => {
       schema: template.processSchema,
     });
 
-    // Legacy proposal: raw HTML in `description`, no collaborationDocId
+    // Legacy proposal: raw HTML in `description`, no collaborationDocId,
+    // plain number budget (pre-currency-object format)
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
@@ -102,6 +107,7 @@ test.describe('Proposal View', () => {
           '<ul><li>First legacy item</li><li>Second legacy item</li></ul>',
           '<p>Contact us at <a href="https://example.org">our website</a>.</p>',
         ].join(''),
+        budget: 5000,
       },
     });
 
@@ -141,6 +147,10 @@ test.describe('Proposal View', () => {
     const link = authenticatedPage.locator('a', { hasText: 'our website' });
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', 'https://example.org');
+
+    // Legacy plain-number budget (5000) is normalised to { value: 5000, currency: 'USD' }
+    // and rendered as "$5,000" via formatCurrency
+    await expect(authenticatedPage.getByText('$5,000')).toBeVisible();
   });
 
   test('renders legacy proposal with old template format and description field', async ({

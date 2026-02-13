@@ -383,7 +383,7 @@ export interface CreateProposalOptions {
     title: string;
     description?: string;
     collaborationDocId?: string;
-    budget?: number;
+    budget?: number | { value: number; currency: string };
     category?: string;
   };
   /** Proposal status (defaults to DRAFT to match production behavior) */
