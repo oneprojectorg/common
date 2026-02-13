@@ -2,6 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -13,10 +14,32 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { DecisionListItem } from '@/components/decisions/DecisionListItem';
+
 import type { SchemaType } from '../CreateDecisionProcessModal/schemas/schemaLoader';
 import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 
-const DecisionProcessList = ({
+const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
+  const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
+    stewardProfileId: profileId,
+    status: ProcessStatus.PUBLISHED,
+  });
+
+  if (!data.items.length) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col">
+      {data.items.map((item) => (
+        <DecisionListItem key={item.id} item={item} />
+      ))}
+    </div>
+  );
+};
+
+const LegacyDecisionProcessList = ({
   profileId,
   schema = 'simple',
 }: {
@@ -43,40 +66,7 @@ const DecisionProcessList = ({
   const isProcessAdmin = decisionPermission.create && isOwnProfile;
 
   if (!data.instances || data.instances.length === 0) {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
-        {isProcessAdmin ? (
-          <>
-            <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
-              <LuLeaf className="size-6 text-neutral-gray4" />
-            </div>
-
-            <div className="flex max-w-md flex-col gap-2">
-              <h2 className="font-serif text-title-base text-neutral-black">
-                {t('Set up your decision-making process')}
-              </h2>
-              <p className="text-base text-neutral-charcoal">
-                {t(
-                  'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
-                )}
-              </p>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
-              <LuLeaf className="size-6 text-neutral-gray4" />
-            </div>
-
-            <div className="flex max-w-md flex-col gap-2">
-              <h2 className="font-serif text-title-base text-neutral-black">
-                {t('There are no current decision-making processes')}
-              </h2>
-            </div>
-          </>
-        )}
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -193,6 +183,78 @@ const DecisionProcessList = ({
           </Button>
         </div>
       )}
+    </div>
+  );
+};
+
+const EmptyDecisions = ({ profileId }: { profileId: string }) => {
+  const t = useTranslations();
+  const access = useUser();
+  const { user } = access;
+  const permission = access.getPermissionsForProfile(profileId);
+  const isOwnProfile = user.currentProfile?.id === profileId;
+  const isProcessAdmin = permission.decisions.create && isOwnProfile;
+
+  return (
+    <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
+      <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
+        <LuLeaf className="size-6 text-neutral-gray4" />
+      </div>
+      <div className="flex max-w-md flex-col gap-2">
+        <h2 className="font-serif text-title-base text-neutral-black">
+          {isProcessAdmin
+            ? t('Set up your decision-making process')
+            : t('There are no current decision-making processes')}
+        </h2>
+        {isProcessAdmin && (
+          <p className="text-base text-neutral-charcoal">
+            {t(
+              'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
+            )}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const DecisionProcessList = ({
+  profileId,
+  schema = 'simple',
+}: {
+  profileId: string;
+  schema?: SchemaType;
+}) => {
+  const [decisionProfiles] =
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      stewardProfileId: profileId,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+  const legacyInstances = trpc.decision.listInstances.useQuery(
+    { stewardProfileId: profileId, limit: 20, offset: 0 },
+    { retry: false },
+  );
+
+  const hasDecisionProfiles = decisionProfiles.items.length > 0;
+  const hasLegacyInstances = (legacyInstances.data?.instances?.length ?? 0) > 0;
+
+  if (!hasDecisionProfiles && !hasLegacyInstances) {
+    return <EmptyDecisions profileId={profileId} />;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <DecisionProfilesList profileId={profileId} />
+        </Suspense>
+      </ErrorBoundary>
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <LegacyDecisionProcessList profileId={profileId} schema={schema} />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 };

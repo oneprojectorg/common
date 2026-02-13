@@ -5,47 +5,46 @@ import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
-import { ReactNode, Suspense } from 'react';
+import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProfileOrganizations } from '@/components/screens/ProfileOrganizations';
 
 import { MembersList } from './MembersList';
 
-const DecisionsTabInner = ({ profileId }: { profileId: string }) => {
+export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
+  const access = useUser();
+  const canReadDecisions =
+    access.getPermissionsForProfile(profileId).decisions.read;
 
-  const [decisionProfiles] =
-    trpc.decision.listDecisionProfiles.useSuspenseQuery({
-      stewardProfileId: profileId,
-      limit: 1,
-      status: ProcessStatus.PUBLISHED,
-    });
+  const decisionProfiles = trpc.decision.listDecisionProfiles.useQuery({
+    stewardProfileId: profileId,
+    limit: 1,
+    status: ProcessStatus.PUBLISHED,
+  });
 
   const legacyInstances = trpc.decision.listInstances.useQuery(
     { stewardProfileId: profileId, limit: 1, offset: 0 },
-    { retry: false },
+    { retry: false, enabled: canReadDecisions },
   );
 
-  const hasDecisionProfiles = decisionProfiles.items.length > 0;
+  const hasDecisionProfiles = (decisionProfiles.data?.items?.length ?? 0) > 0;
   const hasLegacyInstances = (legacyInstances.data?.instances?.length ?? 0) > 0;
+  const hasActiveDecisions = hasDecisionProfiles || hasLegacyInstances;
 
-  if (!hasDecisionProfiles && !hasLegacyInstances) {
+  if (!hasActiveDecisions) {
     return null;
   }
 
-  return <Tab id="decisions">{t('Decisions')}</Tab>;
-};
-
-export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   return (
-    <ErrorBoundary fallback={null}>
-      <Suspense fallback={null}>
-        <DecisionsTabInner profileId={profileId} />
-      </Suspense>
-    </ErrorBoundary>
+    <Tab id="decisions">
+      {t('Decisions')}
+      {hasDecisionProfiles && (
+        <span className="ml-1.5 inline-block size-1 rounded-full bg-functional-green" />
+      )}
+    </Tab>
   );
 };
 

@@ -19,8 +19,8 @@ export const listInstancesRouter = router({
         authUserId: ctx.user.id,
       });
 
-      return legacyProcessInstanceListEncoder.parse({
-        instances: result.instances.map((instance) => ({
+      const encoded = result.instances
+        .map((instance) => ({
           ...instance,
           instanceData: instance.instanceData,
           process: instance.process
@@ -38,9 +38,19 @@ export const listInstancesRouter = router({
             : undefined,
           proposalCount: instance.proposalCount,
           participantCount: instance.participantCount,
-        })),
-        total: result.total,
-        hasMore: result.hasMore,
+        }))
+        .filter((instance) => {
+          const parsed =
+            legacyProcessInstanceListEncoder.shape.instances.element.safeParse(
+              instance,
+            );
+          return parsed.success;
+        });
+
+      return legacyProcessInstanceListEncoder.parse({
+        instances: encoded,
+        total: encoded.length,
+        hasMore: false,
       });
     }),
 });
