@@ -454,16 +454,7 @@ export const transformFormDataToProcessSchema = (
       properties: {
         title: { type: 'string' },
         description: { type: 'string' },
-        budget: {
-          type: 'object',
-          title: 'Budget',
-          'x-format': 'money',
-          maximum: data.budgetCapAmount,
-          properties: {
-            amount: { type: 'number' },
-            currency: { type: 'string', default: 'USD' },
-          },
-        },
+        budget: { type: 'number', maximum: data.budgetCapAmount },
         ...(data.categories && (data.categories as string[]).length > 0
           ? {
               category: {
