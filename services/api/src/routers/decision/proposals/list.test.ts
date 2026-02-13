@@ -1,8 +1,16 @@
 import { mockCollab } from '@op/collab/testing';
-import { Visibility } from '@op/db/schema';
+import { db } from '@op/db/client';
+import {
+  Visibility,
+  decisionProcesses,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
@@ -820,5 +828,231 @@ describe.concurrent('listProposals', () => {
     });
     // Empty proposal has a collaborationDocId but no mock response, so documentContent is undefined
     expect(foundEmpty?.documentContent).toBeUndefined();
+  });
+
+  /**
+   * Legacy cowop process_schema fallback with mixed budget formats.
+   *
+   * Simulates production layout: proposalTemplate lives in
+   * `decision_processes.process_schema` (not instanceData), proposals have
+   * plain-number budgets and the old `content` field instead of `description`.
+   */
+  it('should list legacy cowop proposals with budget normalization, content→description compat, and proposalTemplate from process_schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // 1. Set legacy cowop process_schema on the decision process
+    const cowopProcessSchema = cowopSchema({
+      processName: 'COWOP Democratic Budgeting',
+      totalBudget: 100000,
+      budgetCapAmount: 10000,
+      requireBudget: true,
+      categories: ['Infrastructure', 'Education'],
+    });
+
+    await db
+      .update(decisionProcesses)
+      .set({ processSchema: cowopProcessSchema })
+      .where(eq(decisionProcesses.id, setup.process.id));
+
+    // 2. Strip proposalTemplate from instanceData so resolver falls back to process_schema
+    const instanceRecord = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const { proposalTemplate: _, ...instanceDataWithoutTemplate } =
+      instanceRecord.instanceData as Record<string, unknown>;
+
+    await db
+      .update(processInstances)
+      .set({ instanceData: instanceDataWithoutTemplate })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    // 3. Create proposals and raw-patch their data to simulate legacy DB state
+    const [proposalA, proposalB] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Legacy A' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Legacy B' },
+      }),
+    ]);
+
+    await Promise.all([
+      // Plain-number budget + old `content` field (no `description`)
+      db
+        .update(proposals)
+        .set({
+          proposalData: {
+            title: 'Legacy A',
+            content: '<p>body from content field</p>',
+            budget: 7500,
+            category: 'Infrastructure',
+            collaborationDocId: null,
+          },
+        })
+        .where(eq(proposals.id, proposalA.id)),
+      // Canonical { amount, currency } budget (new format already in DB)
+      db
+        .update(proposals)
+        .set({
+          proposalData: {
+            title: 'Legacy B',
+            description: '<p>already migrated</p>',
+            budget: { amount: 4200, currency: 'EUR' },
+            category: 'Education',
+            collaborationDocId: null,
+          },
+        })
+        .where(eq(proposals.id, proposalB.id)),
+    ]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(2);
+
+    const foundA = result.proposals.find((p) => p.id === proposalA.id);
+    const foundB = result.proposals.find((p) => p.id === proposalB.id);
+
+    // Plain number → { amount, currency: 'USD' }
+    expect(foundA?.proposalData).toMatchObject({
+      title: 'Legacy A',
+      description: '<p>body from content field</p>',
+      budget: { amount: 7500, currency: 'USD' },
+      category: 'Infrastructure',
+    });
+    // content→description backward compat
+    expect(foundA?.documentContent).toEqual({
+      type: 'html',
+      content: '<p>body from content field</p>',
+    });
+
+    // Canonical budget passes through unchanged
+    expect(foundB?.proposalData).toMatchObject({
+      title: 'Legacy B',
+      budget: { amount: 4200, currency: 'EUR' },
+      category: 'Education',
+    });
+    expect(foundB?.documentContent).toEqual({
+      type: 'html',
+      content: '<p>already migrated</p>',
+    });
+  });
+
+  it('should normalize budgets correctly when listing mixed new-schema and legacy proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create proposals via API (new schema — gets collaborationDocId)
+    const [newSchemaProposal, legacyProposal] = await Promise.all([
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'New Schema' },
+      }),
+      testData.createProposal({
+        callerEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Legacy' },
+      }),
+    ]);
+
+    // Raw-patch legacy proposal to simulate old DB state:
+    // plain-number budget, `content` instead of `description`, custom field, no collaborationDocId
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Legacy',
+          content: '<p>old content field</p>',
+          budget: 9999,
+          collaborationDocId: null,
+          customField: 'should survive',
+        },
+      })
+      .where(eq(proposals.id, legacyProposal.id));
+
+    // Set up TipTap mock for the new-schema proposal
+    const { collaborationDocId } = newSchemaProposal.proposalData as {
+      collaborationDocId: string;
+    };
+    const mockContent = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'TipTap' }] },
+      ],
+    };
+    mockCollab.setDocResponse(collaborationDocId, mockContent);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(2);
+
+    const foundNew = result.proposals.find(
+      (p) => p.id === newSchemaProposal.id,
+    );
+    const foundLegacy = result.proposals.find(
+      (p) => p.id === legacyProposal.id,
+    );
+
+    // New-schema: collaborationDocId present, TipTap content
+    expect(foundNew?.proposalData).toMatchObject({
+      title: 'New Schema',
+      collaborationDocId: expect.any(String),
+    });
+    expect(foundNew?.documentContent).toEqual({
+      type: 'json',
+      fragments: { default: mockContent },
+    });
+
+    // Legacy: budget normalized, content→description, custom field preserved
+    expect(foundLegacy?.proposalData).toMatchObject({
+      title: 'Legacy',
+      description: '<p>old content field</p>',
+      budget: { amount: 9999, currency: 'USD' },
+      customField: 'should survive',
+    });
+    expect(foundLegacy?.documentContent).toEqual({
+      type: 'html',
+      content: '<p>old content field</p>',
+    });
   });
 });
