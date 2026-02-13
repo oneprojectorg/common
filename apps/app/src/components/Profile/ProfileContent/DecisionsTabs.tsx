@@ -16,13 +16,23 @@ import { MembersList } from './MembersList';
 
 const DecisionsTabInner = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
-    stewardProfileId: profileId,
-    limit: 1,
-    status: ProcessStatus.PUBLISHED,
-  });
 
-  if (!data.items.length) {
+  const [decisionProfiles] =
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      stewardProfileId: profileId,
+      limit: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+  const legacyInstances = trpc.decision.listInstances.useQuery(
+    { stewardProfileId: profileId, limit: 1, offset: 0 },
+    { retry: false },
+  );
+
+  const hasDecisionProfiles = decisionProfiles.items.length > 0;
+  const hasLegacyInstances = (legacyInstances.data?.instances?.length ?? 0) > 0;
+
+  if (!hasDecisionProfiles && !hasLegacyInstances) {
     return null;
   }
 
