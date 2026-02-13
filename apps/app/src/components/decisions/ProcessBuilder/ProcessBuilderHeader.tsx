@@ -93,10 +93,7 @@ const ProcessBuilderHeaderContent = ({
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
 
-  const { data: instance } = trpc.decision.getInstance.useQuery(
-    { instanceId: instanceId! },
-    { enabled: !!instanceId },
-  );
+  const { data: instance } = trpc.decision.getInstance.useQuery({ instanceId });
 
   const instanceStatus = instance?.status as ProcessStatus | undefined;
   const decisionProfileId = instance?.profileId ?? undefined;
@@ -252,7 +249,7 @@ const ProcessBuilderHeaderContent = ({
   );
 };
 
-const MobileSidebar = ({ instanceId }: { instanceId?: string }) => {
+const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
