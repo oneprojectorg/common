@@ -61,7 +61,7 @@ export const LaunchProcessModal = ({
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
       <ModalHeader>{t('Launch Process')}</ModalHeader>
       <ModalBody className="flex flex-col gap-4">
-        <p className="text-sm text-neutral-charcoal">
+        <p className="text-neutral-charcoal">
           {t(
             'This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.',
             { processName },
@@ -69,7 +69,7 @@ export const LaunchProcessModal = ({
         </p>
 
         {/* Summary Section */}
-        <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-4 text-sm">
+        <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-4">
           <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
             <span className="text-neutral-gray4">{t('Phases')}</span>
             <span className="text-neutral-charcoal">{phasesCount}</span>
@@ -82,14 +82,14 @@ export const LaunchProcessModal = ({
           </div>
         </div>
 
-        <p className="text-xs text-neutral-charcoal">
+        <p className="text-sm text-neutral-charcoal">
           {t('You can edit settings and advance phases after launching.')}
         </p>
 
         {showNoCategoriesWarning && (
           <div className="flex items-start gap-1 rounded-lg border border-primary-orange1 bg-primary-orange1/[0.08] p-4">
             <LuInfo className="mt-0.5 size-4 shrink-0 text-primary-orange1" />
-            <p className="text-xs text-primary-orange1">
+            <p className="text-primary-orange1">
               {t(
                 "No proposal categories defined. Proposers won't be able to categorize their submissions.",
               )}
