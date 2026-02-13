@@ -215,6 +215,7 @@ export const decisionProfileWithSchemaFilterSchema = z.object({
   search: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
   ownerProfileId: z.uuid().optional(),
+  stewardProfileId: z.uuid().optional(),
 });
 
 // ============================================================================
@@ -677,7 +678,8 @@ export const processFilterSchema = z
 export const instanceFilterSchema = z
   .object({
     processId: z.uuid().optional(),
-    ownerProfileId: z.uuid(),
+    ownerProfileId: z.uuid().optional(),
+    stewardProfileId: z.uuid().optional(),
     status: z.enum(ProcessStatus).optional(),
     search: z.string().optional(),
   })
@@ -714,6 +716,7 @@ export const decisionProfileFilterSchema = z.object({
   search: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
   ownerProfileId: z.uuid().optional(),
+  stewardProfileId: z.uuid().optional(),
 });
 
 // Type exports

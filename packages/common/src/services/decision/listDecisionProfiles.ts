@@ -73,6 +73,7 @@ export const listDecisionProfiles = async ({
   dir = 'desc',
   cursor,
   ownerProfileId,
+  stewardProfileId,
 }: {
   user: User;
   search?: string;
@@ -82,6 +83,7 @@ export const listDecisionProfiles = async ({
   dir?: 'asc' | 'desc';
   cursor?: string | null;
   ownerProfileId?: string | null;
+  stewardProfileId?: string | null;
 }): Promise<PaginatedResult<DecisionProfileItem>> => {
   // Get the column to order by
   const orderByColumn =
@@ -107,6 +109,9 @@ export const listDecisionProfiles = async ({
     status ? eq(processInstances.status, status) : undefined,
     ownerProfileId
       ? eq(processInstances.ownerProfileId, ownerProfileId)
+      : undefined,
+    stewardProfileId
+      ? eq(processInstances.stewardProfileId, stewardProfileId)
       : undefined,
   ].filter(Boolean);
 

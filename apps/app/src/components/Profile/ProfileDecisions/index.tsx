@@ -30,7 +30,7 @@ const DecisionProcessList = ({
     string | null
   >(null);
   const [data] = trpc.decision.listInstances.useSuspenseQuery({
-    ownerProfileId: profileId,
+    stewardProfileId: profileId,
     limit: 20,
     offset: 0,
   });

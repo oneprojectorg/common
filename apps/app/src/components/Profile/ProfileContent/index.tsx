@@ -255,7 +255,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
 
   const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
     limit: 3,
-    ownerProfileId: profileId,
+    stewardProfileId: profileId,
     status: ProcessStatus.PUBLISHED,
   });
 
