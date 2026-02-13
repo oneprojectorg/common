@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { DecisionProfileList, ProcessStatus } from '@op/api/encoders';
+import { ProcessStatus } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -16,11 +16,9 @@ import { DecisionListItem } from '../DecisionListItem';
 
 const DecisionsListSuspense = ({
   status,
-  initialData,
   ownerProfileId,
 }: {
   status: ProcessStatus;
-  initialData?: DecisionProfileList;
   ownerProfileId?: string;
 }) => {
   const {
@@ -34,17 +32,9 @@ const DecisionsListSuspense = ({
       status,
       ownerProfileId,
     },
-    initialData
-      ? {
-          initialData: {
-            pages: [initialData],
-            pageParams: [null],
-          },
-          getNextPageParam: (lastPage) => lastPage.next,
-        }
-      : {
-          getNextPageParam: (lastPage) => lastPage.next,
-        },
+    {
+      getNextPageParam: (lastPage) => lastPage.next,
+    },
   );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
@@ -82,11 +72,7 @@ const DecisionsListSuspense = ({
   );
 };
 
-const AllDecisionsTabs = ({
-  initialData,
-}: {
-  initialData?: DecisionProfileList;
-}) => {
+const AllDecisionsTabs = () => {
   const t = useTranslations();
   const { user } = useUser();
   const ownerProfileId = user.currentProfile?.id;
@@ -118,7 +104,7 @@ const AllDecisionsTabs = ({
         <Suspense fallback={<SkeletonLine lines={5} />}>
           <DecisionsListSuspense
             status={ProcessStatus.PUBLISHED}
-            initialData={initialData}
+            ownerProfileId={ownerProfileId}
           />
         </Suspense>
       </TabPanel>
@@ -141,20 +127,13 @@ const AllDecisionsTabs = ({
   );
 };
 
-export const AllDecisions = ({
-  initialData,
-}: {
-  initialData?: DecisionProfileList;
-}) => {
+export const AllDecisions = () => {
   const { user } = useUser();
 
   return (
     <ErrorBoundary fallback={<div>Could not load decisions</div>}>
       <Suspense fallback={<SkeletonLine lines={5} />}>
-        <AllDecisionsTabs
-          key={user.currentProfile?.id}
-          initialData={initialData}
-        />
+        <AllDecisionsTabs key={user.currentProfile?.id} />
       </Suspense>
     </ErrorBoundary>
   );
