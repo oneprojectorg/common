@@ -517,6 +517,12 @@
   "Add a review stage where designated reviewers evaluate proposals before voting": "Adicione uma etapa de revisão onde revisores designados avaliam propostas antes da votação",
   "Keep this process private": "Manter este processo privado",
   "Only invited members can view and participate in this process": "Apenas membros convidados podem ver e participar deste processo",
+  "Process Overview": "Visão geral do processo",
+  "Organize proposals into categories": "Organizar propostas em categorias",
+  "Group proposals into categories for better organization and evaluation": "Agrupar propostas em categorias para melhor organização e avaliação",
+  "Require collaborative proposals": "Exigir propostas colaborativas",
+  "Require proposals to be co-authored by multiple participants": "Exigir que propostas sejam co-autoradas por múltiplos participantes",
+  "Visibility": "Visibilidade",
   "Save": "Salvar",
   "Saving...": "Salvando...",
   "Saved": "Salvo",
@@ -651,5 +657,8 @@
   "Minimum must be less than or equal to maximum": "O mínimo deve ser menor ou igual ao máximo",
   "These are the categories you defined in": "Estas são as categorias que você definiu em",
   "Set maximum budget": "Definir orçamento máximo",
+  "Select a steward for this process": "Selecione um responsável para este processo",
+  "Enter a process name": "Digite um nome para o processo",
+  "Enter a description": "Digite uma descrição",
   "This invite is no longer valid": "Este convite não é mais válido"
 }
