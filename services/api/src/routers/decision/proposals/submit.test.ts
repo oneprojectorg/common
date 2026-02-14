@@ -183,125 +183,103 @@ describe.concurrent('submitProposal', () => {
     ).rejects.toThrow();
   });
 
-  // ---- Validation gap tests ----
-  // These tests document that submitProposal SHOULD validate proposal data
-  // against the proposalTemplate before flipping status to SUBMITTED.
-  // They are expected to fail until validation is added to the service.
+  it('should reject submission when required fields are missing from proposal data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-  it.fails(
-    'should reject submission when required fields are missing from proposal data',
-    async ({ task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        properties: {
+          title: { type: 'string', minLength: 1 },
+        },
+      },
+    });
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
 
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+    // Create a proposal with an empty title
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: '' },
+    });
 
-      // Create a proposal with only a title — no description or other fields
-      const proposal = await testData.createProposal({
-        callerEmail: setup.userEmail,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: '' },
-      });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
 
-      const caller = await createAuthenticatedCaller(setup.userEmail);
+    // submitProposal should validate against the proposalTemplate and reject
+    // because title is empty (violates minLength: 1)
+    await expect(
+      caller.decision.submitProposal({
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
 
-      // submitProposal should validate against the proposalTemplate and reject
-      // because title is empty (required by the default template)
-      await expect(
-        caller.decision.submitProposal({
-          proposalId: proposal.id,
-        }),
-      ).rejects.toMatchObject({
-        cause: { name: 'ValidationError' },
-      });
-    },
-  );
+  it('should reject submission when budget exceeds the template maximum', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-  it.fails(
-    'should reject submission when budget exceeds the template maximum',
-    async ({ task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'budget'],
+        properties: {
+          title: { type: 'string' },
+          budget: { type: 'number', maximum: 10000 },
+        },
+      },
+    });
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
 
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+    // Create a proposal, then directly overwrite proposalData
+    // with a budget that exceeds the template maximum
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Over Budget Proposal' },
+    });
 
-      // Create a proposal via tRPC, then directly overwrite proposalData
-      // with an invalid budget that exceeds the template maximum
-      const proposal = await testData.createProposal({
-        callerEmail: setup.userEmail,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Over Budget Proposal' },
-      });
+    // Directly set invalid proposal data that exceeds the budget cap
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Over Budget Proposal',
+          collaborationDocId: `proposal-${proposal.id}`,
+          budget: 99999,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
 
-      // Set a proposalTemplate with a budget maximum on the process schema,
-      // and set proposal data with a budget that exceeds it
-      const instanceRecord = await db._query.processInstances.findFirst({
-        where: eq(processInstances.id, instance.instance.id),
-        with: { process: true },
-      });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
 
-      if (!instanceRecord) {
-        throw new Error('Instance record not found');
-      }
-
-      const instanceData = instanceRecord.instanceData as Record<
-        string,
-        unknown
-      >;
-      await db
-        .update(processInstances)
-        .set({
-          instanceData: {
-            ...instanceData,
-            proposalTemplate: {
-              type: 'object',
-              required: ['title', 'budget'],
-              properties: {
-                title: { type: 'string' },
-                budget: { type: 'number', maximum: 10000 },
-              },
-            },
-          },
-        })
-        .where(eq(processInstances.id, instance.instance.id));
-
-      // Directly set invalid proposal data that exceeds the budget cap
-      await db
-        .update(proposals)
-        .set({
-          proposalData: {
-            title: 'Over Budget Proposal',
-            collaborationDocId: `proposal-${proposal.id}`,
-            budget: 99999,
-          },
-        })
-        .where(eq(proposals.id, proposal.id));
-
-      const caller = await createAuthenticatedCaller(setup.userEmail);
-
-      // submitProposal should validate against the template and reject
-      // because budget 99999 > maximum 10000
-      await expect(
-        caller.decision.submitProposal({
-          proposalId: proposal.id,
-        }),
-      ).rejects.toMatchObject({
-        cause: { name: 'ValidationError' },
-      });
-    },
-  );
+    // submitProposal should validate against the template and reject
+    // because budget 99999 > maximum 10000
+    await expect(
+      caller.decision.submitProposal({
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
 });
