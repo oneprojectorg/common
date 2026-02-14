@@ -7,7 +7,8 @@ import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 
 export interface ListInstancesInput {
-  ownerProfileId: string;
+  ownerProfileId?: string;
+  stewardProfileId?: string;
   processId?: string;
   status?: ProcessStatus;
   search?: string;
@@ -21,6 +22,7 @@ export interface ListInstancesInput {
 
 export const listInstances = async ({
   ownerProfileId,
+  stewardProfileId,
   processId,
   status,
   search,
@@ -30,11 +32,18 @@ export const listInstances = async ({
   orderDirection = 'desc',
   user,
 }: ListInstancesInput) => {
+  const filterProfileId = stewardProfileId ?? ownerProfileId;
+  if (!filterProfileId) {
+    throw new UnauthorizedError(
+      'Either ownerProfileId or stewardProfileId is required',
+    );
+  }
+
   // ASSERT VIEW ACCESS ON ORGUSER
   const org = await db
     .select({ id: organizations.id })
     .from(organizations)
-    .where(eq(organizations.profileId, ownerProfileId));
+    .where(eq(organizations.profileId, filterProfileId));
 
   if (!org[0]?.id) {
     throw new UnauthorizedError("You don't have access to do this");
@@ -53,6 +62,10 @@ export const listInstances = async ({
 
     if (ownerProfileId) {
       conditions.push(eq(processInstances.ownerProfileId, ownerProfileId));
+    }
+
+    if (stewardProfileId) {
+      conditions.push(eq(processInstances.stewardProfileId, stewardProfileId));
     }
 
     if (processId) {

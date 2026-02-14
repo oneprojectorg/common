@@ -1,6 +1,8 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
+import { ProcessStatus, VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
@@ -14,11 +16,37 @@ import { MembersList } from './MembersList';
 export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   const access = useUser();
-  const permission = access.getPermissionsForProfile(profileId);
+  const canReadDecisions =
+    access.getPermissionsForProfile(profileId).decisions.read;
 
-  return permission.decisions.read ? (
-    <Tab id="decisions">{t('Decisions')}</Tab>
-  ) : null;
+  const decisionProfiles = trpc.decision.listDecisionProfiles.useQuery({
+    stewardProfileId: profileId,
+    status: VISIBLE_DECISION_STATUSES,
+  });
+
+  const legacyInstances = trpc.decision.listInstances.useQuery(
+    { stewardProfileId: profileId, limit: 1, offset: 0 },
+    { retry: false, enabled: canReadDecisions },
+  );
+
+  const hasDecisionProfiles = (decisionProfiles.data?.items?.length ?? 0) > 0;
+  const hasLegacyInstances = (legacyInstances.data?.instances?.length ?? 0) > 0;
+  const hasPublishedDecisions = decisionProfiles.data?.items?.some(
+    (item) => item.processInstance.status === ProcessStatus.PUBLISHED,
+  );
+
+  if (!hasDecisionProfiles && !hasLegacyInstances) {
+    return null;
+  }
+
+  return (
+    <Tab id="decisions">
+      {t('Decisions')}
+      {hasPublishedDecisions && (
+        <span className="ml-1.5 inline-block size-1 rounded-full bg-functional-green" />
+      )}
+    </Tab>
+  );
 };
 
 export const DecisionsTabPanel = ({

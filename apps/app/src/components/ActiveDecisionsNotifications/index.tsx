@@ -23,7 +23,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
 
   const [{ items: decisions }] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({
-      status: ProcessStatus.PUBLISHED,
+      status: [ProcessStatus.PUBLISHED],
       limit: 10,
     });
 

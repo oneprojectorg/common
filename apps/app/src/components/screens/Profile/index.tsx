@@ -1,5 +1,4 @@
 import { getPublicUrl } from '@/utils';
-import { checkModuleEnabled } from '@/utils/modules';
 import { createClient } from '@op/api/serverClient';
 import { match } from '@op/core';
 import { cn, getGradientForString } from '@op/ui/utils';
@@ -58,11 +57,6 @@ const ProfileWithData = async ({
         slug,
       });
 
-      const decisionsEnabled = checkModuleEnabled(
-        organization.profile.modules,
-        'decisions',
-      );
-
       return organization ? (
         <>
           <ImageHeader
@@ -87,7 +81,6 @@ const ProfileWithData = async ({
             organization={organization}
             profile={profile}
             initialTab={initialTab}
-            decisionsEnabled={decisionsEnabled}
             schema={schema}
           />
         </>

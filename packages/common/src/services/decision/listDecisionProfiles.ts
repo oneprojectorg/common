@@ -73,15 +73,17 @@ export const listDecisionProfiles = async ({
   dir = 'desc',
   cursor,
   ownerProfileId,
+  stewardProfileId,
 }: {
   user: User;
   search?: string;
-  status?: ProcessStatus;
+  status?: ProcessStatus[];
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
   cursor?: string | null;
   ownerProfileId?: string | null;
+  stewardProfileId?: string | null;
 }): Promise<PaginatedResult<DecisionProfileItem>> => {
   // Get the column to order by
   const orderByColumn =
@@ -104,9 +106,12 @@ export const listDecisionProfiles = async ({
 
   // Build process instance filter conditions
   const processInstanceConditions = [
-    status ? eq(processInstances.status, status) : undefined,
+    status?.length ? inArray(processInstances.status, status) : undefined,
     ownerProfileId
       ? eq(processInstances.ownerProfileId, ownerProfileId)
+      : undefined,
+    stewardProfileId
+      ? eq(processInstances.stewardProfileId, stewardProfileId)
       : undefined,
   ].filter(Boolean);
 

@@ -77,7 +77,7 @@ describe.concurrent('listDecisionProfiles', () => {
 
     const result = await caller.decision.listDecisionProfiles({
       limit: 10,
-      status: ProcessStatus.PUBLISHED,
+      status: [ProcessStatus.PUBLISHED],
     });
 
     expect(result.items).toHaveLength(1);
@@ -194,7 +194,7 @@ describe.concurrent('listDecisionProfiles', () => {
     const result = await caller.decision.listDecisionProfiles({
       limit: 10,
       ownerProfileId: setup.organization.profileId,
-      status: ProcessStatus.PUBLISHED,
+      status: [ProcessStatus.PUBLISHED],
     });
 
     expect(result.items).toHaveLength(1);

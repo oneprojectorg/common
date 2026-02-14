@@ -41,13 +41,11 @@ export const ProfileTabsRenderer = ({
   organization,
   profile,
   initialTab,
-  decisionsEnabled,
   schema,
 }: {
   organization: Organization;
   profile: Profile;
   initialTab?: string;
-  decisionsEnabled: boolean;
   schema: SchemaType;
 }) => {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
@@ -76,7 +74,7 @@ export const ProfileTabsRenderer = ({
         <DesktopOrganizationTabs />
         <FollowersTab />
         <MembersTab profileId={profile.id} />
-        {decisionsEnabled && <DecisionsTab profileId={profile.id} />}
+        <DecisionsTab profileId={profile.id} />
       </ProfileTabList>
 
       <TabPanel id="home" className="flex grow flex-col sm:p-0">
@@ -93,14 +91,10 @@ export const ProfileTabsRenderer = ({
       <FollowersTabPanel>
         <ProfileFollowers profileId={profile.id} />
       </FollowersTabPanel>
-      {decisionsEnabled && (
-        <>
-          <DecisionsTabPanel>
-            <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
-          </DecisionsTabPanel>
-          <MembersTabPanel profileId={profile.id} />
-        </>
-      )}
+      <DecisionsTabPanel>
+        <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
+      </DecisionsTabPanel>
+      <MembersTabPanel profileId={profile.id} />
     </ProfileTabs>
   );
 };

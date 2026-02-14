@@ -401,7 +401,8 @@ export const legacyProcessFilterSchema = z
 export const legacyInstanceFilterSchema = z
   .object({
     processId: z.uuid().optional(),
-    ownerProfileId: z.uuid(),
+    ownerProfileId: z.uuid().optional(),
+    stewardProfileId: z.uuid().optional(),
     status: z.enum(ProcessStatus).optional(),
     search: z.string().optional(),
   })
@@ -438,6 +439,7 @@ export const legacyDecisionProfileFilterSchema = z.object({
   search: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
   ownerProfileId: z.uuid().optional(),
+  stewardProfileId: z.uuid().optional(),
 });
 
 // Type exports

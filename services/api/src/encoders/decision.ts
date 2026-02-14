@@ -206,6 +206,13 @@ export const decisionProfileWithSchemaListEncoder = z.object({
   next: z.string().nullish(),
 });
 
+/** Decision statuses visible on profile pages (excludes drafts) */
+export const VISIBLE_DECISION_STATUSES = [
+  ProcessStatus.PUBLISHED,
+  ProcessStatus.COMPLETED,
+  ProcessStatus.CANCELLED,
+];
+
 /** Decision profile filter schema */
 export const decisionProfileWithSchemaFilterSchema = z.object({
   cursor: z.string().nullish(),
@@ -213,8 +220,9 @@ export const decisionProfileWithSchemaFilterSchema = z.object({
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),
-  status: z.enum(ProcessStatus).optional(),
+  status: z.array(z.enum(ProcessStatus)).optional(),
   ownerProfileId: z.uuid().optional(),
+  stewardProfileId: z.uuid().optional(),
 });
 
 // ============================================================================
@@ -677,7 +685,8 @@ export const processFilterSchema = z
 export const instanceFilterSchema = z
   .object({
     processId: z.uuid().optional(),
-    ownerProfileId: z.uuid(),
+    ownerProfileId: z.uuid().optional(),
+    stewardProfileId: z.uuid().optional(),
     status: z.enum(ProcessStatus).optional(),
     search: z.string().optional(),
   })
@@ -714,6 +723,7 @@ export const decisionProfileFilterSchema = z.object({
   search: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
   ownerProfileId: z.uuid().optional(),
+  stewardProfileId: z.uuid().optional(),
 });
 
 // Type exports
