@@ -1,9 +1,12 @@
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
+import type { JSONSchema7 } from 'json-schema';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { schemaValidator } from './schemaValidator';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
 
@@ -70,6 +73,19 @@ export const submitProposal = async ({
   if (!allowed) {
     throw new ValidationError(
       `Proposals are not allowed in the ${phaseName} phase`,
+    );
+  }
+
+  // Validate proposal data against the proposal template schema
+  const proposalTemplate = await resolveProposalTemplate(
+    instanceData as unknown as Record<string, unknown>,
+    instance.processId,
+  );
+
+  if (proposalTemplate) {
+    schemaValidator.validateProposalData(
+      proposalTemplate as JSONSchema7,
+      existingProposal.proposalData,
     );
   }
 
