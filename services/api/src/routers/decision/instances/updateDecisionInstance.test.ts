@@ -313,4 +313,110 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.id).toBe(instance.profileId);
     expect(result.processInstance.id).toBe(instance.instance.id);
   });
+
+  it('should update phases on a published instance with only endDate', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Publish the instance first
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    // Get current phases
+    const dbInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+    const currentData = dbInstance!.instanceData as DecisionInstanceData;
+
+    // Update phases with only endDate (no startDate) — should not throw
+    const endDate = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: currentData.phases.map((p) => ({
+        phaseId: p.phaseId,
+        endDate,
+      })),
+    });
+
+    expect(result.processInstance.id).toBe(instance.instance.id);
+
+    // Verify phases were updated in the database
+    const updatedInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+    const updatedData = updatedInstance!.instanceData as DecisionInstanceData;
+    for (const phase of updatedData.phases) {
+      expect(phase.endDate).toBe(endDate);
+    }
+  });
+
+  it('should update phases on a published instance when some phases have no dates', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Publish the instance first
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    // Get current phases
+    const dbInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+    const currentData = dbInstance!.instanceData as DecisionInstanceData;
+    const phaseIds = currentData.phases.map((p) => p.phaseId);
+
+    // Send phases with no dates at all — should succeed (transitions skipped)
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: phaseIds.map((phaseId) => ({
+        phaseId,
+        name: `Updated ${phaseId}`,
+      })),
+    });
+
+    expect(result.processInstance.id).toBe(instance.instance.id);
+
+    // Verify names were updated
+    const updatedInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+    const updatedData = updatedInstance!.instanceData as DecisionInstanceData;
+    for (const phase of updatedData.phases) {
+      expect(phase.name).toBe(`Updated ${phase.phaseId}`);
+    }
+  });
 });

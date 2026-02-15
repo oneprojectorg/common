@@ -100,7 +100,7 @@ export function PhasesSectionContent({
     },
   });
 
-  // Debounced save: draft persists to API, non-draft buffers in localStorage.
+  // Debounced save: persists phases to the API for any instance status.
   const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
     setSaveStatus(decisionProfileId, 'saving');
 
@@ -118,11 +118,7 @@ export function PhasesSectionContent({
     // Always update the store so validation stays reactive
     setInstanceData(decisionProfileId, { phases: phasesPayload });
 
-    if (isDraft) {
-      updateInstance.mutate({ instanceId, phases: phasesPayload });
-    } else {
-      markSaved(decisionProfileId);
-    }
+    updateInstance.mutate({ instanceId, phases: phasesPayload });
   }, AUTOSAVE_DEBOUNCE_MS);
   debouncedSaveRef.current = () => debouncedSave.isPending();
 
