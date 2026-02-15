@@ -62,6 +62,14 @@ function useFocusedEditor() {
     });
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (pendingBlur.current !== null) {
+        cancelAnimationFrame(pendingBlur.current);
+      }
+    };
+  }, []);
+
   return { editor, onEditorFocus, onEditorBlur };
 }
 

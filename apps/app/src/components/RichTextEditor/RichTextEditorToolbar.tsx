@@ -102,8 +102,6 @@ export function RichTextEditorToolbar({
   );
 
   const noEditor = !editor;
-  const isActive = (name: string, attrs?: Record<string, unknown>) =>
-    editor?.isActive(name, attrs) ?? false;
 
   const btnClass = (active: boolean) =>
     `shrink-0 rounded p-2 hover:bg-gray-100 ${active ? 'bg-gray-200' : ''}`;
@@ -137,7 +135,9 @@ export function RichTextEditorToolbar({
             editor?.chain().focus().toggleHeading({ level: 1 }).run()
           }
           disabled={noEditor}
-          className={btnClass(isActive('heading', { level: 1 }))}
+          className={btnClass(
+            editor?.isActive('heading', { level: 1 }) ?? false,
+          )}
           title="Heading 1"
         >
           <Heading1 className="h-4 w-4" />
@@ -147,7 +147,9 @@ export function RichTextEditorToolbar({
             editor?.chain().focus().toggleHeading({ level: 2 }).run()
           }
           disabled={noEditor}
-          className={btnClass(isActive('heading', { level: 2 }))}
+          className={btnClass(
+            editor?.isActive('heading', { level: 2 }) ?? false,
+          )}
           title="Heading 2"
         >
           <Heading2 className="h-4 w-4" />
@@ -157,7 +159,9 @@ export function RichTextEditorToolbar({
             editor?.chain().focus().toggleHeading({ level: 3 }).run()
           }
           disabled={noEditor}
-          className={btnClass(isActive('heading', { level: 3 }))}
+          className={btnClass(
+            editor?.isActive('heading', { level: 3 }) ?? false,
+          )}
           title="Heading 3"
         >
           <Heading3 className="h-4 w-4" />
@@ -169,7 +173,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleBold().run()}
           disabled={noEditor}
-          className={btnClass(isActive('bold'))}
+          className={btnClass(editor?.isActive('bold') ?? false)}
           title="Bold"
         >
           <Bold className="h-4 w-4" />
@@ -177,7 +181,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleItalic().run()}
           disabled={noEditor}
-          className={btnClass(isActive('italic'))}
+          className={btnClass(editor?.isActive('italic') ?? false)}
           title="Italic"
         >
           <Italic className="h-4 w-4" />
@@ -185,7 +189,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleUnderline().run()}
           disabled={noEditor}
-          className={btnClass(isActive('underline'))}
+          className={btnClass(editor?.isActive('underline') ?? false)}
           title="Underline"
         >
           <UnderlineIcon className="h-4 w-4" />
@@ -193,7 +197,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleStrike().run()}
           disabled={noEditor}
-          className={btnClass(isActive('strike'))}
+          className={btnClass(editor?.isActive('strike') ?? false)}
           title="Strikethrough"
         >
           <Strikethrough className="h-4 w-4" />
@@ -201,7 +205,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleCode().run()}
           disabled={noEditor}
-          className={btnClass(isActive('code'))}
+          className={btnClass(editor?.isActive('code') ?? false)}
           title="Code"
         >
           <Code className="h-4 w-4" />
@@ -213,7 +217,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
           disabled={noEditor}
-          className={btnClass(isActive('bulletList'))}
+          className={btnClass(editor?.isActive('bulletList') ?? false)}
           title="Bullet List"
         >
           <List className="h-4 w-4" />
@@ -221,7 +225,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
           disabled={noEditor}
-          className={btnClass(isActive('orderedList'))}
+          className={btnClass(editor?.isActive('orderedList') ?? false)}
           title="Numbered List"
         >
           <ListOrdered className="h-4 w-4" />
@@ -229,7 +233,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
           disabled={noEditor}
-          className={btnClass(isActive('blockquote'))}
+          className={btnClass(editor?.isActive('blockquote') ?? false)}
           title="Blockquote"
         >
           <Quote className="h-4 w-4" />
@@ -241,7 +245,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().setTextAlign('left').run()}
           disabled={noEditor}
-          className={btnClass(isActive('textAlign', { textAlign: 'left' }))}
+          className={btnClass(editor?.isActive({ textAlign: 'left' }) ?? false)}
           title="Align Left"
         >
           <AlignLeft className="h-4 w-4" />
@@ -249,7 +253,9 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().setTextAlign('center').run()}
           disabled={noEditor}
-          className={btnClass(isActive('textAlign', { textAlign: 'center' }))}
+          className={btnClass(
+            editor?.isActive({ textAlign: 'center' }) ?? false,
+          )}
           title="Align Center"
         >
           <AlignCenter className="h-4 w-4" />
@@ -257,7 +263,9 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().setTextAlign('right').run()}
           disabled={noEditor}
-          className={btnClass(isActive('textAlign', { textAlign: 'right' }))}
+          className={btnClass(
+            editor?.isActive({ textAlign: 'right' }) ?? false,
+          )}
           title="Align Right"
         >
           <AlignRight className="h-4 w-4" />
@@ -269,7 +277,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={addLink}
           disabled={noEditor}
-          className={btnClass(isActive('link'))}
+          className={btnClass(editor?.isActive('link') ?? false)}
           title="Add Link"
         >
           <LinkIcon className="h-4 w-4" />
