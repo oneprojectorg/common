@@ -15,6 +15,8 @@ export interface CollabUser {
 export interface UseTiptapCollabOptions {
   docId: string | null;
   enabled?: boolean;
+  /** JWT token for Tiptap Cloud authentication */
+  token: string | null;
   /** User's display name for the collaboration cursor */
   userName?: string;
 }
@@ -33,6 +35,7 @@ export interface UseTiptapCollabReturn {
 export function useTiptapCollab({
   docId,
   enabled = true,
+  token,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
@@ -48,7 +51,7 @@ export function useTiptapCollab({
   }, [userName]);
 
   useEffect(() => {
-    if (!enabled || !docId) {
+    if (!enabled || !docId || !token) {
       setStatus('disconnected');
       return;
     }
@@ -63,7 +66,7 @@ export function useTiptapCollab({
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
-      token: 'notoken', // TODO: proper JWT auth
+      token,
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
@@ -82,7 +85,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, ydoc]);
+  }, [docId, enabled, token, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {
