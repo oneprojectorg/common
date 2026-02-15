@@ -183,6 +183,75 @@ describe.concurrent('submitProposal', () => {
     ).rejects.toThrow();
   });
 
+  it('should submit successfully when proposal template contains vendor extension keywords', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Use a template with x-field-order and x-format vendor extensions,
+    // matching real-world templates stored in the database
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        'x-field-order': ['title', 'budget', 'summary'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            'x-format': 'money',
+          },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal with vendor extensions' },
+    });
+
+    // Set proposal data with all fields the template defines
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Proposal with vendor extensions',
+          collaborationDocId: `proposal-${proposal.id}`,
+          budget: 5000,
+          summary:
+            'Testing that x-field-order and x-format do not break validation',
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
   it('should reject submission when required fields are missing from proposal data', async ({
     task,
     onTestFinished,
@@ -195,8 +264,9 @@ describe.concurrent('submitProposal', () => {
       proposalTemplate: {
         type: 'object',
         required: ['title'],
+        'x-field-order': ['title'],
         properties: {
-          title: { type: 'string', minLength: 1 },
+          title: { type: 'string', minLength: 1, 'x-format': 'short-text' },
         },
       },
     });
@@ -226,6 +296,70 @@ describe.concurrent('submitProposal', () => {
     });
   });
 
+  it('should use schema title in validation errors for UUID-keyed custom fields', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Template with UUID-keyed custom fields, matching real-world editor output
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'a1b2c3d4', 'e5f6a7b8'],
+        'x-field-order': ['title', 'a1b2c3d4', 'e5f6a7b8'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Proposal title',
+            'x-format': 'short-text',
+          },
+          a1b2c3d4: {
+            type: 'string',
+            title: 'Project Justification',
+            'x-format': 'long-text',
+          },
+          e5f6a7b8: {
+            type: 'number',
+            title: 'Estimated Cost',
+            'x-format': 'money',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create proposal with only title — missing the UUID-keyed required fields
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Incomplete Proposal' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Validation error should use "Project Justification" and "Estimated Cost"
+    // from the schema title, not the raw UUID keys "a1b2c3d4" / "e5f6a7b8"
+    try {
+      await caller.decision.submitProposal({
+        proposalId: proposal.id,
+      });
+      expect.unreachable('Should have thrown');
+    } catch (error: unknown) {
+      const err = error as { cause?: { message?: string } };
+      expect(err.cause?.message).toContain('Project Justification is required');
+      expect(err.cause?.message).toContain('Estimated Cost is required');
+      expect(err.cause?.message).not.toContain('a1b2c3d4');
+      expect(err.cause?.message).not.toContain('e5f6a7b8');
+    }
+  });
+
   it('should reject submission when budget exceeds the template maximum', async ({
     task,
     onTestFinished,
@@ -238,9 +372,10 @@ describe.concurrent('submitProposal', () => {
       proposalTemplate: {
         type: 'object',
         required: ['title', 'budget'],
+        'x-field-order': ['title', 'budget'],
         properties: {
-          title: { type: 'string' },
-          budget: { type: 'number', maximum: 10000 },
+          title: { type: 'string', 'x-format': 'short-text' },
+          budget: { type: 'number', maximum: 10000, 'x-format': 'money' },
         },
       },
     });
