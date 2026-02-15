@@ -110,19 +110,19 @@ test.describe('Proposal Editor Toolbar', () => {
     );
     const detailsEditor = detailsSection.locator('[contenteditable="true"]');
 
-    // -- Toolbar should be hidden when no editor is focused ------------------
+    // -- Toolbar should be visible but disabled when no editor is focused -----
 
-    const toolbar = authenticatedPage.locator('button[title="Bold"]');
-    await expect(toolbar).not.toBeVisible();
+    const boldButton = authenticatedPage.locator('button[title="Bold"]');
+    const italicButton = authenticatedPage.locator('button[title="Italic"]');
+    await expect(boldButton).toBeVisible();
+    await expect(boldButton).toBeDisabled();
 
-    // -- Step 1: Click into summary, toolbar appears -------------------------
+    // -- Step 1: Click into summary, toolbar becomes active ------------------
 
     await summaryEditor.click();
 
-    // Toolbar should now be visible (shared toolbar renders on focus)
-    const boldButton = authenticatedPage.locator('button[title="Bold"]');
-    const italicButton = authenticatedPage.locator('button[title="Italic"]');
-    await expect(boldButton).toBeVisible({ timeout: 5_000 });
+    // Toolbar buttons should now be enabled (an editor has focus)
+    await expect(boldButton).toBeEnabled({ timeout: 5_000 });
 
     // Type text and select all
     await authenticatedPage.keyboard.type('Summary bold text');
