@@ -2,10 +2,9 @@
 
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import { getProposalExtensions } from '../RichTextEditor';
-import { useRegisterEditor } from './ActiveEditorContext';
 import { CollaborativeEditor } from './CollaborativeEditor';
 
 /**
@@ -18,6 +17,8 @@ import { CollaborativeEditor } from './CollaborativeEditor';
  * @param placeholder - Placeholder text shown when the editor is empty.
  * @param multiline - When true, renders a taller editor suitable for long text.
  * @param onChange - Called with the editor's HTML content on every update.
+ * @param onEditorFocus - Called with the editor instance when it gains focus.
+ * @param onEditorBlur - Called with the editor instance when it loses focus.
  */
 interface CollaborativeTextFieldProps {
   fragmentName: string;
@@ -26,6 +27,8 @@ interface CollaborativeTextFieldProps {
   placeholder?: string;
   multiline?: boolean;
   onChange?: (html: string) => void;
+  onEditorFocus?: (editor: Editor) => void;
+  onEditorBlur?: (editor: Editor) => void;
 }
 
 /**
@@ -41,6 +44,8 @@ export function CollaborativeTextField({
   placeholder = 'Start typing...',
   multiline = false,
   onChange,
+  onEditorFocus,
+  onEditorBlur,
 }: CollaborativeTextFieldProps) {
   const extensions = useMemo(
     () => [
@@ -54,35 +59,26 @@ export function CollaborativeTextField({
     [placeholder],
   );
 
-  // Stable ref so the onEditorReady callback doesn't re-trigger on onChange identity changes
+  // Stable refs so the onEditorReady callback doesn't re-trigger on identity changes
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  // Register with ActiveEditorContext for shared toolbar focus tracking.
-  // Returns null when no provider is present (e.g. standalone usage).
-  const registerEditor = useRegisterEditor();
-  const unregisterRef = useRef<(() => void) | null>(null);
+  const onEditorFocusRef = useRef(onEditorFocus);
+  onEditorFocusRef.current = onEditorFocus;
 
-  const handleEditorReady = useCallback(
-    (editor: Editor) => {
-      const handleUpdate = () => {
-        onChangeRef.current?.(editor.getHTML());
-      };
-      editor.on('update', handleUpdate);
+  const onEditorBlurRef = useRef(onEditorBlur);
+  onEditorBlurRef.current = onEditorBlur;
 
-      // Register this editor for active-editor focus tracking
-      if (registerEditor) {
-        unregisterRef.current = registerEditor(editor);
-      }
-    },
-    [registerEditor],
-  );
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      unregisterRef.current?.();
-    };
+  const handleEditorReady = useCallback((editor: Editor) => {
+    editor.on('update', () => {
+      onChangeRef.current?.(editor.getHTML());
+    });
+    editor.on('focus', () => {
+      onEditorFocusRef.current?.(editor);
+    });
+    editor.on('blur', () => {
+      onEditorBlurRef.current?.(editor);
+    });
   }, []);
 
   return (
