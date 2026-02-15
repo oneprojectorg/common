@@ -63,7 +63,8 @@ export function TemplateEditorContent({
   const instanceData = instance.instanceData;
 
   // Check if categories have been configured
-  const hasCategories = (instanceData?.config?.categories?.length ?? 0) > 0;
+  const categories = instanceData?.config?.categories ?? [];
+  const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
     const saved = instanceData?.proposalTemplate as
@@ -79,8 +80,9 @@ export function TemplateEditorContent({
       titleLabel: t('Proposal title'),
       categoryLabel: t('Category'),
       hasCategories,
+      categories,
     });
-  }, [instanceData?.proposalTemplate, t, hasCategories]);
+  }, [instanceData?.proposalTemplate, t, hasCategories, categories]);
 
   const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
   const isInitialLoadRef = useRef(true);

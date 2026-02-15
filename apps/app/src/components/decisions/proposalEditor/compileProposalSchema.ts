@@ -14,7 +14,12 @@ import type { JSONSchema7 } from 'json-schema';
  * `x-format` describes **how** a field should be presented, while JSON Schema's
  * own keywords (`type`, `enum`, etc.) describe the data shape.
  */
-export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
+export type XFormat =
+  | 'short-text'
+  | 'long-text'
+  | 'money'
+  | 'category'
+  | 'dropdown';
 
 /**
  * JSON Schema 7 extended with proposal-specific vendor extensions.

@@ -166,9 +166,12 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
         if (existingProcess) {
           const currentProcessSchema = existingProcess.processSchema as any;
 
-          // Update the proposal template to include the new category enums
+          // Update the proposal template category field using oneOf format
           const currentProposalTemplate =
             currentProcessSchema?.proposalTemplate || {};
+          const existingCategory =
+            currentProposalTemplate.properties?.category ?? {};
+          const { enum: _legacyEnum, ...categoryRest } = existingCategory;
           const updatedProposalTemplate = {
             ...currentProposalTemplate,
             properties: {
@@ -176,8 +179,10 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
               ...(categories.length > 0
                 ? {
                     category: {
+                      ...categoryRest,
                       type: ['string', 'null'],
-                      enum: [...categories, null],
+                      'x-format': 'category',
+                      oneOf: categories.map((c) => ({ const: c, title: c })),
                     },
                   }
                 : {}),

@@ -25,10 +25,9 @@ export function FieldConfigDropdown({
   onUpdateJsonSchema,
 }: FieldConfigProps) {
   const handleOptionsChange = (newOptions: FieldOption[]) => {
-    const enumValues = newOptions.map((o) => o.value);
-
     if (fieldSchema.type === 'array') {
       // multiple_choice: enum is on items
+      const enumValues = newOptions.map((o) => o.value);
       const items =
         typeof fieldSchema.items === 'object' &&
         !Array.isArray(fieldSchema.items)
@@ -38,8 +37,12 @@ export function FieldConfigDropdown({
         items: { ...items, enum: enumValues },
       });
     } else {
-      // dropdown: enum is on schema directly
-      onUpdateJsonSchema({ enum: enumValues });
+      // dropdown: use oneOf format for richer value/label pairs
+      const oneOfValues = newOptions.map((o) => ({
+        const: o.value,
+        title: o.value,
+      }));
+      onUpdateJsonSchema({ oneOf: oneOfValues });
     }
   };
 

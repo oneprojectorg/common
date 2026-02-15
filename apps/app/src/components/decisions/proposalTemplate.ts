@@ -81,7 +81,7 @@ export function createFieldJsonSchema(type: FieldType): RJSFSchema {
         'multiple-choice',
       );
     case 'dropdown':
-      return withXFormat({ type: 'string', enum: [] }, 'dropdown');
+      return withXFormat({ type: 'string', oneOf: [] }, 'dropdown');
     case 'yes_no':
       return withXFormat({ type: 'boolean' }, 'yes-no');
     case 'date':
@@ -168,12 +168,31 @@ export function getFieldOptions(
     return [];
   }
 
-  // dropdown: enum is on schema directly
-  if (schema.type === 'string' && Array.isArray(schema.enum)) {
-    return schema.enum.map((val, i) => ({
-      id: `${fieldId}-opt-${i}`,
-      value: String(val ?? ''),
-    }));
+  // dropdown / category: prefer oneOf, fall back to legacy enum
+  if (schema.type === 'string' || Array.isArray(schema.type)) {
+    if (Array.isArray(schema.oneOf)) {
+      return schema.oneOf
+        .filter(
+          (entry): entry is { const: string; title: string } =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            'const' in entry &&
+            typeof (entry as Record<string, unknown>).const === 'string',
+        )
+        .map((entry, i) => ({
+          id: `${fieldId}-opt-${i}`,
+          value: entry.const,
+        }));
+    }
+
+    if (Array.isArray(schema.enum)) {
+      return schema.enum
+        .filter((val): val is string => typeof val === 'string')
+        .map((val, i) => ({
+          id: `${fieldId}-opt-${i}`,
+          value: val,
+        }));
+    }
   }
 
   // multiple_choice: enum is on items
@@ -433,6 +452,11 @@ export function createDefaultTemplate(
  * template schema. Call this when hydrating a saved template to handle
  * backward compatibility with templates created before locked fields
  * were stored in the schema.
+ *
+ * When `categories` are provided, the category field's `oneOf` options
+ * are always synced to match the current config — this keeps the
+ * template self-contained even when categories change outside the
+ * template editor.
  */
 export function ensureLockedFields(
   template: ProposalTemplate,
@@ -440,6 +464,7 @@ export function ensureLockedFields(
     titleLabel: string;
     categoryLabel: string;
     hasCategories: boolean;
+    categories?: { label: string }[];
   },
 ): ProposalTemplate {
   let result = template;
@@ -456,15 +481,33 @@ export function ensureLockedFields(
   }
 
   // Sync category field with categories config
-  if (options.hasCategories && !getFieldSchema(result, 'category')) {
+  if (options.hasCategories) {
+    const oneOf = (options.categories ?? []).map((c) => ({
+      const: c.label,
+      title: c.label,
+    }));
+
+    const existing = getFieldSchema(result, 'category');
+    const { enum: _legacyEnum, ...existingRest } = (existing ?? {}) as Record<
+      string,
+      unknown
+    >;
+
     result = {
       ...result,
       properties: {
         ...result.properties,
-        category: createLockedFieldSchema('dropdown', options.categoryLabel),
+        category: {
+          ...existingRest,
+          type: 'string',
+          title:
+            (existing?.title as string | undefined) ?? options.categoryLabel,
+          'x-format': 'category',
+          oneOf,
+        },
       },
     };
-  } else if (!options.hasCategories && getFieldSchema(result, 'category')) {
+  } else if (getFieldSchema(result, 'category')) {
     const { category: _, ...restProps } = result.properties ?? {};
     result = { ...result, properties: restProps };
   }
