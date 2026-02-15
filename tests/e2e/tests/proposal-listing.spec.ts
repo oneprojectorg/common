@@ -236,10 +236,16 @@ test.describe('Proposal Listing', () => {
     await expect(authenticatedPage.getByText('€12,500')).toBeVisible();
 
     // Card preview renders text from the collab mock fixture.
-    // The mock returns TipTap JSON with "Bold text and italic text..." content.
+    // The mock returns TipTap JSON with "Bold text and italic text..." content
+    // AND an iframely embed node — generateText() must handle both gracefully.
     await expect(
       authenticatedPage.getByText('Bold text').first(),
     ).toBeVisible();
+
+    // Iframely node in the fixture must not cause "Content could not be loaded"
+    await expect(
+      authenticatedPage.getByText('Content could not be loaded'),
+    ).not.toBeVisible();
   });
 
   /**

@@ -1,9 +1,31 @@
 import type { proposalEncoder } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
 import { defaultViewerExtensions } from '@op/ui/RichTextEditor';
-import { type JSONContent, generateText } from '@tiptap/core';
+import { type JSONContent, Node, generateText } from '@tiptap/core';
 import type { Content } from '@tiptap/react';
 import type { z } from 'zod';
+
+/**
+ * Minimal iframely node extension for `generateText()`.
+ *
+ * The full IframelyExtension (with React node view) lives in the editor and
+ * cannot be used here because `generateText()` only needs the ProseMirror
+ * schema — no rendering. Without this registration, `generateText()` throws
+ * on any doc containing an iframely embed, which causes the proposal listing
+ * card to show "Content could not be loaded".
+ */
+const IframelyTextNode = Node.create({
+  name: 'iframely',
+  group: 'block',
+  atom: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+    };
+  },
+});
+
+const generateTextExtensions = [...defaultViewerExtensions, IframelyTextNode];
 
 type Proposal = z.infer<typeof proposalEncoder>;
 type DocumentContent = NonNullable<Proposal['documentContent']>;
@@ -69,7 +91,7 @@ export function getProposalContentPreview(
     try {
       const text = generateText(
         content as JSONContent,
-        defaultViewerExtensions,
+        generateTextExtensions,
       );
       return text.trim();
     } catch {
