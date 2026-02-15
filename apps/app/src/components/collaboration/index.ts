@@ -1,4 +1,3 @@
-export { ActiveEditorProvider, useActiveEditor } from './ActiveEditorContext';
 export {
   CollaborativeDocProvider,
   useCollaborativeDoc,
