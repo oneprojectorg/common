@@ -30,40 +30,59 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
+import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import type { ValidationSummary } from './validation/processBuilderValidation';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderHeader = ({
-  processName,
   instanceId,
   slug,
 }: {
-  processName?: string;
   instanceId?: string;
   slug?: string;
 }) => {
+  if (!instanceId) {
+    return <CreateModeHeader />;
+  }
+
   return (
     <SidebarProvider>
-      <ProcessBuilderHeaderContent
-        processName={processName}
-        instanceId={instanceId}
-        slug={slug}
-      />
-
+      <ProcessBuilderHeaderContent instanceId={instanceId} slug={slug} />
       <MobileSidebar instanceId={instanceId} />
     </SidebarProvider>
   );
 };
 
+const CreateModeHeader = () => {
+  const t = useTranslations();
+
+  return (
+    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
+      <div className="flex items-center gap-2 pl-4 md:pl-8">
+        <Link
+          href="/"
+          className="hidden items-center gap-2 text-primary md:flex"
+        >
+          <LuHouse className="size-4" />
+          {t('Home')}
+        </Link>
+        <LuChevronRight className="hidden size-4 md:block" />
+        <span>{t('New process')}</span>
+      </div>
+      <div className="pr-4 md:pr-8">
+        <UserAvatarMenu className="hidden md:block" />
+      </div>
+    </header>
+  );
+};
+
 const ProcessBuilderHeaderContent = ({
-  processName,
   instanceId,
   slug,
 }: {
-  processName?: string;
-  instanceId?: string;
+  instanceId: string;
   slug?: string;
 }) => {
   const t = useTranslations();
@@ -72,14 +91,16 @@ const ProcessBuilderHeaderContent = ({
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
 
-  const { data: instance } = trpc.decision.getInstance.useQuery(
-    { instanceId: instanceId! },
-    { enabled: !!instanceId },
-  );
+  const { data: instance } = trpc.decision.getInstance.useQuery({ instanceId });
 
   const instanceStatus = instance?.status as ProcessStatus | undefined;
   const decisionProfileId = instance?.profileId ?? undefined;
   const validation = useProcessBuilderValidation(decisionProfileId);
+
+  const storeInstanceName = useProcessBuilderStore((state) =>
+    decisionProfileId ? state.instances[decisionProfileId]?.name : undefined,
+  );
+  const displayName = instance?.name || storeInstanceName || t('New process');
 
   const { setOpen } = useSidebar();
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
@@ -103,9 +124,6 @@ const ProcessBuilderHeaderContent = ({
   });
 
   const handleLaunchOrSave = () => {
-    if (!instanceId) {
-      return;
-    }
     if (isDraft) {
       setIsLaunchModalOpen(true);
     } else {
@@ -132,7 +150,7 @@ const ProcessBuilderHeaderContent = ({
         </Link>
         <LuChevronRight className="hidden size-4 md:block" />
 
-        <span>{processName || t('New process')}</span>
+        <span>{displayName}</span>
       </div>
       {hasSteps && (
         <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
@@ -191,12 +209,12 @@ const ProcessBuilderHeaderContent = ({
         <UserAvatarMenu className="hidden md:block" />
       </div>
 
-      {instanceId && slug && processName && decisionProfileId && (
+      {slug && decisionProfileId && (
         <LaunchProcessModal
           isOpen={isLaunchModalOpen}
           onOpenChange={setIsLaunchModalOpen}
           instanceId={instanceId}
-          processName={processName}
+          processName={displayName}
           slug={slug}
           decisionProfileId={decisionProfileId}
         />
@@ -205,7 +223,7 @@ const ProcessBuilderHeaderContent = ({
   );
 };
 
-const MobileSidebar = ({ instanceId }: { instanceId?: string }) => {
+const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
