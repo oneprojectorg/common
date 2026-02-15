@@ -1,0 +1,1 @@
+export { generateCollabToken } from './token';

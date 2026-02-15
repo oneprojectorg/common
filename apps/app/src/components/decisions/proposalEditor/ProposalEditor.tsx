@@ -240,6 +240,13 @@ export function ProposalEditor({
     draftRef,
   ]);
 
+  // -- Collaboration token ---------------------------------------------------
+
+  const { data: collabTokenData } = trpc.decision.getCollabToken.useQuery(
+    { proposalProfileId: proposal.profileId },
+    { staleTime: 1000 * 60 * 60 },
+  );
+
   // -- Render ----------------------------------------------------------------
 
   const userName = user.profile?.name ?? t('Anonymous');
@@ -247,6 +254,7 @@ export function ProposalEditor({
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
+      token={collabTokenData?.token ?? null}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
