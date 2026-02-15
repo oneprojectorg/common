@@ -27,7 +27,7 @@ export function useProposalFilters({
 } {
   // Set default filter based on initialFilter or hasVoted status
   const defaultFilter: ProposalFilter =
-    initialFilter || (hasVoted ? 'my-ballot' : 'shortlisted');
+    initialFilter || (hasVoted ? 'my-ballot' : 'all');
 
   const [proposalFilter, setProposalFilter] =
     useState<ProposalFilter>(defaultFilter);
