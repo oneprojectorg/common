@@ -678,6 +678,69 @@ describe.concurrent('listProposals', () => {
     expect(foundProposal?.documentContent).toBeUndefined();
   });
 
+  it('should return json documentContent containing iframely nodes', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Proposal With Embed',
+      },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+
+    const mockTipTapContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Check out this video' }],
+        },
+        {
+          type: 'iframely',
+          attrs: { src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        },
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'More text after embed' }],
+        },
+      ],
+    };
+
+    mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    expect(foundProposal?.documentContent).toEqual({
+      type: 'json',
+      fragments: {
+        default: mockTipTapContent,
+      },
+    });
+  });
+
   it('should fetch multiple TipTap documents in parallel', async ({
     task,
     onTestFinished,

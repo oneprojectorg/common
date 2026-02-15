@@ -79,6 +79,10 @@ const E2E_FIXTURE_CONTENT: TipTapDocument = {
         },
       ],
     },
+    {
+      type: 'iframely',
+      attrs: { src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+    },
   ],
 };
 

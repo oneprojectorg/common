@@ -82,6 +82,11 @@ test.describe('Proposal View', () => {
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', 'https://example.com');
 
+    // Iframely embed node renders as a LinkPreview (fallback: URL shown as link)
+    await expect(
+      authenticatedPage.getByText('youtube.com').first(),
+    ).toBeVisible();
+
     // New-format budget { value: 10000, currency: 'EUR' } rendered as "€10,000"
     await expect(authenticatedPage.getByText('€10,000')).toBeVisible();
   });
