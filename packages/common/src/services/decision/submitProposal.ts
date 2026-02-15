@@ -12,6 +12,7 @@ import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { schemaValidator } from './schemaValidator';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { ProposalTemplateSchema } from './types';
 import { checkProposalsAllowed } from './utils/proposal';
 
 export interface SubmitProposalInput {
@@ -110,7 +111,7 @@ export const submitProposal = async ({
         'text',
       );
       const validationData = assembleProposalData(
-        proposalTemplate as JSONSchema7,
+        proposalTemplate as ProposalTemplateSchema,
         fragmentTexts,
       );
 

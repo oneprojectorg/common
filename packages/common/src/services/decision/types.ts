@@ -5,6 +5,37 @@ import type { SelectionPipeline } from './selectionPipeline/types';
 // Base JSON Schema type (more specific than any)
 export type JsonSchema = JSONSchema7;
 
+// ---------------------------------------------------------------------------
+// Proposal template vendor extensions
+// ---------------------------------------------------------------------------
+
+/**
+ * Supported values for the `x-format` vendor extension on proposal template
+ * properties. Describes **how** a field should be presented/coerced, while
+ * JSON Schema keywords (`type`, `enum`, etc.) describe the data shape.
+ */
+export type XFormat =
+  | 'short-text'
+  | 'long-text'
+  | 'money'
+  | 'category'
+  | 'multiple-choice'
+  | 'dropdown'
+  | 'yes-no'
+  | 'date'
+  | 'number';
+
+/** JSON Schema 7 property extended with proposal-specific vendor extensions. */
+export interface ProposalPropertySchema extends JSONSchema7 {
+  'x-format'?: XFormat;
+}
+
+/** JSON Schema 7 extended with proposal template vendor extensions. */
+export interface ProposalTemplateSchema extends JSONSchema7 {
+  properties?: Record<string, ProposalPropertySchema>;
+  'x-field-order'?: string[];
+}
+
 // Process Schema Structure
 export interface ProcessSchema {
   // Basic info

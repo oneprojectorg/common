@@ -1,4 +1,4 @@
-import type { JSONSchema7 } from 'json-schema';
+import type { ProposalTemplateSchema } from './types';
 
 /**
  * Builds the flat data object that the JSON Schema validator expects from
@@ -10,12 +10,10 @@ import type { JSONSchema7 } from 'json-schema';
  * - Everything else with no `x-format`: attempt `JSON.parse`, fall back to string
  */
 export function assembleProposalData(
-  template: JSONSchema7,
+  template: ProposalTemplateSchema,
   fragmentTexts: Record<string, string>,
 ): Record<string, unknown> {
-  const properties = template.properties as
-    | Record<string, Record<string, unknown>>
-    | undefined;
+  const properties = template.properties;
 
   if (!properties) {
     return {};
@@ -29,7 +27,7 @@ export function assembleProposalData(
       continue;
     }
 
-    const format = schema['x-format'] as string | undefined;
+    const format = schema['x-format'];
 
     if (
       format === 'short-text' ||
