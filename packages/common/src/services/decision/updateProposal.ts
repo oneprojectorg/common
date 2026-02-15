@@ -6,8 +6,6 @@ import {
   Visibility,
   proposalCategories,
   proposals,
-  taxonomies,
-  taxonomyTerms,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -22,6 +20,7 @@ import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
+import { ensureProposalTaxonomyTerm } from './utils/ensureProposalTaxonomyTerm';
 
 type ProcessInstanceWithProcess = ProcessInstance & {
   process: DecisionProcess;
@@ -40,34 +39,16 @@ async function updateProposalCategoryLink(
       .delete(proposalCategories)
       .where(eq(proposalCategories.proposalId, proposalId));
 
-    // Add new category link if provided
-    if (newCategoryLabel?.trim()) {
-      // Find the "proposal" taxonomy
-      const proposalTaxonomy = await db._query.taxonomies.findFirst({
-        where: eq(taxonomies.name, 'proposal'),
+    // Add new category link if provided (creates term if missing)
+    const categoryTermId = await ensureProposalTaxonomyTerm(
+      newCategoryLabel ?? '',
+    );
+
+    if (categoryTermId) {
+      await db.insert(proposalCategories).values({
+        proposalId,
+        taxonomyTermId: categoryTermId,
       });
-
-      if (!proposalTaxonomy) {
-        console.warn('No "proposal" taxonomy found, skipping category linking');
-        return;
-      }
-
-      // Find the taxonomy term that matches the category label
-      const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-        where: eq(taxonomyTerms.label, newCategoryLabel.trim()),
-      });
-
-      if (taxonomyTerm) {
-        // Create the new link
-        await db.insert(proposalCategories).values({
-          proposalId,
-          taxonomyTermId: taxonomyTerm.id,
-        });
-      } else {
-        console.warn(
-          `No taxonomy term found for category: ${newCategoryLabel}`,
-        );
-      }
     }
   } catch (error) {
     console.error('Error updating proposal category link:', error);
