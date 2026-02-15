@@ -1,3 +1,4 @@
+import { mockCollab } from '@op/collab/testing';
 import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
@@ -229,19 +230,29 @@ describe.concurrent('submitProposal', () => {
       proposalData: { title: 'Proposal with vendor extensions' },
     });
 
-    // Set proposal data with all fields the template defines
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    // Set proposal data with collaborationDocId so submit fetches from TipTap
     await db
       .update(proposals)
       .set({
         proposalData: {
           title: 'Proposal with vendor extensions',
-          collaborationDocId: `proposal-${proposal.id}`,
+          collaborationDocId,
           budget: 5000,
           summary:
             'Testing that x-field-order and x-format do not break validation',
         },
       })
       .where(eq(proposals.id, proposal.id));
+
+    // Seed the collaboration doc fragments so validation reads from TipTap
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Proposal with vendor extensions',
+      budget: JSON.stringify({ amount: 5000, currency: 'USD' }),
+      summary:
+        'Testing that x-field-order and x-format do not break validation',
+    });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -393,17 +404,25 @@ describe.concurrent('submitProposal', () => {
       proposalData: { title: 'Over Budget Proposal' },
     });
 
+    const collaborationDocId = `proposal-${proposal.id}`;
+
     // Directly set invalid proposal data that exceeds the budget cap
     await db
       .update(proposals)
       .set({
         proposalData: {
           title: 'Over Budget Proposal',
-          collaborationDocId: `proposal-${proposal.id}`,
+          collaborationDocId,
           budget: 99999,
         },
       })
       .where(eq(proposals.id, proposal.id));
+
+    // Seed the collaboration doc fragments with the over-budget value
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Over Budget Proposal',
+      budget: JSON.stringify({ amount: 99999, currency: 'USD' }),
+    });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -413,6 +432,134 @@ describe.concurrent('submitProposal', () => {
       caller.decision.submitProposal({
         proposalId: proposal.id,
       }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
+
+  it('should reject submission when a required text field is empty in the collaboration document', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'summary'],
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            minLength: 1,
+            'x-format': 'short-text',
+          },
+          summary: {
+            type: 'string',
+            title: 'Project Summary',
+            minLength: 1,
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Has Title' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: { title: 'Has Title', collaborationDocId },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    // Seed title but leave summary empty — simulates user never filling it in
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Has Title',
+      // summary deliberately omitted
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitProposal({ proposalId: proposal.id }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
+
+  it('should reject submission when a required money field is missing from the collaboration document', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'budget'],
+        'x-field-order': ['title', 'budget'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          budget: {
+            type: 'number',
+            title: 'Requested Budget',
+            'x-format': 'money',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'No Budget' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: { title: 'No Budget', collaborationDocId },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    // Seed title but no budget fragment
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'No Budget',
+      // budget deliberately omitted
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitProposal({ proposalId: proposal.id }),
     ).rejects.toMatchObject({
       cause: { name: 'ValidationError' },
     });
