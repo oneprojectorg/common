@@ -285,11 +285,12 @@ export function ProposalEditor({
         presenceSlot={<CollaborativePresence />}
         proposalProfileId={proposal.profileId}
       >
-        {focusedEditor && (
-          <div className="sticky top-0 z-10 bg-white">
-            <RichTextEditorToolbar editor={focusedEditor} />
-          </div>
-        )}
+        <div
+          className="sticky top-0 z-10 bg-white"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <RichTextEditorToolbar editor={focusedEditor} />
+        </div>
         <div className="flex flex-1 flex-col gap-12 pt-12">
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
             <ProposalFormRenderer
