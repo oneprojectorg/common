@@ -1,4 +1,5 @@
 import { set } from '@op/cache';
+import { ProposalFilter } from '@op/core';
 import { and, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
@@ -21,7 +22,7 @@ export interface ExportProposalsInput {
   submittedByProfileId?: string;
   status?: ProposalStatus;
   dir: 'asc' | 'desc';
-  proposalFilter?: 'all' | 'my' | 'shortlisted' | 'my-ballot';
+  proposalFilter?: ProposalFilter;
 }
 
 export const exportProposals = async ({

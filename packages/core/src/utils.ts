@@ -1,5 +1,12 @@
 import he from 'he';
 
+export enum ProposalFilter {
+  ALL = 'all',
+  MY_PROPOSALS = 'my-proposals',
+  SHORTLISTED = 'shortlisted',
+  MY_BALLOT = 'my-ballot',
+}
+
 /**
  * Sanitizes a URL to prevent XSS attacks via javascript: or data: URI schemes.
  * Only allows http: and https: protocols.

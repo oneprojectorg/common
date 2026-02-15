@@ -1,3 +1,4 @@
+import { ProposalFilter } from '@op/core';
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -22,9 +23,7 @@ export const Events = {
         submittedByProfileId: z.string().optional(),
         status: z.enum(ProposalStatus).optional(),
         dir: z.enum(['asc', 'desc']),
-        proposalFilter: z
-          .enum(['all', 'my', 'shortlisted', 'my-ballot'])
-          .optional(),
+        proposalFilter: z.enum(ProposalFilter).optional(),
       }),
     }),
   },
