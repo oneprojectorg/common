@@ -48,6 +48,7 @@ export * from './exports';
 export * from './generateProposalHtml';
 export * from './getProposalDocumentsContent';
 export * from './getProposalFragmentNames';
+export * from './assembleProposalData';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
 export * from './tiptapExtensions';

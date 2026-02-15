@@ -10,7 +10,7 @@ export type TipTapDocument = {
 };
 
 /**
- * TipTap document response when fetching multiple named fragments.
+ * TipTap document response when fetching multiple named fragments in JSON format.
  */
 export type TipTapFragmentResponse = Record<string, TipTapDocument>;
 
@@ -65,34 +65,49 @@ export function createTipTapClient(config: TipTapClientConfig) {
 
     /**
      * Fetch specific named fragments from a document.
-     * GET /api/documents/{docName}?format=json&fragment=X&fragment=Y
+     *
+     * - `format='json'` (default): returns `Record<string, TipTapDocument>`
+     * - `format='text'`: returns `Record<string, string>` (plain-text per fragment)
+     *
+     * @see https://tiptap.dev/docs/collaboration/documents/rest-api
      */
-    getDocumentFragments: async (
+    getDocumentFragments: async <F extends 'json' | 'text' = 'json'>(
       docName: string,
       fragments: string[],
-    ): Promise<TipTapFragmentResponse> => {
-      const params = new URLSearchParams({ format: 'json' });
+      format?: F,
+    ): Promise<
+      F extends 'text' ? Record<string, string> : TipTapFragmentResponse
+    > => {
+      type R = F extends 'text'
+        ? Record<string, string>
+        : TipTapFragmentResponse;
+      const fmt = format ?? 'json';
+      const params = new URLSearchParams({ format: fmt });
 
       for (const fragment of fragments) {
         params.append('fragment', fragment);
       }
 
       const response = await api
-        .get<TipTapFragmentResponse>(
-          `documents/${encodeURIComponent(docName)}`,
-          {
-            searchParams: params,
-          },
-        )
+        .get(`documents/${encodeURIComponent(docName)}`, {
+          searchParams: params,
+        })
         .json();
+
+      if (fmt === 'text') {
+        if (typeof response === 'string') {
+          const fragmentName = fragments[0] ?? 'default';
+          return { [fragmentName]: response } as R;
+        }
+        return response as R;
+      }
 
       if (isTipTapDocument(response)) {
         const fragmentName = fragments[0] ?? 'default';
-
-        return { [fragmentName]: response };
+        return { [fragmentName]: response } as R;
       }
 
-      return response;
+      return response as R;
     },
   };
 }

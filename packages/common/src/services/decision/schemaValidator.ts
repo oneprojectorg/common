@@ -16,14 +16,6 @@ export interface SchemaValidationResult {
 export class SchemaValidator {
   private ajv: Ajv;
 
-  // Map of field names to user-friendly names
-  private readonly fieldDisplayNames: Record<string, string> = {
-    title: 'Title',
-    description: 'Description',
-    budget: 'Budget',
-    category: 'Category',
-  };
-
   constructor() {
     this.ajv = new Ajv({
       allErrors: true, // Return all validation errors, not just the first
@@ -34,6 +26,11 @@ export class SchemaValidator {
 
     // Add format support (date, email, etc.)
     addFormats(this.ajv);
+
+    // Register vendor extension keywords used in proposal templates
+    // so Ajv's strict mode doesn't reject them during schema compilation
+    this.ajv.addKeyword('x-field-order');
+    this.ajv.addKeyword('x-format');
   }
 
   /**
@@ -51,7 +48,7 @@ export class SchemaValidator {
     const requiredErrors = new Set<string>();
 
     // First pass: collect required field errors
-    (validate.errors || []).forEach((error) => {
+    for (const error of validate.errors || []) {
       if (error.keyword === 'required') {
         const missingProperty = error.params?.missingProperty;
         if (missingProperty) {
@@ -62,30 +59,33 @@ export class SchemaValidator {
               )
             : missingProperty;
           requiredErrors.add(fieldPath);
-          const friendlyName = this.getFieldDisplayName(missingProperty);
+          const friendlyName = this.getFieldDisplayName(
+            missingProperty,
+            schema,
+          );
           errors[fieldPath] = `${friendlyName} is required`;
         }
       }
-    });
+    }
 
     // Second pass: add other errors, but skip type errors for required fields
-    (validate.errors || []).forEach((error) => {
+    for (const error of validate.errors || []) {
       if (error.keyword === 'required') {
-        return; // Already handled above
+        continue; // Already handled above
       }
 
       const field = this.getFieldPath(error.instancePath, error.keyword);
 
       // Skip type errors for fields that have required errors
       if (error.keyword === 'type' && requiredErrors.has(field)) {
-        return;
+        continue;
       }
 
       // Only add if we don't already have an error for this field
       if (!errors[field]) {
-        errors[field] = this.formatErrorMessage(error);
+        errors[field] = this.formatErrorMessage(error, schema);
       }
-    });
+    }
 
     return { valid: false, errors };
   }
@@ -101,9 +101,7 @@ export class SchemaValidator {
     const result = this.validate(proposalTemplate, proposalData);
 
     if (!result.valid) {
-      const errorMessage = Object.entries(result.errors)
-        .map(([field, message]) => `${field}: ${message}`)
-        .join(', ');
+      const errorMessage = Object.values(result.errors).join(', ');
 
       throw new ValidationError(
         `Proposal validation failed: ${errorMessage}`,
@@ -125,26 +123,31 @@ export class SchemaValidator {
   }
 
   /**
-   * Get user-friendly display name for a field
+   * Get user-friendly display name for a field by looking up the `title`
+   * property from the schema definition. Falls back to capitalizing the key.
    */
-  private getFieldDisplayName(fieldName: string): string {
-    return this.fieldDisplayNames[fieldName] || this.capitalizeFirst(fieldName);
-  }
-
-  /**
-   * Capitalize first letter of a string
-   */
-  private capitalizeFirst(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+  private getFieldDisplayName(fieldName: string, schema?: JSONSchema7): string {
+    const fieldSchema = schema?.properties?.[fieldName];
+    if (typeof fieldSchema === 'object' && fieldSchema?.title) {
+      return fieldSchema.title;
+    }
+    return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
   }
 
   /**
    * Format AJV error message for better UX
    */
-  private formatErrorMessage(error: any): string {
+  private formatErrorMessage(
+    error: {
+      keyword: string;
+      instancePath: string;
+      params?: Record<string, unknown>;
+    },
+    schema?: JSONSchema7,
+  ): string {
     const fieldPath = this.getFieldPath(error.instancePath, error.keyword);
     const fieldName = fieldPath.split('.').pop() || '';
-    const friendlyName = this.getFieldDisplayName(fieldName);
+    const friendlyName = this.getFieldDisplayName(fieldName, schema);
 
     switch (error.keyword) {
       case 'required':
@@ -165,8 +168,11 @@ export class SchemaValidator {
         return `${friendlyName} must be at least ${error.params?.limit} characters`;
       case 'maxLength':
         return `${friendlyName} cannot exceed ${error.params?.limit} characters`;
-      case 'enum':
-        return `${friendlyName} must be one of: ${error.params?.allowedValues?.join(', ')}`;
+      case 'enum': {
+        const allowed = error.params?.allowedValues;
+        const values = Array.isArray(allowed) ? allowed.join(', ') : '';
+        return `${friendlyName} must be one of: ${values}`;
+      }
       case 'format':
         return `${friendlyName} has an invalid ${error.params?.format} format`;
       default:

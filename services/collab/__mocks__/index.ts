@@ -85,6 +85,9 @@ const E2E_FIXTURE_CONTENT: TipTapDocument = {
 // Per-doc responses — concurrent-safe.
 const docResponses = new Map<string, () => Promise<unknown>>();
 
+// Per-doc, per-fragment text responses for format='text' support.
+const docFragmentResponses = new Map<string, Record<string, string>>();
+
 // Pre-seed the well-known e2e doc ID so the Next.js server (separate process)
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
@@ -92,9 +95,17 @@ docResponses.set('test-proposal-doc', () =>
 );
 
 export const mockCollab = {
-  /** Set a mock response for a specific document ID. */
+  /** Set a mock response for a specific document ID (JSON format). */
   setDocResponse: (docId: string, data: unknown) => {
     docResponses.set(docId, () => Promise.resolve(data));
+  },
+
+  /**
+   * Set per-fragment text responses for a document.
+   * Used when `getDocumentFragments` is called with `format='text'`.
+   */
+  setDocFragments: (docId: string, fragments: Record<string, string>) => {
+    docFragmentResponses.set(docId, fragments);
   },
 
   /** Set a mock error response for a specific document ID. */
@@ -117,12 +128,28 @@ export function createTipTapClient(_config?: unknown) {
   return {
     getDocument: (docName: string) => resolveDoc(docName),
 
-    getDocumentFragments: async (docName: string, fragments: string[]) => {
-      const doc = await resolveDoc(docName);
+    getDocumentFragments: async <F extends 'json' | 'text' = 'json'>(
+      docName: string,
+      fragments: string[],
+      format?: F,
+    ): Promise<
+      F extends 'text' ? Record<string, string> : TipTapFragmentResponse
+    > => {
+      type R = F extends 'text'
+        ? Record<string, string>
+        : TipTapFragmentResponse;
 
+      if ((format ?? 'json') === 'text') {
+        const seeded = docFragmentResponses.get(docName) ?? {};
+        return Object.fromEntries(
+          fragments.map((f) => [f, seeded[f] ?? '']),
+        ) as R;
+      }
+
+      const doc = await resolveDoc(docName);
       return Object.fromEntries(
         fragments.map((fragment) => [fragment, doc]),
-      ) as TipTapFragmentResponse;
+      ) as R;
     },
   };
 }

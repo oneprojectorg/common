@@ -21,17 +21,7 @@ export function getProposalFragmentNames(
   const fragments: string[] = [];
 
   for (const key of all) {
-    const prop = properties[key];
-    if (!prop) {
-      continue;
-    }
-
-    const format = prop['x-format'] as string | undefined;
-
-    // Only text-based fields produce collaborative fragments.
-    // title is always a collaborative field (rendered as CollaborativeTitleField).
-    // short-text and long-text are rendered as CollaborativeTextField.
-    if (key === 'title' || format === 'short-text' || format === 'long-text') {
+    if (properties[key]) {
       fragments.push(key);
     }
   }
