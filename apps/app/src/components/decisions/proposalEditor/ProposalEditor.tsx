@@ -100,29 +100,10 @@ export function ProposalEditor({
   // -- Mutations -------------------------------------------------------------
 
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
-    onSuccess: async () => {
-      posthog?.capture('submit_proposal_success', {
-        process_instance_id: instance.id,
-        process_name: instance.name || instance.instanceData?.templateName,
-      });
-      await utils.decision.listProposals.invalidate({
-        processInstanceId: instance.id,
-      });
-      router.push(backHref);
-    },
     onError: (error) => handleMutationError(error, 'submit', t),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onSuccess: async () => {
-      await utils.decision.getProposal.invalidate({
-        profileId: proposal?.profileId,
-      });
-      await utils.decision.listProposals.invalidate({
-        processInstanceId: instance.id,
-      });
-      router.push(backHref);
-    },
     onError: (error) => handleMutationError(error, 'update', t),
   });
 
@@ -224,7 +205,22 @@ export function ProposalEditor({
         await submitProposalMutation.mutateAsync({
           proposalId: proposal.id,
         });
+        posthog?.capture('submit_proposal_success', {
+          process_instance_id: instance.id,
+          process_name: instance.name || instance.instanceData?.templateName,
+        });
       }
+
+      // Invalidate caches and navigate only after all mutations succeed
+      await Promise.all([
+        utils.decision.getProposal.invalidate({
+          profileId: proposal.profileId,
+        }),
+        utils.decision.listProposals.invalidate({
+          processInstanceId: instance.id,
+        }),
+      ]);
+      router.push(backHref);
     } catch (error) {
       console.error('Failed to update proposal:', error);
     } finally {
@@ -238,6 +234,14 @@ export function ProposalEditor({
     submitProposalMutation,
     updateProposalMutation,
     draftRef,
+    backHref,
+    instance.id,
+    instance.name,
+    instance.instanceData?.templateName,
+    posthog,
+    router,
+    utils.decision.getProposal,
+    utils.decision.listProposals,
   ]);
 
   // -- Render ----------------------------------------------------------------
