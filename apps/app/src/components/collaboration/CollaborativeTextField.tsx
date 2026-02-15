@@ -2,9 +2,10 @@
 
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { getProposalExtensions } from '../RichTextEditor';
+import { useRegisterEditor } from './ActiveEditorContext';
 import { CollaborativeEditor } from './CollaborativeEditor';
 
 /**
@@ -57,11 +58,31 @@ export function CollaborativeTextField({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  const handleEditorReady = useCallback((editor: Editor) => {
-    const handleUpdate = () => {
-      onChangeRef.current?.(editor.getHTML());
+  // Register with ActiveEditorContext for shared toolbar focus tracking.
+  // Returns null when no provider is present (e.g. standalone usage).
+  const registerEditor = useRegisterEditor();
+  const unregisterRef = useRef<(() => void) | null>(null);
+
+  const handleEditorReady = useCallback(
+    (editor: Editor) => {
+      const handleUpdate = () => {
+        onChangeRef.current?.(editor.getHTML());
+      };
+      editor.on('update', handleUpdate);
+
+      // Register this editor for active-editor focus tracking
+      if (registerEditor) {
+        unregisterRef.current = registerEditor(editor);
+      }
+    },
+    [registerEditor],
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      unregisterRef.current?.();
     };
-    editor.on('update', handleUpdate);
   }, []);
 
   return (
