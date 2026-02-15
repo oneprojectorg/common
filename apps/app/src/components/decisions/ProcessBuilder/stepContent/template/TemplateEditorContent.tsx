@@ -150,10 +150,7 @@ export function TemplateEditorContent({
       updateInstance.mutate(
         {
           instanceId,
-          proposalTemplate: updatedTemplate as unknown as Record<
-            string,
-            unknown
-          >,
+          proposalTemplate: updatedTemplate,
         },
         {
           onSuccess: () => markSaved(decisionProfileId),

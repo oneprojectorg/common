@@ -30,6 +30,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
+import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import type { ValidationSummary } from './validation/processBuilderValidation';
@@ -81,6 +82,10 @@ const ProcessBuilderHeaderContent = ({
   const decisionProfileId = instance?.profileId ?? undefined;
   const validation = useProcessBuilderValidation(decisionProfileId);
 
+  const storeData = useProcessBuilderStore((s) =>
+    decisionProfileId ? s.instances[decisionProfileId] : undefined,
+  );
+
   const { setOpen } = useSidebar();
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
 
@@ -88,6 +93,8 @@ const ProcessBuilderHeaderContent = ({
   const isTerminalStatus =
     instanceStatus === ProcessStatus.COMPLETED ||
     instanceStatus === ProcessStatus.CANCELLED;
+
+  const utils = trpc.useUtils();
 
   // Save mutation for non-draft states
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
@@ -100,6 +107,11 @@ const ProcessBuilderHeaderContent = ({
         title: error.message,
       });
     },
+    onSettled: () => {
+      if (instanceId) {
+        void utils.decision.getInstance.invalidate({ instanceId });
+      }
+    },
   });
 
   const handleLaunchOrSave = () => {
@@ -109,7 +121,21 @@ const ProcessBuilderHeaderContent = ({
     if (isDraft) {
       setIsLaunchModalOpen(true);
     } else {
-      updateInstance.mutate({ instanceId });
+      updateInstance.mutate({
+        instanceId,
+        name: storeData?.name || undefined,
+        description: storeData?.description || undefined,
+        stewardProfileId: storeData?.stewardProfileId || undefined,
+        phases: storeData?.phases,
+        proposalTemplate: storeData?.proposalTemplate,
+        config: storeData?.categories
+          ? {
+              categories: storeData.categories,
+              requireCategorySelection: storeData.requireCategorySelection,
+              allowMultipleCategories: storeData.allowMultipleCategories,
+            }
+          : undefined,
+      });
     }
   };
 
