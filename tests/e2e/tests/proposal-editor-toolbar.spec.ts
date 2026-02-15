@@ -1,0 +1,186 @@
+import { ProposalStatus } from '@op/db/schema';
+import {
+  createDecisionInstance,
+  createProposal,
+  getSeededTemplate,
+} from '@op/test';
+
+import { expect, test } from '../fixtures/index.js';
+
+/**
+ * Custom proposal template with two rich-text fields (short + long)
+ * and a required budget field.
+ */
+const TWO_FIELD_TEMPLATE = {
+  type: 'object' as const,
+  required: ['title', 'budget'],
+  'x-field-order': ['title', 'budget', 'summary', 'details'],
+  properties: {
+    title: {
+      type: 'string' as const,
+      title: 'Title',
+      'x-format': 'short-text',
+    },
+    budget: {
+      type: 'number' as const,
+      title: 'Budget',
+      'x-format': 'money',
+    },
+    summary: {
+      type: 'string' as const,
+      title: 'Summary',
+      description: 'A brief overview of the proposal',
+      'x-format': 'short-text',
+    },
+    details: {
+      type: 'string' as const,
+      title: 'Details',
+      description: 'Full proposal details and justification',
+      'x-format': 'long-text',
+    },
+  },
+};
+
+test.describe('Proposal Editor Toolbar', () => {
+  test('shared toolbar applies formatting to the focused editor', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    // -- Setup: create decision instance + draft proposal --------------------
+
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+      proposalTemplate: TWO_FIELD_TEMPLATE,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      proposalData: {
+        title: 'Toolbar Test Proposal',
+        budget: { amount: 5000, currency: 'USD' },
+      },
+      status: ProposalStatus.DRAFT,
+    });
+
+    // Give DB a moment to commit
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // -- Navigate to editor --------------------------------------------------
+
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
+      { waitUntil: 'networkidle' },
+    );
+
+    // Wait for editor to fully load
+    await expect(
+      authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(
+      authenticatedPage.getByText('Summary', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByText('Details', { exact: true }),
+    ).toBeVisible();
+
+    // -- Locate the two rich-text editor fields by their labels ---------------
+    // CollaborativeTextField renders:
+    //   <div class="flex flex-col gap-2">     ← wrapper (has label + editor)
+    //     <div class="flex flex-col gap-0.5"> ← label group
+    //       <span class="font-serif ...">Summary</span>
+    //     </div>
+    //     <div>                                ← CollaborativeEditor
+    //       <div>                              ← StyledRichTextContent
+    //         <div contenteditable="true">     ← TipTap
+
+    const summarySection = authenticatedPage.locator(
+      'div.flex.flex-col.gap-2:has(> div > span.font-serif:text("Summary"))',
+    );
+    const summaryEditor = summarySection.locator('[contenteditable="true"]');
+
+    const detailsSection = authenticatedPage.locator(
+      'div.flex.flex-col.gap-2:has(> div > span.font-serif:text("Details"))',
+    );
+    const detailsEditor = detailsSection.locator('[contenteditable="true"]');
+
+    // -- Toolbar should be hidden when no editor is focused ------------------
+
+    const toolbar = authenticatedPage.locator('button[title="Bold"]');
+    await expect(toolbar).not.toBeVisible();
+
+    // -- Step 1: Click into summary, toolbar appears -------------------------
+
+    await summaryEditor.click();
+
+    // Toolbar should now be visible (shared toolbar renders on focus)
+    const boldButton = authenticatedPage.locator('button[title="Bold"]');
+    const italicButton = authenticatedPage.locator('button[title="Italic"]');
+    await expect(boldButton).toBeVisible({ timeout: 5_000 });
+
+    // Type text and select all
+    await authenticatedPage.keyboard.type('Summary bold text');
+    const isMac = process.platform === 'darwin';
+    const modifier = isMac ? 'Meta' : 'Control';
+    await authenticatedPage.keyboard.press(`${modifier}+a`);
+
+    // Apply bold via toolbar button
+    await boldButton.click();
+
+    // Verify bold is applied
+    await expect(
+      summarySection.locator('strong', { hasText: 'Summary bold text' }),
+    ).toBeVisible();
+
+    // Verify bold button shows active state (bg-gray-200 class)
+    await expect(boldButton).toHaveClass(/bg-gray-200/);
+
+    // -- Step 2: Click into details, apply italic via toolbar -----------------
+
+    await detailsEditor.click();
+    await authenticatedPage.keyboard.type('Details italic text');
+    await authenticatedPage.keyboard.press(`${modifier}+a`);
+
+    // Apply italic via toolbar button
+    await italicButton.click();
+
+    // Verify italic is applied
+    await expect(
+      detailsSection.locator('em', { hasText: 'Details italic text' }),
+    ).toBeVisible();
+
+    // Verify italic button shows active state
+    await expect(italicButton).toHaveClass(/bg-gray-200/);
+
+    // Bold button should NOT be active (we're in details, which has no bold)
+    await expect(boldButton).not.toHaveClass(/bg-gray-200/);
+
+    // -- Step 3: Verify summary still has bold (formatting persisted) ---------
+
+    await expect(
+      summarySection.locator('strong', { hasText: 'Summary bold text' }),
+    ).toBeVisible();
+
+    // -- Step 4: Click back into summary, verify toolbar state updates --------
+
+    await summaryEditor.click();
+    await authenticatedPage.keyboard.press(`${modifier}+a`);
+
+    // Bold button should now be active again (reflecting summary's bold state)
+    await expect(boldButton).toHaveClass(/bg-gray-200/);
+
+    // Italic button should NOT be active (summary has no italic)
+    await expect(italicButton).not.toHaveClass(/bg-gray-200/);
+
+    // Bold text still there
+    await expect(
+      summarySection.locator('strong', { hasText: 'Summary bold text' }),
+    ).toBeVisible();
+  });
+});

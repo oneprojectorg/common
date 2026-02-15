@@ -15,9 +15,12 @@ import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { RichTextEditorToolbar } from '../../RichTextEditor';
 import {
+  ActiveEditorProvider,
   CollaborativeDocProvider,
   CollaborativePresence,
+  useActiveEditor,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
@@ -33,6 +36,22 @@ import { handleMutationError } from './handleMutationError';
 import { useProposalDraft } from './useProposalDraft';
 
 type Proposal = z.infer<typeof proposalEncoder>;
+
+/**
+ * Renders the shared formatting toolbar bound to whichever rich-text
+ * editor currently has focus. Hidden when no editor is focused.
+ */
+function ActiveEditorToolbar() {
+  const editor = useActiveEditor();
+  if (!editor) {
+    return null;
+  }
+  return (
+    <div className="sticky top-0 z-10 bg-white">
+      <RichTextEditorToolbar editor={editor} />
+    </div>
+  );
+}
 
 export function ProposalEditor({
   instance,
@@ -248,37 +267,38 @@ export function ProposalEditor({
         presenceSlot={<CollaborativePresence />}
         proposalProfileId={proposal.profileId}
       >
-        <div className="flex flex-1 flex-col gap-12 pt-12">
-          {/* TODO: Re-add RichTextEditorToolbar that tracks the currently-focused
-              editor instance so it works with multiple CollaborativeTextField fields. */}
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
-            <ProposalFormRenderer
-              fields={proposalFields}
-              draft={draft}
-              onFieldChange={handleFieldChange}
-              t={t}
-            />
-
-            <div className="border-t border-neutral-gray2 pt-8">
-              <ProposalAttachments
-                proposalId={proposal.id}
-                attachments={
-                  proposal.attachments?.map((pa) => ({
-                    id: pa.attachmentId,
-                    fileName: pa.attachment?.fileName ?? t('Unknown'),
-                    fileSize: pa.attachment?.fileSize ?? null,
-                    url: pa.attachment?.url,
-                  })) ?? []
-                }
-                onMutate={() =>
-                  utils.decision.getProposal.invalidate({
-                    profileId: proposal.profileId,
-                  })
-                }
+        <ActiveEditorProvider>
+          <ActiveEditorToolbar />
+          <div className="flex flex-1 flex-col gap-12 pt-12">
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
+              <ProposalFormRenderer
+                fields={proposalFields}
+                draft={draft}
+                onFieldChange={handleFieldChange}
+                t={t}
               />
+
+              <div className="border-t border-neutral-gray2 pt-8">
+                <ProposalAttachments
+                  proposalId={proposal.id}
+                  attachments={
+                    proposal.attachments?.map((pa) => ({
+                      id: pa.attachmentId,
+                      fileName: pa.attachment?.fileName ?? t('Unknown'),
+                      fileSize: pa.attachment?.fileSize ?? null,
+                      url: pa.attachment?.url,
+                    })) ?? []
+                  }
+                  onMutate={() =>
+                    utils.decision.getProposal.invalidate({
+                      profileId: proposal.profileId,
+                    })
+                  }
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </ActiveEditorProvider>
 
         {proposalInfoTitle && proposalInfoContent && (
           <ProposalInfoModal
