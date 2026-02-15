@@ -228,8 +228,7 @@ function renderField(
     }
 
     default: {
-      const _exhaustive: never = format;
-      console.warn(`Unknown x-format "${_exhaustive}" for field "${key}"`);
+      console.warn(`Unsupported x-format "${format}" for field "${key}"`);
       return null;
     }
   }
