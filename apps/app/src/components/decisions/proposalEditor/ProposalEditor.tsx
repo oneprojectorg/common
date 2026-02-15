@@ -234,14 +234,6 @@ export function ProposalEditor({
     submitProposalMutation,
     updateProposalMutation,
     draftRef,
-    backHref,
-    instance.id,
-    instance.name,
-    instance.instanceData?.templateName,
-    posthog,
-    router,
-    utils.decision.getProposal,
-    utils.decision.listProposals,
   ]);
 
   // -- Render ----------------------------------------------------------------
