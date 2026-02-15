@@ -18,6 +18,7 @@ export * from './shared';
 export * from './joinProfileRequests';
 
 // Export EntityType and ProfileRelationshipType for frontend usage
+export { ProposalFilter } from '@op/core';
 export {
   EntityType,
   JoinProfileRequestStatus,

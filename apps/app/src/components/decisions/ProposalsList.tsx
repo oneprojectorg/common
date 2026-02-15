@@ -2,7 +2,11 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
+import {
+  ProposalFilter,
+  ProposalStatus,
+  type proposalEncoder,
+} from '@op/api/encoders';
 import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
@@ -38,7 +42,7 @@ import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
 import { useProposalExport } from './useProposalExport';
-import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
+import { useProposalFilters } from './useProposalFilters';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -586,11 +590,11 @@ export const ProposalsList = ({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
-            {proposalFilter === 'my-ballot'
+            {proposalFilter === ProposalFilter.MY_BALLOT
               ? t('My ballot')
-              : proposalFilter === 'my'
+              : proposalFilter === ProposalFilter.MY_PROPOSALS
                 ? t('My proposals')
-                : proposalFilter === 'shortlisted'
+                : proposalFilter === ProposalFilter.SHORTLISTED
                   ? t('Shortlisted proposals')
                   : t('All proposals')}{' '}
             <Bullet /> {proposals?.length ?? 0}
@@ -601,27 +605,27 @@ export const ProposalsList = ({
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {
               // If selecting "My proposals" but no current profile, ignore
-              if (key === 'my' && !currentProfileId) {
+              if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
                 return;
               }
               setProposalFilter(key);
             }}
             aria-label={t('Filter proposals')}
             items={[
-              { id: 'all' as ProposalFilter, label: t('All proposals') },
+              { id: ProposalFilter.ALL, label: t('All proposals') },
               {
-                id: 'my' as ProposalFilter,
+                id: ProposalFilter.MY_PROPOSALS,
                 label: t('My proposals'),
                 isDisabled: !currentProfileId,
               },
               {
-                id: 'shortlisted' as ProposalFilter,
+                id: ProposalFilter.SHORTLISTED,
                 label: t('Shortlisted proposals'),
               },
               ...(hasVoted
                 ? [
                     {
-                      id: 'my-ballot' as ProposalFilter,
+                      id: ProposalFilter.MY_BALLOT,
                       label: t('My ballot'),
                     },
                   ]

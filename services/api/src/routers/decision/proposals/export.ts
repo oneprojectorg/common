@@ -1,4 +1,5 @@
 import { UnauthorizedError, exportProposals } from '@op/common';
+import { ProposalFilter } from '@op/core';
 import { ProposalStatus } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -12,7 +13,7 @@ const exportInputSchema = z.object({
   submittedByProfileId: z.string().optional(),
   status: z.enum(ProposalStatus).optional(),
   dir: z.enum(['asc', 'desc']).default('desc'),
-  proposalFilter: z.enum(['all', 'my', 'shortlisted', 'my-ballot']).optional(),
+  proposalFilter: z.enum(ProposalFilter).optional(),
 });
 
 const exportOutputSchema = z.object({

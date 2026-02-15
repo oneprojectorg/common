@@ -12,6 +12,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@op/core": "workspace:^",
     "@op/db": "workspace:*",
     "inngest": "^3.44.0",
     "zod": "catalog:"

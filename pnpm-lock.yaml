@@ -1427,6 +1427,9 @@ importers:
 
   services/events:
     dependencies:
+      '@op/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       '@op/db':
         specifier: workspace:*
         version: link:../db
