@@ -82,7 +82,7 @@ export const submitProposal = async ({
 
   // Validate proposal data against the proposal template schema
   const proposalTemplate = await resolveProposalTemplate(
-    instanceData as unknown as Record<string, unknown>,
+    instanceData,
     instance.processId,
   );
 
