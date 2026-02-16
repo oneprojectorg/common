@@ -37,7 +37,6 @@ export function FieldConfigDropdown({
         items: { ...items, enum: enumValues },
       });
     } else {
-      // dropdown: use oneOf format for richer value/label pairs
       const oneOfValues = newOptions.map((o) => ({
         const: o.value,
         title: o.value,
