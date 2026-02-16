@@ -33,12 +33,40 @@ test.describe('Proposal View', () => {
   }) => {
     const template = await getSeededTemplate();
 
+    const newSchemaTemplate = {
+      type: 'object' as const,
+      required: ['title'],
+      'x-field-order': ['title', 'budget', 'category', 'summary'],
+      properties: {
+        title: {
+          type: 'string' as const,
+          title: 'Title',
+          'x-format': 'short-text',
+        },
+        budget: {
+          type: 'number' as const,
+          title: 'Budget',
+          'x-format': 'money',
+        },
+        category: {
+          type: ['string', 'null'] as const,
+          enum: ['Renewable Energy', 'Community Development', null],
+        },
+        summary: {
+          type: 'string' as const,
+          title: 'Summary',
+          'x-format': 'long-text',
+        },
+      },
+    };
+
     const instance = await createDecisionInstance({
       processId: template.id,
       ownerProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       schema: template.processSchema,
+      proposalTemplate: newSchemaTemplate as ProposalTemplateSchema,
     });
 
     const proposal = await createProposal({
@@ -48,6 +76,7 @@ test.describe('Proposal View', () => {
         title: 'Community Solar Initiative',
         collaborationDocId: MOCK_DOC_ID,
         budget: { amount: 10000, currency: 'EUR' },
+        category: 'Renewable Energy',
       },
     });
 
@@ -85,6 +114,9 @@ test.describe('Proposal View', () => {
 
     // New-format budget { value: 10000, currency: 'EUR' } rendered as "€10,000"
     await expect(authenticatedPage.getByText('€10,000')).toBeVisible();
+
+    // Category value rendered in a Tag component on the proposal view
+    await expect(authenticatedPage.getByText('Renewable Energy')).toBeVisible();
   });
 
   test('renders legacy HTML description when no collaborationDocId exists', async ({
@@ -201,6 +233,7 @@ test.describe('Proposal View', () => {
           '<p>This proposal uses the <strong>old template format</strong> with a plain description field.</p>',
           '<ul><li>Support co-ops</li><li>Build sustainability</li></ul>',
         ].join(''),
+        category: 'Ai. Direct funding to worker-owned co-ops.',
       },
     });
 
@@ -233,6 +266,11 @@ test.describe('Proposal View', () => {
     ).toBeVisible();
     await expect(
       authenticatedPage.locator('li', { hasText: 'Build sustainability' }),
+    ).toBeVisible();
+
+    // Category value rendered in a Tag component on the proposal view
+    await expect(
+      authenticatedPage.getByText('Ai. Direct funding to worker-owned co-ops.'),
     ).toBeVisible();
   });
 
@@ -417,6 +455,11 @@ test.describe('Proposal View', () => {
     // Legacy plain-number budget (15000) normalised to { amount: 15000, currency: 'USD' }
     // and rendered as "$15,000"
     await expect(authenticatedPage.getByText('$15,000')).toBeVisible();
+
+    // Category value rendered in a Tag component on the proposal view
+    await expect(
+      authenticatedPage.getByText('Ai. Direct funding to worker-owned co-ops.'),
+    ).toBeVisible();
 
     // Description content renders
     await expect(
