@@ -209,6 +209,27 @@ export function getFieldOptions(
   return [];
 }
 
+/**
+ * Check whether a JSON Schema property has selectable options.
+ * Returns `true` when the schema contains a non-empty `oneOf` array
+ * (canonical format) **or** a non-empty `enum` array (legacy format).
+ */
+export function schemaHasOptions(schema: RJSFSchema | undefined): boolean {
+  if (!schema) {
+    return false;
+  }
+  if (Array.isArray(schema.oneOf) && schema.oneOf.length > 0) {
+    return true;
+  }
+  if (
+    Array.isArray(schema.enum) &&
+    schema.enum.filter((v) => v != null).length > 0
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function getFieldMin(
   template: ProposalTemplate,
   fieldId: string,
