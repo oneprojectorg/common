@@ -244,10 +244,7 @@ export function ProposalEditor({
 
   const { data: collabTokenData } = trpc.decision.getCollabToken.useQuery(
     { proposalProfileId: proposal.profileId },
-    {
-      staleTime: 1000 * 60 * 60, // 1 hour
-      refetchInterval: 1000 * 60 * 60 * 12, // 12 hours — refresh well before 24h JWT expiry
-    },
+    { staleTime: 1000 * 60 * 60 }, // 1 hour — refetched on demand via onAuthenticationFailed
   );
 
   const handleAuthenticationFailed = useCallback(() => {
