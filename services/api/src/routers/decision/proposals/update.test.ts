@@ -1,4 +1,6 @@
-import { ProposalStatus, Visibility } from '@op/db/schema';
+import { mockCollab } from '@op/collab/testing';
+import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -465,5 +467,74 @@ describe.concurrent('updateProposal status', () => {
 
     expect(result.status).toBe(ProposalStatus.REJECTED);
     expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+});
+
+describe.concurrent('updateProposal validation', () => {
+  it('should reject update when required fields are missing from collaboration document', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'summary'],
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            minLength: 1,
+            'x-format': 'short-text',
+          },
+          summary: {
+            type: 'string',
+            title: 'Project Summary',
+            minLength: 1,
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Draft' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: { title: 'Draft', collaborationDocId },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    // Seed title but omit the required summary field
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Draft',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { proposalData: { title: 'Updated Draft' } },
+      }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
   });
 });
