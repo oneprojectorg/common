@@ -47,6 +47,13 @@ export function useTiptapCollab({
 
   const ydoc = useMemo(() => new Y.Doc(), []);
 
+  // Clean up Y.Doc on unmount
+  useEffect(() => {
+    return () => {
+      ydoc.destroy();
+    };
+  }, [ydoc]);
+
   // Derive color from username - matches Avatar gradient
   const user = useMemo<CollabUser>(() => {
     const { hex } = getAvatarColorForString(userName);
