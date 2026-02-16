@@ -205,13 +205,8 @@ export function ProposalEditor({
         await submitProposalMutation.mutateAsync({
           proposalId: proposal.id,
         });
-        posthog?.capture('submit_proposal_success', {
-          process_instance_id: instance.id,
-          process_name: instance.name || instance.instanceData?.templateName,
-        });
       }
 
-      // Invalidate caches and navigate only after all mutations succeed
       await Promise.all([
         utils.decision.getProposal.invalidate({
           profileId: proposal.profileId,

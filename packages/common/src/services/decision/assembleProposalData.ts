@@ -1,4 +1,4 @@
-import { normalizeBudget } from './proposalDataSchema';
+import { extractBudgetValue, normalizeBudget } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
 /**
@@ -36,7 +36,12 @@ export function assembleProposalData(
         break;
       case 'money':
         try {
-          data[key] = normalizeBudget(JSON.parse(text)) ?? text;
+          const parsed = JSON.parse(text);
+          // Legacy schemas use type: 'number' for budget — extract just the amount
+          data[key] =
+            schema.type === 'number'
+              ? extractBudgetValue(parsed)
+              : (normalizeBudget(parsed) ?? text);
         } catch {
           data[key] = text;
         }
