@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
-import type { ProposalPropertySchema, ProposalTemplateSchema } from './types';
+import type { ProposalPropertySchema } from './types';
 
 /**
  * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
@@ -113,13 +113,9 @@ export function parseProposalData(proposalData: unknown): ProposalData {
 // Category / dropdown schema helpers
 // ---------------------------------------------------------------------------
 //
-// Category fields use the `oneOf` pattern (`[{ const, title }]`) as the
-// canonical format.  A `{ const: null, title: '' }` sentinel is included
-// so that AJV accepts `null` (unselected) values against `type: ['string', 'null']`.
-//
-// Legacy templates stored categories as `{ enum: [..., null] }`.  The
-// `normalizeTemplateSchema` function converts legacy `enum` to `oneOf` at
-// the read boundary so downstream code only ever sees the canonical format.
+// New templates use the `oneOf` pattern (`[{ const, title }]`).
+// Legacy templates use `{ enum: [..., null] }`.
+// `parseSchemaOptions` handles both formats transparently.
 // ---------------------------------------------------------------------------
 
 /** A single selectable option extracted from a JSON Schema property. */
@@ -155,60 +151,11 @@ export function buildCategorySchema(
 }
 
 /**
- * Normalize a proposal template's category/dropdown fields from legacy
- * `enum` format to the canonical `oneOf` format.
- *
- * Call this at every read boundary (e.g. `resolveProposalTemplate`) so
- * that downstream code only ever sees `oneOf`.  Analogous to how
- * `normalizeBudget` converts legacy plain-number budgets at the boundary.
- *
- * Fields that already use `oneOf` or have no `enum` are left untouched.
- */
-export function normalizeTemplateSchema<
-  T extends ProposalTemplateSchema | null | undefined,
->(template: T): T {
-  if (!template?.properties) {
-    return template;
-  }
-
-  let changed = false;
-  const normalized = { ...template.properties };
-
-  for (const [key, schema] of Object.entries(normalized)) {
-    if (
-      schema &&
-      typeof schema === 'object' &&
-      !Array.isArray(schema) &&
-      Array.isArray(schema.enum) &&
-      !Array.isArray(schema.oneOf)
-    ) {
-      changed = true;
-      const { enum: legacyEnum, ...rest } = schema;
-      normalized[key] = {
-        ...rest,
-        oneOf: (legacyEnum as unknown[])
-          .filter((v): v is string => typeof v === 'string')
-          .map((v) => ({ const: v, title: v })),
-      };
-    }
-  }
-
-  if (!changed) {
-    return template;
-  }
-
-  return { ...template, properties: normalized } as T;
-}
-
-/**
  * Parse selectable options from a JSON Schema property.
  *
- * Expects the canonical `oneOf` format (`[{ const, title }]`).
- * The null sentinel (`{ const: null }`) and non-string values are filtered
- * out — callers receive only user-visible options.
- *
- * **Note:** Call `normalizeTemplateSchema` at the read boundary before
- * using this function. Legacy `enum` arrays are not handled here.
+ * Handles both the canonical `oneOf` format (`[{ const, title }]`) and
+ * the legacy `enum` format (`['value1', 'value2', null]`).  Null values
+ * are filtered out — callers receive only user-visible options.
  */
 export function parseSchemaOptions(
   schema: ProposalPropertySchema | null | undefined,
@@ -217,10 +164,9 @@ export function parseSchemaOptions(
     return [];
   }
 
-  const { oneOf } = schema;
-
-  if (Array.isArray(oneOf)) {
-    return oneOf
+  // Canonical: oneOf with { const, title } entries
+  if (Array.isArray(schema.oneOf)) {
+    return schema.oneOf
       .filter(
         (entry): entry is { const: string; title: string } =>
           typeof entry === 'object' &&
@@ -231,6 +177,13 @@ export function parseSchemaOptions(
           typeof (entry as Record<string, unknown>).title === 'string',
       )
       .map((entry) => ({ value: entry.const, title: entry.title }));
+  }
+
+  // Legacy: plain enum array
+  if (Array.isArray(schema.enum)) {
+    return schema.enum
+      .filter((v): v is string => typeof v === 'string')
+      .map((v) => ({ value: v, title: v }));
   }
 
   return [];

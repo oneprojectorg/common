@@ -10,10 +10,7 @@ import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
-import {
-  buildCategorySchema,
-  normalizeTemplateSchema,
-} from './proposalDataSchema';
+import { buildCategorySchema } from './proposalDataSchema';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -170,12 +167,11 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
         if (existingProcess) {
           const currentProcessSchema = existingProcess.processSchema as any;
 
-          // Normalize legacy enum→oneOf before rebuilding category field
-          const currentProposalTemplate = normalizeTemplateSchema(
-            currentProcessSchema?.proposalTemplate || {},
-          );
+          const currentProposalTemplate =
+            currentProcessSchema?.proposalTemplate || {};
           const existingCategory =
-            currentProposalTemplate.properties?.category ?? {};
+            ((currentProposalTemplate.properties as Record<string, unknown>)
+              ?.category as Record<string, unknown>) ?? {};
 
           const updatedProposalTemplate = {
             ...currentProposalTemplate,

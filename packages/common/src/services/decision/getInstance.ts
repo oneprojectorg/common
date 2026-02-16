@@ -5,9 +5,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import { normalizeTemplateSchema } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ProposalTemplateSchema } from './types';
 
 export interface GetInstanceInput {
   instanceId: string;
@@ -63,20 +61,9 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         }
       : instanceData;
 
-    // Normalize legacy enum→oneOf in the proposal template so frontend
-    // only ever sees the canonical oneOf format.
-    const normalizedInstanceData = filteredInstanceData.proposalTemplate
-      ? {
-          ...filteredInstanceData,
-          proposalTemplate: normalizeTemplateSchema(
-            filteredInstanceData.proposalTemplate as ProposalTemplateSchema,
-          ),
-        }
-      : filteredInstanceData;
-
     return {
       ...instance,
-      instanceData: normalizedInstanceData,
+      instanceData: filteredInstanceData,
       proposalCount,
       participantCount,
     };

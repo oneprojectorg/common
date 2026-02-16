@@ -473,9 +473,8 @@ describe.concurrent('getProposal', () => {
    * stored as either a plain number or an `{ amount, currency }` object.
    *
    * Category uses the legacy `{ type: ['string', 'null'], enum: [..., null] }`
-   * format in these templates. `resolveProposalTemplate` normalizes the legacy
-   * enum to `oneOf` format at the read boundary. The assertions verify both
-   * budget normalization and that the category field is returned as `oneOf`.
+   * format in these templates. The schema is returned as-is —
+   * `parseSchemaOptions` handles both `enum` and `oneOf` on the frontend.
    *
    * @see https://github.com/oneprojectorg/common/pull/601#discussion_r2803602140
    */
@@ -562,7 +561,7 @@ describe.concurrent('getProposal', () => {
     });
 
     // Verify the proposalTemplate was resolved from process_schema.
-    // Legacy enum is normalized to oneOf by resolveProposalTemplate.
+    // Legacy templates retain their enum format in the schema.
     expect(result.proposalTemplate).toMatchObject({
       type: 'object',
       properties: {
@@ -571,10 +570,7 @@ describe.concurrent('getProposal', () => {
         budget: { type: 'number', maximum: 10000 },
         category: {
           type: ['string', 'null'],
-          oneOf: [
-            { const: 'Infrastructure', title: 'Infrastructure' },
-            { const: 'Education', title: 'Education' },
-          ],
+          enum: ['Infrastructure', 'Education', null],
         },
       },
     });
@@ -748,7 +744,7 @@ describe.concurrent('getProposal', () => {
     });
 
     // Verify the proposalTemplate was resolved from process_schema.
-    // Legacy enum is normalized to oneOf by resolveProposalTemplate.
+    // Legacy templates retain their enum format in the schema.
     expect(result.proposalTemplate).toMatchObject({
       type: 'object',
       properties: {
@@ -757,10 +753,7 @@ describe.concurrent('getProposal', () => {
         budget: { type: 'number', maximum: 25000 },
         category: {
           type: ['string', 'null'],
-          oneOf: [
-            { const: 'Community', title: 'Community' },
-            { const: 'Environment', title: 'Environment' },
-          ],
+          enum: ['Community', 'Environment', null],
         },
       },
     });

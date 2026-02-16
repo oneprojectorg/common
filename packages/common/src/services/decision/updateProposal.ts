@@ -20,10 +20,7 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
-import {
-  type ProposalDataInput,
-  normalizeTemplateSchema,
-} from './proposalDataSchema';
+import type { ProposalDataInput } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
 
 type ProcessInstanceWithProcess = ProcessInstance & {
@@ -143,7 +140,7 @@ export const updateProposal = async ({
 
       if (processSchema?.proposalTemplate) {
         schemaValidator.validateProposalData(
-          normalizeTemplateSchema(processSchema.proposalTemplate),
+          processSchema.proposalTemplate,
           data.proposalData,
         );
       }
