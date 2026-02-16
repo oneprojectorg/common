@@ -9,6 +9,8 @@ import {
 import { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
+import { normalizeTemplateSchema } from './proposalDataSchema';
+import type { ProposalTemplateSchema } from './types';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -99,10 +101,28 @@ export const getDecisionBySlug = async ({
     throw new NotFoundError('Decision profile not found');
   }
 
+  const processInstance = profile.processInstance as Record<string, unknown>;
+  const instanceData = processInstance.instanceData as Record<
+    string,
+    unknown
+  > | null;
+
+  // Normalize legacy enum→oneOf in the proposal template so frontend
+  // only ever sees the canonical oneOf format.
+  const normalizedInstanceData = instanceData?.proposalTemplate
+    ? {
+        ...instanceData,
+        proposalTemplate: normalizeTemplateSchema(
+          instanceData.proposalTemplate as ProposalTemplateSchema,
+        ),
+      }
+    : instanceData;
+
   return {
     ...profile,
     processInstance: {
-      ...profile.processInstance,
+      ...processInstance,
+      instanceData: normalizedInstanceData,
       proposalCount: authAndStatsResult.proposalCount,
       participantCount: authAndStatsResult.participantCount,
     },

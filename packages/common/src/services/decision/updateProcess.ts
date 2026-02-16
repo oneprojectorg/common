@@ -4,8 +4,11 @@ import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import {
+  buildCategorySchema,
+  normalizeTemplateSchema,
+} from './proposalDataSchema';
 import type { ProcessSchema } from './types';
-import { buildCategorySchema } from './utils/categorySchema';
 
 /**
  * Ensures the "proposal" taxonomy exists and creates/updates taxonomy terms for the given categories
@@ -134,10 +137,11 @@ export const updateProcess = async ({
       // Ensure proposal taxonomy and terms exist for the categories
       await ensureProposalTaxonomy(categories);
 
-      // Update the proposal template category field using oneOf format
+      // Normalize legacy enum→oneOf before rebuilding category field
       if (data.processSchema.proposalTemplate) {
-        const currentProposalTemplate = data.processSchema
-          .proposalTemplate as any;
+        const currentProposalTemplate = normalizeTemplateSchema(
+          data.processSchema.proposalTemplate as any,
+        );
         const existingCategory =
           currentProposalTemplate.properties?.category ?? {};
 

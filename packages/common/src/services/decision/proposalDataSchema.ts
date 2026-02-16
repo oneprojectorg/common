@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
+import type { ProposalPropertySchema, ProposalTemplateSchema } from './types';
 
 /**
  * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
@@ -106,4 +107,143 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     attachmentIds: (raw.attachmentIds as string[]) ?? [],
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Category / dropdown schema helpers
+// ---------------------------------------------------------------------------
+//
+// Category fields use the `oneOf` pattern (`[{ const, title }]`) as the
+// canonical format.  A `{ const: null, title: '' }` sentinel is included
+// so that AJV accepts `null` (unselected) values against `type: ['string', 'null']`.
+//
+// Legacy templates stored categories as `{ enum: [..., null] }`.  The
+// `normalizeTemplateSchema` function converts legacy `enum` to `oneOf` at
+// the read boundary so downstream code only ever sees the canonical format.
+// ---------------------------------------------------------------------------
+
+/** A single selectable option extracted from a JSON Schema property. */
+export interface SchemaOption {
+  value: string;
+  title: string;
+}
+
+/**
+ * Build a category JSON Schema property from a list of category labels.
+ *
+ * @param categories  - Plain string labels (e.g. `['Infrastructure', 'Education']`).
+ * @param existing    - The current schema for the field, if any. Existing
+ *                      properties (like `title`) are preserved; the legacy
+ *                      `enum` key is stripped.
+ * @returns A JSON Schema object ready to be set as `properties.category`.
+ */
+export function buildCategorySchema(
+  categories: string[],
+  existing?: Record<string, unknown>,
+): Record<string, unknown> {
+  const { enum: _legacyEnum, ...rest } = existing ?? {};
+
+  return {
+    ...rest,
+    type: ['string', 'null'],
+    'x-format': 'dropdown',
+    oneOf: [
+      ...categories.map((c) => ({ const: c, title: c })),
+      { const: null, title: '' },
+    ],
+  };
+}
+
+/**
+ * Normalize a proposal template's category/dropdown fields from legacy
+ * `enum` format to the canonical `oneOf` format.
+ *
+ * Call this at every read boundary (e.g. `resolveProposalTemplate`) so
+ * that downstream code only ever sees `oneOf`.  Analogous to how
+ * `normalizeBudget` converts legacy plain-number budgets at the boundary.
+ *
+ * Fields that already use `oneOf` or have no `enum` are left untouched.
+ */
+export function normalizeTemplateSchema<
+  T extends ProposalTemplateSchema | null | undefined,
+>(template: T): T {
+  if (!template?.properties) {
+    return template;
+  }
+
+  let changed = false;
+  const normalized = { ...template.properties };
+
+  for (const [key, schema] of Object.entries(normalized)) {
+    if (
+      schema &&
+      typeof schema === 'object' &&
+      !Array.isArray(schema) &&
+      Array.isArray(schema.enum) &&
+      !Array.isArray(schema.oneOf)
+    ) {
+      changed = true;
+      const { enum: legacyEnum, ...rest } = schema;
+      normalized[key] = {
+        ...rest,
+        oneOf: (legacyEnum as unknown[])
+          .filter((v): v is string => typeof v === 'string')
+          .map((v) => ({ const: v, title: v })),
+      };
+    }
+  }
+
+  if (!changed) {
+    return template;
+  }
+
+  return { ...template, properties: normalized } as T;
+}
+
+/**
+ * Parse selectable options from a JSON Schema property.
+ *
+ * Expects the canonical `oneOf` format (`[{ const, title }]`).
+ * The null sentinel (`{ const: null }`) and non-string values are filtered
+ * out — callers receive only user-visible options.
+ *
+ * **Note:** Call `normalizeTemplateSchema` at the read boundary before
+ * using this function. Legacy `enum` arrays are not handled here.
+ */
+export function parseSchemaOptions(
+  schema: ProposalPropertySchema | null | undefined,
+): SchemaOption[] {
+  if (!schema) {
+    return [];
+  }
+
+  const { oneOf } = schema;
+
+  if (Array.isArray(oneOf)) {
+    return oneOf
+      .filter(
+        (entry): entry is { const: string; title: string } =>
+          typeof entry === 'object' &&
+          entry !== null &&
+          'const' in entry &&
+          typeof (entry as Record<string, unknown>).const === 'string' &&
+          'title' in entry &&
+          typeof (entry as Record<string, unknown>).title === 'string',
+      )
+      .map((entry) => ({ value: entry.const, title: entry.title }));
+  }
+
+  return [];
+}
+
+/**
+ * Check whether a JSON Schema property has selectable options.
+ *
+ * Returns `true` when the schema contains a non-empty `oneOf` array
+ * with at least one non-null string value.
+ */
+export function schemaHasOptions(
+  schema: ProposalPropertySchema | null | undefined,
+): boolean {
+  return parseSchemaOptions(schema).length > 0;
 }

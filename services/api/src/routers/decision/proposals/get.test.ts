@@ -473,9 +473,9 @@ describe.concurrent('getProposal', () => {
    * stored as either a plain number or an `{ amount, currency }` object.
    *
    * Category uses the legacy `{ type: ['string', 'null'], enum: [..., null] }`
-   * format in these templates. The assertions verify both budget normalization
-   * and that the legacy enum-based category field is returned correctly in
-   * the proposalTemplate (backwards compat for the enum → oneOf migration).
+   * format in these templates. `resolveProposalTemplate` normalizes the legacy
+   * enum to `oneOf` format at the read boundary. The assertions verify both
+   * budget normalization and that the category field is returned as `oneOf`.
    *
    * @see https://github.com/oneprojectorg/common/pull/601#discussion_r2803602140
    */
@@ -562,7 +562,7 @@ describe.concurrent('getProposal', () => {
     });
 
     // Verify the proposalTemplate was resolved from process_schema.
-    // Category should retain the legacy enum format (not yet migrated to oneOf).
+    // Legacy enum is normalized to oneOf by resolveProposalTemplate.
     expect(result.proposalTemplate).toMatchObject({
       type: 'object',
       properties: {
@@ -571,7 +571,10 @@ describe.concurrent('getProposal', () => {
         budget: { type: 'number', maximum: 10000 },
         category: {
           type: ['string', 'null'],
-          enum: ['Infrastructure', 'Education', null],
+          oneOf: [
+            { const: 'Infrastructure', title: 'Infrastructure' },
+            { const: 'Education', title: 'Education' },
+          ],
         },
       },
     });
@@ -745,7 +748,7 @@ describe.concurrent('getProposal', () => {
     });
 
     // Verify the proposalTemplate was resolved from process_schema.
-    // Category should retain the legacy enum format (not yet migrated to oneOf).
+    // Legacy enum is normalized to oneOf by resolveProposalTemplate.
     expect(result.proposalTemplate).toMatchObject({
       type: 'object',
       properties: {
@@ -754,7 +757,10 @@ describe.concurrent('getProposal', () => {
         budget: { type: 'number', maximum: 25000 },
         category: {
           type: ['string', 'null'],
-          enum: ['Community', 'Environment', null],
+          oneOf: [
+            { const: 'Community', title: 'Community' },
+            { const: 'Environment', title: 'Environment' },
+          ],
         },
       },
     });

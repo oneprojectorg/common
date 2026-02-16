@@ -10,9 +10,12 @@ import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import {
+  buildCategorySchema,
+  normalizeTemplateSchema,
+} from './proposalDataSchema';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
-import { buildCategorySchema } from './utils/categorySchema';
 
 /**
  * Ensures the "proposal" taxonomy exists and creates/updates taxonomy terms for the given categories
@@ -167,9 +170,10 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
         if (existingProcess) {
           const currentProcessSchema = existingProcess.processSchema as any;
 
-          // Update the proposal template category field using oneOf format
-          const currentProposalTemplate =
-            currentProcessSchema?.proposalTemplate || {};
+          // Normalize legacy enum→oneOf before rebuilding category field
+          const currentProposalTemplate = normalizeTemplateSchema(
+            currentProcessSchema?.proposalTemplate || {},
+          );
           const existingCategory =
             currentProposalTemplate.properties?.category ?? {};
 
