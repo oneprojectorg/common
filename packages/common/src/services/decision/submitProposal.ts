@@ -2,7 +2,6 @@ import { createTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
-import type { JSONSchema7 } from 'json-schema';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
@@ -12,7 +11,6 @@ import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { schemaValidator } from './schemaValidator';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ProposalTemplateSchema } from './types';
 import { checkProposalsAllowed } from './utils/proposal';
 
 export interface SubmitProposalInput {
@@ -102,27 +100,22 @@ export const submitProposal = async ({
       }
 
       const client = createTipTapClient({ appId, secret });
-      const fragmentNames = getProposalFragmentNames(
-        proposalTemplate as Record<string, unknown>,
-      );
+      const fragmentNames = getProposalFragmentNames(proposalTemplate);
       const fragmentTexts = await client.getDocumentFragments(
         parsed.collaborationDocId,
         fragmentNames,
         'text',
       );
       const validationData = assembleProposalData(
-        proposalTemplate as ProposalTemplateSchema,
+        proposalTemplate,
         fragmentTexts,
       );
 
-      schemaValidator.validateProposalData(
-        proposalTemplate as JSONSchema7,
-        validationData,
-      );
+      schemaValidator.validateProposalData(proposalTemplate, validationData);
     } else {
       // Legacy proposal without collaboration doc — validate DB data directly
       schemaValidator.validateProposalData(
-        proposalTemplate as JSONSchema7,
+        proposalTemplate,
         existingProposal.proposalData,
       );
     }

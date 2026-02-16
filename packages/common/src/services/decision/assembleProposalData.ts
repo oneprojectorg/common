@@ -1,3 +1,4 @@
+import { normalizeBudget } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
 /**
@@ -27,38 +28,26 @@ export function assembleProposalData(
       continue;
     }
 
-    const format = schema['x-format'];
-
-    if (
-      format === 'short-text' ||
-      format === 'long-text' ||
-      format === 'category'
-    ) {
-      data[key] = text;
-    } else if (format === 'money') {
-      try {
-        const parsed = JSON.parse(text);
-        // If schema expects a plain number (legacy), extract amount from {amount, currency}
-        if (
-          schema.type === 'number' &&
-          typeof parsed === 'object' &&
-          parsed !== null &&
-          'amount' in parsed
-        ) {
-          data[key] = parsed.amount;
-        } else {
-          data[key] = parsed;
+    switch (schema['x-format']) {
+      case 'short-text':
+      case 'long-text':
+      case 'category':
+        data[key] = text;
+        break;
+      case 'money':
+        try {
+          data[key] = normalizeBudget(JSON.parse(text)) ?? text;
+        } catch {
+          data[key] = text;
         }
-      } catch {
-        data[key] = text;
-      }
-    } else {
-      // Unknown format — try JSON parse, fall back to raw string
-      try {
-        data[key] = JSON.parse(text);
-      } catch {
-        data[key] = text;
-      }
+        break;
+      default:
+        // Unknown format — try JSON parse, fall back to raw string
+        try {
+          data[key] = JSON.parse(text);
+        } catch {
+          data[key] = text;
+        }
     }
   }
 

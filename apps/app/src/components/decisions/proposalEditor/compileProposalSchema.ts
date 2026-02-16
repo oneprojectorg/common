@@ -63,9 +63,7 @@ export function compileProposalSchema(
     }
   }
 
-  const { all } = getProposalTemplateFieldOrder(
-    proposalTemplate as Record<string, unknown>,
-  );
+  const { all } = getProposalTemplateFieldOrder(proposalTemplate);
 
   return all
     .map((key) => {

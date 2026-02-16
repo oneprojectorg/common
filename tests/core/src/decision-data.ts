@@ -1,4 +1,7 @@
-import type { DecisionSchemaDefinition } from '@op/common';
+import type {
+  DecisionSchemaDefinition,
+  ProposalTemplateSchema,
+} from '@op/common';
 import {
   EntityType,
   ProcessStatus,
@@ -183,7 +186,7 @@ export interface CreateDecisionInstanceOptions {
   /** Whether to grant admin access (defaults to true) */
   grantAdminAccess?: boolean;
   /** Optional override for proposalTemplate in instanceData (for testing legacy templates) */
-  proposalTemplate?: Record<string, unknown>;
+  proposalTemplate?: ProposalTemplateSchema;
 }
 
 export interface CreateDecisionInstanceResult {

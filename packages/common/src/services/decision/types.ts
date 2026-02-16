@@ -32,6 +32,7 @@ export interface ProposalPropertySchema extends JSONSchema7 {
 
 /** JSON Schema 7 extended with proposal template vendor extensions. */
 export interface ProposalTemplateSchema extends JSONSchema7 {
+  [key: string]: unknown;
   properties?: Record<string, ProposalPropertySchema>;
   'x-field-order'?: string[];
 }
