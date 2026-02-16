@@ -208,8 +208,6 @@ test.describe('Proposal Listing', () => {
       },
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     // 3. Navigate with ?filter=all (default is "Shortlisted" which hides drafts)
     await authenticatedPage.goto(`/en/decisions/${slug}?filter=all`, {
       waitUntil: 'networkidle',
@@ -360,8 +358,6 @@ test.describe('Proposal Listing', () => {
         category: 'Bv. Support regional co-op organizing groups.',
       },
     });
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // 3. Navigate with ?filter=all (default is "Shortlisted" which hides drafts)
     await authenticatedPage.goto(`/en/decisions/${slug}?filter=all`, {
