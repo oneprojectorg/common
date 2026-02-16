@@ -1,6 +1,5 @@
 import type { proposalEncoder } from '@op/api/encoders';
-import { SYSTEM_FIELD_KEYS } from '@op/common/client';
-import { serverExtensions } from '@op/common/src/services/decision/tiptapExtensions';
+import { SYSTEM_FIELD_KEYS, serverExtensions } from '@op/common/client';
 import { getTextPreview } from '@op/core';
 import { type JSONContent, generateText } from '@tiptap/core';
 import type { z } from 'zod';
