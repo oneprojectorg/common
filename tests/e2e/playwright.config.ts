@@ -55,6 +55,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm dev:e2e',
     url: 'http://localhost:4100',
+    wait: { stdout: /app:dev:e2e:.*Local:\s+http:\/\/localhost:4100/ },
     reuseExistingServer: !process.env.CI,
     cwd: path.resolve(__dirname, '../..'),
     timeout: 120 * 1000,
