@@ -45,7 +45,7 @@ export const getCollabTokenRouter = router({
       });
 
       const hasAccess = checkPermission(
-        { profile: permission.READ },
+        { profile: permission.UPDATE },
         profileAccessUser?.roles ?? [],
       );
 
