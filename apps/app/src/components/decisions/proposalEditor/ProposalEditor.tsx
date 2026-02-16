@@ -247,6 +247,12 @@ export function ProposalEditor({
     { staleTime: 1000 * 60 * 60 },
   );
 
+  const handleAuthenticationFailed = useCallback(() => {
+    void utils.decision.getCollabToken.invalidate({
+      proposalProfileId: proposal.profileId,
+    });
+  }, [utils, proposal.profileId]);
+
   // -- Render ----------------------------------------------------------------
 
   const userName = user.profile?.name ?? t('Anonymous');
@@ -255,6 +261,7 @@ export function ProposalEditor({
     <CollaborativeDocProvider
       docId={collaborationDocId}
       token={collabTokenData?.token ?? null}
+      onAuthenticationFailed={handleAuthenticationFailed}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >

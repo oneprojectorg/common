@@ -17,6 +17,8 @@ export interface UseTiptapCollabOptions {
   enabled?: boolean;
   /** JWT token for Tiptap Cloud authentication */
   token: string | null;
+  /** Called when Tiptap Cloud rejects the JWT (expired or invalid) */
+  onAuthenticationFailed?: () => void;
   /** User's display name for the collaboration cursor */
   userName?: string;
 }
@@ -36,6 +38,7 @@ export function useTiptapCollab({
   docId,
   enabled = true,
   token,
+  onAuthenticationFailed,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
@@ -78,6 +81,10 @@ export function useTiptapCollab({
       onSynced: () => {
         setIsSynced(true);
       },
+      onAuthenticationFailed: () => {
+        setStatus('disconnected');
+        onAuthenticationFailed?.();
+      },
     });
 
     setProvider(newProvider);
@@ -85,7 +92,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, token, ydoc]);
+  }, [docId, enabled, onAuthenticationFailed, token, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {

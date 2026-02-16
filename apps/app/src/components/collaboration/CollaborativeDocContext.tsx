@@ -34,6 +34,8 @@ interface CollaborativeDocProviderProps {
   docId: string;
   /** JWT token for Tiptap Cloud authentication */
   token: string | null;
+  /** Called when Tiptap Cloud rejects the JWT (expired or invalid) */
+  onAuthenticationFailed?: () => void;
   /** User's display name for collaboration cursors */
   userName?: string;
   /** Loading state to show while the collaboration provider initializes */
@@ -57,6 +59,7 @@ interface CollaborativeDocProviderProps {
 export function CollaborativeDocProvider({
   docId,
   token,
+  onAuthenticationFailed,
   userName = 'Anonymous',
   fallback = null,
   children,
@@ -65,6 +68,7 @@ export function CollaborativeDocProvider({
     docId,
     enabled: true,
     token,
+    onAuthenticationFailed,
     userName,
   });
 
