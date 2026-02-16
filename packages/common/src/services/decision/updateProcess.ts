@@ -133,10 +133,13 @@ export const updateProcess = async ({
       // Ensure proposal taxonomy and terms exist for the categories
       await ensureProposalTaxonomy(categories);
 
-      // Update the proposal template to include the new category enums
+      // Update the proposal template category field using oneOf format
       if (data.processSchema.proposalTemplate) {
         const currentProposalTemplate = data.processSchema
           .proposalTemplate as any;
+        const existingCategory =
+          currentProposalTemplate.properties?.category ?? {};
+        const { enum: _legacyEnum, ...categoryRest } = existingCategory;
         const updatedProposalTemplate = {
           ...currentProposalTemplate,
           properties: {
@@ -144,8 +147,10 @@ export const updateProcess = async ({
             ...(categories.length > 0
               ? {
                   category: {
+                    ...categoryRest,
                     type: ['string', 'null'],
-                    enum: [...categories, null],
+                    'x-format': 'category',
+                    oneOf: categories.map((c) => ({ const: c, title: c })),
                   },
                 }
               : {}),

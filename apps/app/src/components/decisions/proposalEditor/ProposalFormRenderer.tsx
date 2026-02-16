@@ -33,22 +33,34 @@ interface ProposalFormRendererProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract `{ value, label }` options from a JSON Schema `oneOf` array. */
+/**
+ * Extract `{ value, label }` options from a JSON Schema property.
+ * Prefers the `oneOf` format (`[{ const, title }]`), falling back to
+ * a legacy `enum` array for backwards compatibility with older templates.
+ */
 function extractOneOfOptions(
   schema: ProposalFieldDescriptor['schema'],
 ): { value: string; label: string }[] {
-  if (!Array.isArray(schema.oneOf)) {
-    return [];
+  if (Array.isArray(schema.oneOf)) {
+    return schema.oneOf
+      .filter(
+        (entry): entry is { const: string; title: string } =>
+          typeof entry === 'object' &&
+          entry !== null &&
+          'const' in entry &&
+          'title' in entry,
+      )
+      .map((entry) => ({ value: entry.const, label: entry.title }));
   }
-  return schema.oneOf
-    .filter(
-      (entry): entry is { const: string; title: string } =>
-        typeof entry === 'object' &&
-        entry !== null &&
-        'const' in entry &&
-        'title' in entry,
-    )
-    .map((entry) => ({ value: entry.const, label: entry.title }));
+
+  // Legacy fallback: plain enum array (value used as both value and label)
+  if (Array.isArray(schema.enum)) {
+    return schema.enum
+      .filter((val): val is string => typeof val === 'string')
+      .map((val) => ({ value: val, label: val }));
+  }
+
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -198,32 +210,69 @@ function renderField(
       );
     }
 
-    case 'category': {
+    case 'category':
+    case 'dropdown': {
       const options = extractOneOfOptions(schema);
 
       if (preview) {
         return (
-          <Select
-            variant="pill"
-            size="medium"
-            placeholder={t('Select option')}
-            selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-            className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-          >
-            {options.map((opt) => (
-              <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </Select>
+          <div className="flex flex-col gap-2">
+            {(schema.title || schema.description) && (
+              <div className="flex flex-col gap-0.5">
+                {schema.title && (
+                  <span className="font-serif text-title-sm text-neutral-charcoal">
+                    {schema.title}
+                  </span>
+                )}
+                {schema.description && (
+                  <p className="text-body-sm text-neutral-charcoal">
+                    {schema.description}
+                  </p>
+                )}
+              </div>
+            )}
+            <Select
+              variant="pill"
+              size="medium"
+              placeholder={t('Select option')}
+              selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
+              className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+            >
+              {options.map((opt) => (
+                <SelectItem
+                  className="min-w-fit"
+                  key={opt.value}
+                  id={opt.value}
+                >
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
         );
       }
       return (
-        <CollaborativeCategoryField
-          options={options}
-          initialValue={(draft[key] as string | null) ?? null}
-          onChange={(value) => onFieldChange(key, value)}
-        />
+        <div className="flex flex-col gap-2">
+          {(schema.title || schema.description) && (
+            <div className="flex flex-col gap-0.5">
+              {schema.title && (
+                <span className="font-serif text-title-sm text-neutral-charcoal">
+                  {schema.title}
+                </span>
+              )}
+              {schema.description && (
+                <p className="text-body-sm text-neutral-charcoal">
+                  {schema.description}
+                </p>
+              )}
+            </div>
+          )}
+          <CollaborativeCategoryField
+            options={options}
+            initialValue={(draft[key] as string | null) ?? null}
+            onChange={(value) => onFieldChange(key, value)}
+          />
+        </div>
       );
     }
 
