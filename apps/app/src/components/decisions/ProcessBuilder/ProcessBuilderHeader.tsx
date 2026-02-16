@@ -14,6 +14,7 @@ import {
 } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   LuCheck,
@@ -67,6 +68,7 @@ const ProcessBuilderHeaderContent = ({
   slug?: string;
 }) => {
   const t = useTranslations();
+  const router = useRouter();
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
@@ -93,6 +95,9 @@ const ProcessBuilderHeaderContent = ({
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Changes saved successfully') });
+      if (slug) {
+        router.push(`/decisions/${slug}`);
+      }
     },
     onError: (error) => {
       toast.error({
