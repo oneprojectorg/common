@@ -1,4 +1,5 @@
 import { trpc } from '@op/api/client';
+import type { ProposalFilter } from '@op/api/encoders';
 import { toast } from '@op/ui/Toast';
 import { useEffect, useState } from 'react';
 
@@ -50,7 +51,7 @@ export const useProposalExport = () => {
       processInstanceId: string;
       categoryId?: string;
       dir?: 'asc' | 'desc';
-      proposalFilter?: 'all' | 'my' | 'shortlisted' | 'my-ballot';
+      proposalFilter?: ProposalFilter;
     },
     format: 'csv' = 'csv',
   ) => {
