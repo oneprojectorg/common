@@ -22,7 +22,7 @@ export const getCollabTokenRouter = router({
       const { proposalProfileId } = input;
 
       // Look up the proposal by its profile ID
-      const proposal = await db._query.proposals.findFirst({
+      const proposal = await db.query.proposals.findFirst({
         where: { profileId: proposalProfileId },
         columns: {
           id: true,
