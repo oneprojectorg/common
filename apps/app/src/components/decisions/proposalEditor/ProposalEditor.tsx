@@ -10,7 +10,6 @@ import {
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
@@ -48,7 +47,6 @@ export function ProposalEditor({
   const { user } = useUser();
   const router = useRouter();
   const t = useTranslations();
-  const posthog = usePostHog();
   const utils = trpc.useUtils();
 
   const [showInfoModal, setShowInfoModal] = useState(false);

@@ -116,8 +116,8 @@ describe.concurrent('submitProposal', () => {
 
     // Advance instance to the 'final' phase which has proposals.submit = false
     // (testMinimalSchema: initial = submit:true, final = submit:false)
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     if (!instanceRecord) {
