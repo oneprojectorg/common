@@ -210,7 +210,6 @@ function renderField(
       );
     }
 
-    case 'category':
     case 'dropdown': {
       const options = extractOneOfOptions(schema);
 

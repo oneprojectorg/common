@@ -502,9 +502,9 @@ export function ensureLockedFields(
           type: 'string',
           title:
             (existing?.title as string | undefined) ?? options.categoryLabel,
-          'x-format': 'category',
+          'x-format': 'dropdown' as const,
           oneOf,
-        },
+        } as RJSFSchema,
       },
     };
   } else if (getFieldSchema(result, 'category')) {

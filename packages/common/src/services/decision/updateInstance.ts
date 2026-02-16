@@ -181,7 +181,7 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
                     category: {
                       ...categoryRest,
                       type: ['string', 'null'],
-                      'x-format': 'category',
+                      'x-format': 'dropdown',
                       oneOf: categories.map((c) => ({ const: c, title: c })),
                     },
                   }

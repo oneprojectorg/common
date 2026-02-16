@@ -18,8 +18,8 @@ interface CollaborativeCategoryFieldProps {
  * Collaborative category selector synced via Yjs XmlFragment.
  * When one user picks a category, all connected users see it update in real time.
  *
- * NOTE: `x-format: 'category'` may be replaced by a generic select/enum
- * widget in the future — keep this as a thin wrapper for now.
+ * Category uses `x-format: 'dropdown'` — identified as the system category
+ * field by its key (`'category'`) being in `SYSTEM_FIELD_KEYS`.
  */
 export function CollaborativeCategoryField({
   options,

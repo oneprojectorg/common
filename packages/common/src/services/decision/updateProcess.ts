@@ -149,7 +149,7 @@ export const updateProcess = async ({
                   category: {
                     ...categoryRest,
                     type: ['string', 'null'],
-                    'x-format': 'category',
+                    'x-format': 'dropdown',
                     oneOf: categories.map((c) => ({ const: c, title: c })),
                   },
                 }

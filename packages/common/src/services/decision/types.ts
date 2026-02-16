@@ -18,7 +18,6 @@ export type XFormat =
   | 'short-text'
   | 'long-text'
   | 'money'
-  | 'category'
   | 'multiple-choice'
   | 'dropdown'
   | 'yes-no'
