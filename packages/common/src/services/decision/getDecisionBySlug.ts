@@ -99,17 +99,10 @@ export const getDecisionBySlug = async ({
     throw new NotFoundError('Decision profile not found');
   }
 
-  const processInstance = profile.processInstance as Record<string, unknown>;
-  const instanceData = processInstance.instanceData as Record<
-    string,
-    unknown
-  > | null;
-
   return {
     ...profile,
     processInstance: {
-      ...processInstance,
-      instanceData,
+      ...profile.processInstance,
       proposalCount: authAndStatsResult.proposalCount,
       participantCount: authAndStatsResult.participantCount,
     },

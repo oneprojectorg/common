@@ -9,6 +9,7 @@ export {
   getProposalTemplateFieldOrder,
   type ProposalTemplateFieldOrder,
 } from './services/decision/getProposalTemplateFieldOrder';
+
 // Translation constants (no server dependencies)
 export {
   SUPPORTED_LOCALES,
