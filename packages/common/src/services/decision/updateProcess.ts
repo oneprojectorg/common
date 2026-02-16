@@ -5,6 +5,7 @@ import { User } from '@op/supabase/lib';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import type { ProcessSchema } from './types';
+import { buildCategorySchema } from './utils/categorySchema';
 
 /**
  * Ensures the "proposal" taxonomy exists and creates/updates taxonomy terms for the given categories
@@ -139,20 +140,13 @@ export const updateProcess = async ({
           .proposalTemplate as any;
         const existingCategory =
           currentProposalTemplate.properties?.category ?? {};
-        const { enum: _legacyEnum, ...categoryRest } = existingCategory;
+
         const updatedProposalTemplate = {
           ...currentProposalTemplate,
           properties: {
             ...currentProposalTemplate.properties,
             ...(categories.length > 0
-              ? {
-                  category: {
-                    ...categoryRest,
-                    type: ['string', 'null'],
-                    'x-format': 'dropdown',
-                    oneOf: categories.map((c) => ({ const: c, title: c })),
-                  },
-                }
+              ? { category: buildCategorySchema(categories, existingCategory) }
               : {}),
           },
         };

@@ -9,6 +9,12 @@ export {
   getProposalTemplateFieldOrder,
   type ProposalTemplateFieldOrder,
 } from './services/decision/getProposalTemplateFieldOrder';
+export {
+  buildCategorySchema,
+  parseSchemaOptions,
+  schemaHasOptions,
+  type SchemaOption,
+} from './services/decision/utils/categorySchema';
 
 // Translation constants (no server dependencies)
 export {

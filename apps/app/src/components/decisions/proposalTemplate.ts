@@ -8,6 +8,11 @@
  * No separate uiSchema is stored — everything lives in the JSON Schema itself
  * via vendor extensions (`x-*` properties).
  */
+import {
+  buildCategorySchema,
+  parseSchemaOptions,
+  schemaHasOptions,
+} from '@op/common/client';
 import type { RJSFSchema } from '@rjsf/utils';
 
 // ---------------------------------------------------------------------------
@@ -170,29 +175,10 @@ export function getFieldOptions(
 
   // dropdown / category: prefer oneOf, fall back to legacy enum
   if (schema.type === 'string' || Array.isArray(schema.type)) {
-    if (Array.isArray(schema.oneOf)) {
-      return schema.oneOf
-        .filter(
-          (entry): entry is { const: string; title: string } =>
-            typeof entry === 'object' &&
-            entry !== null &&
-            'const' in entry &&
-            typeof (entry as Record<string, unknown>).const === 'string',
-        )
-        .map((entry, i) => ({
-          id: `${fieldId}-opt-${i}`,
-          value: entry.const,
-        }));
-    }
-
-    if (Array.isArray(schema.enum)) {
-      return schema.enum
-        .filter((val): val is string => typeof val === 'string')
-        .map((val, i) => ({
-          id: `${fieldId}-opt-${i}`,
-          value: val,
-        }));
-    }
+    return parseSchemaOptions(schema).map((opt, i) => ({
+      id: `${fieldId}-opt-${i}`,
+      value: opt.value,
+    }));
   }
 
   // multiple_choice: enum is on items
@@ -209,26 +195,7 @@ export function getFieldOptions(
   return [];
 }
 
-/**
- * Check whether a JSON Schema property has selectable options.
- * Returns `true` when the schema contains a non-empty `oneOf` array
- * (canonical format) **or** a non-empty `enum` array (legacy format).
- */
-export function schemaHasOptions(schema: RJSFSchema | undefined): boolean {
-  if (!schema) {
-    return false;
-  }
-  if (Array.isArray(schema.oneOf) && schema.oneOf.length > 0) {
-    return true;
-  }
-  if (
-    Array.isArray(schema.enum) &&
-    schema.enum.filter((v) => v != null).length > 0
-  ) {
-    return true;
-  }
-  return false;
-}
+export { schemaHasOptions };
 
 export function getFieldMin(
   template: ProposalTemplate,
@@ -503,29 +470,21 @@ export function ensureLockedFields(
 
   // Sync category field with categories config
   if (options.hasCategories) {
-    const oneOf = (options.categories ?? []).map((c) => ({
-      const: c.label,
-      title: c.label,
-    }));
-
+    const categoryLabels = (options.categories ?? []).map((c) => c.label);
     const existing = getFieldSchema(result, 'category');
-    const { enum: _legacyEnum, ...existingRest } = (existing ?? {}) as Record<
-      string,
-      unknown
-    >;
+    const categorySchema = buildCategorySchema(
+      categoryLabels,
+      (existing ?? {}) as Record<string, unknown>,
+    );
+    // Preserve existing title or fall back to the configured label
+    categorySchema.title =
+      (existing?.title as string | undefined) ?? options.categoryLabel;
 
     result = {
       ...result,
       properties: {
         ...result.properties,
-        category: {
-          ...existingRest,
-          type: 'string',
-          title:
-            (existing?.title as string | undefined) ?? options.categoryLabel,
-          'x-format': 'dropdown' as const,
-          oneOf,
-        } as RJSFSchema,
+        category: categorySchema as RJSFSchema,
       },
     };
   } else if (getFieldSchema(result, 'category')) {

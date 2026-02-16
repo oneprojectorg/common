@@ -1,5 +1,6 @@
 'use client';
 
+import { parseSchemaOptions } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 
@@ -35,32 +36,41 @@ interface ProposalFormRendererProps {
 
 /**
  * Extract `{ value, label }` options from a JSON Schema property.
- * Prefers the `oneOf` format (`[{ const, title }]`), falling back to
- * a legacy `enum` array for backwards compatibility with older templates.
+ * Delegates to the shared `parseSchemaOptions` normalizer which handles
+ * both `oneOf` and legacy `enum` formats.
  */
-function extractOneOfOptions(
+function extractOptions(
   schema: ProposalFieldDescriptor['schema'],
 ): { value: string; label: string }[] {
-  if (Array.isArray(schema.oneOf)) {
-    return schema.oneOf
-      .filter(
-        (entry): entry is { const: string; title: string } =>
-          typeof entry === 'object' &&
-          entry !== null &&
-          'const' in entry &&
-          'title' in entry,
-      )
-      .map((entry) => ({ value: entry.const, label: entry.title }));
-  }
+  return parseSchemaOptions(schema).map((opt) => ({
+    value: opt.value,
+    label: opt.title,
+  }));
+}
 
-  // Legacy fallback: plain enum array (value used as both value and label)
-  if (Array.isArray(schema.enum)) {
-    return schema.enum
-      .filter((val): val is string => typeof val === 'string')
-      .map((val) => ({ value: val, label: val }));
+/** Renders title and description header for a dynamic field. */
+function FieldHeader({
+  title,
+  description,
+}: {
+  title?: string;
+  description?: string;
+}) {
+  if (!title && !description) {
+    return null;
   }
-
-  return [];
+  return (
+    <div className="flex flex-col gap-0.5">
+      {title && (
+        <span className="font-serif text-title-sm text-neutral-charcoal">
+          {title}
+        </span>
+      )}
+      {description && (
+        <p className="text-body-sm text-neutral-charcoal">{description}</p>
+      )}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -102,7 +112,7 @@ function renderField(
   // -- Category (system) ------------------------------------------------------
 
   if (key === 'category') {
-    const options = extractOneOfOptions(schema);
+    const options = extractOptions(schema);
 
     if (preview) {
       return (
@@ -159,20 +169,10 @@ function renderField(
       if (preview) {
         return (
           <div className="flex flex-col gap-2">
-            {(schema.title || schema.description) && (
-              <div className="flex flex-col gap-0.5">
-                {schema.title && (
-                  <span className="font-serif text-title-sm text-neutral-charcoal">
-                    {schema.title}
-                  </span>
-                )}
-                {schema.description && (
-                  <p className="text-body-sm text-neutral-charcoal">
-                    {schema.description}
-                  </p>
-                )}
-              </div>
-            )}
+            <FieldHeader
+              title={schema.title}
+              description={schema.description}
+            />
             <div
               className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
             >
@@ -211,25 +211,15 @@ function renderField(
     }
 
     case 'dropdown': {
-      const options = extractOneOfOptions(schema);
+      const options = extractOptions(schema);
 
       if (preview) {
         return (
           <div className="flex flex-col gap-2">
-            {(schema.title || schema.description) && (
-              <div className="flex flex-col gap-0.5">
-                {schema.title && (
-                  <span className="font-serif text-title-sm text-neutral-charcoal">
-                    {schema.title}
-                  </span>
-                )}
-                {schema.description && (
-                  <p className="text-body-sm text-neutral-charcoal">
-                    {schema.description}
-                  </p>
-                )}
-              </div>
-            )}
+            <FieldHeader
+              title={schema.title}
+              description={schema.description}
+            />
             <Select
               variant="pill"
               size="medium"
@@ -252,20 +242,7 @@ function renderField(
       }
       return (
         <div className="flex flex-col gap-2">
-          {(schema.title || schema.description) && (
-            <div className="flex flex-col gap-0.5">
-              {schema.title && (
-                <span className="font-serif text-title-sm text-neutral-charcoal">
-                  {schema.title}
-                </span>
-              )}
-              {schema.description && (
-                <p className="text-body-sm text-neutral-charcoal">
-                  {schema.description}
-                </p>
-              )}
-            </div>
-          )}
+          <FieldHeader title={schema.title} description={schema.description} />
           <CollaborativeCategoryField
             options={options}
             initialValue={(draft[key] as string | null) ?? null}

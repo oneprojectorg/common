@@ -12,6 +12,7 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
+import { buildCategorySchema } from './utils/categorySchema';
 
 /**
  * Ensures the "proposal" taxonomy exists and creates/updates taxonomy terms for the given categories
@@ -171,19 +172,14 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
             currentProcessSchema?.proposalTemplate || {};
           const existingCategory =
             currentProposalTemplate.properties?.category ?? {};
-          const { enum: _legacyEnum, ...categoryRest } = existingCategory;
+
           const updatedProposalTemplate = {
             ...currentProposalTemplate,
             properties: {
               ...currentProposalTemplate.properties,
               ...(categories.length > 0
                 ? {
-                    category: {
-                      ...categoryRest,
-                      type: ['string', 'null'],
-                      'x-format': 'dropdown',
-                      oneOf: categories.map((c) => ({ const: c, title: c })),
-                    },
+                    category: buildCategorySchema(categories, existingCategory),
                   }
                 : {}),
             },
