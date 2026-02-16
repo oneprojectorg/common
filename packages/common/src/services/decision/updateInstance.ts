@@ -10,7 +10,6 @@ import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
-import { buildCategorySchema } from './proposalDataSchema';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -167,19 +166,19 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
         if (existingProcess) {
           const currentProcessSchema = existingProcess.processSchema as any;
 
+          // Update the proposal template to include the new category enums
           const currentProposalTemplate =
             currentProcessSchema?.proposalTemplate || {};
-          const existingCategory =
-            ((currentProposalTemplate.properties as Record<string, unknown>)
-              ?.category as Record<string, unknown>) ?? {};
-
           const updatedProposalTemplate = {
             ...currentProposalTemplate,
             properties: {
               ...currentProposalTemplate.properties,
               ...(categories.length > 0
                 ? {
-                    category: buildCategorySchema(categories, existingCategory),
+                    category: {
+                      type: ['string', 'null'],
+                      enum: [...categories, null],
+                    },
                   }
                 : {}),
             },

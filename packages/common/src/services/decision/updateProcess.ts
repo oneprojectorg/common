@@ -4,7 +4,6 @@ import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
-import { buildCategorySchema } from './proposalDataSchema';
 import type { ProcessSchema } from './types';
 
 /**
@@ -134,19 +133,21 @@ export const updateProcess = async ({
       // Ensure proposal taxonomy and terms exist for the categories
       await ensureProposalTaxonomy(categories);
 
+      // Update the proposal template to include the new category enums
       if (data.processSchema.proposalTemplate) {
         const currentProposalTemplate = data.processSchema
-          .proposalTemplate as Record<string, any>;
-        const existingCategory =
-          ((currentProposalTemplate.properties as Record<string, unknown>)
-            ?.category as Record<string, unknown>) ?? {};
-
+          .proposalTemplate as any;
         const updatedProposalTemplate = {
           ...currentProposalTemplate,
           properties: {
             ...currentProposalTemplate.properties,
             ...(categories.length > 0
-              ? { category: buildCategorySchema(categories, existingCategory) }
+              ? {
+                  category: {
+                    type: ['string', 'null'],
+                    enum: [...categories, null],
+                  },
+                }
               : {}),
           },
         };
