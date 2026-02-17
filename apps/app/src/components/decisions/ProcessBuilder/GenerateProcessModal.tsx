@@ -44,13 +44,11 @@ export const GenerateProcessModal = ({
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <ModalHeader>
-        {t('Describe your decision-making process')}
-      </ModalHeader>
+      <ModalHeader>{t('Describe your decision-making process')}</ModalHeader>
       <ModalBody className="flex flex-col gap-4">
         <p className="text-neutral-gray4">
           {t(
-            'Tell us about your decision-making process and we\'ll create a template for you.',
+            "Tell us about your decision-making process and we'll create a template for you.",
           )}
         </p>
         <TextField

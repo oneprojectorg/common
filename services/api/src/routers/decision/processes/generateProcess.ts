@@ -1,13 +1,10 @@
-import {
-  assertUserByAuthId,
-  createInstanceFromTemplateCore,
-} from '@op/common';
+import { anthropic } from '@ai-sdk/anthropic';
+import { assertUserByAuthId, createInstanceFromTemplateCore } from '@op/common';
 import { CommonError, UnauthorizedError } from '@op/common';
 import { db } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
-import { anthropic } from '@ai-sdk/anthropic';
-import { generateObject } from 'ai';
 import { TRPCError } from '@trpc/server';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
@@ -49,9 +46,7 @@ const selectionPipelineBlockSchema = z.object({
       }),
     )
     .optional(),
-  count: z
-    .union([z.number(), z.object({ variable: z.string() })])
-    .optional(),
+  count: z.union([z.number(), z.object({ variable: z.string() })]).optional(),
 });
 
 const selectionPipelineSchema = z.object({

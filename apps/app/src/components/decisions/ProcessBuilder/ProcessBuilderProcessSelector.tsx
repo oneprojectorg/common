@@ -53,8 +53,8 @@ const TemplateList = () => {
         onClick={() => setIsGenerateModalOpen(true)}
       >
         <div className="flex gap-2 md:flex-col md:items-center md:gap-6">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-green1/20 md:size-20">
-            <LuSparkles className="size-5 text-primary-green1 md:size-8" />
+          <div className="bg-primary-green1/20 flex size-10 shrink-0 items-center justify-center rounded-full md:size-20">
+            <LuSparkles className="text-primary-green1 size-5 md:size-8" />
           </div>
           <Header2 className="font-serif text-xl leading-6 font-light">
             {t('Describe your process')}
