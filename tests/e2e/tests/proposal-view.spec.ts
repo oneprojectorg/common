@@ -49,7 +49,7 @@ test.describe('Proposal View', () => {
           'x-format': 'money',
         },
         category: {
-          type: ['string', 'null'] as const,
+          type: ['string', 'null'],
           enum: ['Renewable Energy', 'Community Development', null],
         },
         summary: {
