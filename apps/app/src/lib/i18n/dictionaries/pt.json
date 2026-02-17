@@ -678,5 +678,13 @@
   "Complete all required phase fields": "Complete all required phase fields",
   "Create a proposal template": "Create a proposal template",
   "Fix errors in the proposal template": "Fix errors in the proposal template",
-  "Invite members": "Invite members"
+  "Invite members": "Invite members",
+  "Describe your process": "Describe your process",
+  "Tell us about your decision-making process and we'll create a template for you.": "Tell us about your decision-making process and we'll create a template for you.",
+  "Describe your decision-making process": "Describe your decision-making process",
+  "Generate template": "Generate template",
+  "Generating your template...": "Generating your template...",
+  "Failed to generate template": "Failed to generate template",
+  "Process description": "Process description",
+  "e.g., A hiring process where candidates submit applications, a committee reviews them, then we do ranked-choice voting": "e.g., A hiring process where candidates submit applications, a committee reviews them, then we do ranked-choice voting"
 }
