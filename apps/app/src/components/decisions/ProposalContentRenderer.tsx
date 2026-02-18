@@ -69,14 +69,14 @@ function ViewField({
   return (
     <div className="flex flex-col gap-2">
       {(schema.title || schema.description) && (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-2">
           {schema.title && (
-            <span className="font-serif text-title-sm text-neutral-charcoal">
+            <span className="font-serif text-title-sm14 text-neutral-charcoal">
               {schema.title}
             </span>
           )}
           {schema.description && (
-            <p className="text-body-sm text-neutral-charcoal">
+            <p className="text-sm text-neutral-charcoal">
               {schema.description}
             </p>
           )}

@@ -65,14 +65,14 @@ function FieldHeader({
     return null;
   }
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-2">
       {title && (
-        <span className="font-serif text-title-sm text-neutral-charcoal">
+        <span className="font-serif text-title-sm14 text-neutral-charcoal">
           {title}
         </span>
       )}
       {description && (
-        <p className="text-body-sm text-neutral-charcoal">{description}</p>
+        <p className="text-sm text-neutral-charcoal">{description}</p>
       )}
     </div>
   );
@@ -315,14 +315,16 @@ export function ProposalFormRenderer({
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
-        <div className="flex gap-2">
+        <div className="flex gap-6">
           {categoryField && render(categoryField)}
           {budgetField && render(budgetField)}
         </div>
       )}
 
       {dynamicFields.map((field) => (
-        <div key={field.key}>{render(field)}</div>
+        <div key={field.key} className="pt-4">
+          {render(field)}
+        </div>
       ))}
     </div>
   );
