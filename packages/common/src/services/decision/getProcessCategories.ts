@@ -52,8 +52,8 @@ export const getProcessCategories = async ({
     ]);
 
     // Extract categories from the instance config
-    const instanceData = instance.instanceData as DecisionInstanceData | null;
-    const instanceCategories = instanceData?.config?.categories;
+    const instanceCategories = (instance.instanceData as DecisionInstanceData)
+      .config?.categories;
 
     if (!instanceCategories || instanceCategories.length === 0) {
       return [];
