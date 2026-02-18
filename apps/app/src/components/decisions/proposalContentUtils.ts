@@ -42,7 +42,8 @@ export function getProposalContentPreview(
     }
 
     if (allContent.length === 0) {
-      return null;
+      // Empty doc (e.g. unedited draft) — render nothing, not an error.
+      return '';
     }
 
     const content = { type: 'doc', content: allContent } as JSONContent;
