@@ -74,6 +74,23 @@ export const testSimpleVotingSchema = {
       },
     },
   ],
+  proposalTemplate: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        title: 'Proposal title',
+        'x-format': 'short-text',
+      },
+      summary: {
+        type: 'string',
+        title: 'Proposal summary',
+        'x-format': 'long-text',
+      },
+    },
+    'x-field-order': ['title', 'summary'],
+    required: ['summary', 'title'],
+  },
 } satisfies DecisionSchemaDefinition;
 
 /**
@@ -106,6 +123,23 @@ export const testMinimalSchema = {
       },
     },
   ],
+  proposalTemplate: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        title: 'Proposal title',
+        'x-format': 'short-text',
+      },
+      summary: {
+        type: 'string',
+        title: 'Proposal summary',
+        'x-format': 'long-text',
+      },
+    },
+    'x-field-order': ['title', 'summary'],
+    required: ['summary', 'title'],
+  },
 } satisfies DecisionSchemaDefinition;
 
 export interface CreateDecisionProcessOptions {
