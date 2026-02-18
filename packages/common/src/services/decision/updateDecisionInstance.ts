@@ -16,6 +16,7 @@ import type {
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
+import { ensureProposalTaxonomy } from './utils/ensureProposalTaxonomy';
 
 /**
  * Updates a decision process instance.
@@ -104,6 +105,14 @@ export const updateDecisionInstance = async ({
         ...existingInstanceData.config,
         ...config,
       };
+
+      // Ensure taxonomy terms exist for any categories in the config
+      if (config.categories) {
+        const categoryLabels = config.categories
+          .map((cat) => cat.label.trim())
+          .filter((label) => label.length > 0);
+        await ensureProposalTaxonomy(categoryLabels);
+      }
     }
 
     // Apply phase updates — replaces the full phases array to accommodate
