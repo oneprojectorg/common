@@ -437,9 +437,12 @@ export function createDefaultTemplate(
 
 /**
  * Ensures locked system fields (title, category) exist in the
- * template schema. Call this when hydrating a saved template to handle
- * backward compatibility with templates created before locked fields
- * were stored in the schema.
+ * template schema and that `x-field-order` and `required` are
+ * consistent with the current properties.
+ *
+ * Call this when hydrating a saved template to handle backward
+ * compatibility with templates created before locked fields were
+ * stored in the schema.
  *
  * When `categories` are provided, the category field's `oneOf` options
  * are always synced to match the current config — this keeps the
@@ -491,6 +494,47 @@ export function ensureLockedFields(
     const { category: _, ...restProps } = result.properties ?? {};
     result = { ...result, properties: restProps };
   }
+
+  // --- Ensure x-field-order contains every property key -------------------
+  // System fields always lead in canonical order (title, category, budget).
+  // Non-system fields preserve their existing relative order. Any property
+  // key not yet in the order is appended at the end.
+  const properties = result.properties ?? {};
+  const order = getFieldOrder(result);
+
+  const systemKeys = ['title', 'category', 'budget'] as const;
+  const systemSet = new Set<string>(systemKeys);
+
+  // System fields present in properties, in canonical order
+  const prefix = systemKeys.filter((k) => properties[k]);
+
+  // Non-system fields: keep existing order, strip stale/system keys,
+  // then append any property keys not yet present
+  const rest = order.filter((k) => !systemSet.has(k) && properties[k]);
+  const restSet = new Set(rest);
+  for (const key of Object.keys(properties)) {
+    if (!systemSet.has(key) && !restSet.has(key)) {
+      rest.push(key);
+    }
+  }
+
+  result = {
+    ...result,
+    'x-field-order': [...prefix, ...rest],
+  };
+
+  // --- Ensure required includes title and category (if present) -----------
+  const currentRequired = new Set(result.required ?? []);
+  currentRequired.add('title');
+  if (properties.category) {
+    currentRequired.add('category');
+  } else {
+    currentRequired.delete('category');
+  }
+  result = {
+    ...result,
+    required: [...currentRequired],
+  };
 
   return result;
 }
