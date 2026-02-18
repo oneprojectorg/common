@@ -78,8 +78,6 @@ test.describe('Onboarding', () => {
       invitedBy: instance.profileId,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     await authenticateAsUser(page, {
       email,
       password: TEST_USER_DEFAULT_PASSWORD,
