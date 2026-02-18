@@ -33,7 +33,13 @@ export const getProcessCategories = async ({
     }
 
     // Run access check and taxonomy lookup in parallel — they're independent
-    const [, proposalTaxonomy] = await Promise.all([
+    const [proposalTaxonomy] = await Promise.all([
+      db.query.taxonomies.findFirst({
+        where: { name: 'proposal' },
+        with: {
+          taxonomyTerms: true,
+        },
+      }),
       assertInstanceProfileAccess({
         user,
         instance: {
@@ -42,12 +48,6 @@ export const getProcessCategories = async ({
         },
         profilePermissions: { decisions: permission.READ },
         orgFallbackPermissions: { decisions: permission.READ },
-      }),
-      db.query.taxonomies.findFirst({
-        where: { name: 'proposal' },
-        with: {
-          taxonomyTerms: true,
-        },
       }),
     ]);
 
