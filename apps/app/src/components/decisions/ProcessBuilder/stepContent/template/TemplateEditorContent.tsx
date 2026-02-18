@@ -63,7 +63,8 @@ export function TemplateEditorContent({
   const instanceData = instance.instanceData;
 
   // Check if categories have been configured
-  const categories = instanceData?.config?.categories ?? [];
+  const rawCategories = instanceData?.config?.categories;
+  const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
   const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
@@ -90,6 +91,9 @@ export function TemplateEditorContent({
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
   // Applied to the current template state so user edits are preserved.
+  // NOTE: `t` is intentionally excluded from deps — translations don't change
+  // at runtime without a full remount, and including it causes infinite
+  // re-renders because next-intl's useTranslations may return an unstable ref.
   const categorySyncedRef = useRef(false);
   useEffect(() => {
     if (!categorySyncedRef.current) {
@@ -104,7 +108,7 @@ export function TemplateEditorContent({
         categories,
       }),
     );
-  }, [hasCategories, categories, t]);
+  }, [hasCategories, categories]);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
