@@ -45,7 +45,7 @@ const PendingDecisionInvitesSuspense = () => {
   return (
     <NotificationPanel>
       <NotificationPanelHeader
-        title={t('Pending Decision Invitations')}
+        title={t('Decision Invitations')}
         count={invites.length}
       />
       <NotificationPanelList>
