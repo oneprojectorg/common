@@ -63,7 +63,8 @@ export function TemplateEditorContent({
   const instanceData = instance.instanceData;
 
   // Check if categories have been configured
-  const categories = instanceData?.config?.categories ?? [];
+  const rawCategories = instanceData?.config?.categories;
+  const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
   const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
@@ -104,7 +105,7 @@ export function TemplateEditorContent({
         categories,
       }),
     );
-  }, [hasCategories, categories, t]);
+  }, [hasCategories, categories]);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
