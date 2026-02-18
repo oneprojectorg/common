@@ -179,8 +179,8 @@ export const simpleVoting: DecisionSchemaDefinition = {
       },
       budget: {
         type: 'number',
-        'x-format': 'number',
-        title: 'Number',
+        'x-format': 'money',
+        title: 'Budget',
       },
       summary: {
         type: 'string',
