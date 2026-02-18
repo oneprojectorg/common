@@ -177,6 +177,11 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to update decision process instance');
     }
 
+    // Keep the profile name in sync with the instance name
+    if (name !== undefined) {
+      await tx.update(profiles).set({ name }).where(eq(profiles.id, profileId));
+    }
+
     // Determine the final status (updated or existing)
     const finalStatus = status ?? existingInstance.status;
 
