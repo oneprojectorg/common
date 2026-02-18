@@ -1,4 +1,5 @@
 import { getProposalTemplateFieldOrder } from './getProposalTemplateFieldOrder';
+import type { ProposalTemplateSchema } from './types';
 
 /**
  * Derives the TipTap Cloud fragment names to fetch server-side from a proposal template schema.
@@ -7,11 +8,9 @@ import { getProposalTemplateFieldOrder } from './getProposalTemplateFieldOrder';
  * compatibility with legacy single-fragment documents.
  */
 export function getProposalFragmentNames(
-  proposalTemplate: Record<string, unknown>,
+  proposalTemplate: ProposalTemplateSchema,
 ): string[] {
-  const properties = proposalTemplate.properties as
-    | Record<string, Record<string, unknown>>
-    | undefined;
+  const properties = proposalTemplate.properties;
 
   if (!properties || Object.keys(properties).length === 0) {
     return ['default'];
@@ -21,17 +20,7 @@ export function getProposalFragmentNames(
   const fragments: string[] = [];
 
   for (const key of all) {
-    const prop = properties[key];
-    if (!prop) {
-      continue;
-    }
-
-    const format = prop['x-format'] as string | undefined;
-
-    // Only text-based fields produce collaborative fragments.
-    // title is always a collaborative field (rendered as CollaborativeTitleField).
-    // short-text and long-text are rendered as CollaborativeTextField.
-    if (key === 'title' || format === 'short-text' || format === 'long-text') {
+    if (properties[key]) {
       fragments.push(key);
     }
   }

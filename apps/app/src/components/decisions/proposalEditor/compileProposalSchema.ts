@@ -1,32 +1,12 @@
 import {
+  type ProposalPropertySchema,
+  type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
+  type XFormat,
   getProposalTemplateFieldOrder,
 } from '@op/common/client';
-import type { JSONSchema7 } from 'json-schema';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/**
- * Supported values for the `x-format` vendor extension on template properties.
- *
- * `x-format` describes **how** a field should be presented, while JSON Schema's
- * own keywords (`type`, `enum`, etc.) describe the data shape.
- */
-export type XFormat = 'short-text' | 'long-text' | 'money' | 'category';
-
-/**
- * JSON Schema 7 extended with proposal-specific vendor extensions.
- */
-export interface ProposalPropertySchema extends JSONSchema7 {
-  'x-format'?: string;
-}
-
-export interface ProposalTemplateSchema extends JSONSchema7 {
-  properties?: Record<string, ProposalPropertySchema>;
-  'x-field-order'?: string[];
-}
+export type { ProposalPropertySchema, ProposalTemplateSchema, XFormat };
 
 /** System fields that must always be present. Others are conditionally added. */
 const REQUIRED_SYSTEM_FIELDS = new Set(['title']);
@@ -83,9 +63,7 @@ export function compileProposalSchema(
     }
   }
 
-  const { all } = getProposalTemplateFieldOrder(
-    proposalTemplate as Record<string, unknown>,
-  );
+  const { all } = getProposalTemplateFieldOrder(proposalTemplate);
 
   return all
     .map((key) => {
@@ -95,8 +73,7 @@ export function compileProposalSchema(
       }
       return {
         key,
-        format:
-          (propSchema['x-format'] as XFormat | undefined) ?? DEFAULT_X_FORMAT,
+        format: propSchema['x-format'] ?? DEFAULT_X_FORMAT,
         isSystem: SYSTEM_FIELD_KEYS.has(key),
         schema: propSchema,
       };

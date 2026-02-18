@@ -1,3 +1,4 @@
+import type { ProposalTemplateSchema } from '@op/common';
 import {
   EntityType,
   ProcessStatus,
@@ -186,7 +187,7 @@ test.describe('Proposal View', () => {
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       schema: template.processSchema,
-      proposalTemplate: legacyProposalTemplate,
+      proposalTemplate: legacyProposalTemplate as ProposalTemplateSchema,
     });
 
     // Legacy proposal: raw HTML in `description`, no collaborationDocId

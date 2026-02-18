@@ -1,3 +1,5 @@
+import type { ProposalTemplateSchema } from './types';
+
 /** Property keys that get special UI treatment (rendered in the header, not as dynamic fields). */
 export const SYSTEM_FIELD_KEYS = new Set(['title', 'budget', 'category']);
 
@@ -13,7 +15,7 @@ export interface ProposalTemplateFieldOrder {
  * then `x-field-order`, then any remaining properties.
  */
 export function getProposalTemplateFieldOrder(
-  proposalTemplate: Record<string, unknown>,
+  proposalTemplate: ProposalTemplateSchema,
 ): ProposalTemplateFieldOrder {
   const empty: ProposalTemplateFieldOrder = {
     system: [],
@@ -21,16 +23,13 @@ export function getProposalTemplateFieldOrder(
     all: [],
   };
 
-  const properties = proposalTemplate.properties as
-    | Record<string, unknown>
-    | undefined;
+  const properties = proposalTemplate.properties;
 
   if (!properties || Object.keys(properties).length === 0) {
     return empty;
   }
 
-  const fieldOrder =
-    (proposalTemplate['x-field-order'] as string[] | undefined) ?? [];
+  const fieldOrder = proposalTemplate['x-field-order'] ?? [];
 
   const seen = new Set<string>();
   const system: string[] = [];

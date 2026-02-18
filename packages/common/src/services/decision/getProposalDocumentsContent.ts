@@ -3,6 +3,7 @@ import pMap from 'p-map';
 
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
+import type { ProposalTemplateSchema } from './types';
 
 /**
  * Proposal document content can be either TipTap JSON or legacy HTML
@@ -25,7 +26,7 @@ export async function getProposalDocumentsContent(
   proposals: Array<{
     id: string;
     proposalData: unknown;
-    proposalTemplate?: Record<string, unknown> | null;
+    proposalTemplate?: ProposalTemplateSchema | null;
   }>,
 ): Promise<Map<string, ProposalDocumentContent>> {
   const documentContentMap = new Map<string, ProposalDocumentContent>();
@@ -33,7 +34,7 @@ export async function getProposalDocumentsContent(
   const proposalsWithCollabDoc: Array<{
     id: string;
     collaborationDocId: string;
-    proposalTemplate?: Record<string, unknown> | null;
+    proposalTemplate?: ProposalTemplateSchema | null;
   }> = [];
 
   for (const proposal of proposals) {

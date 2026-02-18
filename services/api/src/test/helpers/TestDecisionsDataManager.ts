@@ -40,6 +40,8 @@ interface CreateDecisionSetupOptions {
   processDescription?: string;
   instanceCount?: number;
   grantAccess?: boolean;
+  /** JSON Schema to validate proposal data against on submit/update */
+  proposalTemplate?: Record<string, unknown>;
 }
 
 type EncodedProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
@@ -139,6 +141,7 @@ export class TestDecisionsDataManager {
       processDescription = 'A test decision process',
       instanceCount = 0,
       grantAccess = false,
+      proposalTemplate,
     } = opts || {};
 
     // 1. Create test user
@@ -205,9 +208,10 @@ export class TestDecisionsDataManager {
     // 3. Create decision process via direct DB insert with new schema format
     // We insert directly because the createProcess router uses the legacy format,
     // but listDecisionProfiles and other new endpoints expect the new format.
-    const newProcessSchema: DecisionSchemaDefinition = {
+    const newProcessSchema = {
       ...testMinimalSchema,
       name: processName,
+      ...(proposalTemplate ? { proposalTemplate } : {}),
     };
 
     const [processRecord] = await db
