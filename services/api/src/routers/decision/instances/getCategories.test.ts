@@ -294,23 +294,23 @@ describe.concurrent('getCategories category matching', () => {
       throw new Error('No instance created');
     }
 
-    // Seed taxonomy with matching terms
+    // Use unique labels per test to avoid (taxonomyId, termUri) unique constraint
+    // collisions when tests run concurrently against the shared "proposal" taxonomy
     const { termRecords } = await seedProposalTaxonomy(
-      ['Climate Action', 'Education'],
+      ['Renewable Energy', 'Food Security'],
       onTestFinished,
     );
 
-    // Inject categories into the instance's instanceData
     await injectInstanceCategories(instance.instance.id, [
       {
         id: 'cat-1',
-        label: 'Climate Action',
-        description: 'Climate-related proposals',
+        label: 'Renewable Energy',
+        description: 'Renewable energy proposals',
       },
       {
         id: 'cat-2',
-        label: 'Education',
-        description: 'Education proposals',
+        label: 'Food Security',
+        description: 'Food security proposals',
       },
     ]);
 
@@ -325,13 +325,13 @@ describe.concurrent('getCategories category matching', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: termRecords[0]!.id,
-          name: 'Climate Action',
-          termUri: 'climate-action',
+          name: 'Renewable Energy',
+          termUri: 'renewable-energy',
         }),
         expect.objectContaining({
           id: termRecords[1]!.id,
-          name: 'Education',
-          termUri: 'education',
+          name: 'Food Security',
+          termUri: 'food-security',
         }),
       ]),
     );
@@ -353,9 +353,9 @@ describe.concurrent('getCategories category matching', () => {
       throw new Error('No instance created');
     }
 
-    // Only seed one matching term — "Education" exists but "Nonexistent" does not
+    // Only seed one matching term — "Water Access" exists but "Nonexistent" does not
     const { termRecords } = await seedProposalTaxonomy(
-      ['Education'],
+      ['Water Access'],
       onTestFinished,
     );
 
@@ -367,8 +367,8 @@ describe.concurrent('getCategories category matching', () => {
       },
       {
         id: 'cat-2',
-        label: 'Education',
-        description: 'Education proposals',
+        label: 'Water Access',
+        description: 'Water access proposals',
       },
     ]);
 
@@ -382,8 +382,8 @@ describe.concurrent('getCategories category matching', () => {
     expect(result.categories[0]).toEqual(
       expect.objectContaining({
         id: termRecords[0]!.id,
-        name: 'Education',
-        termUri: 'education',
+        name: 'Water Access',
+        termUri: 'water-access',
       }),
     );
   });
@@ -405,7 +405,7 @@ describe.concurrent('getCategories category matching', () => {
     }
 
     // Seed taxonomy so we can confirm it's not about missing taxonomy
-    await seedProposalTaxonomy(['Climate Action'], onTestFinished);
+    await seedProposalTaxonomy(['Digital Literacy'], onTestFinished);
 
     // Don't inject any categories — instanceData has no config.categories
 
@@ -435,7 +435,7 @@ describe.concurrent('getCategories category matching', () => {
     }
 
     // Seed taxonomy with terms that won't match our categories
-    await seedProposalTaxonomy(['Unrelated Term'], onTestFinished);
+    await seedProposalTaxonomy(['Urban Planning'], onTestFinished);
 
     await injectInstanceCategories(instance.instance.id, [
       {
