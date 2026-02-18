@@ -191,7 +191,7 @@ export const WithoutDescription = () => {
 
 interface FieldItem {
   id: string;
-  type: 'short_text' | 'long_text' | 'number';
+  type: 'short_text' | 'long_text' | 'dropdown';
   label: string;
   description: string;
   required: boolean;
@@ -200,13 +200,13 @@ interface FieldItem {
 const iconMap = {
   short_text: LuType,
   long_text: LuAlignLeft,
-  number: LuHash,
+  dropdown: LuChevronDown,
 };
 
 const tooltipMap = {
   short_text: 'Short text',
   long_text: 'Long text',
-  number: 'Number',
+  dropdown: 'Dropdown',
 };
 
 /**
@@ -266,9 +266,9 @@ export const SortableList = () => {
     },
     {
       id: '3',
-      type: 'number',
-      label: 'Budget',
-      description: 'Estimated budget in USD',
+      type: 'dropdown',
+      label: 'Category',
+      description: 'Select a category',
       required: false,
     },
   ]);

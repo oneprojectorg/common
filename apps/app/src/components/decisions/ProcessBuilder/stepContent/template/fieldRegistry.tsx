@@ -1,19 +1,10 @@
 import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
-import {
-  LuAlignLeft,
-  LuCalendar,
-  LuChevronDown,
-  LuHash,
-  LuLetterText,
-  LuListChecks,
-  LuToggleLeft,
-} from 'react-icons/lu';
+import { LuAlignLeft, LuChevronDown, LuLetterText } from 'react-icons/lu';
 
 import type { ProposalPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
-import { FieldConfigNumber } from './FieldConfigNumber';
 
 /**
  * Props passed to field config components.
@@ -48,33 +39,11 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     labelKey: 'Long text',
     placeholderKey: 'Long answer text',
   },
-  multiple_choice: {
-    icon: LuListChecks,
-    labelKey: 'Multiple choice',
-    placeholderKey: 'Select options',
-    ConfigComponent: FieldConfigDropdown,
-  },
   dropdown: {
     icon: LuChevronDown,
     labelKey: 'Dropdown',
     placeholderKey: 'Select an option',
     ConfigComponent: FieldConfigDropdown,
-  },
-  yes_no: {
-    icon: LuToggleLeft,
-    labelKey: 'Yes/no',
-    placeholderKey: 'Yes or No',
-  },
-  date: {
-    icon: LuCalendar,
-    labelKey: 'Date',
-    placeholderKey: 'Select a date',
-  },
-  number: {
-    icon: LuHash,
-    labelKey: 'Number',
-    placeholderKey: 'Enter a number',
-    ConfigComponent: FieldConfigNumber,
   },
 };
 
@@ -94,12 +63,7 @@ export const FIELD_CATEGORIES: {
   {
     id: 'choice',
     labelKey: 'Choice',
-    types: ['multiple_choice', 'dropdown', 'yes_no'],
-  },
-  {
-    id: 'other',
-    labelKey: 'Other',
-    types: ['date', 'number'],
+    types: ['dropdown'],
   },
 ];
 

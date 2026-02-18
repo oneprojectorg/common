@@ -21,28 +21,14 @@ interface FieldOption {
  */
 export function FieldConfigDropdown({
   field,
-  fieldSchema,
   onUpdateJsonSchema,
 }: FieldConfigProps) {
   const handleOptionsChange = (newOptions: FieldOption[]) => {
-    if (fieldSchema.type === 'array') {
-      // multiple_choice: enum is on items
-      const enumValues = newOptions.map((o) => o.value);
-      const items =
-        typeof fieldSchema.items === 'object' &&
-        !Array.isArray(fieldSchema.items)
-          ? fieldSchema.items
-          : {};
-      onUpdateJsonSchema({
-        items: { ...items, enum: enumValues },
-      });
-    } else {
-      const oneOfValues = newOptions.map((o) => ({
-        const: o.value,
-        title: o.value,
-      }));
-      onUpdateJsonSchema({ oneOf: oneOfValues });
-    }
+    const oneOfValues = newOptions.map((o) => ({
+      const: o.value,
+      title: o.value,
+    }));
+    onUpdateJsonSchema({ oneOf: oneOfValues });
   };
 
   return (

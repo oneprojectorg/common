@@ -2,6 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { Sidebar, useSidebar } from '@op/ui/Sidebar';
+import type { IconType } from 'react-icons';
 import { LuAlignJustify } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,7 +14,10 @@ import { getFieldIcon } from './fieldRegistry';
 export interface SidebarFieldItem {
   id: string;
   label: string;
-  fieldType: FieldType;
+  /** Field type used for icon lookup. Can be omitted when `icon` is provided. */
+  fieldType?: FieldType;
+  /** Override the icon instead of looking it up from fieldType. */
+  icon?: IconType;
 }
 
 interface TemplateEditorSidebarProps {
@@ -97,7 +101,12 @@ function SidebarContent({
         </h3>
         <ul className="space-y-1">
           {fields.map((field) => {
-            const Icon = getFieldIcon(field.fieldType);
+            const Icon =
+              field.icon ??
+              (field.fieldType ? getFieldIcon(field.fieldType) : undefined);
+            if (!Icon) {
+              return null;
+            }
             return (
               <li key={field.id}>
                 <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-neutral-charcoal">
