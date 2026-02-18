@@ -635,7 +635,7 @@ describe.concurrent('listProposals', () => {
     expect(foundProposal?.documentContent).toEqual({
       type: 'json',
       fragments: {
-        default: mockTipTapContent,
+        summary: mockTipTapContent,
       },
     });
   });
@@ -743,13 +743,13 @@ describe.concurrent('listProposals', () => {
     expect(found1?.documentContent).toEqual({
       type: 'json',
       fragments: {
-        default: mockContent1,
+        summary: mockContent1,
       },
     });
     expect(found2?.documentContent).toEqual({
       type: 'json',
       fragments: {
-        default: mockContent2,
+        summary: mockContent2,
       },
     });
   });
@@ -823,7 +823,7 @@ describe.concurrent('listProposals', () => {
     expect(foundCollab?.documentContent).toEqual({
       type: 'json',
       fragments: {
-        default: mockTipTapContent,
+        summary: mockTipTapContent,
       },
     });
     expect(foundLegacy?.documentContent).toEqual({
@@ -833,7 +833,7 @@ describe.concurrent('listProposals', () => {
     expect(foundEmpty?.documentContent).toEqual({
       type: 'json',
       fragments: {
-        default: { type: 'doc', content: [] },
+        summary: { type: 'doc', content: [] },
       },
     });
   });
@@ -1048,7 +1048,7 @@ describe.concurrent('listProposals', () => {
     });
     expect(foundNew?.documentContent).toEqual({
       type: 'json',
-      fragments: { default: mockContent },
+      fragments: { summary: mockContent },
     });
 
     // Legacy: budget normalized, content→description, custom field preserved

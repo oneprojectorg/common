@@ -138,7 +138,7 @@ export const testMinimalSchema = {
       },
     },
     'x-field-order': ['title', 'summary'],
-    required: ['summary', 'title'],
+    required: ['title'],
   },
 } satisfies DecisionSchemaDefinition;
 
