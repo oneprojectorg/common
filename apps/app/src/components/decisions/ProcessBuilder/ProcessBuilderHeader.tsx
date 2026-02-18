@@ -93,16 +93,21 @@ const ProcessBuilderHeaderContent = ({
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
 
-  const { data: instance } = trpc.decision.getInstance.useQuery({ instanceId });
+  const { data: decisionProfile } =
+    trpc.decision.getDecisionBySlug.useQuery(
+      { slug: slug! },
+      { enabled: !!slug },
+    );
 
-  const instanceStatus = instance?.status as ProcessStatus | undefined;
-  const decisionProfileId = instance?.profileId ?? undefined;
+  const processInstance = decisionProfile?.processInstance;
+  const instanceStatus = processInstance?.status as ProcessStatus | undefined;
+  const decisionProfileId = decisionProfile?.id;
   const validation = useProcessBuilderValidation(decisionProfileId);
 
   const storeData = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId] : undefined,
   );
-  const displayName = storeData?.name || instance?.name || t('New process');
+  const displayName = storeData?.name || decisionProfile?.name || t('New process');
 
   const { setOpen } = useSidebar();
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
@@ -129,8 +134,8 @@ const ProcessBuilderHeaderContent = ({
       });
     },
     onSettled: () => {
-      if (instanceId) {
-        void utils.decision.getInstance.invalidate({ instanceId });
+      if (slug) {
+        void utils.decision.getDecisionBySlug.invalidate({ slug });
       }
     },
   });
