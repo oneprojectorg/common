@@ -7,6 +7,7 @@ import type { JSONSchema7 } from 'json-schema';
 import { CommonError, ValidationError } from '../../../utils';
 import { schemaValidator } from '../schemaValidator';
 import type { SelectionPipeline } from '../selectionPipeline/types';
+import { ProposalTemplateSchema } from '../types';
 import type {
   DecisionSchemaDefinition,
   PhaseRules,
@@ -41,7 +42,7 @@ export interface DecisionInstanceData {
   templateDescription?: string;
   phases: PhaseInstanceData[];
   /** Proposal template (JSON Schema + embedded UI Schema) */
-  proposalTemplate?: JSONSchema7 & { ui?: UiSchema };
+  proposalTemplate?: ProposalTemplateSchema;
 }
 
 export interface PhaseOverride {
@@ -83,6 +84,7 @@ export function createInstanceDataFromTemplate(input: {
     templateVersion: template.version,
     templateName: template.name,
     templateDescription: template.description,
+    proposalTemplate: template.proposalTemplate,
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 
