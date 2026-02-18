@@ -1,3 +1,4 @@
+import type { ProposalTemplateSchema } from '@op/common';
 import { ProposalStatus } from '@op/db/schema';
 import {
   createDecisionInstance,
@@ -19,27 +20,27 @@ const TWO_FIELD_TEMPLATE = {
     title: {
       type: 'string' as const,
       title: 'Title',
-      'x-format': 'short-text',
+      'x-format': 'short-text' as const,
     },
     budget: {
       type: 'number' as const,
       title: 'Budget',
-      'x-format': 'money',
+      'x-format': 'money' as const,
     },
     summary: {
       type: 'string' as const,
       title: 'Summary',
       description: 'A brief overview of the proposal',
-      'x-format': 'short-text',
+      'x-format': 'short-text' as const,
     },
     details: {
       type: 'string' as const,
       title: 'Details',
       description: 'Full proposal details and justification',
-      'x-format': 'long-text',
+      'x-format': 'long-text' as const,
     },
   },
-};
+} satisfies ProposalTemplateSchema;
 
 test.describe('Proposal Editor Toolbar', () => {
   test('shared toolbar applies formatting to the focused editor', async ({
