@@ -17,6 +17,7 @@ import { JoinProfileRequestsNotifications } from '@/components/JoinProfileReques
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationListSkeleton } from '@/components/OrganizationList';
+import { PendingDecisionInvites } from '@/components/PendingDecisionInvites';
 import { PendingRelationships } from '@/components/PendingRelationships';
 import { PlatformHighlights } from '@/components/PlatformHighlights';
 import { PostFeedSkeleton } from '@/components/PostFeed';
@@ -239,6 +240,7 @@ const UserContent = async () => {
 
   return (
     <>
+      <PendingDecisionInvites />
       <ActiveDecisionsNotifications />
       {user.currentProfile?.type === 'org' ? (
         <OrgNotifications currentProfile={user.currentProfile} />
