@@ -91,9 +91,6 @@ export function TemplateEditorContent({
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
   // Applied to the current template state so user edits are preserved.
-  // NOTE: `t` is intentionally excluded from deps — translations don't change
-  // at runtime without a full remount, and including it causes infinite
-  // re-renders because next-intl's useTranslations may return an unstable ref.
   const categorySyncedRef = useRef(false);
   useEffect(() => {
     if (!categorySyncedRef.current) {
