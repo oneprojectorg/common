@@ -1,57 +1,21 @@
 import type { proposalEncoder } from '@op/api/encoders';
+import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import { getTextPreview } from '@op/core';
 import { defaultViewerExtensions } from '@op/ui/RichTextEditor';
 import { type JSONContent, generateText } from '@tiptap/core';
-import type { Content } from '@tiptap/react';
 import type { z } from 'zod';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 type DocumentContent = NonNullable<Proposal['documentContent']>;
 
 /**
- * Extracts content from proposal documentContent for use with RichTextViewer.
- * Returns Content for rendering, or null if no content available.
+ * Extracts a plain-text preview from proposal document content.
+ *
+ * System fields (title, budget, category) are excluded because they are
+ * rendered separately in the card header and their TipTap fragments contain
+ * double-nested arrays rather than standard TipTap nodes, which crashes
+ * `generateText()`.
  */
-export function getProposalContent(
-  documentContent?: DocumentContent,
-): Content | null {
-  if (!documentContent) {
-    return null;
-  }
-
-  if (documentContent.type === 'json') {
-    // Merge all fragment contents (excluding title, rendered separately) into a single doc
-    const allContent: unknown[] = [];
-    for (const [key, fragment] of Object.entries(documentContent.fragments)) {
-      if (key === 'title' || !fragment?.content) {
-        continue;
-      }
-      allContent.push(...fragment.content);
-    }
-
-    // Fall back to legacy `default` fragment if no keyed fragments matched
-    if (allContent.length === 0) {
-      const defaultFragment = documentContent.fragments.default;
-      if (!defaultFragment?.content) {
-        return null;
-      }
-      allContent.push(...defaultFragment.content);
-    }
-
-    if (allContent.length === 0) {
-      return null;
-    }
-
-    return {
-      type: 'doc',
-      content: allContent,
-    } as JSONContent;
-  }
-
-  return documentContent.content;
-}
-
-/** Extracts plain text preview from proposal content. */
 export function getProposalContentPreview(
   documentContent?: DocumentContent,
 ): string | null {
@@ -60,18 +24,32 @@ export function getProposalContentPreview(
   }
 
   if (documentContent.type === 'json') {
-    const content = getProposalContent(documentContent);
+    const { fragments } = documentContent;
+    const allContent: unknown[] = [];
 
-    if (!content || typeof content === 'string') {
+    for (const [key, fragment] of Object.entries(fragments)) {
+      if (SYSTEM_FIELD_KEYS.has(key) || !fragment?.content) {
+        continue;
+      }
+      allContent.push(...fragment.content);
+    }
+
+    // Fall back to legacy `default` fragment
+    if (allContent.length === 0) {
+      const defaultFragment = fragments.default;
+      if (defaultFragment?.content) {
+        allContent.push(...defaultFragment.content);
+      }
+    }
+
+    if (allContent.length === 0) {
       return null;
     }
 
+    const content = { type: 'doc', content: allContent } as JSONContent;
+
     try {
-      const text = generateText(
-        content as JSONContent,
-        defaultViewerExtensions,
-      );
-      return text.trim();
+      return generateText(content, defaultViewerExtensions).trim() || null;
     } catch {
       return null;
     }
