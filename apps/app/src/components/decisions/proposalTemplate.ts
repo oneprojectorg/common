@@ -8,6 +8,11 @@
  * No separate uiSchema is stored — everything lives in the JSON Schema itself
  * via vendor extensions (`x-*` properties).
  */
+import {
+  buildCategorySchema,
+  parseSchemaOptions,
+  schemaHasOptions,
+} from '@op/common/client';
 import type { RJSFSchema } from '@rjsf/utils';
 
 // ---------------------------------------------------------------------------
@@ -81,7 +86,7 @@ export function createFieldJsonSchema(type: FieldType): RJSFSchema {
         'multiple-choice',
       );
     case 'dropdown':
-      return withXFormat({ type: 'string', enum: [] }, 'dropdown');
+      return withXFormat({ type: 'string', oneOf: [] }, 'dropdown');
     case 'yes_no':
       return withXFormat({ type: 'boolean' }, 'yes-no');
     case 'date':
@@ -168,11 +173,11 @@ export function getFieldOptions(
     return [];
   }
 
-  // dropdown: enum is on schema directly
-  if (schema.type === 'string' && Array.isArray(schema.enum)) {
-    return schema.enum.map((val, i) => ({
+  // dropdown / category: prefer oneOf, fall back to legacy enum
+  if (schema.type === 'string' || Array.isArray(schema.type)) {
+    return parseSchemaOptions(schema).map((opt, i) => ({
       id: `${fieldId}-opt-${i}`,
-      value: String(val ?? ''),
+      value: opt.value,
     }));
   }
 
@@ -189,6 +194,8 @@ export function getFieldOptions(
 
   return [];
 }
+
+export { schemaHasOptions };
 
 export function getFieldMin(
   template: ProposalTemplate,
@@ -430,9 +437,17 @@ export function createDefaultTemplate(
 
 /**
  * Ensures locked system fields (title, category) exist in the
- * template schema. Call this when hydrating a saved template to handle
- * backward compatibility with templates created before locked fields
- * were stored in the schema.
+ * template schema and that `x-field-order` and `required` are
+ * consistent with the current properties.
+ *
+ * Call this when hydrating a saved template to handle backward
+ * compatibility with templates created before locked fields were
+ * stored in the schema.
+ *
+ * When `categories` are provided, the category field's `oneOf` options
+ * are always synced to match the current config — this keeps the
+ * template self-contained even when categories change outside the
+ * template editor.
  */
 export function ensureLockedFields(
   template: ProposalTemplate,
@@ -440,6 +455,7 @@ export function ensureLockedFields(
     titleLabel: string;
     categoryLabel: string;
     hasCategories: boolean;
+    categories?: { label: string }[];
   },
 ): ProposalTemplate {
   let result = template;
@@ -456,18 +472,69 @@ export function ensureLockedFields(
   }
 
   // Sync category field with categories config
-  if (options.hasCategories && !getFieldSchema(result, 'category')) {
+  if (options.hasCategories) {
+    const categoryLabels = (options.categories ?? []).map((c) => c.label);
+    const existing = getFieldSchema(result, 'category');
+    const categorySchema = buildCategorySchema(
+      categoryLabels,
+      (existing ?? {}) as Record<string, unknown>,
+    );
+    // Preserve existing title or fall back to the configured label
+    categorySchema.title =
+      (existing?.title as string | undefined) ?? options.categoryLabel;
+
     result = {
       ...result,
       properties: {
         ...result.properties,
-        category: createLockedFieldSchema('dropdown', options.categoryLabel),
+        category: categorySchema as RJSFSchema,
       },
     };
-  } else if (!options.hasCategories && getFieldSchema(result, 'category')) {
+  } else if (getFieldSchema(result, 'category')) {
     const { category: _, ...restProps } = result.properties ?? {};
     result = { ...result, properties: restProps };
   }
+
+  // --- Ensure x-field-order contains every property key -------------------
+  // System fields always lead in canonical order (title, category, budget).
+  // Non-system fields preserve their existing relative order. Any property
+  // key not yet in the order is appended at the end.
+  const properties = result.properties ?? {};
+  const order = getFieldOrder(result);
+
+  const systemKeys = ['title', 'category', 'budget'] as const;
+  const systemSet = new Set<string>(systemKeys);
+
+  // System fields present in properties, in canonical order
+  const prefix = systemKeys.filter((k) => properties[k]);
+
+  // Non-system fields: keep existing order, strip stale/system keys,
+  // then append any property keys not yet present
+  const rest = order.filter((k) => !systemSet.has(k) && properties[k]);
+  const restSet = new Set(rest);
+  for (const key of Object.keys(properties)) {
+    if (!systemSet.has(key) && !restSet.has(key)) {
+      rest.push(key);
+    }
+  }
+
+  result = {
+    ...result,
+    'x-field-order': [...prefix, ...rest],
+  };
+
+  // --- Ensure required includes title and category (if present) -----------
+  const currentRequired = new Set(result.required ?? []);
+  currentRequired.add('title');
+  if (properties.category) {
+    currentRequired.add('category');
+  } else {
+    currentRequired.delete('category');
+  }
+  result = {
+    ...result,
+    required: [...currentRequired],
+  };
 
   return result;
 }

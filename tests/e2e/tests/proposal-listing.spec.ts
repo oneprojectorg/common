@@ -144,7 +144,7 @@ test.describe('Proposal Listing', () => {
       proposalTemplate: {
         type: 'object',
         required: ['title'],
-        'x-field-order': ['title', 'summary', 'budget'],
+        'x-field-order': ['title', 'summary', 'budget', 'category'],
         properties: {
           title: { type: 'string' },
           summary: { type: 'string', 'x-format': 'long-text' },
@@ -155,6 +155,10 @@ test.describe('Proposal Listing', () => {
               amount: { type: 'number' },
               currency: { type: 'string' },
             },
+          },
+          category: {
+            type: ['string', 'null'],
+            enum: ['Environment', 'Education', 'Infrastructure', null],
           },
         },
       },
@@ -187,7 +191,7 @@ test.describe('Proposal Listing', () => {
       processName: 'New Schema Listing',
     });
 
-    // 2. Create two proposals with new-format budgets and collaborationDocId
+    // 2. Create two proposals with new-format budgets, categories, and collaborationDocId
     await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.organizationProfile.id,
@@ -195,6 +199,7 @@ test.describe('Proposal Listing', () => {
         title: 'Community Garden Project',
         collaborationDocId: MOCK_DOC_ID,
         budget: { amount: 8000, currency: 'USD' },
+        category: 'Environment',
       },
     });
 
@@ -205,6 +210,7 @@ test.describe('Proposal Listing', () => {
         title: 'Youth Mentorship Program',
         collaborationDocId: MOCK_DOC_ID,
         budget: { amount: 12500, currency: 'EUR' },
+        category: 'Education',
       },
     });
 
@@ -234,6 +240,10 @@ test.describe('Proposal Listing', () => {
     // Budget values rendered with correct formatting
     await expect(authenticatedPage.getByText('$8,000')).toBeVisible();
     await expect(authenticatedPage.getByText('€12,500')).toBeVisible();
+
+    // Category values rendered in Chip components on the proposal cards
+    await expect(authenticatedPage.getByText('Environment')).toBeVisible();
+    await expect(authenticatedPage.getByText('Education')).toBeVisible();
 
     // Card preview renders text from the collab mock fixture.
     // The mock returns TipTap JSON with "Bold text and italic text..." content.
@@ -390,6 +400,16 @@ test.describe('Proposal Listing', () => {
     // rendered as "$15,000" and "$25,000"
     await expect(authenticatedPage.getByText('$15,000')).toBeVisible();
     await expect(authenticatedPage.getByText('$25,000')).toBeVisible();
+
+    // Category values rendered in Chip components on the proposal cards
+    await expect(
+      authenticatedPage.getByText('Ai. Direct funding to worker-owned co-ops.'),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByText(
+        'Bv. Support regional co-op organizing groups.',
+      ),
+    ).toBeVisible();
 
     // Legacy HTML descriptions render as text preview in the card
     await expect(

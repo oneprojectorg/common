@@ -63,7 +63,8 @@ export function TemplateEditorContent({
   const instanceData = instance.instanceData;
 
   // Check if categories have been configured
-  const hasCategories = (instanceData?.config?.categories?.length ?? 0) > 0;
+  const categories = instanceData?.config?.categories ?? [];
+  const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
     const saved = instanceData?.proposalTemplate as
@@ -79,11 +80,31 @@ export function TemplateEditorContent({
       titleLabel: t('Proposal title'),
       categoryLabel: t('Category'),
       hasCategories,
+      categories,
     });
-  }, [instanceData?.proposalTemplate, t, hasCategories]);
+  }, [instanceData?.proposalTemplate, t, hasCategories, categories]);
 
   const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
   const isInitialLoadRef = useRef(true);
+
+  // Keep locked fields (category) in sync when the upstream config changes
+  // (e.g. categories added/removed in the Proposal Categories step).
+  // Applied to the current template state so user edits are preserved.
+  const categorySyncedRef = useRef(false);
+  useEffect(() => {
+    if (!categorySyncedRef.current) {
+      categorySyncedRef.current = true;
+      return;
+    }
+    setTemplate((prev) =>
+      ensureLockedFields(prev, {
+        titleLabel: t('Proposal title'),
+        categoryLabel: t('Category'),
+        hasCategories,
+        categories,
+      }),
+    );
+  }, [hasCategories, categories, t]);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
@@ -143,14 +164,23 @@ export function TemplateEditorContent({
     ];
   }, [fields, hasCategories, t]);
 
-  // Debounced auto-save to localStorage and backend
+  // Debounced auto-save to localStorage and backend.
+  // Runs ensureLockedFields before persisting so that x-field-order and
+  // required are always consistent — individual mutators only need to
+  // touch properties.
   const debouncedSave = useDebouncedCallback(
     (updatedTemplate: ProposalTemplate) => {
-      setProposalTemplate(decisionProfileId, updatedTemplate);
+      const normalized = ensureLockedFields(updatedTemplate, {
+        titleLabel: t('Proposal title'),
+        categoryLabel: t('Category'),
+        hasCategories,
+        categories,
+      });
+      setProposalTemplate(decisionProfileId, normalized);
       updateInstance.mutate(
         {
           instanceId,
-          proposalTemplate: updatedTemplate,
+          proposalTemplate: normalized,
         },
         {
           onSuccess: () => markSaved(decisionProfileId),

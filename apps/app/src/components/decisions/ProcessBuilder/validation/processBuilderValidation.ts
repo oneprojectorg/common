@@ -1,3 +1,4 @@
+import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import { z } from 'zod';
 
 import { getFieldErrors, getFields } from '../../proposalTemplate';
@@ -104,7 +105,9 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
       if (!data?.proposalTemplate) {
         return true;
       }
-      const fields = getFields(data.proposalTemplate);
+      const fields = getFields(data.proposalTemplate).filter(
+        (f) => !SYSTEM_FIELD_KEYS.has(f.id),
+      );
       return fields.every((field) => getFieldErrors(field).length === 0);
     },
   },

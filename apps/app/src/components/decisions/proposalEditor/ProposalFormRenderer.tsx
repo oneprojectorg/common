@@ -1,5 +1,6 @@
 'use client';
 
+import { parseSchemaOptions } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 
@@ -33,22 +34,43 @@ interface ProposalFormRendererProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract `{ value, label }` options from a JSON Schema `oneOf` array. */
-function extractOneOfOptions(
+/**
+ * Extract `{ value, label }` options from a JSON Schema property.
+ * Delegates to the shared `parseSchemaOptions` normalizer which handles
+ * both `oneOf` and legacy `enum` formats.
+ */
+function extractOptions(
   schema: ProposalFieldDescriptor['schema'],
 ): { value: string; label: string }[] {
-  if (!Array.isArray(schema.oneOf)) {
-    return [];
+  return parseSchemaOptions(schema).map((opt) => ({
+    value: opt.value,
+    label: opt.title,
+  }));
+}
+
+/** Renders title and description header for a dynamic field. */
+function FieldHeader({
+  title,
+  description,
+}: {
+  title?: string;
+  description?: string;
+}) {
+  if (!title && !description) {
+    return null;
   }
-  return schema.oneOf
-    .filter(
-      (entry): entry is { const: string; title: string } =>
-        typeof entry === 'object' &&
-        entry !== null &&
-        'const' in entry &&
-        'title' in entry,
-    )
-    .map((entry) => ({ value: entry.const, label: entry.title }));
+  return (
+    <div className="flex flex-col gap-0.5">
+      {title && (
+        <span className="font-serif text-title-sm text-neutral-charcoal">
+          {title}
+        </span>
+      )}
+      {description && (
+        <p className="text-body-sm text-neutral-charcoal">{description}</p>
+      )}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -90,7 +112,7 @@ function renderField(
   // -- Category (system) ------------------------------------------------------
 
   if (key === 'category') {
-    const options = extractOneOfOptions(schema);
+    const options = extractOptions(schema);
 
     if (preview) {
       return (
@@ -147,20 +169,10 @@ function renderField(
       if (preview) {
         return (
           <div className="flex flex-col gap-2">
-            {(schema.title || schema.description) && (
-              <div className="flex flex-col gap-0.5">
-                {schema.title && (
-                  <span className="font-serif text-title-sm text-neutral-charcoal">
-                    {schema.title}
-                  </span>
-                )}
-                {schema.description && (
-                  <p className="text-body-sm text-neutral-charcoal">
-                    {schema.description}
-                  </p>
-                )}
-              </div>
-            )}
+            <FieldHeader
+              title={schema.title}
+              description={schema.description}
+            />
             <div
               className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
             >
@@ -198,32 +210,45 @@ function renderField(
       );
     }
 
-    case 'category': {
-      const options = extractOneOfOptions(schema);
+    case 'dropdown': {
+      const options = extractOptions(schema);
 
       if (preview) {
         return (
-          <Select
-            variant="pill"
-            size="medium"
-            placeholder={t('Select option')}
-            selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-            className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-          >
-            {options.map((opt) => (
-              <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </Select>
+          <div className="flex flex-col gap-2">
+            <FieldHeader
+              title={schema.title}
+              description={schema.description}
+            />
+            <Select
+              variant="pill"
+              size="medium"
+              placeholder={t('Select option')}
+              selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
+              className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+            >
+              {options.map((opt) => (
+                <SelectItem
+                  className="min-w-fit"
+                  key={opt.value}
+                  id={opt.value}
+                >
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
         );
       }
       return (
-        <CollaborativeCategoryField
-          options={options}
-          initialValue={(draft[key] as string | null) ?? null}
-          onChange={(value) => onFieldChange(key, value)}
-        />
+        <div className="flex flex-col gap-2">
+          <FieldHeader title={schema.title} description={schema.description} />
+          <CollaborativeCategoryField
+            options={options}
+            initialValue={(draft[key] as string | null) ?? null}
+            onChange={(value) => onFieldChange(key, value)}
+          />
+        </div>
       );
     }
 

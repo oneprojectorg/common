@@ -472,6 +472,10 @@ describe.concurrent('getProposal', () => {
    * proposalTemplate, no proposalTemplate in instanceData, and proposal data
    * stored as either a plain number or an `{ amount, currency }` object.
    *
+   * Category uses the legacy `{ type: ['string', 'null'], enum: [..., null] }`
+   * format in these templates. The schema is returned as-is —
+   * `parseSchemaOptions` handles both `enum` and `oneOf` on the frontend.
+   *
    * @see https://github.com/oneprojectorg/common/pull/601#discussion_r2803602140
    */
   it('should parse legacy cowop proposal via process_schema fallback', async ({
@@ -556,13 +560,18 @@ describe.concurrent('getProposal', () => {
       category: 'Infrastructure',
     });
 
-    // Verify the proposalTemplate was resolved from process_schema
+    // Verify the proposalTemplate was resolved from process_schema.
+    // Legacy templates retain their enum format in the schema.
     expect(result.proposalTemplate).toMatchObject({
       type: 'object',
       properties: {
         title: { type: 'string' },
         description: { type: 'string' },
         budget: { type: 'number', maximum: 10000 },
+        category: {
+          type: ['string', 'null'],
+          enum: ['Infrastructure', 'Education', null],
+        },
       },
     });
   });
@@ -734,13 +743,18 @@ describe.concurrent('getProposal', () => {
       category: 'Community',
     });
 
-    // Verify the proposalTemplate was resolved from process_schema
+    // Verify the proposalTemplate was resolved from process_schema.
+    // Legacy templates retain their enum format in the schema.
     expect(result.proposalTemplate).toMatchObject({
       type: 'object',
       properties: {
         title: { type: 'string' },
         description: { type: 'string' },
         budget: { type: 'number', maximum: 25000 },
+        category: {
+          type: ['string', 'null'],
+          enum: ['Community', 'Environment', null],
+        },
       },
     });
   });

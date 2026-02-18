@@ -23,6 +23,7 @@ import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
+import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import {
   type ProposalTemplateSchema,
@@ -135,9 +136,7 @@ export function ProposalEditor({
 
     const categorySchema = template.properties?.category;
     const hasCategories =
-      typeof categorySchema === 'object' &&
-      Array.isArray(categorySchema?.oneOf) &&
-      categorySchema.oneOf.length > 0;
+      typeof categorySchema === 'object' && schemaHasOptions(categorySchema);
 
     if (
       templateRequired.includes('category') &&

@@ -31,7 +31,7 @@ export function assembleProposalData(
     switch (schema['x-format']) {
       case 'short-text':
       case 'long-text':
-      case 'category':
+      case 'dropdown':
         data[key] = text;
         break;
       case 'money':

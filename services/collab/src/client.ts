@@ -82,25 +82,31 @@ export function createTipTapClient(config: TipTapClientConfig) {
         ? Record<string, string>
         : TipTapFragmentResponse;
       const fmt = format ?? 'json';
-      const params = new URLSearchParams({ format: fmt });
+      const docPath = `documents/${encodeURIComponent(docName)}`;
 
+      if (fmt === 'text') {
+        // TipTap concatenates all fragment text into a single string when
+        // multiple fragments are requested with format=text.  Fetch each
+        // fragment individually so we get per-fragment text values.
+        const entries = await Promise.all(
+          fragments.map(async (fragment) => {
+            const text = await api
+              .get(docPath, {
+                searchParams: { format: 'text', fragment },
+              })
+              .text();
+            return [fragment, text.trim()] as const;
+          }),
+        );
+        return Object.fromEntries(entries) as R;
+      }
+
+      const params = new URLSearchParams({ format: fmt });
       for (const fragment of fragments) {
         params.append('fragment', fragment);
       }
 
-      const response = await api
-        .get(`documents/${encodeURIComponent(docName)}`, {
-          searchParams: params,
-        })
-        .json();
-
-      if (fmt === 'text') {
-        if (typeof response === 'string') {
-          const fragmentName = fragments[0] ?? 'default';
-          return { [fragmentName]: response } as R;
-        }
-        return response as R;
-      }
+      const response = await api.get(docPath, { searchParams: params }).json();
 
       if (isTipTapDocument(response)) {
         const fragmentName = fragments[0] ?? 'default';
