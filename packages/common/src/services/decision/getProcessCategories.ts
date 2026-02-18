@@ -32,15 +32,24 @@ export const getProcessCategories = async ({
       return [];
     }
 
-    await assertInstanceProfileAccess({
-      user,
-      instance: {
-        profileId: instance.profileId,
-        ownerProfileId: instance.ownerProfileId,
-      },
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
-    });
+    // Run access check and taxonomy lookup in parallel — they're independent
+    const [, proposalTaxonomy] = await Promise.all([
+      assertInstanceProfileAccess({
+        user,
+        instance: {
+          profileId: instance.profileId,
+          ownerProfileId: instance.ownerProfileId,
+        },
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: { decisions: permission.READ },
+      }),
+      db.query.taxonomies.findFirst({
+        where: { name: 'proposal' },
+        with: {
+          taxonomyTerms: true,
+        },
+      }),
+    ]);
 
     // Extract categories from the instance config
     const instanceData = instance.instanceData as DecisionInstanceData | null;
@@ -49,14 +58,6 @@ export const getProcessCategories = async ({
     if (!instanceCategories || instanceCategories.length === 0) {
       return [];
     }
-
-    // Get the "proposal" taxonomy
-    const proposalTaxonomy = await db.query.taxonomies.findFirst({
-      where: { name: 'proposal' },
-      with: {
-        taxonomyTerms: true,
-      },
-    });
 
     if (!proposalTaxonomy) {
       return [];
