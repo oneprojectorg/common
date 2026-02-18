@@ -51,7 +51,7 @@ const PendingDecisionInvitesSuspense = () => {
       <NotificationPanelList>
         {invites.map((invite) => {
           const profile = invite.profile;
-          const description = profile?.processInstance?.description;
+          const description = profile.processInstance?.description;
           const isAccepting =
             acceptInvite.isPending &&
             acceptInvite.variables?.inviteId === invite.id;
@@ -60,8 +60,8 @@ const PendingDecisionInvitesSuspense = () => {
             <NotificationPanelItem key={invite.id}>
               <ProfileItem
                 avatar={
-                  <Avatar className="size-12" placeholder={profile?.name ?? ''}>
-                    {profile?.avatarImage?.name ? (
+                  <Avatar className="size-12" placeholder={profile.name ?? ''}>
+                    {profile.avatarImage?.name ? (
                       <Image
                         src={getPublicUrl(profile.avatarImage.name) ?? ''}
                         alt={profile.name ?? ''}
@@ -71,7 +71,7 @@ const PendingDecisionInvitesSuspense = () => {
                     ) : null}
                   </Avatar>
                 }
-                title={profile?.name ?? ''}
+                title={profile.name ?? ''}
                 description={
                   description
                     ? getTextPreview({ content: description })
