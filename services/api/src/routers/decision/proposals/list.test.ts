@@ -789,7 +789,10 @@ describe.concurrent('listProposals', () => {
       }),
     ]);
 
-    const { collaborationDocId } = collabProposal.proposalData as {
+    const { collaborationDocId: collabDocId } = collabProposal.proposalData as {
+      collaborationDocId: string;
+    };
+    const { collaborationDocId: emptyDocId } = emptyProposal.proposalData as {
       collaborationDocId: string;
     };
 
@@ -799,8 +802,9 @@ describe.concurrent('listProposals', () => {
         { type: 'paragraph', content: [{ type: 'text', text: 'TipTap' }] },
       ],
     };
-    // Only set up mock for the collab proposal (empty and legacy won't have valid responses)
-    mockCollab.setDocResponse(collaborationDocId, mockTipTapContent);
+
+    mockCollab.setDocResponse(collabDocId, mockTipTapContent);
+    mockCollab.setDocResponse(emptyDocId, { type: 'doc', content: [] });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -826,8 +830,12 @@ describe.concurrent('listProposals', () => {
       type: 'html',
       content: '<p>HTML</p>',
     });
-    // Empty proposal has a collaborationDocId but no mock response, so documentContent is undefined
-    expect(foundEmpty?.documentContent).toBeUndefined();
+    expect(foundEmpty?.documentContent).toEqual({
+      type: 'json',
+      fragments: {
+        default: { type: 'doc', content: [] },
+      },
+    });
   });
 
   /**
