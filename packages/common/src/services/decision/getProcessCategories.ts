@@ -1,10 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { organizations, processInstances, taxonomies } from '@op/db/schema';
+import { processInstances, taxonomies } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { UnauthorizedError } from '../../utils';
+import { assertInstanceProfileAccess } from '../access';
 
 export interface ProcessCategory {
   id: string;
@@ -33,25 +33,15 @@ export const getProcessCategories = async ({
       return [];
     }
 
-    const instanceOrg = await db
-      .select({
-        id: organizations.id,
-      })
-      .from(organizations)
-      .where(eq(organizations.profileId, instance.ownerProfileId))
-      .limit(1);
-
-    if (!instanceOrg[0]) {
-      throw new NotFoundError('Organization not found');
-    }
-
-    // ASSERT VIEW ACCESS ON ORGUSER
-    const orgUser = await getOrgAccessUser({
+    await assertInstanceProfileAccess({
       user,
-      organizationId: instanceOrg[0].id,
+      instance: {
+        profileId: instance.profileId,
+        ownerProfileId: instance.ownerProfileId,
+      },
+      profilePermissions: { decisions: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
     });
-
-    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
     // Extract categories from the process schema
     const process = Array.isArray(instance.process)
