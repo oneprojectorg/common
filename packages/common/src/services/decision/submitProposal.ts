@@ -1,17 +1,13 @@
-import { createTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
-import { assembleProposalData } from './assembleProposalData';
-import { getProposalFragmentNames } from './getProposalFragmentNames';
-import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { schemaValidator } from './schemaValidator';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
+import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 export interface SubmitProposalInput {
   proposalId: string;
@@ -86,39 +82,10 @@ export const submitProposal = async ({
   );
 
   if (proposalTemplate) {
-    const parsed = parseProposalData(existingProposal.proposalData);
-
-    if (parsed.collaborationDocId) {
-      // Fetch field values from the Yjs collaboration document
-      const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
-      const secret = process.env.TIPTAP_SECRET;
-
-      if (!appId || !secret) {
-        throw new CommonError(
-          'TipTap credentials not configured, cannot validate proposal',
-        );
-      }
-
-      const client = createTipTapClient({ appId, secret });
-      const fragmentNames = getProposalFragmentNames(proposalTemplate);
-      const fragmentTexts = await client.getDocumentFragments(
-        parsed.collaborationDocId,
-        fragmentNames,
-        'text',
-      );
-      const validationData = assembleProposalData(
-        proposalTemplate,
-        fragmentTexts,
-      );
-
-      schemaValidator.validateProposalData(proposalTemplate, validationData);
-    } else {
-      // Legacy proposal without collaboration doc — validate DB data directly
-      schemaValidator.validateProposalData(
-        proposalTemplate,
-        existingProposal.proposalData,
-      );
-    }
+    await validateProposalAgainstTemplate(
+      proposalTemplate,
+      existingProposal.proposalData,
+    );
   }
 
   // Update proposal status to submitted

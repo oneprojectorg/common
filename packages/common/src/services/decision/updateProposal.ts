@@ -1,15 +1,14 @@
 import { db, eq } from '@op/db/client';
 import {
-  DecisionProcess,
-  ProcessInstance,
+  type ProcessInstance,
   ProposalStatus,
-  Visibility,
+  type Visibility,
   proposalCategories,
   proposals,
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import {
@@ -21,11 +20,9 @@ import {
 import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
-import { schemaValidator } from './schemaValidator';
-
-type ProcessInstanceWithProcess = ProcessInstance & {
-  process: DecisionProcess;
-};
+import { resolveProposalTemplate } from './resolveProposalTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 /**
  * Updates the category link for a proposal
@@ -101,11 +98,7 @@ export const updateProposal = async ({
     const existingProposal = await db._query.proposals.findFirst({
       where: eq(proposals.id, proposalId),
       with: {
-        processInstance: {
-          with: {
-            process: true,
-          },
-        },
+        processInstance: true,
       },
     });
 
@@ -113,8 +106,7 @@ export const updateProposal = async ({
       throw new NotFoundError('Proposal not found');
     }
 
-    const processInstance =
-      existingProposal.processInstance as ProcessInstanceWithProcess;
+    const processInstance = existingProposal.processInstance as ProcessInstance;
 
     await assertInstanceProfileAccess({
       user: { id: user.id },
@@ -134,14 +126,19 @@ export const updateProposal = async ({
     }
 
     // Validate proposal data against schema if updating proposalData
-    if (data.proposalData && processInstance.process) {
-      const process = processInstance.process as any;
-      const processSchema = process.processSchema;
+    if (data.proposalData) {
+      const instanceData =
+        processInstance.instanceData as DecisionInstanceData | null;
 
-      if (processSchema?.proposalTemplate) {
-        schemaValidator.validateProposalData(
-          processSchema.proposalTemplate,
-          data.proposalData,
+      const proposalTemplate = await resolveProposalTemplate(
+        instanceData,
+        processInstance.processId,
+      );
+
+      if (proposalTemplate) {
+        await validateProposalAgainstTemplate(
+          proposalTemplate,
+          existingProposal.proposalData,
         );
       }
     }
