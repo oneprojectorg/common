@@ -149,8 +149,7 @@ export function ProposalView({
     category: originalCategory,
   } = parseProposalData(currentProposal.proposalData);
 
-  // Use translated values when available, otherwise originals
-  const title = translatedHtmlContent?.translated.title ?? originalTitle;
+  // Use translated category when available, otherwise original
   const category =
     translatedHtmlContent?.translated.category ?? originalCategory;
 
@@ -182,9 +181,16 @@ export function ProposalView({
       <div className="flex-1 px-6 py-8">
         <div className="mx-auto flex max-w-xl flex-col gap-8">
           <div className="space-y-4">
-            {/* Title */}
             <Header1 className="font-serif text-title-lg">
-              {title || t('Untitled Proposal')}
+              {translatedHtmlContent?.translated.title ? (
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html: translatedHtmlContent.translated.title,
+                  }}
+                />
+              ) : (
+                originalTitle || t('Untitled Proposal')
+              )}
             </Header1>
 
             {/* Translation attribution */}
@@ -209,7 +215,10 @@ export function ProposalView({
                 {category && (
                   <TagGroup className="max-w-full">
                     <Tag className="max-w-full sm:max-w-96 sm:rounded-sm">
-                      <span className="truncate">{category}</span>
+                      <span
+                        className="truncate"
+                        dangerouslySetInnerHTML={{ __html: category }}
+                      />
                     </Tag>
                   </TagGroup>
                 )}
