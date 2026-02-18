@@ -3,6 +3,7 @@
 import { parseSchemaOptions } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
+import type { Editor } from '@tiptap/react';
 
 import {
   CollaborativeBudgetField,
@@ -24,6 +25,10 @@ interface ProposalFormRendererProps {
   draft: ProposalDraftFields;
   /** Called when any system field value changes. */
   onFieldChange: (key: string, value: unknown) => void;
+  /** Called with the editor instance when a rich-text field gains focus. */
+  onEditorFocus?: (editor: Editor) => void;
+  /** Called with the editor instance when a rich-text field loses focus. */
+  onEditorBlur?: (editor: Editor) => void;
   /** Translation function for placeholders. */
   t: (key: string, params?: Record<string, string | number>) => string;
   /** When true, renders the form as a non-interactive static preview. */
@@ -88,6 +93,8 @@ function renderField(
   onFieldChange: (key: string, value: unknown) => void,
   t: (key: string, params?: Record<string, string | number>) => string,
   preview: boolean,
+  onEditorFocus?: (editor: Editor) => void,
+  onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
   const { key, format, schema } = field;
 
@@ -189,6 +196,8 @@ function renderField(
           placeholder={placeholder}
           multiline={format === 'long-text'}
           onChange={(html) => onFieldChange(key, html)}
+          onEditorFocus={onEditorFocus}
+          onEditorBlur={onEditorBlur}
         />
       );
     }
@@ -280,6 +289,8 @@ export function ProposalFormRenderer({
   fields,
   draft,
   onFieldChange,
+  onEditorFocus,
+  onEditorBlur,
   t,
   previewMode = false,
 }: ProposalFormRendererProps) {
@@ -289,7 +300,15 @@ export function ProposalFormRenderer({
   const dynamicFields = fields.filter((f) => !f.isSystem);
 
   const render = (field: ProposalFieldDescriptor) =>
-    renderField(field, draft, onFieldChange, t, previewMode);
+    renderField(
+      field,
+      draft,
+      onFieldChange,
+      t,
+      previewMode,
+      onEditorFocus,
+      onEditorBlur,
+    );
 
   return (
     <div className={`space-y-4 ${previewMode ? 'pointer-events-none' : ''}`}>

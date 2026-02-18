@@ -9,12 +9,14 @@ import {
 } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
+import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { RichTextEditorToolbar } from '../../RichTextEditor';
 import {
   CollaborativeDocProvider,
   CollaborativePresence,
@@ -33,6 +35,43 @@ import { handleMutationError } from './handleMutationError';
 import { useProposalDraft } from './useProposalDraft';
 
 type Proposal = z.infer<typeof proposalEncoder>;
+
+/**
+ * Tracks which TipTap editor currently has focus.
+ *
+ * Handles the blur/focus race condition: when clicking from editor A to
+ * editor B, `blur` fires before `focus`. We defer the blur-to-null via
+ * `requestAnimationFrame` and cancel it when a focus fires first.
+ */
+function useFocusedEditor() {
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const pendingBlur = useRef<number | null>(null);
+
+  const onEditorFocus = useCallback((e: Editor) => {
+    if (pendingBlur.current !== null) {
+      cancelAnimationFrame(pendingBlur.current);
+      pendingBlur.current = null;
+    }
+    setEditor(e);
+  }, []);
+
+  const onEditorBlur = useCallback((e: Editor) => {
+    pendingBlur.current = requestAnimationFrame(() => {
+      pendingBlur.current = null;
+      setEditor((cur) => (cur === e ? null : cur));
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pendingBlur.current !== null) {
+        cancelAnimationFrame(pendingBlur.current);
+      }
+    };
+  }, []);
+
+  return { editor, onEditorFocus, onEditorBlur };
+}
 
 export function ProposalEditor({
   instance,
@@ -232,6 +271,12 @@ export function ProposalEditor({
 
   const userName = user.profile?.name ?? t('Anonymous');
 
+  const {
+    editor: focusedEditor,
+    onEditorFocus,
+    onEditorBlur,
+  } = useFocusedEditor();
+
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
@@ -248,14 +293,20 @@ export function ProposalEditor({
         presenceSlot={<CollaborativePresence />}
         proposalProfileId={proposal.profileId}
       >
+        <div
+          className="sticky top-0 z-10 bg-white"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <RichTextEditorToolbar editor={focusedEditor} />
+        </div>
         <div className="flex flex-1 flex-col gap-12 pt-12">
-          {/* TODO: Re-add RichTextEditorToolbar that tracks the currently-focused
-              editor instance so it works with multiple CollaborativeTextField fields. */}
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
             <ProposalFormRenderer
               fields={proposalFields}
               draft={draft}
               onFieldChange={handleFieldChange}
+              onEditorFocus={onEditorFocus}
+              onEditorBlur={onEditorBlur}
               t={t}
             />
 
