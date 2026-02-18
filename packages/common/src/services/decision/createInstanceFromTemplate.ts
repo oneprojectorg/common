@@ -28,6 +28,7 @@ export type CreateInstanceFromTemplateCoreOptions = {
   ownerProfileId: string;
   creatorAuthUserId: string;
   creatorEmail: string;
+  stewardProfileId?: string;
   /** Defaults to DRAFT */
   status?: ProcessStatus;
 };
@@ -45,6 +46,7 @@ export const createInstanceFromTemplateCore = async ({
   ownerProfileId,
   creatorAuthUserId,
   creatorEmail,
+  stewardProfileId,
   status = ProcessStatus.DRAFT,
 }: CreateInstanceFromTemplateCoreOptions) => {
   const template = await getTemplate(templateId);
@@ -84,6 +86,7 @@ export const createInstanceFromTemplateCore = async ({
         instanceData,
         currentStateId: instanceData.currentPhaseId, // DB column is currentStateId but stores phaseId
         ownerProfileId,
+        stewardProfileId,
         profileId: instanceProfile.id,
         status,
       })
@@ -200,6 +203,7 @@ export const createInstanceFromTemplate = async ({
     description,
     phases,
     ownerProfileId,
+    stewardProfileId: ownerProfileId,
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
   });
