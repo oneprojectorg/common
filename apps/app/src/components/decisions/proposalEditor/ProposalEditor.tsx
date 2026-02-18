@@ -310,7 +310,7 @@ export function ProposalEditor({
               t={t}
             />
 
-            <div className="border-t border-neutral-gray2 pt-8">
+            <div className="border-t border-neutral-gray1 pt-8">
               <ProposalAttachments
                 proposalId={proposal.id}
                 attachments={

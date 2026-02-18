@@ -82,16 +82,16 @@ export function CollaborativeTextField({
   }, []);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       {(title || description) && (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-2">
           {title && (
-            <span className="font-serif text-title-sm text-neutral-charcoal">
+            <span className="font-serif text-title-sm14 text-neutral-charcoal">
               {title}
             </span>
           )}
           {description && (
-            <p className="text-body-sm text-neutral-charcoal">{description}</p>
+            <p className="text-sm text-neutral-charcoal">{description}</p>
           )}
         </div>
       )}

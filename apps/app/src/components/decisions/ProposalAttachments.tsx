@@ -156,11 +156,11 @@ export function ProposalAttachments({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-0.5">
-        <span className="font-serif text-title-sm text-neutral-charcoal">
+      <div className="flex flex-col gap-2">
+        <span className="font-serif text-title-sm14 text-neutral-charcoal">
           {t('Attachments (optional)')}
         </span>
-        <p className="text-body-sm text-neutral-charcoal">
+        <p className="text-sm text-neutral-charcoal">
           {t(
             'Support your proposal with relevant documents like budgets or supporting research.',
           )}
