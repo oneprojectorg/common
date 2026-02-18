@@ -135,10 +135,7 @@ const AllDecisionsTabs = () => {
       </TabList>
       <TabPanel id="active" className="p-0 sm:p-0">
         <Suspense fallback={<DecisionsListSkeleton />}>
-          <DecisionsListSuspense
-            status={[ProcessStatus.PUBLISHED]}
-            ownerProfileId={ownerProfileId}
-          />
+          <DecisionsListSuspense status={[ProcessStatus.PUBLISHED]} />
         </Suspense>
       </TabPanel>
       {hasDrafts && (
