@@ -10,7 +10,7 @@ import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
+import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -152,7 +152,7 @@ export function TemplateEditorContent({
       {
         id: 'budget',
         label: t('Budget'),
-        fieldType: 'number' as const,
+        icon: LuHash,
       },
     ];
     return [

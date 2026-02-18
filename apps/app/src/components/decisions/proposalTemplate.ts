@@ -21,14 +21,7 @@ import type { RJSFSchema } from '@rjsf/utils';
 
 export type ProposalTemplate = RJSFSchema;
 
-export type FieldType =
-  | 'short_text'
-  | 'long_text'
-  | 'multiple_choice'
-  | 'dropdown'
-  | 'yes_no'
-  | 'date'
-  | 'number';
+export type FieldType = 'short_text' | 'long_text' | 'dropdown';
 
 /**
  * Flat read-only view of a single field, derived from a ProposalTemplate.
@@ -54,12 +47,7 @@ export interface FieldView {
 const X_FORMAT_TO_FIELD_TYPE: Record<string, FieldType> = {
   'short-text': 'short_text',
   'long-text': 'long_text',
-  'multiple-choice': 'multiple_choice',
   dropdown: 'dropdown',
-  'yes-no': 'yes_no',
-  date: 'date',
-  number: 'number',
-  money: 'number',
 };
 
 // ---------------------------------------------------------------------------
@@ -76,23 +64,8 @@ export function createFieldJsonSchema(type: FieldType): RJSFSchema {
       return withXFormat({ type: 'string' }, 'short-text');
     case 'long_text':
       return withXFormat({ type: 'string' }, 'long-text');
-    case 'multiple_choice':
-      return withXFormat(
-        {
-          type: 'array',
-          items: { type: 'string', enum: [] },
-          uniqueItems: true,
-        },
-        'multiple-choice',
-      );
     case 'dropdown':
       return withXFormat({ type: 'string', oneOf: [] }, 'dropdown');
-    case 'yes_no':
-      return withXFormat({ type: 'boolean' }, 'yes-no');
-    case 'date':
-      return withXFormat({ type: 'string', format: 'date' }, 'date');
-    case 'number':
-      return withXFormat({ type: 'number' }, 'number');
   }
 }
 
@@ -181,17 +154,6 @@ export function getFieldOptions(
     }));
   }
 
-  // multiple_choice: enum is on items
-  if (schema.type === 'array') {
-    const items = asSchema(schema.items);
-    if (items && Array.isArray(items.enum)) {
-      return items.enum.map((val, i) => ({
-        id: `${fieldId}-opt-${i}`,
-        value: String(val ?? ''),
-      }));
-    }
-  }
-
   return [];
 }
 
@@ -274,22 +236,13 @@ export function getFieldErrors(field: FieldView): string[] {
     errors.push('Field label is required');
   }
 
-  if (field.fieldType === 'dropdown' || field.fieldType === 'multiple_choice') {
+  if (field.fieldType === 'dropdown') {
     if (field.options.length < 2) {
       errors.push('At least two options are required');
     }
     if (field.options.some((o) => !o.value.trim())) {
       errors.push('Options cannot be empty');
     }
-  }
-
-  if (
-    field.fieldType === 'number' &&
-    field.min !== undefined &&
-    field.max !== undefined &&
-    field.min > field.max
-  ) {
-    errors.push('Minimum must be less than or equal to maximum');
   }
 
   return errors;
