@@ -1,7 +1,6 @@
 import type { proposalEncoder } from '@op/api/encoders';
-import { SYSTEM_FIELD_KEYS } from '@op/common/client';
+import { SYSTEM_FIELD_KEYS, serverExtensions } from '@op/common/client';
 import { getTextPreview } from '@op/core';
-import { defaultViewerExtensions } from '@op/ui/RichTextEditor';
 import { type JSONContent, generateText } from '@tiptap/core';
 import type { z } from 'zod';
 
@@ -49,7 +48,8 @@ export function getProposalContentPreview(
     const content = { type: 'doc', content: allContent } as JSONContent;
 
     try {
-      return generateText(content, defaultViewerExtensions).trim() || null;
+      const text = generateText(content, serverExtensions);
+      return text.trim() || null;
     } catch {
       return null;
     }

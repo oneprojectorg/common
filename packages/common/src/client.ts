@@ -9,6 +9,7 @@ export {
   getProposalTemplateFieldOrder,
   type ProposalTemplateFieldOrder,
 } from './services/decision/getProposalTemplateFieldOrder';
+export { serverExtensions } from './services/decision/tiptapExtensions';
 
 // Translation constants (no server dependencies)
 export {
