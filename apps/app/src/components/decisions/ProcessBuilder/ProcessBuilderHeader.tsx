@@ -93,11 +93,10 @@ const ProcessBuilderHeaderContent = ({
     useProcessNavigation(navigationConfig);
   const hasSteps = visibleSteps.length > 0;
 
-  const { data: decisionProfile } =
-    trpc.decision.getDecisionBySlug.useQuery(
-      { slug: slug! },
-      { enabled: !!slug },
-    );
+  const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
+    { slug: slug! },
+    { enabled: !!slug },
+  );
 
   const processInstance = decisionProfile?.processInstance;
   const instanceStatus = processInstance?.status as ProcessStatus | undefined;
@@ -107,7 +106,8 @@ const ProcessBuilderHeaderContent = ({
   const storeData = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId] : undefined,
   );
-  const displayName = storeData?.name || decisionProfile?.name || t('New process');
+  const displayName =
+    storeData?.name || decisionProfile?.name || t('New process');
 
   const { setOpen } = useSidebar();
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
