@@ -3,9 +3,7 @@ import { createTipTapClient } from '@op/collab';
 import { CommonError } from '../../utils';
 import { assembleProposalData } from './assembleProposalData';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
-import {
-  SYSTEM_FIELD_KEYS,
-} from './getProposalTemplateFieldOrder';
+import { SYSTEM_FIELD_KEYS } from './getProposalTemplateFieldOrder';
 import {
   extractBudgetValue,
   normalizeBudget,
