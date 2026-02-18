@@ -1,10 +1,10 @@
-import { db, eq } from '@op/db/client';
-import { processInstances, taxonomies } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
+import type { DecisionInstanceData } from './schemas';
 
 export interface ProcessCategory {
   id: string;
@@ -17,13 +17,12 @@ export const getProcessCategories = async ({
   user,
 }: {
   processInstanceId: string;
-  authUserId: string;
   user: User;
 }): Promise<ProcessCategory[]> => {
   try {
     // Get the process instance with its process schema
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, processInstanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: processInstanceId },
       with: {
         process: true,
       },
@@ -33,34 +32,32 @@ export const getProcessCategories = async ({
       return [];
     }
 
-    await assertInstanceProfileAccess({
-      user,
-      instance: {
-        profileId: instance.profileId,
-        ownerProfileId: instance.ownerProfileId,
-      },
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
-    });
+    // Run access check and taxonomy lookup in parallel — they're independent
+    const [proposalTaxonomy] = await Promise.all([
+      db.query.taxonomies.findFirst({
+        where: { name: 'proposal' },
+        with: {
+          taxonomyTerms: true,
+        },
+      }),
+      assertInstanceProfileAccess({
+        user,
+        instance: {
+          profileId: instance.profileId,
+          ownerProfileId: instance.ownerProfileId,
+        },
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: { decisions: permission.READ },
+      }),
+    ]);
 
-    // Extract categories from the process schema
-    const process = Array.isArray(instance.process)
-      ? instance.process[0]
-      : instance.process;
-    const processSchema = process?.processSchema as any;
-    const categoryNames = (processSchema?.fields?.categories as string[]) || [];
+    // Extract categories from the instance config
+    const instanceCategories = (instance.instanceData as DecisionInstanceData)
+      .config?.categories;
 
-    if (categoryNames.length === 0) {
+    if (!instanceCategories || instanceCategories.length === 0) {
       return [];
     }
-
-    // Get the "proposal" taxonomy
-    const proposalTaxonomy = await db._query.taxonomies.findFirst({
-      where: eq(taxonomies.name, 'proposal'),
-      with: {
-        taxonomyTerms: true,
-      },
-    });
 
     if (!proposalTaxonomy) {
       return [];
@@ -69,15 +66,14 @@ export const getProcessCategories = async ({
     // Find matching taxonomy terms for the categories
     const categories: ProcessCategory[] = [];
 
-    for (const categoryName of categoryNames) {
-      const categoryLabel = categoryName.trim();
-      const expectedTermUri = categoryLabel
+    for (const category of instanceCategories) {
+      const expectedTermUri = category.label
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
 
       const taxonomyTerm = proposalTaxonomy.taxonomyTerms.find(
-        (term) => term.termUri === expectedTermUri,
+        (term: { termUri: string }) => term.termUri === expectedTermUri,
       );
 
       if (taxonomyTerm) {

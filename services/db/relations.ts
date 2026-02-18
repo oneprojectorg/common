@@ -163,4 +163,29 @@ export const relations = defineRelations(schema, (r) => ({
       optional: false,
     }),
   },
+
+  /**
+   * Taxonomy relations
+   *
+   * taxonomyTerms has a self-referential parentId which breaks Drizzle inference.
+   */
+  taxonomies: {
+    // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+    taxonomyTerms: r.many.taxonomyTerms({
+      from: r.taxonomies.id,
+      // @ts-expect-error - see above
+      to: r.taxonomyTerms.taxonomyId,
+    }),
+  },
+
+  /**
+   * Taxonomy term relations
+   */
+  taxonomyTerms: {
+    taxonomy: r.one.taxonomies({
+      // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+      from: r.taxonomyTerms.taxonomyId,
+      to: r.taxonomies.id,
+    }),
+  },
 }));
