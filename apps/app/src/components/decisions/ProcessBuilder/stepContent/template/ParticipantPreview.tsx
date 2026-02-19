@@ -54,7 +54,7 @@ export function ParticipantPreview({
           previewMode
         />
 
-        <div className="pointer-events-none border-t border-neutral-gray2 pt-8">
+        <div className="pointer-events-none mt-4 border-t border-neutral-gray2 pt-4">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <span className="font-serif text-title-sm14 text-neutral-charcoal">
