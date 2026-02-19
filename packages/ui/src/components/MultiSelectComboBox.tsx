@@ -106,6 +106,7 @@ export const MultiSelectComboBox = ({
       setSelectedOptions([...selectedOptions, option]);
     }
     setInputValue('');
+    onInputUpdate?.('');
     inputRef.current?.focus();
   };
 
@@ -130,6 +131,7 @@ export const MultiSelectComboBox = ({
       setSelectedOptions([...selectedOptions, { id: trimmed, label: trimmed }]);
     }
     setInputValue('');
+    onInputUpdate?.('');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
