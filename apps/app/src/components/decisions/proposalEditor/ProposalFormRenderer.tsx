@@ -322,9 +322,7 @@ export function ProposalFormRenderer({
       )}
 
       {dynamicFields.map((field) => (
-        <div key={field.key} className="pt-4">
-          {render(field)}
-        </div>
+        <div key={field.key}>{render(field)}</div>
       ))}
     </div>
   );
