@@ -5,6 +5,8 @@ import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import type { Editor } from '@tiptap/react';
 
+import { useTranslations } from '@/lib/i18n/routing';
+
 import {
   CollaborativeBudgetField,
   CollaborativeDropdownField,
@@ -29,8 +31,6 @@ interface ProposalFormRendererProps {
   onEditorFocus?: (editor: Editor) => void;
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
-  /** Translation function for placeholders. */
-  t: (key: string, params?: Record<string, string | number>) => string;
   /** When true, renders the form as a non-interactive static preview. */
   previewMode?: boolean;
 }
@@ -182,11 +182,7 @@ function renderField(
               title={schema.title}
               description={schema.description}
             />
-            <div
-              className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
-            >
-              {placeholder}
-            </div>
+            <div className="min-h-8 text-neutral-gray3">{placeholder}</div>
           </div>
         );
       }
@@ -294,9 +290,10 @@ export function ProposalFormRenderer({
   onFieldChange,
   onEditorFocus,
   onEditorBlur,
-  t,
   previewMode = false,
 }: ProposalFormRendererProps) {
+  const t = useTranslations();
+
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');

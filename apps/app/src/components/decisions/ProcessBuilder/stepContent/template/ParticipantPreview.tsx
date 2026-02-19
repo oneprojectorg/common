@@ -51,7 +51,6 @@ export function ParticipantPreview({
           fields={fields}
           draft={EMPTY_DRAFT}
           onFieldChange={() => {}}
-          t={t}
           previewMode
         />
 
