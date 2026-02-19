@@ -70,10 +70,8 @@ export const MultiSelectComboBox = ({
 
     const handlePointerDown = (e: PointerEvent) => {
       const target = e.target as Node;
-      const isInsideTrigger =
-        triggerRef.current?.contains(target) ?? false;
-      const isInsidePopover =
-        popoverRef.current?.contains(target) ?? false;
+      const isInsideTrigger = triggerRef.current?.contains(target) ?? false;
+      const isInsidePopover = popoverRef.current?.contains(target) ?? false;
       if (!isInsideTrigger && !isInsidePopover) {
         setIsOpen(false);
       }
@@ -230,7 +228,11 @@ export const MultiSelectComboBox = ({
       {errorMessage && (
         <p className="text-sm text-functional-red">
           {typeof errorMessage === 'function'
-            ? errorMessage({ isInvalid: true, validationDetails: {} as ValidityState, validationErrors: [] })
+            ? errorMessage({
+                isInvalid: true,
+                validationDetails: {} as ValidityState,
+                validationErrors: [],
+              })
             : errorMessage}
         </p>
       )}

@@ -120,10 +120,22 @@ export const WithDefinitions = () => {
   const [value, setValue] = useState<Option[]>([]);
 
   const itemsWithDefinitions: Option[] = [
-    { id: 'apple', label: 'Apple', definition: 'A round fruit with red or green skin' },
+    {
+      id: 'apple',
+      label: 'Apple',
+      definition: 'A round fruit with red or green skin',
+    },
     { id: 'banana', label: 'Banana', definition: 'A long curved yellow fruit' },
-    { id: 'cherry', label: 'Cherry', definition: 'A small round red fruit with a pit' },
-    { id: 'grape', label: 'Grape', definition: 'A small round fruit that grows in clusters' },
+    {
+      id: 'cherry',
+      label: 'Cherry',
+      definition: 'A small round red fruit with a pit',
+    },
+    {
+      id: 'grape',
+      label: 'Grape',
+      definition: 'A small round fruit that grows in clusters',
+    },
   ];
 
   return (
