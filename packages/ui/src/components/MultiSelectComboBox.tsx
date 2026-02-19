@@ -1,6 +1,6 @@
 'use client';
 
-import { Search } from 'lucide-react';
+import { LuSearch } from 'react-icons/lu';
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   ListBox as AriaListBox,
@@ -205,7 +205,7 @@ export const MultiSelectComboBox = ({
             {isLoading ? (
               <LoadingSpinner className="size-4" color="gray" />
             ) : (
-              <Search className="size-4" />
+              <LuSearch className="size-4" />
             )}
           </span>
         </div>
