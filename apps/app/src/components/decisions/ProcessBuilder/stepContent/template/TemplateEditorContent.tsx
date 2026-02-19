@@ -62,10 +62,13 @@ export function TemplateEditorContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instanceData = instance.instanceData;
 
-  // Check if categories have been configured
+  // Check if categories have been configured and selection is required
   const rawCategories = instanceData?.config?.categories;
   const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
   const hasCategories = categories.length > 0;
+  const requireCategorySelection =
+    instanceData?.config?.requireCategorySelection ?? false;
+  const showCategoryField = hasCategories && requireCategorySelection;
 
   const initialTemplate = useMemo(() => {
     const saved = instanceData?.proposalTemplate as
@@ -82,8 +85,14 @@ export function TemplateEditorContent({
       categoryLabel: t('Category'),
       hasCategories,
       categories,
+      requireCategorySelection,
     });
-  }, [instanceData?.proposalTemplate, t, hasCategories, categories]);
+  }, [
+    instanceData?.proposalTemplate,
+    hasCategories,
+    categories,
+    requireCategorySelection,
+  ]);
 
   const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
   const isInitialLoadRef = useRef(true);
@@ -103,9 +112,10 @@ export function TemplateEditorContent({
         categoryLabel: t('Category'),
         hasCategories,
         categories,
+        requireCategorySelection,
       }),
     );
-  }, [hasCategories, categories]);
+  }, [hasCategories, categories, requireCategorySelection]);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
@@ -140,7 +150,7 @@ export function TemplateEditorContent({
         label: t('Proposal title'),
         fieldType: 'short_text' as const,
       },
-      ...(hasCategories
+      ...(showCategoryField
         ? [
             {
               id: 'category',
@@ -163,7 +173,7 @@ export function TemplateEditorContent({
         fieldType: f.fieldType,
       })),
     ];
-  }, [fields, hasCategories, t]);
+  }, [fields, showCategoryField, t]);
 
   // Debounced auto-save to localStorage and backend.
   // Runs ensureLockedFields before persisting so that x-field-order and
@@ -176,6 +186,7 @@ export function TemplateEditorContent({
         categoryLabel: t('Category'),
         hasCategories,
         categories,
+        requireCategorySelection,
       });
       setProposalTemplate(decisionProfileId, normalized);
       updateInstance.mutate(
@@ -348,7 +359,7 @@ export function TemplateEditorContent({
                 label={t('Proposal title')}
                 locked
               />
-              {hasCategories && (
+              {showCategoryField && (
                 <FieldConfigCard
                   icon={LuChevronDown}
                   iconTooltip={t('Dropdown')}

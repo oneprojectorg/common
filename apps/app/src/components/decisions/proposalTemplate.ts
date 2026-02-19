@@ -409,6 +409,8 @@ export function ensureLockedFields(
     categoryLabel: string;
     hasCategories: boolean;
     categories?: { label: string }[];
+    /** When true, the category field is included in the template. Defaults to true. */
+    requireCategorySelection?: boolean;
   },
 ): ProposalTemplate {
   let result = template;
@@ -424,8 +426,11 @@ export function ensureLockedFields(
     };
   }
 
-  // Sync category field with categories config
-  if (options.hasCategories) {
+  // Sync category field with categories config — only include the category
+  // field when categories exist AND requireCategorySelection is enabled.
+  const includeCategory =
+    options.hasCategories && (options.requireCategorySelection ?? false);
+  if (includeCategory) {
     const categoryLabels = (options.categories ?? []).map((c) => c.label);
     const existing = getFieldSchema(result, 'category');
     const categorySchema = buildCategorySchema(
