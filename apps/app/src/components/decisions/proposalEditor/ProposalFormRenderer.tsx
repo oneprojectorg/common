@@ -182,7 +182,11 @@ function renderField(
               title={schema.title}
               description={schema.description}
             />
-            <div className="min-h-8 text-neutral-gray3">{placeholder}</div>
+            <div
+              className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
+            >
+              {placeholder}
+            </div>
           </div>
         );
       }
