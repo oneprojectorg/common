@@ -315,7 +315,9 @@ export function ProposalFormRenderer({
     );
 
   return (
-    <div className={`space-y-4 ${previewMode ? 'pointer-events-none' : ''}`}>
+    <div
+      className={`flex flex-col ${previewMode ? 'pointer-events-none gap-4' : 'gap-8'}`}
+    >
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
@@ -326,9 +328,7 @@ export function ProposalFormRenderer({
       )}
 
       {dynamicFields.map((field) => (
-        <div key={field.key} className={previewMode ? '' : 'pt-4'}>
-          {render(field)}
-        </div>
+        <div key={field.key}>{render(field)}</div>
       ))}
     </div>
   );
