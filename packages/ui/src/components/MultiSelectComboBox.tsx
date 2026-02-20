@@ -218,6 +218,7 @@ export const MultiSelectComboBox = ({
                 key={option.isNewValue ? 'other' : option.id}
                 id={option.isNewValue ? 'other' : option.id}
                 textValue={option.label}
+                className="text-base leading-none"
               >
                 {option.label}
               </Tag>
