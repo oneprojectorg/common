@@ -8,7 +8,7 @@ export {
   type CollaborativeEditorRef,
 } from './CollaborativeEditor';
 export { CollaborativeTitleField } from './CollaborativeTitleField';
-export { CollaborativeCategoryField } from './CollaborativeCategoryField';
+export { CollaborativeDropdownField } from './CollaborativeDropdownField';
 export { CollaborativeBudgetField } from './CollaborativeBudgetField';
 export { CollaborativePresence } from './CollaborativePresence';
 export { CollaborativeTextField } from './CollaborativeTextField';

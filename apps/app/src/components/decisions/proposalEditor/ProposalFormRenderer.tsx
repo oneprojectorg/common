@@ -7,7 +7,7 @@ import type { Editor } from '@tiptap/react';
 
 import {
   CollaborativeBudgetField,
-  CollaborativeCategoryField,
+  CollaborativeDropdownField,
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
@@ -139,10 +139,12 @@ function renderField(
       );
     }
     return (
-      <CollaborativeCategoryField
+      <CollaborativeDropdownField
         options={options}
         initialValue={draft.category}
         onChange={(value) => onFieldChange('category', value)}
+        fragmentName="category"
+        placeholder={t('Select category')}
       />
     );
   }
@@ -252,10 +254,11 @@ function renderField(
       return (
         <div className="flex flex-col gap-2">
           <FieldHeader title={schema.title} description={schema.description} />
-          <CollaborativeCategoryField
+          <CollaborativeDropdownField
             options={options}
             initialValue={(draft[key] as string | null) ?? null}
             onChange={(value) => onFieldChange(key, value)}
+            fragmentName={key}
           />
         </div>
       );
