@@ -58,7 +58,7 @@ export async function uploadProposalAttachment({
     throw new UnauthorizedError('Not authorized');
   }
 
-  assertAccess({ decisions: permission.UPDATE }, profileUser.roles);
+  assertAccess({ profile: permission.UPDATE }, profileUser.roles);
 
   // Create attachment record in database
   const [attachment] = await db

@@ -50,7 +50,7 @@ export async function deleteProposalAttachment({
     throw new UnauthorizedError('Not authorized');
   }
 
-  assertAccess({ decisions: permission.UPDATE }, profileUser.roles);
+  assertAccess({ profile: permission.UPDATE }, profileUser.roles);
 
   // Delete the link (soft delete - keeps the attachment record)
   await db
