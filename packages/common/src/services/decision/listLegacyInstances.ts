@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq, inArray, isNull, sql } from '@op/db/client';
+import { and, asc, db, desc, eq, inArray, sql } from '@op/db/client';
 import { ProcessStatus, organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';

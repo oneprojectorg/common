@@ -451,6 +451,9 @@ export const legacyDecisionProfileFilterSchema = z.object({
 });
 
 // Type exports
+export type LegacyProcessInstance = z.infer<
+  typeof legacyProcessInstanceEncoder
+>;
 export type LegacyDecisionProfile = z.infer<
   typeof legacyDecisionProfileEncoder
 >;

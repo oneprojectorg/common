@@ -41,12 +41,11 @@ export const ProfileTabsRenderer = ({
   organization,
   profile,
   initialTab,
-  schema,
 }: {
   organization: Organization;
   profile: Profile;
   initialTab?: string;
-  schema: SchemaType;
+  schema?: SchemaType;
 }) => {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
@@ -56,7 +55,7 @@ export const ProfileTabsRenderer = ({
         profile={organization}
         initialTab={initialTab}
         decisionsContent={
-          <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
+          <ProfileDecisionsSuspense profileId={profile.id} />
         }
         followersContent={<ProfileFollowers profileId={profile.id} />}
       >
@@ -92,7 +91,7 @@ export const ProfileTabsRenderer = ({
         <ProfileFollowers profileId={profile.id} />
       </FollowersTabPanel>
       <DecisionsTabPanel>
-        <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
+        <ProfileDecisionsSuspense profileId={profile.id} />
       </DecisionsTabPanel>
       <MembersTabPanel profileId={profile.id} />
     </ProfileTabs>

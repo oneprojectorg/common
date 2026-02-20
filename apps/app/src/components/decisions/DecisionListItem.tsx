@@ -121,6 +121,51 @@ export const ProfileDecisionListItem = ({
   );
 };
 
+export const LegacyDecisionListItem = ({
+  name,
+  href,
+  currentStateName,
+  closingDate,
+  ownerName,
+  ownerAvatarPath,
+  participantCount = 0,
+  proposalCount = 0,
+}: {
+  name: string;
+  href: string;
+  currentStateName?: string | null;
+  closingDate?: string | null;
+  ownerName?: string | null;
+  ownerAvatarPath?: string | null;
+  participantCount?: number;
+  proposalCount?: number;
+}) => {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
+    >
+      <DecisionCardHeader
+        name={name}
+        currentState={currentStateName}
+        stewardName={ownerName}
+        stewardAvatarPath={ownerAvatarPath}
+      >
+        {closingDate && (
+          <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
+            <DecisionClosingDate closingDate={closingDate} />
+          </div>
+        )}
+      </DecisionCardHeader>
+
+      <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+        <DecisionStat number={participantCount} label="Participants" />
+        <DecisionStat number={proposalCount} label="Proposals" />
+      </div>
+    </Link>
+  );
+};
+
 const DecisionStat = ({
   number,
   label,
