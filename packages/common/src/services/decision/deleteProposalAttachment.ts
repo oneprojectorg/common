@@ -8,7 +8,7 @@ import { getProfileAccessUser } from '../access';
 
 /**
  * Deletes the link between an attachment and a proposal.
- * Any user with decisions:UPDATE permission on the proposal's process instance can delete attachments.
+ * Any user with profile:UPDATE permission on the proposal can delete attachments.
  * This is a soft delete - the attachment record itself is preserved.
  */
 export async function deleteProposalAttachment({
