@@ -14,7 +14,7 @@ interface CollaborativeCategoryFieldProps {
   onChange?: (category: string | null) => void;
   /** Yjs fragment name used to sync this field. Must be unique per dropdown instance. */
   fragmentName: string;
-  /** Placeholder text shown when no value is selected. Defaults to `'Select category'`. */
+  /** Placeholder text shown when no value is selected. */
   placeholder?: string;
 }
 
