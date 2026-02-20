@@ -170,7 +170,7 @@ export function TemplateEditorContent({
         fieldType: f.fieldType,
       })),
     ];
-  }, [fields, showCategoryField, t]);
+  }, [fields, showCategoryField]);
 
   // Debounced auto-save to localStorage and backend.
   // Runs ensureLockedFields before persisting so that x-field-order and
