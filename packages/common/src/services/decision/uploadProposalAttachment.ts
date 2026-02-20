@@ -3,7 +3,7 @@ import { attachments, proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { CommonError } from '../../utils';
+import { CommonError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId, getProfileAccessUser } from '../access';
 
 export interface UploadProposalAttachmentInput {
@@ -42,7 +42,6 @@ export async function uploadProposalAttachment({
     getCurrentProfileId(user.id),
     db.query.proposals.findFirst({
       where: { id: proposalId },
-      with: { processInstance: true },
     }),
   ]);
 
@@ -50,17 +49,16 @@ export async function uploadProposalAttachment({
     throw new CommonError('Proposal not found');
   }
 
-  if (!proposal.processInstance.profileId) {
-    throw new CommonError('Process instance has no associated profile');
-  }
-
-  // Assert the user has decisions:UPDATE permission on the instance profile
   const profileUser = await getProfileAccessUser({
     user: { id: user.id },
-    profileId: proposal.processInstance.profileId,
+    profileId: proposal.profileId,
   });
 
-  assertAccess({ decisions: permission.UPDATE }, profileUser?.roles ?? []);
+  if (!profileUser) {
+    throw new UnauthorizedError('Not authorized');
+  }
+
+  assertAccess({ decisions: permission.UPDATE }, profileUser.roles);
 
   // Create attachment record in database
   const [attachment] = await db

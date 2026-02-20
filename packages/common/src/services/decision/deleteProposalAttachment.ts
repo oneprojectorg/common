@@ -3,7 +3,7 @@ import { proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { CommonError } from '../../utils';
+import { CommonError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 
 /**
@@ -30,7 +30,6 @@ export async function deleteProposalAttachment({
     }),
     db.query.proposals.findFirst({
       where: { id: proposalId },
-      with: { processInstance: true },
     }),
   ]);
 
@@ -42,17 +41,16 @@ export async function deleteProposalAttachment({
     throw new CommonError('Proposal not found');
   }
 
-  if (!proposal.processInstance.profileId) {
-    throw new CommonError('Process instance has no associated profile');
-  }
-
-  // Assert the user has decisions:UPDATE permission on the instance profile
   const profileUser = await getProfileAccessUser({
     user: { id: user.id },
-    profileId: proposal.processInstance.profileId,
+    profileId: proposal.profileId,
   });
 
-  assertAccess({ decisions: permission.UPDATE }, profileUser?.roles ?? []);
+  if (!profileUser) {
+    throw new UnauthorizedError('Not authorized');
+  }
+
+  assertAccess({ decisions: permission.UPDATE }, profileUser.roles);
 
   // Delete the link (soft delete - keeps the attachment record)
   await db

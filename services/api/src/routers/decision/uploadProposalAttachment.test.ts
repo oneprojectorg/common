@@ -92,11 +92,16 @@ describe.concurrent('uploadProposalAttachment', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    // Create a member user with access to the same instance (not the proposal owner)
+    // Create a user and grant them access to the proposal profile (simulating an invite)
     const member = await testData.createMemberUser({
       organization: setupA.organization,
-      instanceProfileIds: [instance.profileId],
     });
+
+    await testData.grantProfileAccess(
+      proposal.profileId,
+      member.authUserId,
+      member.email,
+    );
 
     const memberCaller = await createAuthenticatedCaller(member.email);
 
@@ -165,7 +170,7 @@ describe.concurrent('uploadProposalAttachment', () => {
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AccessControlException' },
+      cause: { name: 'UnauthorizedError' },
     });
   });
 });
