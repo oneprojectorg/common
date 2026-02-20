@@ -123,7 +123,7 @@ export const listDecisionProfiles = async ({
       .where(
         processInstanceConditions.length > 0
           ? and(...processInstanceConditions)
-          : undefined, // This will still work correctly
+          : undefined,
       ),
   );
 
@@ -133,7 +133,6 @@ export const listDecisionProfiles = async ({
     : undefined;
 
   // Filter profiles to only those the user has access to via profileUsers
-  // This uses a subquery which executes as a single query at the database level
   const authorizationCondition = inArray(
     profiles.id,
     db

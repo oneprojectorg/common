@@ -52,8 +52,8 @@ const LegacyDecisionProcessList = ({
   const [navigatingInstanceId, setNavigatingInstanceId] = useState<
     string | null
   >(null);
-  const [data] = trpc.decision.listInstances.useSuspenseQuery({
-    stewardProfileId: profileId,
+  const [data] = trpc.decision.listLegacyInstances.useSuspenseQuery({
+    ownerProfileId: profileId,
     limit: 20,
     offset: 0,
   });
@@ -235,8 +235,8 @@ const DecisionProcessList = ({
       status: VISIBLE_DECISION_STATUSES,
     });
 
-  const legacyInstances = trpc.decision.listInstances.useQuery(
-    { stewardProfileId: profileId, limit: 20, offset: 0 },
+  const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
+    { ownerProfileId: profileId, limit: 20, offset: 0 },
     { retry: false, enabled: canReadDecisions },
   );
 

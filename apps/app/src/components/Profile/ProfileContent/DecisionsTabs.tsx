@@ -24,8 +24,8 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
     status: VISIBLE_DECISION_STATUSES,
   });
 
-  const legacyInstances = trpc.decision.listInstances.useQuery(
-    { stewardProfileId: profileId, limit: 1, offset: 0 },
+  const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
+    { ownerProfileId: profileId, limit: 1, offset: 0 },
     { retry: false, enabled: canReadDecisions },
   );
 
