@@ -408,13 +408,11 @@ export const legacyInstanceFilterSchema = z
   })
   .extend(legacyPaginationInputSchema.shape);
 
-export const legacyOnlyInstanceFilterSchema = z
-  .object({
-    ownerProfileId: z.uuid(),
-    status: z.enum(ProcessStatus).optional(),
-    search: z.string().optional(),
-  })
-  .extend(legacyPaginationInputSchema.shape);
+export const legacyOnlyInstanceFilterSchema = z.object({
+  ownerProfileId: z.uuid(),
+});
+
+export const legacyInstanceListEncoder = z.array(legacyProcessInstanceEncoder);
 
 export const legacyProposalFilterSchema = z
   .object({

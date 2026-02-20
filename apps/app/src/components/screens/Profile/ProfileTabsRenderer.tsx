@@ -54,9 +54,7 @@ export const ProfileTabsRenderer = ({
       <ProfileTabsMobile
         profile={organization}
         initialTab={initialTab}
-        decisionsContent={
-          <ProfileDecisionsSuspense profileId={profile.id} />
-        }
+        decisionsContent={<ProfileDecisionsSuspense profileId={profile.id} />}
         followersContent={<ProfileFollowers profileId={profile.id} />}
       >
         <ProfileRelationshipsSuspense

@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
+import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -13,8 +14,6 @@ import {
   DecisionListItem,
   LegacyDecisionListItem,
 } from '@/components/decisions/DecisionListItem';
-
-import { useParams } from 'next/navigation';
 
 const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
   const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
@@ -35,29 +34,22 @@ const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
   );
 };
 
-const LegacyDecisionProcessList = ({
-  profileId,
-}: {
-  profileId: string;
-}) => {
+const LegacyDecisionProcessList = ({ profileId }: { profileId: string }) => {
   const { slug } = useParams();
   const [data] = trpc.decision.listLegacyInstances.useSuspenseQuery({
     ownerProfileId: profileId,
-    limit: 20,
-    offset: 0,
   });
 
-  if (!data.instances || data.instances.length === 0) {
+  if (!data || data.length === 0) {
     return null;
   }
 
   return (
     <div className="flex flex-col">
-      {data.instances.map((instance) => {
-        const currentState =
-          instance.process?.processSchema?.states?.find(
-            (s) => s.id === instance.currentStateId,
-          );
+      {data.map((instance) => {
+        const currentState = instance.process?.processSchema?.states?.find(
+          (s) => s.id === instance.currentStateId,
+        );
         const currentPhase = instance.instanceData?.phases?.find(
           (p) => p.phaseId === instance.instanceData?.currentPhaseId,
         );
@@ -111,11 +103,7 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
   );
 };
 
-const DecisionProcessList = ({
-  profileId,
-}: {
-  profileId: string;
-}) => {
+const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   const access = useUser();
   const canReadDecisions =
     access.getPermissionsForProfile(profileId).decisions.read;
@@ -127,12 +115,12 @@ const DecisionProcessList = ({
     });
 
   const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
-    { ownerProfileId: profileId, limit: 20, offset: 0 },
+    { ownerProfileId: profileId },
     { retry: false, enabled: canReadDecisions },
   );
 
   const hasDecisionProfiles = decisionProfiles.items.length > 0;
-  const hasLegacyInstances = (legacyInstances.data?.instances?.length ?? 0) > 0;
+  const hasLegacyInstances = (legacyInstances.data?.length ?? 0) > 0;
 
   if (!hasDecisionProfiles && !hasLegacyInstances) {
     return <EmptyDecisions profileId={profileId} />;
