@@ -25,7 +25,7 @@ import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
-import { ensureLockedFields, schemaHasOptions } from '../proposalTemplate';
+import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import {
   type ProposalTemplateSchema,
@@ -123,32 +123,12 @@ export function ProposalEditor({
 
   // -- Schema compilation ----------------------------------------------------
 
-  const rawTemplate = instance.instanceData
+  const proposalTemplate = instance.instanceData
     ?.proposalTemplate as ProposalTemplateSchema | null;
 
-  if (!rawTemplate) {
+  if (!proposalTemplate) {
     throw new Error('Proposal template not found on instance');
   }
-
-  const config = instance.instanceData?.config as
-    | {
-        categories?: { label: string }[];
-        requireCategorySelection?: boolean;
-      }
-    | undefined;
-  const categories = config?.categories ?? [];
-
-  const proposalTemplate = useMemo(
-    () =>
-      ensureLockedFields(rawTemplate, {
-        titleLabel: t('Proposal title'),
-        categoryLabel: t('Category'),
-        hasCategories: categories.length > 0,
-        categories,
-        requireCategorySelection: config?.requireCategorySelection ?? false,
-      }) as ProposalTemplateSchema,
-    [rawTemplate, categories, config?.requireCategorySelection, t],
-  );
 
   const templateRef = useRef(proposalTemplate);
   templateRef.current = proposalTemplate;
