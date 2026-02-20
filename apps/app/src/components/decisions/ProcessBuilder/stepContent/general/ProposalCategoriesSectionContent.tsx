@@ -50,7 +50,7 @@ export function ProposalCategoriesSectionContent({
     requireCategorySelection:
       storeData?.requireCategorySelection ??
       serverConfig?.requireCategorySelection ??
-      false,
+      true,
     allowMultipleCategories:
       storeData?.allowMultipleCategories ??
       serverConfig?.allowMultipleCategories ??
