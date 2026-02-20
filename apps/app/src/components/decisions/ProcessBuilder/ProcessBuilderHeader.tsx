@@ -168,23 +168,67 @@ const ProcessBuilderHeaderContent = ({
   };
 
   return (
-    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
-      <div className="relative z-10 flex items-center gap-2 pl-4 md:pl-8">
-        {hasSteps && <SidebarTrigger className="size-4 md:hidden" />}
+    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between gap-2 border-b bg-white sm:h-28 sm:flex-col sm:gap-0">
+      <div className="relative z-10 flex h-14 w-full items-center justify-between gap-2 overflow-hidden pl-4 sm:border-b md:pl-8">
+        <div className="relative z-10 flex items-center gap-2 overflow-hidden">
+          {hasSteps && <SidebarTrigger className="size-4 sm:hidden" />}
 
-        <Link
-          href="/"
-          className="hidden items-center gap-2 text-primary md:flex"
-        >
-          <LuHouse className="size-4" />
-          {t('Home')}
-        </Link>
-        <LuChevronRight className="hidden size-4 md:block" />
+          <Link
+            href="/"
+            className="hidden items-center gap-2 text-primary sm:flex"
+          >
+            <LuHouse className="size-4" />
+            {t('Home')}
+          </Link>
+          <LuChevronRight className="hidden size-4 sm:block" />
 
-        <span>{displayName}</span>
+          <span className="truncate">{displayName}</span>
+        </div>
+        <div className="relative z-10 flex gap-4 pr-4 md:pr-8">
+          {hasSteps && (
+            <div className="flex gap-2">
+              {validation.stepsRemaining > 0 && (
+                <StepsRemainingPopover validation={validation} />
+              )}
+              <Button
+                className="h-8 rounded-sm"
+                onPress={handleLaunchOrSave}
+                isDisabled={
+                  updateInstance.isPending ||
+                  !validation.isReadyToLaunch ||
+                  isTerminalStatus
+                }
+              >
+                {isDraft ? (
+                  <LuPlus className="size-4" />
+                ) : (
+                  <LuSave className="size-4" />
+                )}
+                <span className="md:hidden">
+                  {isDraft ? t('Launch') : t('Update')}
+                </span>
+                <span className="hidden md:inline">
+                  {isDraft ? t('Launch Process') : t('Update Process')}
+                </span>
+              </Button>
+            </div>
+          )}
+          <UserAvatarMenu className="hidden sm:block" />
+        </div>
       </div>
+
+      {slug && decisionProfileId && (
+        <LaunchProcessModal
+          isOpen={isLaunchModalOpen}
+          onOpenChange={setIsLaunchModalOpen}
+          instanceId={instanceId}
+          processName={displayName}
+          slug={slug}
+          decisionProfileId={decisionProfileId}
+        />
+      )}
       {hasSteps && (
-        <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
+        <nav className="z-0 hidden h-14 w-full px-4 sm:flex md:px-8">
           <Tabs
             selectedKey={currentStep?.id}
             onSelectionChange={handleSelectionChange}
@@ -198,7 +242,7 @@ const ProcessBuilderHeaderContent = ({
                 <Tab
                   key={step.id}
                   id={step.id}
-                  className="flex h-full items-center gap-2"
+                  className="flex h-full cursor-pointer items-center gap-2"
                 >
                   {t(step.labelKey)}
                   {step.id === 'rubric' && <ComingSoonIndicator />}
@@ -207,48 +251,6 @@ const ProcessBuilderHeaderContent = ({
             </TabList>
           </Tabs>
         </nav>
-      )}
-      <div className="relative z-10 flex gap-4 pr-4 md:pr-8">
-        {hasSteps && (
-          <div className="flex gap-2">
-            {validation.stepsRemaining > 0 && (
-              <StepsRemainingPopover validation={validation} />
-            )}
-            <Button
-              className="h-8 rounded-sm"
-              onPress={handleLaunchOrSave}
-              isDisabled={
-                updateInstance.isPending ||
-                !validation.isReadyToLaunch ||
-                isTerminalStatus
-              }
-            >
-              {isDraft ? (
-                <LuPlus className="size-4" />
-              ) : (
-                <LuSave className="size-4" />
-              )}
-              <span className="md:hidden">
-                {isDraft ? t('Launch') : t('Update')}
-              </span>
-              <span className="hidden md:inline">
-                {isDraft ? t('Launch Process') : t('Update Process')}
-              </span>
-            </Button>
-          </div>
-        )}
-        <UserAvatarMenu className="hidden md:block" />
-      </div>
-
-      {slug && decisionProfileId && (
-        <LaunchProcessModal
-          isOpen={isLaunchModalOpen}
-          onOpenChange={setIsLaunchModalOpen}
-          instanceId={instanceId}
-          processName={displayName}
-          slug={slug}
-          decisionProfileId={decisionProfileId}
-        />
       )}
     </header>
   );

@@ -50,7 +50,7 @@ const EditDecisionPage = async ({
         serverData={serverData}
       />
       <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
-      <div className="flex grow flex-col overflow-y-auto sm:flex-row">
+      <div className="flex grow flex-col overflow-y-auto md:flex-row">
         <ProcessBuilderSidebar instanceId={instanceId} />
         <main className="grow">
           <ProcessBuilderContent

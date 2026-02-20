@@ -148,7 +148,7 @@ export function PhasesSectionContent({
   };
 
   return (
-    <div className="mx-auto w-full max-w-160 space-y-4 p-4 md:p-8">
+    <div className="mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
         <h2 className="font-serif text-title-sm">{t('Phases')}</h2>
         <SaveStatusIndicator
@@ -404,7 +404,7 @@ export const PhaseEditor = ({
                         )}
                       </p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4">
                       <div className="flex-1">
                         <DatePicker
                           label={t('Start date')}

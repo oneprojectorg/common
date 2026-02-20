@@ -29,7 +29,7 @@ export const ProcessBuilderSidebar = ({
   }
 
   return (
-    <nav className="h-12 shrink-0 overflow-x-auto overflow-y-hidden p-0 py-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
+    <nav className="h-auto shrink-0 overflow-x-auto overflow-y-hidden p-0 py-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
       <Tabs
         key={currentStep?.id}
         orientation="vertical"
@@ -45,7 +45,7 @@ export const ProcessBuilderSidebar = ({
               key={section.id}
               id={section.id}
               variant="pill"
-              className="first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:text-charcoal md:selected:bg-neutral-offWhite"
+              className="cursor-pointer first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:text-charcoal md:selected:bg-neutral-offWhite"
             >
               {t(section.labelKey)}
             </Tab>

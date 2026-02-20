@@ -181,7 +181,7 @@ export function OverviewSectionForm({
           )}
         />
 
-        <div className="mx-auto w-full max-w-160 space-y-8 p-4 md:p-8">
+        <div className="mx-auto w-full space-y-8 p-4 md:max-w-160 md:p-8">
           {/* Process Overview Section */}
           <section className="space-y-6">
             <div>
