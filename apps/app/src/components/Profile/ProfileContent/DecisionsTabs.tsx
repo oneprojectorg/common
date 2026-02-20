@@ -24,13 +24,13 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
     status: VISIBLE_DECISION_STATUSES,
   });
 
-  const legacyInstances = trpc.decision.listInstances.useQuery(
-    { stewardProfileId: profileId, limit: 1, offset: 0 },
+  const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
+    { ownerProfileId: profileId },
     { retry: false, enabled: canReadDecisions },
   );
 
   const hasDecisionProfiles = (decisionProfiles.data?.items?.length ?? 0) > 0;
-  const hasLegacyInstances = (legacyInstances.data?.instances?.length ?? 0) > 0;
+  const hasLegacyInstances = (legacyInstances.data?.length ?? 0) > 0;
   const hasPublishedDecisions = decisionProfiles.data?.items?.some(
     (item) => item.processInstance.status === ProcessStatus.PUBLISHED,
   );
