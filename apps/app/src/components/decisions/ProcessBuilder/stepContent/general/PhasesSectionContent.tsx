@@ -404,7 +404,7 @@ export const PhaseEditor = ({
                         )}
                       </p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4">
                       <div className="flex-1">
                         <DatePicker
                           label={t('Start date')}
