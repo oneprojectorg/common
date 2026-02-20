@@ -1,5 +1,9 @@
 import type { proposalEncoder } from '@op/api/encoders';
-import { SYSTEM_FIELD_KEYS, serverExtensions } from '@op/common/client';
+import {
+  SYSTEM_FIELD_KEYS,
+  isRawValueFragment,
+  serverExtensions,
+} from '@op/common/client';
 import { getTextPreview } from '@op/core';
 import { type JSONContent, generateText } from '@tiptap/core';
 import type { z } from 'zod';
@@ -11,9 +15,9 @@ type DocumentContent = NonNullable<Proposal['documentContent']>;
  * Extracts a plain-text preview from proposal document content.
  *
  * System fields (title, budget, category) are excluded because they are
- * rendered separately in the card header and their TipTap fragments contain
- * double-nested arrays rather than standard TipTap nodes, which crashes
- * `generateText()`.
+ * rendered separately in the card header. Dynamic fields that store raw
+ * `Y.XmlText` (dropdowns, money fields) are also filtered out because
+ * their bare `text` nodes crash `generateText()`.
  */
 export function getProposalContentPreview(
   documentContent?: DocumentContent,
@@ -30,6 +34,15 @@ export function getProposalContentPreview(
       if (SYSTEM_FIELD_KEYS.has(key) || !fragment?.content) {
         continue;
       }
+
+      // Skip fragments whose content is bare inline text nodes (dropdown,
+      // budget fields stored via useCollaborativeFragment). These are not
+      // valid TipTap doc children and would crash generateText().
+      const hasOnlyRawText = isRawValueFragment(fragment.content);
+      if (hasOnlyRawText) {
+        continue;
+      }
+
       allContent.push(...fragment.content);
     }
 
