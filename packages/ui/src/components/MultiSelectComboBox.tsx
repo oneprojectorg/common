@@ -165,65 +165,66 @@ export const MultiSelectComboBox = ({
         </Label>
       )}
 
-      <div
-        ref={triggerRef}
-        className={`flex min-h-10 w-full cursor-pointer items-center rounded-md border bg-white px-3 py-2 text-base ${
-          errorMessage
-            ? 'border-functional-red'
-            : 'border-offWhite hover:border-neutral-gray2'
-        }`}
-        onClick={() => {
-          if (document.activeElement !== inputRef.current) {
-            inputRef.current?.focus();
-            if (filteredItems.length > 0) {
-              setIsOpen(true);
-            }
-          }
-        }}
-      >
-        <div className="relative flex w-full items-center">
-          <input
-            ref={inputRef}
-            type="text"
-            role="combobox"
-            aria-haspopup="listbox"
-            aria-expanded={isOpen}
-            aria-controls={listboxId}
-            aria-autocomplete="list"
-            className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-hidden placeholder:text-neutral-gray4"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleInputKeyDown}
-            onFocus={() => {
+      <div ref={triggerRef} className="flex flex-col gap-2">
+        <div
+          className={`flex min-h-10 w-full cursor-pointer items-center rounded-md border bg-white px-3 py-2 text-base ${
+            errorMessage
+              ? 'border-functional-red'
+              : 'border-offWhite hover:border-neutral-gray2'
+          }`}
+          onClick={() => {
+            if (document.activeElement !== inputRef.current) {
+              inputRef.current?.focus();
               if (filteredItems.length > 0) {
                 setIsOpen(true);
               }
-            }}
-            placeholder={placeholder}
-          />
-          <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-charcoal">
-            {isLoading ? (
-              <LoadingSpinner className="size-4" color="gray" />
-            ) : (
-              <LuSearch className="size-4" />
-            )}
-          </span>
+            }
+          }}
+        >
+          <div className="relative flex w-full items-center">
+            <input
+              ref={inputRef}
+              type="text"
+              role="combobox"
+              aria-haspopup="listbox"
+              aria-expanded={isOpen}
+              aria-controls={listboxId}
+              aria-autocomplete="list"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-hidden placeholder:text-neutral-gray4"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleInputKeyDown}
+              onFocus={() => {
+                if (filteredItems.length > 0) {
+                  setIsOpen(true);
+                }
+              }}
+              placeholder={placeholder}
+            />
+            <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-charcoal">
+              {isLoading ? (
+                <LoadingSpinner className="size-4" color="gray" />
+              ) : (
+                <LuSearch className="size-4" />
+              )}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {selectedOptions.length > 0 && (
-        <TagGroup onRemove={handleTagRemove}>
-          {selectedOptions.map((option) => (
-            <Tag
-              key={option.isNewValue ? 'other' : option.id}
-              id={option.isNewValue ? 'other' : option.id}
-              textValue={option.label}
-            >
-              {option.label}
-            </Tag>
-          ))}
-        </TagGroup>
-      )}
+        {selectedOptions.length > 0 && (
+          <TagGroup onRemove={handleTagRemove}>
+            {selectedOptions.map((option) => (
+              <Tag
+                key={option.isNewValue ? 'other' : option.id}
+                id={option.isNewValue ? 'other' : option.id}
+                textValue={option.label}
+              >
+                {option.label}
+              </Tag>
+            ))}
+          </TagGroup>
+        )}
+      </div>
 
       {errorMessage && (
         <p className="text-sm text-functional-red">
