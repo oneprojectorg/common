@@ -307,7 +307,6 @@ export function ProposalEditor({
               onFieldChange={handleFieldChange}
               onEditorFocus={onEditorFocus}
               onEditorBlur={onEditorBlur}
-              t={t}
             />
 
             <div className="border-t border-neutral-gray1 pt-8">

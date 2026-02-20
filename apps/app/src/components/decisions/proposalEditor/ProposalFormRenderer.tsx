@@ -5,6 +5,8 @@ import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import type { Editor } from '@tiptap/react';
 
+import { useTranslations } from '@/lib/i18n/routing';
+
 import {
   CollaborativeBudgetField,
   CollaborativeDropdownField,
@@ -29,8 +31,6 @@ interface ProposalFormRendererProps {
   onEditorFocus?: (editor: Editor) => void;
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
-  /** Translation function for placeholders. */
-  t: (key: string, params?: Record<string, string | number>) => string;
   /** When true, renders the form as a non-interactive static preview. */
   previewMode?: boolean;
 }
@@ -294,9 +294,10 @@ export function ProposalFormRenderer({
   onFieldChange,
   onEditorFocus,
   onEditorBlur,
-  t,
   previewMode = false,
 }: ProposalFormRendererProps) {
+  const t = useTranslations();
+
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
@@ -314,7 +315,9 @@ export function ProposalFormRenderer({
     );
 
   return (
-    <div className={`space-y-4 ${previewMode ? 'pointer-events-none' : ''}`}>
+    <div
+      className={`flex flex-col ${previewMode ? 'pointer-events-none gap-4' : 'gap-8'}`}
+    >
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
@@ -325,9 +328,7 @@ export function ProposalFormRenderer({
       )}
 
       {dynamicFields.map((field) => (
-        <div key={field.key} className="pt-4">
-          {render(field)}
-        </div>
+        <div key={field.key}>{render(field)}</div>
       ))}
     </div>
   );
