@@ -1,4 +1,5 @@
 import { createServerSideHelpers } from '@trpc/react-query/server';
+import { cache } from 'react';
 import superjson from 'superjson';
 
 import { appRouter } from './routers';
@@ -29,7 +30,7 @@ export { dehydrate, HydrationBoundary } from '@tanstack/react-query';
  * };
  * ```
  */
-export const createServerUtils = async () => {
+export const createServerUtils = cache(async () => {
   const ctx = await createServerContext();
 
   const helpers = createServerSideHelpers({
@@ -39,4 +40,4 @@ export const createServerUtils = async () => {
   });
 
   return { utils: helpers, queryClient: helpers.queryClient };
-};
+});
