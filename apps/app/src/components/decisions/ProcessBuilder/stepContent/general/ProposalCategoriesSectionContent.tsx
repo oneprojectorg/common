@@ -63,9 +63,10 @@ export function ProposalCategoriesSectionContent({
   // tRPC mutation
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  // Debounced API save — the store is written immediately so other steps
-  // (e.g. the template editor) always see the latest config.
-  const debouncedApiSave = useDebouncedCallback((data: CategoryConfig) => {
+  // Debounced auto-save: writes to Zustand store + API
+  const debouncedSave = useDebouncedCallback((data: CategoryConfig) => {
+    setSaveStatus(decisionProfileId, 'saving');
+    setInstanceData(decisionProfileId, data);
     updateInstance.mutate(
       {
         instanceId,
@@ -78,13 +79,11 @@ export function ProposalCategoriesSectionContent({
     );
   }, AUTOSAVE_DEBOUNCE_MS);
 
-  // Update local state, write to store immediately, debounce API call
+  // Update local state and trigger debounced save
   const updateConfig = (update: Partial<CategoryConfig>) => {
     setConfig((prev) => {
       const updated = { ...prev, ...update };
-      setSaveStatus(decisionProfileId, 'saving');
-      setInstanceData(decisionProfileId, updated);
-      debouncedApiSave(updated);
+      debouncedSave(updated);
       return updated;
     });
   };
