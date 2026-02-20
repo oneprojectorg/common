@@ -14,7 +14,6 @@ import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ensureLockedFields } from '../../../proposalTemplate';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
@@ -41,9 +40,6 @@ export function ProposalCategoriesSectionContent({
     (s) => s.instances[decisionProfileId],
   );
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const setProposalTemplate = useProcessBuilderStore(
-    (s) => s.setProposalTemplate,
-  );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
@@ -67,39 +63,14 @@ export function ProposalCategoriesSectionContent({
   // tRPC mutation
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  // Debounced auto-save: writes to Zustand store + API.
-  // Also reconciles the proposal template so the category field is
-  // added/removed in sync with the requireCategorySelection toggle.
+  // Debounced auto-save: writes to Zustand store + API
   const debouncedSave = useDebouncedCallback((data: CategoryConfig) => {
     setSaveStatus(decisionProfileId, 'saving');
     setInstanceData(decisionProfileId, data);
-
-    // Reconcile the proposal template with the updated category config
-    const currentTemplate =
-      storeData?.proposalTemplate ??
-      (instance.instanceData?.proposalTemplate as
-        | Parameters<typeof ensureLockedFields>[0]
-        | undefined);
-
-    const updatedTemplate = currentTemplate
-      ? ensureLockedFields(currentTemplate, {
-          titleLabel: t('Proposal title'),
-          categoryLabel: t('Category'),
-          hasCategories: data.categories.length > 0,
-          categories: data.categories,
-          requireCategorySelection: data.requireCategorySelection,
-        })
-      : undefined;
-
-    if (updatedTemplate) {
-      setProposalTemplate(decisionProfileId, updatedTemplate);
-    }
-
     updateInstance.mutate(
       {
         instanceId,
         config: data,
-        proposalTemplate: updatedTemplate ?? undefined,
       },
       {
         onSuccess: () => markSaved(decisionProfileId),
