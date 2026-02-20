@@ -29,7 +29,7 @@ export const ProcessBuilderSidebar = ({
   }
 
   return (
-    <nav className="h-12 shrink-0 overflow-x-auto overflow-y-hidden p-0 py-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
+    <nav className="h-auto shrink-0 overflow-x-auto overflow-y-hidden p-0 py-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
       <Tabs
         key={currentStep?.id}
         orientation="vertical"
