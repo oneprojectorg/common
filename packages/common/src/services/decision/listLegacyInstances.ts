@@ -1,15 +1,10 @@
-import { and, asc, db, desc, eq, inArray, sql } from '@op/db/client';
-import { ProcessStatus, organizations, processInstances } from '@op/db/schema';
+import { and, asc, db, desc, eq, sql } from '@op/db/client';
+import { organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
+import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-
-const VISIBLE_STATUSES = [
-  ProcessStatus.PUBLISHED,
-  ProcessStatus.COMPLETED,
-  ProcessStatus.CANCELLED,
-];
 
 export const listLegacyInstances = async ({
   ownerProfileId,
@@ -34,28 +29,19 @@ export const listLegacyInstances = async ({
     .from(organizations)
     .where(eq(organizations.profileId, ownerProfileId));
 
-  // Check if the user has org-level decisions.READ access.
-  // Non-members can still see published/completed/cancelled instances.
-  let hasFullAccess = true;
-  if (org[0]?.id) {
-    try {
-      const orgUser = await getOrgAccessUser({
-        user,
-        organizationId: org[0].id,
-      });
-      assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
-      hasFullAccess = true;
-    } catch {
-      // User is not a member or lacks permission — restrict to visible statuses
-    }
+  if (!org[0]?.id) {
+    throw new UnauthorizedError("You don't have access to do this");
   }
+
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: org[0].id,
+  });
+
+  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
   try {
     const conditions = [eq(processInstances.ownerProfileId, ownerProfileId)];
-
-    if (!hasFullAccess) {
-      conditions.push(inArray(processInstances.status, VISIBLE_STATUSES));
-    }
 
     const whereClause = and(...conditions);
 

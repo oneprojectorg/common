@@ -17,6 +17,17 @@ export const listLegacyInstancesRouter = router({
         authUserId: ctx.user.id,
       });
 
-      return legacyProcessInstanceListEncoder.parse(result);
+      const instanceEncoder =
+        legacyProcessInstanceListEncoder.shape.instances.element;
+
+      const instances = result.instances.filter(
+        (instance) => instanceEncoder.safeParse(instance).success,
+      );
+
+      return legacyProcessInstanceListEncoder.parse({
+        instances,
+        total: instances.length,
+        hasMore: result.hasMore,
+      });
     }),
 });
