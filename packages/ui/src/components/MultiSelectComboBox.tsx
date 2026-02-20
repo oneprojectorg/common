@@ -1,6 +1,5 @@
 'use client';
 
-import { LuSearch } from 'react-icons/lu';
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   ListBox as AriaListBox,
@@ -8,6 +7,7 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import type { Key, ValidationResult } from 'react-aria-components';
+import { LuSearch } from 'react-icons/lu';
 
 import { Label } from './Field';
 import { LoadingSpinner } from './LoadingSpinner';
