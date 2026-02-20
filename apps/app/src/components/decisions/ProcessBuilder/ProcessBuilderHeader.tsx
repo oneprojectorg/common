@@ -169,7 +169,7 @@ const ProcessBuilderHeaderContent = ({
 
   return (
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
-      <div className="relative z-10 flex items-center gap-2 pl-4 md:pl-8">
+      <div className="relative z-10 flex items-center gap-2 overflow-hidden pl-4 md:pl-8">
         {hasSteps && <SidebarTrigger className="size-4 md:hidden" />}
 
         <Link
@@ -181,7 +181,7 @@ const ProcessBuilderHeaderContent = ({
         </Link>
         <LuChevronRight className="hidden size-4 md:block" />
 
-        <span>{displayName}</span>
+        <span className="truncate">{displayName}</span>
       </div>
       {hasSteps && (
         <nav className="absolute z-0 hidden h-full w-full justify-center md:flex">
