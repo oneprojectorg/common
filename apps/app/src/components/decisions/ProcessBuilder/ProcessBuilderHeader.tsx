@@ -168,7 +168,7 @@ const ProcessBuilderHeaderContent = ({
   };
 
   return (
-    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
+    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between gap-2 border-b bg-white">
       <div className="relative z-10 flex items-center gap-2 overflow-hidden pl-4 md:pl-8">
         {hasSteps && <SidebarTrigger className="size-4 md:hidden" />}
 
