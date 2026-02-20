@@ -82,7 +82,7 @@ export function CollaborativeTextField({
   }, []);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div data-testid={`field-${fragmentName}`} className="flex flex-col gap-4">
       {(title || description) && (
         <div className="flex flex-col gap-2">
           {title && (
