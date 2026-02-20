@@ -33,7 +33,11 @@ export const listLegacyInstances = async ({
     where: eq(processInstances.ownerProfileId, ownerProfileId),
     with: {
       process: true,
-      owner: true,
+      owner: {
+        with: {
+          avatarImage: true,
+        },
+      },
       proposals: {
         columns: {
           id: true,

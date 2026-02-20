@@ -145,18 +145,15 @@ describe.concurrent('listLegacyInstances', () => {
       })
       .returning();
 
-    const [legacyInstance] = await db
-      .insert(processInstances)
-      .values({
-        name: 'Legacy With Proposals',
-        processId: process!.id,
-        ownerProfileId: setup.organization.profileId,
-        instanceData: legacyInstanceData,
-        currentStateId: 'submission',
-        status: ProcessStatus.PUBLISHED,
-        profileId: null,
-      })
-      .returning();
+    await db.insert(processInstances).values({
+      name: 'Legacy With Proposals',
+      processId: process!.id,
+      ownerProfileId: setup.organization.profileId,
+      instanceData: legacyInstanceData,
+      currentStateId: 'submission',
+      status: ProcessStatus.PUBLISHED,
+      profileId: null,
+    });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
