@@ -687,5 +687,11 @@
   "Complete all required phase fields": "Complete all required phase fields",
   "Create a proposal template": "Create a proposal template",
   "Fix errors in the proposal template": "Fix errors in the proposal template",
-  "Invite members": "Invite members"
+  "Invite members": "Invite members",
+  "Manage Process": "Manage Process",
+  "Invite Members": "Invite Members",
+  "Review": "Review",
+  "Submit Proposals": "Submit Proposals",
+  "Vote": "Vote",
+  "Advanced permissions": "Advanced permissions"
 }

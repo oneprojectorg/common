@@ -58,6 +58,10 @@ export * from './tiptapExtensions';
 export * from './uploadProposalAttachment';
 export * from './deleteProposalAttachment';
 
+// Decision-specific permissions
+export * from './permissions';
+export * from './decisionCapabilities';
+
 // Voting management
 export * from './voting';
 

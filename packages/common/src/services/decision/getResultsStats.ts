@@ -7,10 +7,11 @@ import {
   proposals,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { decisionPermission } from './permissions';
 import { extractBudgetValue } from './proposalDataSchema';
 
 export const getResultsStats = async ({
@@ -48,7 +49,7 @@ export const getResultsStats = async ({
     organizationId,
   });
 
-  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+  assertAccess({ decisions: decisionPermission.REVIEW }, orgUser?.roles ?? []);
 
   const result = await db._query.decisionProcessResults.findFirst({
     where: eq(decisionProcessResults.processInstanceId, instanceId),

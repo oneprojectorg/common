@@ -1,10 +1,11 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
 import { ProcessStatus, organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { decisionPermission } from './permissions';
 
 export interface ListInstancesInput {
   ownerProfileId?: string;
@@ -54,7 +55,7 @@ export const listInstances = async ({
     organizationId: org[0].id,
   });
 
-  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+  assertAccess({ decisions: decisionPermission.REVIEW }, orgUser?.roles ?? []);
 
   try {
     // Build filter conditions

@@ -112,16 +112,19 @@ export async function updateRolePermissions({
 
   await assertProfileAdmin(user, role.profileId);
 
-  // Convert boolean permissions to bitfield
-  const bitfield = toBitField(permissions);
+  // Convert boolean ACRUD permissions to bitfield (bits 0–4 only)
+  const acrudBitfield = toBitField(permissions);
 
-  // Upsert the permission entry
+  // Upsert the permission entry, preserving any higher bits (e.g. decision capabilities)
   const existing = await db._query.accessRolePermissionsOnAccessZones.findFirst(
     {
       where: (table, { eq, and }) =>
         and(eq(table.accessRoleId, roleId), eq(table.accessZoneId, zone.id)),
     },
   );
+
+  const existingHigherBits = (existing?.permission ?? 0) & ~31;
+  const bitfield = acrudBitfield | existingHigherBits;
 
   if (existing) {
     await db

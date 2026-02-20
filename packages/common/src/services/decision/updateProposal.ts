@@ -19,6 +19,7 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { decisionPermission } from './permissions';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -112,7 +113,7 @@ export const updateProposal = async ({
       user: { id: user.id },
       instance: processInstance,
       profilePermissions: { profile: permission.UPDATE },
-      orgFallbackPermissions: { decisions: permission.UPDATE },
+      orgFallbackPermissions: { decisions: decisionPermission.MANAGE_PROCESS },
     });
 
     // Status and visibility changes require ADMIN
@@ -121,7 +122,9 @@ export const updateProposal = async ({
         user: { id: user.id },
         instance: processInstance,
         profilePermissions: { profile: permission.ADMIN },
-        orgFallbackPermissions: { decisions: permission.ADMIN },
+        orgFallbackPermissions: {
+          decisions: decisionPermission.MANAGE_PROCESS,
+        },
       });
     }
 

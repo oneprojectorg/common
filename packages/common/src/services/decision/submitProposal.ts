@@ -1,9 +1,10 @@
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -54,7 +55,10 @@ export const submitProposal = async ({
     profileId: instance.profileId,
   });
 
-  assertAccess({ decisions: permission.CREATE }, profileUser?.roles ?? []);
+  assertAccess(
+    { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    profileUser?.roles ?? [],
+  );
 
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instanceData.currentPhaseId;

@@ -3,10 +3,11 @@ import { db, eq } from '@op/db/client';
 import { organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { createSBServerClient } from '@op/supabase/server';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { decisionPermission } from './permissions';
 
 export interface ExportStatusData {
   exportId: string;
@@ -73,7 +74,10 @@ export const getExportStatus = async ({
   }
 
   // Verify user still has admin permission
-  assertAccess({ decisions: permission.ADMIN }, orgUser.roles || []);
+  assertAccess(
+    { decisions: decisionPermission.MANAGE_PROCESS },
+    orgUser.roles || [],
+  );
 
   // Refresh signed URL if expired but file exists
   if (

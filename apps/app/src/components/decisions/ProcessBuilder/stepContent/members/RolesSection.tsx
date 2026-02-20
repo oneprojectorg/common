@@ -23,7 +23,7 @@ import {
 } from '@op/ui/ui/table';
 import type { Permission } from 'access-zones';
 import { Suspense, useState } from 'react';
-import { LuLeaf, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuChevronDown, LuLeaf, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -31,12 +31,30 @@ import type { SectionProps } from '../../contentRegistry';
 
 type PermissionKey = keyof Permission;
 
+type DecisionCapabilityKey =
+  | 'manageProcess'
+  | 'inviteMembers'
+  | 'review'
+  | 'submitProposals'
+  | 'vote';
+
 const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
   { key: 'admin', label: 'Admin' },
   { key: 'create', label: 'Create' },
   { key: 'read', label: 'Read' },
   { key: 'update', label: 'Update' },
   { key: 'delete', label: 'Delete' },
+];
+
+const DECISION_CAPABILITY_COLUMNS: Array<{
+  key: DecisionCapabilityKey;
+  label: string;
+}> = [
+  { key: 'manageProcess', label: 'Manage Process' },
+  { key: 'inviteMembers', label: 'Invite Members' },
+  { key: 'review', label: 'Review' },
+  { key: 'submitProposals', label: 'Submit Proposals' },
+  { key: 'vote', label: 'Vote' },
 ];
 
 export default function RolesSection({
@@ -101,18 +119,191 @@ function RolesSectionContent({
   );
 }
 
+function DecisionCapabilityCheckboxes({
+  roleId,
+  profileId,
+  isGlobal,
+}: {
+  roleId: string;
+  profileId: string;
+  isGlobal: boolean;
+}) {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  const { data: capabilities } = trpc.profile.getDecisionCapabilities.useQuery({
+    roleId,
+    profileId,
+  });
+
+  const updateCapabilities =
+    trpc.profile.updateDecisionCapabilities.useMutation({
+      onMutate: async ({ decisionPermissions }) => {
+        await utils.profile.getDecisionCapabilities.cancel({
+          roleId,
+          profileId,
+        });
+
+        const previousData = utils.profile.getDecisionCapabilities.getData({
+          roleId,
+          profileId,
+        });
+
+        utils.profile.getDecisionCapabilities.setData(
+          { roleId, profileId },
+          decisionPermissions,
+        );
+
+        return { previousData };
+      },
+      onError: (_error, _variables, context) => {
+        if (context?.previousData) {
+          utils.profile.getDecisionCapabilities.setData(
+            { roleId, profileId },
+            context.previousData,
+          );
+        }
+        toast.error({ message: t('Failed to update role') });
+      },
+      onSuccess: () => {
+        toast.success({ message: t('Role updated successfully') });
+      },
+      onSettled: () => {
+        utils.profile.getDecisionCapabilities.invalidate({
+          roleId,
+          profileId,
+        });
+      },
+    });
+
+  const toggleCapability = (key: DecisionCapabilityKey) => {
+    if (!capabilities || isGlobal) {
+      return;
+    }
+    updateCapabilities.mutate({
+      roleId,
+      decisionPermissions: {
+        ...capabilities,
+        [key]: !capabilities[key],
+      },
+    });
+  };
+
+  return DECISION_CAPABILITY_COLUMNS.map(({ key, label }) => (
+    <TableCell key={key} className="text-center">
+      <div className="flex justify-center">
+        <Checkbox
+          size="small"
+          isSelected={capabilities?.[key] ?? false}
+          isDisabled={isGlobal}
+          onChange={() => toggleCapability(key)}
+          aria-label={`${label} permission`}
+        />
+      </div>
+    </TableCell>
+  ));
+}
+
+function MobileDecisionCapabilities({
+  roleId,
+  profileId,
+  isGlobal,
+}: {
+  roleId: string;
+  profileId: string;
+  isGlobal: boolean;
+}) {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  const { data: capabilities } = trpc.profile.getDecisionCapabilities.useQuery({
+    roleId,
+    profileId,
+  });
+
+  const updateCapabilities =
+    trpc.profile.updateDecisionCapabilities.useMutation({
+      onMutate: async ({ decisionPermissions }) => {
+        await utils.profile.getDecisionCapabilities.cancel({
+          roleId,
+          profileId,
+        });
+        const previousData = utils.profile.getDecisionCapabilities.getData({
+          roleId,
+          profileId,
+        });
+        utils.profile.getDecisionCapabilities.setData(
+          { roleId, profileId },
+          decisionPermissions,
+        );
+        return { previousData };
+      },
+      onError: (_error, _variables, context) => {
+        if (context?.previousData) {
+          utils.profile.getDecisionCapabilities.setData(
+            { roleId, profileId },
+            context.previousData,
+          );
+        }
+        toast.error({ message: t('Failed to update role') });
+      },
+      onSuccess: () => {
+        toast.success({ message: t('Role updated successfully') });
+      },
+      onSettled: () => {
+        utils.profile.getDecisionCapabilities.invalidate({
+          roleId,
+          profileId,
+        });
+      },
+    });
+
+  const toggleCapability = (key: DecisionCapabilityKey) => {
+    if (!capabilities || isGlobal) {
+      return;
+    }
+    updateCapabilities.mutate({
+      roleId,
+      decisionPermissions: {
+        ...capabilities,
+        [key]: !capabilities[key],
+      },
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {DECISION_CAPABILITY_COLUMNS.map(({ key, label }) => (
+        <Checkbox
+          key={key}
+          size="small"
+          isSelected={capabilities?.[key] ?? false}
+          isDisabled={isGlobal}
+          onChange={() => toggleCapability(key)}
+          aria-label={`${label} permission`}
+        >
+          {t(label)}
+        </Checkbox>
+      ))}
+    </div>
+  );
+}
+
 function MobileRoleCard({
   role,
   isGlobal,
+  profileId,
   onTogglePermission,
   onDelete,
 }: {
   role: Role;
   isGlobal: boolean;
+  profileId: string;
   onTogglePermission: (role: Role, key: PermissionKey) => void;
   onDelete?: (role: Role) => void;
 }) {
   const t = useTranslations();
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
     <div
@@ -137,19 +328,40 @@ function MobileRoleCard({
           </OptionMenu>
         )}
       </div>
-      <div className="flex flex-col gap-2">
-        {PERMISSION_COLUMNS.map(({ key, label }) => (
-          <Checkbox
-            key={key}
-            size="small"
-            isSelected={role.permissions?.[key] ?? false}
-            isDisabled={isGlobal}
-            onChange={() => onTogglePermission(role, key)}
-            aria-label={`${label} permission for ${role.name}`}
-          >
-            {t(label)}
-          </Checkbox>
-        ))}
+
+      <MobileDecisionCapabilities
+        roleId={role.id}
+        profileId={profileId}
+        isGlobal={isGlobal}
+      />
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="text-neutral-gray5 flex items-center gap-1 text-xs"
+        >
+          <LuChevronDown
+            className={`size-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+          />
+          {t('Advanced permissions')}
+        </button>
+        {showAdvanced && (
+          <div className="mt-2 flex flex-col gap-2">
+            {PERMISSION_COLUMNS.map(({ key, label }) => (
+              <Checkbox
+                key={key}
+                size="small"
+                isSelected={role.permissions?.[key] ?? false}
+                isDisabled={isGlobal}
+                onChange={() => onTogglePermission(role, key)}
+                aria-label={`${label} permission for ${role.name}`}
+              >
+                {t(label)}
+              </Checkbox>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -168,6 +380,7 @@ function RolesTable({
   const utils = trpc.useUtils();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [[{ items: globalRoles }, { items: profileRoles }]] =
     trpc.useSuspenseQueries((q) => [
@@ -180,19 +393,16 @@ function RolesTable({
 
   const updatePermission = trpc.profile.updateRolePermission.useMutation({
     onMutate: async ({ roleId, permissions }) => {
-      // Cancel outgoing refetches
       await utils.profile.listRoles.cancel({
         profileId: decisionProfileId,
         zoneName,
       });
 
-      // Snapshot the previous value
       const previousData = utils.profile.listRoles.getData({
         profileId: decisionProfileId,
         zoneName,
       });
 
-      // Optimistically update the cache
       utils.profile.listRoles.setData(
         { profileId: decisionProfileId, zoneName },
         (old) => {
@@ -211,7 +421,6 @@ function RolesTable({
       return { previousData };
     },
     onError: (_error, _variables, context) => {
-      // Rollback on error
       if (context?.previousData) {
         utils.profile.listRoles.setData(
           { profileId: decisionProfileId, zoneName },
@@ -224,7 +433,6 @@ function RolesTable({
       toast.success({ message: t('Role updated successfully') });
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure sync
       utils.profile.listRoles.invalidate({
         profileId: decisionProfileId,
         zoneName,
@@ -286,6 +494,7 @@ function RolesTable({
               key={role.id}
               role={role}
               isGlobal
+              profileId={decisionProfileId}
               onTogglePermission={togglePermission}
             />
           ))}
@@ -294,74 +503,133 @@ function RolesTable({
               key={role.id}
               role={role}
               isGlobal={false}
+              profileId={decisionProfileId}
               onTogglePermission={togglePermission}
               onDelete={setRoleToDelete}
             />
           ))}
         </div>
       ) : (
-        <Table aria-label={t('Roles & permissions')}>
-          <TableHeader>
-            <TableColumn isRowHeader>{t('Role')}</TableColumn>
-            {PERMISSION_COLUMNS.map(({ key, label }) => (
-              <TableColumn key={key} className="text-center">
-                {t(label)}
-              </TableColumn>
-            ))}
-            <TableColumn className="w-12" />
-          </TableHeader>
-          <TableBody>
-            {globalRoles.map((role) => (
-              <TableRow key={role.id} className="opacity-50">
-                <TableCell className="font-medium">{role.name}</TableCell>
-                {PERMISSION_COLUMNS.map(({ key, label }) => (
-                  <TableCell key={key} className="text-center">
-                    <div className="flex justify-center">
-                      <Checkbox
-                        size="small"
-                        isSelected={role.permissions?.[key] ?? false}
-                        isDisabled
-                        aria-label={`${label} permission for ${role.name}`}
-                      />
-                    </div>
+        <div className="flex flex-col gap-4">
+          <Table aria-label={t('Roles & permissions')}>
+            <TableHeader>
+              <TableColumn isRowHeader>{t('Role')}</TableColumn>
+              {DECISION_CAPABILITY_COLUMNS.map(({ key, label }) => (
+                <TableColumn key={key} className="text-center">
+                  {t(label)}
+                </TableColumn>
+              ))}
+              <TableColumn className="w-12" />
+            </TableHeader>
+            <TableBody>
+              {globalRoles.map((role) => (
+                <TableRow key={role.id} className="opacity-50">
+                  <TableCell className="font-medium">{role.name}</TableCell>
+                  <DecisionCapabilityCheckboxes
+                    roleId={role.id}
+                    profileId={decisionProfileId}
+                    isGlobal
+                  />
+                  <TableCell />
+                </TableRow>
+              ))}
+              {profileRoles.map((role) => (
+                <TableRow key={role.id}>
+                  <TableCell className="font-medium">{role.name}</TableCell>
+                  <DecisionCapabilityCheckboxes
+                    roleId={role.id}
+                    profileId={decisionProfileId}
+                    isGlobal={false}
+                  />
+                  <TableCell>
+                    <OptionMenu variant="outline" className="rounded-md">
+                      <Menu className="min-w-28 p-2">
+                        <MenuItem
+                          key="delete"
+                          onAction={() => setRoleToDelete(role)}
+                          className="text-functional-red"
+                        >
+                          <LuTrash2 className="size-4" />
+                          {t('Delete')}
+                        </MenuItem>
+                      </Menu>
+                    </OptionMenu>
                   </TableCell>
-                ))}
-                <TableCell />
-              </TableRow>
-            ))}
-            {profileRoles.map((role) => (
-              <TableRow key={role.id}>
-                <TableCell className="font-medium">{role.name}</TableCell>
-                {PERMISSION_COLUMNS.map(({ key, label }) => (
-                  <TableCell key={key} className="text-center">
-                    <div className="flex justify-center">
-                      <Checkbox
-                        size="small"
-                        isSelected={role.permissions?.[key] ?? false}
-                        onChange={() => togglePermission(role, key)}
-                        aria-label={`${label} permission for ${role.name}`}
-                      />
-                    </div>
-                  </TableCell>
-                ))}
-                <TableCell>
-                  <OptionMenu variant="outline" className="rounded-md">
-                    <Menu className="min-w-28 p-2">
-                      <MenuItem
-                        key="delete"
-                        onAction={() => setRoleToDelete(role)}
-                        className="text-functional-red"
-                      >
-                        <LuTrash2 className="size-4" />
-                        {t('Delete')}
-                      </MenuItem>
-                    </Menu>
-                  </OptionMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-neutral-gray5 flex items-center gap-1 text-sm hover:text-neutral-black"
+            >
+              <LuChevronDown
+                className={`size-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+              />
+              {t('Advanced permissions')}
+            </button>
+            {showAdvanced && (
+              <div className="mt-4">
+                <Table aria-label={t('Advanced permissions')}>
+                  <TableHeader>
+                    <TableColumn isRowHeader>{t('Role')}</TableColumn>
+                    {PERMISSION_COLUMNS.map(({ key, label }) => (
+                      <TableColumn key={key} className="text-center">
+                        {t(label)}
+                      </TableColumn>
+                    ))}
+                    <TableColumn className="w-12" />
+                  </TableHeader>
+                  <TableBody>
+                    {globalRoles.map((role) => (
+                      <TableRow key={role.id} className="opacity-50">
+                        <TableCell className="font-medium">
+                          {role.name}
+                        </TableCell>
+                        {PERMISSION_COLUMNS.map(({ key, label }) => (
+                          <TableCell key={key} className="text-center">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                size="small"
+                                isSelected={role.permissions?.[key] ?? false}
+                                isDisabled
+                                aria-label={`${label} permission for ${role.name}`}
+                              />
+                            </div>
+                          </TableCell>
+                        ))}
+                        <TableCell />
+                      </TableRow>
+                    ))}
+                    {profileRoles.map((role) => (
+                      <TableRow key={role.id}>
+                        <TableCell className="font-medium">
+                          {role.name}
+                        </TableCell>
+                        {PERMISSION_COLUMNS.map(({ key, label }) => (
+                          <TableCell key={key} className="text-center">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                size="small"
+                                isSelected={role.permissions?.[key] ?? false}
+                                onChange={() => togglePermission(role, key)}
+                                aria-label={`${label} permission for ${role.name}`}
+                              />
+                            </div>
+                          </TableCell>
+                        ))}
+                        <TableCell />
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       <DialogTrigger

@@ -9,11 +9,12 @@ import {
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess } from 'access-zones';
 import { randomUUID } from 'crypto';
 
 import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { decisionPermission } from './permissions';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
@@ -72,7 +73,10 @@ export const exportProposals = async ({
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  assertAccess({ decisions: permission.ADMIN }, orgUser.roles || []);
+  assertAccess(
+    { decisions: decisionPermission.MANAGE_PROCESS },
+    orgUser.roles || [],
+  );
 
   const exportId = randomUUID();
 

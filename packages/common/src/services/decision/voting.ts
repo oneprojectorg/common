@@ -21,6 +21,7 @@ import {
   getOrgAccessUser,
 } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
+import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -189,7 +190,7 @@ export const submitVote = async ({
       organizationId: org.id,
     });
 
-    assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+    assertAccess({ decisions: decisionPermission.VOTE }, orgUser?.roles ?? []);
 
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
@@ -376,7 +377,7 @@ export const getVotingStatus = async ({
       user: { id: authUserId },
       instance: processInstance,
       profilePermissions: { profile: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
+      orgFallbackPermissions: { decisions: decisionPermission.REVIEW },
     });
 
     // Extract voting configuration from current phase/state
@@ -508,7 +509,10 @@ export const validateVoteSelectionService = async ({
       organizationId: org.id,
     });
 
-    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+    assertAccess(
+      { decisions: decisionPermission.REVIEW },
+      orgUser?.roles ?? [],
+    );
 
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
