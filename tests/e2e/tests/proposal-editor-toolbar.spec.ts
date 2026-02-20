@@ -91,8 +91,6 @@ test.describe('Proposal Editor Toolbar', () => {
       authenticatedPage.getByText('Details', { exact: true }),
     ).toBeVisible();
 
-    // -- Locate the two rich-text editor fields by their data-testid -----------
-
     const summarySection = authenticatedPage.getByTestId('field-summary');
     const summaryEditor = summarySection.locator('[contenteditable="true"]');
 

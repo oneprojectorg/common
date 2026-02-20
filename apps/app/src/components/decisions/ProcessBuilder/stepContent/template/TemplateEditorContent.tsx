@@ -62,21 +62,17 @@ export function TemplateEditorContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instanceData = instance.instanceData;
 
-  // Check if categories have been configured and selection is required.
-  // Read from the Zustand store first (written immediately by the categories
-  // step), falling back to the server data for initial loads.
   const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
   const rawCategories =
     storeData?.categories ?? instanceData?.config?.categories;
   const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
-  const hasCategories = categories.length > 0;
   const requireCategorySelection =
     storeData?.requireCategorySelection ??
     instanceData?.config?.requireCategorySelection ??
     false;
-  const showCategoryField = hasCategories && requireCategorySelection;
+  const showCategoryField = categories.length > 0 && requireCategorySelection;
 
   const initialTemplate = useMemo(() => {
     const saved = instanceData?.proposalTemplate as
@@ -91,16 +87,10 @@ export function TemplateEditorContent({
     return ensureLockedFields(base, {
       titleLabel: t('Proposal title'),
       categoryLabel: t('Category'),
-      hasCategories,
       categories,
       requireCategorySelection,
     });
-  }, [
-    instanceData?.proposalTemplate,
-    hasCategories,
-    categories,
-    requireCategorySelection,
-  ]);
+  }, [instanceData?.proposalTemplate, categories, requireCategorySelection]);
 
   const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
   const isInitialLoadRef = useRef(true);
@@ -118,12 +108,11 @@ export function TemplateEditorContent({
       ensureLockedFields(prev, {
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
-        hasCategories,
         categories,
         requireCategorySelection,
       }),
     );
-  }, [hasCategories, categories, requireCategorySelection]);
+  }, [categories, requireCategorySelection]);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
@@ -192,7 +181,6 @@ export function TemplateEditorContent({
       const normalized = ensureLockedFields(updatedTemplate, {
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
-        hasCategories,
         categories,
         requireCategorySelection,
       });

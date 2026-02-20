@@ -407,7 +407,6 @@ export function ensureLockedFields(
   options: {
     titleLabel: string;
     categoryLabel: string;
-    hasCategories: boolean;
     categories?: { label: string }[];
     /** When true, the category field is included in the template. Defaults to true. */
     requireCategorySelection?: boolean;
@@ -428,8 +427,9 @@ export function ensureLockedFields(
 
   // Sync category field with categories config — only include the category
   // field when categories exist AND requireCategorySelection is enabled.
+  const hasCategories = (options.categories ?? []).length > 0;
   const includeCategory =
-    options.hasCategories && (options.requireCategorySelection ?? false);
+    hasCategories && (options.requireCategorySelection ?? false);
   if (includeCategory) {
     const categoryLabels = (options.categories ?? []).map((c) => c.label);
     const existing = getFieldSchema(result, 'category');
