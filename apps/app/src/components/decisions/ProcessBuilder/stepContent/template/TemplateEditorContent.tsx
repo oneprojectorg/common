@@ -62,12 +62,20 @@ export function TemplateEditorContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instanceData = instance.instanceData;
 
-  // Check if categories have been configured and selection is required
-  const rawCategories = instanceData?.config?.categories;
+  // Check if categories have been configured and selection is required.
+  // Read from the Zustand store first (written immediately by the categories
+  // step), falling back to the server data for initial loads.
+  const storeData = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId],
+  );
+  const rawCategories =
+    storeData?.categories ?? instanceData?.config?.categories;
   const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
   const hasCategories = categories.length > 0;
   const requireCategorySelection =
-    instanceData?.config?.requireCategorySelection ?? false;
+    storeData?.requireCategorySelection ??
+    instanceData?.config?.requireCategorySelection ??
+    false;
   const showCategoryField = hasCategories && requireCategorySelection;
 
   const initialTemplate = useMemo(() => {
