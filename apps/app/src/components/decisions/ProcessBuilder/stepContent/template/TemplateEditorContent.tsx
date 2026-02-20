@@ -62,9 +62,16 @@ export function TemplateEditorContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instanceData = instance.instanceData;
 
-  // Check if categories have been configured
-  const rawCategories = instanceData?.config?.categories;
+  const storeData = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId],
+  );
+  const rawCategories =
+    storeData?.categories ?? instanceData?.config?.categories;
   const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
+  const requireCategorySelection =
+    storeData?.requireCategorySelection ??
+    instanceData?.config?.requireCategorySelection ??
+    false;
   const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
@@ -80,10 +87,10 @@ export function TemplateEditorContent({
     return ensureLockedFields(base, {
       titleLabel: t('Proposal title'),
       categoryLabel: t('Category'),
-      hasCategories,
       categories,
+      requireCategorySelection,
     });
-  }, [instanceData?.proposalTemplate, t, hasCategories, categories]);
+  }, [instanceData?.proposalTemplate, categories, requireCategorySelection]);
 
   const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
   const isInitialLoadRef = useRef(true);
@@ -101,11 +108,11 @@ export function TemplateEditorContent({
       ensureLockedFields(prev, {
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
-        hasCategories,
         categories,
+        requireCategorySelection,
       }),
     );
-  }, [hasCategories, categories]);
+  }, [categories, requireCategorySelection]);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
@@ -163,7 +170,7 @@ export function TemplateEditorContent({
         fieldType: f.fieldType,
       })),
     ];
-  }, [fields, hasCategories, t]);
+  }, [fields, hasCategories]);
 
   // Debounced auto-save to localStorage and backend.
   // Runs ensureLockedFields before persisting so that x-field-order and
@@ -174,8 +181,8 @@ export function TemplateEditorContent({
       const normalized = ensureLockedFields(updatedTemplate, {
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
-        hasCategories,
         categories,
+        requireCategorySelection,
       });
       setProposalTemplate(decisionProfileId, normalized);
       updateInstance.mutate(

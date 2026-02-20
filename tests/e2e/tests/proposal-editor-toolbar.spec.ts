@@ -91,24 +91,10 @@ test.describe('Proposal Editor Toolbar', () => {
       authenticatedPage.getByText('Details', { exact: true }),
     ).toBeVisible();
 
-    // -- Locate the two rich-text editor fields by their labels ---------------
-    // CollaborativeTextField renders:
-    //   <div class="flex flex-col gap-2">     ← wrapper (has label + editor)
-    //     <div class="flex flex-col gap-0.5"> ← label group
-    //       <span class="font-serif ...">Summary</span>
-    //     </div>
-    //     <div>                                ← CollaborativeEditor
-    //       <div>                              ← StyledRichTextContent
-    //         <div contenteditable="true">     ← TipTap
-
-    const summarySection = authenticatedPage.locator(
-      'div.flex.flex-col.gap-2:has(> div > span.font-serif:text("Summary"))',
-    );
+    const summarySection = authenticatedPage.getByTestId('field-summary');
     const summaryEditor = summarySection.locator('[contenteditable="true"]');
 
-    const detailsSection = authenticatedPage.locator(
-      'div.flex.flex-col.gap-2:has(> div > span.font-serif:text("Details"))',
-    );
+    const detailsSection = authenticatedPage.getByTestId('field-details');
     const detailsEditor = detailsSection.locator('[contenteditable="true"]');
 
     // -- Toolbar should be visible but disabled when no editor is focused -----

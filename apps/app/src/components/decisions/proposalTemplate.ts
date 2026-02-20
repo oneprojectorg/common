@@ -407,8 +407,9 @@ export function ensureLockedFields(
   options: {
     titleLabel: string;
     categoryLabel: string;
-    hasCategories: boolean;
     categories?: { label: string }[];
+    /** When true, the category field is included in the template. Defaults to true. */
+    requireCategorySelection?: boolean;
   },
 ): ProposalTemplate {
   let result = template;
@@ -425,7 +426,8 @@ export function ensureLockedFields(
   }
 
   // Sync category field with categories config
-  if (options.hasCategories) {
+  const hasCategories = (options.categories ?? []).length > 0;
+  if (hasCategories) {
     const categoryLabels = (options.categories ?? []).map((c) => c.label);
     const existing = getFieldSchema(result, 'category');
     const categorySchema = buildCategorySchema(
@@ -476,10 +478,10 @@ export function ensureLockedFields(
     'x-field-order': [...prefix, ...rest],
   };
 
-  // --- Ensure required includes title and category (if present) -----------
+  // --- Ensure required includes title; category only when requireCategorySelection is on ---
   const currentRequired = new Set(result.required ?? []);
   currentRequired.add('title');
-  if (properties.category) {
+  if (properties.category && options.requireCategorySelection) {
     currentRequired.add('category');
   } else {
     currentRequired.delete('category');
