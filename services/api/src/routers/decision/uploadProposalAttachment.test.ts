@@ -69,7 +69,63 @@ describe.concurrent('uploadProposalAttachment', () => {
     expect(link).toBeDefined();
   });
 
-  it('should reject upload from user who is not the proposal owner', async ({
+  it('should allow non-owner member with proposal permissions to upload attachment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Create setup for user A who owns the proposal
+    const setupA = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setupA.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setupA.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    // Create a member user with access to the same instance (not the proposal owner)
+    const member = await testData.createMemberUser({
+      organization: setupA.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    // Non-owner member WITH proposal permissions should be able to upload
+    const result = await memberCaller.decision.uploadProposalAttachment({
+      file: VALID_PNG_BASE64,
+      fileName: 'member-upload.png',
+      mimeType: 'image/png',
+      proposalId: proposal.id,
+    });
+
+    expect(result).toMatchObject({
+      fileName: 'member-upload.png',
+      mimeType: 'image/png',
+    });
+    expect(result.id).toBeDefined();
+    expect(result.fileSize).toBeGreaterThan(0);
+
+    // Verify attachment was linked to proposal
+    const link = await db.query.proposalAttachments.findFirst({
+      where: {
+        proposalId: proposal.id,
+        attachmentId: result.id,
+      },
+    });
+    expect(link).toBeDefined();
+  });
+
+  it('should reject upload from user without proposal permissions', async ({
     task,
     onTestFinished,
   }) => {
@@ -92,7 +148,7 @@ describe.concurrent('uploadProposalAttachment', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    // Create a different user (not the proposal owner)
+    // Create a different user with NO access to the instance
     const setupB = await testData.createDecisionSetup({
       instanceCount: 0,
       grantAccess: false,
@@ -100,7 +156,7 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const nonOwnerCaller = await createAuthenticatedCaller(setupB.userEmail);
 
-    // Non-owner should NOT be able to upload to another user's proposal
+    // User without proposal permissions should NOT be able to upload
     await expect(
       nonOwnerCaller.decision.uploadProposalAttachment({
         file: VALID_PNG_BASE64,
@@ -109,7 +165,7 @@ describe.concurrent('uploadProposalAttachment', () => {
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
+      cause: { name: 'AccessControlException' },
     });
   });
 });

@@ -1,13 +1,14 @@
 import { and, db, eq } from '@op/db/client';
 import { proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, UnauthorizedError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { CommonError } from '../../utils';
+import { getProfileAccessUser } from '../access';
 
 /**
  * Deletes the link between an attachment and a proposal.
- * Only the proposal owner can delete attachments.
+ * Any user with decisions:UPDATE permission on the proposal's process instance can delete attachments.
  * This is a soft delete - the attachment record itself is preserved.
  */
 export async function deleteProposalAttachment({
@@ -19,9 +20,8 @@ export async function deleteProposalAttachment({
   proposalId: string;
   user: User;
 }) {
-  // Fetch all data in parallel
-  const [profileId, existingLink, proposal] = await Promise.all([
-    getCurrentProfileId(user.id),
+  // Fetch link and proposal in parallel
+  const [existingLink, proposal] = await Promise.all([
     db.query.proposalAttachments.findFirst({
       where: {
         proposalId,
@@ -30,6 +30,7 @@ export async function deleteProposalAttachment({
     }),
     db.query.proposals.findFirst({
       where: { id: proposalId },
+      with: { processInstance: true },
     }),
   ]);
 
@@ -41,13 +42,17 @@ export async function deleteProposalAttachment({
     throw new CommonError('Proposal not found');
   }
 
-  // NOTE: Revisit after we introduce collaborative editing of proposals.
-  // Currently only the proposal owner can delete attachments.
-  if (proposal.submittedByProfileId !== profileId) {
-    throw new UnauthorizedError(
-      'Only the proposal owner can delete attachments',
-    );
+  if (!proposal.processInstance.profileId) {
+    throw new CommonError('Process instance has no associated profile');
   }
+
+  // Assert the user has decisions:UPDATE permission on the instance profile
+  const profileUser = await getProfileAccessUser({
+    user: { id: user.id },
+    profileId: proposal.processInstance.profileId,
+  });
+
+  assertAccess({ decisions: permission.UPDATE }, profileUser?.roles ?? []);
 
   // Delete the link (soft delete - keeps the attachment record)
   await db

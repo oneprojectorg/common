@@ -78,7 +78,7 @@ describe.concurrent('deleteProposalAttachment', () => {
     expect(linkAfter).toBeUndefined();
   });
 
-  it('should reject delete from user who is not the proposal owner', async ({
+  it('should allow non-owner member with proposal permissions to delete attachment', async ({
     task,
     onTestFinished,
   }) => {
@@ -110,7 +110,72 @@ describe.concurrent('deleteProposalAttachment', () => {
       proposalId: proposal.id,
     });
 
-    // Create a different user (not the proposal owner)
+    // Verify attachment exists
+    const linkBefore = await db.query.proposalAttachments.findFirst({
+      where: {
+        proposalId: proposal.id,
+        attachmentId: uploadResult.id,
+      },
+    });
+    expect(linkBefore).toBeDefined();
+
+    // Create a member user with access to the same instance (not the proposal owner)
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    // Non-owner member WITH proposal permissions should be able to delete
+    await memberCaller.decision.deleteProposalAttachment({
+      attachmentId: uploadResult.id,
+      proposalId: proposal.id,
+    });
+
+    // Verify link is gone
+    const linkAfter = await db.query.proposalAttachments.findFirst({
+      where: {
+        proposalId: proposal.id,
+        attachmentId: uploadResult.id,
+      },
+    });
+    expect(linkAfter).toBeUndefined();
+  });
+
+  it('should reject delete from user without proposal permissions', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Owner uploads an attachment
+    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
+      file: VALID_PNG_BASE64,
+      fileName: 'owner-file.png',
+      mimeType: 'image/png',
+      proposalId: proposal.id,
+    });
+
+    // Create a different user with NO access to the instance
     const otherSetup = await testData.createDecisionSetup({
       instanceCount: 0,
       grantAccess: false,
@@ -120,14 +185,14 @@ describe.concurrent('deleteProposalAttachment', () => {
       otherSetup.userEmail,
     );
 
-    // Non-owner should NOT be able to delete attachment
+    // User without proposal permissions should NOT be able to delete
     await expect(
       nonOwnerCaller.decision.deleteProposalAttachment({
         attachmentId: uploadResult.id,
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
+      cause: { name: 'AccessControlException' },
     });
   });
 });
