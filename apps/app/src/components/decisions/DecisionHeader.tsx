@@ -18,6 +18,8 @@ interface DecisionHeaderProps {
   decisionProfileId?: string;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
+  /** Title from the decision profile */
+  profileName?: string;
 }
 
 export async function DecisionHeader({
@@ -27,6 +29,7 @@ export async function DecisionHeader({
   decisionSlug,
   decisionProfileId,
   useLegacy = false,
+  profileName,
 }: DecisionHeaderProps) {
   const client = await createClient();
 
@@ -76,6 +79,7 @@ export async function DecisionHeader({
           href: `/profile/${slug}?tab=decisions`,
         }}
         title={
+          profileName ||
           instance.name ||
           instanceData.templateName ||
           (instance as any).process?.name
