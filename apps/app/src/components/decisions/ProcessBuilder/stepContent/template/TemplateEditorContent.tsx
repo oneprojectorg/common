@@ -72,7 +72,7 @@ export function TemplateEditorContent({
     storeData?.requireCategorySelection ??
     instanceData?.config?.requireCategorySelection ??
     false;
-  const showCategoryField = categories.length > 0 && requireCategorySelection;
+  const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
     const saved = instanceData?.proposalTemplate as
@@ -147,7 +147,7 @@ export function TemplateEditorContent({
         label: t('Proposal title'),
         fieldType: 'short_text' as const,
       },
-      ...(showCategoryField
+      ...(hasCategories
         ? [
             {
               id: 'category',
@@ -170,7 +170,7 @@ export function TemplateEditorContent({
         fieldType: f.fieldType,
       })),
     ];
-  }, [fields, showCategoryField]);
+  }, [fields, hasCategories]);
 
   // Debounced auto-save to localStorage and backend.
   // Runs ensureLockedFields before persisting so that x-field-order and
@@ -355,7 +355,7 @@ export function TemplateEditorContent({
                 label={t('Proposal title')}
                 locked
               />
-              {showCategoryField && (
+              {hasCategories && (
                 <FieldConfigCard
                   icon={LuChevronDown}
                   iconTooltip={t('Dropdown')}

@@ -425,12 +425,9 @@ export function ensureLockedFields(
     };
   }
 
-  // Sync category field with categories config — only include the category
-  // field when categories exist AND requireCategorySelection is enabled.
+  // Sync category field with categories config
   const hasCategories = (options.categories ?? []).length > 0;
-  const includeCategory =
-    hasCategories && (options.requireCategorySelection ?? false);
-  if (includeCategory) {
+  if (hasCategories) {
     const categoryLabels = (options.categories ?? []).map((c) => c.label);
     const existing = getFieldSchema(result, 'category');
     const categorySchema = buildCategorySchema(
@@ -481,10 +478,10 @@ export function ensureLockedFields(
     'x-field-order': [...prefix, ...rest],
   };
 
-  // --- Ensure required includes title and category (if present) -----------
+  // --- Ensure required includes title; category only when requireCategorySelection is on ---
   const currentRequired = new Set(result.required ?? []);
   currentRequired.add('title');
-  if (properties.category) {
+  if (properties.category && options.requireCategorySelection) {
     currentRequired.add('category');
   } else {
     currentRequired.delete('category');
