@@ -42,11 +42,9 @@ async function seedProposalTaxonomy(
     .returning({ id: taxonomies.id });
 
   let resolvedTaxonomyId: string;
-  let ownsTheTaxonomy = false;
 
   if (inserted) {
     resolvedTaxonomyId = inserted.id;
-    ownsTheTaxonomy = true;
   } else {
     // Another test created it — look up the existing one
     const [existing] = await db
@@ -81,10 +79,6 @@ async function seedProposalTaxonomy(
           termRecords.map((t) => t.id),
         ),
       );
-    }
-    // Only delete taxonomy if this test created it
-    if (ownsTheTaxonomy) {
-      await db.delete(taxonomies).where(eq(taxonomies.id, resolvedTaxonomyId));
     }
   });
 
