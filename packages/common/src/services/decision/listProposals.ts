@@ -119,7 +119,10 @@ export const listProposals = async ({
       user,
       instance: instance[0],
       profilePermissions: { profile: permission.READ },
-      orgFallbackPermissions: { decisions: decisionPermission.REVIEW },
+      orgFallbackPermissions: [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.REVIEW },
+      ],
     });
 
     // Check if user can manage proposals (approve/reject)

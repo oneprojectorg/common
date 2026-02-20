@@ -1,7 +1,7 @@
 import { db, eq } from '@op/db/client';
 import { ProcessInstance, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { checkPermission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import {
   CommonError,
@@ -59,7 +59,10 @@ export const deleteProposal = async ({
     });
 
     const hasPermissions = checkPermission(
-      { decisions: decisionPermission.MANAGE_PROCESS },
+      [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.MANAGE_PROCESS },
+      ],
       orgUser?.roles ?? [],
     );
 

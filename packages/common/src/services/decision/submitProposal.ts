@@ -1,6 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
-import { assertAccess } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
@@ -56,7 +56,10 @@ export const submitProposal = async ({
   });
 
   assertAccess(
-    { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    ],
     profileUser?.roles ?? [],
   );
 

@@ -9,7 +9,7 @@ import {
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
-import { assertAccess } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
 import { UnauthorizedError } from '../../utils';
@@ -74,7 +74,10 @@ export const exportProposals = async ({
   }
 
   assertAccess(
-    { decisions: decisionPermission.MANAGE_PROCESS },
+    [
+      { decisions: permission.ADMIN },
+      { decisions: decisionPermission.MANAGE_PROCESS },
+    ],
     orgUser.roles || [],
   );
 

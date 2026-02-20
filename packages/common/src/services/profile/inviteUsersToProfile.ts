@@ -3,7 +3,7 @@ import { db } from '@op/db/client';
 import { allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
@@ -101,19 +101,13 @@ export const inviteUsersToProfile = async ({
     );
   }
 
-  const hasProfileAdmin = checkPermission(
-    { profile: permission.ADMIN },
+  assertAccess(
+    [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.INVITE_MEMBERS },
+    ],
     profileUser.roles ?? [],
   );
-  const hasInviteMembers = checkPermission(
-    { decisions: decisionPermission.INVITE_MEMBERS },
-    profileUser.roles ?? [],
-  );
-  if (!hasProfileAdmin && !hasInviteMembers) {
-    throw new UnauthorizedError(
-      'You do not have permission to invite users to this profile',
-    );
-  }
 
   // Validate all roles exist
   const rolesById = new Map(targetRoles.map((r) => [r.id, r]));

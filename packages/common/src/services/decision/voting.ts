@@ -190,7 +190,10 @@ export const submitVote = async ({
       organizationId: org.id,
     });
 
-    assertAccess({ decisions: decisionPermission.VOTE }, orgUser?.roles ?? []);
+    assertAccess(
+      [{ decisions: permission.ADMIN }, { decisions: decisionPermission.VOTE }],
+      orgUser?.roles ?? [],
+    );
 
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
@@ -377,7 +380,10 @@ export const getVotingStatus = async ({
       user: { id: authUserId },
       instance: processInstance,
       profilePermissions: { profile: permission.READ },
-      orgFallbackPermissions: { decisions: decisionPermission.REVIEW },
+      orgFallbackPermissions: [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.REVIEW },
+      ],
     });
 
     // Extract voting configuration from current phase/state
@@ -510,7 +516,10 @@ export const validateVoteSelectionService = async ({
     });
 
     assertAccess(
-      { decisions: decisionPermission.REVIEW },
+      [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.REVIEW },
+      ],
       orgUser?.roles ?? [],
     );
 

@@ -3,7 +3,7 @@ import { db, eq } from '@op/db/client';
 import { organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { createSBServerClient } from '@op/supabase/server';
-import { assertAccess } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
@@ -73,9 +73,12 @@ export const getExportStatus = async ({
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  // Verify user still has admin permission
+  // Verify user still has manage process or admin permission
   assertAccess(
-    { decisions: decisionPermission.MANAGE_PROCESS },
+    [
+      { decisions: permission.ADMIN },
+      { decisions: decisionPermission.MANAGE_PROCESS },
+    ],
     orgUser.roles || [],
   );
 
