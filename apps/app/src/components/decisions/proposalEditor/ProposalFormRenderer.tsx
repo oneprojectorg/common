@@ -143,6 +143,7 @@ function renderField(
         options={options}
         initialValue={draft.category}
         onChange={(value) => onFieldChange('category', value)}
+        fragmentName="category"
         placeholder={t('Select category')}
       />
     );

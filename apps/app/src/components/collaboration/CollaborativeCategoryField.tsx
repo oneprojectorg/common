@@ -12,8 +12,8 @@ interface CollaborativeCategoryFieldProps {
   options: Array<{ value: string; label: string }>;
   initialValue?: string | null;
   onChange?: (category: string | null) => void;
-  /** Yjs fragment name used to sync this field. Defaults to `'category'`. */
-  fragmentName?: string;
+  /** Yjs fragment name used to sync this field. Must be unique per dropdown instance. */
+  fragmentName: string;
   /** Placeholder text shown when no value is selected. Defaults to `'Select category'`. */
   placeholder?: string;
 }
@@ -21,15 +21,12 @@ interface CollaborativeCategoryFieldProps {
 /**
  * Collaborative category/dropdown selector synced via Yjs XmlFragment.
  * When one user picks a value, all connected users see it update in real time.
- *
- * Each instance **must** use a unique `fragmentName` to avoid clobbering
- * other dropdown fields in the same collaborative document.
  */
 export function CollaborativeCategoryField({
   options,
   initialValue = null,
   onChange,
-  fragmentName = 'category',
+  fragmentName,
   placeholder,
 }: CollaborativeCategoryFieldProps) {
   const t = useTranslations();
