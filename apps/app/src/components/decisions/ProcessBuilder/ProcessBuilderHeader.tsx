@@ -198,7 +198,7 @@ const ProcessBuilderHeaderContent = ({
                 <Tab
                   key={step.id}
                   id={step.id}
-                  className="flex h-full items-center gap-2"
+                  className="flex h-full cursor-pointer items-center gap-2"
                 >
                   {t(step.labelKey)}
                   {step.id === 'rubric' && <ComingSoonIndicator />}
