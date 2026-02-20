@@ -1,9 +1,10 @@
 import { db } from '@op/db/client';
 import { attachments, proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, UnauthorizedError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileId, getProfileAccessUser } from '../access';
 
 export interface UploadProposalAttachmentInput {
   /** Sanitized file name */
@@ -48,9 +49,16 @@ export async function uploadProposalAttachment({
     throw new CommonError('Proposal not found');
   }
 
-  if (proposal.submittedByProfileId !== profileId) {
-    throw new UnauthorizedError('Only the proposal owner can add attachments');
+  const profileUser = await getProfileAccessUser({
+    user: { id: user.id },
+    profileId: proposal.profileId,
+  });
+
+  if (!profileUser) {
+    throw new UnauthorizedError('Not authorized');
   }
+
+  assertAccess({ profile: permission.UPDATE }, profileUser.roles);
 
   // Create attachment record in database
   const [attachment] = await db
