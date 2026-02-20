@@ -283,6 +283,106 @@ describe.concurrent('profile.updateRolePermission', () => {
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
+  it('should preserve higher bits (decision capabilities) when updating ACRUD', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Create a custom role for this profile
+    const [customRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `Custom Role ${task.id}`,
+        description: 'A custom role for testing higher bits',
+        profileId: profile.id,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (customRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, customRole.id));
+      }
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // First, set ACRUD permissions
+    await caller.updateRolePermission({
+      roleId: customRole!.id,
+      permissions: {
+        admin: false,
+        create: true,
+        read: true,
+        update: false,
+        delete: false,
+      },
+    });
+
+    // Now manually set higher bits (decision capabilities) directly in DB
+    // to simulate decision capabilities being set via the separate endpoint
+    const decisionsZone = await db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, 'decisions'),
+    });
+
+    const existingPerm =
+      await db._query.accessRolePermissionsOnAccessZones.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.accessRoleId, customRole!.id),
+            eq(table.accessZoneId, decisionsZone!.id),
+          ),
+      });
+
+    // Add decision bits: REVIEW (128) + VOTE (512) = 640
+    const decisionBits = 128 | 512; // 640
+    await db
+      .update(accessRolePermissionsOnAccessZones)
+      .set({ permission: existingPerm!.permission | decisionBits })
+      .where(eq(accessRolePermissionsOnAccessZones.id, existingPerm!.id));
+
+    // Now update ACRUD permissions — this should NOT clobber the higher bits
+    await caller.updateRolePermission({
+      roleId: customRole!.id,
+      permissions: {
+        admin: false,
+        create: false,
+        read: true,
+        update: true,
+        delete: false,
+      },
+    });
+
+    // Verify the final permission value
+    const finalPerm =
+      await db._query.accessRolePermissionsOnAccessZones.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.accessRoleId, customRole!.id),
+            eq(table.accessZoneId, decisionsZone!.id),
+          ),
+      });
+
+    expect(finalPerm).toBeDefined();
+
+    // ACRUD bits should reflect the second update (read=4, update=2 → 6)
+    const acrudBits = finalPerm!.permission & 31;
+    const acrud = fromBitField(acrudBits);
+    expect(acrud.create).toBe(false);
+    expect(acrud.read).toBe(true);
+    expect(acrud.update).toBe(true);
+    expect(acrud.delete).toBe(false);
+    expect(acrud.admin).toBe(false);
+
+    // Higher bits should still be present (REVIEW=128, VOTE=512)
+    const higherBits = finalPerm!.permission & ~31;
+    expect(higherBits).toBe(decisionBits);
+  });
+
   it('should not allow admin from different profile to update role permissions', async ({
     task,
     onTestFinished,
