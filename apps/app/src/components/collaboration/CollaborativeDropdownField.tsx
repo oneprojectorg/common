@@ -8,10 +8,10 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
-interface CollaborativeCategoryFieldProps {
+interface CollaborativeDropdownFieldProps {
   options: Array<{ value: string; label: string }>;
   initialValue?: string | null;
-  onChange?: (category: string | null) => void;
+  onChange?: (value: string | null) => void;
   /** Yjs fragment name used to sync this field. Must be unique per dropdown instance. */
   fragmentName: string;
   /** Placeholder text shown when no value is selected. */
@@ -19,27 +19,26 @@ interface CollaborativeCategoryFieldProps {
 }
 
 /**
- * Collaborative category/dropdown selector synced via Yjs XmlFragment.
+ * Collaborative dropdown selector synced via Yjs XmlFragment.
  * When one user picks a value, all connected users see it update in real time.
  */
-export function CollaborativeCategoryField({
+export function CollaborativeDropdownField({
   options,
   initialValue = null,
   onChange,
   fragmentName,
   placeholder,
-}: CollaborativeCategoryFieldProps) {
+}: CollaborativeDropdownFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
 
-  const [categoryText, setCategoryText] = useCollaborativeFragment(
+  const [syncedText, setSyncedText] = useCollaborativeFragment(
     ydoc,
     fragmentName,
     initialValue ?? '',
   );
-  const selectedCategory = categoryText || null;
-  const setSelectedCategory = (value: string | null) =>
-    setCategoryText(value ?? '');
+  const selectedValue = syncedText || null;
+  const setSelectedValue = (value: string | null) => setSyncedText(value ?? '');
 
   const onChangeRef = useRef(onChange);
   const lastEmittedValueRef = useRef<string | null | undefined>(undefined);
@@ -49,13 +48,13 @@ export function CollaborativeCategoryField({
   }, [onChange]);
 
   useEffect(() => {
-    if (lastEmittedValueRef.current === selectedCategory) {
+    if (lastEmittedValueRef.current === selectedValue) {
       return;
     }
 
-    lastEmittedValueRef.current = selectedCategory;
-    onChangeRef.current?.(selectedCategory);
-  }, [selectedCategory]);
+    lastEmittedValueRef.current = selectedValue;
+    onChangeRef.current?.(selectedValue);
+  }, [selectedValue]);
 
   if (options.length === 0) {
     return null;
@@ -63,7 +62,7 @@ export function CollaborativeCategoryField({
 
   const handleSelectionChange = (key: string | number) => {
     const value = String(key);
-    setSelectedCategory(value);
+    setSelectedValue(value);
   };
 
   return (
@@ -71,7 +70,7 @@ export function CollaborativeCategoryField({
       variant="pill"
       size="medium"
       placeholder={placeholder ?? t('Select option')}
-      selectedKey={selectedCategory}
+      selectedKey={selectedValue}
       onSelectionChange={handleSelectionChange}
       selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
       className="w-auto max-w-36 overflow-hidden sm:max-w-96"
