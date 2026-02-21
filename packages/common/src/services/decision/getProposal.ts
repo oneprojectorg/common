@@ -169,15 +169,10 @@ export const getProposal = async ({
       profileId: proposal.processInstance.profileId,
     });
 
-    const hasReadAccess =
-      checkPermission(
-        { decisions: permission.READ },
-        instanceProfileUser?.roles ?? [],
-      ) ||
-      checkPermission(
-        { decisions: permission.ADMIN },
-        instanceProfileUser?.roles ?? [],
-      );
+    const hasReadAccess = checkPermission(
+      [{ decisions: permission.READ }, { decisions: permission.ADMIN }],
+      instanceProfileUser?.roles ?? [],
+    );
 
     if (!hasReadAccess) {
       throw new UnauthorizedError('Not authorized to view this proposal');
