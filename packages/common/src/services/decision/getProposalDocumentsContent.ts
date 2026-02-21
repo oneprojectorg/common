@@ -76,30 +76,14 @@ export async function getProposalDocumentsContent(
             ? getProposalFragmentNames(proposalTemplate)
             : ['default'];
 
-          console.log('[DEBUG getProposalDocumentsContent]', {
-            collaborationDocId,
-            fragmentNames,
-            proposalTemplate: !!proposalTemplate,
-          });
           const fragments = await client.getDocumentFragments(
             collaborationDocId,
             fragmentNames,
           );
-          console.log(
-            '[DEBUG getProposalDocumentsContent] fragments received',
-            {
-              collaborationDocId,
-              fragmentKeys: Object.keys(fragments),
-              hasContent: Object.entries(fragments).map(([k, v]) => [
-                k,
-                !!(v as any)?.content?.length,
-              ]),
-            },
-          );
 
           return { id, fragments };
         } catch (error) {
-          console.warn('[DEBUG] Failed to fetch TipTap document', {
+          console.warn('Failed to fetch TipTap document', {
             collaborationDocId,
             error: error instanceof Error ? error.message : String(error),
           });

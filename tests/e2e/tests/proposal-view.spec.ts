@@ -50,7 +50,12 @@ test.describe('Proposal View', () => {
         },
         category: {
           type: ['string', 'null'],
-          enum: ['Renewable Energy', 'Community Development', null],
+          title: 'Category',
+          'x-format': 'dropdown' as const,
+          oneOf: [
+            { const: 'Renewable Energy', title: 'Renewable Energy' },
+            { const: 'Community Development', title: 'Community Development' },
+          ],
         },
         summary: {
           type: 'string' as const,

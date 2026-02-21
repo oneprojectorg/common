@@ -146,10 +146,19 @@ test.describe('Proposal Listing', () => {
         required: ['title'],
         'x-field-order': ['title', 'summary', 'budget', 'category'],
         properties: {
-          title: { type: 'string' },
-          summary: { type: 'string', 'x-format': 'long-text' },
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
           budget: {
             type: 'object',
+            title: 'Budget',
             'x-format': 'money',
             properties: {
               amount: { type: 'number' },
@@ -158,7 +167,13 @@ test.describe('Proposal Listing', () => {
           },
           category: {
             type: ['string', 'null'],
-            enum: ['Environment', 'Education', 'Infrastructure', null],
+            title: 'Category',
+            'x-format': 'dropdown',
+            oneOf: [
+              { const: 'Environment', title: 'Environment' },
+              { const: 'Education', title: 'Education' },
+              { const: 'Infrastructure', title: 'Infrastructure' },
+            ],
           },
         },
       },
