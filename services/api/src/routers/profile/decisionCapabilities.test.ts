@@ -199,10 +199,14 @@ describe.concurrent('profile.decisionCapabilities', () => {
     expect(acrud.admin).toBe(true);
 
     // Decision bits should also be correct
-    expect(permission!.permission & decisionPermission.INVITE_MEMBERS).toBeTruthy();
+    expect(
+      permission!.permission & decisionPermission.INVITE_MEMBERS,
+    ).toBeTruthy();
     expect(permission!.permission & decisionPermission.REVIEW).toBeTruthy();
     expect(permission!.permission & decisionPermission.VOTE).toBeTruthy();
-    expect(permission!.permission & decisionPermission.SUBMIT_PROPOSALS).toBeFalsy();
+    expect(
+      permission!.permission & decisionPermission.SUBMIT_PROPOSALS,
+    ).toBeFalsy();
   });
 
   it('should not allow non-admin to update decision capabilities', async ({
