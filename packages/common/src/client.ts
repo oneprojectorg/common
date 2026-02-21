@@ -17,10 +17,6 @@ export {
   type SchemaValidationResult,
 } from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
-export {
-  isRawValueFragment,
-  extractFragmentRawText,
-} from './services/decision/fragmentUtils';
 
 // Translation constants (no server dependencies)
 export {

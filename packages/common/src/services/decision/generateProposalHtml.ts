@@ -2,22 +2,17 @@ import type { TipTapFragmentResponse } from '@op/collab';
 import type { JSONContent } from '@tiptap/core';
 import { generateHTML } from '@tiptap/html';
 
-import { extractFragmentRawText, isRawValueFragment } from './fragmentUtils';
 import { serverExtensions } from './tiptapExtensions';
 
 /**
  * Converts TipTap JSON fragments to HTML strings.
  *
- * The source data is our own JSON from TipTap Cloud — not user-supplied HTML — so
- * the output is deterministic and does not require sanitization.
+ * All fragments are stored as valid ProseMirror content (paragraph-wrapped)
+ * via `useCollaborativeFragment`, so every fragment — text fields, dropdowns,
+ * money fields — can be processed through `generateHTML()`.
  *
- * Fragments fall into two categories:
- * - **TipTap editor fragments** (title, summary, long-text): contain block-level
- *   nodes and are processed via `generateHTML()`.
- * - **Collaborative value fragments** (dropdown, budget, category): stored as raw
- *   `Y.XmlText` via `useCollaborativeFragment`, serialised by TipTap Cloud as
- *   bare `text` nodes. These are returned as plain text since they cannot be
- *   passed through `generateHTML()`.
+ * Filtering by field type (e.g. excluding scalar values from card previews)
+ * is the caller's responsibility via `x-format`.
  *
  * @param fragments - TipTap fragment response from the collaboration service
  * @returns Record mapping fragment name to HTML string
@@ -30,13 +25,6 @@ export function generateProposalHtml(
   for (const [fragmentName, fragment] of Object.entries(fragments)) {
     if (!fragment.content || fragment.content.length === 0) {
       result[fragmentName] = '';
-      continue;
-    }
-
-    // Collaborative value fragments (dropdown, budget) store raw XmlText which
-    // TipTap Cloud serialises as bare `text` nodes. Return as plain text.
-    if (isRawValueFragment(fragment.content)) {
-      result[fragmentName] = extractFragmentRawText(fragment.content);
       continue;
     }
 
