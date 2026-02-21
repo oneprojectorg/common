@@ -1,3 +1,4 @@
+import { decisionPermission } from '@op/common';
 import { db } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
@@ -450,7 +451,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       throw new Error('Expected memberUser to be defined');
     }
 
-    // Create a custom role with INVITE_MEMBERS decision capability (bit 6 = 64)
+    // Create a custom role with INVITE_MEMBERS decision capability
     const [inviterRole] = await db
       .insert(accessRoles)
       .values({
@@ -466,7 +467,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       }
     });
 
-    // Set INVITE_MEMBERS (64) decision bit on the decisions zone for this role
+    // Set INVITE_MEMBERS decision bit on the decisions zone for this role
     const decisionsZone = await db._query.accessZones.findFirst({
       where: (table, { eq }) => eq(table.name, 'decisions'),
     });
@@ -478,7 +479,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     await db.insert(accessRolePermissionsOnAccessZones).values({
       accessRoleId: inviterRole!.id,
       accessZoneId: decisionsZone.id,
-      permission: 64, // INVITE_MEMBERS bit only
+      permission: decisionPermission.INVITE_MEMBERS,
     });
 
     // Assign this role to the member user's profile user

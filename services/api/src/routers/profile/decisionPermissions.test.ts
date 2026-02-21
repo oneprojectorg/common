@@ -5,14 +5,15 @@ import {
   fromDecisionBitField,
   toDecisionBitField,
 } from '@op/common';
+import { permission } from 'access-zones';
 import { describe, expect, it } from 'vitest';
 
 describe('decisionPermission constants', () => {
   it('should have the correct bit values', () => {
-    expect(decisionPermission.INVITE_MEMBERS).toBe(64);
-    expect(decisionPermission.REVIEW).toBe(128);
-    expect(decisionPermission.SUBMIT_PROPOSALS).toBe(256);
-    expect(decisionPermission.VOTE).toBe(512);
+    expect(decisionPermission.INVITE_MEMBERS).toBe(32);
+    expect(decisionPermission.REVIEW).toBe(64);
+    expect(decisionPermission.SUBMIT_PROPOSALS).toBe(128);
+    expect(decisionPermission.VOTE).toBe(256);
   });
 
   it('should not overlap with CRUD bits', () => {
@@ -48,7 +49,7 @@ describe('toDecisionBitField', () => {
         submitProposals: false,
         vote: false,
       }),
-    ).toBe(16);
+    ).toBe(permission.ADMIN);
   });
 
   it('should set individual decision bits correctly', () => {
@@ -60,7 +61,7 @@ describe('toDecisionBitField', () => {
         submitProposals: false,
         vote: false,
       }),
-    ).toBe(64);
+    ).toBe(decisionPermission.INVITE_MEMBERS);
 
     expect(
       toDecisionBitField({
@@ -70,7 +71,7 @@ describe('toDecisionBitField', () => {
         submitProposals: false,
         vote: false,
       }),
-    ).toBe(128);
+    ).toBe(decisionPermission.REVIEW);
 
     expect(
       toDecisionBitField({
@@ -80,7 +81,7 @@ describe('toDecisionBitField', () => {
         submitProposals: true,
         vote: false,
       }),
-    ).toBe(256);
+    ).toBe(decisionPermission.SUBMIT_PROPOSALS);
 
     expect(
       toDecisionBitField({
@@ -90,7 +91,7 @@ describe('toDecisionBitField', () => {
         submitProposals: false,
         vote: true,
       }),
-    ).toBe(512);
+    ).toBe(decisionPermission.VOTE);
   });
 
   it('should combine all bits correctly', () => {
@@ -101,8 +102,13 @@ describe('toDecisionBitField', () => {
       submitProposals: true,
       vote: true,
     };
-    // 16 + 64 + 128 + 256 + 512 = 976
-    expect(toDecisionBitField(caps)).toBe(976);
+    expect(toDecisionBitField(caps)).toBe(
+      permission.ADMIN |
+        decisionPermission.INVITE_MEMBERS |
+        decisionPermission.REVIEW |
+        decisionPermission.SUBMIT_PROPOSALS |
+        decisionPermission.VOTE,
+    );
   });
 
   it('should combine a subset of bits correctly', () => {
@@ -113,8 +119,11 @@ describe('toDecisionBitField', () => {
       submitProposals: false,
       vote: true,
     };
-    // 64 + 128 + 512 = 704
-    expect(toDecisionBitField(caps)).toBe(704);
+    expect(toDecisionBitField(caps)).toBe(
+      decisionPermission.INVITE_MEMBERS |
+        decisionPermission.REVIEW |
+        decisionPermission.VOTE,
+    );
   });
 });
 
@@ -129,8 +138,15 @@ describe('fromDecisionBitField', () => {
     });
   });
 
-  it('should return all true for 976 (all bits set)', () => {
-    expect(fromDecisionBitField(976)).toEqual({
+  it('should return all true when all bits set', () => {
+    const allBits =
+      permission.ADMIN |
+      decisionPermission.INVITE_MEMBERS |
+      decisionPermission.REVIEW |
+      decisionPermission.SUBMIT_PROPOSALS |
+      decisionPermission.VOTE;
+
+    expect(fromDecisionBitField(allBits)).toEqual({
       admin: true,
       inviteMembers: true,
       review: true,
@@ -140,8 +156,11 @@ describe('fromDecisionBitField', () => {
   });
 
   it('should extract admin and decision bits, ignoring CRUD bits', () => {
-    // CRUD bits (create=8, read=4) + decision bits (REVIEW=128, VOTE=512)
-    const bitfield = 8 | 4 | 128 | 512;
+    const bitfield =
+      permission.CREATE |
+      permission.READ |
+      decisionPermission.REVIEW |
+      decisionPermission.VOTE;
     const result = fromDecisionBitField(bitfield);
 
     expect(result).toEqual({
@@ -154,8 +173,7 @@ describe('fromDecisionBitField', () => {
   });
 
   it('should extract admin bit when present', () => {
-    // admin=16 + REVIEW=128
-    const bitfield = 16 | 128;
+    const bitfield = permission.ADMIN | decisionPermission.REVIEW;
     const result = fromDecisionBitField(bitfield);
 
     expect(result).toEqual({
@@ -191,8 +209,9 @@ describe('fromDecisionBitField', () => {
       vote: false,
     };
 
-    // Combine with CRUD bits (create=8, read=4) — admin is NOT set
-    const bitfield = toDecisionBitField(original) | 8 | 4;
+    // Combine with CRUD bits — admin is NOT set
+    const bitfield =
+      toDecisionBitField(original) | permission.CREATE | permission.READ;
     const roundTripped = fromDecisionBitField(bitfield);
 
     expect(roundTripped).toEqual(original);
