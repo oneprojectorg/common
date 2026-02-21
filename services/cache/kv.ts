@@ -21,13 +21,10 @@ if (REDIS_URL) {
       connectTimeout: 10_000,
       keepAlive: false, // TCP keepalive
       reconnectStrategy: (retries) => {
-        if (retries > 3) {
-          return false;
-        }
-
-        const jitter = Math.floor(Math.random() * 100);
-
-        return Math.min(retries * 500, 5_000) + jitter;
+        // Exponential backoff capped at 30s so we can recover when Redis comes back.
+        // The redisAvailable guard ensures zero per-request overhead while disconnected.
+        const jitter = Math.floor(Math.random() * 200);
+        return Math.min(retries * 500, 30_000) + jitter;
       },
     },
   });
