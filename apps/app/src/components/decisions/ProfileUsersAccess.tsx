@@ -64,18 +64,12 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   const { data, isPending, isError, refetch } =
     trpc.profile.listUsers.useQuery(queryInput);
 
-  // Fetch global + profile-specific roles in parallel to avoid waterfall loading
-  const { data: globalRolesData, isPending: globalRolesPending } =
-    trpc.profile.listRoles.useQuery({});
-  const { data: profileRolesData, isPending: profileRolesPending } =
+  // Fetch profile-specific roles for this decision instance
+  const { data: rolesData, isPending: rolesPending } =
     trpc.profile.listRoles.useQuery({ profileId });
 
   const { items: profileUsers = [], next } = data ?? {};
-  const roles = [
-    ...(globalRolesData?.items ?? []),
-    ...(profileRolesData?.items ?? []),
-  ];
-  const rolesPending = globalRolesPending || profileRolesPending;
+  const roles = rolesData?.items ?? [];
 
   const onNext = () => {
     if (next) {

@@ -129,10 +129,12 @@ function ShareProposalModalContent({
     (state, inviteId: string) => state.filter((i) => i.id !== inviteId),
   );
 
-  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({});
-  const memberRole = useMemo(() => {
+  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({
+    profileId: proposalProfileId,
+  });
+  const participantRole = useMemo(() => {
     const roles = rolesData.items ?? [];
-    return roles.find((r) => r.name === 'Member');
+    return roles.find((r) => r.name === 'Participant');
   }, [rolesData]);
 
   // Update dropdown position when search query changes
@@ -291,7 +293,7 @@ function ShareProposalModalContent({
       return;
     }
 
-    if (!memberRole) {
+    if (!participantRole) {
       toast.error({ message: t('Failed to send invite') });
       return;
     }
@@ -300,7 +302,7 @@ function ShareProposalModalContent({
       await inviteMutation.mutateAsync({
         invitations: pendingInvites.map((item) => ({
           email: item.email,
-          roleId: memberRole.id,
+          roleId: participantRole.id,
         })),
         profileId: proposalProfileId,
       });

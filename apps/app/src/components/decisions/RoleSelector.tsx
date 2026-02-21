@@ -23,16 +23,11 @@ export const RoleSelector = ({
   onRoleNameChange: (roleName: string) => void;
 }) => {
   const t = useTranslations();
-  const [[globalRolesData, profileRolesData]] = trpc.useSuspenseQueries((t) => [
-    t.profile.listRoles({}),
-    t.profile.listRoles({ profileId }),
-  ]);
+  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({ profileId });
 
   const roles = useMemo(() => {
-    const globalRoles = globalRolesData.items ?? [];
-    const profileRoles = profileRolesData.items ?? [];
-    return [...globalRoles, ...profileRoles];
-  }, [globalRolesData, profileRolesData]);
+    return rolesData.items ?? [];
+  }, [rolesData]);
 
   // Set default role on mount if none selected
   const hasInitialized = useRef(false);
