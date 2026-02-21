@@ -6,8 +6,8 @@ import { permission } from 'access-zones';
 
 /**
  * Decision-specific permission bits (bits 5–8), extending the standard ACRUD bits (0–4).
- * These mirror the constants in @op/common/services/decision/permissions.ts
- * but are duplicated here to avoid a circular dependency (@op/db cannot depend on @op/common).
+ * Duplicated from @op/common/src/services/decision/permissions.ts to avoid a
+ * circular dependency (@op/db cannot depend on @op/common).
  */
 const DECISION_BITS = {
   INVITE_MEMBERS: 0b1_00000, // 32
@@ -93,17 +93,14 @@ export const ZONES = {
 // Permission flags
 export const PERMISSIONS = permission;
 
-// Permissions for the Admin role (all ACRUD bits + all decision bits)
+// Permissions for the Admin role (ACRUD bits only — admin access is checked
+// via the ADMIN bit in OR-patterns, so custom decision bits aren't needed)
 const ADMIN_ROLE_PERMISSIONS =
   PERMISSIONS.ADMIN |
   PERMISSIONS.CREATE |
   PERMISSIONS.READ |
   PERMISSIONS.UPDATE |
-  PERMISSIONS.DELETE |
-  DECISION_BITS.INVITE_MEMBERS |
-  DECISION_BITS.REVIEW |
-  DECISION_BITS.SUBMIT_PROPOSALS |
-  DECISION_BITS.VOTE;
+  PERMISSIONS.DELETE;
 
 // Access role permissions on access zones (based on production patterns)
 export const ACCESS_ROLE_PERMISSIONS = [
