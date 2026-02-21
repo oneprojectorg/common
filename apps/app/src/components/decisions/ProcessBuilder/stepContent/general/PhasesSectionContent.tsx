@@ -15,6 +15,7 @@ import {
 import { AutoSizeInput } from '@op/ui/AutoSizeInput';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import type { Key } from '@op/ui/RAC';
 import { DisclosureStateContext } from '@op/ui/RAC';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
@@ -27,7 +28,7 @@ import {
   LuCircleAlert,
   LuGripVertical,
   LuPlus,
-  LuX,
+  LuTrash2,
 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -258,6 +259,7 @@ export const PhaseEditor = ({
 
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
   const [autoFocusPhaseId, setAutoFocusPhaseId] = useState<string | null>(null);
+  const [phaseToDelete, setPhaseToDelete] = useState<string | null>(null);
 
   const addPhase = () => {
     const newPhase: PhaseDefinition = {
@@ -270,13 +272,17 @@ export const PhaseEditor = ({
     setAutoFocusPhaseId(newPhase.id);
   };
 
-  const removePhase = (phaseId: string) => {
-    setPhases(phases.filter((p) => p.id !== phaseId));
+  const confirmRemovePhase = () => {
+    if (!phaseToDelete) {
+      return;
+    }
+    setPhases(phases.filter((p) => p.id !== phaseToDelete));
     setTouchedFields((prev) => {
       const next = { ...prev };
-      delete next[phaseId];
+      delete next[phaseToDelete];
       return next;
     });
+    setPhaseToDelete(null);
   };
 
   if (phases.length === 0) {
@@ -341,10 +347,6 @@ export const PhaseEditor = ({
                     onAutoFocused={() => setAutoFocusPhaseId(null)}
                   />
                   {phaseHasVisibleErrors(phase.id) && <PhaseErrorIndicator />}
-                  <RemovePhaseButton
-                    onPress={() => removePhase(phase.id)}
-                    isDisabled={phases.length <= 1}
-                  />
                 </AccordionHeader>
                 <AccordionContent>
                   <hr />
@@ -444,6 +446,16 @@ export const PhaseEditor = ({
                     instanceId={instanceId}
                     onUpdate={(updates) => updatePhase(phase.id, updates)}
                   />
+                  <div className="border-t p-4">
+                    <Button
+                      color="destructive"
+                      onPress={() => setPhaseToDelete(phase.id)}
+                      isDisabled={phases.length <= 1}
+                    >
+                      <LuTrash2 className="size-4" />
+                      {t('Delete phase')}
+                    </Button>
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             );
@@ -458,6 +470,40 @@ export const PhaseEditor = ({
         <LuPlus className="size-4" />
         {t('Add phase')}
       </Button>
+      <Modal
+        isDismissable
+        isOpen={phaseToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPhaseToDelete(null);
+          }
+        }}
+      >
+        <ModalHeader>{t('Delete phase')}</ModalHeader>
+        <ModalBody>
+          <p>
+            {t(
+              'Are you sure you want to delete this phase? This action cannot be undone.',
+            )}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="secondary"
+            className="w-full sm:w-fit"
+            onPress={() => setPhaseToDelete(null)}
+          >
+            {t('Cancel')}
+          </Button>
+          <Button
+            color="destructive"
+            className="w-full sm:w-fit"
+            onPress={confirmRemovePhase}
+          >
+            {t('Delete')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 };
@@ -625,35 +671,7 @@ const AccordionTitleInput = ({
   );
 };
 
-/** Remove button that only appears when the accordion item is expanded */
-const RemovePhaseButton = ({
-  onPress,
-  isDisabled,
-}: {
-  onPress: () => void;
-  isDisabled: boolean;
-}) => {
-  const t = useTranslations();
-  const state = use(DisclosureStateContext);
-  const isExpanded = state?.isExpanded ?? false;
 
-  if (!isExpanded) {
-    return null;
-  }
-
-  return (
-    <Button
-      color="ghost"
-      size="small"
-      className="text-neutral-gray4 hover:text-red-600"
-      onPress={onPress}
-      isDisabled={isDisabled}
-      aria-label={t('Remove')}
-    >
-      <LuX className="size-4" />
-    </Button>
-  );
-};
 
 /** Warning icon shown on collapsed accordion headers when a phase has validation errors */
 const PhaseErrorIndicator = () => {

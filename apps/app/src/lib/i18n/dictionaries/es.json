@@ -232,6 +232,8 @@
   "are not valid email addresses": "no son direcciones de correo válidas",
   "About the process": "Acerca del proceso",
   "Delete Proposal": "Eliminar propuesta",
+  "Delete phase": "Eliminar fase",
+  "Are you sure you want to delete this phase? This action cannot be undone.": "¿Estás seguro de que quieres eliminar esta fase? Esta acción no se puede deshacer.",
   "Delete": "Eliminar",
   "Deleting...": "Eliminando...",
   "Failed to delete proposal": "Error al eliminar la propuesta",
