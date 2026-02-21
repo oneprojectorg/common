@@ -103,12 +103,19 @@ export const createInstanceFromTemplateCore = async ({
         name: 'Admin',
         profileId: instanceProfile.id,
         permissions: {
+          profile: {
+            type: 'acrud',
+            value: { admin: true, create: true, read: true, update: true, delete: true },
+          },
           decisions: {
-            admin: true,
-            inviteMembers: true,
-            review: true,
-            submitProposals: true,
-            vote: true,
+            type: 'decision',
+            value: {
+              admin: true,
+              inviteMembers: true,
+              review: true,
+              submitProposals: true,
+              vote: true,
+            },
           },
         },
         tx,
@@ -117,12 +124,19 @@ export const createInstanceFromTemplateCore = async ({
         name: 'Participant',
         profileId: instanceProfile.id,
         permissions: {
+          profile: {
+            type: 'acrud',
+            value: { admin: false, create: false, read: true, update: false, delete: false },
+          },
           decisions: {
-            admin: false,
-            inviteMembers: false,
-            review: false,
-            submitProposals: true,
-            vote: true,
+            type: 'decision',
+            value: {
+              admin: false,
+              inviteMembers: false,
+              review: false,
+              submitProposals: true,
+              vote: true,
+            },
           },
         },
         tx,

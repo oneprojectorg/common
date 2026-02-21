@@ -1,6 +1,6 @@
 import { type TransactionType, db } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
-import { permission } from 'access-zones';
+import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
@@ -11,8 +11,21 @@ import {
   toDecisionBitField,
 } from './permissions';
 
+type ZonePermission =
+  | { type: 'decision'; value: DecisionRolePermissions }
+  | { type: 'acrud'; value: { admin: boolean; create: boolean; read: boolean; update: boolean; delete: boolean } };
+
+function toBitfield(zonePermission: ZonePermission): number {
+  if (zonePermission.type === 'decision') {
+    return toDecisionBitField(zonePermission.value) | permission.READ;
+  }
+  return toBitField(zonePermission.value);
+}
+
 /**
- * Create a decision role with decision-specific permissions on the decisions zone.
+ * Create a decision role with permissions on one or more zones.
+ * Each zone entry specifies its type: 'decision' for decision-specific bits,
+ * or 'acrud' for standard access-zones bits.
  */
 export async function createDecisionRole({
   name,
@@ -23,7 +36,7 @@ export async function createDecisionRole({
 }: {
   name: string;
   profileId: string;
-  permissions: Record<string, DecisionRolePermissions>;
+  permissions: Record<string, ZonePermission>;
   description?: string;
   tx?: TransactionType;
 }) {
@@ -59,7 +72,7 @@ export async function createDecisionRole({
     zoneNames.map((zoneName) => ({
       accessRoleId: role.id,
       accessZoneId: zoneMap.get(zoneName)!.id,
-      permission: toDecisionBitField(permissions[zoneName]!) | permission.READ,
+      permission: toBitfield(permissions[zoneName]!),
     })),
   );
 
