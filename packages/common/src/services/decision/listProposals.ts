@@ -21,7 +21,6 @@ import {
   getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { decisionPermission } from './permissions';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -121,7 +120,7 @@ export const listProposals = async ({
       profilePermissions: { profile: permission.READ },
       orgFallbackPermissions: [
         { decisions: permission.ADMIN },
-        { decisions: decisionPermission.REVIEW },
+        { decisions: permission.READ },
       ],
     });
 

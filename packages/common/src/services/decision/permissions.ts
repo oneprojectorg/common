@@ -11,14 +11,14 @@
  * Bit 9 (512) — Vote
  */
 export const decisionPermission = {
-  INVITE_MEMBERS: 64,
-  REVIEW: 128,
-  SUBMIT_PROPOSALS: 256,
-  VOTE: 512,
+  INVITE_MEMBERS: 0b1000000,
+  REVIEW: 0b10000000,
+  SUBMIT_PROPOSALS: 0b100000000,
+  VOTE: 0b1000000000,
 } as const;
 
 /** ACRUD admin bit from access-zones (bit 4) */
-const ADMIN_BIT = 16;
+const ADMIN_BIT = 0b10000;
 
 export type DecisionRolePermissions = {
   admin: boolean;
@@ -29,7 +29,7 @@ export type DecisionRolePermissions = {
 };
 
 /** Mask covering only CRUD bits (0–3), excluding admin which is managed via capabilities */
-export const CRUD_BITS_MASK = 15; // 0x0F
+export const CRUD_BITS_MASK = 0b1111;
 
 /**
  * Convert a DecisionRolePermissions object into a bitfield.

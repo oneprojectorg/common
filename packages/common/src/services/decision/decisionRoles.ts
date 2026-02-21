@@ -1,11 +1,11 @@
 import { db } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones } from '@op/db/schema';
+import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import {
-  CRUD_BITS_MASK,
   type DecisionRolePermissions,
   fromDecisionBitField,
   toDecisionBitField,
@@ -74,10 +74,7 @@ export async function updateDecisionRoles({
     where: { accessRoleId: roleId, accessZoneId: zone.id },
   });
 
-  const READ_BIT = 4;
-  const existingCrud = (existing?.permission ?? 0) & CRUD_BITS_MASK;
-  const newDecisionBits = toDecisionBitField(decisionPermissions);
-  const bitfield = existingCrud | newDecisionBits | READ_BIT;
+  const bitfield = toDecisionBitField(decisionPermissions) | permission.READ;
 
   if (existing) {
     await db

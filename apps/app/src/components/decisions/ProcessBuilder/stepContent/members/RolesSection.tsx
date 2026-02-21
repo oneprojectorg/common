@@ -28,7 +28,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
 
-const DECISION_CAPABILITY_COLUMNS = [
+const PERMISSION_COLUMNS = [
   { key: 'admin', label: 'Manage Process' },
   { key: 'inviteMembers', label: 'Invite Members' },
   { key: 'review', label: 'Review' },
@@ -36,7 +36,7 @@ const DECISION_CAPABILITY_COLUMNS = [
   { key: 'vote', label: 'Vote' },
 ] as const;
 
-type DecisionRoleKey = (typeof DECISION_CAPABILITY_COLUMNS)[number]['key'];
+type DecisionRoleKey = (typeof PERMISSION_COLUMNS)[number]['key'];
 
 export default function RolesSection({
   decisionProfileId,
@@ -112,12 +112,12 @@ function DecisionRoleCheckboxes({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const { data: capabilities } = trpc.profile.getDecisionRoles.useQuery({
+  const { data: permissions } = trpc.profile.getDecisionRoles.useQuery({
     roleId,
     profileId,
   });
 
-  const updateCapabilities = trpc.profile.updateDecisionRoles.useMutation({
+  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation({
     onMutate: async ({ decisionPermissions }) => {
       await utils.profile.getDecisionRoles.cancel({
         roleId,
@@ -156,27 +156,27 @@ function DecisionRoleCheckboxes({
     },
   });
 
-  const toggleCapability = (key: DecisionRoleKey) => {
-    if (!capabilities || isGlobal) {
+  const togglePermission = (key: DecisionRoleKey) => {
+    if (!permissions || isGlobal) {
       return;
     }
-    updateCapabilities.mutate({
+    updatePermissions.mutate({
       roleId,
       decisionPermissions: {
-        ...capabilities,
-        [key]: !capabilities[key],
+        ...permissions,
+        [key]: !permissions[key],
       },
     });
   };
 
-  return DECISION_CAPABILITY_COLUMNS.map(({ key, label }) => (
+  return PERMISSION_COLUMNS.map(({ key, label }) => (
     <TableCell key={key} className="text-center">
       <div className="flex justify-center">
         <Checkbox
           size="small"
-          isSelected={capabilities?.[key] ?? false}
+          isSelected={permissions?.[key] ?? false}
           isDisabled={isGlobal}
-          onChange={() => toggleCapability(key)}
+          onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
         />
       </div>
@@ -196,12 +196,12 @@ function MobileDecisionRoles({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const { data: capabilities } = trpc.profile.getDecisionRoles.useQuery({
+  const { data: permissions } = trpc.profile.getDecisionRoles.useQuery({
     roleId,
     profileId,
   });
 
-  const updateCapabilities = trpc.profile.updateDecisionRoles.useMutation({
+  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation({
     onMutate: async ({ decisionPermissions }) => {
       await utils.profile.getDecisionRoles.cancel({
         roleId,
@@ -237,28 +237,28 @@ function MobileDecisionRoles({
     },
   });
 
-  const toggleCapability = (key: DecisionRoleKey) => {
-    if (!capabilities || isGlobal) {
+  const togglePermission = (key: DecisionRoleKey) => {
+    if (!permissions || isGlobal) {
       return;
     }
-    updateCapabilities.mutate({
+    updatePermissions.mutate({
       roleId,
       decisionPermissions: {
-        ...capabilities,
-        [key]: !capabilities[key],
+        ...permissions,
+        [key]: !permissions[key],
       },
     });
   };
 
   return (
     <div className="flex flex-col gap-2">
-      {DECISION_CAPABILITY_COLUMNS.map(({ key, label }) => (
+      {PERMISSION_COLUMNS.map(({ key, label }) => (
         <Checkbox
           key={key}
           size="small"
-          isSelected={capabilities?.[key] ?? false}
+          isSelected={permissions?.[key] ?? false}
           isDisabled={isGlobal}
-          onChange={() => toggleCapability(key)}
+          onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
         >
           {t(label)}
@@ -391,7 +391,7 @@ function RolesTable({
           <Table aria-label={t('Roles & permissions')}>
             <TableHeader>
               <TableColumn isRowHeader>{t('Role')}</TableColumn>
-              {DECISION_CAPABILITY_COLUMNS.map(({ key, label }) => (
+              {PERMISSION_COLUMNS.map(({ key, label }) => (
                 <TableColumn key={key} className="text-center">
                   {t(label)}
                 </TableColumn>
