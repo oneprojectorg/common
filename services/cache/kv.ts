@@ -10,6 +10,9 @@ const REDIS_URL = process.env.REDIS_URL;
 // Create Redis client only if REDIS_URL is provided
 let redis: ReturnType<typeof createClient> | null = null;
 
+/** Tracks whether Redis is currently reachable — used to suppress per-request error spam. */
+let redisAvailable = false;
+
 if (REDIS_URL) {
   redis = createClient({
     url: REDIS_URL,
@@ -29,13 +32,29 @@ if (REDIS_URL) {
     },
   });
 
-  redis.on('error', (err) => {
-    logger.error('Redis Client Error', err);
+  // Log state transitions once instead of every error event
+  redis.on('error', () => {
+    if (redisAvailable) {
+      redisAvailable = false;
+      logger.warn(
+        'Redis connection lost — cache operations will fall through to DB',
+      );
+    }
+  });
+
+  redis.on('ready', () => {
+    if (!redisAvailable) {
+      redisAvailable = true;
+      logger.info('Redis connected');
+    }
   });
 
   // Connect to Redis
   if (!redis.isOpen) {
-    redis.connect().catch(console.error);
+    redis.connect().catch(() => {
+      // Intentionally swallowed — the 'error' event handler above already
+      // logs the transition to unavailable state once.
+    });
   }
 }
 
@@ -205,7 +224,7 @@ export const invalidateMultiple = async ({
 };
 
 export const get = async (key: string) => {
-  if (!redis) {
+  if (!redis || !redisAvailable) {
     return null;
   }
 
@@ -218,7 +237,6 @@ export const get = async (key: string) => {
 
     return null;
   } catch (e) {
-    logger.error('CACHE: error getting from Redis', { error: e });
     cacheMetrics.recordError('get');
 
     return null;
@@ -228,7 +246,7 @@ export const get = async (key: string) => {
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing
 export const set = async (key: string, data: unknown, ttl?: number) => {
-  if (!redis) {
+  if (!redis || !redisAvailable) {
     return;
   }
 
@@ -240,7 +258,6 @@ export const set = async (key: string, data: unknown, ttl?: number) => {
       await redis.setEx(key, ttl || DEFAULT_TTL, serializedData);
     }
   } catch (e) {
-    logger.error('CACHE: error setting to Redis', { error: e });
     cacheMetrics.recordError('set');
   }
 };
