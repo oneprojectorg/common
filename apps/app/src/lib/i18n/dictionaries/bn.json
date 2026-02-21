@@ -700,5 +700,7 @@
   "Review": "Review",
   "Submit Proposals": "Submit Proposals",
   "Vote": "Vote",
-  "Advanced permissions": "Advanced permissions"
+  "Advanced permissions": "Advanced permissions",
+  "Invite participants": "অংশগ্রহণকারীদের আমন্ত্রণ করুন",
+  "Only invited participants can view and participate in this process": "শুধুমাত্র আমন্ত্রিত অংশগ্রহণকারীরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন"
 }

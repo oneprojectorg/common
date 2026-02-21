@@ -692,5 +692,7 @@
   "Review": "Review",
   "Submit Proposals": "Submit Proposals",
   "Vote": "Vote",
-  "Advanced permissions": "Advanced permissions"
+  "Advanced permissions": "Advanced permissions",
+  "Invite participants": "Inviter des participants",
+  "Only invited participants can view and participate in this process": "Seuls les participants invités peuvent voir et participer à ce processus"
 }

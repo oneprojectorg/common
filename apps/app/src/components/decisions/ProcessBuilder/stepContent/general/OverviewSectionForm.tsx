@@ -315,7 +315,7 @@ export function OverviewSectionForm({
                 <ToggleRow
                   label={t('Keep this process private')}
                   tooltip={t(
-                    'Only invited members can view and participate in this process',
+                    'Only invited participants can view and participate in this process',
                   )}
                 >
                   <field.ToggleButton
