@@ -266,7 +266,12 @@ const AccordionContent = ({
     }
 
     if (state?.isExpanded) {
-      // Expanding: measure and set height, then switch to auto after animation
+      // Expanding: ensure panel is measurable before reading scrollHeight.
+      // React Aria's useDisclosure manages the hidden attribute via a useLayoutEffect
+      // in the parent Disclosure component, which fires AFTER this child effect.
+      // Without this, scrollHeight can return 0 when the browser's layout cache has
+      // been invalidated (e.g. after a drag-and-drop reorder).
+      panel.removeAttribute('hidden');
       const height = panel.scrollHeight;
       panel.style.setProperty('--disclosure-panel-height', `${height}px`);
 
