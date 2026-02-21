@@ -1,7 +1,7 @@
 import { getDecisionRoles } from '@op/common';
 import { z } from 'zod';
 
-import { decisionRoleSchema } from '../../encoders/access';
+import { decisionRoleEncoder } from '../../encoders/access';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 export const getDecisionRolesRouter = router({
@@ -12,7 +12,7 @@ export const getDecisionRolesRouter = router({
         profileId: z.string().uuid(),
       }),
     )
-    .output(decisionRoleSchema)
+    .output(decisionRoleEncoder)
     .query(async ({ input }) => {
       return getDecisionRoles({
         roleId: input.roleId,

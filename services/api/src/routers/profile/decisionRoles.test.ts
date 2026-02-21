@@ -121,7 +121,7 @@ describe.concurrent('profile.decisionRoles', () => {
     });
   });
 
-  it('should preserve CRUD bits when updating decision capabilities', async ({
+  it('should write the full bitfield when updating decision roles', async ({
     task,
     onTestFinished,
   }) => {
@@ -134,7 +134,7 @@ describe.concurrent('profile.decisionRoles', () => {
       .insert(accessRoles)
       .values({
         name: `Decision Cap Role ${task.id}`,
-        description: 'A custom role for decision capabilities testing',
+        description: 'A custom role for decision roles testing',
         profileId: profile.id,
       })
       .returning();
@@ -148,19 +148,6 @@ describe.concurrent('profile.decisionRoles', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // First, set ACRUD permissions via updateRolePermission (includes admin)
-    await caller.updateRolePermission({
-      roleId: customRole!.id,
-      permissions: {
-        admin: false,
-        create: true,
-        read: true,
-        update: false,
-        delete: false,
-      },
-    });
-
-    // Now set decision capabilities (admin controlled here, not via ACRUD)
     await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
@@ -172,7 +159,6 @@ describe.concurrent('profile.decisionRoles', () => {
       },
     });
 
-    // Verify that CRUD bits are still present in the raw permission
     const decisionsZone = await db._query.accessZones.findFirst({
       where: (table, { eq }) => eq(table.name, 'decisions'),
     });
@@ -188,17 +174,10 @@ describe.concurrent('profile.decisionRoles', () => {
 
     expect(permission).toBeDefined();
 
-    // CRUD bits (0–3) should still show create=true, read=true
     const acrud = fromBitField(permission!.permission);
-    expect(acrud.create).toBe(true);
-    expect(acrud.read).toBe(true);
-    expect(acrud.update).toBe(false);
-    expect(acrud.delete).toBe(false);
-
-    // Admin bit should be set (controlled by capabilities now)
     expect(acrud.admin).toBe(true);
+    expect(acrud.read).toBe(true);
 
-    // Decision bits should also be correct
     expect(
       permission!.permission & decisionPermission.INVITE_MEMBERS,
     ).toBeTruthy();

@@ -21,7 +21,7 @@ export const accessRoleMinimalEncoder = z.object({
 export type AccessRoleMinimal = z.infer<typeof accessRoleMinimalEncoder>;
 
 // Decision role permissions schema
-export const decisionRoleSchema = z.object({
+export const decisionRoleEncoder = z.object({
   admin: z.boolean(),
   inviteMembers: z.boolean(),
   review: z.boolean(),
