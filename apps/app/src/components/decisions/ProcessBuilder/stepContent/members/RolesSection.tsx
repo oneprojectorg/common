@@ -31,13 +31,6 @@ import type { SectionProps } from '../../contentRegistry';
 
 type PermissionKey = keyof Permission;
 
-type DecisionCapabilityKey =
-  | 'admin'
-  | 'inviteMembers'
-  | 'review'
-  | 'submitProposals'
-  | 'vote';
-
 const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
   { key: 'admin', label: 'Admin' },
   { key: 'create', label: 'Create' },
@@ -46,16 +39,16 @@ const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
   { key: 'delete', label: 'Delete' },
 ];
 
-const DECISION_CAPABILITY_COLUMNS: Array<{
-  key: DecisionCapabilityKey;
-  label: string;
-}> = [
+const DECISION_CAPABILITY_COLUMNS = [
   { key: 'admin', label: 'Manage Process' },
   { key: 'inviteMembers', label: 'Invite Members' },
   { key: 'review', label: 'Review' },
   { key: 'submitProposals', label: 'Submit Proposals' },
   { key: 'vote', label: 'Vote' },
-];
+] as const;
+
+type DecisionCapabilityKey =
+  (typeof DECISION_CAPABILITY_COLUMNS)[number]['key'];
 
 export default function RolesSection({
   decisionProfileId,
