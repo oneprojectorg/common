@@ -129,12 +129,10 @@ function ShareProposalModalContent({
     (state, inviteId: string) => state.filter((i) => i.id !== inviteId),
   );
 
-  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({
-    profileId: proposalProfileId,
-  });
+  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({});
   const memberRole = useMemo(() => {
     const roles = rolesData.items ?? [];
-    return roles.find((r) => r.name === 'Participant');
+    return roles.find((r) => r.name === 'Member');
   }, [rolesData]);
 
   // Update dropdown position when search query changes
