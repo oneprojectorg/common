@@ -130,9 +130,9 @@ function ShareProposalModalContent({
   );
 
   const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({});
-  const memberRole = useMemo(() => {
+  const adminRole = useMemo(() => {
     const roles = rolesData.items ?? [];
-    return roles.find((r) => r.name === 'Member');
+    return roles.find((r) => r.name === 'Admin');
   }, [rolesData]);
 
   // Update dropdown position when search query changes
@@ -291,7 +291,7 @@ function ShareProposalModalContent({
       return;
     }
 
-    if (!memberRole) {
+    if (!adminRole) {
       toast.error({ message: t('Failed to send invite') });
       return;
     }
@@ -300,7 +300,7 @@ function ShareProposalModalContent({
       await inviteMutation.mutateAsync({
         invitations: pendingInvites.map((item) => ({
           email: item.email,
-          roleId: memberRole.id,
+          roleId: adminRole.id,
         })),
         profileId: proposalProfileId,
       });
