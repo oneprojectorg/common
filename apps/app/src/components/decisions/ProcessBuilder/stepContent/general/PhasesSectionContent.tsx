@@ -448,7 +448,8 @@ export const PhaseEditor = ({
                   />
                   <div className="border-t p-4">
                     <Button
-                      color="destructive"
+                      color="secondary"
+                      className="text-functional-red"
                       onPress={() => setPhaseToDelete(phase.id)}
                       isDisabled={phases.length <= 1}
                     >
