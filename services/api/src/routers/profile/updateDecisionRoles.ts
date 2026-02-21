@@ -1,31 +1,10 @@
-import { getDecisionRoles, updateDecisionRoles } from '@op/common';
+import { updateDecisionRoles } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { decisionRoleSchema } from './decisionRoleSchema';
 
-const decisionRoleSchema = z.object({
-  admin: z.boolean(),
-  inviteMembers: z.boolean(),
-  review: z.boolean(),
-  submitProposals: z.boolean(),
-  vote: z.boolean(),
-});
-
-export const decisionRolesRouter = router({
-  getDecisionRoles: commonAuthedProcedure()
-    .input(
-      z.object({
-        roleId: z.string().uuid(),
-        profileId: z.string().uuid(),
-      }),
-    )
-    .output(decisionRoleSchema)
-    .query(async ({ input }) => {
-      return getDecisionRoles({
-        roleId: input.roleId,
-      });
-    }),
-
+export const updateDecisionRolesRouter = router({
   updateDecisionRoles: commonAuthedProcedure()
     .input(
       z.object({
