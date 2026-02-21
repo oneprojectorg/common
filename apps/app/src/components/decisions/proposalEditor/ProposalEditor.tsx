@@ -269,9 +269,6 @@ export function ProposalEditor({
 
   // -- Render ----------------------------------------------------------------
 
-  const canShare =
-    proposal.access?.admin === true || proposal.access?.inviteMembers === true;
-
   const userName = user.profile?.name ?? t('Anonymous');
 
   const {
@@ -295,7 +292,7 @@ export function ProposalEditor({
         isDraft={isDraft}
         presenceSlot={<CollaborativePresence />}
         proposalProfileId={proposal.profileId}
-        canShare={canShare}
+        access={proposal.access}
       >
         <div
           className="sticky top-0 z-10 bg-white"

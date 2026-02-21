@@ -24,8 +24,11 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
-  /** Whether the current user can share (invite members to) this proposal */
-  canShare?: boolean;
+  /** The current user's decision permissions on this proposal */
+  access?: {
+    admin: boolean;
+    inviteMembers: boolean;
+  };
 }
 
 export function ProposalEditorLayout({
@@ -38,11 +41,13 @@ export function ProposalEditorLayout({
   isDraft = false,
   presenceSlot,
   proposalProfileId,
-  canShare = false,
+  access,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  const canShare = access?.admin || access?.inviteMembers;
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
