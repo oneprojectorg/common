@@ -1,8 +1,8 @@
 import { updateDecisionRoles } from '@op/common';
 import { z } from 'zod';
 
+import { decisionRoleSchema } from '../../encoders/access';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { decisionRoleSchema } from './decisionRoleSchema';
 
 export const updateDecisionRolesRouter = router({
   updateDecisionRoles: commonAuthedProcedure()
