@@ -19,20 +19,17 @@ export async function getDecisionRoles({
 }: {
   roleId: string;
 }): Promise<DecisionRolePermissions> {
-  const zone = await db._query.accessZones.findFirst({
-    where: (table, { eq }) => eq(table.name, 'decisions'),
+  const zone = await db.query.accessZones.findFirst({
+    where: { name: 'decisions' },
   });
 
   if (!zone) {
     throw new NotFoundError('Zone', 'decisions');
   }
 
-  const existing = await db._query.accessRolePermissionsOnAccessZones.findFirst(
-    {
-      where: (table, { eq, and }) =>
-        and(eq(table.accessRoleId, roleId), eq(table.accessZoneId, zone.id)),
-    },
-  );
+  const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
+    where: { accessRoleId: roleId, accessZoneId: zone.id },
+  });
 
   return fromDecisionBitField(existing?.permission ?? 0);
 }
@@ -51,11 +48,11 @@ export async function updateDecisionRoles({
   user: { id: string };
 }) {
   const [zone, role] = await Promise.all([
-    db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     }),
-    db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, roleId),
+    db.query.accessRoles.findFirst({
+      where: { id: roleId },
     }),
   ]);
 
@@ -73,12 +70,9 @@ export async function updateDecisionRoles({
 
   await assertProfileAdmin(user, role.profileId);
 
-  const existing = await db._query.accessRolePermissionsOnAccessZones.findFirst(
-    {
-      where: (table, { eq, and }) =>
-        and(eq(table.accessRoleId, roleId), eq(table.accessZoneId, zone.id)),
-    },
-  );
+  const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
+    where: { accessRoleId: roleId, accessZoneId: zone.id },
+  });
 
   const READ_BIT = 4;
   const existingCrud = (existing?.permission ?? 0) & CRUD_BITS_MASK;
