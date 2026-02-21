@@ -1,3 +1,5 @@
+import { permission } from 'access-zones';
+
 /**
  * Decision permission capabilities.
  *
@@ -16,13 +18,6 @@ export const decisionPermission = {
   SUBMIT_PROPOSALS: 0b100_00000,
   VOTE: 0b1000_00000,
 } as const;
-
-/** ACRUD bits from access-zones (bits 0–4) */
-const DELETE_BIT = 0b00001;
-const UPDATE_BIT = 0b00010;
-const READ_BIT = 0b00100;
-const CREATE_BIT = 0b01000;
-const ADMIN_BIT = 0b10000;
 
 export type DecisionRolePermissions = {
   delete: boolean;
@@ -46,19 +41,19 @@ export const CRUD_BITS_MASK = 0b1111;
 export function toDecisionBitField(caps: DecisionRolePermissions): number {
   let bits = 0;
   if (caps.delete) {
-    bits |= DELETE_BIT;
+    bits |= permission.DELETE;
   }
   if (caps.update) {
-    bits |= UPDATE_BIT;
+    bits |= permission.UPDATE;
   }
   if (caps.read) {
-    bits |= READ_BIT;
+    bits |= permission.READ;
   }
   if (caps.create) {
-    bits |= CREATE_BIT;
+    bits |= permission.CREATE;
   }
   if (caps.admin) {
-    bits |= ADMIN_BIT;
+    bits |= permission.ADMIN;
   }
   if (caps.inviteMembers) {
     bits |= decisionPermission.INVITE_MEMBERS;
@@ -83,11 +78,11 @@ export function fromDecisionBitField(
   bitField: number,
 ): DecisionRolePermissions {
   return {
-    delete: (bitField & DELETE_BIT) !== 0,
-    update: (bitField & UPDATE_BIT) !== 0,
-    read: (bitField & READ_BIT) !== 0,
-    create: (bitField & CREATE_BIT) !== 0,
-    admin: (bitField & ADMIN_BIT) !== 0,
+    delete: (bitField & permission.DELETE) !== 0,
+    update: (bitField & permission.UPDATE) !== 0,
+    read: (bitField & permission.READ) !== 0,
+    create: (bitField & permission.CREATE) !== 0,
+    admin: (bitField & permission.ADMIN) !== 0,
     inviteMembers: (bitField & decisionPermission.INVITE_MEMBERS) !== 0,
     review: (bitField & decisionPermission.REVIEW) !== 0,
     submitProposals: (bitField & decisionPermission.SUBMIT_PROPOSALS) !== 0,
