@@ -235,49 +235,11 @@ export const getPermissionsOnProposal = async ({
 }: {
   user: User;
   proposal: Proposal & { processInstance: ProcessInstance };
-}): Promise<{ isEditable: boolean; access: DecisionRolePermissions }> => {
+}): Promise<{ access: DecisionRolePermissions & { update: boolean } }> => {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
     throw new UnauthorizedError('User must have an active profile');
-  }
-
-  // Check if proposal is editable by current user
-  const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
-  let isEditable = isOwner;
-
-  // If it's not already editable, check profile-level edit permission on the proposal's profile
-  if (!isEditable && proposal.profileId) {
-    const proposalProfileUser = await getProfileAccessUser({
-      user,
-      profileId: proposal.profileId,
-    });
-
-    isEditable = checkPermission(
-      { profile: permission.UPDATE },
-      proposalProfileUser?.roles ?? [],
-    );
-  }
-
-  // Also check instance-level admin permission
-  if (!isEditable && proposal.processInstance?.profileId) {
-    const instanceProfileUser = await getProfileAccessUser({
-      user,
-      profileId: proposal.processInstance.profileId,
-    });
-
-    isEditable = checkPermission(
-      { decisions: permission.ADMIN },
-      instanceProfileUser?.roles ?? [],
-    );
-  }
-
-  // Disable editing if we're in the results phase
-  if (isEditable && proposal.processInstance) {
-    const currentStateId = proposal.processInstance.currentStateId;
-    if (currentStateId === 'results') {
-      isEditable = false;
-    }
   }
 
   // Fetch the user's roles on the proposal's profile
@@ -287,11 +249,6 @@ export const getPermissionsOnProposal = async ({
   });
 
   const roles = profileUser?.roles ?? [];
-
-  // If it's not already editable, check profile-level edit permission
-  if (!isEditable && proposal.processInstance?.profileId) {
-    isEditable = checkPermission({ profile: permission.UPDATE }, roles);
-  }
 
   // Compute decision access from combined role bitfields
   const combinedDecisionBits = roles.reduce(
@@ -306,5 +263,15 @@ export const getPermissionsOnProposal = async ({
     access.admin = true;
   }
 
-  return { isEditable, access };
+  // Determine if the user can edit this proposal
+  const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
+  const inResultsPhase = proposal.processInstance?.currentStateId === 'results';
+  const hasProfileUpdate = checkPermission(
+    { profile: permission.UPDATE },
+    roles,
+  );
+  const canUpdate =
+    (isOwner && !inResultsPhase) || hasProfileUpdate || access.admin;
+
+  return { access: { ...access, update: canUpdate } };
 };

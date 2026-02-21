@@ -462,6 +462,10 @@ export const proposalEncoder = createSelectSchema(proposals)
     isEditable: z.boolean().optional(),
     access: z
       .object({
+        delete: z.boolean(),
+        update: z.boolean(),
+        read: z.boolean(),
+        create: z.boolean(),
         admin: z.boolean(),
         inviteMembers: z.boolean(),
         review: z.boolean(),

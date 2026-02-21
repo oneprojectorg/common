@@ -36,7 +36,7 @@ export const getProposalRouter = router({
       });
 
       // Fetch permissions
-      const { isEditable, access } = await getPermissionsOnProposal({
+      const { access } = await getPermissionsOnProposal({
         user,
         proposal,
       }).catch((error) => {
@@ -44,7 +44,7 @@ export const getProposalRouter = router({
           error,
           profileId,
         });
-        return { isEditable: false, access: undefined };
+        return { access: undefined };
       });
 
       // Track proposal viewed event
@@ -61,7 +61,7 @@ export const getProposalRouter = router({
 
       return proposalEncoder.parse({
         ...proposal,
-        isEditable,
+        isEditable: access?.update,
         access,
       });
     }),
