@@ -105,7 +105,13 @@ export const createInstanceFromTemplateCore = async ({
         permissions: {
           profile: {
             type: 'acrud',
-            value: { admin: true, create: true, read: true, update: true, delete: true },
+            value: {
+              admin: true,
+              create: true,
+              read: true,
+              update: true,
+              delete: true,
+            },
           },
           decisions: {
             type: 'decision',
@@ -126,7 +132,13 @@ export const createInstanceFromTemplateCore = async ({
         permissions: {
           profile: {
             type: 'acrud',
-            value: { admin: false, create: false, read: true, update: false, delete: false },
+            value: {
+              admin: false,
+              create: false,
+              read: true,
+              update: false,
+              delete: false,
+            },
           },
           decisions: {
             type: 'decision',

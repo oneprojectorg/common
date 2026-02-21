@@ -13,7 +13,16 @@ import {
 
 type ZonePermission =
   | { type: 'decision'; value: DecisionRolePermissions }
-  | { type: 'acrud'; value: { admin: boolean; create: boolean; read: boolean; update: boolean; delete: boolean } };
+  | {
+      type: 'acrud';
+      value: {
+        admin: boolean;
+        create: boolean;
+        read: boolean;
+        update: boolean;
+        delete: boolean;
+      };
+    };
 
 function toBitfield(zonePermission: ZonePermission): number {
   if (zonePermission.type === 'decision') {
