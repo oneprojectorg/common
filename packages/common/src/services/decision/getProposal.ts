@@ -23,6 +23,10 @@ import {
   type ProposalDocumentContent,
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
+import {
+  type DecisionRolePermissions,
+  fromDecisionBitField,
+} from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -231,7 +235,7 @@ export const getPermissionsOnProposal = async ({
 }: {
   user: User;
   proposal: Proposal & { processInstance: ProcessInstance };
-}) => {
+}): Promise<{ isEditable: boolean; access: DecisionRolePermissions }> => {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
@@ -276,5 +280,31 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  return isEditable;
+  // Fetch the user's roles on the proposal's profile
+  const profileUser = await getProfileAccessUser({
+    user,
+    profileId: proposal.profileId,
+  });
+
+  const roles = profileUser?.roles ?? [];
+
+  // If it's not already editable, check profile-level edit permission
+  if (!isEditable && proposal.processInstance?.profileId) {
+    isEditable = checkPermission({ profile: permission.UPDATE }, roles);
+  }
+
+  // Compute decision access from combined role bitfields
+  const combinedDecisionBits = roles.reduce(
+    (bits, role) => bits | (role.access.decisions ?? 0),
+    0,
+  );
+  const access = fromDecisionBitField(combinedDecisionBits);
+
+  // Fold profile-level admin into the access.admin field
+  const isProfileAdmin = checkPermission({ profile: permission.ADMIN }, roles);
+  if (isProfileAdmin) {
+    access.admin = true;
+  }
+
+  return { isEditable, access };
 };

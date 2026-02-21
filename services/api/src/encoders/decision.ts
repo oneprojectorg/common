@@ -460,6 +460,15 @@ export const proposalEncoder = createSelectSchema(proposals)
     isLikedByUser: z.boolean().optional(),
     isFollowedByUser: z.boolean().optional(),
     isEditable: z.boolean().optional(),
+    access: z
+      .object({
+        admin: z.boolean(),
+        inviteMembers: z.boolean(),
+        review: z.boolean(),
+        submitProposals: z.boolean(),
+        vote: z.boolean(),
+      })
+      .optional(),
     attachments: z.array(proposalAttachmentEncoder).optional(),
     selectionRank: z.number().nullable().optional(),
     voteCount: z.number().optional(),

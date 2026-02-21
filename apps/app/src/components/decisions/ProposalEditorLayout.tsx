@@ -24,6 +24,8 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
+  /** Whether the current user can share (invite members to) this proposal */
+  canShare?: boolean;
 }
 
 export function ProposalEditorLayout({
@@ -36,6 +38,7 @@ export function ProposalEditorLayout({
   isDraft = false,
   presenceSlot,
   proposalProfileId,
+  canShare = false,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -61,15 +64,17 @@ export function ProposalEditorLayout({
 
         <div className="flex items-center justify-end gap-4">
           {presenceSlot}
-          <Button
-            color="secondary"
-            variant="icon"
-            size="small"
-            onPress={() => setIsShareModalOpen(true)}
-          >
-            <LuShare2 className="size-4" />
-            <span className="hidden sm:inline">{t('Share')}</span>
-          </Button>
+          {canShare && (
+            <Button
+              color="secondary"
+              variant="icon"
+              size="small"
+              onPress={() => setIsShareModalOpen(true)}
+            >
+              <LuShare2 className="size-4" />
+              <span className="hidden sm:inline">{t('Share')}</span>
+            </Button>
+          )}
           <Button
             color="primary"
             variant="icon"
@@ -98,12 +103,14 @@ export function ProposalEditorLayout({
 
       {children}
 
-      <ShareProposalModal
-        proposalProfileId={proposalProfileId}
-        proposalTitle={title}
-        isOpen={isShareModalOpen}
-        onOpenChange={setIsShareModalOpen}
-      />
+      {canShare && (
+        <ShareProposalModal
+          proposalProfileId={proposalProfileId}
+          proposalTitle={title}
+          isOpen={isShareModalOpen}
+          onOpenChange={setIsShareModalOpen}
+        />
+      )}
     </div>
   );
 }
