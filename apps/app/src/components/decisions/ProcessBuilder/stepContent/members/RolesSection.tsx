@@ -21,23 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import type { Permission } from 'access-zones';
 import { Suspense, useState } from 'react';
-import { LuChevronDown, LuLeaf, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuLeaf, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
-
-type PermissionKey = keyof Permission;
-
-const PERMISSION_COLUMNS: Array<{ key: PermissionKey; label: string }> = [
-  { key: 'admin', label: 'Admin' },
-  { key: 'create', label: 'Create' },
-  { key: 'read', label: 'Read' },
-  { key: 'update', label: 'Update' },
-  { key: 'delete', label: 'Delete' },
-];
 
 const DECISION_CAPABILITY_COLUMNS = [
   { key: 'admin', label: 'Manage Process' },
@@ -47,8 +36,7 @@ const DECISION_CAPABILITY_COLUMNS = [
   { key: 'vote', label: 'Vote' },
 ] as const;
 
-type DecisionCapabilityKey =
-  (typeof DECISION_CAPABILITY_COLUMNS)[number]['key'];
+type DecisionRoleKey = (typeof DECISION_CAPABILITY_COLUMNS)[number]['key'];
 
 export default function RolesSection({
   decisionProfileId,
@@ -112,7 +100,7 @@ function RolesSectionContent({
   );
 }
 
-function DecisionCapabilityCheckboxes({
+function DecisionRoleCheckboxes({
   roleId,
   profileId,
   isGlobal,
@@ -124,52 +112,51 @@ function DecisionCapabilityCheckboxes({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const { data: capabilities } = trpc.profile.getDecisionCapabilities.useQuery({
+  const { data: capabilities } = trpc.profile.getDecisionRoles.useQuery({
     roleId,
     profileId,
   });
 
-  const updateCapabilities =
-    trpc.profile.updateDecisionCapabilities.useMutation({
-      onMutate: async ({ decisionPermissions }) => {
-        await utils.profile.getDecisionCapabilities.cancel({
-          roleId,
-          profileId,
-        });
+  const updateCapabilities = trpc.profile.updateDecisionRoles.useMutation({
+    onMutate: async ({ decisionPermissions }) => {
+      await utils.profile.getDecisionRoles.cancel({
+        roleId,
+        profileId,
+      });
 
-        const previousData = utils.profile.getDecisionCapabilities.getData({
-          roleId,
-          profileId,
-        });
+      const previousData = utils.profile.getDecisionRoles.getData({
+        roleId,
+        profileId,
+      });
 
-        utils.profile.getDecisionCapabilities.setData(
+      utils.profile.getDecisionRoles.setData(
+        { roleId, profileId },
+        decisionPermissions,
+      );
+
+      return { previousData };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousData) {
+        utils.profile.getDecisionRoles.setData(
           { roleId, profileId },
-          decisionPermissions,
+          context.previousData,
         );
+      }
+      toast.error({ message: t('Failed to update role') });
+    },
+    onSuccess: () => {
+      toast.success({ message: t('Role updated successfully') });
+    },
+    onSettled: () => {
+      utils.profile.getDecisionRoles.invalidate({
+        roleId,
+        profileId,
+      });
+    },
+  });
 
-        return { previousData };
-      },
-      onError: (_error, _variables, context) => {
-        if (context?.previousData) {
-          utils.profile.getDecisionCapabilities.setData(
-            { roleId, profileId },
-            context.previousData,
-          );
-        }
-        toast.error({ message: t('Failed to update role') });
-      },
-      onSuccess: () => {
-        toast.success({ message: t('Role updated successfully') });
-      },
-      onSettled: () => {
-        utils.profile.getDecisionCapabilities.invalidate({
-          roleId,
-          profileId,
-        });
-      },
-    });
-
-  const toggleCapability = (key: DecisionCapabilityKey) => {
+  const toggleCapability = (key: DecisionRoleKey) => {
     if (!capabilities || isGlobal) {
       return;
     }
@@ -197,7 +184,7 @@ function DecisionCapabilityCheckboxes({
   ));
 }
 
-function MobileDecisionCapabilities({
+function MobileDecisionRoles({
   roleId,
   profileId,
   isGlobal,
@@ -209,49 +196,48 @@ function MobileDecisionCapabilities({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const { data: capabilities } = trpc.profile.getDecisionCapabilities.useQuery({
+  const { data: capabilities } = trpc.profile.getDecisionRoles.useQuery({
     roleId,
     profileId,
   });
 
-  const updateCapabilities =
-    trpc.profile.updateDecisionCapabilities.useMutation({
-      onMutate: async ({ decisionPermissions }) => {
-        await utils.profile.getDecisionCapabilities.cancel({
-          roleId,
-          profileId,
-        });
-        const previousData = utils.profile.getDecisionCapabilities.getData({
-          roleId,
-          profileId,
-        });
-        utils.profile.getDecisionCapabilities.setData(
+  const updateCapabilities = trpc.profile.updateDecisionRoles.useMutation({
+    onMutate: async ({ decisionPermissions }) => {
+      await utils.profile.getDecisionRoles.cancel({
+        roleId,
+        profileId,
+      });
+      const previousData = utils.profile.getDecisionRoles.getData({
+        roleId,
+        profileId,
+      });
+      utils.profile.getDecisionRoles.setData(
+        { roleId, profileId },
+        decisionPermissions,
+      );
+      return { previousData };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousData) {
+        utils.profile.getDecisionRoles.setData(
           { roleId, profileId },
-          decisionPermissions,
+          context.previousData,
         );
-        return { previousData };
-      },
-      onError: (_error, _variables, context) => {
-        if (context?.previousData) {
-          utils.profile.getDecisionCapabilities.setData(
-            { roleId, profileId },
-            context.previousData,
-          );
-        }
-        toast.error({ message: t('Failed to update role') });
-      },
-      onSuccess: () => {
-        toast.success({ message: t('Role updated successfully') });
-      },
-      onSettled: () => {
-        utils.profile.getDecisionCapabilities.invalidate({
-          roleId,
-          profileId,
-        });
-      },
-    });
+      }
+      toast.error({ message: t('Failed to update role') });
+    },
+    onSuccess: () => {
+      toast.success({ message: t('Role updated successfully') });
+    },
+    onSettled: () => {
+      utils.profile.getDecisionRoles.invalidate({
+        roleId,
+        profileId,
+      });
+    },
+  });
 
-  const toggleCapability = (key: DecisionCapabilityKey) => {
+  const toggleCapability = (key: DecisionRoleKey) => {
     if (!capabilities || isGlobal) {
       return;
     }
@@ -286,17 +272,14 @@ function MobileRoleCard({
   role,
   isGlobal,
   profileId,
-  onTogglePermission,
   onDelete,
 }: {
   role: Role;
   isGlobal: boolean;
   profileId: string;
-  onTogglePermission: (role: Role, key: PermissionKey) => void;
   onDelete?: (role: Role) => void;
 }) {
   const t = useTranslations();
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
     <div
@@ -322,40 +305,11 @@ function MobileRoleCard({
         )}
       </div>
 
-      <MobileDecisionCapabilities
+      <MobileDecisionRoles
         roleId={role.id}
         profileId={profileId}
         isGlobal={isGlobal}
       />
-
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-neutral-gray5 flex items-center gap-1 text-xs"
-        >
-          <LuChevronDown
-            className={`size-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
-          />
-          {t('Advanced permissions')}
-        </button>
-        {showAdvanced && (
-          <div className="mt-2 flex flex-col gap-2">
-            {PERMISSION_COLUMNS.map(({ key, label }) => (
-              <Checkbox
-                key={key}
-                size="small"
-                isSelected={role.permissions?.[key] ?? false}
-                isDisabled={isGlobal}
-                onChange={() => onTogglePermission(role, key)}
-                aria-label={`${label} permission for ${role.name}`}
-              >
-                {t(label)}
-              </Checkbox>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -373,7 +327,6 @@ function RolesTable({
   const utils = trpc.useUtils();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [[{ items: globalRoles }, { items: profileRoles }]] =
     trpc.useSuspenseQueries((q) => [
@@ -383,55 +336,6 @@ function RolesTable({
         zoneName,
       }),
     ]);
-
-  const updatePermission = trpc.profile.updateRolePermission.useMutation({
-    onMutate: async ({ roleId, permissions }) => {
-      await utils.profile.listRoles.cancel({
-        profileId: decisionProfileId,
-        zoneName,
-      });
-
-      const previousData = utils.profile.listRoles.getData({
-        profileId: decisionProfileId,
-        zoneName,
-      });
-
-      utils.profile.listRoles.setData(
-        { profileId: decisionProfileId, zoneName },
-        (old) => {
-          if (!old) {
-            return old;
-          }
-          return {
-            ...old,
-            items: old.items.map((role) =>
-              role.id === roleId ? { ...role, permissions } : role,
-            ),
-          };
-        },
-      );
-
-      return { previousData };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previousData) {
-        utils.profile.listRoles.setData(
-          { profileId: decisionProfileId, zoneName },
-          context.previousData,
-        );
-      }
-      toast.error({ message: t('Failed to update role') });
-    },
-    onSuccess: () => {
-      toast.success({ message: t('Role updated successfully') });
-    },
-    onSettled: () => {
-      utils.profile.listRoles.invalidate({
-        profileId: decisionProfileId,
-        zoneName,
-      });
-    },
-  });
 
   const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
     onSuccess: () => {
@@ -443,24 +347,6 @@ function RolesTable({
       toast.error({ message: t('Failed to delete role') });
     },
   });
-
-  const togglePermission = (role: Role, key: PermissionKey) => {
-    const permissions = role.permissions ?? {
-      admin: false,
-      create: false,
-      read: false,
-      update: false,
-      delete: false,
-    };
-
-    updatePermission.mutate({
-      roleId: role.id,
-      permissions: {
-        ...permissions,
-        [key]: !permissions[key],
-      },
-    });
-  };
 
   if (globalRoles.length === 0 && profileRoles.length === 0) {
     return (
@@ -488,7 +374,6 @@ function RolesTable({
               role={role}
               isGlobal
               profileId={decisionProfileId}
-              onTogglePermission={togglePermission}
             />
           ))}
           {profileRoles.map((role) => (
@@ -497,7 +382,6 @@ function RolesTable({
               role={role}
               isGlobal={false}
               profileId={decisionProfileId}
-              onTogglePermission={togglePermission}
               onDelete={setRoleToDelete}
             />
           ))}
@@ -518,7 +402,7 @@ function RolesTable({
               {globalRoles.map((role) => (
                 <TableRow key={role.id} className="opacity-50">
                   <TableCell className="font-medium">{role.name}</TableCell>
-                  <DecisionCapabilityCheckboxes
+                  <DecisionRoleCheckboxes
                     roleId={role.id}
                     profileId={decisionProfileId}
                     isGlobal
@@ -529,7 +413,7 @@ function RolesTable({
               {profileRoles.map((role) => (
                 <TableRow key={role.id}>
                   <TableCell className="font-medium">{role.name}</TableCell>
-                  <DecisionCapabilityCheckboxes
+                  <DecisionRoleCheckboxes
                     roleId={role.id}
                     profileId={decisionProfileId}
                     isGlobal={false}
@@ -552,76 +436,6 @@ function RolesTable({
               ))}
             </TableBody>
           </Table>
-
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-neutral-gray5 flex items-center gap-1 text-sm hover:text-neutral-black"
-            >
-              <LuChevronDown
-                className={`size-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
-              />
-              {t('Advanced permissions')}
-            </button>
-            {showAdvanced && (
-              <div className="mt-4">
-                <Table aria-label={t('Advanced permissions')}>
-                  <TableHeader>
-                    <TableColumn isRowHeader>{t('Role')}</TableColumn>
-                    {PERMISSION_COLUMNS.map(({ key, label }) => (
-                      <TableColumn key={key} className="text-center">
-                        {t(label)}
-                      </TableColumn>
-                    ))}
-                    <TableColumn className="w-12" />
-                  </TableHeader>
-                  <TableBody>
-                    {globalRoles.map((role) => (
-                      <TableRow key={role.id} className="opacity-50">
-                        <TableCell className="font-medium">
-                          {role.name}
-                        </TableCell>
-                        {PERMISSION_COLUMNS.map(({ key, label }) => (
-                          <TableCell key={key} className="text-center">
-                            <div className="flex justify-center">
-                              <Checkbox
-                                size="small"
-                                isSelected={role.permissions?.[key] ?? false}
-                                isDisabled
-                                aria-label={`${label} permission for ${role.name}`}
-                              />
-                            </div>
-                          </TableCell>
-                        ))}
-                        <TableCell />
-                      </TableRow>
-                    ))}
-                    {profileRoles.map((role) => (
-                      <TableRow key={role.id}>
-                        <TableCell className="font-medium">
-                          {role.name}
-                        </TableCell>
-                        {PERMISSION_COLUMNS.map(({ key, label }) => (
-                          <TableCell key={key} className="text-center">
-                            <div className="flex justify-center">
-                              <Checkbox
-                                size="small"
-                                isSelected={role.permissions?.[key] ?? false}
-                                onChange={() => togglePermission(role, key)}
-                                aria-label={`${label} permission for ${role.name}`}
-                              />
-                            </div>
-                          </TableCell>
-                        ))}
-                        <TableCell />
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
         </div>
       )}
 

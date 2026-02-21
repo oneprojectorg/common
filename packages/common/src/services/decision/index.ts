@@ -60,7 +60,7 @@ export * from './deleteProposalAttachment';
 
 // Decision-specific permissions
 export * from './permissions';
-export * from './decisionCapabilities';
+export * from './decisionRoles';
 
 // Voting management
 export * from './voting';

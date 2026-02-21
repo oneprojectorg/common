@@ -6,19 +6,19 @@ import { NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import {
   CRUD_BITS_MASK,
-  type DecisionCapabilities,
+  type DecisionRolePermissions,
   fromDecisionBitField,
   toDecisionBitField,
 } from './permissions';
 
 /**
- * Get the decision-specific capabilities for a role on the decisions zone.
+ * Get the decision role permissions for a role on the decisions zone.
  */
-export async function getDecisionCapabilities({
+export async function getDecisionRoles({
   roleId,
 }: {
   roleId: string;
-}): Promise<DecisionCapabilities> {
+}): Promise<DecisionRolePermissions> {
   const zone = await db._query.accessZones.findFirst({
     where: (table, { eq }) => eq(table.name, 'decisions'),
   });
@@ -38,16 +38,16 @@ export async function getDecisionCapabilities({
 }
 
 /**
- * Update the decision capabilities for a role on the decisions zone.
+ * Update the decision role permissions for a role on the decisions zone.
  * Preserves CRUD bits (0–3); overwrites admin (bit 4) and decision bits (6–9).
  */
-export async function updateDecisionCapabilities({
+export async function updateDecisionRoles({
   roleId,
   decisionPermissions,
   user,
 }: {
   roleId: string;
-  decisionPermissions: DecisionCapabilities;
+  decisionPermissions: DecisionRolePermissions;
   user: { id: string };
 }) {
   const [zone, role] = await Promise.all([
@@ -80,9 +80,10 @@ export async function updateDecisionCapabilities({
     },
   );
 
+  const READ_BIT = 4;
   const existingCrud = (existing?.permission ?? 0) & CRUD_BITS_MASK;
   const newDecisionBits = toDecisionBitField(decisionPermissions);
-  const bitfield = existingCrud | newDecisionBits;
+  const bitfield = existingCrud | newDecisionBits | READ_BIT;
 
   if (existing) {
     await db

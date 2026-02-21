@@ -1,12 +1,9 @@
-import {
-  getDecisionCapabilities,
-  updateDecisionCapabilities,
-} from '@op/common';
+import { getDecisionRoles, updateDecisionRoles } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const decisionCapabilitiesSchema = z.object({
+const decisionRoleSchema = z.object({
   admin: z.boolean(),
   inviteMembers: z.boolean(),
   review: z.boolean(),
@@ -14,36 +11,36 @@ const decisionCapabilitiesSchema = z.object({
   vote: z.boolean(),
 });
 
-export const decisionCapabilitiesRouter = router({
-  getDecisionCapabilities: commonAuthedProcedure()
+export const decisionRolesRouter = router({
+  getDecisionRoles: commonAuthedProcedure()
     .input(
       z.object({
         roleId: z.string().uuid(),
         profileId: z.string().uuid(),
       }),
     )
-    .output(decisionCapabilitiesSchema)
+    .output(decisionRoleSchema)
     .query(async ({ input }) => {
-      return getDecisionCapabilities({
+      return getDecisionRoles({
         roleId: input.roleId,
       });
     }),
 
-  updateDecisionCapabilities: commonAuthedProcedure()
+  updateDecisionRoles: commonAuthedProcedure()
     .input(
       z.object({
         roleId: z.string().uuid(),
-        decisionPermissions: decisionCapabilitiesSchema,
+        decisionPermissions: decisionRoleSchema,
       }),
     )
     .output(
       z.object({
         roleId: z.string(),
-        decisionPermissions: decisionCapabilitiesSchema,
+        decisionPermissions: decisionRoleSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return updateDecisionCapabilities({
+      return updateDecisionRoles({
         roleId: input.roleId,
         decisionPermissions: input.decisionPermissions,
         user: ctx.user,

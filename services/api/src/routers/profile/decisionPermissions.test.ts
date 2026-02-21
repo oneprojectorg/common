@@ -1,6 +1,6 @@
 import {
   CRUD_BITS_MASK,
-  type DecisionCapabilities,
+  type DecisionRolePermissions,
   decisionPermission,
   fromDecisionBitField,
   toDecisionBitField,
@@ -29,7 +29,7 @@ describe('decisionPermission constants', () => {
 
 describe('toDecisionBitField', () => {
   it('should return 0 when all capabilities are false', () => {
-    const caps: DecisionCapabilities = {
+    const caps: DecisionRolePermissions = {
       admin: false,
       inviteMembers: false,
       review: false,
@@ -94,7 +94,7 @@ describe('toDecisionBitField', () => {
   });
 
   it('should combine all bits correctly', () => {
-    const caps: DecisionCapabilities = {
+    const caps: DecisionRolePermissions = {
       admin: true,
       inviteMembers: true,
       review: true,
@@ -106,7 +106,7 @@ describe('toDecisionBitField', () => {
   });
 
   it('should combine a subset of bits correctly', () => {
-    const caps: DecisionCapabilities = {
+    const caps: DecisionRolePermissions = {
       admin: false,
       inviteMembers: true,
       review: true,
@@ -168,7 +168,7 @@ describe('fromDecisionBitField', () => {
   });
 
   it('should round-trip correctly with toDecisionBitField', () => {
-    const original: DecisionCapabilities = {
+    const original: DecisionRolePermissions = {
       admin: true,
       inviteMembers: false,
       review: true,
@@ -183,7 +183,7 @@ describe('fromDecisionBitField', () => {
   });
 
   it('should round-trip correctly even with CRUD bits present', () => {
-    const original: DecisionCapabilities = {
+    const original: DecisionRolePermissions = {
       admin: false,
       inviteMembers: true,
       review: false,

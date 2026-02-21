@@ -20,7 +20,7 @@ export const decisionPermission = {
 /** ACRUD admin bit from access-zones (bit 4) */
 const ADMIN_BIT = 16;
 
-export type DecisionCapabilities = {
+export type DecisionRolePermissions = {
   admin: boolean;
   inviteMembers: boolean;
   review: boolean;
@@ -32,10 +32,10 @@ export type DecisionCapabilities = {
 export const CRUD_BITS_MASK = 15; // 0x0F
 
 /**
- * Convert a DecisionCapabilities object into a bitfield.
+ * Convert a DecisionRolePermissions object into a bitfield.
  * Produces admin bit (4) + decision bits (6–9).
  */
-export function toDecisionBitField(caps: DecisionCapabilities): number {
+export function toDecisionBitField(caps: DecisionRolePermissions): number {
   let bits = 0;
   if (caps.admin) {
     bits |= ADMIN_BIT;
@@ -59,7 +59,9 @@ export function toDecisionBitField(caps: DecisionCapabilities): number {
  * Extract decision capabilities from a raw permission bitfield.
  * Reads admin bit (4) + decision bits (6–9).
  */
-export function fromDecisionBitField(bitField: number): DecisionCapabilities {
+export function fromDecisionBitField(
+  bitField: number,
+): DecisionRolePermissions {
   return {
     admin: (bitField & ADMIN_BIT) !== 0,
     inviteMembers: (bitField & decisionPermission.INVITE_MEMBERS) !== 0,
@@ -70,7 +72,7 @@ export function fromDecisionBitField(bitField: number): DecisionCapabilities {
 }
 
 export const DECISION_PERMISSION_LABELS: Record<
-  keyof DecisionCapabilities,
+  keyof DecisionRolePermissions,
   string
 > = {
   admin: 'Manage Process',

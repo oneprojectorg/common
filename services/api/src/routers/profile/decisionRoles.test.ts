@@ -13,7 +13,7 @@ import {
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
-describe.concurrent('profile.decisionCapabilities', () => {
+describe.concurrent('profile.decisionRoles', () => {
   const createCaller = createCallerFactory(profileRouter);
 
   it('should return all-false capabilities for a role with no decision bits', async ({
@@ -44,7 +44,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.getDecisionCapabilities({
+    const result = await caller.getDecisionRoles({
       roleId: customRole!.id,
       profileId: profile.id,
     });
@@ -86,7 +86,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Set some decision capabilities
-    const updateResult = await caller.updateDecisionCapabilities({
+    const updateResult = await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
         admin: true,
@@ -107,7 +107,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     // Verify the capabilities can be retrieved
-    const getResult = await caller.getDecisionCapabilities({
+    const getResult = await caller.getDecisionRoles({
       roleId: customRole!.id,
       profileId: profile.id,
     });
@@ -161,7 +161,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     // Now set decision capabilities (admin controlled here, not via ACRUD)
-    await caller.updateDecisionCapabilities({
+    await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
         admin: true,
@@ -237,7 +237,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
-      caller.updateDecisionCapabilities({
+      caller.updateDecisionRoles({
         roleId: customRole!.id,
         decisionPermissions: {
           admin: true,
@@ -275,7 +275,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     }
 
     await expect(
-      caller.updateDecisionCapabilities({
+      caller.updateDecisionRoles({
         roleId: globalRole.id,
         decisionPermissions: {
           admin: false,
@@ -318,7 +318,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // First update — enable all
-    await caller.updateDecisionCapabilities({
+    await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
         admin: true,
@@ -330,7 +330,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     // Second update — disable all
-    await caller.updateDecisionCapabilities({
+    await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
         admin: false,
@@ -341,7 +341,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
       },
     });
 
-    const result = await caller.getDecisionCapabilities({
+    const result = await caller.getDecisionRoles({
       roleId: customRole!.id,
       profileId: profile.id,
     });
@@ -373,6 +373,64 @@ describe.concurrent('profile.decisionCapabilities', () => {
       );
 
     expect(permissions.length).toBe(1);
+  });
+
+  it('should always set READ access by default when updating decision roles', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const [customRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `Decision Cap Role ${task.id}`,
+        description: 'A custom role for READ default testing',
+        profileId: profile.id,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (customRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, customRole.id));
+      }
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Set decision roles with no CRUD bits previously set
+    await caller.updateDecisionRoles({
+      roleId: customRole!.id,
+      decisionPermissions: {
+        admin: false,
+        inviteMembers: false,
+        review: false,
+        submitProposals: false,
+        vote: false,
+      },
+    });
+
+    const decisionsZone = await db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, 'decisions'),
+    });
+
+    const permission =
+      await db._query.accessRolePermissionsOnAccessZones.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.accessRoleId, customRole!.id),
+            eq(table.accessZoneId, decisionsZone!.id),
+          ),
+      });
+
+    expect(permission).toBeDefined();
+
+    const acrud = fromBitField(permission!.permission);
+    expect(acrud.read).toBe(true);
   });
 
   it('should not allow admin from different profile to update decision capabilities', async ({
@@ -410,7 +468,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
-      caller.updateDecisionCapabilities({
+      caller.updateDecisionRoles({
         roleId: customRole!.id,
         decisionPermissions: {
           admin: true,
