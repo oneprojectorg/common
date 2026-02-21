@@ -232,6 +232,8 @@
   "are not valid email addresses": "বৈধ ইমেইল ঠিকানা নয়",
   "About the process": "এই প্রক্রিয়া সম্পর্কে",
   "Delete Proposal": "প্রস্তাব মুছুন",
+  "Delete phase": "পর্যায় মুছুন",
+  "Are you sure you want to delete this phase? This action cannot be undone.": "আপনি কি নিশ্চিত যে আপনি এই পর্যায়টি মুছতে চান? এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "Delete": "মুছুন",
   "Deleting...": "মুছে ফেলা হচ্ছে...",
   "Failed to delete proposal": "প্রস্তাব মুছতে ব্যর্থ",
