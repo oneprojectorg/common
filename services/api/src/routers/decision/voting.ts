@@ -1,8 +1,4 @@
-import {
-  getVotingStatus,
-  submitVote,
-  validateVoteSelectionService,
-} from '@op/common';
+import { getVotingStatus, submitVote } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -54,20 +50,6 @@ export const votingRouter = router({
       return await getVotingStatus({
         data: {
           processInstanceId: input.processInstanceId,
-          authUserId: ctx.user.id,
-        },
-        authUserId: ctx.user.id,
-      });
-    }),
-
-  // Validate vote selection against current schema
-  validateVoteSelection: votingProcedure
-    .input(validateVoteSelectionInput)
-    .query(async ({ input, ctx }) => {
-      return await validateVoteSelectionService({
-        data: {
-          processInstanceId: input.processInstanceId,
-          selectedProposalIds: input.selectedProposalIds,
           authUserId: ctx.user.id,
         },
         authUserId: ctx.user.id,

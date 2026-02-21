@@ -9,9 +9,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getOrgAccessUser, getUserSession } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
-import { decisionPermission } from './permissions';
+import { getProfileAccessUser, getUserSession } from '../access';
 
 export const deleteProposal = async ({
   proposalId,
@@ -47,23 +45,19 @@ export const deleteProposal = async ({
       throw new NotFoundError('Process instance not found');
     }
 
-    // Get organization from process instance owner profile
-    const organization = await assertOrganizationByProfileId(
-      processInstance.ownerProfileId,
-    );
+    if (!processInstance.profileId) {
+      throw new NotFoundError('Decision profile not found');
+    }
 
-    // Get user's organization membership and roles
-    const orgUser = await getOrgAccessUser({
+    // Get user's profile membership and roles
+    const profileUser = await getProfileAccessUser({
       user,
-      organizationId: organization.id,
+      profileId: processInstance.profileId,
     });
 
     const hasPermissions = checkPermission(
-      [
-        { decisions: permission.ADMIN },
-        { decisions: decisionPermission.MANAGE_PROCESS },
-      ],
-      orgUser?.roles ?? [],
+      [{ decisions: permission.ADMIN }],
+      profileUser?.roles ?? [],
     );
 
     // Only the submitter or process owner can delete the proposal

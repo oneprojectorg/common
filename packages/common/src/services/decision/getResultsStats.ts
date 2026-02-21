@@ -2,7 +2,6 @@ import { db, desc, eq } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
-  organizations,
   processInstances,
   proposals,
 } from '@op/db/schema';
@@ -10,8 +9,7 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { getOrgAccessUser } from '../access';
-import { decisionPermission } from './permissions';
+import { getProfileAccessUser } from '../access';
 import { extractBudgetValue } from './proposalDataSchema';
 
 export const getResultsStats = async ({
@@ -25,34 +23,29 @@ export const getResultsStats = async ({
   proposalsFunded: number;
   totalAllocated: number;
 } | null> => {
-  const instanceWithOrg = await db
+  const instance = await db
     .select({
       instanceId: processInstances.id,
-      organizationId: organizations.id,
+      profileId: processInstances.profileId,
     })
     .from(processInstances)
-    .innerJoin(
-      organizations,
-      eq(organizations.profileId, processInstances.ownerProfileId),
-    )
     .where(eq(processInstances.id, instanceId))
     .limit(1);
 
-  if (!instanceWithOrg[0]) {
+  if (!instance[0]) {
     throw new NotFoundError('Process instance not found');
   }
 
-  const { organizationId } = instanceWithOrg[0];
+  if (!instance[0].profileId) {
+    throw new NotFoundError('Decision profile not found');
+  }
 
-  const orgUser = await getOrgAccessUser({
+  const profileUser = await getProfileAccessUser({
     user,
-    organizationId,
+    profileId: instance[0].profileId,
   });
 
-  assertAccess(
-    [{ decisions: permission.ADMIN }, { decisions: decisionPermission.REVIEW }],
-    orgUser?.roles ?? [],
-  );
+  assertAccess([{ decisions: permission.READ }], profileUser?.roles ?? []);
 
   const result = await db._query.decisionProcessResults.findFirst({
     where: eq(decisionProcessResults.processInstanceId, instanceId),

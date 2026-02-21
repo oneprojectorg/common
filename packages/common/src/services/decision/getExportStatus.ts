@@ -1,13 +1,12 @@
 import { get, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import { organizations, processInstances } from '@op/db/schema';
+import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { createSBServerClient } from '@op/supabase/server';
 import { assertAccess, permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
-import { decisionPermission } from './permissions';
+import { NotFoundError, UnauthorizedError } from '../../utils';
+import { getProfileAccessUser } from '../access';
 
 export interface ExportStatusData {
   exportId: string;
@@ -46,41 +45,31 @@ export const getExportStatus = async ({
     throw new UnauthorizedError('You do not have access to this export');
   }
 
-  // Additionally verify user still has admin access to the organization
-  const instanceOrg = await db
+  // Additionally verify user still has access to the decision profile
+  const instance = await db
     .select({
-      id: organizations.id,
+      profileId: processInstances.profileId,
     })
-    .from(organizations)
-    .leftJoin(
-      processInstances,
-      eq(organizations.profileId, processInstances.ownerProfileId),
-    )
+    .from(processInstances)
     .where(eq(processInstances.id, exportStatus.processInstanceId))
     .limit(1);
 
-  if (!instanceOrg[0]) {
-    throw new UnauthorizedError('Process instance not found');
+  if (!instance[0]) {
+    throw new NotFoundError('Process instance not found');
   }
 
-  // Get user's organization membership and roles
-  const orgUser = await getOrgAccessUser({
+  if (!instance[0].profileId) {
+    throw new NotFoundError('Decision profile not found');
+  }
+
+  // Get user's profile membership and roles
+  const profileUser = await getProfileAccessUser({
     user,
-    organizationId: instanceOrg[0].id,
+    profileId: instance[0].profileId,
   });
 
-  if (!orgUser) {
-    throw new UnauthorizedError('You are not a member of this organization');
-  }
-
   // Verify user still has manage process or admin permission
-  assertAccess(
-    [
-      { decisions: permission.ADMIN },
-      { decisions: decisionPermission.MANAGE_PROCESS },
-    ],
-    orgUser.roles || [],
-  );
+  assertAccess([{ decisions: permission.ADMIN }], profileUser?.roles ?? []);
 
   // Refresh signed URL if expired but file exists
   if (
