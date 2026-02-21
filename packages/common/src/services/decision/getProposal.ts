@@ -162,8 +162,27 @@ export const getProposal = async ({
     ]),
   ]);
 
-  // TODO: Add access control - check if user can view this proposal
-  // For now, any authenticated user can view any proposal
+  // Check that user has read access on the instance's profile
+  if (proposal.processInstance?.profileId) {
+    const instanceProfileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.processInstance.profileId,
+    });
+
+    const hasReadAccess =
+      checkPermission(
+        { decisions: permission.READ },
+        instanceProfileUser?.roles ?? [],
+      ) ||
+      checkPermission(
+        { decisions: permission.ADMIN },
+        instanceProfileUser?.roles ?? [],
+      );
+
+    if (!hasReadAccess) {
+      throw new UnauthorizedError('Not authorized to view this proposal');
+    }
+  }
 
   // Generate signed URLs for attachments
   let attachmentsWithUrls = proposal.attachments ?? [];
@@ -240,16 +259,29 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  // If it's not already editable, check profile-level edit permission
+  // If it's not already editable, check profile-level edit permission on the proposal's profile
+  if (!isEditable && proposal.profileId) {
+    const proposalProfileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.profileId,
+    });
+
+    isEditable = checkPermission(
+      { profile: permission.UPDATE },
+      proposalProfileUser?.roles ?? [],
+    );
+  }
+
+  // Also check instance-level admin permission
   if (!isEditable && proposal.processInstance?.profileId) {
-    const profileUser = await getProfileAccessUser({
+    const instanceProfileUser = await getProfileAccessUser({
       user,
       profileId: proposal.processInstance.profileId,
     });
 
     isEditable = checkPermission(
-      { profile: permission.UPDATE },
-      profileUser?.roles ?? [],
+      { decisions: permission.ADMIN },
+      instanceProfileUser?.roles ?? [],
     );
   }
 

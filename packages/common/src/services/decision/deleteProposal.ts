@@ -9,8 +9,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getOrgAccessUser, getUserSession } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
+import { getProfileAccessUser, getUserSession } from '../access';
 
 export const deleteProposal = async ({
   proposalId,
@@ -46,29 +45,35 @@ export const deleteProposal = async ({
       throw new NotFoundError('Process instance not found');
     }
 
-    // Get organization from process instance owner profile
-    const organization = await assertOrganizationByProfileId(
-      processInstance.ownerProfileId,
+    // Check permissions on proposal's profile and instance's profile in parallel
+    const [proposalProfileUser, instanceProfileUser] = await Promise.all([
+      getProfileAccessUser({
+        user: { id: user.id },
+        profileId: existingProposal.profileId,
+      }),
+      processInstance.profileId
+        ? getProfileAccessUser({
+            user: { id: user.id },
+            profileId: processInstance.profileId,
+          })
+        : undefined,
+    ]);
+
+    const hasProposalAdmin = checkPermission(
+      { profile: permission.ADMIN },
+      proposalProfileUser?.roles ?? [],
     );
 
-    // Get user's organization membership and roles
-    const orgUser = await getOrgAccessUser({
-      user,
-      organizationId: organization.id,
-    });
-
-    const hasPermissions = checkPermission(
+    const hasInstanceAdmin = checkPermission(
       { decisions: permission.ADMIN },
-      orgUser?.roles ?? [],
+      instanceProfileUser?.roles ?? [],
     );
 
-    // Only the submitter or process owner can delete the proposal
+    // Only the submitter, proposal admin, or instance admin can delete
     const isSubmitter =
       existingProposal.submittedByProfileId === dbUser.currentProfileId;
-    const isProcessOwner =
-      processInstance.ownerProfileId === dbUser.currentProfileId;
 
-    if (!isSubmitter && !hasPermissions && !isProcessOwner) {
+    if (!isSubmitter && !hasProposalAdmin && !hasInstanceAdmin) {
       throw new UnauthorizedError('Not authorized to delete this proposal');
     }
 
