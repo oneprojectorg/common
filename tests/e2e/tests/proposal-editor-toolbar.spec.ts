@@ -23,9 +23,13 @@ const TWO_FIELD_TEMPLATE = {
       'x-format': 'short-text' as const,
     },
     budget: {
-      type: 'number' as const,
+      type: 'object' as const,
       title: 'Budget',
       'x-format': 'money' as const,
+      properties: {
+        amount: { type: 'number' as const },
+        currency: { type: 'string' as const, default: 'USD' },
+      },
     },
     summary: {
       type: 'string' as const,
