@@ -30,17 +30,15 @@ function getBlockText(element: Y.XmlElement): string {
  * Extracts plain text from a Yjs XmlFragment, matching the output of
  * TipTap Cloud REST API with `format=text`.
  *
- * - Top-level XmlText children (used by `useCollaborativeFragment` for
- *   dropdowns, budget, etc.) are returned as-is.
- * - Top-level XmlElement children (TipTap paragraph/heading nodes) are
- *   recursively walked to concatenate their text, then joined with newlines.
+ * All fragment content (both TipTap editor fields and scalar values from
+ * `useCollaborativeFragment`) is stored as paragraph-wrapped `XmlElement`
+ * nodes. Each element is recursively walked to concatenate its text,
+ * then blocks are joined with newlines.
  */
 function getFragmentPlainText(fragment: Y.XmlFragment): string {
   const blocks: string[] = [];
   fragment.forEach((node) => {
-    if (node instanceof Y.XmlText) {
-      blocks.push(node.toJSON());
-    } else if (node instanceof Y.XmlElement) {
+    if (node instanceof Y.XmlElement) {
       blocks.push(getBlockText(node));
     }
   });
