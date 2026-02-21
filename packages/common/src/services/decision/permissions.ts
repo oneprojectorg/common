@@ -11,10 +11,10 @@
  * Bit 9 (512) — Vote
  */
 export const decisionPermission = {
-  INVITE_MEMBERS: 0b1000000,
-  REVIEW: 0b10000000,
-  SUBMIT_PROPOSALS: 0b100000000,
-  VOTE: 0b1000000000,
+  INVITE_MEMBERS: 0b10_00000,
+  REVIEW: 0b100_00000,
+  SUBMIT_PROPOSALS: 0b1000_00000,
+  VOTE: 0b10000_00000,
 } as const;
 
 /** ACRUD admin bit from access-zones (bit 4) */
