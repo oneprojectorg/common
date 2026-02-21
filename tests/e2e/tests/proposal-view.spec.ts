@@ -36,7 +36,14 @@ test.describe('Proposal View', () => {
     const newSchemaTemplate = {
       type: 'object' as const,
       required: ['title'],
-      'x-field-order': ['title', 'budget', 'category', 'summary'],
+      'x-field-order': [
+        'title',
+        'budget',
+        'category',
+        'priority',
+        'region',
+        'summary',
+      ],
       properties: {
         title: {
           type: 'string' as const,
@@ -55,6 +62,27 @@ test.describe('Proposal View', () => {
           oneOf: [
             { const: 'Renewable Energy', title: 'Renewable Energy' },
             { const: 'Community Development', title: 'Community Development' },
+          ],
+        },
+        priority: {
+          type: ['string', 'null'],
+          title: 'Priority Level',
+          'x-format': 'dropdown' as const,
+          oneOf: [
+            { const: 'high', title: 'High' },
+            { const: 'medium', title: 'Medium' },
+            { const: 'low', title: 'Low' },
+          ],
+        },
+        region: {
+          type: ['string', 'null'],
+          title: 'Region',
+          'x-format': 'dropdown' as const,
+          oneOf: [
+            { const: 'north', title: 'North' },
+            { const: 'south', title: 'South' },
+            { const: 'east', title: 'East' },
+            { const: 'west', title: 'West' },
           ],
         },
         summary: {
@@ -82,6 +110,8 @@ test.describe('Proposal View', () => {
         collaborationDocId: MOCK_DOC_ID,
         budget: { amount: 10000, currency: 'EUR' },
         category: 'Renewable Energy',
+        priority: 'high',
+        region: 'north',
       },
     });
 
@@ -96,24 +126,27 @@ test.describe('Proposal View', () => {
       }),
     ).toBeVisible({ timeout: 30_000 });
 
-    // Formatted text rendered with correct tags
+    // Formatted text rendered with correct tags (use .first() because the mock
+    // returns the same fixture content for every fragment, including dropdowns)
     await expect(
-      authenticatedPage.locator('strong', { hasText: 'Bold text' }),
+      authenticatedPage.locator('strong', { hasText: 'Bold text' }).first(),
     ).toBeVisible();
     await expect(
-      authenticatedPage.locator('em', { hasText: 'italic text' }),
+      authenticatedPage.locator('em', { hasText: 'italic text' }).first(),
     ).toBeVisible();
 
     // List items inside a list
     await expect(
-      authenticatedPage.locator('li', { hasText: 'First item' }),
+      authenticatedPage.locator('li', { hasText: 'First item' }).first(),
     ).toBeVisible();
     await expect(
-      authenticatedPage.locator('li', { hasText: 'Second item' }),
+      authenticatedPage.locator('li', { hasText: 'Second item' }).first(),
     ).toBeVisible();
 
     // Link with correct href
-    const link = authenticatedPage.locator('a', { hasText: 'Example link' });
+    const link = authenticatedPage
+      .locator('a', { hasText: 'Example link' })
+      .first();
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', 'https://example.com');
 
@@ -127,6 +160,15 @@ test.describe('Proposal View', () => {
 
     // Category value rendered in a Tag component on the proposal view
     await expect(authenticatedPage.getByText('Renewable Energy')).toBeVisible();
+
+    // Dynamic dropdown fields render with their label via ProposalContentRenderer.
+    // The field labels should be visible as section headings.
+    await expect(
+      authenticatedPage.getByText('Priority Level', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByText('Region', { exact: true }),
+    ).toBeVisible();
   });
 
   test('renders legacy HTML description when no collaborationDocId exists', async ({

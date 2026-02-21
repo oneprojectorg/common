@@ -388,6 +388,8 @@ export interface CreateProposalOptions {
     collaborationDocId?: string;
     budget?: number | { amount: number; currency: string };
     category?: string;
+    /** Allow arbitrary extra fields for dynamic template properties (dropdowns, etc.) */
+    [key: string]: unknown;
   };
   /** Proposal status (defaults to DRAFT to match production behavior) */
   status?: ProposalStatus;
