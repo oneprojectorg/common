@@ -1,11 +1,7 @@
 import { set } from '@op/cache';
 import { ProposalFilter } from '@op/core';
 import { db, eq } from '@op/db/client';
-import {
-  ProposalStatus,
-  organizations,
-  processInstances,
-} from '@op/db/schema';
+import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';

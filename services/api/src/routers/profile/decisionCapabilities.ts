@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const decisionCapabilitiesSchema = z.object({
-  manageProcess: z.boolean(),
   inviteMembers: z.boolean(),
   review: z.boolean(),
   submitProposals: z.boolean(),

@@ -13,11 +13,6 @@ const submitVoteInput = z.object({
   customData: customDataSchema,
 });
 
-const validateVoteSelectionInput = z.object({
-  processInstanceId: z.uuid(),
-  selectedProposalIds: z.array(z.uuid()),
-});
-
 const votingProcedure = commonAuthedProcedure({
   rateLimit: { windowSize: 10, maxRequests: 5 },
 });

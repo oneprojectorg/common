@@ -1,3 +1,4 @@
+import { decisionPermission } from '@op/common';
 import { db } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import { fromBitField } from 'access-zones';
@@ -49,7 +50,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     expect(result).toEqual({
-      manageProcess: false,
       inviteMembers: false,
       review: false,
       submitProposals: false,
@@ -88,7 +88,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const updateResult = await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
-        manageProcess: true,
         inviteMembers: false,
         review: true,
         submitProposals: true,
@@ -98,7 +97,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
 
     expect(updateResult.roleId).toBe(customRole!.id);
     expect(updateResult.decisionPermissions).toEqual({
-      manageProcess: true,
       inviteMembers: false,
       review: true,
       submitProposals: true,
@@ -112,7 +110,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     expect(getResult).toEqual({
-      manageProcess: true,
       inviteMembers: false,
       review: true,
       submitProposals: true,
@@ -163,7 +160,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
     await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
-        manageProcess: false,
         inviteMembers: true,
         review: true,
         submitProposals: false,
@@ -195,13 +191,11 @@ describe.concurrent('profile.decisionCapabilities', () => {
     expect(acrud.delete).toBe(false);
 
     // Decision bits should also be correct
-    // inviteMembers=64, review=128, vote=512 → higher bits = 64 | 128 | 512 = 704
     const higherBits = permission!.permission & ~31;
-    expect(higherBits & 64).toBeTruthy(); // inviteMembers
-    expect(higherBits & 128).toBeTruthy(); // review
-    expect(higherBits & 512).toBeTruthy(); // vote
-    expect(higherBits & 32).toBeFalsy(); // manageProcess (off)
-    expect(higherBits & 256).toBeFalsy(); // submitProposals (off)
+    expect(higherBits & decisionPermission.INVITE_MEMBERS).toBeTruthy();
+    expect(higherBits & decisionPermission.REVIEW).toBeTruthy();
+    expect(higherBits & decisionPermission.VOTE).toBeTruthy();
+    expect(higherBits & decisionPermission.SUBMIT_PROPOSALS).toBeFalsy();
   });
 
   it('should not allow non-admin to update decision capabilities', async ({
@@ -235,7 +229,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
       caller.updateDecisionCapabilities({
         roleId: customRole!.id,
         decisionPermissions: {
-          manageProcess: true,
           inviteMembers: true,
           review: true,
           submitProposals: true,
@@ -273,7 +266,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
       caller.updateDecisionCapabilities({
         roleId: globalRole.id,
         decisionPermissions: {
-          manageProcess: true,
           inviteMembers: false,
           review: false,
           submitProposals: false,
@@ -316,7 +308,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
     await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
-        manageProcess: true,
         inviteMembers: true,
         review: true,
         submitProposals: true,
@@ -328,7 +319,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
     await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
-        manageProcess: false,
         inviteMembers: false,
         review: false,
         submitProposals: false,
@@ -342,7 +332,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     expect(result).toEqual({
-      manageProcess: false,
       inviteMembers: false,
       review: false,
       submitProposals: false,
@@ -408,7 +397,6 @@ describe.concurrent('profile.decisionCapabilities', () => {
       caller.updateDecisionCapabilities({
         roleId: customRole!.id,
         decisionPermissions: {
-          manageProcess: true,
           inviteMembers: true,
           review: true,
           submitProposals: true,

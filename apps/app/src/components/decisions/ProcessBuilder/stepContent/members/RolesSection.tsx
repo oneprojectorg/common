@@ -32,7 +32,6 @@ import type { SectionProps } from '../../contentRegistry';
 type PermissionKey = keyof Permission;
 
 type DecisionCapabilityKey =
-  | 'manageProcess'
   | 'inviteMembers'
   | 'review'
   | 'submitProposals'
@@ -50,7 +49,6 @@ const DECISION_CAPABILITY_COLUMNS: Array<{
   key: DecisionCapabilityKey;
   label: string;
 }> = [
-  { key: 'manageProcess', label: 'Manage Process' },
   { key: 'inviteMembers', label: 'Invite Members' },
   { key: 'review', label: 'Review' },
   { key: 'submitProposals', label: 'Submit Proposals' },
