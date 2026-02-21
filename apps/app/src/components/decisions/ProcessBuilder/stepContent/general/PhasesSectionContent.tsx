@@ -672,8 +672,6 @@ const AccordionTitleInput = ({
   );
 };
 
-
-
 /** Warning icon shown on collapsed accordion headers when a phase has validation errors */
 const PhaseErrorIndicator = () => {
   const t = useTranslations();
