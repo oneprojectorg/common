@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import {
-  ACRUD_BITS_MASK,
+  CRUD_BITS_MASK,
   type DecisionCapabilities,
   fromDecisionBitField,
   toDecisionBitField,
@@ -38,8 +38,8 @@ export async function getDecisionCapabilities({
 }
 
 /**
- * Update the decision-specific capabilities for a role on the decisions zone.
- * Preserves ACRUD bits (0–4); only overwrites bits 5–9.
+ * Update the decision capabilities for a role on the decisions zone.
+ * Preserves CRUD bits (0–3); overwrites admin (bit 4) and decision bits (6–9).
  */
 export async function updateDecisionCapabilities({
   roleId,
@@ -80,9 +80,9 @@ export async function updateDecisionCapabilities({
     },
   );
 
-  const existingAcrud = (existing?.permission ?? 0) & ACRUD_BITS_MASK;
+  const existingCrud = (existing?.permission ?? 0) & CRUD_BITS_MASK;
   const newDecisionBits = toDecisionBitField(decisionPermissions);
-  const bitfield = existingAcrud | newDecisionBits;
+  const bitfield = existingCrud | newDecisionBits;
 
   if (existing) {
     await db

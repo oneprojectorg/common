@@ -50,6 +50,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     expect(result).toEqual({
+      admin: false,
       inviteMembers: false,
       review: false,
       submitProposals: false,
@@ -88,6 +89,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const updateResult = await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
+        admin: true,
         inviteMembers: false,
         review: true,
         submitProposals: true,
@@ -97,6 +99,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
 
     expect(updateResult.roleId).toBe(customRole!.id);
     expect(updateResult.decisionPermissions).toEqual({
+      admin: true,
       inviteMembers: false,
       review: true,
       submitProposals: true,
@@ -110,6 +113,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     expect(getResult).toEqual({
+      admin: true,
       inviteMembers: false,
       review: true,
       submitProposals: true,
@@ -117,7 +121,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
   });
 
-  it('should preserve ACRUD bits when updating decision capabilities', async ({
+  it('should preserve CRUD bits when updating decision capabilities', async ({
     task,
     onTestFinished,
   }) => {
@@ -144,7 +148,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // First, set ACRUD permissions via updateRolePermission
+    // First, set ACRUD permissions via updateRolePermission (includes admin)
     await caller.updateRolePermission({
       roleId: customRole!.id,
       permissions: {
@@ -156,10 +160,11 @@ describe.concurrent('profile.decisionCapabilities', () => {
       },
     });
 
-    // Now set decision capabilities
+    // Now set decision capabilities (admin controlled here, not via ACRUD)
     await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
+        admin: true,
         inviteMembers: true,
         review: true,
         submitProposals: false,
@@ -167,7 +172,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
       },
     });
 
-    // Verify that ACRUD bits are still present in the raw permission
+    // Verify that CRUD bits are still present in the raw permission
     const decisionsZone = await db._query.accessZones.findFirst({
       where: (table, { eq }) => eq(table.name, 'decisions'),
     });
@@ -183,19 +188,21 @@ describe.concurrent('profile.decisionCapabilities', () => {
 
     expect(permission).toBeDefined();
 
-    // ACRUD bits (0–4) should still show create=true, read=true
+    // CRUD bits (0–3) should still show create=true, read=true
     const acrud = fromBitField(permission!.permission);
     expect(acrud.create).toBe(true);
     expect(acrud.read).toBe(true);
     expect(acrud.update).toBe(false);
     expect(acrud.delete).toBe(false);
 
+    // Admin bit should be set (controlled by capabilities now)
+    expect(acrud.admin).toBe(true);
+
     // Decision bits should also be correct
-    const higherBits = permission!.permission & ~31;
-    expect(higherBits & decisionPermission.INVITE_MEMBERS).toBeTruthy();
-    expect(higherBits & decisionPermission.REVIEW).toBeTruthy();
-    expect(higherBits & decisionPermission.VOTE).toBeTruthy();
-    expect(higherBits & decisionPermission.SUBMIT_PROPOSALS).toBeFalsy();
+    expect(permission!.permission & decisionPermission.INVITE_MEMBERS).toBeTruthy();
+    expect(permission!.permission & decisionPermission.REVIEW).toBeTruthy();
+    expect(permission!.permission & decisionPermission.VOTE).toBeTruthy();
+    expect(permission!.permission & decisionPermission.SUBMIT_PROPOSALS).toBeFalsy();
   });
 
   it('should not allow non-admin to update decision capabilities', async ({
@@ -229,6 +236,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
       caller.updateDecisionCapabilities({
         roleId: customRole!.id,
         decisionPermissions: {
+          admin: true,
           inviteMembers: true,
           review: true,
           submitProposals: true,
@@ -266,6 +274,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
       caller.updateDecisionCapabilities({
         roleId: globalRole.id,
         decisionPermissions: {
+          admin: false,
           inviteMembers: false,
           review: false,
           submitProposals: false,
@@ -308,6 +317,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
+        admin: true,
         inviteMembers: true,
         review: true,
         submitProposals: true,
@@ -319,6 +329,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     await caller.updateDecisionCapabilities({
       roleId: customRole!.id,
       decisionPermissions: {
+        admin: false,
         inviteMembers: false,
         review: false,
         submitProposals: false,
@@ -332,6 +343,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
     });
 
     expect(result).toEqual({
+      admin: false,
       inviteMembers: false,
       review: false,
       submitProposals: false,
@@ -397,6 +409,7 @@ describe.concurrent('profile.decisionCapabilities', () => {
       caller.updateDecisionCapabilities({
         roleId: customRole!.id,
         decisionPermissions: {
+          admin: true,
           inviteMembers: true,
           review: true,
           submitProposals: true,
