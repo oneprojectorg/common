@@ -235,7 +235,7 @@ export const getPermissionsOnProposal = async ({
 }: {
   user: User;
   proposal: Proposal & { processInstance: ProcessInstance };
-}): Promise<{ access: DecisionRolePermissions & { update: boolean } }> => {
+}): Promise<{ access: DecisionRolePermissions }> => {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
@@ -263,15 +263,5 @@ export const getPermissionsOnProposal = async ({
     access.admin = true;
   }
 
-  // Determine if the user can edit this proposal
-  const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
-  const inResultsPhase = proposal.processInstance?.currentStateId === 'results';
-  const hasProfileUpdate = checkPermission(
-    { profile: permission.UPDATE },
-    roles,
-  );
-  const canUpdate =
-    (isOwner && !inResultsPhase) || hasProfileUpdate || access.admin;
-
-  return { access: { ...access, update: canUpdate } };
+  return { access };
 };
