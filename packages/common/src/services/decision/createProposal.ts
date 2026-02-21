@@ -12,7 +12,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
 import {
   CommonError,
@@ -67,7 +67,10 @@ export const createProposal = async ({
     }
 
     assertAccess(
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
       profileAccessUser.roles,
     );
 
