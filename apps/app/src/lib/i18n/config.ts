@@ -1,5 +1,5 @@
-import { SUPPORTED_LOCALES } from '@op/common/client';
-import type { SupportedLocale } from '@op/common/client';
+import { SUPPORTED_LOCALES } from '@op/common/locales';
+import type { SupportedLocale } from '@op/common/locales';
 
 export const i18nConfig = {
   defaultLocale: 'en' satisfies SupportedLocale,
