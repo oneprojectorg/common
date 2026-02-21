@@ -5,7 +5,6 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { TabPanel } from '@op/ui/Tabs';
 
-import type { SchemaType } from '@/components/Profile/CreateDecisionProcessModal/schemas/schemaLoader';
 import {
   OrganizationProfileGrid,
   ProfileGrid,
@@ -45,7 +44,6 @@ export const ProfileTabsRenderer = ({
   organization: Organization;
   profile: Profile;
   initialTab?: string;
-  schema?: SchemaType;
 }) => {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 

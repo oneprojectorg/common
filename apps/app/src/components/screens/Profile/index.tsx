@@ -1,6 +1,5 @@
 import { getPublicUrl } from '@/utils';
 import { createClient } from '@op/api/serverClient';
-import { match } from '@op/core';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -30,16 +29,6 @@ const ProfileWithData = async ({
     const profile = await client.profile.getBySlug({
       slug,
     });
-
-    const schema = match<'simple' | 'horizon' | 'cowop'>(slug, {
-      'people-powered': 'simple',
-      cowop: 'cowop',
-      'one-project': 'horizon',
-      'd4cc2f9e-a461-4727-8b3a-3adae4f92a25': 'cowop',
-      _: 'horizon',
-    });
-
-    console.log('Choosing schema:', schema);
 
     const { headerImage, avatarImage } = profile;
     const headerUrl = getPublicUrl(headerImage?.name);
@@ -81,7 +70,6 @@ const ProfileWithData = async ({
             organization={organization}
             profile={profile}
             initialTab={initialTab}
-            schema={schema}
           />
         </>
       ) : null;
