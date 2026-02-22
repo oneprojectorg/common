@@ -340,9 +340,6 @@ export const PhaseEditor = ({
                   <AccordionTitleInput
                     value={phase.name}
                     onChange={(name) => updatePhase(phase.id, { name })}
-                    onExpand={() =>
-                      setExpandedKeys((prev) => new Set([...prev, phase.id]))
-                    }
                     onBlur={() => markTouched(phase.id, 'name')}
                     hasError={!!getErrorMessage(phase.id, 'name', errors)}
                     aria-label={t('Phase name')}
@@ -612,7 +609,6 @@ const PhaseControls = ({
 const AccordionTitleInput = ({
   value,
   onChange,
-  onExpand,
   onBlur,
   hasError,
   autoFocus,
@@ -621,7 +617,6 @@ const AccordionTitleInput = ({
 }: {
   value: string;
   onChange: (value: string) => void;
-  onExpand: () => void;
   onBlur?: () => void;
   hasError?: boolean;
   autoFocus?: boolean;
@@ -646,7 +641,7 @@ const AccordionTitleInput = ({
       <button
         type="button"
         className="w-full cursor-pointer rounded border border-transparent px-2 py-1 text-left font-serif text-title-sm"
-        onClick={onExpand}
+        onClick={() => state?.expand()}
       >
         {value}
       </button>
