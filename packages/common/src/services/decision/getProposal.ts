@@ -13,7 +13,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
-import { checkPermission, permission } from 'access-zones';
+import { assertAccess, checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
@@ -169,14 +169,10 @@ export const getProposal = async ({
       profileId: proposal.processInstance.profileId,
     });
 
-    const hasReadAccess = checkPermission(
+    assertAccess(
       [{ decisions: permission.READ }, { decisions: permission.ADMIN }],
       instanceProfileUser?.roles ?? [],
     );
-
-    if (!hasReadAccess) {
-      throw new UnauthorizedError('Not authorized to view this proposal');
-    }
   }
 
   // Generate signed URLs for attachments
