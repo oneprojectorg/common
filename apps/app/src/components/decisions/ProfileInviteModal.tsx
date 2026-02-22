@@ -254,7 +254,7 @@ export const ProfileInviteModal = ({
       className="sm:max-w-xl"
     >
       <ModalHeader className="truncate">
-        {t('Invite members to your decision-making process')}
+        {t('Invite participants to your decision-making process')}
       </ModalHeader>
 
       <ModalBody className="space-y-6">
