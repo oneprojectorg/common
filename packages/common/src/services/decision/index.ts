@@ -39,6 +39,7 @@ export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';
 export * from './getProposal';
+export * from './getCollabToken';
 export * from './listProposals';
 export * from './deleteProposal';
 export * from './getProcessCategories';

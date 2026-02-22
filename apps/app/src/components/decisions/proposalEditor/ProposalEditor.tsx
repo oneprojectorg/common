@@ -267,6 +267,19 @@ export function ProposalEditor({
     draftRef,
   ]);
 
+  // -- Collaboration token ---------------------------------------------------
+
+  const { data: collabTokenData } = trpc.decision.getCollabToken.useQuery(
+    { proposalProfileId: proposal.profileId },
+    { staleTime: 1000 * 60 * 60 }, // 1 hour — refetched on demand via onAuthenticationFailed
+  );
+
+  const handleAuthenticationFailed = useCallback(() => {
+    void utils.decision.getCollabToken.invalidate({
+      proposalProfileId: proposal.profileId,
+    });
+  }, [utils, proposal.profileId]);
+
   // -- Render ----------------------------------------------------------------
 
   const userName = user.profile?.name ?? t('Anonymous');
@@ -280,6 +293,8 @@ export function ProposalEditor({
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
+      token={collabTokenData?.token ?? null}
+      onAuthenticationFailed={handleAuthenticationFailed}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >

@@ -15,6 +15,10 @@ export interface CollabUser {
 export interface UseTiptapCollabOptions {
   docId: string | null;
   enabled?: boolean;
+  /** JWT token for Tiptap Cloud authentication */
+  token: string | null;
+  /** Called when Tiptap Cloud rejects the JWT (expired or invalid) */
+  onAuthenticationFailed?: () => void;
   /** User's display name for the collaboration cursor */
   userName?: string;
 }
@@ -33,6 +37,8 @@ export interface UseTiptapCollabReturn {
 export function useTiptapCollab({
   docId,
   enabled = true,
+  token,
+  onAuthenticationFailed,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
@@ -41,6 +47,13 @@ export function useTiptapCollab({
 
   const ydoc = useMemo(() => new Y.Doc(), []);
 
+  // Clean up Y.Doc on unmount
+  useEffect(() => {
+    return () => {
+      ydoc.destroy();
+    };
+  }, [ydoc]);
+
   // Derive color from username - matches Avatar gradient
   const user = useMemo<CollabUser>(() => {
     const { hex } = getAvatarColorForString(userName);
@@ -48,7 +61,7 @@ export function useTiptapCollab({
   }, [userName]);
 
   useEffect(() => {
-    if (!enabled || !docId) {
+    if (!enabled || !docId || !token) {
       setStatus('disconnected');
       return;
     }
@@ -63,7 +76,7 @@ export function useTiptapCollab({
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
-      token: 'notoken', // TODO: proper JWT auth
+      token,
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
@@ -75,6 +88,10 @@ export function useTiptapCollab({
       onSynced: () => {
         setIsSynced(true);
       },
+      onAuthenticationFailed: () => {
+        setStatus('disconnected');
+        onAuthenticationFailed?.();
+      },
     });
 
     setProvider(newProvider);
@@ -82,7 +99,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, ydoc]);
+  }, [docId, enabled, onAuthenticationFailed, token, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {
