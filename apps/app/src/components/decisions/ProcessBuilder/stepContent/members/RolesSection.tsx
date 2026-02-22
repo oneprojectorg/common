@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import { Suspense, useState } from 'react';
+import { Suspense, useOptimistic, useState, useTransition } from 'react';
 import { LuLeaf, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -111,61 +111,36 @@ function DecisionRoleCheckboxes({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const [, startTransition] = useTransition();
 
-  const { data: permissions } = trpc.profile.getDecisionRoles.useQuery({
+  const { data: permissions } = trpc.profile.getDecisionRole.useQuery({
     roleId,
     profileId,
   });
 
-  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation({
-    onMutate: async ({ decisionPermissions }) => {
-      await utils.profile.getDecisionRoles.cancel({
-        roleId,
-        profileId,
-      });
+  const [optimisticPermissions, setOptimisticPermissions] =
+    useOptimistic(permissions);
 
-      const previousData = utils.profile.getDecisionRoles.getData({
-        roleId,
-        profileId,
-      });
-
-      utils.profile.getDecisionRoles.setData(
-        { roleId, profileId },
-        decisionPermissions,
-      );
-
-      return { previousData };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previousData) {
-        utils.profile.getDecisionRoles.setData(
-          { roleId, profileId },
-          context.previousData,
-        );
-      }
-      toast.error({ message: t('Failed to update role') });
-    },
-    onSuccess: () => {
-      toast.success({ message: t('Role updated successfully') });
-    },
-    onSettled: () => {
-      utils.profile.getDecisionRoles.invalidate({
-        roleId,
-        profileId,
-      });
-    },
-  });
+  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
 
   const togglePermission = (key: DecisionRoleKey) => {
     if (!permissions || isGlobal) {
       return;
     }
-    updatePermissions.mutate({
-      roleId,
-      decisionPermissions: {
-        ...permissions,
-        [key]: !permissions[key],
-      },
+    const newPermissions = { ...permissions, [key]: !permissions[key] };
+    startTransition(async () => {
+      setOptimisticPermissions(newPermissions);
+      try {
+        await updatePermissions.mutateAsync({
+          roleId,
+          decisionPermissions: newPermissions,
+        });
+        toast.success({ message: t('Role updated successfully') });
+      } catch {
+        toast.error({ message: t('Failed to update role') });
+      } finally {
+        await utils.profile.getDecisionRole.invalidate({ roleId, profileId });
+      }
     });
   };
 
@@ -174,7 +149,7 @@ function DecisionRoleCheckboxes({
       <div className="flex justify-center">
         <Checkbox
           size="small"
-          isSelected={permissions?.[key] ?? false}
+          isSelected={optimisticPermissions?.[key] ?? false}
           isDisabled={isGlobal}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
@@ -195,58 +170,36 @@ function MobileDecisionRoles({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const [, startTransition] = useTransition();
 
-  const { data: permissions } = trpc.profile.getDecisionRoles.useQuery({
+  const { data: permissions } = trpc.profile.getDecisionRole.useQuery({
     roleId,
     profileId,
   });
 
-  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation({
-    onMutate: async ({ decisionPermissions }) => {
-      await utils.profile.getDecisionRoles.cancel({
-        roleId,
-        profileId,
-      });
-      const previousData = utils.profile.getDecisionRoles.getData({
-        roleId,
-        profileId,
-      });
-      utils.profile.getDecisionRoles.setData(
-        { roleId, profileId },
-        decisionPermissions,
-      );
-      return { previousData };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previousData) {
-        utils.profile.getDecisionRoles.setData(
-          { roleId, profileId },
-          context.previousData,
-        );
-      }
-      toast.error({ message: t('Failed to update role') });
-    },
-    onSuccess: () => {
-      toast.success({ message: t('Role updated successfully') });
-    },
-    onSettled: () => {
-      utils.profile.getDecisionRoles.invalidate({
-        roleId,
-        profileId,
-      });
-    },
-  });
+  const [optimisticPermissions, setOptimisticPermissions] =
+    useOptimistic(permissions);
+
+  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
 
   const togglePermission = (key: DecisionRoleKey) => {
     if (!permissions || isGlobal) {
       return;
     }
-    updatePermissions.mutate({
-      roleId,
-      decisionPermissions: {
-        ...permissions,
-        [key]: !permissions[key],
-      },
+    const newPermissions = { ...permissions, [key]: !permissions[key] };
+    startTransition(async () => {
+      setOptimisticPermissions(newPermissions);
+      try {
+        await updatePermissions.mutateAsync({
+          roleId,
+          decisionPermissions: newPermissions,
+        });
+        toast.success({ message: t('Role updated successfully') });
+      } catch {
+        toast.error({ message: t('Failed to update role') });
+      } finally {
+        await utils.profile.getDecisionRole.invalidate({ roleId, profileId });
+      }
     });
   };
 
@@ -256,7 +209,7 @@ function MobileDecisionRoles({
         <Checkbox
           key={key}
           size="small"
-          isSelected={permissions?.[key] ?? false}
+          isSelected={optimisticPermissions?.[key] ?? false}
           isDisabled={isGlobal}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}

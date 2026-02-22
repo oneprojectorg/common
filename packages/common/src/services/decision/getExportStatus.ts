@@ -68,7 +68,7 @@ export const getExportStatus = async ({
     profileId: instance[0].profileId,
   });
 
-  // Verify user still has manage process or admin permission
+  // Verify user has admin permission
   assertAccess([{ decisions: permission.ADMIN }], profileUser?.roles ?? []);
 
   // Refresh signed URL if expired but file exists

@@ -44,7 +44,7 @@ describe.concurrent('profile.decisionRoles', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.getDecisionRoles({
+    const result = await caller.getDecisionRole({
       roleId: customRole!.id,
       profileId: profile.id,
     });
@@ -107,7 +107,7 @@ describe.concurrent('profile.decisionRoles', () => {
     });
 
     // Verify the capabilities can be retrieved
-    const getResult = await caller.getDecisionRoles({
+    const getResult = await caller.getDecisionRole({
       roleId: customRole!.id,
       profileId: profile.id,
     });
@@ -320,7 +320,7 @@ describe.concurrent('profile.decisionRoles', () => {
       },
     });
 
-    const result = await caller.getDecisionRoles({
+    const result = await caller.getDecisionRole({
       roleId: customRole!.id,
       profileId: profile.id,
     });

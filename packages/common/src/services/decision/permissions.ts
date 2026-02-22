@@ -70,14 +70,3 @@ export function fromDecisionBitField(
     vote: (bitField & decisionPermission.VOTE) !== 0,
   };
 }
-
-export const DECISION_PERMISSION_LABELS: Record<
-  keyof DecisionRolePermissions,
-  string
-> = {
-  admin: 'Manage Process',
-  inviteMembers: 'Invite Members',
-  review: 'Review',
-  submitProposals: 'Submit Proposals',
-  vote: 'Vote',
-};

@@ -14,7 +14,7 @@ import {
 /**
  * Get the decision role permissions for a role on the decisions zone.
  */
-export async function getDecisionRoles({
+export async function getDecisionRole({
   roleId,
 }: {
   roleId: string;
