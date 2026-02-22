@@ -47,11 +47,7 @@ const config = {
     NEXT_PUBLIC_PREVIEW_BRANCH_URL:
       DEPLOY_ENV === 'preview' ? PREVIEW_BRANCH_URL : undefined,
   },
-  experimental: {
-    // reactCompiler: true,
-    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
-    instrumentationHook: true,
-  },
+  serverExternalPackages: ['sharp', 'onnxruntime-node'],
 
   webpack: (cfg, { isServer }) => {
     // In e2e mode, swap the real TipTap client for an in-process mock
