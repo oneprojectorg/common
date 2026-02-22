@@ -1,6 +1,5 @@
 'use client';
 
-import { trpc } from '@op/api/client';
 import type { ChannelName, RegistryEvents } from '@op/common/realtime';
 import { queryChannelRegistry } from '@op/common/realtime';
 import { RealtimeManager } from '@op/realtime/client';
@@ -41,15 +40,12 @@ export function QueryInvalidationSubscriber() {
 function useInvalidateQueries(): void {
   const queryClient = useRequiredQueryClient();
   const invalidatedMutationIds = useRef(new Set<string>());
-  const utils = trpc.useUtils();
   const unsubscribersRef = useRef<Map<ChannelName, () => void>>(new Map());
   const initializedRef = useRef(false);
 
   // Store refs to avoid effect re-runs
   const queryClientRef = useRef(queryClient);
-  const utilsRef = useRef(utils);
   queryClientRef.current = queryClient;
-  utilsRef.current = utils;
 
   const handleInvalidation = useCallback(
     async ({ channels, mutationId }: RegistryEvents['mutation:added']) => {
@@ -87,21 +83,19 @@ function useInvalidateQueries(): void {
    * Subscribe to WebSocket channel when a query registers interest in channels
    */
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_CENTRIFUGO_WS_URL;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    // Skip realtime subscriptions entirely if WebSocket URL is not configured
-    if (!wsUrl) {
+    // Skip realtime subscriptions entirely if Supabase config is not available
+    if (!supabaseUrl || !supabaseAnonKey) {
       return;
     }
 
     // Initialize RealtimeManager only once
     if (!initializedRef.current) {
       RealtimeManager.initialize({
-        wsUrl,
-        getToken: async () => {
-          const { token } = await utilsRef.current.realtime.getToken.fetch();
-          return token;
-        },
+        supabaseUrl,
+        supabaseAnonKey,
       });
       initializedRef.current = true;
     }
