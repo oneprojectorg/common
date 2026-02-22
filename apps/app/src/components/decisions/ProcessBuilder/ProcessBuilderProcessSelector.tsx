@@ -6,9 +6,12 @@ import { Avatar } from '@op/ui/Avatar';
 import { Header1, Header2 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { useRouter } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
+import { LuSparkles } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { GenerateProcessModal } from './GenerateProcessModal';
 
 export const ProcessBuilderProcessSelector = () => {
   const t = useTranslations();
@@ -34,6 +37,7 @@ const TemplateList = () => {
   const t = useTranslations();
   const [templatesData] = trpc.decision.listProcesses.useSuspenseQuery({});
   const templates = templatesData?.processes;
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
   const createDecisionInstance =
     trpc.decision.createInstanceFromTemplate.useMutation({
@@ -42,26 +46,46 @@ const TemplateList = () => {
       },
     });
 
-  if (!templates?.length) {
-    return (
-      <div className="grid aspect-square h-64 items-center rounded-lg border bg-white text-center">
-        <p>{t('No templates found')}</p>
-      </div>
-    );
-  }
+  return (
+    <>
+      <button
+        className="flex w-full cursor-pointer flex-col gap-2 rounded-lg border border-dashed border-neutral-300 bg-white p-6 text-left transition-shadow hover:border-neutral-400 hover:shadow-md sm:w-72 md:aspect-[4/3] md:w-[360px] md:p-12 md:text-center"
+        onClick={() => setIsGenerateModalOpen(true)}
+      >
+        <div className="flex gap-2 md:flex-col md:items-center md:gap-6">
+          <div className="bg-primary-green1/20 flex size-10 shrink-0 items-center justify-center rounded-full md:size-20">
+            <LuSparkles className="text-primary-green1 size-5 md:size-8" />
+          </div>
+          <Header2 className="font-serif text-xl leading-6 font-light">
+            {t('Describe your process')}
+          </Header2>
+        </div>
+        <p className="text-neutral-gray4">
+          {t(
+            "Tell us about your decision-making process and we'll create a template for you.",
+          )}
+        </p>
+      </button>
 
-  return templates.map((template) => (
-    <ProcessBuilderProcessCard
-      key={template.id}
-      template={template}
-      onSelect={() => {
-        createDecisionInstance.mutate({
-          templateId: template.id,
-          name: `New ${template.name}`,
-        });
-      }}
-    />
-  ));
+      {templates?.map((template) => (
+        <ProcessBuilderProcessCard
+          key={template.id}
+          template={template}
+          onSelect={() => {
+            createDecisionInstance.mutate({
+              templateId: template.id,
+              name: `New ${template.name}`,
+            });
+          }}
+        />
+      ))}
+
+      <GenerateProcessModal
+        isOpen={isGenerateModalOpen}
+        onOpenChange={setIsGenerateModalOpen}
+      />
+    </>
+  );
 };
 
 export const ProcessBuilderProcessCard = ({
