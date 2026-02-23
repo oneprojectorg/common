@@ -111,7 +111,7 @@ export function OverviewSectionForm({
     name: p.name,
   }));
 
-  // Debounced save: always buffer in localStorage; draft also persists to API.
+  // Debounced save: draft persists to API; non-draft only buffers locally.
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
     setSaveStatus(decisionProfileId, 'saving');
 

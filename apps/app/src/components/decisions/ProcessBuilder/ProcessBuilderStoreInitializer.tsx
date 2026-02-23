@@ -18,6 +18,10 @@ import {
  * - Non-draft: server data is the base layer, localStorage edits overlay
  *   on top for keys with a defined, non-empty value (since not all fields
  *   are persisted to the API yet).
+ *
+ * Note: `isDraft` is evaluated once from the server component at page load.
+ * This assumes launching a process triggers a navigation/reload so the
+ * value cannot go stale during a session.
  */
 export function ProcessBuilderStoreInitializer({
   decisionProfileId,

@@ -62,6 +62,7 @@ export function TemplateEditorContent({
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const isDraft = instance.status === 'draft';
   const instanceData = instance.instanceData;
 
   const storeData = useProcessBuilderStore(
@@ -174,7 +175,7 @@ export function TemplateEditorContent({
     ];
   }, [fields, hasCategories]);
 
-  // Debounced auto-save to localStorage and backend.
+  // Debounced auto-save: draft persists to API, non-draft only buffers locally.
   // Runs ensureLockedFields before persisting so that x-field-order and
   // required are always consistent — individual mutators only need to
   // touch properties.
@@ -187,16 +188,21 @@ export function TemplateEditorContent({
         requireCategorySelection,
       });
       setProposalTemplate(decisionProfileId, normalized);
-      updateInstance.mutate(
-        {
-          instanceId,
-          proposalTemplate: normalized,
-        },
-        {
-          onSuccess: () => markSaved(decisionProfileId),
-          onError: () => setSaveStatus(decisionProfileId, 'error'),
-        },
-      );
+
+      if (isDraft) {
+        updateInstance.mutate(
+          {
+            instanceId,
+            proposalTemplate: normalized,
+          },
+          {
+            onSuccess: () => markSaved(decisionProfileId),
+            onError: () => setSaveStatus(decisionProfileId, 'error'),
+          },
+        );
+      } else {
+        markSaved(decisionProfileId);
+      }
     },
     AUTOSAVE_DEBOUNCE_MS,
   );

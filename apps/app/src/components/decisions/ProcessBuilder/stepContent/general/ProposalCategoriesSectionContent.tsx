@@ -35,6 +35,7 @@ export function ProposalCategoriesSectionContent({
 
   // Fetch server data for seeding
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const isDraft = instance.status === 'draft';
   const serverConfig = instance.instanceData?.config;
 
   const storeData = useProcessBuilderStore(
@@ -67,7 +68,7 @@ export function ProposalCategoriesSectionContent({
   // tRPC mutation
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  // Debounced auto-save: writes to Zustand store + API.
+  // Debounced auto-save: draft persists to API, non-draft only buffers locally.
   // Also syncs the proposalTemplate so that the category field and required
   // array stay consistent with the config — even if the template editor is
   // not currently mounted.
@@ -93,10 +94,11 @@ export function ProposalCategoriesSectionContent({
       setProposalTemplate(decisionProfileId, syncedTemplate);
     }
 
-    updateInstance.mutate(mutation, {
-      onSuccess: () => markSaved(decisionProfileId),
-      onError: () => setSaveStatus(decisionProfileId, 'error'),
-    });
+    if (isDraft) {
+      updateInstance.mutate(mutation);
+    } else {
+      markSaved(decisionProfileId);
+    }
   }, AUTOSAVE_DEBOUNCE_MS);
 
   // Update local state and trigger debounced save
