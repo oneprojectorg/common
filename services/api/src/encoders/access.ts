@@ -22,6 +22,10 @@ export type AccessRoleMinimal = z.infer<typeof accessRoleMinimalEncoder>;
 
 // Decision role permissions schema
 export const decisionRoleEncoder = z.object({
+  delete: z.boolean(),
+  update: z.boolean(),
+  read: z.boolean(),
+  create: z.boolean(),
   admin: z.boolean(),
   inviteMembers: z.boolean(),
   review: z.boolean(),

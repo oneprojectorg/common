@@ -292,6 +292,7 @@ export function ProposalEditor({
         isDraft={isDraft}
         presenceSlot={<CollaborativePresence />}
         proposalProfileId={proposal.profileId}
+        access={proposal.access}
       >
         <div
           className="sticky top-0 z-10 bg-white"

@@ -24,6 +24,11 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
+  /** The current user's decision permissions on this proposal */
+  access?: {
+    admin: boolean;
+    inviteMembers: boolean;
+  };
 }
 
 export function ProposalEditorLayout({
@@ -36,10 +41,13 @@ export function ProposalEditorLayout({
   isDraft = false,
   presenceSlot,
   proposalProfileId,
+  access,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  const canShare = access?.admin || access?.inviteMembers;
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -61,15 +69,17 @@ export function ProposalEditorLayout({
 
         <div className="flex items-center justify-end gap-4">
           {presenceSlot}
-          <Button
-            color="secondary"
-            variant="icon"
-            size="small"
-            onPress={() => setIsShareModalOpen(true)}
-          >
-            <LuShare2 className="size-4" />
-            <span className="hidden sm:inline">{t('Share')}</span>
-          </Button>
+          {canShare && (
+            <Button
+              color="secondary"
+              variant="icon"
+              size="small"
+              onPress={() => setIsShareModalOpen(true)}
+            >
+              <LuShare2 className="size-4" />
+              <span className="hidden sm:inline">{t('Share')}</span>
+            </Button>
+          )}
           <Button
             color="primary"
             variant="icon"
@@ -98,12 +108,14 @@ export function ProposalEditorLayout({
 
       {children}
 
-      <ShareProposalModal
-        proposalProfileId={proposalProfileId}
-        proposalTitle={title}
-        isOpen={isShareModalOpen}
-        onOpenChange={setIsShareModalOpen}
-      />
+      {canShare && (
+        <ShareProposalModal
+          proposalProfileId={proposalProfileId}
+          proposalTitle={title}
+          isOpen={isShareModalOpen}
+          onOpenChange={setIsShareModalOpen}
+        />
+      )}
     </div>
   );
 }

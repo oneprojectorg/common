@@ -1,3 +1,5 @@
+import { permission } from 'access-zones';
+
 /**
  * Decision permission capabilities.
  *
@@ -17,10 +19,11 @@ export const decisionPermission = {
   VOTE: 0b1000_00000,
 } as const;
 
-/** ACRUD admin bit from access-zones (bit 4) */
-const ADMIN_BIT = 0b10000;
-
 export type DecisionRolePermissions = {
+  delete: boolean;
+  update: boolean;
+  read: boolean;
+  create: boolean;
   admin: boolean;
   inviteMembers: boolean;
   review: boolean;
@@ -33,12 +36,24 @@ export const CRUD_BITS_MASK = 0b1111;
 
 /**
  * Convert a DecisionRolePermissions object into a bitfield.
- * Produces admin bit (4) + decision bits (5–8).
+ * Produces ACRUD bits (0–4) + decision bits (5–8).
  */
 export function toDecisionBitField(caps: DecisionRolePermissions): number {
   let bits = 0;
+  if (caps.delete) {
+    bits |= permission.DELETE;
+  }
+  if (caps.update) {
+    bits |= permission.UPDATE;
+  }
+  if (caps.read) {
+    bits |= permission.READ;
+  }
+  if (caps.create) {
+    bits |= permission.CREATE;
+  }
   if (caps.admin) {
-    bits |= ADMIN_BIT;
+    bits |= permission.ADMIN;
   }
   if (caps.inviteMembers) {
     bits |= decisionPermission.INVITE_MEMBERS;
@@ -56,17 +71,36 @@ export function toDecisionBitField(caps: DecisionRolePermissions): number {
 }
 
 /**
- * Extract decision capabilities from a raw permission bitfield.
- * Reads admin bit (4) + decision bits (5–8).
+ * Extract all capabilities from a raw permission bitfield.
+ * Reads ACRUD bits (0–4) + decision bits (5–8).
  */
 export function fromDecisionBitField(
   bitField: number,
 ): DecisionRolePermissions {
   return {
-    admin: (bitField & ADMIN_BIT) !== 0,
+    delete: (bitField & permission.DELETE) !== 0,
+    update: (bitField & permission.UPDATE) !== 0,
+    read: (bitField & permission.READ) !== 0,
+    create: (bitField & permission.CREATE) !== 0,
+    admin: (bitField & permission.ADMIN) !== 0,
     inviteMembers: (bitField & decisionPermission.INVITE_MEMBERS) !== 0,
     review: (bitField & decisionPermission.REVIEW) !== 0,
     submitProposals: (bitField & decisionPermission.SUBMIT_PROPOSALS) !== 0,
     vote: (bitField & decisionPermission.VOTE) !== 0,
   };
 }
+
+export const DECISION_PERMISSION_LABELS: Record<
+  keyof DecisionRolePermissions,
+  string
+> = {
+  delete: 'Delete',
+  update: 'Update',
+  read: 'Read',
+  create: 'Create',
+  admin: 'Manage Process',
+  inviteMembers: 'Invite Members',
+  review: 'Review',
+  submitProposals: 'Submit Proposals',
+  vote: 'Vote',
+};

@@ -31,6 +31,10 @@ describe('decisionPermission constants', () => {
 describe('toDecisionBitField', () => {
   it('should return 0 when all capabilities are false', () => {
     const caps: DecisionRolePermissions = {
+      delete: false,
+      update: false,
+      read: false,
+      create: false,
       admin: false,
       inviteMembers: false,
       review: false,
@@ -43,6 +47,10 @@ describe('toDecisionBitField', () => {
   it('should set the admin bit correctly', () => {
     expect(
       toDecisionBitField({
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: true,
         inviteMembers: false,
         review: false,
@@ -55,6 +63,10 @@ describe('toDecisionBitField', () => {
   it('should set individual decision bits correctly', () => {
     expect(
       toDecisionBitField({
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: false,
         inviteMembers: true,
         review: false,
@@ -65,6 +77,10 @@ describe('toDecisionBitField', () => {
 
     expect(
       toDecisionBitField({
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: false,
         inviteMembers: false,
         review: true,
@@ -75,6 +91,10 @@ describe('toDecisionBitField', () => {
 
     expect(
       toDecisionBitField({
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: false,
         inviteMembers: false,
         review: false,
@@ -85,6 +105,10 @@ describe('toDecisionBitField', () => {
 
     expect(
       toDecisionBitField({
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: false,
         inviteMembers: false,
         review: false,
@@ -96,6 +120,10 @@ describe('toDecisionBitField', () => {
 
   it('should combine all bits correctly', () => {
     const caps: DecisionRolePermissions = {
+      delete: true,
+      update: true,
+      read: true,
+      create: true,
       admin: true,
       inviteMembers: true,
       review: true,
@@ -103,7 +131,11 @@ describe('toDecisionBitField', () => {
       vote: true,
     };
     expect(toDecisionBitField(caps)).toBe(
-      permission.ADMIN |
+      permission.DELETE |
+        permission.UPDATE |
+        permission.READ |
+        permission.CREATE |
+        permission.ADMIN |
         decisionPermission.INVITE_MEMBERS |
         decisionPermission.REVIEW |
         decisionPermission.SUBMIT_PROPOSALS |
@@ -113,6 +145,10 @@ describe('toDecisionBitField', () => {
 
   it('should combine a subset of bits correctly', () => {
     const caps: DecisionRolePermissions = {
+      delete: false,
+      update: false,
+      read: false,
+      create: false,
       admin: false,
       inviteMembers: true,
       review: true,
@@ -130,6 +166,10 @@ describe('toDecisionBitField', () => {
 describe('fromDecisionBitField', () => {
   it('should return all false for 0', () => {
     expect(fromDecisionBitField(0)).toEqual({
+      delete: false,
+      update: false,
+      read: false,
+      create: false,
       admin: false,
       inviteMembers: false,
       review: false,
@@ -140,6 +180,10 @@ describe('fromDecisionBitField', () => {
 
   it('should return all true when all bits set', () => {
     const allBits =
+      permission.DELETE |
+      permission.UPDATE |
+      permission.READ |
+      permission.CREATE |
       permission.ADMIN |
       decisionPermission.INVITE_MEMBERS |
       decisionPermission.REVIEW |
@@ -147,6 +191,10 @@ describe('fromDecisionBitField', () => {
       decisionPermission.VOTE;
 
     expect(fromDecisionBitField(allBits)).toEqual({
+      delete: true,
+      update: true,
+      read: true,
+      create: true,
       admin: true,
       inviteMembers: true,
       review: true,
@@ -155,7 +203,7 @@ describe('fromDecisionBitField', () => {
     });
   });
 
-  it('should extract admin and decision bits, ignoring CRUD bits', () => {
+  it('should extract all bits including CRUD', () => {
     const bitfield =
       permission.CREATE |
       permission.READ |
@@ -164,6 +212,10 @@ describe('fromDecisionBitField', () => {
     const result = fromDecisionBitField(bitfield);
 
     expect(result).toEqual({
+      delete: false,
+      update: false,
+      read: true,
+      create: true,
       admin: false,
       inviteMembers: false,
       review: true,
@@ -177,6 +229,10 @@ describe('fromDecisionBitField', () => {
     const result = fromDecisionBitField(bitfield);
 
     expect(result).toEqual({
+      delete: false,
+      update: false,
+      read: false,
+      create: false,
       admin: true,
       inviteMembers: false,
       review: true,
@@ -187,6 +243,10 @@ describe('fromDecisionBitField', () => {
 
   it('should round-trip correctly with toDecisionBitField', () => {
     const original: DecisionRolePermissions = {
+      delete: false,
+      update: false,
+      read: true,
+      create: false,
       admin: true,
       inviteMembers: false,
       review: true,
@@ -195,23 +255,6 @@ describe('fromDecisionBitField', () => {
     };
 
     const bitfield = toDecisionBitField(original);
-    const roundTripped = fromDecisionBitField(bitfield);
-
-    expect(roundTripped).toEqual(original);
-  });
-
-  it('should round-trip correctly even with CRUD bits present', () => {
-    const original: DecisionRolePermissions = {
-      admin: false,
-      inviteMembers: true,
-      review: false,
-      submitProposals: true,
-      vote: false,
-    };
-
-    // Combine with CRUD bits — admin is NOT set
-    const bitfield =
-      toDecisionBitField(original) | permission.CREATE | permission.READ;
     const roundTripped = fromDecisionBitField(bitfield);
 
     expect(roundTripped).toEqual(original);

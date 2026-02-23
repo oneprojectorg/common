@@ -50,6 +50,10 @@ describe.concurrent('profile.decisionRoles', () => {
     });
 
     expect(result).toEqual({
+      delete: false,
+      update: false,
+      read: false,
+      create: false,
       admin: false,
       inviteMembers: false,
       review: false,
@@ -89,6 +93,10 @@ describe.concurrent('profile.decisionRoles', () => {
     const updateResult = await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: true,
         inviteMembers: false,
         review: true,
@@ -99,6 +107,10 @@ describe.concurrent('profile.decisionRoles', () => {
 
     expect(updateResult.roleId).toBe(customRole!.id);
     expect(updateResult.decisionPermissions).toEqual({
+      delete: false,
+      update: false,
+      read: false,
+      create: false,
       admin: true,
       inviteMembers: false,
       review: true,
@@ -106,13 +118,17 @@ describe.concurrent('profile.decisionRoles', () => {
       vote: false,
     });
 
-    // Verify the capabilities can be retrieved
+    // Verify the capabilities can be retrieved — read is true because updateDecisionRoles always forces READ
     const getResult = await caller.getDecisionRole({
       roleId: customRole!.id,
       profileId: profile.id,
     });
 
     expect(getResult).toEqual({
+      delete: false,
+      update: false,
+      read: true,
+      create: false,
       admin: true,
       inviteMembers: false,
       review: true,
@@ -151,6 +167,10 @@ describe.concurrent('profile.decisionRoles', () => {
     await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: true,
         inviteMembers: true,
         review: true,
@@ -219,6 +239,10 @@ describe.concurrent('profile.decisionRoles', () => {
       caller.updateDecisionRoles({
         roleId: customRole!.id,
         decisionPermissions: {
+          delete: false,
+          update: false,
+          read: false,
+          create: false,
           admin: true,
           inviteMembers: true,
           review: true,
@@ -257,6 +281,10 @@ describe.concurrent('profile.decisionRoles', () => {
       caller.updateDecisionRoles({
         roleId: globalRole.id,
         decisionPermissions: {
+          delete: false,
+          update: false,
+          read: false,
+          create: false,
           admin: false,
           inviteMembers: false,
           review: false,
@@ -300,6 +328,10 @@ describe.concurrent('profile.decisionRoles', () => {
     await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: true,
         inviteMembers: true,
         review: true,
@@ -312,6 +344,10 @@ describe.concurrent('profile.decisionRoles', () => {
     await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: false,
         inviteMembers: false,
         review: false,
@@ -325,7 +361,12 @@ describe.concurrent('profile.decisionRoles', () => {
       profileId: profile.id,
     });
 
+    // read is true because updateDecisionRoles always forces READ
     expect(result).toEqual({
+      delete: false,
+      update: false,
+      read: true,
+      create: false,
       admin: false,
       inviteMembers: false,
       review: false,
@@ -385,6 +426,10 @@ describe.concurrent('profile.decisionRoles', () => {
     await caller.updateDecisionRoles({
       roleId: customRole!.id,
       decisionPermissions: {
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
         admin: false,
         inviteMembers: false,
         review: false,
@@ -450,6 +495,10 @@ describe.concurrent('profile.decisionRoles', () => {
       caller.updateDecisionRoles({
         roleId: customRole!.id,
         decisionPermissions: {
+          delete: false,
+          update: false,
+          read: false,
+          create: false,
           admin: true,
           inviteMembers: true,
           review: true,
