@@ -13,7 +13,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
-import { checkPermission, permission } from 'access-zones';
+import { assertAccess, checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
@@ -162,8 +162,18 @@ export const getProposal = async ({
     ]),
   ]);
 
-  // TODO: Add access control - check if user can view this proposal
-  // For now, any authenticated user can view any proposal
+  // Check that user has read access on the instance's profile
+  if (proposal.processInstance?.profileId) {
+    const instanceProfileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.processInstance.profileId,
+    });
+
+    assertAccess(
+      [{ decisions: permission.READ }, { decisions: permission.ADMIN }],
+      instanceProfileUser?.roles ?? [],
+    );
+  }
 
   // Generate signed URLs for attachments
   let attachmentsWithUrls = proposal.attachments ?? [];
@@ -232,25 +242,38 @@ export const getPermissionsOnProposal = async ({
   const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
   let isEditable = isOwner;
 
+  // If it's not already editable, check profile-level edit permission on the proposal's profile
+  if (!isEditable && proposal.profileId) {
+    const proposalProfileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.profileId,
+    });
+
+    isEditable = checkPermission(
+      { profile: permission.UPDATE },
+      proposalProfileUser?.roles ?? [],
+    );
+  }
+
+  // Also check instance-level admin permission
+  if (!isEditable && proposal.processInstance?.profileId) {
+    const instanceProfileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.processInstance.profileId,
+    });
+
+    isEditable = checkPermission(
+      { decisions: permission.ADMIN },
+      instanceProfileUser?.roles ?? [],
+    );
+  }
+
   // Disable editing if we're in the results phase
   if (isEditable && proposal.processInstance) {
     const currentStateId = proposal.processInstance.currentStateId;
     if (currentStateId === 'results') {
       isEditable = false;
     }
-  }
-
-  // If it's not already editable, check profile-level edit permission
-  if (!isEditable && proposal.processInstance?.profileId) {
-    const profileUser = await getProfileAccessUser({
-      user,
-      profileId: proposal.processInstance.profileId,
-    });
-
-    isEditable = checkPermission(
-      { profile: permission.UPDATE },
-      profileUser?.roles ?? [],
-    );
   }
 
   return isEditable;

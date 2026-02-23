@@ -9,7 +9,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import {
   CommonError,
@@ -17,7 +17,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
+import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -108,21 +108,34 @@ export const updateProposal = async ({
 
     const processInstance = existingProposal.processInstance as ProcessInstance;
 
-    await assertInstanceProfileAccess({
-      user: { id: user.id },
-      instance: processInstance,
-      profilePermissions: { profile: permission.UPDATE },
-      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-    });
-
-    // Status and visibility changes require ADMIN
+    // Status and visibility changes only require instance-level decisions: ADMIN
     if (data.status || data.visibility) {
       await assertInstanceProfileAccess({
         user: { id: user.id },
         instance: processInstance,
-        profilePermissions: { profile: permission.ADMIN },
+        profilePermissions: { decisions: permission.ADMIN },
         orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
+    } else {
+      // Data updates require profile-level update permission on the proposal's profile
+      const proposalProfileUser = await getProfileAccessUser({
+        user: { id: user.id },
+        profileId: existingProposal.profileId,
+      });
+
+      const hasProposalUpdate = checkPermission(
+        { profile: permission.UPDATE },
+        proposalProfileUser?.roles ?? [],
+      );
+
+      if (!hasProposalUpdate) {
+        await assertInstanceProfileAccess({
+          user: { id: user.id },
+          instance: processInstance,
+          profilePermissions: { profile: permission.UPDATE },
+          orgFallbackPermissions: [{ decisions: permission.ADMIN }],
+        });
+      }
     }
 
     // Validate proposal data against schema if updating proposalData

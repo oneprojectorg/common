@@ -4,6 +4,18 @@
  */
 import { permission } from 'access-zones';
 
+/**
+ * Decision-specific permission bits (bits 5–8), extending the standard ACRUD bits (0–4).
+ * Duplicated from @op/common/src/services/decision/permissions.ts to avoid a
+ * circular dependency (@op/db cannot depend on @op/common).
+ */
+const DECISION_BITS = {
+  INVITE_MEMBERS: 0b1_00000, // 32
+  REVIEW: 0b10_00000, // 64
+  SUBMIT_PROPOSALS: 0b100_00000, // 128
+  VOTE: 0b1000_00000, // 256
+} as const;
+
 // Predefined UUIDs for access zones (v4 format with version=4 and variant=8)
 const ACCESS_ZONE_IDS = {
   PROFILE: '00000000-0000-4000-8000-000000000001',
@@ -81,7 +93,8 @@ export const ZONES = {
 // Permission flags
 export const PERMISSIONS = permission;
 
-// Permissions for the Admin role (all bits set)
+// Permissions for the Admin role (ACRUD bits only — admin access is checked
+// via the ADMIN bit in OR-patterns, so custom decision bits aren't needed)
 const ADMIN_ROLE_PERMISSIONS =
   PERMISSIONS.ADMIN |
   PERMISSIONS.CREATE |
@@ -115,10 +128,14 @@ export const ACCESS_ROLE_PERMISSIONS = [
     accessZoneId: ACCESS_ZONE_IDS.PROFILE,
     permission: PERMISSIONS.READ,
   },
-  // Member gets read+update permissions on decisions zone (to view and submit proposals)
+  // Member gets read+update permissions on decisions zone plus submit proposals and vote
   {
     accessRoleId: ACCESS_ROLE_IDS.MEMBER,
     accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
-    permission: PERMISSIONS.READ | PERMISSIONS.UPDATE,
+    permission:
+      PERMISSIONS.READ |
+      PERMISSIONS.UPDATE |
+      DECISION_BITS.SUBMIT_PROPOSALS |
+      DECISION_BITS.VOTE,
   },
 ];

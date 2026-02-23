@@ -108,7 +108,7 @@ export const listProposals = async ({
 
   // Only perform access checks if not skipped
   if (!skipAccessCheck) {
-    // Assert view access via profileUser on the instance's profile
+    // Check view access via profileUser on the instance's profile
     profileUser = await getProfileAccessUser({
       user,
       profileId: instance[0].profileId,
@@ -117,7 +117,10 @@ export const listProposals = async ({
     await assertInstanceProfileAccess({
       user,
       instance: instance[0],
-      profilePermissions: { profile: permission.READ },
+      profilePermissions: [
+        { decisions: permission.ADMIN },
+        { decisions: permission.READ },
+      ],
       orgFallbackPermissions: [
         { decisions: permission.ADMIN },
         { decisions: permission.READ },

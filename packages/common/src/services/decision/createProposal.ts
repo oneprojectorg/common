@@ -22,6 +22,7 @@ import {
 } from '../../utils';
 import { getCurrentProfileId, getProfileAccessUser } from '../access';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -65,7 +66,13 @@ export const createProposal = async ({
       throw new UnauthorizedError('Not authorized');
     }
 
-    assertAccess({ profile: permission.READ }, profileAccessUser.roles);
+    assertAccess(
+      [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+      profileAccessUser.roles,
+    );
 
     const instanceData = instance.instanceData as DecisionInstanceData;
     const currentPhaseId = instanceData.currentPhaseId;
