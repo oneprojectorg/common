@@ -116,6 +116,10 @@ export const createInstanceFromTemplateCore = async ({
           decisions: {
             type: 'decision',
             value: {
+              create: true,
+              read: true,
+              update: true,
+              delete: true,
               admin: true,
               inviteMembers: true,
               review: true,
@@ -143,6 +147,10 @@ export const createInstanceFromTemplateCore = async ({
           decisions: {
             type: 'decision',
             value: {
+              create: false,
+              read: true,
+              update: false,
+              delete: false,
               admin: false,
               inviteMembers: false,
               review: false,
