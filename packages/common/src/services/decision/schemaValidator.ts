@@ -161,9 +161,9 @@ export class SchemaValidator {
         }
         return `${friendlyName} has an invalid format`;
       case 'minimum':
-        return `${friendlyName} must be at least ${error.params?.limit}`;
+        return `${friendlyName} must be at least ${Number(error.params?.limit).toLocaleString()}`;
       case 'maximum':
-        return `${friendlyName} cannot exceed ${error.params?.limit}`;
+        return `${friendlyName} cannot exceed ${Number(error.params?.limit).toLocaleString()}`;
       case 'minLength':
         return `${friendlyName} must be at least ${error.params?.limit} characters`;
       case 'maxLength':

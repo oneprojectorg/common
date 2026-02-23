@@ -212,9 +212,13 @@ describe.concurrent('submitProposal', () => {
             'x-format': 'short-text',
           },
           budget: {
-            type: 'number',
+            type: 'object',
             title: 'Budget',
             'x-format': 'money',
+            properties: {
+              amount: { type: 'number' },
+              currency: { type: 'string', default: 'USD' },
+            },
           },
           summary: {
             type: 'string',
@@ -245,7 +249,7 @@ describe.concurrent('submitProposal', () => {
         proposalData: {
           title: 'Proposal with vendor extensions',
           collaborationDocId,
-          budget: 5000,
+          budget: { amount: 5000, currency: 'USD' },
           summary:
             'Testing that x-field-order and x-format do not break validation',
         },
@@ -339,9 +343,13 @@ describe.concurrent('submitProposal', () => {
             'x-format': 'long-text',
           },
           e5f6a7b8: {
-            type: 'number',
+            type: 'object',
             title: 'Estimated Cost',
             'x-format': 'money',
+            properties: {
+              amount: { type: 'number' },
+              currency: { type: 'string', default: 'USD' },
+            },
           },
         },
       },
@@ -392,7 +400,14 @@ describe.concurrent('submitProposal', () => {
         'x-field-order': ['title', 'budget'],
         properties: {
           title: { type: 'string', 'x-format': 'short-text' },
-          budget: { type: 'number', maximum: 10000, 'x-format': 'money' },
+          budget: {
+            type: 'object',
+            'x-format': 'money',
+            properties: {
+              amount: { type: 'number', maximum: 10000 },
+              currency: { type: 'string', default: 'USD' },
+            },
+          },
         },
       },
     });
@@ -419,7 +434,7 @@ describe.concurrent('submitProposal', () => {
         proposalData: {
           title: 'Over Budget Proposal',
           collaborationDocId,
-          budget: 99999,
+          budget: { amount: 99999, currency: 'USD' },
         },
       })
       .where(eq(proposals.id, proposal.id));
@@ -528,9 +543,13 @@ describe.concurrent('submitProposal', () => {
             'x-format': 'short-text',
           },
           budget: {
-            type: 'number',
+            type: 'object',
             title: 'Requested Budget',
             'x-format': 'money',
+            properties: {
+              amount: { type: 'number' },
+              currency: { type: 'string', default: 'USD' },
+            },
           },
         },
       },

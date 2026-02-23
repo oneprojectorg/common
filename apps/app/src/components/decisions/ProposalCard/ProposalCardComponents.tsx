@@ -7,7 +7,10 @@ import {
   Visibility,
   type proposalEncoder,
 } from '@op/api/encoders';
-import { parseProposalData } from '@op/common/client';
+import {
+  type ProposalTemplateSchema,
+  parseProposalData,
+} from '@op/common/client';
 import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
@@ -353,7 +356,10 @@ export function ProposalCardPreview({
 }: BaseProposalCardProps & {
   className?: string;
 }) {
-  const previewText = getProposalContentPreview(proposal.documentContent);
+  const previewText = getProposalContentPreview(
+    proposal.documentContent,
+    (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
+  );
 
   if (previewText === null) {
     return <DocumentNotAvailable className="py-4" />;

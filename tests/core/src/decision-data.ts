@@ -265,9 +265,13 @@ export async function createDecisionInstance(
           'x-format': 'short-text',
         },
         budget: {
-          type: 'number' as const,
+          type: 'object' as const,
           title: 'Budget',
           'x-format': 'money',
+          properties: {
+            amount: { type: 'number' as const },
+            currency: { type: 'string' as const, default: 'USD' },
+          },
         },
         summary: {
           type: 'string' as const,
@@ -388,6 +392,8 @@ export interface CreateProposalOptions {
     collaborationDocId?: string;
     budget?: number | { amount: number; currency: string };
     category?: string;
+    /** Allow arbitrary extra fields for dynamic template properties (dropdowns, etc.) */
+    [key: string]: unknown;
   };
   /** Proposal status (defaults to DRAFT to match production behavior) */
   status?: ProposalStatus;

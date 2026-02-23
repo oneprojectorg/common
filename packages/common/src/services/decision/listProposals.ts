@@ -380,6 +380,7 @@ export const listProposals = async ({
       commentsCount: relationshipInfo?.commentsCount || 0,
       isEditable,
       documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate,
     };
   });
 

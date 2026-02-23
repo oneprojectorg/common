@@ -9,6 +9,13 @@ export {
   getProposalTemplateFieldOrder,
   type ProposalTemplateFieldOrder,
 } from './services/decision/getProposalTemplateFieldOrder';
+export { getProposalFragmentNames } from './services/decision/getProposalFragmentNames';
+export { assembleProposalData } from './services/decision/assembleProposalData';
+export {
+  SchemaValidator,
+  schemaValidator,
+  type SchemaValidationResult,
+} from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 
 // Translation constants (no server dependencies)

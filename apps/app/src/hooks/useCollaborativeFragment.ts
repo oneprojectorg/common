@@ -5,9 +5,28 @@ import * as Y from 'yjs';
 import type { Doc } from 'yjs';
 
 /**
+ * Extracts the plain-text content from a Y.XmlFragment containing a
+ * paragraph-wrapped `Y.XmlElement` node (as written by `setFragmentValue`).
+ */
+function getFragmentText(fragment: Y.XmlFragment): string {
+  const parts: string[] = [];
+  fragment.forEach((node) => {
+    if (node instanceof Y.XmlElement) {
+      node.forEach((child) => {
+        if (child instanceof Y.XmlText) {
+          parts.push(child.toJSON());
+        }
+      });
+    }
+  });
+  return parts.join('');
+}
+
+/**
  * Syncs a plain-text value with a Y.XmlFragment.
- * This ensures all collaborative data is stored as XmlFragment,
- * making it accessible via the TipTap Cloud REST API.
+ * Values are stored inside a paragraph `Y.XmlElement` so that TipTap
+ * Cloud serialises them as valid ProseMirror JSON, avoiding the
+ * double-nested array artefact that bare `Y.XmlText` nodes produce.
  *
  * @param ydoc - The shared Yjs document
  * @param fragmentName - The fragment key (e.g. 'category', 'budget')
@@ -29,7 +48,7 @@ export function useCollaborativeFragment(
     const fragment = ydoc.getXmlFragment(fragmentName);
 
     // Read existing value
-    const existing = fragment.toString();
+    const existing = getFragmentText(fragment);
     if (existing) {
       setValue(existing);
     }
@@ -40,7 +59,7 @@ export function useCollaborativeFragment(
         isLocalUpdateRef.current = false;
         return;
       }
-      setValue(fragment.toString());
+      setValue(getFragmentText(fragment));
     };
 
     fragment.observeDeep(observer);
@@ -60,7 +79,9 @@ export function useCollaborativeFragment(
       ydoc.transact(() => {
         fragment.delete(0, fragment.length);
         if (newValue) {
-          fragment.insert(0, [new Y.XmlText(newValue)]);
+          const paragraph = new Y.XmlElement('paragraph');
+          paragraph.insert(0, [new Y.XmlText(newValue)]);
+          fragment.insert(0, [paragraph]);
         }
       });
     },

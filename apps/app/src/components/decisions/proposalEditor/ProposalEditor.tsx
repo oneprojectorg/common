@@ -20,6 +20,7 @@ import { RichTextEditorToolbar } from '../../RichTextEditor';
 import {
   CollaborativeDocProvider,
   CollaborativePresence,
+  useCollaborativeDoc,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
@@ -33,6 +34,7 @@ import {
 } from './compileProposalSchema';
 import { handleMutationError } from './handleMutationError';
 import { useProposalDraft } from './useProposalDraft';
+import { useProposalValidation } from './useProposalValidation';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -85,21 +87,7 @@ export function ProposalEditor({
   isEditMode?: boolean;
 }) {
   const { user } = useUser();
-  const router = useRouter();
   const t = useTranslations();
-  const utils = trpc.useUtils();
-
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
-
-  // -- Instance config -------------------------------------------------------
-
-  const proposalInfoTitle = instance.instanceData?.fieldValues
-    ?.proposalInfoTitle as string | undefined;
-  const proposalInfoContent = instance.instanceData?.fieldValues
-    ?.proposalInfoContent as string | undefined;
 
   // -- Collaboration ---------------------------------------------------------
 
@@ -113,13 +101,7 @@ export function ProposalEditor({
     return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
   }, [proposal?.proposalData, proposal?.id, instance.id]);
 
-  // -- Draft management ------------------------------------------------------
-
-  const { draft, draftRef, handleFieldChange } = useProposalDraft({
-    proposal,
-    isEditMode,
-    collaborationDocId,
-  });
+  const userName = user.profile?.name ?? t('Anonymous');
 
   // -- Schema compilation ----------------------------------------------------
 
@@ -130,10 +112,78 @@ export function ProposalEditor({
     throw new Error('Proposal template not found on instance');
   }
 
+  return (
+    <CollaborativeDocProvider
+      docId={collaborationDocId}
+      userName={userName}
+      fallback={<ProposalEditorSkeleton />}
+    >
+      <ProposalEditorInner
+        instance={instance}
+        backHref={backHref}
+        proposal={proposal}
+        isEditMode={isEditMode}
+        collaborationDocId={collaborationDocId}
+        proposalTemplate={proposalTemplate}
+      />
+    </CollaborativeDocProvider>
+  );
+}
+
+/**
+ * Inner component rendered inside `CollaborativeDocProvider` so it can
+ * access the Yjs document for client-side schema validation.
+ */
+function ProposalEditorInner({
+  instance,
+  backHref,
+  proposal,
+  isEditMode,
+  collaborationDocId,
+  proposalTemplate,
+}: {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
+  isEditMode: boolean;
+  collaborationDocId: string;
+  proposalTemplate: ProposalTemplateSchema;
+}) {
+  const router = useRouter();
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+  const { ydoc } = useCollaborativeDoc();
+
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
+
+  // -- Instance config -------------------------------------------------------
+
+  const proposalInfoTitle = instance.instanceData?.fieldValues
+    ?.proposalInfoTitle as string | undefined;
+  const proposalInfoContent = instance.instanceData?.fieldValues
+    ?.proposalInfoContent as string | undefined;
+
+  // -- Draft management ------------------------------------------------------
+
+  const { draft, draftRef, handleFieldChange } = useProposalDraft({
+    proposal,
+    isEditMode,
+    collaborationDocId,
+  });
+
+  // -- Schema compilation ----------------------------------------------------
+
   const templateRef = useRef(proposalTemplate);
   templateRef.current = proposalTemplate;
 
   const proposalFields = compileProposalSchema(proposalTemplate);
+
+  // -- Validation ------------------------------------------------------------
+
+  const { validate } = useProposalValidation(ydoc, proposalTemplate);
 
   // -- Mutations -------------------------------------------------------------
 
@@ -159,56 +209,13 @@ export function ProposalEditor({
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
     const template = templateRef.current;
-    const templateRequired = Array.isArray(template.required)
-      ? template.required
-      : [];
 
-    const missingFields: string[] = [];
-
-    if (!currentDraft.title || currentDraft.title.trim() === '') {
-      missingFields.push(t('Title'));
-    }
-
-    if (templateRequired.includes('budget') && !currentDraft.budget) {
-      missingFields.push(t('Budget'));
-    }
-
-    const categorySchema = template.properties?.category;
-    const hasCategories =
-      typeof categorySchema === 'object' && schemaHasOptions(categorySchema);
-
-    if (
-      templateRequired.includes('category') &&
-      hasCategories &&
-      currentDraft.category === null
-    ) {
-      missingFields.push(t('Category'));
-    }
-
-    const budgetSchema = template.properties?.budget;
-    const budgetMax =
-      typeof budgetSchema === 'object' &&
-      typeof budgetSchema?.maximum === 'number'
-        ? budgetSchema.maximum
-        : undefined;
-
-    if (
-      currentDraft.budget !== null &&
-      budgetMax !== undefined &&
-      currentDraft.budget.amount > budgetMax
-    ) {
-      toast.error({
-        message: t('Budget cannot exceed {amount}', {
-          amount: budgetMax.toLocaleString(),
-        }),
-      });
-      return;
-    }
-
-    if (missingFields.length > 0) {
+    // -- Client-side schema validation (validates ALL template fields) --------
+    const result = validate();
+    if (!result.valid) {
       toast.error({
         title: t('Please complete the following required fields:'),
-        message: missingFields.join(', '),
+        message: Object.values(result.errors).join(', '),
       });
       return;
     }
@@ -219,6 +226,10 @@ export function ProposalEditor({
       if (!proposal) {
         throw new Error('No proposal to update');
       }
+
+      const categorySchema = template.properties?.category;
+      const hasCategories =
+        typeof categorySchema === 'object' && schemaHasOptions(categorySchema);
 
       const proposalData: ProposalDataInput = {
         ...parseProposalData(proposal.proposalData),
@@ -265,11 +276,10 @@ export function ProposalEditor({
     submitProposalMutation,
     updateProposalMutation,
     draftRef,
+    validate,
   ]);
 
   // -- Render ----------------------------------------------------------------
-
-  const userName = user.profile?.name ?? t('Anonymous');
 
   const {
     editor: focusedEditor,
@@ -278,68 +288,62 @@ export function ProposalEditor({
   } = useFocusedEditor();
 
   return (
-    <CollaborativeDocProvider
-      docId={collaborationDocId}
-      userName={userName}
-      fallback={<ProposalEditorSkeleton />}
+    <ProposalEditorLayout
+      backHref={backHref}
+      title={draft.title}
+      onSubmitProposal={handleSubmitProposal}
+      isSubmitting={isSubmitting}
+      isEditMode={isEditMode}
+      isDraft={isDraft}
+      presenceSlot={<CollaborativePresence />}
+      proposalProfileId={proposal.profileId}
+      access={proposal.access}
     >
-      <ProposalEditorLayout
-        backHref={backHref}
-        title={draft.title}
-        onSubmitProposal={handleSubmitProposal}
-        isSubmitting={isSubmitting}
-        isEditMode={isEditMode}
-        isDraft={isDraft}
-        presenceSlot={<CollaborativePresence />}
-        proposalProfileId={proposal.profileId}
-        access={proposal.access}
+      <div
+        className="sticky top-0 z-10 bg-white"
+        onMouseDown={(e) => e.preventDefault()}
       >
-        <div
-          className="sticky top-0 z-10 bg-white"
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          <RichTextEditorToolbar editor={focusedEditor} />
-        </div>
-        <div className="flex flex-1 flex-col gap-12 pt-12">
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
-            <ProposalFormRenderer
-              fields={proposalFields}
-              draft={draft}
-              onFieldChange={handleFieldChange}
-              onEditorFocus={onEditorFocus}
-              onEditorBlur={onEditorBlur}
-            />
+        <RichTextEditorToolbar editor={focusedEditor} />
+      </div>
+      <div className="flex flex-1 flex-col gap-12 pt-12">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
+          <ProposalFormRenderer
+            fields={proposalFields}
+            draft={draft}
+            onFieldChange={handleFieldChange}
+            onEditorFocus={onEditorFocus}
+            onEditorBlur={onEditorBlur}
+          />
 
-            <div className="border-t border-neutral-gray1 pt-8">
-              <ProposalAttachments
-                proposalId={proposal.id}
-                attachments={
-                  proposal.attachments?.map((pa) => ({
-                    id: pa.attachmentId,
-                    fileName: pa.attachment?.fileName ?? t('Unknown'),
-                    fileSize: pa.attachment?.fileSize ?? null,
-                    url: pa.attachment?.url,
-                  })) ?? []
-                }
-                onMutate={() =>
-                  utils.decision.getProposal.invalidate({
-                    profileId: proposal.profileId,
-                  })
-                }
-              />
-            </div>
+          <div className="border-t border-neutral-gray1 pt-8">
+            <ProposalAttachments
+              proposalId={proposal.id}
+              attachments={
+                proposal.attachments?.map((pa) => ({
+                  id: pa.attachmentId,
+                  fileName: pa.attachment?.fileName ?? t('Unknown'),
+                  fileSize: pa.attachment?.fileSize ?? null,
+                  url: pa.attachment?.url,
+                })) ?? []
+              }
+              onMutate={() =>
+                utils.decision.getProposal.invalidate({
+                  profileId: proposal.profileId,
+                })
+              }
+            />
           </div>
         </div>
+      </div>
 
-        {proposalInfoTitle && proposalInfoContent && (
-          <ProposalInfoModal
-            isOpen={showInfoModal}
-            onClose={handleCloseInfoModal}
-            title={proposalInfoTitle}
-            content={proposalInfoContent}
-          />
-        )}
-      </ProposalEditorLayout>
-    </CollaborativeDocProvider>
+      {proposalInfoTitle && proposalInfoContent && (
+        <ProposalInfoModal
+          isOpen={showInfoModal}
+          onClose={handleCloseInfoModal}
+          title={proposalInfoTitle}
+          content={proposalInfoContent}
+        />
+      )}
+    </ProposalEditorLayout>
   );
 }
