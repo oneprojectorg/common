@@ -14,6 +14,10 @@ import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import {
+  type ProposalTemplate,
+  ensureLockedFields,
+} from '../../../proposalTemplate';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
@@ -63,20 +67,36 @@ export function ProposalCategoriesSectionContent({
   // tRPC mutation
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  // Debounced auto-save: writes to Zustand store + API
+  // Debounced auto-save: writes to Zustand store + API.
+  // Also syncs the proposalTemplate so that the category field and required
+  // array stay consistent with the config — even if the template editor is
+  // not currently mounted.
   const debouncedSave = useDebouncedCallback((data: CategoryConfig) => {
     setSaveStatus(decisionProfileId, 'saving');
     setInstanceData(decisionProfileId, data);
-    updateInstance.mutate(
-      {
-        instanceId,
-        config: data,
-      },
-      {
-        onSuccess: () => markSaved(decisionProfileId),
-        onError: () => setSaveStatus(decisionProfileId, 'error'),
-      },
-    );
+
+    const existingTemplate = instance.instanceData?.proposalTemplate as
+      | ProposalTemplate
+      | undefined;
+
+    const mutation: Parameters<typeof updateInstance.mutate>[0] = {
+      instanceId,
+      config: data,
+    };
+
+    if (existingTemplate) {
+      mutation.proposalTemplate = ensureLockedFields(existingTemplate, {
+        titleLabel: t('Proposal title'),
+        categoryLabel: t('Category'),
+        categories: data.categories,
+        requireCategorySelection: data.requireCategorySelection,
+      });
+    }
+
+    updateInstance.mutate(mutation, {
+      onSuccess: () => markSaved(decisionProfileId),
+      onError: () => setSaveStatus(decisionProfileId, 'error'),
+    });
   }, AUTOSAVE_DEBOUNCE_MS);
 
   // Update local state and trigger debounced save
