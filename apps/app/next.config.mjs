@@ -47,6 +47,9 @@ const config = {
     NEXT_PUBLIC_PREVIEW_BRANCH_URL:
       DEPLOY_ENV === 'preview' ? PREVIEW_BRANCH_URL : undefined,
   },
+  images: {
+    minimumCacheTTL: 31536000, // 1 year — assets are content-addressed
+  },
   experimental: {
     // reactCompiler: true,
     serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
@@ -102,6 +105,19 @@ const config = {
     }
 
     return cfg;
+  },
+  async headers() {
+    return [
+      {
+        source: '/assets/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
   async rewrites() {
     // On preview deployments, proxy tRPC to avoid cross-origin cookie issues
