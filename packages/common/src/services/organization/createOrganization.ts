@@ -166,7 +166,8 @@ export const createOrganization = async ({
       })
       .returning(),
     db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.name, 'Admin'),
+      where: (table, { eq, and, isNull }) =>
+        and(eq(table.name, 'Admin'), isNull(table.profileId)),
     }),
     db
       .update(users)

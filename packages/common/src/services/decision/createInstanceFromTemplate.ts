@@ -13,6 +13,7 @@ import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
+import { createDecisionRole } from './decisionRoles';
 import { getTemplate } from './getTemplate';
 import {
   type PhaseOverride,
@@ -96,32 +97,83 @@ export const createInstanceFromTemplateCore = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
-    // Add the creator as a profile user with Admin role
-    const [[newProfileUser], adminRole] = await Promise.all([
-      tx
-        .insert(profileUsers)
-        .values({
-          profileId: instanceProfile.id,
-          authUserId: creatorAuthUserId,
-          email: creatorEmail,
-          isOwner: true,
-        })
-        .returning(),
-      tx._query.accessRoles.findFirst({
-        where: (table, { eq }) => eq(table.name, 'Admin'),
+    // Create default roles for the decision instance
+    const [adminRole] = await Promise.all([
+      createDecisionRole({
+        name: 'Admin',
+        profileId: instanceProfile.id,
+        permissions: {
+          profile: {
+            type: 'acrud',
+            value: {
+              admin: true,
+              create: true,
+              read: true,
+              update: true,
+              delete: true,
+            },
+          },
+          decisions: {
+            type: 'decision',
+            value: {
+              admin: true,
+              inviteMembers: true,
+              review: true,
+              submitProposals: true,
+              vote: true,
+            },
+          },
+        },
+        tx,
+      }),
+      createDecisionRole({
+        name: 'Participant',
+        profileId: instanceProfile.id,
+        permissions: {
+          profile: {
+            type: 'acrud',
+            value: {
+              admin: false,
+              create: false,
+              read: true,
+              update: false,
+              delete: false,
+            },
+          },
+          decisions: {
+            type: 'decision',
+            value: {
+              admin: false,
+              inviteMembers: false,
+              review: false,
+              submitProposals: true,
+              vote: true,
+            },
+          },
+        },
+        tx,
       }),
     ]);
+
+    // Add the creator as a profile user with Admin role
+    const [newProfileUser] = await tx
+      .insert(profileUsers)
+      .values({
+        profileId: instanceProfile.id,
+        authUserId: creatorAuthUserId,
+        email: creatorEmail,
+        isOwner: true,
+      })
+      .returning();
 
     if (!newProfileUser) {
       throw new CommonError('Failed to add creator as profile user');
     }
 
-    if (adminRole) {
-      await tx.insert(profileUserToAccessRoles).values({
-        profileUserId: newProfileUser.id,
-        accessRoleId: adminRole.id,
-      });
-    }
+    await tx.insert(profileUserToAccessRoles).values({
+      profileUserId: newProfileUser.id,
+      accessRoleId: adminRole.id,
+    });
 
     return newInstance;
   });

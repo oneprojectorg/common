@@ -1,15 +1,92 @@
-import { db } from '@op/db/client';
-import { accessRolePermissionsOnAccessZones } from '@op/db/schema';
-import { permission } from 'access-zones';
+import { type TransactionType, db } from '@op/db/client';
+import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
+import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
-import { NotFoundError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
   toDecisionBitField,
 } from './permissions';
+
+type ZonePermission =
+  | { type: 'decision'; value: DecisionRolePermissions }
+  | {
+      type: 'acrud';
+      value: {
+        admin: boolean;
+        create: boolean;
+        read: boolean;
+        update: boolean;
+        delete: boolean;
+      };
+    };
+
+function toBitfield(zonePermission: ZonePermission): number {
+  if (zonePermission.type === 'decision') {
+    return toDecisionBitField(zonePermission.value) | permission.READ;
+  }
+  return toBitField(zonePermission.value);
+}
+
+/**
+ * Create a decision role with permissions on one or more zones.
+ * Each zone entry specifies its type: 'decision' for decision-specific bits,
+ * or 'acrud' for standard access-zones bits.
+ */
+export async function createDecisionRole({
+  name,
+  profileId,
+  permissions,
+  description,
+  tx,
+}: {
+  name: string;
+  profileId: string;
+  permissions: Record<string, ZonePermission>;
+  description?: string;
+  tx?: TransactionType;
+}) {
+  const client = tx ?? db;
+
+  const zoneNames = Object.keys(permissions);
+  const zones = await Promise.all(
+    zoneNames.map((zoneName) =>
+      client.query.accessZones.findFirst({ where: { name: zoneName } }),
+    ),
+  );
+
+  const zoneMap = new Map(
+    zoneNames.map((zoneName, i) => {
+      const zone = zones[i];
+      if (!zone) {
+        throw new NotFoundError('Zone', zoneName);
+      }
+      return [zoneName, zone];
+    }),
+  );
+
+  const [role] = await client
+    .insert(accessRoles)
+    .values({ name, description, profileId })
+    .returning();
+
+  if (!role) {
+    throw new CommonError('Failed to create decision role');
+  }
+
+  await client.insert(accessRolePermissionsOnAccessZones).values(
+    zoneNames.map((zoneName) => ({
+      accessRoleId: role.id,
+      accessZoneId: zoneMap.get(zoneName)!.id,
+      permission: toBitfield(permissions[zoneName]!),
+    })),
+  );
+
+  return { id: role.id, name: role.name, permissions };
+}
 
 /**
  * Get the decision role permissions for a role on the decisions zone.

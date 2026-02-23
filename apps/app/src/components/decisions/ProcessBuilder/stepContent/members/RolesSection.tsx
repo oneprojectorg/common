@@ -87,7 +87,6 @@ function RolesSectionContent({
         <RolesTable
           decisionProfileId={decisionProfileId}
           decisionName={decisionName}
-          zoneName="decisions"
         />
       </Suspense>
 
@@ -103,11 +102,9 @@ function RolesSectionContent({
 function DecisionRoleCheckboxes({
   roleId,
   profileId,
-  isGlobal,
 }: {
   roleId: string;
   profileId: string;
-  isGlobal: boolean;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -124,7 +121,7 @@ function DecisionRoleCheckboxes({
   const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
 
   const togglePermission = (key: DecisionRoleKey) => {
-    if (!permissions || isGlobal) {
+    if (!permissions) {
       return;
     }
     const newPermissions = { ...permissions, [key]: !permissions[key] };
@@ -150,7 +147,6 @@ function DecisionRoleCheckboxes({
         <Checkbox
           size="small"
           isSelected={optimisticPermissions?.[key] ?? false}
-          isDisabled={isGlobal}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
         />
@@ -162,11 +158,9 @@ function DecisionRoleCheckboxes({
 function MobileDecisionRoles({
   roleId,
   profileId,
-  isGlobal,
 }: {
   roleId: string;
   profileId: string;
-  isGlobal: boolean;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -183,7 +177,7 @@ function MobileDecisionRoles({
   const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
 
   const togglePermission = (key: DecisionRoleKey) => {
-    if (!permissions || isGlobal) {
+    if (!permissions) {
       return;
     }
     const newPermissions = { ...permissions, [key]: !permissions[key] };
@@ -210,7 +204,6 @@ function MobileDecisionRoles({
           key={key}
           size="small"
           isSelected={optimisticPermissions?.[key] ?? false}
-          isDisabled={isGlobal}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
         >
@@ -223,26 +216,22 @@ function MobileDecisionRoles({
 
 function MobileRoleCard({
   role,
-  isGlobal,
   profileId,
   onDelete,
 }: {
   role: Role;
-  isGlobal: boolean;
   profileId: string;
   onDelete?: (role: Role) => void;
 }) {
   const t = useTranslations();
 
   return (
-    <div
-      className={`flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4 ${isGlobal ? 'opacity-50' : ''}`}
-    >
+    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
       <div className="flex items-center justify-between">
         <h3 className="font-serif text-sm font-light text-neutral-black">
           {role.name}
         </h3>
-        {!isGlobal && onDelete && (
+        {onDelete && (
           <OptionMenu variant="outline" className="rounded-md">
             <Menu className="min-w-28 p-2">
               <MenuItem
@@ -258,11 +247,7 @@ function MobileRoleCard({
         )}
       </div>
 
-      <MobileDecisionRoles
-        roleId={role.id}
-        profileId={profileId}
-        isGlobal={isGlobal}
-      />
+      <MobileDecisionRoles roleId={role.id} profileId={profileId} />
     </div>
   );
 }
@@ -270,25 +255,19 @@ function MobileRoleCard({
 function RolesTable({
   decisionProfileId,
   decisionName,
-  zoneName,
 }: {
   decisionProfileId: string;
   decisionName: string;
-  zoneName: string;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
-  const [[{ items: globalRoles }, { items: profileRoles }]] =
-    trpc.useSuspenseQueries((q) => [
-      q.profile.listRoles({ zoneName }),
-      q.profile.listRoles({
-        profileId: decisionProfileId,
-        zoneName,
-      }),
-    ]);
+  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({
+    profileId: decisionProfileId,
+    zoneName: 'decisions',
+  });
 
   const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
     onSuccess: () => {
@@ -301,7 +280,7 @@ function RolesTable({
     },
   });
 
-  if (globalRoles.length === 0 && profileRoles.length === 0) {
+  if (roles.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
         <span>{t('No roles configured')}</span>
@@ -321,19 +300,10 @@ function RolesTable({
     <>
       {isMobile ? (
         <div className="flex flex-col gap-4">
-          {globalRoles.map((role) => (
+          {roles.map((role) => (
             <MobileRoleCard
               key={role.id}
               role={role}
-              isGlobal
-              profileId={decisionProfileId}
-            />
-          ))}
-          {profileRoles.map((role) => (
-            <MobileRoleCard
-              key={role.id}
-              role={role}
-              isGlobal={false}
               profileId={decisionProfileId}
               onDelete={setRoleToDelete}
             />
@@ -352,24 +322,12 @@ function RolesTable({
               <TableColumn className="w-12" />
             </TableHeader>
             <TableBody>
-              {globalRoles.map((role) => (
-                <TableRow key={role.id} className="opacity-50">
-                  <TableCell className="font-medium">{role.name}</TableCell>
-                  <DecisionRoleCheckboxes
-                    roleId={role.id}
-                    profileId={decisionProfileId}
-                    isGlobal
-                  />
-                  <TableCell />
-                </TableRow>
-              ))}
-              {profileRoles.map((role) => (
+              {roles.map((role) => (
                 <TableRow key={role.id}>
                   <TableCell className="font-medium">{role.name}</TableCell>
                   <DecisionRoleCheckboxes
                     roleId={role.id}
                     profileId={decisionProfileId}
-                    isGlobal={false}
                   />
                   <TableCell>
                     <OptionMenu variant="outline" className="rounded-md">
