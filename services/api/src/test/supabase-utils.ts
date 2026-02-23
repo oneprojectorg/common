@@ -104,29 +104,6 @@ export async function createTestUser(
 }
 
 /**
- * Sign in as a test user
- */
-export async function signInTestUser(
-  email: string,
-  password: string = TEST_USER_DEFAULT_PASSWORD,
-) {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
-  }
-
-  const { data, error } = await supabaseTestClient.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    throw new Error(`Failed to sign in test user: ${error.message}`);
-  }
-
-  return data;
-}
-
-/**
  * Sign out current user
  */
 export async function signOutTestUser() {

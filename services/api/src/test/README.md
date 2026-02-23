@@ -123,7 +123,6 @@ The setup file:
 Utility functions for common test operations:
 
 - `createTestUser()` - Create test users
-- `signInTestUser()` - Authenticate test users
 - `insertTestData()` - Insert test data
 
 ## Writing Integration Tests
@@ -142,21 +141,6 @@ describe('My Integration Tests', () => {
 
     expect(user).toBeDefined();
   });
-});
-```
-
-### Testing Authentication
-
-```typescript
-it('should handle user authentication', async () => {
-  const email = `test-${Date.now()}@example.com`;
-
-  // Create and sign in user
-  await createTestUser(email);
-  const session = await signInTestUser(email);
-
-  expect(session.user).toBeDefined();
-  expect(session.session).toBeDefined();
 });
 ```
 
