@@ -16,6 +16,7 @@ import type {
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
+import type { ProposalPropertySchema, ProposalTemplateSchema } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
@@ -27,24 +28,26 @@ import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 function syncProposalTemplateWithConfig(
   instanceData: DecisionInstanceData,
 ): DecisionInstanceData {
-  const template = instanceData.proposalTemplate;
+  const template = instanceData.proposalTemplate as
+    | ProposalTemplateSchema
+    | undefined;
   if (!template) {
     return instanceData;
   }
 
   const config = instanceData.config;
   const categories = config?.categories ?? [];
-  const properties = (template.properties ?? {}) as Record<
-    string,
-    Record<string, unknown>
-  >;
+  const properties = template.properties ?? {};
   let updatedProperties = { ...properties };
 
   // Sync category field options
   if (categories.length > 0) {
     const categoryLabels = categories.map((c) => c.label);
     const existing = properties.category;
-    updatedProperties.category = buildCategorySchema(categoryLabels, existing);
+    updatedProperties.category = buildCategorySchema(
+      categoryLabels,
+      existing as Record<string, unknown>,
+    ) as ProposalPropertySchema;
     // Preserve existing title
     if (existing?.title) {
       updatedProperties.category.title = existing.title;
@@ -55,8 +58,7 @@ function syncProposalTemplateWithConfig(
   }
 
   // Sync x-field-order
-  const order = ((template as Record<string, unknown>)['x-field-order'] ??
-    []) as string[];
+  const order = template['x-field-order'] ?? [];
   const hasCategory = 'category' in updatedProperties;
   let updatedOrder: string[];
   if (hasCategory && !order.includes('category')) {
@@ -70,7 +72,7 @@ function syncProposalTemplateWithConfig(
   }
 
   // Sync required array
-  const required = new Set((template.required ?? []) as string[]);
+  const required = new Set(template.required ?? []);
   if (updatedProperties.category && config?.requireCategorySelection) {
     required.add('category');
   } else {
@@ -112,7 +114,7 @@ export const updateDecisionInstance = async ({
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema + embedded UI Schema) */
-  proposalTemplate?: Record<string, unknown>;
+  proposalTemplate?: ProposalTemplateSchema;
   user: User;
 }) => {
   // Fetch existing instance
