@@ -6,10 +6,10 @@ import {
   proposals,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertInstanceProfileAccess } from '../access';
 import { extractBudgetValue } from './proposalDataSchema';
 
 export const getResultsStats = async ({
@@ -27,6 +27,7 @@ export const getResultsStats = async ({
     .select({
       instanceId: processInstances.id,
       profileId: processInstances.profileId,
+      ownerProfileId: processInstances.ownerProfileId,
     })
     .from(processInstances)
     .where(eq(processInstances.id, instanceId))
@@ -40,12 +41,12 @@ export const getResultsStats = async ({
     throw new NotFoundError('Decision profile not found');
   }
 
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: instance[0].profileId,
+  await assertInstanceProfileAccess({
+    user: { id: user.id },
+    instance: instance[0],
+    profilePermissions: { decisions: permission.READ },
+    orgFallbackPermissions: [{ decisions: permission.READ }],
   });
-
-  assertAccess([{ decisions: permission.READ }], profileUser?.roles ?? []);
 
   const result = await db._query.decisionProcessResults.findFirst({
     where: eq(decisionProcessResults.processInstanceId, instanceId),
