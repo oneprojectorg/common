@@ -60,6 +60,7 @@ export const inviteUsersToProfile = async ({
     existingAllowListEntries,
     existingPendingInvites,
     profileUser,
+    proposalWithDecision,
   ] = await Promise.all([
     // Get the profile details for the invite
     assertProfile(requesterProfileId),
@@ -92,6 +93,11 @@ export const inviteUsersToProfile = async ({
     getProfileAccessUser({
       user,
       profileId: requesterProfileId,
+    }),
+    // Get the proposal for building the invite URL
+    db._query.proposals.findFirst({
+      where: (table, { eq }) => eq(table.profileId, requesterProfileId),
+      columns: { processInstanceId: true },
     }),
   ]);
 
@@ -128,7 +134,27 @@ export const inviteUsersToProfile = async ({
   // Compute repeated values once (same for every invitation)
   const inviterName = profileUser.profile.name || user.email || 'A team member';
   const profileName = profile.name;
-  const inviteUrl = OPURLConfig('APP').ENV_URL;
+  const baseUrl = OPURLConfig('APP').ENV_URL;
+
+  // Build the full invite URL for proposal profiles
+  let inviteUrl = baseUrl;
+  if (profile.type === 'proposal' && proposalWithDecision?.processInstanceId) {
+    const processInstance = await db._query.processInstances.findFirst({
+      where: (table, { eq }) =>
+        eq(table.id, proposalWithDecision.processInstanceId),
+      columns: { profileId: true },
+    });
+    const decisionProfileId = processInstance?.profileId;
+    if (decisionProfileId) {
+      const decisionProfile = await db._query.profiles.findFirst({
+        where: (table, { eq }) => eq(table.id, decisionProfileId),
+        columns: { slug: true },
+      });
+      if (decisionProfile?.slug) {
+        inviteUrl = `${baseUrl}/decisions/${decisionProfile.slug}/proposal/${requesterProfileId}/invite`;
+      }
+    }
+  }
 
   const usersByEmail = new Map(
     existingUsers.map((user) => [user.email.toLowerCase(), user]),
