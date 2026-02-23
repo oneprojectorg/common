@@ -61,6 +61,7 @@ export const inviteUsersToProfile = async ({
     existingPendingInvites,
     profileUser,
     proposalWithDecision,
+    invitingUser,
   ] = await Promise.all([
     // Get the profile details for the invite
     assertProfile(requesterProfileId),
@@ -99,6 +100,11 @@ export const inviteUsersToProfile = async ({
       where: (table, { eq }) => eq(table.profileId, requesterProfileId),
       columns: { processInstanceId: true },
     }),
+    // Get the inviting user's profile name
+    db._query.users.findFirst({
+      where: (table, { eq }) => eq(table.authUserId, user.id),
+      columns: { name: true, profileId: true },
+    }),
   ]);
 
   if (!profileUser) {
@@ -131,8 +137,19 @@ export const inviteUsersToProfile = async ({
     existingUserAuthIds: [] as string[],
   };
 
+  // Resolve the inviting user's individual profile name
+  let inviterProfileName: string | undefined;
+  if (invitingUser?.profileId) {
+    const inviterProfile = await db._query.profiles.findFirst({
+      where: (table, { eq }) => eq(table.id, invitingUser.profileId!),
+      columns: { name: true },
+    });
+    inviterProfileName = inviterProfile?.name;
+  }
+
   // Compute repeated values once (same for every invitation)
-  const inviterName = profileUser.profile.name || user.email || 'A team member';
+  const inviterName =
+    inviterProfileName || invitingUser?.name || user.email || 'A team member';
   const profileName = profile.name;
   const baseUrl = OPURLConfig('APP').ENV_URL;
 
