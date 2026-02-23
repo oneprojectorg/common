@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
 import type { TContext } from '../types';
-import { supabaseTestAdminClient, supabaseTestClient } from './setup';
+import { supabaseTestClient } from './setup';
 
 export { supabaseTestClient, supabaseTestAdminClient } from './setup';
 export { TEST_USER_DEFAULT_PASSWORD };
@@ -104,21 +104,6 @@ export async function createTestUser(
 }
 
 /**
- * Get current test user session
- */
-export async function getCurrentTestSession() {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
-  }
-
-  const {
-    data: { session },
-  } = await supabaseTestClient.auth.getSession();
-
-  return session;
-}
-
-/**
  * Create an isolated Supabase client for a test.
  * This client won't interfere with other tests running in parallel.
  * Safe for concurrent test execution.
@@ -161,27 +146,4 @@ export async function createIsolatedSession(
     client,
     session: data.session,
   };
-}
-
-/**
- * Insert test data into a table
- * Uses admin client to bypass RLS policies
- */
-export async function insertTestData<T = any>(table: string, data: T | T[]) {
-  if (!supabaseTestAdminClient) {
-    throw new Error('Supabase admin test client not initialized');
-  }
-
-  const response = await supabaseTestAdminClient
-    .from(table)
-    .insert(data)
-    .select();
-
-  if (response.error) {
-    throw new Error(
-      `Failed to insert test data into ${table}: ${response.error.message || response.error.code || response.error.hint || JSON.stringify(response.error)}`,
-    );
-  }
-
-  return response.data;
 }

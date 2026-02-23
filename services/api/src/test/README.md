@@ -8,7 +8,6 @@ The test setup uses a **separate Supabase instance** running on different ports:
 
 | Service   | Development | Testing   |
 | --------- | ----------- | --------- |
-| API       | 54321       | **55321** |
 | Database  | 54322       | **55322** |
 | Studio    | 54323       | **55323** |
 | Inbucket  | 54324       | **55324** |
@@ -51,34 +50,17 @@ pnpm w:api test:check-supabase
 
 This script checks if the **test instance** (port 55321) is accessible.
 
-### 3. Run Database Migrations (Optional)
+### 3. Run Tests
 
 ```bash
-# Check test Supabase and run migrations + seed
-pnpm w:api test:migrate
-
-# Or run test migrations and seed manually
-pnpm w:db migrate:test
-pnpm w:db seed:test
-```
-
-### 4. Run Integration Tests
-
-```bash
-# Run all integration tests (with auto-migrations)
-pnpm w:api test:integration
-
-# Run integration tests in watch mode
-pnpm w:api test:integration:watch
-
-# Run all tests (unit + integration)
+# Run all tests
 pnpm w:api test
 
-# Run with coverage
-pnpm w:api test:coverage
+# Run tests in watch mode
+pnpm w:api test:watch
 ```
 
-### 5. Manage Test Supabase Instance
+### 4. Manage Test Supabase Instance
 
 ```bash
 # Start test instance
@@ -86,12 +68,6 @@ pnpm w:api test:supabase:start
 
 # Check status
 pnpm w:api test:supabase:status
-
-# Reset test database (clean slate)
-pnpm w:api test:supabase:reset
-
-# Complete database reset with fresh migrations and seed
-pnpm w:api test:db:reset
 
 # Stop test instance
 pnpm w:api test:supabase:stop
@@ -123,7 +99,10 @@ The setup file:
 Utility functions for common test operations:
 
 - `createTestUser()` - Create test users
-- `insertTestData()` - Insert test data
+- `sessionToCookies()` - Convert a Supabase session into cookies
+- `createTestContextWithSession()` - Create a test tRPC context with auth
+- `createIsolatedTestClient()` - Create an isolated Supabase client for parallel tests
+- `createIsolatedSession()` - Sign in with an isolated client and return the session
 
 ## Writing Integration Tests
 
@@ -141,38 +120,6 @@ describe('My Integration Tests', () => {
 
     expect(user).toBeDefined();
   });
-});
-```
-
-### Testing Real-time Features
-
-```typescript
-it('should handle real-time subscriptions', async () => {
-  let received = false;
-
-  const subscription = supabaseTestClient
-    .channel('test-changes')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'my_table',
-      },
-      () => {
-        received = true;
-      },
-    )
-    .subscribe();
-
-  // Trigger change
-  await insertTestData('my_table', { name: 'test' });
-
-  // Wait for real-time event
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  await supabaseTestClient.removeChannel(subscription);
-  expect(received).toBe(true);
 });
 ```
 
@@ -233,7 +180,6 @@ If tests fail due to missing tables:
 
 Default ports from `supabase/supabase-dev.toml`:
 
-- API: 54321
 - DB: 54322
 - Studio: 54323
 
@@ -243,16 +189,17 @@ Change ports in config if they conflict with other services.
 
 ```
 src/test/
-├── README.md                      # This file
-├── setup.ts                       # Global test setup
-├── supabase-utils.ts              # Test utility functions
-├── check-supabase.ts              # Supabase health check script
-└── integration/
-    └── supabase.integration.test.ts   # Integration test examples
+├── README.md                # This file
+├── setup.ts                 # Global test setup
+├── globalSetup.ts           # Vitest global setup
+├── supabase-utils.ts        # Test utility functions
+├── supabase-test.ts         # Supabase instance management
+├── check-supabase.ts        # Supabase health check script
+└── helpers/                 # Test data managers
 ```
 
 ## Configuration Files
 
 - `vitest.config.ts` - Vitest configuration with Supabase environment
-- `../../supabase/supabase-dev.toml` - Supabase local configuration
+- `../../supabase/supabase-test.toml` - Supabase test configuration
 - `package.json` - Test scripts and dependencies
