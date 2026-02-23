@@ -136,20 +136,17 @@ export function OverviewSectionForm({
     }
   }, AUTOSAVE_DEBOUNCE_MS);
 
-  // Non-draft: prefer store (localStorage buffer) over API data.
-  // Draft: use API data (query cache kept fresh via onSettled invalidation).
-  const initialName =
-    !isDraft && instanceData?.name
-      ? instanceData.name
-      : (instance.name ?? decisionName ?? '');
+  // Prefer store (localStorage buffer) over API data — the store is written
+  // synchronously on every save, so it's always the freshest source.
+  const initialStewardProfileId =
+    instanceData?.stewardProfileId ?? instance.steward?.id ?? '';
+  const initialName = instanceData?.name ?? instance.name ?? decisionName ?? '';
   const initialDescription =
-    !isDraft && instanceData?.description
-      ? instanceData.description
-      : (instance.description ?? '');
+    instanceData?.description ?? instance.description ?? '';
 
   const form = useAppForm({
     defaultValues: {
-      stewardProfileId: instanceData?.stewardProfileId ?? '',
+      stewardProfileId: initialStewardProfileId,
       name: initialName,
       description: initialDescription,
       organizeByCategories: instanceData?.organizeByCategories ?? true,
