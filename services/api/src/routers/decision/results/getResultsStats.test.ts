@@ -236,14 +236,10 @@ describe.concurrent('getResultsStats', () => {
 
     await expect(
       caller.decision.getResultsStats({ instanceId: instance.id }),
-    ).rejects.toThrow(
-      expect.objectContaining({
-        code: 'UNAUTHORIZED',
-      }),
-    );
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('should throw NOT_FOUND for non-existent instance ID', async ({
+  it('should throw for non-existent instance ID', async ({
     task,
     onTestFinished,
   }) => {
@@ -257,10 +253,6 @@ describe.concurrent('getResultsStats', () => {
 
     await expect(
       caller.decision.getResultsStats({ instanceId: randomUUID() }),
-    ).rejects.toThrow(
-      expect.objectContaining({
-        code: 'NOT_FOUND',
-      }),
-    );
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 });
