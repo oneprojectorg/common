@@ -20,9 +20,11 @@ import {
 export function ProcessBuilderStoreInitializer({
   decisionProfileId,
   serverData,
+  isDraft,
 }: {
   decisionProfileId: string;
   serverData: FormInstanceData;
+  isDraft: boolean;
 }) {
   const serverDataRef = useRef(serverData);
   serverDataRef.current = serverData;
@@ -34,21 +36,27 @@ export function ProcessBuilderStoreInitializer({
 
       const base = serverDataRef.current;
 
-      // Only overlay localStorage values that are defined and non-empty.
-      // This prevents stale empty strings or undefined keys from
-      // clobbering valid server data.
-      const merged: FormInstanceData = { ...base };
-      if (existing) {
-        for (const [key, value] of Object.entries(existing)) {
-          if (value !== undefined && value !== '') {
-            (merged as Record<string, unknown>)[key] = value;
+      // For drafts, use server data directly — localStorage may contain
+      // stale edits from a previous session that have already been saved.
+      // For non-draft (launched) processes, overlay localStorage on top
+      // since not all fields are persisted to the API yet.
+      let data: FormInstanceData;
+      if (isDraft) {
+        data = base;
+      } else {
+        data = { ...base };
+        if (existing) {
+          for (const [key, value] of Object.entries(existing)) {
+            if (value !== undefined && value !== '') {
+              (data as Record<string, unknown>)[key] = value;
+            }
           }
         }
       }
 
       useProcessBuilderStore
         .getState()
-        .setInstanceData(decisionProfileId, merged);
+        .setInstanceData(decisionProfileId, data);
     });
 
     void useProcessBuilderStore.persist.rehydrate();

@@ -48,6 +48,7 @@ const EditDecisionPage = async ({
       <ProcessBuilderStoreInitializer
         decisionProfileId={decisionProfile.id}
         serverData={serverData}
+        isDraft={processInstance.status === 'draft'}
       />
       <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
       <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
