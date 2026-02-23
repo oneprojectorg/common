@@ -1,6 +1,5 @@
 import { cache } from '@op/cache';
-import { NotFoundError, UnauthorizedError, getResultsStats } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { getResultsStats } from '@op/common';
 
 import {
   getResultsStatsInputSchema,
@@ -15,7 +14,7 @@ export const getResultsStatsRouter = router({
     .input(getResultsStatsInputSchema)
     .output(resultsStatsEncoder.nullable())
     .query(async ({ ctx, input }) => {
-      const { user, logger } = ctx;
+      const { user } = ctx;
       const { instanceId } = input;
 
       const stats = await cache({
