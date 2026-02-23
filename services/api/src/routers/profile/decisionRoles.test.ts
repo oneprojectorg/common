@@ -119,7 +119,7 @@ describe.concurrent('profile.decisionRoles', () => {
     });
 
     // Verify the capabilities can be retrieved — read is true because updateDecisionRoles always forces READ
-    const getResult = await caller.getDecisionRoles({
+    const getResult = await caller.getDecisionRole({
       roleId: customRole!.id,
       profileId: profile.id,
     });
