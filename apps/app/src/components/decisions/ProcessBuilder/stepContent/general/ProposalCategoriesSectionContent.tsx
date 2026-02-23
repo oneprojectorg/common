@@ -44,6 +44,9 @@ export function ProposalCategoriesSectionContent({
     (s) => s.instances[decisionProfileId],
   );
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
+  const setProposalTemplate = useProcessBuilderStore(
+    (s) => s.setProposalTemplate,
+  );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
@@ -85,12 +88,14 @@ export function ProposalCategoriesSectionContent({
     };
 
     if (existingTemplate) {
-      mutation.proposalTemplate = ensureLockedFields(existingTemplate, {
+      const syncedTemplate = ensureLockedFields(existingTemplate, {
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
         categories: data.categories,
         requireCategorySelection: data.requireCategorySelection,
       });
+      mutation.proposalTemplate = syncedTemplate;
+      setProposalTemplate(decisionProfileId, syncedTemplate);
     }
 
     updateInstance.mutate(mutation, {
