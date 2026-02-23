@@ -7,12 +7,8 @@ import { serverExtensions } from './tiptapExtensions';
 /**
  * Converts TipTap JSON fragments to HTML strings.
  *
- * All fragments are stored as valid ProseMirror content (paragraph-wrapped)
- * via `useCollaborativeFragment`, so every fragment — text fields, dropdowns,
- * money fields — can be processed through `generateHTML()`.
- *
- * Filtering by field type (e.g. excluding scalar values from card previews)
- * is the caller's responsibility via `x-format`.
+ * The source data is our own JSON from TipTap Cloud — not user-supplied HTML — so
+ * the output is deterministic and does not require sanitization.
  *
  * @param fragments - TipTap fragment response from the collaboration service
  * @returns Record mapping fragment name to HTML string
