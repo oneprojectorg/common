@@ -10,85 +10,12 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
-import { buildCategorySchema } from './proposalDataSchema';
 import type {
   DecisionInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
-import type { ProposalPropertySchema, ProposalTemplateSchema } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
-
-/**
- * Synchronizes the proposalTemplate's category field, field order, and
- * required array with the current process config (categories list and
- * requireCategorySelection flag).  This ensures the template stays
- * consistent even when only config is updated.
- */
-function syncProposalTemplateWithConfig(
-  instanceData: DecisionInstanceData,
-): DecisionInstanceData {
-  const template = instanceData.proposalTemplate as
-    | ProposalTemplateSchema
-    | undefined;
-  if (!template) {
-    return instanceData;
-  }
-
-  const config = instanceData.config;
-  const categories = config?.categories ?? [];
-  const properties = template.properties ?? {};
-  let updatedProperties = { ...properties };
-
-  // Sync category field options
-  if (categories.length > 0) {
-    const categoryLabels = categories.map((c) => c.label);
-    const existing = properties.category;
-    updatedProperties.category = buildCategorySchema(
-      categoryLabels,
-      existing as Record<string, unknown>,
-    ) as ProposalPropertySchema;
-    // Preserve existing title
-    if (existing?.title) {
-      updatedProperties.category.title = existing.title;
-    }
-  } else if (properties.category) {
-    const { category: _, ...rest } = updatedProperties;
-    updatedProperties = rest;
-  }
-
-  // Sync x-field-order
-  const order = template['x-field-order'] ?? [];
-  const hasCategory = 'category' in updatedProperties;
-  let updatedOrder: string[];
-  if (hasCategory && !order.includes('category')) {
-    const titleIdx = order.indexOf('title');
-    updatedOrder = [...order];
-    updatedOrder.splice(titleIdx + 1, 0, 'category');
-  } else if (!hasCategory) {
-    updatedOrder = order.filter((k) => k !== 'category');
-  } else {
-    updatedOrder = order;
-  }
-
-  // Sync required array
-  const required = new Set(template.required ?? []);
-  if (updatedProperties.category && config?.requireCategorySelection) {
-    required.add('category');
-  } else {
-    required.delete('category');
-  }
-
-  return {
-    ...instanceData,
-    proposalTemplate: {
-      ...template,
-      properties: updatedProperties,
-      'x-field-order': updatedOrder,
-      required: [...required],
-    } as DecisionInstanceData['proposalTemplate'],
-  };
-}
 
 /**
  * Updates a decision process instance.
@@ -114,7 +41,7 @@ export const updateDecisionInstance = async ({
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema + embedded UI Schema) */
-  proposalTemplate?: ProposalTemplateSchema;
+  proposalTemplate?: Record<string, unknown>;
   user: User;
 }) => {
   // Fetch existing instance
@@ -178,10 +105,6 @@ export const updateDecisionInstance = async ({
         ...config,
       };
     }
-
-    // Sync proposalTemplate with the (possibly updated) config so that
-    // category field options, field order, and required stay consistent.
-    updatedInstanceData = syncProposalTemplateWithConfig(updatedInstanceData);
 
     // Apply phase updates — replaces the full phases array to accommodate
     // adding, removing, and reordering phases from the phase editor.
