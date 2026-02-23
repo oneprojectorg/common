@@ -70,8 +70,8 @@ export const inviteUsersToProfile = async ({
     // Get the requester's profile for the inviter name
     assertProfile(requesterProfileId),
     // Get all target roles
-    db._query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, uniqueRoleIds),
+    db.query.accessRoles.findMany({
+      where: { id: { in: uniqueRoleIds } },
     }),
     // Get all users with their profile memberships for this profile
     db._query.users.findMany({
@@ -83,26 +83,29 @@ export const inviteUsersToProfile = async ({
       },
     }),
     // Get all existing allowList entries for these emails
-    db._query.allowList.findMany({
-      where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+    db.query.allowList.findMany({
+      where: { email: { in: normalizedEmails } },
     }),
     // Get existing pending invites for this profile (acceptedOn is null = pending)
-    db._query.profileInvites.findMany({
-      where: (table, { inArray, eq, and, isNull }) =>
-        and(
-          inArray(table.email, normalizedEmails),
-          eq(table.profileId, profileId),
-          isNull(table.acceptedOn),
-        ),
+    db.query.profileInvites.findMany({
+      where: {
+        email: { in: normalizedEmails },
+        profileId,
+        acceptedOn: { isNull: true },
+      },
     }),
     getProfileAccessUser({
       user,
       profileId,
     }),
-    // Get the proposal for building the invite URL
-    db._query.proposals.findFirst({
-      where: (table, { eq }) => eq(table.profileId, profileId),
-      columns: { processInstanceId: true },
+    // Get the proposal with its decision profile for building the invite URL
+    db.query.proposals.findFirst({
+      where: { profileId },
+      with: {
+        processInstance: {
+          with: { profile: true },
+        },
+      },
     }),
   ]);
 
@@ -143,22 +146,9 @@ export const inviteUsersToProfile = async ({
 
   // Build the full invite URL for proposal profiles
   let inviteUrl = baseUrl;
-  if (profile.type === 'proposal' && proposalWithDecision?.processInstanceId) {
-    const processInstance = await db._query.processInstances.findFirst({
-      where: (table, { eq }) =>
-        eq(table.id, proposalWithDecision.processInstanceId),
-      columns: { profileId: true },
-    });
-    const decisionProfileId = processInstance?.profileId;
-    if (decisionProfileId) {
-      const decisionProfile = await db._query.profiles.findFirst({
-        where: (table, { eq }) => eq(table.id, decisionProfileId),
-        columns: { slug: true },
-      });
-      if (decisionProfile?.slug) {
-        inviteUrl = `${baseUrl}/decisions/${decisionProfile.slug}/proposal/${profileId}/invite`;
-      }
-    }
+  const decisionSlug = proposalWithDecision?.processInstance?.profile?.slug;
+  if (profile.type === 'proposal' && decisionSlug) {
+    inviteUrl = `${baseUrl}/decisions/${decisionSlug}/proposal/${profileId}/invite`;
   }
 
   const usersByEmail = new Map(
