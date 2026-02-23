@@ -14,21 +14,10 @@ async function checkSupabase() {
   try {
     const supabase = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
 
-    // Try to make a simple request
-    const { error } = await supabase.from('_health_check').select('*').limit(1);
+    // Use auth endpoint to check if Supabase is running (PostgREST is disabled)
+    const { error } = await supabase.auth.getSession();
 
-    // Even if the table doesn't exist, getting a proper error response means Supabase is running
-    if (
-      error &&
-      (error.message.includes('relation "_health_check" does not exist') ||
-        error.message.includes(
-          'relation "public._health_check" does not exist',
-        ))
-    ) {
-      console.log('✅ Supabase is running and accessible');
-      console.log(`   URL: ${TEST_SUPABASE_URL}`);
-      return true;
-    } else if (!error) {
+    if (!error) {
       console.log('✅ Supabase is running and accessible');
       console.log(`   URL: ${TEST_SUPABASE_URL}`);
       return true;

@@ -3,7 +3,7 @@
 project_id = "common"
 
 [api]
-enabled = true
+enabled = false
 # Port to use for the API URL.
 port = 54321
 schemas = [
