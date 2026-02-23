@@ -30,11 +30,13 @@ const generateInviteResultMessage = (
  */
 export const inviteUsersToProfile = async ({
   invitations,
+  profileId,
   requesterProfileId,
   personalMessage,
   user,
 }: {
   invitations: Array<{ email: string; roleId: string }>;
+  profileId: string;
   requesterProfileId: string;
   personalMessage?: string;
   user: User;
@@ -55,43 +57,55 @@ export const inviteUsersToProfile = async ({
 
   const [
     profile,
+    requesterProfile,
     targetRoles,
     existingUsers,
     existingAllowListEntries,
     existingPendingInvites,
     profileUser,
+    proposalWithDecision,
   ] = await Promise.all([
-    // Get the profile details for the invite
+    // Get the target profile details
+    assertProfile(profileId),
+    // Get the requester's profile for the inviter name
     assertProfile(requesterProfileId),
     // Get all target roles
-    db._query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, uniqueRoleIds),
+    db.query.accessRoles.findMany({
+      where: { id: { in: uniqueRoleIds } },
     }),
     // Get all users with their profile memberships for this profile
     db._query.users.findMany({
       where: (table, { inArray }) => inArray(table.email, normalizedEmails),
       with: {
         profileUsers: {
-          where: (table, { eq }) => eq(table.profileId, requesterProfileId),
+          where: (table, { eq }) => eq(table.profileId, profileId),
         },
       },
     }),
     // Get all existing allowList entries for these emails
-    db._query.allowList.findMany({
-      where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+    db.query.allowList.findMany({
+      where: { email: { in: normalizedEmails } },
     }),
     // Get existing pending invites for this profile (acceptedOn is null = pending)
-    db._query.profileInvites.findMany({
-      where: (table, { inArray, eq, and, isNull }) =>
-        and(
-          inArray(table.email, normalizedEmails),
-          eq(table.profileId, requesterProfileId),
-          isNull(table.acceptedOn),
-        ),
+    db.query.profileInvites.findMany({
+      where: {
+        email: { in: normalizedEmails },
+        profileId,
+        acceptedOn: { isNull: true },
+      },
     }),
     getProfileAccessUser({
       user,
-      profileId: requesterProfileId,
+      profileId,
+    }),
+    // Get the proposal with its decision profile for building the invite URL
+    db.query.proposals.findFirst({
+      where: { profileId },
+      with: {
+        processInstance: {
+          with: { profile: true },
+        },
+      },
     }),
   ]);
 
@@ -126,9 +140,16 @@ export const inviteUsersToProfile = async ({
   };
 
   // Compute repeated values once (same for every invitation)
-  const inviterName = profileUser.profile.name || user.email || 'A team member';
+  const inviterName = requesterProfile.name || user.email || 'A team member';
   const profileName = profile.name;
-  const inviteUrl = OPURLConfig('APP').ENV_URL;
+  const baseUrl = OPURLConfig('APP').ENV_URL;
+
+  // Build the full invite URL for proposal profiles
+  let inviteUrl = baseUrl;
+  const decisionSlug = proposalWithDecision?.processInstance?.profile?.slug;
+  if (profile.type === 'proposal' && decisionSlug) {
+    inviteUrl = `${baseUrl}/decisions/${decisionSlug}/proposal/${profileId}/invite`;
+  }
 
   const usersByEmail = new Map(
     existingUsers.map((user) => [user.email.toLowerCase(), user]),
@@ -215,10 +236,10 @@ export const inviteUsersToProfile = async ({
     // Collect profile invite entry
     profileInviteEntries.push({
       email,
-      profileId: requesterProfileId,
+      profileId,
       profileEntityType: profile.type,
       accessRoleId: targetRole.id,
-      invitedBy: profileUser.profileId,
+      invitedBy: requesterProfileId,
       inviteeProfileId: existingUser?.profileId ?? undefined,
       message: personalMessage,
     });
@@ -247,7 +268,7 @@ export const inviteUsersToProfile = async ({
       await event.send({
         name: Events.profileInviteSent.name,
         data: {
-          senderProfileId: profileUser.profileId,
+          senderProfileId: requesterProfileId,
           invitations: emailsToInvite,
         },
       });

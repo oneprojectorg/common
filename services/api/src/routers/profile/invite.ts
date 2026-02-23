@@ -1,5 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
-import { inviteUsersToProfile } from '@op/common';
+import { getIndividualProfileId, inviteUsersToProfile } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -41,10 +41,12 @@ export const inviteProfileUserRouter = router({
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
+      const requesterProfileId = await getIndividualProfileId(user.id);
 
       const result = await inviteUsersToProfile({
         invitations: input.invitations,
-        requesterProfileId: input.profileId,
+        profileId: input.profileId,
+        requesterProfileId,
         personalMessage: input.personalMessage,
         user,
       });
