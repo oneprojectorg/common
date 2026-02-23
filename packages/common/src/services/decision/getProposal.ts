@@ -242,14 +242,6 @@ export const getPermissionsOnProposal = async ({
   const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
   let isEditable = isOwner;
 
-  // Disable editing if we're in the results phase
-  if (isEditable && proposal.processInstance) {
-    const currentStateId = proposal.processInstance.currentStateId;
-    if (currentStateId === 'results') {
-      isEditable = false;
-    }
-  }
-
   // If it's not already editable, check profile-level edit permission on the proposal's profile
   if (!isEditable && proposal.profileId) {
     const proposalProfileUser = await getProfileAccessUser({
@@ -274,6 +266,14 @@ export const getPermissionsOnProposal = async ({
       { decisions: permission.ADMIN },
       instanceProfileUser?.roles ?? [],
     );
+  }
+
+  // Disable editing if we're in the results phase
+  if (isEditable && proposal.processInstance) {
+    const currentStateId = proposal.processInstance.currentStateId;
+    if (currentStateId === 'results') {
+      isEditable = false;
+    }
   }
 
   return isEditable;
