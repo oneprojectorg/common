@@ -97,6 +97,9 @@ const processConfigEncoder = z.object({
   categories: z.array(categoryEncoder).optional(),
   requireCategorySelection: z.boolean().optional(),
   allowMultipleCategories: z.boolean().optional(),
+  organizeByCategories: z.boolean().optional(),
+  requireCollaborativeProposals: z.boolean().optional(),
+  isPrivate: z.boolean().optional(),
 });
 
 /** DecisionSchemaDefinition encoder */
@@ -593,6 +596,9 @@ export const updateDecisionInstanceInputSchema = z.object({
       categories: z.array(categoryEncoder).optional(),
       requireCategorySelection: z.boolean().optional(),
       allowMultipleCategories: z.boolean().optional(),
+      organizeByCategories: z.boolean().optional(),
+      requireCollaborativeProposals: z.boolean().optional(),
+      isPrivate: z.boolean().optional(),
     })
     .optional(),
   /** Phase overrides for dates, rules, and settings */

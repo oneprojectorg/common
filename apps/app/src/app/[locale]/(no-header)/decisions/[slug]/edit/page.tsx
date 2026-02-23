@@ -41,6 +41,10 @@ const EditDecisionPage = async ({
     categories: instanceData.config?.categories,
     requireCategorySelection: instanceData.config?.requireCategorySelection,
     allowMultipleCategories: instanceData.config?.allowMultipleCategories,
+    organizeByCategories: instanceData.config?.organizeByCategories,
+    requireCollaborativeProposals:
+      instanceData.config?.requireCollaborativeProposals,
+    isPrivate: instanceData.config?.isPrivate,
   };
 
   return (

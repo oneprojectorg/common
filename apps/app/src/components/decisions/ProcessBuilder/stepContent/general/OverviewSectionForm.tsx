@@ -115,6 +115,8 @@ export function OverviewSectionForm({
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
     setSaveStatus(decisionProfileId, 'saving');
 
+    // Always buffer in the store so the UI reflects the latest values.
+    // For non-draft this also persists to localStorage as an offline buffer.
     setInstanceData(decisionProfileId, {
       name: values.name,
       description: values.description,
@@ -130,6 +132,11 @@ export function OverviewSectionForm({
         name: values.name,
         description: values.description,
         stewardProfileId: values.stewardProfileId || undefined,
+        config: {
+          organizeByCategories: values.organizeByCategories,
+          requireCollaborativeProposals: values.requireCollaborativeProposals,
+          isPrivate: values.isPrivate,
+        },
       });
     } else {
       markSaved(decisionProfileId);

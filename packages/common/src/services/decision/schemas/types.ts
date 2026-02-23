@@ -61,6 +61,9 @@ export interface ProcessConfig {
   categories?: ProposalCategory[];
   requireCategorySelection?: boolean;
   allowMultipleCategories?: boolean;
+  organizeByCategories?: boolean;
+  requireCollaborativeProposals?: boolean;
+  isPrivate?: boolean;
 }
 
 /**

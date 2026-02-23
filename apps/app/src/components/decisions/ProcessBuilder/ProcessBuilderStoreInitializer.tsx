@@ -12,10 +12,12 @@ import {
  * validation (and other consumers) have data immediately — even before
  * the user visits any individual section.
  *
- * Merge strategy: server data is the base layer, localStorage edits overlay
- * on top — but only for keys that have a defined, non-empty value. This
- * prevents stale localStorage entries (e.g. an empty string from a cleared
- * field in a previous session) from overwriting fresh server data.
+ * Merge strategy depends on instance status:
+ * - Draft: server data is used directly (localStorage is ignored to avoid
+ *   stale edits overwriting already-saved data).
+ * - Non-draft: server data is the base layer, localStorage edits overlay
+ *   on top for keys with a defined, non-empty value (since not all fields
+ *   are persisted to the API yet).
  */
 export function ProcessBuilderStoreInitializer({
   decisionProfileId,
@@ -36,8 +38,8 @@ export function ProcessBuilderStoreInitializer({
 
       const base = serverDataRef.current;
 
-      // For drafts, use server data directly — localStorage may contain
-      // stale edits from a previous session that have already been saved.
+      // For drafts, prefer server data — localStorage may contain stale
+      // edits from a previous session that have already been saved.
       // For non-draft (launched) processes, overlay localStorage on top
       // since not all fields are persisted to the API yet.
       let data: FormInstanceData;
@@ -61,7 +63,7 @@ export function ProcessBuilderStoreInitializer({
 
     void useProcessBuilderStore.persist.rehydrate();
     return unsubscribe;
-  }, [decisionProfileId]);
+  }, [decisionProfileId, isDraft]);
 
   return null;
 }
