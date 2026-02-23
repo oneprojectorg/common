@@ -1,8 +1,4 @@
-import {
-  getVotingStatus,
-  submitVote,
-  validateVoteSelectionService,
-} from '@op/common';
+import { getVotingStatus, submitVote } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -15,11 +11,6 @@ const submitVoteInput = z.object({
   selectedProposalIds: z.array(z.uuid()).min(1),
   schemaVersion: z.string().optional(),
   customData: customDataSchema,
-});
-
-const validateVoteSelectionInput = z.object({
-  processInstanceId: z.uuid(),
-  selectedProposalIds: z.array(z.uuid()),
 });
 
 const votingProcedure = commonAuthedProcedure({
@@ -54,20 +45,6 @@ export const votingRouter = router({
       return await getVotingStatus({
         data: {
           processInstanceId: input.processInstanceId,
-          authUserId: ctx.user.id,
-        },
-        authUserId: ctx.user.id,
-      });
-    }),
-
-  // Validate vote selection against current schema
-  validateVoteSelection: votingProcedure
-    .input(validateVoteSelectionInput)
-    .query(async ({ input, ctx }) => {
-      return await validateVoteSelectionService({
-        data: {
-          processInstanceId: input.processInstanceId,
-          selectedProposalIds: input.selectedProposalIds,
           authUserId: ctx.user.id,
         },
         authUserId: ctx.user.id,

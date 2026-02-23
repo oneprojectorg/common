@@ -112,7 +112,7 @@ export const updateProposal = async ({
       user: { id: user.id },
       instance: processInstance,
       profilePermissions: { profile: permission.UPDATE },
-      orgFallbackPermissions: { decisions: permission.UPDATE },
+      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
     });
 
     // Status and visibility changes require ADMIN
@@ -121,7 +121,7 @@ export const updateProposal = async ({
         user: { id: user.id },
         instance: processInstance,
         profilePermissions: { profile: permission.ADMIN },
-        orgFallbackPermissions: { decisions: permission.ADMIN },
+        orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
     }
 

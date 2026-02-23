@@ -18,9 +18,9 @@ import {
 import {
   assertInstanceProfileAccess,
   getIndividualProfileId,
-  getOrgAccessUser,
+  getProfileAccessUser,
 } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
+import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -167,6 +167,7 @@ export const submitVote = async ({
       where: eq(processInstances.id, data.processInstanceId),
       columns: {
         id: true,
+        profileId: true,
         ownerProfileId: true,
         instanceData: true,
       },
@@ -176,20 +177,22 @@ export const submitVote = async ({
       throw new NotFoundError('Process instance not found');
     }
 
+    if (!processInstance.profileId) {
+      throw new NotFoundError('Decision profile not found');
+    }
+
     const instanceData = processInstance.instanceData as DecisionInstanceData;
 
-    // Get organization from owner profile
-    const org = await assertOrganizationByProfileId(
-      processInstance.ownerProfileId,
-    );
-
     // Check user permissions
-    const orgUser = await getOrgAccessUser({
+    const profileUser = await getProfileAccessUser({
       user: { id: authUserId },
-      organizationId: org.id,
+      profileId: processInstance.profileId,
     });
 
-    assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+    assertAccess(
+      [{ decisions: permission.ADMIN }, { decisions: decisionPermission.VOTE }],
+      profileUser?.roles ?? [],
+    );
 
     // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
@@ -376,7 +379,7 @@ export const getVotingStatus = async ({
       user: { id: authUserId },
       instance: processInstance,
       profilePermissions: { profile: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
+      orgFallbackPermissions: [{ decisions: permission.READ }],
     });
 
     // Extract voting configuration from current phase/state
@@ -466,144 +469,5 @@ export const getVotingStatus = async ({
     }
     console.error('Error getting voting status:', error);
     throw new CommonError('Failed to get voting status');
-  }
-};
-
-export const validateVoteSelectionService = async ({
-  data,
-  authUserId,
-}: {
-  data: ValidateVoteSelectionInput;
-  authUserId: string;
-}): Promise<VoteValidationResult> => {
-  if (!authUserId) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
-  try {
-    // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      columns: {
-        id: true,
-        ownerProfileId: true,
-        instanceData: true,
-      },
-    });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance not found');
-    }
-
-    const instanceData = processInstance.instanceData as DecisionInstanceData;
-
-    // Get organization from owner profile
-    const org = await assertOrganizationByProfileId(
-      processInstance.ownerProfileId,
-    );
-
-    // Check user permissions
-    const orgUser = await getOrgAccessUser({
-      user: { id: authUserId },
-      organizationId: org.id,
-    });
-
-    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
-
-    // Extract voting configuration from current phase/state
-    const phaseConfig = getCurrentPhaseConfig(processInstance);
-
-    if (!phaseConfig) {
-      return {
-        isValid: false,
-        errors: ['Current state not found'],
-        maxVotesAllowed: 0,
-        schemaConstraints: {
-          schemaType: 'invalid',
-          allowDecisions: false,
-        },
-        proposalValidation: [],
-      };
-    }
-
-    // Build schema data for validation
-    const schemaData = {
-      allowProposals: phaseConfig.allowProposals,
-      allowDecisions: phaseConfig.allowDecisions,
-      instanceData: {
-        maxVotesPerMember:
-          Number(instanceData.fieldValues?.maxVotesPerMember) || 3,
-      },
-      schemaType: 'simple',
-    };
-
-    const schemaResult = processDecisionProcessSchema(schemaData);
-
-    if (!schemaResult.isValid || !schemaResult.votingConfig) {
-      return {
-        isValid: false,
-        errors: ['Invalid process schema'],
-        maxVotesAllowed: 0,
-        schemaConstraints: {
-          schemaType: 'invalid',
-          allowDecisions: false,
-        },
-        proposalValidation: [],
-      };
-    }
-
-    const { votingConfig } = schemaResult;
-
-    // Get available proposals
-    const availableProposals = await db._query.proposals.findMany({
-      where: eq(proposals.processInstanceId, data.processInstanceId),
-    });
-
-    const availableProposalIds = availableProposals.map((p) => p.id);
-
-    // Validate selection
-    const validation = validateVoteSelection(
-      data.selectedProposalIds,
-      votingConfig.maxVotesPerMember,
-      availableProposalIds,
-    );
-
-    // Validate individual proposals
-    const proposalValidation = data.selectedProposalIds.map(
-      (proposalId: string) => {
-        const proposal = availableProposals.find((p) => p.id === proposalId);
-        const errors: string[] = [];
-
-        if (!proposal) {
-          errors.push('Proposal not found');
-        } else if (proposal.status !== ProposalStatus.SUBMITTED) {
-          errors.push('Proposal is not available for voting');
-        }
-
-        return {
-          proposalId,
-          isValid: errors.length === 0,
-          errors,
-        };
-      },
-    );
-
-    return {
-      isValid: validation.isValid,
-      errors: validation.errors,
-      maxVotesAllowed: votingConfig.maxVotesPerMember,
-      schemaConstraints: {
-        schemaType: schemaResult.schemaType,
-        allowDecisions: votingConfig.allowDecisions,
-        additionalValidation: votingConfig.additionalConfig,
-      },
-      proposalValidation,
-    };
-  } catch (error) {
-    if (error instanceof CommonError) {
-      throw error;
-    }
-    console.error('Error validating vote selection:', error);
-    throw new CommonError('Failed to validate vote selection');
   }
 };

@@ -4,6 +4,7 @@ import { createRoleRouter } from './createRole';
 import { declineInviteRouter } from './declineInvite';
 import { deleteProfileInviteRouter } from './deleteProfileInvite';
 import { deleteRoleRouter } from './deleteRole';
+import { getDecisionRoleRouter } from './getDecisionRole';
 import { getProfileRouter } from './getProfile';
 import { inviteProfileUserRouter } from './invite';
 import { listProfileInvitesRouter } from './listProfileInvites';
@@ -17,12 +18,15 @@ import {
   updateJoinRequestRouter,
 } from './requests';
 import { searchProfilesRouter } from './searchProfiles';
+import { updateDecisionRolesRouter } from './updateDecisionRoles';
 import { updateRolePermissionRouter } from './updateRolePermission';
 import { usersRouter } from './users';
 
 const profileRouter = mergeRouters(
   acceptInviteRouter,
   declineInviteRouter,
+  getDecisionRoleRouter,
+  updateDecisionRolesRouter,
   deleteProfileInviteRouter,
   getProfileRouter,
   searchProfilesRouter,

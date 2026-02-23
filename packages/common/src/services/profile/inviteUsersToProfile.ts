@@ -8,6 +8,7 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
+import { decisionPermission } from '../decision/permissions';
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -100,7 +101,13 @@ export const inviteUsersToProfile = async ({
     );
   }
 
-  assertAccess({ profile: permission.ADMIN }, profileUser.roles ?? []);
+  assertAccess(
+    [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.INVITE_MEMBERS },
+    ],
+    profileUser.roles ?? [],
+  );
 
   // Validate all roles exist
   const rolesById = new Map(targetRoles.map((r) => [r.id, r]));

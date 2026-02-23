@@ -1,7 +1,14 @@
+import { decisionPermission } from '@op/common';
 import { db } from '@op/db/client';
-import { allowList } from '@op/db/schema';
+import {
+  accessRolePermissionsOnAccessZones,
+  accessRoles,
+  allowList,
+  profileUserToAccessRoles,
+} from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { event } from '@op/events';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
@@ -400,7 +407,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     });
   });
 
-  it('should fail when user lacks ADMIN permission', async ({
+  it('should fail when user lacks ADMIN and INVITE_MEMBERS permissions', async ({
     task,
     onTestFinished,
   }) => {
@@ -416,7 +423,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
 
     const targetUser = await testData.createStandaloneUser();
 
-    // Login as member (not admin)
+    // Login as member (not admin, no INVITE_MEMBERS decision capability)
     const { session } = await createIsolatedSession(memberUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -428,6 +435,74 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     ).rejects.toMatchObject({
       cause: { name: 'AccessControlException' },
     });
+  });
+
+  it('should allow user with INVITE_MEMBERS decision capability to invite', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+
+    const memberUser = memberUsers[0];
+    if (!memberUser) {
+      throw new Error('Expected memberUser to be defined');
+    }
+
+    // Create a custom role with INVITE_MEMBERS decision capability
+    const [inviterRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `Inviter Role ${task.id}`,
+        description: 'Can invite members via decision capability',
+        profileId: profile.id,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (inviterRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, inviterRole.id));
+      }
+    });
+
+    // Set INVITE_MEMBERS decision bit on the decisions zone for this role
+    const decisionsZone = await db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, 'decisions'),
+    });
+
+    if (!decisionsZone) {
+      throw new Error('Decisions zone not found');
+    }
+
+    await db.insert(accessRolePermissionsOnAccessZones).values({
+      accessRoleId: inviterRole!.id,
+      accessZoneId: decisionsZone.id,
+      permission: decisionPermission.INVITE_MEMBERS,
+    });
+
+    // Assign this role to the member user's profile user
+    await db.insert(profileUserToAccessRoles).values({
+      profileUserId: memberUser.profileUserId,
+      accessRoleId: inviterRole!.id,
+    });
+
+    // Create a standalone user to be invited
+    const targetUser = await testData.createStandaloneUser();
+    testData.trackProfileInvite(targetUser.email, profile.id);
+
+    // Login as the member user (who now has INVITE_MEMBERS capability)
+    const { session } = await createIsolatedSession(memberUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.invite({
+      invitations: [{ email: targetUser.email, roleId: ROLES.MEMBER.id }],
+      profileId: profile.id,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.details.successful).toContain(targetUser.email.toLowerCase());
   });
 
   // This test clears the global event.send mock, so it must run sequentially

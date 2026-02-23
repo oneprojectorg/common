@@ -283,6 +283,67 @@ describe.concurrent('profile.updateRolePermission', () => {
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
+  it('should write the full ACRUD bitfield when updating permissions', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const [customRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `Custom Role ${task.id}`,
+        description: 'A custom role for testing full bitfield write',
+        profileId: profile.id,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (customRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, customRole.id));
+      }
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await caller.updateRolePermission({
+      roleId: customRole!.id,
+      permissions: {
+        admin: false,
+        create: false,
+        read: true,
+        update: true,
+        delete: false,
+      },
+    });
+
+    const decisionsZone = await db._query.accessZones.findFirst({
+      where: (table, { eq }) => eq(table.name, 'decisions'),
+    });
+
+    const finalPerm =
+      await db._query.accessRolePermissionsOnAccessZones.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.accessRoleId, customRole!.id),
+            eq(table.accessZoneId, decisionsZone!.id),
+          ),
+      });
+
+    expect(finalPerm).toBeDefined();
+
+    const acrud = fromBitField(finalPerm!.permission);
+    expect(acrud.create).toBe(false);
+    expect(acrud.read).toBe(true);
+    expect(acrud.update).toBe(true);
+    expect(acrud.delete).toBe(false);
+    expect(acrud.admin).toBe(false);
+  });
+
   it('should not allow admin from different profile to update role permissions', async ({
     task,
     onTestFinished,

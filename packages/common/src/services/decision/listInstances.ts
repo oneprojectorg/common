@@ -1,10 +1,10 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
-import { ProcessStatus, organizations, processInstances } from '@op/db/schema';
+import { ProcessStatus, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getProfileAccessUser } from '../access';
 
 export interface ListInstancesInput {
   ownerProfileId?: string;
@@ -39,22 +39,15 @@ export const listInstances = async ({
     );
   }
 
-  // ASSERT VIEW ACCESS ON ORGUSER
-  const org = await db
-    .select({ id: organizations.id })
-    .from(organizations)
-    .where(eq(organizations.profileId, filterProfileId));
-
-  if (!org[0]?.id) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  const orgUser = await getOrgAccessUser({
-    user,
-    organizationId: org[0].id,
+  const profileUser = await getProfileAccessUser({
+    user: { id: user.id },
+    profileId: filterProfileId,
   });
 
-  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+  assertAccess(
+    [{ decisions: permission.ADMIN }, { decisions: permission.READ }],
+    profileUser?.roles ?? [],
+  );
 
   try {
     // Build filter conditions

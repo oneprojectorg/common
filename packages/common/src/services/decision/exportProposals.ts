@@ -1,19 +1,14 @@
 import { set } from '@op/cache';
 import { ProposalFilter } from '@op/core';
-import { and, db, eq } from '@op/db/client';
-import {
-  ProposalStatus,
-  organizationUsers,
-  organizations,
-  processInstances,
-} from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
-import { UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { NotFoundError } from '../../utils';
+import { getProfileAccessUser } from '../access';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
@@ -34,45 +29,35 @@ export const exportProposals = async ({
 }): Promise<{ exportId: string; organizationId: string }> => {
   const { processInstanceId } = input;
 
-  // Get organization AND verify user membership
+  // Get process instance with profile and org info
   const result = await db
     .select({
+      profileId: processInstances.profileId,
       organizationId: organizations.id,
-      orgUserId: organizationUsers.id,
     })
     .from(processInstances)
     .innerJoin(
       organizations,
       eq(organizations.profileId, processInstances.ownerProfileId),
     )
-    .innerJoin(
-      organizationUsers,
-      and(
-        eq(organizationUsers.organizationId, organizations.id),
-        eq(organizationUsers.authUserId, user.id),
-      ),
-    )
     .where(eq(processInstances.id, processInstanceId))
     .limit(1);
 
   if (!result[0]) {
-    throw new UnauthorizedError(
-      'Process instance not found or you are not a member of this organization',
-    );
+    throw new NotFoundError('Process instance not found');
   }
 
-  // Get full org user with roles for permission check (cached)
-  const orgUser = await getOrgAccessUser({
+  if (!result[0].profileId) {
+    throw new NotFoundError('Decision profile not found');
+  }
+
+  // Check user permissions via profile
+  const profileUser = await getProfileAccessUser({
     user,
-    organizationId: result[0].organizationId,
+    profileId: result[0].profileId,
   });
 
-  // This should always succeed since we validated membership above
-  if (!orgUser) {
-    throw new UnauthorizedError('You are not a member of this organization');
-  }
-
-  assertAccess({ decisions: permission.ADMIN }, orgUser.roles || []);
+  assertAccess([{ decisions: permission.ADMIN }], profileUser?.roles ?? []);
 
   const exportId = randomUUID();
 

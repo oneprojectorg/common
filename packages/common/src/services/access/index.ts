@@ -3,7 +3,7 @@ import { and, db, eq } from '@op/db/client';
 import type { Profile, ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import type { AccessZonePermission, NormalizedRole } from 'access-zones';
+import type { AccessZonePermissionInput, NormalizedRole } from 'access-zones';
 import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
@@ -162,8 +162,8 @@ export const assertInstanceProfileAccess = async ({
 }: {
   user: { id: string };
   instance: { profileId: string | null; ownerProfileId: string | null };
-  profilePermissions: AccessZonePermission;
-  orgFallbackPermissions: AccessZonePermission;
+  profilePermissions: AccessZonePermissionInput;
+  orgFallbackPermissions: AccessZonePermissionInput;
 }) => {
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");

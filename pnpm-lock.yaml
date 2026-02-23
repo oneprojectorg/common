@@ -82,8 +82,8 @@ catalogs:
       specifier: ^3.15.3
       version: 3.17.1
     access-zones:
-      specifier: 1.0.0
-      version: 1.0.0
+      specifier: 1.1.0
+      version: 1.1.0
     drizzle-orm:
       specifier: 1.0.0-beta.11-05230d9
       version: 1.0.0-beta.11-05230d9
@@ -625,7 +625,7 @@ importers:
         version: 2.1.0(@opentelemetry/api-logs@0.208.0)(@opentelemetry/api@1.9.0)(@opentelemetry/instrumentation@0.211.0(@opentelemetry/api@1.9.0))(@opentelemetry/resources@2.5.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.0(@opentelemetry/api@1.9.0))
       access-zones:
         specifier: 'catalog:'
-        version: 1.0.0
+        version: 1.1.0
       ajv-errors:
         specifier: ^3.0.0
         version: 3.0.0(ajv@8.17.1)
@@ -815,7 +815,7 @@ importers:
         version: 2.1.0
       access-zones:
         specifier: 'catalog:'
-        version: 1.0.0
+        version: 1.1.0
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -1220,7 +1220,7 @@ importers:
         version: 2.1.0
       access-zones:
         specifier: 'catalog:'
-        version: 1.0.0
+        version: 1.1.0
       ai:
         specifier: ^4.2.2
         version: 4.2.2(react@19.2.1)(zod@4.1.12)
@@ -1340,7 +1340,7 @@ importers:
         version: 8.11.11
       access-zones:
         specifier: 'catalog:'
-        version: 1.0.0
+        version: 1.1.0
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -5688,8 +5688,8 @@ packages:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
     engines: {node: '>= 0.6'}
 
-  access-zones@1.0.0:
-    resolution: {integrity: sha512-JP9n/ulebplYYnU2ESXvjzcoOThIJSvF/eMjq9DRnCnZrnU1QbgRYiz9RW4M8MjnYTf1UrchNEJfrxMB2lDCZQ==}
+  access-zones@1.1.0:
+    resolution: {integrity: sha512-8wweX7XxeGg/jBXChZaLTo3EV3twRKZSlkPYnhtqJbxuMUNMF125ISahNZLXfbcPC7eyOu/pIIOTFhNtz6Vxlg==}
     engines: {node: '>=16.0.0'}
 
   acorn-import-attributes@1.9.5:
@@ -14727,7 +14727,7 @@ snapshots:
       mime-types: 2.1.35
       negotiator: 0.6.3
 
-  access-zones@1.0.0: {}
+  access-zones@1.1.0: {}
 
   acorn-import-attributes@1.9.5(acorn@8.15.0):
     dependencies:

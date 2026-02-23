@@ -112,16 +112,11 @@ export async function updateRolePermissions({
 
   await assertProfileAdmin(user, role.profileId);
 
-  // Convert boolean permissions to bitfield
   const bitfield = toBitField(permissions);
 
-  // Upsert the permission entry
-  const existing = await db._query.accessRolePermissionsOnAccessZones.findFirst(
-    {
-      where: (table, { eq, and }) =>
-        and(eq(table.accessRoleId, roleId), eq(table.accessZoneId, zone.id)),
-    },
-  );
+  const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
+    where: { accessRoleId: roleId, accessZoneId: zone.id },
+  });
 
   if (existing) {
     await db
