@@ -544,7 +544,7 @@
   "Saved at {time}": "Enregistré à {time}",
   "Failed to save": "Échec de l'enregistrement",
   "Invite": "Inviter",
-  "Invite members to your decision-making process": "Inviter des membres à votre processus de prise de décision",
+  "Invite participants to your decision-making process": "Inviter des participants à votre processus de prise de décision",
   "Search by name or email...": "Rechercher par nom ou courriel...",
   "Invite {email}": "Inviter {email}",
   "No results": "Aucun résultat",
@@ -692,5 +692,7 @@
   "Review": "Review",
   "Submit Proposals": "Submit Proposals",
   "Vote": "Vote",
-  "Advanced permissions": "Advanced permissions"
+  "Advanced permissions": "Advanced permissions",
+  "Invite participants": "Inviter des participants",
+  "Only invited participants can view and participate in this process": "Seuls les participants invités peuvent voir et participer à ce processus"
 }

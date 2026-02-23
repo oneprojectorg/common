@@ -6,8 +6,8 @@ import type { StepId } from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
 import PhasesSection from './stepContent/general/PhasesSection';
 import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
-import MembersSection from './stepContent/members/MembersSection';
-import RolesSection from './stepContent/members/RolesSection';
+import ParticipantsSection from './stepContent/participants/ParticipantsSection';
+import RolesSection from './stepContent/participants/RolesSection';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
 import TemplateEditorSection from './stepContent/template/TemplateEditorSection';
 
@@ -37,9 +37,9 @@ const CONTENT_REGISTRY: ContentRegistry = {
   rubric: {
     criteria: CriteriaSection,
   },
-  members: {
+  participants: {
     roles: RolesSection,
-    members: MembersSection,
+    participants: ParticipantsSection,
   },
 };
 

@@ -54,7 +54,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   templateEditor: validateTemplateEditor,
   criteria: () => true,
   roles: () => true,
-  members: () => true,
+  participants: () => true,
 };
 
 // ============ Checklist Items ============
@@ -113,7 +113,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
   {
     id: 'inviteMembers',
-    labelKey: 'Invite members',
+    labelKey: 'Invite participants',
     validate: () => true,
   },
 ];

@@ -5,7 +5,7 @@ export const STEPS = [
   { id: 'general', labelKey: 'General' },
   { id: 'template', labelKey: 'Proposal Template' },
   { id: 'rubric', labelKey: 'Review Rubric' },
-  { id: 'members', labelKey: 'Members' },
+  { id: 'participants', labelKey: 'Participants' },
 ] as const;
 
 // Derive StepId first so we can use it in SECTIONS_BY_STEP
@@ -19,9 +19,9 @@ export const SECTIONS_BY_STEP = {
   ],
   template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
   rubric: [{ id: 'criteria', labelKey: 'Criteria' }],
-  members: [
+  participants: [
     { id: 'roles', labelKey: 'Roles & permissions' },
-    { id: 'members', labelKey: 'Members' },
+    { id: 'participants', labelKey: 'Participants' },
   ],
 } as const satisfies Record<
   StepId,
@@ -43,12 +43,12 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
     general: true,
     template: true,
     rubric: false,
-    members: true,
+    participants: true,
   },
   sections: {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
     rubric: ['criteria'],
-    members: ['roles', 'members'],
+    participants: ['roles', 'participants'],
   },
 };

@@ -64,7 +64,7 @@ export interface FormInstanceData
   objective?: string;
   /** Total budget available */
   budget?: number;
-  /** Whether to hide budget from members */
+  /** Whether to hide budget from participants */
   hideBudget?: boolean;
   /** Whether to include proposal review phase */
   includeReview?: boolean;

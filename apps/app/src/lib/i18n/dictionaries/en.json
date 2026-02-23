@@ -544,7 +544,7 @@
   "Saved at {time}": "Saved at {time}",
   "Failed to save": "Failed to save",
   "Invite": "Invite",
-  "Invite members to your decision-making process": "Invite members to your decision-making process",
+  "Invite participants to your decision-making process": "Invite participants to your decision-making process",
   "Search by name or email...": "Search by name or email...",
   "Invite {email}": "Invite {email}",
   "No results": "No results",
@@ -693,5 +693,7 @@
   "Review": "Review",
   "Submit Proposals": "Submit Proposals",
   "Vote": "Vote",
-  "Advanced permissions": "Advanced permissions"
+  "Advanced permissions": "Advanced permissions",
+  "Invite participants": "Invite participants",
+  "Only invited participants can view and participate in this process": "Only invited participants can view and participate in this process"
 }
