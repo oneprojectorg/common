@@ -104,20 +104,6 @@ export async function createTestUser(
 }
 
 /**
- * Sign out current user
- */
-export async function signOutTestUser() {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
-  }
-
-  const { error } = await supabaseTestClient.auth.signOut();
-  if (error) {
-    throw new Error(`Failed to sign out: ${error.message}`);
-  }
-}
-
-/**
  * Get current test user session
  */
 export async function getCurrentTestSession() {
