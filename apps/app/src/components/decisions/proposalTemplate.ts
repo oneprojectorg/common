@@ -1,7 +1,7 @@
 /**
  * Proposal Template — JSON Schema utilities.
  *
- * A ProposalTemplate is a plain `RJSFSchema`. Field ordering is stored as a
+ * A ProposalTemplate is a plain JSON Schema. Field ordering is stored as a
  * top-level `x-field-order` array. Per-field widget selection is driven by `x-format`
  * on each property (consumed by the renderer's FORMAT_REGISTRY).
  *
@@ -15,13 +15,10 @@ import {
   parseSchemaOptions,
   schemaHasOptions,
 } from '@op/common/client';
-import type { RJSFSchema } from '@rjsf/utils';
 
 // ---------------------------------------------------------------------------
 // Core types
 // ---------------------------------------------------------------------------
-
-// export type ProposalTemplate = RJSFSchema;
 
 export type FieldType = 'short_text' | 'long_text' | 'dropdown';
 
@@ -63,7 +60,7 @@ function withXFormat(
   return { ...schema, 'x-format': xFormat };
 }
 
-export function createFieldJsonSchema(type: FieldType): RJSFSchema {
+export function createFieldJsonSchema(type: FieldType): ProposalTemplateSchema {
   switch (type) {
     case 'short_text':
       return withXFormat({ type: 'string' }, 'short-text');
@@ -92,7 +89,7 @@ export function getFieldOrder(template: ProposalTemplateSchema): string[] {
 export function getFieldSchema(
   template: ProposalTemplateSchema,
   fieldId: string,
-): RJSFSchema | undefined {
+): ProposalTemplateSchema | undefined {
   const props = template.properties;
   if (!props) {
     return undefined;
@@ -366,7 +363,10 @@ export function setFieldRequired(
 // Locked field helpers
 // ---------------------------------------------------------------------------
 
-function createLockedFieldSchema(xFormat: string, title: string): RJSFSchema {
+function createLockedFieldSchema(
+  xFormat: string,
+  title: string,
+): ProposalTemplateSchema {
   return withXFormat({ type: 'string', title }, xFormat);
 }
 

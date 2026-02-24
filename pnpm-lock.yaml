@@ -530,15 +530,9 @@ importers:
       '@posthog/nextjs-config':
         specifier: ^1.0.0
         version: 1.0.0(next@15.3.8(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))
-      '@rjsf/core':
-        specifier: ^5.24.12
-        version: 5.24.12(@rjsf/utils@5.24.12(react@19.2.1))(react@19.2.1)
       '@rjsf/utils':
         specifier: ^5.24.12
         version: 5.24.12(react@19.2.1)
-      '@rjsf/validator-ajv8':
-        specifier: ^5.24.12
-        version: 5.24.12(@rjsf/utils@5.24.12(react@19.2.1))
       '@svgr/plugin-jsx':
         specifier: ^8.1.0
         version: 8.1.0(@svgr/core@8.1.0(typescript@5.7.3))
@@ -4421,13 +4415,6 @@ packages:
   '@remirror/core-constants@3.0.0':
     resolution: {integrity: sha512-42aWfPrimMfDKDi4YegyS7x+/0tlzaqwPQCULLanv3DMIlu96KTJR0fM5isWX2UViOqlGnX6YFgqWepcX+XMNg==}
 
-  '@rjsf/core@5.24.12':
-    resolution: {integrity: sha512-OWVdC501n3Io0hplgpnkzArpcUSiImMgLQhk6/EI8wu2xbvk5fTiM7YAVlAObpAD3z3LRrAwhjnmh9L4k/FWmQ==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@rjsf/utils': ^5.24.x
-      react: ^19.0.1
-
   '@rjsf/utils@5.24.12':
     resolution: {integrity: sha512-fDwQB0XkjZjpdFUz5UAnuZj8nnbxDbX5tp+jTOjjJKw2TMQ9gFFYCQ12lSpdhezA2YgEGZfxyYTGW0DKDL5Drg==}
     engines: {node: '>=14'}
@@ -4439,12 +4426,6 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       react: ^19.0.1
-
-  '@rjsf/validator-ajv8@5.24.12':
-    resolution: {integrity: sha512-IMXdCjvDNdvb+mDgZC3AlAtr0pjYKq5s0GcLECjG5PuiX7Ib4JaDQHZY5ZJdKblMfgzhsn8AAOi573jXAt7BHQ==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@rjsf/utils': ^5.24.x
 
   '@rollup/pluginutils@5.1.4':
     resolution: {integrity: sha512-USm05zrsFxYLPdWWq+K3STlWiT/3ELn3RcV5hJMghpeAIhxfsUIg6mt12CBJBInWMV4VneoV7SfGv8xIwo2qNQ==}
@@ -5728,14 +5709,6 @@ packages:
     resolution: {integrity: sha512-V3wD15YHfHz6y0KdhYFjyy9vWtEVALT9UrxfN3zqlI6dMioHnJrqOYfyPKol3oqrnCM9uwkcdCwkJ0WUcbLMTQ==}
     peerDependencies:
       ajv: ^8.0.1
-
-  ajv-formats@2.1.1:
-    resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependencies:
-      ajv: ^8.0.0
-    peerDependenciesMeta:
-      ajv:
-        optional: true
 
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
@@ -7641,10 +7614,6 @@ packages:
   longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
 
-  loose-envify@1.4.0:
-    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
-    hasBin: true
-
   loupe@3.1.4:
     resolution: {integrity: sha512-wJzkKwJrheKtknCOKNEtDK4iqg/MxmZheEMtSTYvnzRdEYaZzmgH976nenp8WdJRdx5Vc1X/9MO0Oszl6ezeXg==}
 
@@ -7689,12 +7658,6 @@ packages:
   markdown-it@14.1.0:
     resolution: {integrity: sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg==}
     hasBin: true
-
-  markdown-to-jsx@7.7.13:
-    resolution: {integrity: sha512-DiueEq2bttFcSxUs85GJcQVrOr0+VVsPfj9AEUPqmExJ3f8P/iQNvZHltV4tm1XVhu1kl0vWBZWT3l99izRMaA==}
-    engines: {node: '>= 10'}
-    peerDependencies:
-      react: ^19.0.1
 
   marked@7.0.4:
     resolution: {integrity: sha512-t8eP0dXRJMtMvBojtkcsA7n48BkauktUKzfkPSCq85ZMTJ0v76Rke4DYz01omYpPTUh4p/f7HePgRo3ebG8+QQ==}
@@ -8554,9 +8517,6 @@ packages:
   promise-worker-transferable@1.0.4:
     resolution: {integrity: sha512-bN+0ehEnrXfxV2ZQvU2PetO0n4gqBD4ulq3MI1WOPLgr7/Mg9yRQkX5+0v1vagr74ZTsl7XtzlaYDo2EuCeYJw==}
 
-  prop-types@15.8.1:
-    resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
-
   property-information@6.5.0:
     resolution: {integrity: sha512-PgTgs/BlvHxOu8QuEN7wi5A0OmXaBcHpmCSTehcs6Uuu9IkDIEo13Hy7n898RHfrQ49vKCoGeWZSaAK01nwVig==}
 
@@ -8707,9 +8667,6 @@ packages:
     resolution: {integrity: sha512-MEFcXdkP3dLo8uumGI5xN3lDFNsRtrjbOEKDLD7yv76v4wpnEq2Lt2qeHaQOr34I/wPN3s3+N08WkQ+CW37Xiw==}
     peerDependencies:
       react: ^19.0.1
-
-  react-is@16.13.1:
-    resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -13396,16 +13353,6 @@ snapshots:
 
   '@remirror/core-constants@3.0.0': {}
 
-  '@rjsf/core@5.24.12(@rjsf/utils@5.24.12(react@19.2.1))(react@19.2.1)':
-    dependencies:
-      '@rjsf/utils': 5.24.12(react@19.2.1)
-      lodash: 4.17.21
-      lodash-es: 4.17.21
-      markdown-to-jsx: 7.7.13(react@19.2.1)
-      nanoid: 3.3.11
-      prop-types: 15.8.1
-      react: 19.2.1
-
   '@rjsf/utils@5.24.12(react@19.2.1)':
     dependencies:
       json-schema-merge-allof: 0.8.1
@@ -13424,14 +13371,6 @@ snapshots:
       lodash-es: 4.17.23
       react: 19.2.1
       react-is: 18.3.1
-
-  '@rjsf/validator-ajv8@5.24.12(@rjsf/utils@5.24.12(react@19.2.1))':
-    dependencies:
-      '@rjsf/utils': 5.24.12(react@19.2.1)
-      ajv: 8.17.1
-      ajv-formats: 2.1.1(ajv@8.17.1)
-      lodash: 4.17.21
-      lodash-es: 4.17.21
 
   '@rollup/pluginutils@5.1.4(rollup@4.30.1)':
     dependencies:
@@ -14757,10 +14696,6 @@ snapshots:
 
   ajv-errors@3.0.0(ajv@8.17.1):
     dependencies:
-      ajv: 8.17.1
-
-  ajv-formats@2.1.1(ajv@8.17.1):
-    optionalDependencies:
       ajv: 8.17.1
 
   ajv-formats@3.0.1(ajv@8.17.1):
@@ -16597,10 +16532,6 @@ snapshots:
 
   longest-streak@3.1.0: {}
 
-  loose-envify@1.4.0:
-    dependencies:
-      js-tokens: 4.0.0
-
   loupe@3.1.4: {}
 
   lower-case@2.0.2:
@@ -16645,10 +16576,6 @@ snapshots:
       mdurl: 2.0.0
       punycode.js: 2.3.1
       uc.micro: 2.1.0
-
-  markdown-to-jsx@7.7.13(react@19.2.1):
-    dependencies:
-      react: 19.2.1
 
   marked@7.0.4: {}
 
@@ -17681,12 +17608,6 @@ snapshots:
       is-promise: 2.2.2
       lie: 3.3.0
 
-  prop-types@15.8.1:
-    dependencies:
-      loose-envify: 1.4.0
-      object-assign: 4.1.1
-      react-is: 16.13.1
-
   property-information@6.5.0:
     optional: true
 
@@ -17999,8 +17920,6 @@ snapshots:
   react-icons@5.5.0(react@19.2.1):
     dependencies:
       react: 19.2.1
-
-  react-is@16.13.1: {}
 
   react-is@17.0.2: {}
 
