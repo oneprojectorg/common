@@ -1,9 +1,9 @@
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 
 export const deleteDecision = async ({
@@ -30,14 +30,10 @@ export const deleteDecision = async ({
     profileId: instance.profileId,
   });
 
-  const canDelete = checkPermission(
+  assertAccess(
     [{ decisions: permission.DELETE }, { decisions: permission.ADMIN }],
     profileUser?.roles ?? [],
   );
-
-  if (!canDelete) {
-    throw new UnauthorizedError('Not authorized to delete this decision');
-  }
 
   // Delete the decision's profile, which cascades to the instance and all related data
   const [deletedProfile] = await db
