@@ -7,6 +7,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { collapseRoles } from 'access-zones';
 
 import {
   type PaginatedResult,
@@ -15,6 +16,11 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
+import { getProfileAccessUser } from '../access';
+import {
+  type DecisionRolePermissions,
+  fromDecisionBitField,
+} from './permissions';
 
 // Query configuration for fetching decision profiles with relations
 const decisionProfileQueryConfig = {
@@ -61,6 +67,7 @@ type DecisionProfileItem = Omit<
   > & {
     proposalCount: number;
     participantCount: number;
+    access: DecisionRolePermissions;
   };
 };
 
@@ -162,7 +169,20 @@ export const listDecisionProfiles = async ({
     limit: limit + 1, // Fetch one extra to check hasMore
   });
 
-  // Transform profiles to include proposal and participant counts in processInstance
+  // Batch-fetch profile access for all decision profile IDs
+  const profileIds = profileList
+    .map((p) => p.id)
+    .filter((id): id is string => !!id);
+  const profileAccessResults = await Promise.all(
+    profileIds.map((profileId) =>
+      getProfileAccessUser({ user: { id: user.id }, profileId }),
+    ),
+  );
+  const profileAccessMap = new Map(
+    profileIds.map((id, i) => [id, profileAccessResults[i]]),
+  );
+
+  // Transform profiles to include proposal/participant counts and access permissions
   const profilesWithCounts = profileList.map((profile) => {
     if (profile.processInstance) {
       const instance = profile.processInstance as {
@@ -175,12 +195,19 @@ export const listDecisionProfiles = async ({
       );
       const participantCount = uniqueParticipants.size;
 
+      // Compute decision access by collapsing all roles into zone bitfields
+      const profileAccess = profileAccessMap.get(profile.id);
+      const roles = profileAccess?.roles ?? [];
+      const collapsed = collapseRoles(roles);
+      const access = fromDecisionBitField(collapsed.decisions ?? 0);
+
       return {
         ...profile,
         processInstance: {
           ...instance,
           proposalCount,
           participantCount,
+          access,
         },
       };
     }

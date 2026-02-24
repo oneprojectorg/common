@@ -691,10 +691,9 @@
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "Convidar participantes",
   "Only invited participants can view and participate in this process": "Apenas participantes convidados podem ver e participar deste processo",
-  "Delete draft": "Excluir rascunho",
-  "Delete Draft Decision": "Excluir decisão em rascunho",
-  "Are you sure you want to delete this draft? This action cannot be undone.": "Tem certeza de que deseja excluir este rascunho? Esta ação não pode ser desfeita.",
-  "Draft deleted successfully": "Rascunho excluído com sucesso",
-  "Failed to delete draft": "Falha ao excluir o rascunho",
+  "Delete Decision": "Excluir decisão",
+  "Are you sure you want to delete this decision? This action cannot be undone.": "Tem certeza de que deseja excluir esta decisão? Esta ação não pode ser desfeita.",
+  "Decision deleted successfully": "Decisão excluída com sucesso",
+  "Failed to delete decision": "Falha ao excluir a decisão",
   "Deleting...": "Excluindo..."
 }

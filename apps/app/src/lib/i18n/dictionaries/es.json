@@ -695,10 +695,9 @@
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "Invitar participantes",
   "Only invited participants can view and participate in this process": "Solo los participantes invitados pueden ver y participar en este proceso",
-  "Delete draft": "Eliminar borrador",
-  "Delete Draft Decision": "Eliminar decisión en borrador",
-  "Are you sure you want to delete this draft? This action cannot be undone.": "¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer.",
-  "Draft deleted successfully": "Borrador eliminado exitosamente",
-  "Failed to delete draft": "Error al eliminar el borrador",
+  "Delete Decision": "Eliminar decisión",
+  "Are you sure you want to delete this decision? This action cannot be undone.": "¿Estás seguro de que deseas eliminar esta decisión? Esta acción no se puede deshacer.",
+  "Decision deleted successfully": "Decisión eliminada exitosamente",
+  "Failed to delete decision": "Error al eliminar la decisión",
   "Deleting...": "Eliminando..."
 }

@@ -42,14 +42,15 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
   const isDraft = processInstance.status === ProcessStatus.DRAFT;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const canDelete = processInstance.access?.delete;
 
   const deleteMutation = trpc.decision.deleteDecision.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Draft deleted successfully') });
+      toast.success({ message: t('Decision deleted successfully') });
       utils.decision.listDecisionProfiles.invalidate();
     },
     onError: () => {
-      toast.error({ message: t('Failed to delete draft') });
+      toast.error({ message: t('Failed to delete decision') });
     },
   });
 
@@ -105,7 +106,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           </div>
         </Link>
 
-        {isDraft && (
+        {canDelete && (
           <div className="flex items-center pr-2">
             <OptionMenu>
               <Menu className="min-w-28 p-2">
@@ -115,7 +116,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
                   className="text-functional-red"
                 >
                   <LuTrash2 className="size-4" />
-                  {t('Delete draft')}
+                  {t('Delete')}
                 </MenuItem>
               </Menu>
             </OptionMenu>
@@ -132,11 +133,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           isOpen={showDeleteModal}
           onOpenChange={(open) => !open && setShowDeleteModal(false)}
         >
-          <ModalHeader>{t('Delete Draft Decision')}</ModalHeader>
+          <ModalHeader>{t('Delete Decision')}</ModalHeader>
           <ModalBody>
             <p>
               {t(
-                'Are you sure you want to delete this draft? This action cannot be undone.',
+                'Are you sure you want to delete this decision? This action cannot be undone.',
               )}
             </p>
           </ModalBody>
@@ -149,7 +150,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
               onPress={handleDeleteConfirm}
               isDisabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? t('Deleting...') : t('Delete draft')}
+              {deleteMutation.isPending ? t('Deleting...') : t('Delete')}
             </Button>
           </ModalFooter>
         </Modal>

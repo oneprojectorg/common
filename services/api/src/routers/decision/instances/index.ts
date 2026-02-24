@@ -1,6 +1,6 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { createInstanceFromTemplateRouter } from './createInstanceFromTemplate';
-import { deleteDecisionRouter } from './deleteDraftDecision';
+import { deleteDecisionRouter } from './deleteDecision';
 import { getCategoriesRouter } from './getCategories';
 import { getDecisionBySlugRouter } from './getDecisionBySlug';
 import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
