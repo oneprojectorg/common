@@ -78,45 +78,6 @@ export async function createTestContextWithSession(
 }
 
 /**
- * Clean up test data from tables after tests
- * Uses admin client to bypass RLS policies
- */
-export async function cleanupTestData(tables: string[] = []) {
-  if (!supabaseTestAdminClient) {
-    console.warn('Supabase admin test client not initialized');
-    return;
-  }
-
-  const promises = tables.map(async (table) => {
-    try {
-      // First check if the table exists by trying to select from it
-      const { error: selectError } = await supabaseTestAdminClient
-        .from(table)
-        .select('id')
-        .limit(1);
-
-      if (selectError && selectError.message.includes('does not exist')) {
-        // Table doesn't exist, skip cleanup
-        return;
-      }
-
-      // Delete all records from test table using admin client (bypasses RLS)
-      const { error } = await supabaseTestAdminClient
-        .from(table)
-        .delete()
-        .gte('created_at', '1970-01-01');
-      if (error && !error.message.includes('does not exist')) {
-        console.warn(`Failed to cleanup table ${table}:`, error.message);
-      }
-    } catch (err) {
-      console.warn(`Failed to cleanup table ${table}:`, err);
-    }
-  });
-
-  await Promise.allSettled(promises);
-}
-
-/**
  * Create a test user and return the user object
  */
 export async function createTestUser(

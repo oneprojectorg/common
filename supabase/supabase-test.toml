@@ -4,7 +4,7 @@
 project_id = "common-test"
 
 [api]
-enabled = true
+enabled = false
 # Test API port (different from dev port 54321)
 port = 55321
 schemas = [

@@ -122,7 +122,6 @@ The setup file:
 
 Utility functions for common test operations:
 
-- `cleanupTestData()` - Clean database tables
 - `createTestUser()` - Create test users
 - `signInTestUser()` - Authenticate test users
 - `insertTestData()` - Insert test data
@@ -132,28 +131,16 @@ Utility functions for common test operations:
 ### Basic Test Structure
 
 ```typescript
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { supabaseTestClient } from '../setup';
-import { cleanupTestData, createTestUser } from '../supabase-utils';
+import { createTestUser } from '../supabase-utils';
 
 describe('My Integration Tests', () => {
-  beforeEach(async () => {
-    // Clean up before each test
-    await cleanupTestData(['my_table']);
-  });
-
   it('should test database operations', async () => {
     // Create test user
     const user = await createTestUser('test@example.com');
 
-    // Test your database operations
-    const { data, error } = await supabaseTestClient
-      .from('my_table')
-      .insert({ user_id: user.user!.id, name: 'test' });
-
-    expect(error).toBeNull();
-    expect(data).toBeDefined();
+    expect(user).toBeDefined();
   });
 });
 ```

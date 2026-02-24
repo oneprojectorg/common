@@ -5,7 +5,7 @@
 project_id = "common-e2e"
 
 [api]
-enabled = true
+enabled = false
 # E2E API port (different from dev 54321 and test 55321)
 port = 56321
 schemas = [
