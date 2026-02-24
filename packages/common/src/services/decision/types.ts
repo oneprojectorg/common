@@ -1,3 +1,4 @@
+import type { DecisionProcessTransition } from '@op/db/schema';
 import type { JSONSchema7 } from 'json-schema';
 
 import type { SelectionPipeline } from './selectionPipeline/types';
@@ -184,3 +185,9 @@ export interface DecisionData {
   // Decision content should match the decisionDefinition schema
   [key: string]: unknown;
 }
+
+/** A scheduled phase transition (fromStateId/toStateId store phase IDs) */
+export type ScheduledTransition = Pick<
+  DecisionProcessTransition,
+  'processInstanceId' | 'fromStateId' | 'toStateId' | 'scheduledDate'
+>;
