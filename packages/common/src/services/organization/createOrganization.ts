@@ -15,6 +15,7 @@ import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
 import { CommonError, NotFoundError } from '../../utils';
+import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import {
   type FundingLinksInput,
@@ -165,10 +166,7 @@ export const createOrganization = async ({
         email: user.email!,
       })
       .returning(),
-    db._query.accessRoles.findFirst({
-      where: (table, { eq, and, isNull }) =>
-        and(eq(table.name, 'Admin'), isNull(table.profileId)),
-    }),
+    assertGlobalRole('Admin'),
     db
       .update(users)
       .set({ lastOrgId: newOrg.id, currentProfileId: profile.id })
@@ -176,7 +174,7 @@ export const createOrganization = async ({
   ]);
 
   // Add admin role to the user creating the organization
-  if (!(adminRole && newOrgUser)) {
+  if (!newOrgUser) {
     throw new CommonError('Failed to create organization');
   }
 

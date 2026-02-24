@@ -21,6 +21,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
@@ -124,7 +125,10 @@ export const createProposal = async ({
       }
     }
 
-    const profileId = await getCurrentProfileId(authUserId);
+    const [profileId, adminRole] = await Promise.all([
+      getCurrentProfileId(authUserId),
+      assertGlobalRole('Admin'),
+    ]);
     const proposal = await db.transaction(async (tx) => {
       const slug = await generateUniqueProfileSlug({
         name: proposalTitle,
@@ -144,28 +148,25 @@ export const createProposal = async ({
         throw new CommonError('Failed to create proposal profile');
       }
 
-      // Add the creator as a profile user with Admin role
-      const [[newProfileUser], adminRole] = await Promise.all([
-        tx
-          .insert(profileUsers)
-          .values({
-            profileId: proposalProfile.id,
-            authUserId,
-            email: user.email!,
-            isOwner: true,
-          })
-          .returning(),
-        tx.query.accessRoles.findFirst({
-          where: { name: 'Admin' },
-        }),
-      ]);
+      // Add the creator as a profile user with the global Admin role
+      const [newProfileUser] = await tx
+        .insert(profileUsers)
+        .values({
+          profileId: proposalProfile.id,
+          authUserId,
+          email: user.email!,
+          isOwner: true,
+        })
+        .returning();
 
-      if (newProfileUser && adminRole) {
-        await tx.insert(profileUserToAccessRoles).values({
-          profileUserId: newProfileUser.id,
-          accessRoleId: adminRole.id,
-        });
+      if (!newProfileUser) {
+        throw new CommonError('Failed to create proposal profile user');
       }
+
+      await tx.insert(profileUserToAccessRoles).values({
+        profileUserId: newProfileUser.id,
+        accessRoleId: adminRole.id,
+      });
 
       const proposalId = crypto.randomUUID();
       const collaborationDocId = `proposal-${proposalId}`;
