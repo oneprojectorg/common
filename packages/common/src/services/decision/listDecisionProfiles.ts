@@ -16,35 +16,47 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
-import { type RoleJunction, getNormalizedRoles } from '../access';
+import { getNormalizedRoles } from '../access';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
 } from './permissions';
 
-// Query configuration for fetching decision profiles with relations
-const decisionProfileQueryConfig = {
-  with: {
-    headerImage: true,
-    avatarImage: true,
-    processInstance: {
-      with: {
-        process: true,
-        owner: {
-          with: {
-            avatarImage: true,
-            organization: true,
-          },
+const decisionProfileWith = {
+  headerImage: true,
+  avatarImage: true,
+  processInstance: {
+    with: {
+      process: true,
+      owner: {
+        with: {
+          avatarImage: true,
+          organization: true,
         },
-        steward: {
-          with: {
-            avatarImage: true,
-          },
+      },
+      steward: {
+        with: {
+          avatarImage: true,
         },
-        proposals: {
-          columns: {
-            id: true,
-            submittedByProfileId: true,
+      },
+      proposals: {
+        columns: {
+          id: true,
+          submittedByProfileId: true,
+        },
+      },
+    },
+  },
+  profileUsers: {
+    with: {
+      roles: {
+        with: {
+          accessRole: {
+            with: {
+              zonePermissions: {
+                with: { accessZone: true },
+              },
+            },
           },
         },
       },
@@ -54,13 +66,13 @@ const decisionProfileQueryConfig = {
 
 type DecisionProfileQueryResult = Awaited<
   ReturnType<
-    typeof db._query.profiles.findMany<typeof decisionProfileQueryConfig>
+    typeof db._query.profiles.findMany<{ with: typeof decisionProfileWith }>
   >
 >[number];
 
 type DecisionProfileItem = Omit<
   DecisionProfileQueryResult,
-  'processInstance'
+  'processInstance' | 'profileUsers'
 > & {
   processInstance: NonNullable<
     DecisionProfileQueryResult['processInstance']
@@ -165,22 +177,10 @@ export const listDecisionProfiles = async ({
   const profileList = await db._query.profiles.findMany({
     where: whereClause,
     with: {
-      ...decisionProfileQueryConfig.with,
+      ...decisionProfileWith,
       profileUsers: {
+        ...decisionProfileWith.profileUsers,
         where: (table, { eq }) => eq(table.authUserId, user.id),
-        with: {
-          roles: {
-            with: {
-              accessRole: {
-                with: {
-                  zonePermissions: {
-                    with: { accessZone: true },
-                  },
-                },
-              },
-            },
-          },
-        },
       },
     },
     orderBy: orderFn(profiles[orderBy]),
@@ -188,42 +188,46 @@ export const listDecisionProfiles = async ({
   });
 
   // Transform profiles to include proposal/participant counts and access permissions
-  const profilesWithCounts = profileList.map((profile) => {
-    if (profile.processInstance) {
-      const instance = profile.processInstance as {
-        proposals: { id: string; submittedByProfileId: string | null }[];
-        [key: string]: unknown;
-      };
-      const proposalCount = instance.proposals?.length ?? 0;
-      const uniqueParticipants = new Set(
-        instance.proposals?.map((proposal) => proposal.submittedByProfileId),
-      );
-      const participantCount = uniqueParticipants.size;
-
-      // Compute decision access from the joined profileUser roles
-      const profileUser = profile.profileUsers?.[0];
-      const roles = profileUser
-        ? getNormalizedRoles(
-            profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
-          )
-        : [];
-      const collapsed = collapseRoles(roles);
-      const access = fromDecisionBitField(collapsed.decisions ?? 0);
-
+  const profilesWithCounts = (profileList as DecisionProfileQueryResult[]).map(
+    (profile) => {
       const { profileUsers: _, ...profileWithoutUsers } = profile;
-      return {
-        ...profileWithoutUsers,
-        processInstance: {
-          ...instance,
-          proposalCount,
-          participantCount,
-          access,
-        },
-      };
-    }
-    const { profileUsers: _, ...profileWithoutUsers } = profile;
-    return profileWithoutUsers;
-  });
+
+      if (profile.processInstance) {
+        const instance = profile.processInstance as NonNullable<
+          DecisionProfileQueryResult['processInstance']
+        > & {
+          proposals: { id: string; submittedByProfileId: string | null }[];
+        };
+        const { proposals, ...instanceRest } = instance;
+        const proposalCount = proposals?.length ?? 0;
+        const uniqueParticipants = new Set(
+          proposals?.map((proposal) => proposal.submittedByProfileId),
+        );
+        const participantCount = uniqueParticipants.size;
+
+        // Compute decision access from the joined profileUser roles
+        const profileUser = profile.profileUsers?.[0];
+        const roles = profileUser
+          ? getNormalizedRoles(profileUser.roles)
+          : [];
+        const collapsed = collapseRoles(roles);
+        const access = fromDecisionBitField(collapsed.decisions ?? 0);
+
+        return {
+          ...profileWithoutUsers,
+          processInstance: {
+            ...instanceRest,
+            proposals,
+            proposalCount,
+            participantCount,
+            access,
+          },
+        };
+      }
+
+      return profileWithoutUsers;
+    },
+  );
 
   const hasMore = profilesWithCounts.length > limit;
   const items = (
