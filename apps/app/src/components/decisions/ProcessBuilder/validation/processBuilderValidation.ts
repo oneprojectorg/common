@@ -37,9 +37,13 @@ const phasesSchema = z.object({
 
 // ============ Section Validators ============
 
-type SectionValidator = (data: ProcessBuilderInstanceData | undefined) => boolean;
+type SectionValidator = (
+  data: ProcessBuilderInstanceData | undefined,
+) => boolean;
 
-function validateTemplateEditor(data: ProcessBuilderInstanceData | undefined): boolean {
+function validateTemplateEditor(
+  data: ProcessBuilderInstanceData | undefined,
+): boolean {
   if (!data?.proposalTemplate) {
     return false;
   }

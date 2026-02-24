@@ -16,8 +16,8 @@ import {
  * - Draft: server data is used directly (localStorage is ignored to avoid
  *   stale edits overwriting already-saved data).
  * - Non-draft: server data is the base layer, localStorage edits overlay
- *   on top for keys with a defined, non-empty value (since not all fields
- *   are persisted to the API yet).
+ *   on top for keys with a defined, non-empty value (since non-draft
+ *   processes do not save to the API on every edit).
  *
  * Note: `isDraft` is evaluated once from the server component at page load.
  * This assumes launching a process triggers a navigation/reload so the
@@ -58,7 +58,7 @@ export function ProcessBuilderStoreInitializer({
       // For drafts, prefer server data — localStorage may contain stale
       // edits from a previous session that have already been saved.
       // For non-draft (launched) processes, overlay localStorage on top
-      // since not all fields are persisted to the API yet.
+      // since edits are only buffered locally until explicitly saved.
       let data: ProcessBuilderInstanceData;
       if (isDraft) {
         data = base;
@@ -67,7 +67,10 @@ export function ProcessBuilderStoreInitializer({
         if (existing) {
           for (const [key, value] of Object.entries(existing)) {
             if (key === 'config') {
-              data.config = { ...data.config, ...(value as typeof data.config) };
+              data.config = {
+                ...data.config,
+                ...(value as typeof data.config),
+              };
             } else if (value !== undefined && value !== '') {
               (data as Record<string, unknown>)[key] = value;
             }
