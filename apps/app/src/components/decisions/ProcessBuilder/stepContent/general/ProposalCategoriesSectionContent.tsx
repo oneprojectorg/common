@@ -14,10 +14,7 @@ import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  type ProposalTemplate,
-  ensureLockedFields,
-} from '../../../proposalTemplate';
+import { ensureLockedFields } from '../../../proposalTemplate';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
@@ -78,9 +75,7 @@ export function ProposalCategoriesSectionContent({
     setSaveStatus(decisionProfileId, 'saving');
     setInstanceData(decisionProfileId, data);
 
-    const existingTemplate = instance.instanceData?.proposalTemplate as
-      | ProposalTemplate
-      | undefined;
+    const existingTemplate = instance.instanceData.proposalTemplate;
 
     const mutation: Parameters<typeof updateInstance.mutate>[0] = {
       instanceId,

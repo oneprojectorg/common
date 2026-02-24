@@ -12,7 +12,6 @@ import {
   compileProposalSchema,
 } from '../../../proposalEditor/compileProposalSchema';
 import type { ProposalDraftFields } from '../../../proposalEditor/useProposalDraft';
-import type { ProposalTemplate } from '../../../proposalTemplate';
 
 const EMPTY_DRAFT: ProposalDraftFields = {
   title: '',
@@ -30,14 +29,11 @@ const EMPTY_DRAFT: ProposalDraftFields = {
 export function ParticipantPreview({
   template,
 }: {
-  template: ProposalTemplate;
+  template: ProposalTemplateSchema;
 }) {
   const t = useTranslations();
 
-  const fields = useMemo(
-    () => compileProposalSchema(template as ProposalTemplateSchema),
-    [template],
-  );
+  const fields = useMemo(() => compileProposalSchema(template), [template]);
 
   return (
     <aside className="hidden flex-1 basis-1/2 overflow-y-auto border-l bg-neutral-offWhite p-14 xl:block">

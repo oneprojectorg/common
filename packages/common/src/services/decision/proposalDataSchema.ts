@@ -136,7 +136,7 @@ export interface SchemaOption {
 export function buildCategorySchema(
   categories: string[],
   existing?: Record<string, unknown>,
-): Record<string, unknown> {
+): ProposalPropertySchema {
   const { enum: _legacyEnum, ...rest } = existing ?? {};
 
   return {

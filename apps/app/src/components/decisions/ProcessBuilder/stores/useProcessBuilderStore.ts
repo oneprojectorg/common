@@ -31,11 +31,9 @@
  * - `saveStates[decisionId]` - UI save indicator state
  */
 import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
-import type { ProposalCategory } from '@op/common';
+import type { ProposalCategory, ProposalTemplateSchema } from '@op/common';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-
-import type { ProposalTemplate } from '../../proposalTemplate';
 
 // ============ Store-specific Types ============
 
@@ -75,7 +73,7 @@ export interface FormInstanceData
   /** Whether to require collaborative proposals */
   requireCollaborativeProposals?: boolean;
   /** Proposal template (JSON Schema) */
-  proposalTemplate?: ProposalTemplate;
+  proposalTemplate?: ProposalTemplateSchema;
   /** Proposal categories */
   categories?: ProposalCategory[];
   /** Whether proposers must select at least one category */
@@ -120,8 +118,13 @@ interface ProcessBuilderState {
   ) => InstancePhaseData | undefined;
 
   // Actions for proposal template
-  setProposalTemplate: (decisionId: string, template: ProposalTemplate) => void;
-  getProposalTemplate: (decisionId: string) => ProposalTemplate | undefined;
+  setProposalTemplate: (
+    decisionId: string,
+    template: ProposalTemplateSchema,
+  ) => void;
+  getProposalTemplate: (
+    decisionId: string,
+  ) => ProposalTemplateSchema | undefined;
 
   // Actions for save state
   setSaveStatus: (decisionId: string, status: SaveStatus) => void;
