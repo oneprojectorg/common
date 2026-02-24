@@ -16,7 +16,7 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { type RoleJunction, getNormalizedRoles } from '../access';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
@@ -161,26 +161,31 @@ export const listDecisionProfiles = async ({
   const whereClause =
     whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
-  // Get profiles with their process instances
+  // Get profiles with their process instances and the current user's roles
   const profileList = await db._query.profiles.findMany({
     where: whereClause,
-    ...decisionProfileQueryConfig,
+    with: {
+      ...decisionProfileQueryConfig.with,
+      profileUsers: {
+        where: (table, { eq }) => eq(table.authUserId, user.id),
+        with: {
+          roles: {
+            with: {
+              accessRole: {
+                with: {
+                  zonePermissions: {
+                    with: { accessZone: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     orderBy: orderFn(profiles[orderBy]),
     limit: limit + 1, // Fetch one extra to check hasMore
   });
-
-  // Batch-fetch profile access for all decision profile IDs
-  const profileIds = profileList
-    .map((p) => p.id)
-    .filter((id): id is string => !!id);
-  const profileAccessResults = await Promise.all(
-    profileIds.map((profileId) =>
-      getProfileAccessUser({ user: { id: user.id }, profileId }),
-    ),
-  );
-  const profileAccessMap = new Map(
-    profileIds.map((id, i) => [id, profileAccessResults[i]]),
-  );
 
   // Transform profiles to include proposal/participant counts and access permissions
   const profilesWithCounts = profileList.map((profile) => {
@@ -195,14 +200,19 @@ export const listDecisionProfiles = async ({
       );
       const participantCount = uniqueParticipants.size;
 
-      // Compute decision access by collapsing all roles into zone bitfields
-      const profileAccess = profileAccessMap.get(profile.id);
-      const roles = profileAccess?.roles ?? [];
+      // Compute decision access from the joined profileUser roles
+      const profileUser = profile.profileUsers?.[0];
+      const roles = profileUser
+        ? getNormalizedRoles(
+            profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+          )
+        : [];
       const collapsed = collapseRoles(roles);
       const access = fromDecisionBitField(collapsed.decisions ?? 0);
 
+      const { profileUsers: _, ...profileWithoutUsers } = profile;
       return {
-        ...profile,
+        ...profileWithoutUsers,
         processInstance: {
           ...instance,
           proposalCount,
@@ -211,7 +221,8 @@ export const listDecisionProfiles = async ({
         },
       };
     }
-    return profile;
+    const { profileUsers: _, ...profileWithoutUsers } = profile;
+    return profileWithoutUsers;
   });
 
   const hasMore = profilesWithCounts.length > limit;
