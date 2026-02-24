@@ -1,7 +1,7 @@
 import { createTransitionsForProcess } from '@op/common';
 import { db } from '@op/db/client';
-import type { ProcessStatus } from '@op/db/schema';
 import {
+  ProcessStatus,
   decisionProcesses,
   organizationUserToAccessRoles,
   organizationUsers,
