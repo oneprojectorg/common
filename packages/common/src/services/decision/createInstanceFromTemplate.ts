@@ -12,7 +12,6 @@ import type { User } from '@op/supabase/lib';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { createDecisionRole } from './decisionRoles';
 import { getTemplate } from './getTemplate';
 import {
@@ -186,22 +185,8 @@ export const createInstanceFromTemplateCore = async ({
     return newInstance;
   });
 
-  // Create scheduled transitions for phases that have date-based advancement AND actual dates set
-  const hasScheduledDatePhases = instanceData.phases.some(
-    (phase) => phase.rules?.advancement?.method === 'date' && phase.startDate,
-  );
-
-  if (hasScheduledDatePhases) {
-    try {
-      await createTransitionsForProcess({ processInstance: instance });
-    } catch (error) {
-      // Log but don't fail instance creation if transitions can't be created
-      console.error(
-        'Failed to create transitions for process instance:',
-        error,
-      );
-    }
-  }
+  // Note: Transitions are NOT created here because the instance is created as DRAFT.
+  // Transitions are created when the instance is published via updateDecisionInstance.
 
   // Fetch the profile with processInstance joined for the response
   // profileId is guaranteed to be set since we just created it above

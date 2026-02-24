@@ -73,12 +73,6 @@ export class TransitionEngine {
       const process = instance.process as any;
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instance.instanceData as InstanceData;
-      console.log(
-        'TRANSITION',
-        instanceData.currentPhaseId,
-        instance.currentStateId,
-        instanceData,
-      );
       const currentStateId =
         instanceData.currentPhaseId || instance.currentStateId || '';
 
