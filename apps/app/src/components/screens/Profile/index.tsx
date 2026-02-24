@@ -77,7 +77,6 @@ const ProfileWithData = async ({
 
     // For user profiles, create a simplified profile object based on the profile data
     // TODO: this is jammed in until we update the individual profile and a better typing
-    // Remove modules from individual profiles since they don't use decision tabs
     const userProfile = {
       id: profile.id,
       profile,

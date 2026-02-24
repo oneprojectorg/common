@@ -1,6 +1,5 @@
-import { NotFoundError, getProfile, listProfiles } from '@op/common';
+import { getProfile, listProfiles } from '@op/common';
 import { EntityType } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { profileEncoder } from '../../encoders/profiles';
@@ -32,38 +31,18 @@ export const getProfileRouter = router({
     )
     .query(async ({ input }) => {
       const { limit = 10, cursor, orderBy, dir, types } = input ?? {};
-      try {
-        const { items, next } = await listProfiles({
-          cursor,
-          limit,
-          orderBy,
-          dir,
-          types,
-        });
+      const { items, next } = await listProfiles({
+        cursor,
+        limit,
+        orderBy,
+        dir,
+        types,
+      });
 
-        return {
-          items: items.map((profile) => universalProfileSchema.parse(profile)),
-          next,
-        };
-      } catch (error: unknown) {
-        console.log(error);
-
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'NOT_FOUND',
-          });
-        }
-
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        throw new TRPCError({
-          message: 'Profiles not found',
-          code: 'NOT_FOUND',
-        });
-      }
+      return {
+        items: items.map((profile) => universalProfileSchema.parse(profile)),
+        next,
+      };
     }),
   getBySlug: commonAuthedProcedure()
     .input(inputSchema)

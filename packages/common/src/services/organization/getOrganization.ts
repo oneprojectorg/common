@@ -5,7 +5,7 @@ import { NotFoundError } from '../../utils';
 
 export const getOrganization = async ({ slug }: { slug: string }) => {
   if (!slug) {
-    return;
+    throw new NotFoundError('Organization not found');
   }
 
   const profile = await db
