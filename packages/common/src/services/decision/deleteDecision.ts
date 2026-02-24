@@ -42,12 +42,12 @@ export const deleteDecision = async ({
           })
         : undefined;
 
-      const hasInstanceAdmin = checkPermission(
-        { decisions: permission.ADMIN },
+      const canDelete = checkPermission(
+        [{ decisions: permission.DELETE }, { decisions: permission.ADMIN }],
         instanceProfileUser?.roles ?? [],
       );
 
-      if (!hasInstanceAdmin) {
+      if (!canDelete) {
         throw new UnauthorizedError('Not authorized to delete this decision');
       }
     }

@@ -42,7 +42,8 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
   const isDraft = processInstance.status === ProcessStatus.DRAFT;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const canDelete = processInstance.access?.delete;
+  const canDelete =
+    processInstance.access?.delete || processInstance.access?.admin;
 
   const deleteMutation = trpc.decision.deleteDecision.useMutation({
     onSuccess: () => {
