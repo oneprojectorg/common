@@ -73,3 +73,9 @@ export type {
   DecisionInstanceData,
   PhaseInstanceData,
 } from './schemas/instanceData';
+export type {
+  DecisionSchemaDefinition,
+  PhaseDefinition,
+  PhaseRules,
+  ProcessConfig,
+} from './schemas/types';

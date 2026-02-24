@@ -20,10 +20,36 @@ import { baseProfileEncoder } from './profiles';
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
 // ============================================================================
+// ProcessPhase encoder (for frontend UI components)
+// ============================================================================
+
+/** Process phase encoder for UI display (stepper, stats, etc.) */
+export const processPhaseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  phase: z
+    .object({
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      sortOrder: z.number().optional(),
+    })
+    .optional(),
+  type: z.enum(['initial', 'intermediate', 'final']).optional(),
+  config: z
+    .object({
+      allowProposals: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+export type ProcessPhase = z.infer<typeof processPhaseSchema>;
+
+// ============================================================================
 // DecisionSchemaDefinition format encoders
 // ============================================================================
 
-/** Phase behavior rules */
+/** Phase behavior rules  */
 const phaseRulesEncoder = z.object({
   proposals: z
     .object({
@@ -127,7 +153,7 @@ export const decisionProcessWithSchemaEncoder = createSelectSchema(
     createdBy: baseProfileEncoder.optional(),
   });
 
-/** List encoder for decision processes with new schema format */
+/** List encoder for decision processes */
 export const decisionProcessWithSchemaListEncoder = z.object({
   processes: z.array(decisionProcessWithSchemaEncoder),
   total: z.number(),
@@ -225,90 +251,40 @@ export const decisionProfileWithSchemaFilterSchema = z.object({
   stewardProfileId: z.uuid().optional(),
 });
 
-// ============================================================================
-// Legacy format encoders (for backwards compatibility)
-// ============================================================================
-
-// Shared process phase schema
-export const processPhaseSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  phase: z
-    .object({
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-      sortOrder: z.number().optional(),
-    })
-    .optional(),
-  type: z.enum(['initial', 'intermediate', 'final']).optional(),
-});
-
-// Process Schema Encoder
-const processSchemaEncoder = z.object({
-  name: z.string(),
-  description: z.string().optional(),
-  budget: z.number().optional(),
-  fields: jsonSchemaEncoder.optional(),
-  states: z.array(
-    processPhaseSchema.extend({
-      fields: jsonSchemaEncoder.optional(),
-      config: z
-        .object({
-          allowProposals: z.boolean().optional(),
-          allowDecisions: z.boolean().optional(),
-          visibleComponents: z.array(z.string()).optional(),
-        })
-        .optional(),
-    }),
-  ),
-  transitions: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      from: z.union([z.string(), z.array(z.string())]),
-      to: z.string(),
-      rules: z
-        .object({
-          type: z.enum(['manual', 'automatic']),
-          conditions: z
-            .array(
-              z.object({
-                type: z.enum([
-                  'time',
-                  'proposalCount',
-                  'participationCount',
-                  'approvalRate',
-                  'customField',
-                ]),
-                operator: z.enum([
-                  'equals',
-                  'greaterThan',
-                  'lessThan',
-                  'between',
-                ]),
-                value: z.unknown().optional(),
-                field: z.string().optional(),
-              }),
-            )
-            .optional(),
-          requireAll: z.boolean().optional(),
-        })
-        .optional(),
-      actions: z
-        .array(
-          z.object({
-            type: z.enum(['notify', 'updateField', 'createRecord']),
-            config: z.record(z.string(), z.unknown()),
-          }),
-        )
-        .optional(),
-    }),
-  ),
-  initialState: z.string(),
-  decisionDefinition: jsonSchemaEncoder,
-  proposalTemplate: jsonSchemaEncoder,
-});
+// =============================================================================
+// Process Schema Encoder (new format with passthrough for flexibility)
+// =============================================================================
+const processSchemaEncoder = z
+  .object({
+    name: z.string(),
+    description: z.string().optional(),
+    id: z.string().optional(),
+    version: z.string().optional(),
+    config: z
+      .object({
+        hideBudget: z.boolean().optional(),
+      })
+      .passthrough()
+      .optional(),
+    phases: z
+      .array(
+        z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            description: z.string().optional(),
+            rules: phaseRulesEncoder.optional(),
+            selectionPipeline: selectionPipelineEncoder.optional(),
+            settings: jsonSchemaEncoder.optional(),
+            startDate: z.string().optional(),
+            endDate: z.string().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    proposalTemplate: jsonSchemaEncoder.optional(),
+  })
+  .passthrough();
 
 // Instance Data Encoder that supports both new and legacy field names
 const instanceDataEncoder = z.preprocess(
