@@ -96,10 +96,17 @@ export function OverviewSectionForm({
   }, [decisionProfileId, setSaveStatus]);
 
   // tRPC mutation with cache invalidation (matches phase editor pattern)
+  const debouncedSaveRef = useRef<() => boolean>(null);
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: () => markSaved(decisionProfileId),
     onError: () => setSaveStatus(decisionProfileId, 'error'),
     onSettled: () => {
+      // Skip invalidation if another debounced save is pending — that save's
+      // onSettled will reconcile. This prevents a stale refetch from overwriting
+      // optimistic cache updates made between the two saves.
+      if (debouncedSaveRef.current?.()) {
+        return;
+      }
       void utils.decision.getInstance.invalidate({ instanceId });
     },
   });
@@ -142,6 +149,7 @@ export function OverviewSectionForm({
       markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);
+  debouncedSaveRef.current = () => debouncedSave.isPending();
 
   // Prefer store (localStorage buffer) over API data — the store is written
   // synchronously on every save, so it's always the freshest source.
