@@ -9,6 +9,7 @@ export * from './listProcesses';
 export * from './createInstanceFromTemplate';
 export * from './updateInstance';
 export * from './updateDecisionInstance';
+export * from './deleteInstance';
 export * from './listInstances';
 export * from './listLegacyInstances';
 export * from './getInstance';
