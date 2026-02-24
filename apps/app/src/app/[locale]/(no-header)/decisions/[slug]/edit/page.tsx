@@ -5,7 +5,7 @@ import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/Pro
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSectionNav';
 import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
-import type { FormInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
+import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 
 const EditDecisionPage = async ({
   params,
@@ -28,23 +28,15 @@ const EditDecisionPage = async ({
   const instanceId = processInstance.id;
   const instanceData = processInstance.instanceData;
 
-  // Map server data into the shape the store expects so validation works
-  // immediately — even before the user visits any section.
-  const serverData: FormInstanceData = {
+  // Seed the store with server data so validation works immediately.
+  const serverData: ProcessBuilderInstanceData = {
     name: processInstance.name ?? undefined,
     description: processInstance.description ?? undefined,
     stewardProfileId: processInstance.steward?.id,
     phases: instanceData.phases,
     proposalTemplate:
-      instanceData.proposalTemplate as FormInstanceData['proposalTemplate'],
-    hideBudget: instanceData.config?.hideBudget,
-    categories: instanceData.config?.categories,
-    requireCategorySelection: instanceData.config?.requireCategorySelection,
-    allowMultipleCategories: instanceData.config?.allowMultipleCategories,
-    organizeByCategories: instanceData.config?.organizeByCategories,
-    requireCollaborativeProposals:
-      instanceData.config?.requireCollaborativeProposals,
-    isPrivate: instanceData.config?.isPrivate,
+      instanceData.proposalTemplate as ProcessBuilderInstanceData['proposalTemplate'],
+    config: instanceData.config,
   };
 
   return (

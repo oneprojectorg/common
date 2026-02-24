@@ -128,9 +128,11 @@ export function OverviewSectionForm({
       name: values.name,
       description: values.description,
       stewardProfileId: values.stewardProfileId,
-      organizeByCategories: values.organizeByCategories,
-      requireCollaborativeProposals: values.requireCollaborativeProposals,
-      isPrivate: values.isPrivate,
+      config: {
+        organizeByCategories: values.organizeByCategories,
+        requireCollaborativeProposals: values.requireCollaborativeProposals,
+        isPrivate: values.isPrivate,
+      },
     });
 
     if (isDraft) {
@@ -164,10 +166,10 @@ export function OverviewSectionForm({
       stewardProfileId: initialStewardProfileId,
       name: initialName,
       description: initialDescription,
-      organizeByCategories: instanceData?.organizeByCategories ?? true,
+      organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
       requireCollaborativeProposals:
-        instanceData?.requireCollaborativeProposals ?? true,
-      isPrivate: instanceData?.isPrivate ?? false,
+        instanceData?.config?.requireCollaborativeProposals ?? true,
+      isPrivate: instanceData?.config?.isPrivate ?? false,
     },
     validators: {
       onBlur: createOverviewValidator(t),

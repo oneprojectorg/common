@@ -34,7 +34,7 @@ export const LaunchProcessModal = ({
   );
 
   const phasesCount = instanceData?.phases?.length ?? 0;
-  const categoriesCount = instanceData?.categories?.length ?? 0;
+  const categoriesCount = instanceData?.config?.categories?.length ?? 0;
   const showNoCategoriesWarning = categoriesCount === 0;
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({

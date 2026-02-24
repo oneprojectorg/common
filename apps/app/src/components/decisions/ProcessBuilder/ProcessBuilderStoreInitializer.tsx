@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 import {
-  type FormInstanceData,
+  type ProcessBuilderInstanceData,
   useProcessBuilderStore,
 } from './stores/useProcessBuilderStore';
 
@@ -29,7 +29,7 @@ export function ProcessBuilderStoreInitializer({
   isDraft,
 }: {
   decisionProfileId: string;
-  serverData: FormInstanceData;
+  serverData: ProcessBuilderInstanceData;
   isDraft: boolean;
 }) {
   const serverDataRef = useRef(serverData);
@@ -59,14 +59,16 @@ export function ProcessBuilderStoreInitializer({
       // edits from a previous session that have already been saved.
       // For non-draft (launched) processes, overlay localStorage on top
       // since not all fields are persisted to the API yet.
-      let data: FormInstanceData;
+      let data: ProcessBuilderInstanceData;
       if (isDraft) {
         data = base;
       } else {
         data = { ...base };
         if (existing) {
           for (const [key, value] of Object.entries(existing)) {
-            if (value !== undefined && value !== '') {
+            if (key === 'config') {
+              data.config = { ...data.config, ...(value as typeof data.config) };
+            } else if (value !== undefined && value !== '') {
               (data as Record<string, unknown>)[key] = value;
             }
           }

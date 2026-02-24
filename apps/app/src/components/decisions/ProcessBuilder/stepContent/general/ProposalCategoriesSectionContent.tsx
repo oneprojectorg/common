@@ -52,13 +52,14 @@ export function ProposalCategoriesSectionContent({
   // Local state — immediate source of truth for UI
   // Seed from store (localStorage) first, then fall back to server data
   const [config, setConfig] = useState<CategoryConfig>(() => ({
-    categories: storeData?.categories ?? serverConfig?.categories ?? [],
+    categories:
+      storeData?.config?.categories ?? serverConfig?.categories ?? [],
     requireCategorySelection:
-      storeData?.requireCategorySelection ??
+      storeData?.config?.requireCategorySelection ??
       serverConfig?.requireCategorySelection ??
       true,
     allowMultipleCategories:
-      storeData?.allowMultipleCategories ??
+      storeData?.config?.allowMultipleCategories ??
       serverConfig?.allowMultipleCategories ??
       false,
   }));
@@ -88,7 +89,7 @@ export function ProposalCategoriesSectionContent({
   // not currently mounted.
   const debouncedSave = useDebouncedCallback((data: CategoryConfig) => {
     setSaveStatus(decisionProfileId, 'saving');
-    setInstanceData(decisionProfileId, data);
+    setInstanceData(decisionProfileId, { config: data });
 
     const existingTemplate = instance.instanceData.proposalTemplate;
 
