@@ -41,6 +41,10 @@ const EditDecisionPage = async ({
     categories: instanceData.config?.categories,
     requireCategorySelection: instanceData.config?.requireCategorySelection,
     allowMultipleCategories: instanceData.config?.allowMultipleCategories,
+    organizeByCategories: instanceData.config?.organizeByCategories,
+    requireCollaborativeProposals:
+      instanceData.config?.requireCollaborativeProposals,
+    isPrivate: instanceData.config?.isPrivate,
   };
 
   return (
@@ -48,6 +52,7 @@ const EditDecisionPage = async ({
       <ProcessBuilderStoreInitializer
         decisionProfileId={decisionProfile.id}
         serverData={serverData}
+        isDraft={processInstance.status === 'draft'}
       />
       <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
       <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">

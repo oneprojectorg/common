@@ -9,7 +9,7 @@ import { Header2, Header3 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -32,9 +32,11 @@ export function ProposalCategoriesSectionContent({
   instanceId,
 }: SectionProps) {
   const t = useTranslations();
+  const utils = trpc.useUtils();
 
   // Fetch server data for seeding
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const isDraft = instance.status === 'draft';
   const serverConfig = instance.instanceData?.config;
 
   const storeData = useProcessBuilderStore(
@@ -64,10 +66,23 @@ export function ProposalCategoriesSectionContent({
   const { categories, requireCategorySelection, allowMultipleCategories } =
     config;
 
-  // tRPC mutation
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+  // tRPC mutation with cache invalidation (matches phase editor pattern)
+  const debouncedSaveRef = useRef<() => boolean>(null);
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+    onSuccess: () => markSaved(decisionProfileId),
+    onError: () => setSaveStatus(decisionProfileId, 'error'),
+    onSettled: () => {
+      // Skip invalidation if another debounced save is pending — that save's
+      // onSettled will reconcile. This prevents a stale refetch from overwriting
+      // optimistic cache updates made between the two saves.
+      if (debouncedSaveRef.current?.()) {
+        return;
+      }
+      void utils.decision.getInstance.invalidate({ instanceId });
+    },
+  });
 
-  // Debounced auto-save: writes to Zustand store + API.
+  // Debounced auto-save: draft persists to API, non-draft only buffers locally.
   // Also syncs the proposalTemplate so that the category field and required
   // array stay consistent with the config — even if the template editor is
   // not currently mounted.
@@ -93,11 +108,13 @@ export function ProposalCategoriesSectionContent({
       setProposalTemplate(decisionProfileId, syncedTemplate);
     }
 
-    updateInstance.mutate(mutation, {
-      onSuccess: () => markSaved(decisionProfileId),
-      onError: () => setSaveStatus(decisionProfileId, 'error'),
-    });
+    if (isDraft) {
+      updateInstance.mutate(mutation);
+    } else {
+      markSaved(decisionProfileId);
+    }
   }, AUTOSAVE_DEBOUNCE_MS);
+  debouncedSaveRef.current = () => debouncedSave.isPending();
 
   // Update local state and trigger debounced save
   const updateConfig = (update: Partial<CategoryConfig>) => {

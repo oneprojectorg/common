@@ -96,10 +96,17 @@ export function OverviewSectionForm({
   }, [decisionProfileId, setSaveStatus]);
 
   // tRPC mutation with cache invalidation (matches phase editor pattern)
+  const debouncedSaveRef = useRef<() => boolean>(null);
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: () => markSaved(decisionProfileId),
     onError: () => setSaveStatus(decisionProfileId, 'error'),
     onSettled: () => {
+      // Skip invalidation if another debounced save is pending — that save's
+      // onSettled will reconcile. This prevents a stale refetch from overwriting
+      // optimistic cache updates made between the two saves.
+      if (debouncedSaveRef.current?.()) {
+        return;
+      }
       void utils.decision.getInstance.invalidate({ instanceId });
     },
   });
@@ -111,10 +118,12 @@ export function OverviewSectionForm({
     name: p.name,
   }));
 
-  // Debounced save: always buffer in localStorage; draft also persists to API.
+  // Debounced save: draft persists to API; non-draft only buffers locally.
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
     setSaveStatus(decisionProfileId, 'saving');
 
+    // Always buffer in the store so the UI reflects the latest values.
+    // For non-draft this also persists to localStorage as an offline buffer.
     setInstanceData(decisionProfileId, {
       name: values.name,
       description: values.description,
@@ -130,26 +139,29 @@ export function OverviewSectionForm({
         name: values.name,
         description: values.description,
         stewardProfileId: values.stewardProfileId || undefined,
+        config: {
+          organizeByCategories: values.organizeByCategories,
+          requireCollaborativeProposals: values.requireCollaborativeProposals,
+          isPrivate: values.isPrivate,
+        },
       });
     } else {
       markSaved(decisionProfileId);
     }
   }, AUTOSAVE_DEBOUNCE_MS);
+  debouncedSaveRef.current = () => debouncedSave.isPending();
 
-  // Non-draft: prefer store (localStorage buffer) over API data.
-  // Draft: use API data (query cache kept fresh via onSettled invalidation).
-  const initialName =
-    !isDraft && instanceData?.name
-      ? instanceData.name
-      : (instance.name ?? decisionName ?? '');
+  // Prefer store (localStorage buffer) over API data — the store is written
+  // synchronously on every save, so it's always the freshest source.
+  const initialStewardProfileId =
+    instanceData?.stewardProfileId ?? instance.steward?.id ?? '';
+  const initialName = instanceData?.name ?? instance.name ?? decisionName ?? '';
   const initialDescription =
-    !isDraft && instanceData?.description
-      ? instanceData.description
-      : (instance.description ?? '');
+    instanceData?.description ?? instance.description ?? '';
 
   const form = useAppForm({
     defaultValues: {
-      stewardProfileId: instanceData?.stewardProfileId ?? '',
+      stewardProfileId: initialStewardProfileId,
       name: initialName,
       description: initialDescription,
       organizeByCategories: instanceData?.organizeByCategories ?? true,

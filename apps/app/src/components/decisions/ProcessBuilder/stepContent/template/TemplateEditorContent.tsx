@@ -62,6 +62,8 @@ export function TemplateEditorContent({
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const isDraft = instance.status === 'draft';
+  const utils = trpc.useUtils();
   const instanceData = instance.instanceData;
 
   const storeData = useProcessBuilderStore(
@@ -132,7 +134,20 @@ export function TemplateEditorContent({
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
 
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+  const debouncedSaveRef = useRef<() => boolean>(null);
+  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+    onSuccess: () => markSaved(decisionProfileId),
+    onError: () => setSaveStatus(decisionProfileId, 'error'),
+    onSettled: () => {
+      // Skip invalidation if another debounced save is pending — that save's
+      // onSettled will reconcile. This prevents a stale refetch from overwriting
+      // optimistic cache updates made between the two saves.
+      if (debouncedSaveRef.current?.()) {
+        return;
+      }
+      void utils.decision.getInstance.invalidate({ instanceId });
+    },
+  });
 
   // Derive field views from the template, excluding locked system fields
   // that are always rendered separately above the sortable list.
@@ -174,7 +189,7 @@ export function TemplateEditorContent({
     ];
   }, [fields, hasCategories]);
 
-  // Debounced auto-save to localStorage and backend.
+  // Debounced auto-save: draft persists to API, non-draft only buffers locally.
   // Runs ensureLockedFields before persisting so that x-field-order and
   // required are always consistent — individual mutators only need to
   // touch properties.
@@ -187,19 +202,19 @@ export function TemplateEditorContent({
         requireCategorySelection,
       });
       setProposalTemplate(decisionProfileId, normalized);
-      updateInstance.mutate(
-        {
+
+      if (isDraft) {
+        updateInstance.mutate({
           instanceId,
           proposalTemplate: normalized,
-        },
-        {
-          onSuccess: () => markSaved(decisionProfileId),
-          onError: () => setSaveStatus(decisionProfileId, 'error'),
-        },
-      );
+        });
+      } else {
+        markSaved(decisionProfileId);
+      }
     },
     AUTOSAVE_DEBOUNCE_MS,
   );
+  debouncedSaveRef.current = () => debouncedSave.isPending();
 
   // Trigger debounced save when template changes (skip initial load)
   useEffect(() => {
