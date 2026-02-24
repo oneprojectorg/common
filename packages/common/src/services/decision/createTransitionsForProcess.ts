@@ -1,21 +1,17 @@
-import { type TransactionType, db, eq } from '@op/db/client';
-import { decisionProcessTransitions, decisionProcesses } from '@op/db/schema';
+import { type TransactionType, db } from '@op/db/client';
+import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type {
-  DecisionSchemaDefinition,
-  PhaseDefinition,
-} from './schemas/types';
 import type { ScheduledTransition } from './types';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
  * Each transition fires when the current phase's end date arrives.
  *
- * Note: This function looks up rules from the process schema (template) since
- * instance data phases may not include rules when created via API.
+ * Rules are read from the instance's phase data (instanceData.phases[].rules),
+ * which are populated from the template when the instance is created.
  */
 export async function createTransitionsForProcess({
   processInstance,
@@ -45,25 +41,6 @@ export async function createTransitionsForProcess({
       );
     }
 
-    // Fetch the process schema to get phase rules (instance data may not include rules)
-    const process = await dbClient._query.decisionProcesses.findFirst({
-      where: eq(decisionProcesses.id, processInstance.processId),
-    });
-
-    if (!process) {
-      throw new CommonError(
-        `Process not found for instance: ${processInstance.id}`,
-      );
-    }
-
-    const processSchema = process.processSchema as DecisionSchemaDefinition;
-    const schemaPhases = processSchema?.phases || [];
-
-    // Build a map of phase ID to schema phase for quick lookup
-    const schemaPhasesMap = new Map<string, PhaseDefinition>(
-      schemaPhases.map((phase) => [phase.id, phase]),
-    );
-
     // Create transitions for phases that use date-based advancement
     // A transition is created FROM a phase (when it ends) TO the next phase
     const transitionsToCreate: ScheduledTransition[] = [];
@@ -75,14 +52,8 @@ export async function createTransitionsForProcess({
         return;
       }
 
-      // Look up rules from instance data first, then fall back to schema
-      const schemaPhase = schemaPhasesMap.get(currentPhase.phaseId);
-      const advancementMethod =
-        currentPhase.rules?.advancement?.method ??
-        schemaPhase?.rules?.advancement?.method;
-
       // Only create transition if current phase uses date-based advancement
-      if (advancementMethod !== 'date') {
+      if (currentPhase.rules?.advancement?.method !== 'date') {
         return;
       }
 
