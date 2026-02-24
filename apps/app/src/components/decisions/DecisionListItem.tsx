@@ -75,7 +75,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   return (
     <>
-      <div className="flex items-center gap-0 rounded-lg border hover:bg-primary-tealWhite sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-tealWhite sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
           className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
@@ -109,13 +109,10 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         </Link>
 
         {canDelete && (
-          <div className="flex items-center pr-2">
+          <div className="flex items-center pt-4 pr-2 sm:pt-0 sm:pl-12">
             <OptionMenu variant="outline" className="rounded-md">
               <Menu className="min-w-28 p-2">
-                <MenuItem
-                  key="settings"
-                  href={`/decisions/${item.slug}/edit`}
-                >
+                <MenuItem key="settings" href={`/decisions/${item.slug}/edit`}>
                   {t('Settings')}
                 </MenuItem>
                 <MenuItem
