@@ -12,14 +12,8 @@ export const deleteDecisionRouter = router({
         instanceId: z.uuid(),
       }),
     )
-    .output(
-      z.object({
-        success: z.boolean(),
-        deletedId: z.string(),
-      }),
-    )
     .mutation(async ({ ctx, input }) => {
-      return await deleteDecision({
+      await deleteDecision({
         instanceId: input.instanceId,
         user: ctx.user,
       });

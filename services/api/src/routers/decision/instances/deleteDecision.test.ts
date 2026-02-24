@@ -35,12 +35,9 @@ describe.concurrent('deleteDecision', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.deleteDecision({
+    await caller.decision.deleteDecision({
       instanceId: instance.instance.id,
     });
-
-    expect(result.success).toBe(true);
-    expect(result.deletedId).toBe(instance.instance.id);
 
     // Verify the instance is gone from DB
     const deletedInstance = await db.query.processInstances.findFirst({
@@ -85,12 +82,9 @@ describe.concurrent('deleteDecision', () => {
 
     const adminCaller = await createAuthenticatedCaller(adminUser.email);
 
-    const result = await adminCaller.decision.deleteDecision({
+    await adminCaller.decision.deleteDecision({
       instanceId: instance.instance.id,
     });
-
-    expect(result.success).toBe(true);
-    expect(result.deletedId).toBe(instance.instance.id);
 
     // Verify the instance is gone from DB
     const deletedInstance = await db.query.processInstances.findFirst({
