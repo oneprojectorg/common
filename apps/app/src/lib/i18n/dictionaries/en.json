@@ -695,5 +695,11 @@
   "Vote": "Vote",
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "Invite participants",
-  "Only invited participants can view and participate in this process": "Only invited participants can view and participate in this process"
+  "Only invited participants can view and participate in this process": "Only invited participants can view and participate in this process",
+  "Delete draft": "Delete draft",
+  "Delete Draft Decision": "Delete Draft Decision",
+  "Are you sure you want to delete this draft? This action cannot be undone.": "Are you sure you want to delete this draft? This action cannot be undone.",
+  "Draft deleted successfully": "Draft deleted successfully",
+  "Failed to delete draft": "Failed to delete draft",
+  "Deleting...": "Deleting..."
 }

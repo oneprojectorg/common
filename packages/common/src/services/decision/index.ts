@@ -41,6 +41,7 @@ export * from './updateProposal';
 export * from './getProposal';
 export * from './listProposals';
 export * from './deleteProposal';
+export * from './deleteDraftDecision';
 export * from './getProcessCategories';
 export * from './exportProposals';
 export * from './getExportStatus';

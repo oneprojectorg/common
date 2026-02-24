@@ -702,5 +702,11 @@
   "Vote": "Vote",
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "অংশগ্রহণকারীদের আমন্ত্রণ করুন",
-  "Only invited participants can view and participate in this process": "শুধুমাত্র আমন্ত্রিত অংশগ্রহণকারীরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন"
+  "Only invited participants can view and participate in this process": "শুধুমাত্র আমন্ত্রিত অংশগ্রহণকারীরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন",
+  "Delete draft": "খসড়া মুছুন",
+  "Delete Draft Decision": "খসড়া সিদ্ধান্ত মুছুন",
+  "Are you sure you want to delete this draft? This action cannot be undone.": "আপনি কি এই খসড়াটি মুছে ফেলার বিষয়ে নিশ্চিত? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "Draft deleted successfully": "খসড়া সফলভাবে মুছে ফেলা হয়েছে",
+  "Failed to delete draft": "খসড়া মুছে ফেলতে ব্যর্থ",
+  "Deleting...": "মুছে ফেলা হচ্ছে..."
 }
