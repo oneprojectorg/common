@@ -14,9 +14,11 @@ import { NotFoundError } from '../../utils';
  * @throws NotFoundError if no global role with that name exists
  */
 export async function assertGlobalRole(name: string): Promise<AccessRole> {
-  const role = await db._query.accessRoles.findFirst({
-    where: (table, { eq, isNull, and }) =>
-      and(eq(table.name, name), isNull(table.profileId)),
+  const role = await db.query.accessRoles.findFirst({
+    where: {
+      name,
+      profileId: { isNull: true },
+    },
   });
 
   if (!role) {
