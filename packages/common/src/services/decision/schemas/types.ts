@@ -6,6 +6,7 @@ import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
 
 import type { SelectionPipeline } from '../selectionPipeline/types';
+import { ProposalTemplateSchema } from '../types';
 
 /**
  * Phase behavior rules
@@ -78,4 +79,7 @@ export interface DecisionSchemaDefinition {
 
   /** Phase definitions */
   phases: [PhaseDefinition, ...PhaseDefinition[]];
+
+  /** Proposal template definition **/
+  proposalTemplate: ProposalTemplateSchema;
 }

@@ -99,7 +99,7 @@ describe.concurrent('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES] Community Garden Project',
-        default:
+        summary:
           '[ES] <p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
       },
     });
@@ -183,12 +183,12 @@ describe.concurrent('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES-CACHED] Community Garden Project',
-        default:
+        summary:
           '[ES] <p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
       },
     });
 
-    // Only the body (cache miss) should have been sent to DeepL
+    // Only the summary (cache miss) should have been sent to DeepL
     expect(mockTranslateText).toHaveBeenCalledWith(
       ['<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>'],
       null,
@@ -233,7 +233,10 @@ describe.concurrent('translation.translateProposal', () => {
       ],
     });
 
-    // Pre-seed both title and body in the cache
+    const bodyHtml =
+      '<p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>';
+
+    // Pre-seed both title and summary in the cache
     await translationData.seedTranslation({
       contentKey: `proposal:${proposal.id}:title`,
       sourceText: 'Fully Cached Proposal',
@@ -243,11 +246,9 @@ describe.concurrent('translation.translateProposal', () => {
     });
 
     await translationData.seedTranslation({
-      contentKey: `proposal:${proposal.id}:default`,
-      sourceText:
-        '<p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
-      translatedText:
-        '[ES-CACHED] <p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+      contentKey: `proposal:${proposal.id}:summary`,
+      sourceText: bodyHtml,
+      translatedText: `[ES-CACHED] ${bodyHtml}`,
       sourceLocale: 'EN',
       targetLocale: 'ES',
     });
@@ -276,8 +277,7 @@ describe.concurrent('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES-CACHED] Fully Cached Proposal',
-        default:
-          '[ES-CACHED] <p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+        summary: `[ES-CACHED] ${bodyHtml}`,
       },
     });
   });

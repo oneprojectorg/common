@@ -169,6 +169,38 @@ export const simpleVoting: DecisionSchemaDefinition = {
       },
     },
   ],
+  proposalTemplate: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        title: 'Proposal title',
+        'x-format': 'short-text',
+      },
+      budget: {
+        type: 'object',
+        title: 'Budget',
+        'x-format': 'money',
+        properties: {
+          amount: {
+            type: 'number',
+          },
+          currency: {
+            type: 'string',
+            default: 'USD',
+          },
+        },
+      },
+
+      summary: {
+        type: 'string',
+        'x-format': 'long-text',
+        title: 'Proposal summary',
+      },
+    },
+    'x-field-order': ['title', 'budget', 'summary'],
+    required: ['summary', 'title'],
+  },
 };
 
 export const decisionTemplates: Record<string, DecisionSchemaDefinition> = {
