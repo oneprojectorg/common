@@ -20,6 +20,10 @@ export const mockDb = {
     decisions: {
       findFirst: vi.fn(),
     },
+    decisionProcessTransitions: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+    },
   },
   insert: vi.fn().mockReturnValue({
     values: vi.fn().mockReturnValue({
