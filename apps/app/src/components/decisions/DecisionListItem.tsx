@@ -131,7 +131,6 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         onOpenChange={(open) => !open && setShowDeleteModal(false)}
       >
         <Modal
-          isDismissable
           isOpen={showDeleteModal}
           onOpenChange={(open) => !open && setShowDeleteModal(false)}
         >
