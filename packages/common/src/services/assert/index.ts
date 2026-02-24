@@ -1,3 +1,4 @@
+export { assertGlobalRole } from './assertGlobalRole';
 export {
   assertOrganization,
   assertOrganizationByProfileId,

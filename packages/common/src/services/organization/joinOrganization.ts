@@ -11,6 +11,7 @@ import {
 } from '@op/db/schema';
 
 import { CommonError, UnauthorizedError } from '../../utils';
+import { assertGlobalRole } from '../assert';
 import { getAllowListUser } from '../user';
 
 /**
@@ -121,13 +122,5 @@ const determineTargetRole = async (
     }
   }
 
-  const memberRole = await db._query.accessRoles.findFirst({
-    where: (table, { eq }) => eq(table.name, 'Member'),
-  });
-
-  if (!memberRole) {
-    throw new CommonError('Role not found');
-  }
-
-  return memberRole;
+  return assertGlobalRole('Member');
 };

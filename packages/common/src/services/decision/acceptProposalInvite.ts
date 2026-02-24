@@ -12,6 +12,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '../../utils/error';
+import { assertGlobalRole } from '../assert';
 
 /**
  * Accept a proposal invite and ensure the user is also added as a Member
@@ -61,14 +62,8 @@ export const acceptProposalInvite = async ({
       where: { profileId: invite.profileId },
       with: { processInstance: true },
     }),
-    db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.name, 'Member'),
-    }),
+    assertGlobalRole('Member'),
   ]);
-
-  if (!memberRole) {
-    throw new CommonError('Member role not found');
-  }
 
   // Check if we need to add the user to the parent decision process
   let decisionProfileIdToAdd: string | null = null;

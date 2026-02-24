@@ -10,7 +10,7 @@ import { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../../utils';
-import { assertProfile } from '../../assert';
+import { assertGlobalRole, assertProfile } from '../../assert';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
 import { JoinProfileRequestWithProfiles } from './types';
 
@@ -105,16 +105,7 @@ export const updateProfileJoinRequest = async ({
 
       // Only create membership if it doesn't already exist
       if (!existingMembership) {
-        // TODO: We should find a better way to reference the Member role
-        // rather than querying by name. Consider using a constant ID or
-        // a more robust role resolution mechanism.
-        const memberRole = await db._query.accessRoles.findFirst({
-          where: (table, { eq }) => eq(table.name, 'Member'),
-        });
-
-        if (!memberRole) {
-          throw new CommonError('Member role not found in the system');
-        }
+        const memberRole = await assertGlobalRole('Member');
 
         await db.transaction(async (tx) => {
           // Create the organization membership
