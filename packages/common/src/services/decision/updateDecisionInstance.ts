@@ -46,8 +46,8 @@ export const updateDecisionInstance = async ({
   user: User;
 }) => {
   // Fetch existing instance
-  const existingInstance = await db._query.processInstances.findFirst({
-    where: eq(processInstances.id, instanceId),
+  const existingInstance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
   });
 
   if (!existingInstance) {
@@ -151,8 +151,8 @@ export const updateDecisionInstance = async ({
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {
     // Nothing to update, just return the existing profile
-    const profile = await db._query.profiles.findFirst({
-      where: eq(profiles.id, profileId),
+    const profile = await db.query.profiles.findFirst({
+      where: { id: profileId },
       with: {
         processInstance: true,
       },
@@ -210,8 +210,8 @@ export const updateDecisionInstance = async ({
   });
 
   // Fetch the profile with processInstance joined for the response
-  const profile = await db._query.profiles.findFirst({
-    where: eq(profiles.id, profileId),
+  const profile = await db.query.profiles.findFirst({
+    where: { id: profileId },
     with: {
       processInstance: true,
     },

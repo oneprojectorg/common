@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
@@ -190,8 +190,8 @@ export const createInstanceFromTemplateCore = async ({
 
   // Fetch the profile with processInstance joined for the response
   // profileId is guaranteed to be set since we just created it above
-  const profile = await db._query.profiles.findFirst({
-    where: eq(profiles.id, instance.profileId!),
+  const profile = await db.query.profiles.findFirst({
+    where: { id: instance.profileId! },
     with: {
       processInstance: true,
     },
