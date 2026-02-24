@@ -43,8 +43,8 @@ export function ProposalCategoriesSectionContent({
     (s) => s.instances[decisionProfileId],
   );
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const setProposalTemplate = useProcessBuilderStore(
-    (s) => s.setProposalTemplate,
+  const setProposalTemplateSchema = useProcessBuilderStore(
+    (s) => s.setProposalTemplateSchema,
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
@@ -105,7 +105,7 @@ export function ProposalCategoriesSectionContent({
         requireCategorySelection: data.requireCategorySelection,
       });
       mutation.proposalTemplate = syncedTemplate;
-      setProposalTemplate(decisionProfileId, syncedTemplate);
+      setProposalTemplateSchema(decisionProfileId, syncedTemplate);
     }
 
     if (isDraft) {
