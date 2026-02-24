@@ -182,9 +182,7 @@ export const listDecisionProfiles = async ({
 
       // Compute decision access from the joined profileUser roles
       const profileUser = profile.profileUsers?.[0];
-      const roles = profileUser
-        ? getNormalizedRoles(profileUser.roles)
-        : [];
+      const roles = profileUser ? getNormalizedRoles(profileUser.roles) : [];
       const collapsed = collapseRoles(roles);
       const access = fromDecisionBitField(collapsed.decisions ?? 0);
 
@@ -232,5 +230,8 @@ export const listDecisionProfiles = async ({
         })
       : null;
 
-  return { items, next: nextCursor } satisfies PaginatedResult<DecisionProfileItem>;
+  return {
+    items,
+    next: nextCursor,
+  } satisfies PaginatedResult<DecisionProfileItem>;
 };
