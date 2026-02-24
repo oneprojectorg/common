@@ -7,19 +7,19 @@ export const isValidEmail = (email: string) =>
 
 /**
  * Parse a pasted string of comma/semicolon/newline-separated emails into
- * deduplicated, validated email entries. Returns null if the text
- * doesn't look like a multi-email paste.
+ * deduplicated, validated emails. Returns null if the text doesn't look
+ * like a multi-email paste.
  */
 export function parseEmailPaste(
   text: string,
   existingEmails: Set<string>,
-): { id: string; name: string; email: string }[] | null {
+): string[] | null {
   if (!text.includes(',') && !text.includes(';') && !text.includes('\n')) {
     return null;
   }
 
   const seen = new Set(existingEmails);
-  const items: { id: string; name: string; email: string }[] = [];
+  const emails: string[] = [];
 
   const candidates = text
     .split(/[,;\n]+/)
@@ -29,9 +29,9 @@ export function parseEmailPaste(
   for (const email of candidates) {
     if (isValidEmail(email) && !seen.has(email.toLowerCase())) {
       seen.add(email.toLowerCase());
-      items.push({ id: `email-${email}`, name: email, email });
+      emails.push(email);
     }
   }
 
-  return items;
+  return emails;
 }

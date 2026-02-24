@@ -242,14 +242,19 @@ export const ProfileInviteModal = ({
     const existingEmails = new Set(
       allSelectedItems.map((item) => item.email.toLowerCase()),
     );
-    const newItems = parseEmailPaste(pastedText, existingEmails);
-    if (!newItems) {
+    const emails = parseEmailPaste(pastedText, existingEmails);
+    if (!emails) {
       return;
     }
 
     e.preventDefault();
 
-    if (newItems.length > 0) {
+    if (emails.length > 0) {
+      const newItems = emails.map((email) => ({
+        id: `email-${email}`,
+        name: email,
+        email,
+      }));
       setSelectedItemsByRole((prev) => ({
         ...prev,
         [selectedRoleId]: [...(prev[selectedRoleId] ?? []), ...newItems],

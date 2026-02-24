@@ -328,14 +328,19 @@ function ShareProposalModalContent({
       ...optimisticUsers.map((u) => u.email.toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
-    const newItems = parseEmailPaste(pastedText, takenEmails);
-    if (!newItems) {
+    const emails = parseEmailPaste(pastedText, takenEmails);
+    if (!emails) {
       return;
     }
 
     e.preventDefault();
 
-    if (newItems.length > 0) {
+    if (emails.length > 0) {
+      const newItems = emails.map((email) => ({
+        id: `email-${email}`,
+        name: email,
+        email,
+      }));
       setPendingInvites((prev) => [...prev, ...newItems]);
     }
 
