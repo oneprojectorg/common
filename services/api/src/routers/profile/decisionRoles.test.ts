@@ -269,8 +269,8 @@ describe.concurrent('profile.decisionRoles', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Use a well-known global role ID — global roles have no profileId
-    const globalRole = await db._query.accessRoles.findFirst({
-      where: (table, { isNull }) => isNull(table.profileId),
+    const globalRole = await db.query.accessRoles.findFirst({
+      where: { profileId: { isNull: true } },
     });
 
     if (!globalRole) {

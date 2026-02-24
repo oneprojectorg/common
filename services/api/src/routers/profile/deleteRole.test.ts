@@ -42,8 +42,8 @@ describe.concurrent('profile.deleteRole', () => {
     expect(result.success).toBe(true);
 
     // Verify role was deleted
-    const deletedRole = await db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, customRole!.id),
+    const deletedRole = await db.query.accessRoles.findFirst({
+      where: { id: customRole!.id },
     });
     expect(deletedRole).toBeUndefined();
   });
@@ -85,8 +85,8 @@ describe.concurrent('profile.deleteRole', () => {
     );
 
     // Verify role still exists after failed delete attempt
-    const roleStillExists = await db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, customRole!.id),
+    const roleStillExists = await db.query.accessRoles.findFirst({
+      where: { id: customRole!.id },
     });
     expect(roleStillExists).toBeDefined();
   });
@@ -170,8 +170,8 @@ describe.concurrent('profile.deleteRole', () => {
     );
 
     // Verify role still exists
-    const roleStillExists = await db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, customRole!.id),
+    const roleStillExists = await db.query.accessRoles.findFirst({
+      where: { id: customRole!.id },
     });
     expect(roleStillExists).toBeDefined();
   });

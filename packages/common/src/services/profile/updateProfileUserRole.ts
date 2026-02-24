@@ -1,5 +1,5 @@
 import { and, db, eq, inArray } from '@op/db/client';
-import { profileUserToAccessRoles, profileUsers } from '@op/db/schema';
+import { profileUserToAccessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -31,14 +31,14 @@ export const updateProfileUserRoles = async ({
   const roleIdsDeduped = [...new Set(roleIds)];
 
   const [targetProfileUser, validRoles] = await Promise.all([
-    db._query.profileUsers.findFirst({
-      where: eq(profileUsers.id, profileUserId),
+    db.query.profileUsers.findFirst({
+      where: { id: profileUserId },
       with: {
         roles: true,
       },
     }),
-    db._query.accessRoles.findMany({
-      where: (table, { inArray }) => inArray(table.id, roleIdsDeduped),
+    db.query.accessRoles.findMany({
+      where: { id: { in: roleIdsDeduped } },
     }),
   ]);
 

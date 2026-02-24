@@ -34,8 +34,8 @@ export async function createRole({
   user: { id: string };
 }) {
   const [zone] = await Promise.all([
-    db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, zoneName),
+    db.query.accessZones.findFirst({
+      where: { name: zoneName },
     }),
     assertProfileAdmin(user, profileId),
   ]);
@@ -90,11 +90,11 @@ export async function updateRolePermissions({
   user: { id: string };
 }) {
   const [zone, role] = await Promise.all([
-    db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, zoneName),
+    db.query.accessZones.findFirst({
+      where: { name: zoneName },
     }),
-    db._query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.id, roleId),
+    db.query.accessRoles.findFirst({
+      where: { id: roleId },
     }),
   ]);
 
@@ -145,8 +145,8 @@ export async function deleteRole({
   user: { id: string };
 }) {
   // First check if the role is a global role (profileId IS NULL)
-  const role = await db._query.accessRoles.findFirst({
-    where: (table, { eq }) => eq(table.id, roleId),
+  const role = await db.query.accessRoles.findFirst({
+    where: { id: roleId },
   });
 
   if (!role) {
