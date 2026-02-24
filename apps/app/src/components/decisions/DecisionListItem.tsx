@@ -10,7 +10,7 @@ import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useState } from 'react';
-import { LuCalendar, LuTrash2 } from 'react-icons/lu';
+import { LuCalendar } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
@@ -75,10 +75,10 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   return (
     <>
-      <div className="flex items-center gap-0 rounded-lg border sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+      <div className="flex items-center gap-0 rounded-lg border hover:bg-primary-tealWhite sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
-          className="flex flex-1 flex-col gap-4 p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
         >
           <DecisionCardHeader
             name={processInstance.name || item.name}
@@ -113,11 +113,16 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             <OptionMenu variant="outline" className="rounded-md">
               <Menu className="min-w-28 p-2">
                 <MenuItem
+                  key="settings"
+                  href={`/decisions/${item.slug}/edit`}
+                >
+                  {t('Settings')}
+                </MenuItem>
+                <MenuItem
                   key="delete"
                   onAction={() => setShowDeleteModal(true)}
                   className="text-functional-red"
                 >
-                  <LuTrash2 className="size-4" />
                   {t('Delete')}
                 </MenuItem>
               </Menu>
@@ -134,7 +139,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           isOpen={showDeleteModal}
           onOpenChange={(open) => !open && setShowDeleteModal(false)}
         >
-          <ModalHeader>
+          <ModalHeader className="pl-6 text-left">
             {isDraft
               ? t('Delete draft?')
               : t('Delete {name}?', {
