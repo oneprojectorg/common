@@ -1,12 +1,9 @@
 'use client';
 
 import { formatCurrency, formatDateRange } from '@/utils/formatting';
-import type { processPhaseSchema } from '@op/api/encoders';
-import type { z } from 'zod';
+import { type ProcessPhase } from '@op/api/encoders';
 
 import { useTranslations } from '@/lib/i18n';
-
-type ProcessPhase = z.infer<typeof processPhaseSchema>;
 
 interface DecisionStatsProps {
   currentPhase?: ProcessPhase;
@@ -32,11 +29,11 @@ export function DecisionStats({
         <p className="mt-1 text-lg font-medium text-neutral-charcoal">
           {currentPhase?.name || t('Proposal Submissions')}
         </p>
-        {currentPhase?.phase && (
+        {(currentPhase?.phase?.startDate || currentPhase?.phase?.endDate) && (
           <p className="mt-1 text-sm text-neutral-gray3">
             {formatDateRange(
-              currentPhase.phase.startDate,
-              currentPhase.phase.endDate,
+              currentPhase.phase?.startDate,
+              currentPhase.phase?.endDate,
             ) || t('Timeline not set')}
           </p>
         )}
