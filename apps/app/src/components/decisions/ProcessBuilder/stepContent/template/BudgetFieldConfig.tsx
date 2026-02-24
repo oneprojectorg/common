@@ -1,5 +1,6 @@
 'use client';
 
+import { ProposalTemplateSchema } from '@op/common';
 import { FieldConfigCard } from '@op/ui/FieldConfigCard';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -11,7 +12,6 @@ import { LuHash } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import {
-  type ProposalTemplate,
   getFieldSchema,
   isFieldRequired,
   setFieldRequired,
@@ -43,8 +43,10 @@ export function BudgetFieldConfig({
   template,
   onTemplateChange,
 }: {
-  template: ProposalTemplate;
-  onTemplateChange: React.Dispatch<React.SetStateAction<ProposalTemplate>>;
+  template: ProposalTemplateSchema;
+  onTemplateChange: React.Dispatch<
+    React.SetStateAction<ProposalTemplateSchema>
+  >;
 }) {
   const t = useTranslations();
 

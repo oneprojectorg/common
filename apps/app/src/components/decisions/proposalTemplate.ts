@@ -9,6 +9,8 @@
  * via vendor extensions (`x-*` properties).
  */
 import {
+  ProposalTemplateSchema,
+  SYSTEM_FIELD_KEYS,
   buildCategorySchema,
   parseSchemaOptions,
   schemaHasOptions,
@@ -19,7 +21,7 @@ import type { RJSFSchema } from '@rjsf/utils';
 // Core types
 // ---------------------------------------------------------------------------
 
-export type ProposalTemplate = RJSFSchema;
+// export type ProposalTemplate = RJSFSchema;
 
 export type FieldType = 'short_text' | 'long_text' | 'dropdown';
 
@@ -54,7 +56,10 @@ const X_FORMAT_TO_FIELD_TYPE: Record<string, FieldType> = {
 // Field type → JSON Schema creator
 // ---------------------------------------------------------------------------
 
-function withXFormat(schema: RJSFSchema, xFormat: string): RJSFSchema {
+function withXFormat(
+  schema: ProposalTemplateSchema,
+  xFormat: string,
+): ProposalTemplateSchema {
   return { ...schema, 'x-format': xFormat };
 }
 
@@ -73,19 +78,19 @@ export function createFieldJsonSchema(type: FieldType): RJSFSchema {
 // Readers
 // ---------------------------------------------------------------------------
 
-function asSchema(def: unknown): RJSFSchema | undefined {
+function asSchema(def: unknown): ProposalTemplateSchema | undefined {
   if (typeof def === 'object' && def !== null) {
-    return def as RJSFSchema;
+    return def as ProposalTemplateSchema;
   }
   return undefined;
 }
 
-export function getFieldOrder(template: ProposalTemplate): string[] {
+export function getFieldOrder(template: ProposalTemplateSchema): string[] {
   return (template['x-field-order'] as string[] | undefined) ?? [];
 }
 
 export function getFieldSchema(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): RJSFSchema | undefined {
   const props = template.properties;
@@ -96,7 +101,7 @@ export function getFieldSchema(
 }
 
 export function getFieldType(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): FieldType | undefined {
   const schema = getFieldSchema(template, fieldId);
@@ -111,7 +116,7 @@ export function getFieldType(
 }
 
 export function getFieldLabel(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): string {
   const schema = getFieldSchema(template, fieldId);
@@ -119,7 +124,7 @@ export function getFieldLabel(
 }
 
 export function getFieldDescription(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): string | undefined {
   const schema = getFieldSchema(template, fieldId);
@@ -127,7 +132,7 @@ export function getFieldDescription(
 }
 
 export function isFieldRequired(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): boolean {
   const required = template.required;
@@ -138,7 +143,7 @@ export function isFieldRequired(
 }
 
 export function getFieldOptions(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): { id: string; value: string }[] {
   const schema = getFieldSchema(template, fieldId);
@@ -160,7 +165,7 @@ export function getFieldOptions(
 export { schemaHasOptions };
 
 export function getFieldMin(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): number | undefined {
   const schema = getFieldSchema(template, fieldId);
@@ -168,7 +173,7 @@ export function getFieldMin(
 }
 
 export function getFieldMax(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): number | undefined {
   const schema = getFieldSchema(template, fieldId);
@@ -176,7 +181,7 @@ export function getFieldMax(
 }
 
 export function getFieldIsCurrency(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): boolean {
   const schema = getFieldSchema(template, fieldId);
@@ -188,7 +193,7 @@ export function getFieldIsCurrency(
 // ---------------------------------------------------------------------------
 
 export function getField(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
 ): FieldView | undefined {
   const fieldType = getFieldType(template, fieldId);
@@ -209,7 +214,7 @@ export function getField(
   };
 }
 
-export function getFields(template: ProposalTemplate): FieldView[] {
+export function getFields(template: ProposalTemplateSchema): FieldView[] {
   const order = getFieldOrder(template);
   const fields: FieldView[] = [];
   for (const id of order) {
@@ -253,11 +258,11 @@ export function getFieldErrors(field: FieldView): string[] {
 // ---------------------------------------------------------------------------
 
 export function addField(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
   type: FieldType,
   label: string,
-): ProposalTemplate {
+): ProposalTemplateSchema {
   const jsonSchema = { ...createFieldJsonSchema(type), title: label };
   const order = getFieldOrder(template);
 
@@ -272,9 +277,9 @@ export function addField(
 }
 
 export function removeField(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
-): ProposalTemplate {
+): ProposalTemplateSchema {
   const { [fieldId]: _removed, ...restProps } = template.properties ?? {};
   const order = getFieldOrder(template).filter((id) => id !== fieldId);
   const required = (template.required ?? []).filter((id) => id !== fieldId);
@@ -288,9 +293,9 @@ export function removeField(
 }
 
 export function reorderFields(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   newOrder: string[],
-): ProposalTemplate {
+): ProposalTemplateSchema {
   return {
     ...template,
     'x-field-order': newOrder,
@@ -298,10 +303,10 @@ export function reorderFields(
 }
 
 export function updateFieldLabel(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
   label: string,
-): ProposalTemplate {
+): ProposalTemplateSchema {
   const schema = getFieldSchema(template, fieldId);
   if (!schema) {
     return template;
@@ -317,10 +322,10 @@ export function updateFieldLabel(
 }
 
 export function updateFieldDescription(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
   description: string | undefined,
-): ProposalTemplate {
+): ProposalTemplateSchema {
   const schema = getFieldSchema(template, fieldId);
   if (!schema) {
     return template;
@@ -343,10 +348,10 @@ export function updateFieldDescription(
 }
 
 export function setFieldRequired(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   fieldId: string,
   required: boolean,
-): ProposalTemplate {
+): ProposalTemplateSchema {
   const current = template.required ?? [];
   const filtered = current.filter((id) => id !== fieldId);
   const next = required ? [...filtered, fieldId] : filtered;
@@ -377,8 +382,8 @@ function createLockedFieldSchema(xFormat: string, title: string): RJSFSchema {
 export function createDefaultTemplate(
   summaryLabel: string,
   titleLabel: string,
-): ProposalTemplate {
-  const base: ProposalTemplate = {
+): ProposalTemplateSchema {
+  const base: ProposalTemplateSchema = {
     type: 'object',
     properties: {
       title: createLockedFieldSchema('short-text', titleLabel),
@@ -403,7 +408,7 @@ export function createDefaultTemplate(
  * template editor.
  */
 export function ensureLockedFields(
-  template: ProposalTemplate,
+  template: ProposalTemplateSchema,
   options: {
     titleLabel: string;
     categoryLabel: string;
@@ -411,7 +416,7 @@ export function ensureLockedFields(
     /** When true, the category field is included in the template. Defaults to true. */
     requireCategorySelection?: boolean;
   },
-): ProposalTemplate {
+): ProposalTemplateSchema {
   let result = template;
 
   // Ensure title exists
@@ -430,10 +435,7 @@ export function ensureLockedFields(
   if (hasCategories) {
     const categoryLabels = (options.categories ?? []).map((c) => c.label);
     const existing = getFieldSchema(result, 'category');
-    const categorySchema = buildCategorySchema(
-      categoryLabels,
-      (existing ?? {}) as Record<string, unknown>,
-    );
+    const categorySchema = buildCategorySchema(categoryLabels, existing ?? {});
     // Preserve existing title or fall back to the configured label
     categorySchema.title =
       (existing?.title as string | undefined) ?? options.categoryLabel;
@@ -442,7 +444,7 @@ export function ensureLockedFields(
       ...result,
       properties: {
         ...result.properties,
-        category: categorySchema as RJSFSchema,
+        category: categorySchema,
       },
     };
   } else if (getFieldSchema(result, 'category')) {
@@ -457,8 +459,8 @@ export function ensureLockedFields(
   const properties = result.properties ?? {};
   const order = getFieldOrder(result);
 
-  const systemKeys = ['title', 'category', 'budget'] as const;
-  const systemSet = new Set<string>(systemKeys);
+  const systemKeys = Array.from(SYSTEM_FIELD_KEYS);
+  const systemSet = SYSTEM_FIELD_KEYS;
 
   // System fields present in properties, in canonical order
   const prefix = systemKeys.filter((k) => properties[k]);

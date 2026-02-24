@@ -14,11 +14,13 @@ import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalPropertySchema } from '../../../proposalEditor/compileProposalSchema';
+import type {
+  ProposalPropertySchema,
+  ProposalTemplateSchema,
+} from '../../../proposalEditor/compileProposalSchema';
 import {
   type FieldType,
   type FieldView,
-  type ProposalTemplate,
   addField as addFieldToTemplate,
   createDefaultTemplate,
   ensureLockedFields,
@@ -75,9 +77,8 @@ export function TemplateEditorContent({
   const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
-    const saved = instanceData?.proposalTemplate as
-      | ProposalTemplate
-      | undefined;
+    const saved = instanceData?.proposalTemplate;
+
     const base =
       saved && Object.keys(saved.properties ?? {}).length > 0
         ? saved
@@ -92,7 +93,8 @@ export function TemplateEditorContent({
     });
   }, [instanceData?.proposalTemplate, categories, requireCategorySelection]);
 
-  const [template, setTemplate] = useState<ProposalTemplate>(initialTemplate);
+  const [template, setTemplate] =
+    useState<ProposalTemplateSchema>(initialTemplate);
   const isInitialLoadRef = useRef(true);
 
   // Keep locked fields (category) in sync when the upstream config changes
@@ -177,7 +179,7 @@ export function TemplateEditorContent({
   // required are always consistent — individual mutators only need to
   // touch properties.
   const debouncedSave = useDebouncedCallback(
-    (updatedTemplate: ProposalTemplate) => {
+    (updatedTemplate: ProposalTemplateSchema) => {
       const normalized = ensureLockedFields(updatedTemplate, {
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
