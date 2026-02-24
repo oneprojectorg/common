@@ -41,23 +41,6 @@ const profileResultSchema = z.object({
     })
     .nullable(),
   individual: z.object({ pronouns: z.string().nullable() }).nullable(),
-  modules: z.array(
-    z.object({
-      profileId: z.string(),
-      moduleId: z.string(),
-      enabledAt: z.date(),
-      enabledBy: z.string().nullable(),
-      config: z.any().nullable(),
-      module: z.object({
-        id: z.string(),
-        slug: z.string(),
-        name: z.string(),
-        description: z.string().nullable(),
-        isActive: z.boolean(),
-        metadata: z.any().nullable(),
-      }),
-    }),
-  ),
 });
 
 export type ProfileResult = z.infer<typeof profileResultSchema>;
@@ -66,32 +49,18 @@ export const getProfile = async ({
   slug,
   user: _user, // Currently unused but kept for future extensibility
 }: GetProfileParams) => {
-  try {
-    const profile = await db._query.profiles.findFirst({
-      where: eq(profiles.slug, slug),
-      with: {
-        avatarImage: true,
-        headerImage: true,
-        individual: { columns: { pronouns: true } },
-        modules: {
-          with: {
-            module: true,
-          },
-        },
-      },
-    });
+  const profile = await db._query.profiles.findFirst({
+    where: eq(profiles.slug, slug),
+    with: {
+      avatarImage: true,
+      headerImage: true,
+      individual: { columns: { pronouns: true } },
+    },
+  });
 
-    if (!profile) {
-      throw new NotFoundError('Profile not found');
-    }
-
-    return profileResultSchema.parse(profile);
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      throw error;
-    }
-
-    console.error('Error in getProfile:', error);
+  if (!profile) {
     throw new NotFoundError('Profile not found');
   }
+
+  return profileResultSchema.parse(profile);
 };

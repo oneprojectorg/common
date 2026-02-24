@@ -34,13 +34,6 @@ export const baseProfileEncoder = createSelectSchema(profiles)
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
     individual: individualsEncoder.pick({ pronouns: true }).nullish(),
-    modules: z
-      .array(
-        z.object({
-          slug: z.string(),
-        }),
-      )
-      .optional(),
   });
 
 // Minimal organization encoder for profile listing context

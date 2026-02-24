@@ -72,41 +72,13 @@ export const getProfileRouter = router({
       const { slug } = input;
       const { user } = ctx;
 
-      try {
-        // Use the profile service to get profile data
-        const profile = await getProfile({
-          slug,
-          user,
-        });
+      // Use the profile service to get profile data
+      const profile = await getProfile({
+        slug,
+        user,
+      });
 
-        // Transform modules to simplified format
-        const transformedProfile = {
-          ...profile,
-          modules: profile.modules?.map((profileModule: any) => ({
-            slug: profileModule.module.slug,
-          })),
-        };
-
-        // Return the profile data using the profile encoder
-        return universalProfileSchema.parse(transformedProfile);
-      } catch (error: unknown) {
-        console.log(error);
-
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'NOT_FOUND',
-          });
-        }
-
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        throw new TRPCError({
-          message: 'Profile not found',
-          code: 'NOT_FOUND',
-        });
-      }
+      // Return the profile data using the profile encoder
+      return universalProfileSchema.parse(profile);
     }),
 });

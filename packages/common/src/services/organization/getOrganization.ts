@@ -29,11 +29,6 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
         with: {
           headerImage: true,
           avatarImage: true,
-          modules: {
-            with: {
-              module: true,
-            },
-          },
         },
       },
       whereWeWork: {
