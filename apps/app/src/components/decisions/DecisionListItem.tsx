@@ -134,24 +134,38 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           isOpen={showDeleteModal}
           onOpenChange={(open) => !open && setShowDeleteModal(false)}
         >
-          <ModalHeader>{t('Delete Decision')}</ModalHeader>
+          <ModalHeader>
+            {isDraft
+              ? t('Delete draft?')
+              : t('Delete {name}?', {
+                  name: processInstance.name || item.name,
+                })}
+          </ModalHeader>
           <ModalBody>
             <p>
-              {t(
-                'Are you sure you want to delete this decision? This action cannot be undone.',
-              )}
+              {isDraft
+                ? t(
+                    "This draft will be permanently deleted and can't be recovered.",
+                  )
+                : t(
+                    "This decision will be permanently deleted and can't be recovered.",
+                  )}
             </p>
           </ModalBody>
           <ModalFooter>
             <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
-              {t('Cancel')}
+              {isDraft ? t('Keep draft') : t('Cancel')}
             </Button>
             <Button
               color="destructive"
               onPress={handleDeleteConfirm}
               isDisabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? t('Deleting...') : t('Delete')}
+              {deleteMutation.isPending
+                ? t('Deleting...')
+                : isDraft
+                  ? t('Delete draft')
+                  : t('Delete')}
             </Button>
           </ModalFooter>
         </Modal>

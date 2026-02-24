@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { processInstances, profiles } from '@op/db/schema';
+import { profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
@@ -16,8 +16,8 @@ export const deleteDecision = async ({
   try {
     const [sessionUser, instance] = await Promise.all([
       getUserSession({ authUserId: user.id }),
-      db._query.processInstances.findFirst({
-        where: eq(processInstances.id, instanceId),
+      db.query.processInstances.findFirst({
+        where: { id: instanceId },
       }),
     ]);
 

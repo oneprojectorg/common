@@ -1,5 +1,4 @@
-import { db, eq } from '@op/db/client';
-import { processInstances, profiles } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -44,14 +43,14 @@ describe.concurrent('deleteDecision', () => {
     expect(result.deletedId).toBe(instance.instance.id);
 
     // Verify the instance is gone from DB
-    const deletedInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const deletedInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     expect(deletedInstance).toBeUndefined();
 
     // Verify the profile is also gone (cascade)
-    const deletedProfile = await db._query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
+    const deletedProfile = await db.query.profiles.findFirst({
+      where: { id: instance.profileId },
     });
     expect(deletedProfile).toBeUndefined();
   });
@@ -94,8 +93,8 @@ describe.concurrent('deleteDecision', () => {
     expect(result.deletedId).toBe(instance.instance.id);
 
     // Verify the instance is gone from DB
-    const deletedInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const deletedInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     expect(deletedInstance).toBeUndefined();
   });
@@ -133,8 +132,8 @@ describe.concurrent('deleteDecision', () => {
     });
 
     // Verify the instance still exists
-    const existingInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const existingInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     expect(existingInstance).toBeDefined();
   });
