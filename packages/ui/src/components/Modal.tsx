@@ -27,6 +27,7 @@ const modalStyles = tv({
 type ModalContextType = {
   isDismissable?: boolean;
   onClose?: () => void;
+  surface?: 'default' | 'flat';
 };
 
 const ModalContext = createContext<ModalContextType>({});
@@ -38,8 +39,9 @@ export const ModalHeader = ({
   className?: string;
   children: ReactNode;
 }) => {
-  const { isDismissable, onClose } = useContext(ModalContext);
+  const { isDismissable, onClose, surface } = useContext(ModalContext);
   const overlayState = useContext(OverlayTriggerStateContext);
+  const isFlat = surface === 'flat';
 
   const handleClose = () => {
     if (onClose) {
@@ -50,7 +52,12 @@ export const ModalHeader = ({
   };
 
   return (
-    <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b bg-white">
+    <div
+      className={cn(
+        'z-30 flex w-full items-center bg-white',
+        isFlat ? 'px-6 pt-6' : 'sticky top-0 min-h-16 border-b',
+      )}
+    >
       <div className="relative flex w-full items-center justify-center">
         {isDismissable && (
           <button
@@ -108,10 +115,14 @@ export const ModalFooter = ({
   className?: string;
   children: ReactNode;
 }) => {
+  const { surface } = useContext(ModalContext);
+  const isFlat = surface === 'flat';
+
   return (
     <div
       className={cn(
-        'absolute bottom-0 flex w-full flex-col-reverse justify-end gap-4 border-t bg-white px-6 py-3 sm:sticky sm:flex-row',
+        'flex w-full flex-col-reverse justify-end gap-4 bg-white px-6 py-3 sm:flex-row',
+        !isFlat && 'absolute bottom-0 border-t sm:sticky',
         className,
       )}
     >
@@ -190,6 +201,7 @@ export const ModalInContext = ({
   confetti,
   isDismissable,
   onOpenChange,
+  surface,
   children,
   ...props
 }: ModalOverlayProps & {
@@ -197,11 +209,13 @@ export const ModalInContext = ({
   wrapperClassName?: string;
   overlayClassName?: string;
   confetti?: boolean;
+  surface?: 'default' | 'flat';
   children: ReactNode;
 }) => {
   const contextValue = {
     isDismissable,
     onClose: onOpenChange ? () => onOpenChange(false) : undefined,
+    surface,
   };
 
   return (
@@ -232,6 +246,7 @@ export const Modal = (
     wrapperClassName?: string;
     overlayClassName?: string;
     confetti?: boolean;
+    surface?: 'default' | 'flat';
     children: ReactNode;
   },
 ) => {

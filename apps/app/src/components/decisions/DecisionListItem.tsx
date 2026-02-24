@@ -135,6 +135,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         <Modal
           isOpen={showDeleteModal}
           onOpenChange={(open) => !open && setShowDeleteModal(false)}
+          surface="flat"
         >
           <ModalHeader className="pl-6 text-left">
             {isDraft
