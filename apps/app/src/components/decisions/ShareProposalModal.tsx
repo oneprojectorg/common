@@ -26,6 +26,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { LuLink, LuUsers, LuX } from 'react-icons/lu';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';

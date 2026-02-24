@@ -26,10 +26,11 @@ import {
 import { ListBox, ListBoxItem } from 'react-aria-components';
 import { createPortal } from 'react-dom';
 import { LuLeaf, LuX } from 'react-icons/lu';
+
 import { useTranslations } from '@/lib/i18n';
 
-import { isValidEmail, parseEmailPaste } from './emailUtils';
 import { RoleSelector, RoleSelectorSkeleton } from './RoleSelector';
+import { isValidEmail, parseEmailPaste } from './emailUtils';
 
 interface SelectedItem {
   id: string;

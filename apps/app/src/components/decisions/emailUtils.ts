@@ -6,15 +6,15 @@ export const isValidEmail = (email: string) =>
   emailSchema.safeParse(email).success;
 
 /**
- * Parse a pasted string of comma/semicolon-separated emails into
+ * Parse a pasted string of comma/semicolon/newline-separated emails into
  * deduplicated, validated email entries. Returns null if the text
- * doesn't look like a multi-email paste (no commas or semicolons).
+ * doesn't look like a multi-email paste.
  */
 export function parseEmailPaste(
   text: string,
   existingEmails: Set<string>,
 ): { id: string; name: string; email: string }[] | null {
-  if (!text.includes(',') && !text.includes(';')) {
+  if (!text.includes(',') && !text.includes(';') && !text.includes('\n')) {
     return null;
   }
 
@@ -22,7 +22,7 @@ export function parseEmailPaste(
   const items: { id: string; name: string; email: string }[] = [];
 
   const candidates = text
-    .split(/[,;]+/)
+    .split(/[,;\n]+/)
     .map((s) => s.trim())
     .filter(Boolean);
 
