@@ -4,7 +4,7 @@ import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser, getUserSession } from '../access';
+import { getProfileAccessUser } from '../access';
 
 export const deleteDecision = async ({
   instanceId,
@@ -14,46 +14,30 @@ export const deleteDecision = async ({
   user: User;
 }) => {
   try {
-    const [sessionUser, instance] = await Promise.all([
-      getUserSession({ authUserId: user.id }),
-      db.query.processInstances.findFirst({
-        where: { id: instanceId },
-      }),
-    ]);
-
-    const { user: dbUser } = sessionUser ?? {};
-
-    if (!dbUser || !dbUser.currentProfileId) {
-      throw new UnauthorizedError('User must have an active profile');
-    }
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
 
     if (!instance) {
       throw new NotFoundError('Decision not found');
     }
 
-    // Check if user is the owner or has admin access
-    const isOwner = instance.ownerProfileId === dbUser.currentProfileId;
-
-    if (!isOwner) {
-      const instanceProfileUser = instance.profileId
-        ? await getProfileAccessUser({
-            user: { id: user.id },
-            profileId: instance.profileId,
-          })
-        : undefined;
-
-      const canDelete = checkPermission(
-        [{ decisions: permission.DELETE }, { decisions: permission.ADMIN }],
-        instanceProfileUser?.roles ?? [],
-      );
-
-      if (!canDelete) {
-        throw new UnauthorizedError('Not authorized to delete this decision');
-      }
-    }
-
     if (!instance.profileId) {
       throw new CommonError('Decision profile not found');
+    }
+
+    const profileUser = await getProfileAccessUser({
+      user,
+      profileId: instance.profileId,
+    });
+
+    const canDelete = checkPermission(
+      [{ decisions: permission.DELETE }, { decisions: permission.ADMIN }],
+      profileUser?.roles ?? [],
+    );
+
+    if (!canDelete) {
+      throw new UnauthorizedError('Not authorized to delete this decision');
     }
 
     // Delete the decision's profile, which cascades to the instance and all related data
