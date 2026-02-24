@@ -34,7 +34,7 @@ const accordionStyles = tv({
     indicator:
       'size-4 shrink-0 transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-90',
     content:
-      'h-[var(--disclosure-panel-height)] overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none',
+      'h-[var(--disclosure-panel-height)] overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none [&[hidden]]:![content-visibility:visible]',
     contentInner: '',
   },
   variants: {
@@ -266,7 +266,24 @@ const AccordionContent = ({
     }
 
     if (state?.isExpanded) {
-      // Expanding: measure and set height, then switch to auto after animation
+      // If the panel is already at auto height, skip the expanding animation.
+      // This prevents a bug where React Aria re-fires the expanded state after
+      // a component remount (e.g. after drag-and-drop reorder), causing
+      // scrollHeight to be measured while child content (like tiptap editors)
+      // is still initializing — resulting in a stale pixel value that never
+      // transitions to auto because transitionend doesn't fire.
+      if (
+        panel.style.getPropertyValue('--disclosure-panel-height') === 'auto'
+      ) {
+        return;
+      }
+
+      // Expanding: ensure panel is measurable before reading scrollHeight.
+      // React Aria's useDisclosure manages the hidden attribute via a useLayoutEffect
+      // in the parent Disclosure component, which fires AFTER this child effect.
+      // Without this, scrollHeight can return 0 when the browser's layout cache has
+      // been invalidated (e.g. after a drag-and-drop reorder).
+      panel.removeAttribute('hidden');
       const height = panel.scrollHeight;
       panel.style.setProperty('--disclosure-panel-height', `${height}px`);
 

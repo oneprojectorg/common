@@ -44,15 +44,15 @@ const EditDecisionPage = async ({
   };
 
   return (
-    <div className="bg-background relative flex size-full flex-1 flex-col">
+    <div className="bg-background relative flex h-dvh w-full flex-1 flex-col">
       <ProcessBuilderStoreInitializer
         decisionProfileId={decisionProfile.id}
         serverData={serverData}
       />
       <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
-      <div className="flex grow flex-col overflow-y-auto md:flex-row">
+      <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
         <ProcessBuilderSidebar instanceId={instanceId} />
-        <main className="grow">
+        <main className="h-full grow overflow-y-auto [scrollbar-gutter:stable]">
           <ProcessBuilderContent
             decisionProfileId={decisionProfile.id}
             instanceId={instanceId}
