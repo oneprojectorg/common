@@ -26,14 +26,11 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { LuLink, LuUsers, LuX } from 'react-icons/lu';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
-
-const emailSchema = z.string().email();
-const isValidEmail = (email: string) => emailSchema.safeParse(email).success;
+import { isValidEmail, parseEmailPaste } from './emailUtils';
 
 interface PendingInvite {
   id: string;
@@ -320,6 +317,36 @@ function ShareProposalModalContent({
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (!pastedText) {
+      return;
+    }
+
+    const takenEmails = new Set([
+      ...pendingInvites.map((i) => i.email.toLowerCase()),
+      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticInvites.map((i) => i.email.toLowerCase()),
+    ]);
+    const emails = parseEmailPaste(pastedText, takenEmails);
+    if (!emails) {
+      return;
+    }
+
+    e.preventDefault();
+
+    if (emails.length > 0) {
+      const newItems = emails.map((email) => ({
+        id: `email-${email}`,
+        name: email,
+        email,
+      }));
+      setPendingInvites((prev) => [...prev, ...newItems]);
+    }
+
+    setSearchQuery('');
+  };
+
   const handleClose = () => {
     setPendingInvites([]);
     setSearchQuery('');
@@ -329,7 +356,7 @@ function ShareProposalModalContent({
   return (
     <>
       <ModalBody className="space-y-6">
-        <div ref={searchContainerRef}>
+        <div ref={searchContainerRef} onPaste={handlePaste}>
           <SearchField
             placeholder={t('Invite collaborators by name or email')}
             value={searchQuery}

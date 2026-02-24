@@ -26,14 +26,11 @@ import {
 import { ListBox, ListBoxItem } from 'react-aria-components';
 import { createPortal } from 'react-dom';
 import { LuLeaf, LuX } from 'react-icons/lu';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { RoleSelector, RoleSelectorSkeleton } from './RoleSelector';
-
-const emailSchema = z.string().email();
-const isValidEmail = (email: string) => emailSchema.safeParse(email).success;
+import { isValidEmail, parseEmailPaste } from './emailUtils';
 
 interface SelectedItem {
   id: string;
@@ -236,6 +233,37 @@ export const ProfileInviteModal = ({
     });
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (!pastedText || !selectedRoleId) {
+      return;
+    }
+
+    const existingEmails = new Set(
+      allSelectedItems.map((item) => item.email.toLowerCase()),
+    );
+    const emails = parseEmailPaste(pastedText, existingEmails);
+    if (!emails) {
+      return;
+    }
+
+    e.preventDefault();
+
+    if (emails.length > 0) {
+      const newItems = emails.map((email) => ({
+        id: `email-${email}`,
+        name: email,
+        email,
+      }));
+      setSelectedItemsByRole((prev) => ({
+        ...prev,
+        [selectedRoleId]: [...(prev[selectedRoleId] ?? []), ...newItems],
+      }));
+    }
+
+    setSearchQuery('');
+  };
+
   const handleClose = () => {
     setSelectedItemsByRole({});
     setSearchQuery('');
@@ -274,7 +302,7 @@ export const ProfileInviteModal = ({
         </Suspense>
 
         {/* Search Input */}
-        <div ref={searchContainerRef}>
+        <div ref={searchContainerRef} onPaste={handlePaste}>
           <SearchField
             placeholder={t('Search by name or email...')}
             value={searchQuery}
