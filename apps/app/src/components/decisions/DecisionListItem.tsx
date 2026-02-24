@@ -108,7 +108,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
         {canDelete && (
           <div className="flex items-center pr-2">
-            <OptionMenu>
+            <OptionMenu variant="outline" className="rounded-md">
               <Menu className="min-w-28 p-2">
                 <MenuItem
                   key="delete"
