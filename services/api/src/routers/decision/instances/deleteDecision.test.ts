@@ -122,7 +122,7 @@ describe.concurrent('deleteDecision', () => {
         instanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
+      cause: { name: 'AccessControlException' },
     });
 
     // Verify the instance still exists
@@ -161,7 +161,7 @@ describe.concurrent('deleteDecision', () => {
         instanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
+      cause: { name: 'AccessControlException' },
     });
   });
 
