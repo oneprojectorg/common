@@ -63,19 +63,19 @@ export function ProcessBuilderStoreInitializer({
       if (isDraft) {
         data = base;
       } else {
-        data = { ...base };
-        if (existing) {
-          for (const [key, value] of Object.entries(existing)) {
-            if (key === 'config') {
-              data.config = {
-                ...data.config,
-                ...(value as typeof data.config),
-              };
-            } else if (value !== undefined && value !== '') {
-              (data as Record<string, unknown>)[key] = value;
-            }
-          }
-        }
+        // Filter out empty/undefined localStorage values, then overlay
+        // on top of server data so local edits take precedence.
+        const { config: localConfig, ...localRest } = existing ?? {};
+        const filtered = Object.fromEntries(
+          Object.entries(localRest).filter(
+            ([, v]) => v !== undefined && v !== '',
+          ),
+        );
+        data = {
+          ...base,
+          ...filtered,
+          config: { ...base.config, ...localConfig },
+        };
       }
 
       useProcessBuilderStore
