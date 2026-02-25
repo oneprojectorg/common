@@ -6,20 +6,7 @@ project_id = "common-e2e"
 
 [api]
 enabled = false
-# E2E API port (different from dev 54321 and test 55321)
 port = 56321
-schemas = [
-  "public",
-  "graphql_public"
-]
-extra_search_path = [
-  "public",
-  "extensions"
-]
-max_rows = 1000
-
-[api.tls]
-enabled = false
 
 [db]
 # E2E database port (different from dev 54322 and test 55322)
@@ -27,20 +14,9 @@ port = 56322
 shadow_port = 56320
 major_version = 15
 
-[db.pooler]
-enabled = true
-# E2E pooler port (different from dev 54329 and test 55329)
-port = 56329
-pool_mode = "transaction"
-default_pool_size = 20
-max_client_conn = 100
-
 [db.seed]
 enabled = true
 sql_paths = [ './seed.sql' ]
-
-[realtime]
-enabled = false
 
 [studio]
 enabled = true
@@ -57,9 +33,6 @@ port = 56324
 [storage]
 enabled = true
 file_size_limit = "50MiB"
-
-[storage.image_transformation]
-enabled = true
 
 [storage.buckets.assets]
 public = true
@@ -102,12 +75,6 @@ enable_confirmations = false
 template = "Your code is {{ .Code }} ."
 max_frequency = "5s"
 
-[auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
-
 [auth.mfa]
 max_enrolled_factors = 10
 
@@ -122,33 +89,6 @@ secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
 redirect_uri = ""
 url = ""
 skip_nonce_check = false
-
-[auth.external.apple]
-enabled = false
-client_id = ""
-secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
-redirect_uri = ""
-url = ""
-skip_nonce_check = false
-
-[auth.third_party.firebase]
-enabled = false
-
-[auth.third_party.auth0]
-enabled = false
-
-[auth.third_party.aws_cognito]
-enabled = false
-
-[edge_runtime]
-enabled = false
-policy = "oneshot"
-inspector_port = 8085  # Different from dev 8083 and test 8084
-
-[analytics]
-enabled = false
-port = 56327  # Different from dev 54327 and test 55327
-backend = "postgres"
 
 [experimental]
 orioledb_version = ""
