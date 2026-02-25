@@ -14,7 +14,7 @@ import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { TermsMultiSelect } from '../../TermsMultiSelect';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
 import { ToggleRow } from '../../layout/split/form/ToggleRow';
-import { organizationFormValidator } from './organizationValidation';
+import { createOrganizationFormValidator } from './organizationValidation';
 
 export interface ImageData {
   url: string;
@@ -58,7 +58,7 @@ export const OrganizationFormFields = ({
     defaultValues,
     canSubmitWhenInvalid: true,
     validators: {
-      onSubmit: organizationFormValidator,
+      onSubmit: createOrganizationFormValidator(t),
     },
     onSubmit: async ({ value }) => {
       await onSubmit({

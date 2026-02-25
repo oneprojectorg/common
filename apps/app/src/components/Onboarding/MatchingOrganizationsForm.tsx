@@ -101,7 +101,7 @@ export const MatchingOrganizationsForm = ({
     } catch (error) {
       setLoading(false);
       console.error('Failed to join organization:', error);
-      let message = 'Failed to join organization';
+      let message = t('Failed to join organization');
       if (error instanceof Error) {
         message = `${message} (${error.message})`;
       }
