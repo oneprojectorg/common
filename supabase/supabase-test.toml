@@ -3,6 +3,10 @@
 
 project_id = "common-test"
 
+[api]
+enabled = false
+port = 55321
+
 [db]
 # Test database port (different from dev port 54322)
 port = 55322

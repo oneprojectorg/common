@@ -2,6 +2,10 @@
 # working directory name when running `supabase init`.
 project_id = "common"
 
+[api]
+enabled = false
+port = 54321
+
 [db]
 # Test database port (different from dev port 54322)
 port = 54322

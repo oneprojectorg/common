@@ -4,6 +4,10 @@
 
 project_id = "common-e2e"
 
+[api]
+enabled = false
+port = 56321
+
 [db]
 # E2E database port (different from dev 54322 and test 55322)
 port = 56322
