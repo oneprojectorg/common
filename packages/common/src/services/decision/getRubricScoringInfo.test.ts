@@ -116,19 +116,6 @@ describe('getRubricScoringInfo', () => {
     });
   });
 
-  it('respects x-field-order for criteria ordering', () => {
-    const info = getRubricScoringInfo(seiRubricTemplate);
-
-    expect(info.criteria.map((c) => c.key)).toEqual([
-      'innovation',
-      'feasibility',
-      'meetsEligibility',
-      'focusArea',
-      'strengthsSummary',
-      'overallComments',
-    ]);
-  });
-
   it('uses property key as title fallback when title is missing', () => {
     const schema: RubricTemplateSchema = {
       type: 'object',
@@ -185,44 +172,5 @@ describe('getRubricScoringInfo', () => {
     expect(info.totalPoints).toBe(0);
     expect(info.criteria.every((c) => !c.scored)).toBe(true);
     expect(info.criteria.every((c) => c.maxPoints === 0)).toBe(true);
-  });
-
-  it('skips x-field-order entries that have no matching property', () => {
-    const schema: RubricTemplateSchema = {
-      type: 'object',
-      'x-field-order': ['exists', 'ghost', 'alsoExists'],
-      properties: {
-        exists: { type: 'string', title: 'Exists', 'x-format': 'short-text' },
-        alsoExists: {
-          type: 'string',
-          title: 'Also Exists',
-          'x-format': 'long-text',
-        },
-      },
-    };
-
-    const info = getRubricScoringInfo(schema);
-
-    expect(info.criteria).toHaveLength(2);
-    expect(info.criteria.map((c) => c.key)).toEqual(['exists', 'alsoExists']);
-  });
-
-  it('includes properties not listed in x-field-order at the end', () => {
-    const schema: RubricTemplateSchema = {
-      type: 'object',
-      'x-field-order': ['first'],
-      properties: {
-        first: { type: 'string', title: 'First', 'x-format': 'short-text' },
-        unlisted: {
-          type: 'string',
-          title: 'Unlisted',
-          'x-format': 'long-text',
-        },
-      },
-    };
-
-    const info = getRubricScoringInfo(schema);
-
-    expect(info.criteria.map((c) => c.key)).toEqual(['first', 'unlisted']);
   });
 });

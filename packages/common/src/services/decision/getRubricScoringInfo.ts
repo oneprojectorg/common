@@ -34,22 +34,12 @@ export function getRubricScoringInfo<T extends RubricTemplateSchema>(
   type K = string & keyof T['properties'];
 
   const properties = schema.properties ?? {};
-  const explicitOrder = schema['x-field-order'] ?? [];
-  const fieldOrder = [
-    ...explicitOrder,
-    ...Object.keys(properties).filter((k) => !explicitOrder.includes(k)),
-  ];
 
   const criteria: RubricCriterion<K>[] = [];
   const summary: Partial<Record<XFormat, number>> = {};
   let totalPoints = 0;
 
-  for (const key of fieldOrder) {
-    const prop = properties[key];
-    if (!prop) {
-      continue;
-    }
-
+  for (const [key, prop] of Object.entries(properties)) {
     const scored = prop.type === 'integer';
     const maxPoints = scored
       ? typeof prop.maximum === 'number'
