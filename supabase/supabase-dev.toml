@@ -2,43 +2,15 @@
 # working directory name when running `supabase init`.
 project_id = "common"
 
-[api]
-enabled = false
-# Port to use for the API URL.
-port = 54321
-schemas = [
-  "public",
-  "graphql_public"
-]
-extra_search_path = [
-  "public",
-  "extensions"
-]
-max_rows = 1000
-
-[api.tls]
-enabled = false
-
 [db]
 # Test database port (different from dev port 54322)
 port = 54322
 shadow_port = 54320
 major_version = 15
 
-[db.pooler]
-enabled = true
-# Test pooler port (different from dev port 54329)
-port = 54329
-pool_mode = "transaction"
-default_pool_size = 20
-max_client_conn = 100
-
 [db.seed]
 enabled = true
 sql_paths = [ './seed.sql' ]
-
-[realtime]
-enabled = false
 
 [studio]
 enabled = true
@@ -55,9 +27,6 @@ port = 54324
 [storage]
 enabled = true
 file_size_limit = "50MiB"
-
-[storage.image_transformation]
-enabled = true
 
 [storage.buckets.assets]
 public = true
@@ -100,12 +69,6 @@ enable_confirmations = false
 template = "Your code is {{ .Code }} ."
 max_frequency = "5s"
 
-[auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
-
 [auth.mfa]
 max_enrolled_factors = 10
 
@@ -120,33 +83,6 @@ secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
 redirect_uri = ""
 url = ""
 skip_nonce_check = false
-
-[auth.external.apple]
-enabled = false
-client_id = ""
-secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
-redirect_uri = ""
-url = ""
-skip_nonce_check = false
-
-[auth.third_party.firebase]
-enabled = false
-
-[auth.third_party.auth0]
-enabled = false
-
-[auth.third_party.aws_cognito]
-enabled = false
-
-[edge_runtime]
-enabled = false
-policy = "oneshot"
-inspector_port = 8084  # Different from dev port 8083
-
-[analytics]
-enabled = false
-port = 54327  # Different from dev port 54327
-backend = "postgres"
 
 [experimental]
 orioledb_version = ""

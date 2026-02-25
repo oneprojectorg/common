@@ -3,62 +3,19 @@
 
 project_id = "common-test"
 
-[api]
-enabled = false
-# Test API port (different from dev port 54321)
-port = 55321
-schemas = [
-  "public",
-  "graphql_public"
-]
-extra_search_path = [
-  "public",
-  "extensions"
-]
-max_rows = 1000
-
-[api.tls]
-enabled = false
-
 [db]
 # Test database port (different from dev port 54322)
 port = 55322
 shadow_port = 55320
 major_version = 15
 
-[db.pooler]
-enabled = true
-# Test pooler port (different from dev port 54329)
-port = 55329
-pool_mode = "transaction"
-default_pool_size = 20
-max_client_conn = 100
-
 [db.seed]
 enabled = true
 sql_paths = [ './seed.sql' ]
 
-[realtime]
-enabled = false
-
-[studio]
-enabled = false
-# Test Studio port (different from dev port 54323)
-port = 55323
-api_url = "http://127.0.0.1"
-openai_api_key = "env(OPENAI_API_KEY)"
-
-[inbucket]
-enabled = false
-# Test Inbucket port (different from dev port 54324)
-port = 55324
-
 [storage]
 enabled = true
 file_size_limit = "50MiB"
-
-[storage.image_transformation]
-enabled = true
 
 [storage.buckets.assets]
 public = true
@@ -101,12 +58,6 @@ enable_confirmations = false
 template = "Your code is {{ .Code }} ."
 max_frequency = "5s"
 
-[auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
-
 [auth.mfa]
 max_enrolled_factors = 10
 
@@ -121,33 +72,6 @@ secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
 redirect_uri = ""
 url = ""
 skip_nonce_check = false
-
-[auth.external.apple]
-enabled = false
-client_id = ""
-secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
-redirect_uri = ""
-url = ""
-skip_nonce_check = false
-
-[auth.third_party.firebase]
-enabled = false
-
-[auth.third_party.auth0]
-enabled = false
-
-[auth.third_party.aws_cognito]
-enabled = false
-
-[edge_runtime]
-enabled = false
-policy = "oneshot"
-inspector_port = 8084  # Different from dev port 8083
-
-[analytics]
-enabled = false
-port = 55327  # Different from dev port 54327
-backend = "postgres"
 
 [experimental]
 orioledb_version = ""
