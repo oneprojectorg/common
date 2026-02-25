@@ -24,9 +24,32 @@ const modalStyles = tv({
   base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding outline-hidden backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out',
 });
 
+const headerStyles = tv({
+  base: 'z-30 flex w-full items-center bg-white',
+  variants: {
+    surface: {
+      default: 'sticky top-0 min-h-16 border-b',
+      flat: 'pt-6',
+    },
+  },
+  defaultVariants: { surface: 'default' },
+});
+
+const footerStyles = tv({
+  base: 'flex w-full flex-col-reverse justify-end gap-4 bg-white px-6 py-3 sm:flex-row',
+  variants: {
+    surface: {
+      default: 'absolute bottom-0 border-t sm:sticky',
+      flat: '',
+    },
+  },
+  defaultVariants: { surface: 'default' },
+});
+
 type ModalContextType = {
   isDismissable?: boolean;
   onClose?: () => void;
+  surface?: 'default' | 'flat';
 };
 
 const ModalContext = createContext<ModalContextType>({});
@@ -38,7 +61,7 @@ export const ModalHeader = ({
   className?: string;
   children: ReactNode;
 }) => {
-  const { isDismissable, onClose } = useContext(ModalContext);
+  const { isDismissable, onClose, surface } = useContext(ModalContext);
   const overlayState = useContext(OverlayTriggerStateContext);
 
   const handleClose = () => {
@@ -50,7 +73,7 @@ export const ModalHeader = ({
   };
 
   return (
-    <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b bg-white">
+    <div className={headerStyles({ surface })}>
       <div className="relative flex w-full items-center justify-center">
         {isDismissable && (
           <button
@@ -108,16 +131,9 @@ export const ModalFooter = ({
   className?: string;
   children: ReactNode;
 }) => {
-  return (
-    <div
-      className={cn(
-        'absolute bottom-0 flex w-full flex-col-reverse justify-end gap-4 border-t bg-white px-6 py-3 sm:sticky sm:flex-row',
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  const { surface } = useContext(ModalContext);
+
+  return <div className={footerStyles({ surface, className })}>{children}</div>;
 };
 
 export const ModalStepper = memo(
@@ -190,6 +206,7 @@ export const ModalInContext = ({
   confetti,
   isDismissable,
   onOpenChange,
+  surface,
   children,
   ...props
 }: ModalOverlayProps & {
@@ -197,11 +214,13 @@ export const ModalInContext = ({
   wrapperClassName?: string;
   overlayClassName?: string;
   confetti?: boolean;
+  surface?: 'default' | 'flat';
   children: ReactNode;
 }) => {
   const contextValue = {
     isDismissable,
     onClose: onOpenChange ? () => onOpenChange(false) : undefined,
+    surface,
   };
 
   return (
@@ -232,6 +251,7 @@ export const Modal = (
     wrapperClassName?: string;
     overlayClassName?: string;
     confetti?: boolean;
+    surface?: 'default' | 'flat';
     children: ReactNode;
   },
 ) => {

@@ -1,12 +1,12 @@
-import { and, asc, db, desc, eq, inArray } from '@op/db/client';
+import { and, db, eq, inArray } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
   processInstances,
   profileUsers,
-  profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { collapseRoles } from 'access-zones';
 
 import {
   type PaginatedResult,
@@ -15,54 +15,11 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
-
-// Query configuration for fetching decision profiles with relations
-const decisionProfileQueryConfig = {
-  with: {
-    headerImage: true,
-    avatarImage: true,
-    processInstance: {
-      with: {
-        process: true,
-        owner: {
-          with: {
-            avatarImage: true,
-            organization: true,
-          },
-        },
-        steward: {
-          with: {
-            avatarImage: true,
-          },
-        },
-        proposals: {
-          columns: {
-            id: true,
-            submittedByProfileId: true,
-          },
-        },
-      },
-    },
-  },
-} as const;
-
-type DecisionProfileQueryResult = Awaited<
-  ReturnType<
-    typeof db._query.profiles.findMany<typeof decisionProfileQueryConfig>
-  >
->[number];
-
-type DecisionProfileItem = Omit<
-  DecisionProfileQueryResult,
-  'processInstance'
-> & {
-  processInstance: NonNullable<
-    DecisionProfileQueryResult['processInstance']
-  > & {
-    proposalCount: number;
-    participantCount: number;
-  };
-};
+import { getNormalizedRoles } from '../access';
+import {
+  type DecisionRolePermissions,
+  fromDecisionBitField,
+} from './permissions';
 
 export const listDecisionProfiles = async ({
   user,
@@ -84,27 +41,8 @@ export const listDecisionProfiles = async ({
   cursor?: string | null;
   ownerProfileId?: string | null;
   stewardProfileId?: string | null;
-}): Promise<PaginatedResult<DecisionProfileItem>> => {
-  // Get the column to order by
-  const orderByColumn =
-    orderBy === 'name'
-      ? profiles.name
-      : orderBy === 'createdAt'
-        ? profiles.createdAt
-        : profiles.updatedAt;
-
-  const cursorCondition = cursor
-    ? getCursorCondition({
-        column: orderByColumn,
-        tieBreakerColumn: profiles.id,
-        cursor: decodeCursor<{ value: string | Date; id: string }>(cursor),
-        direction: dir,
-      })
-    : undefined;
-
-  const typeCondition = eq(profiles.type, EntityType.DECISION);
-
-  // Build process instance filter conditions
+}) => {
+  // Build process instance filter subquery (references processInstances, not profiles)
   const processInstanceConditions = [
     status?.length ? inArray(processInstances.status, status) : undefined,
     ownerProfileId
@@ -115,76 +53,152 @@ export const listDecisionProfiles = async ({
       : undefined,
   ].filter(Boolean);
 
-  const processInstanceQuery = inArray(
-    profiles.id,
-    db
-      .select({ profileId: processInstances.profileId })
-      .from(processInstances)
-      .where(
-        processInstanceConditions.length > 0
-          ? and(...processInstanceConditions)
-          : undefined,
-      ),
-  );
+  const processInstanceSubquery = db
+    .select({ profileId: processInstances.profileId })
+    .from(processInstances)
+    .where(
+      processInstanceConditions.length > 0
+        ? and(...processInstanceConditions)
+        : undefined,
+    );
 
-  // Build search condition if provided (search on profile name/bio)
-  const searchCondition = search
-    ? constructTextSearch({ column: profiles.search, query: search })
+  const decodedCursor = cursor
+    ? decodeCursor<{ value: string | Date; id: string }>(cursor)
     : undefined;
 
-  // Filter profiles to only those the user has access to via profileUsers
-  const authorizationCondition = inArray(
-    profiles.id,
-    db
-      .select({ profileId: profileUsers.profileId })
-      .from(profileUsers)
-      .where(eq(profileUsers.authUserId, user.id)),
-  );
+  // Get profiles with their process instances and the current user's roles
+  const profileList = await db.query.profiles.findMany({
+    where: {
+      // RAW callback receives the aliased table reference so column
+      // references resolve to the correct alias (e.g. d0.id not profiles.id)
+      RAW: (table) => {
+        const orderByColumn =
+          orderBy === 'name'
+            ? table.name
+            : orderBy === 'createdAt'
+              ? table.createdAt
+              : table.updatedAt;
 
-  const orderFn = dir === 'asc' ? asc : desc;
+        const cursorCondition = decodedCursor
+          ? getCursorCondition({
+              column: orderByColumn,
+              tieBreakerColumn: table.id,
+              cursor: decodedCursor,
+              direction: dir,
+            })
+          : undefined;
 
-  const whereConditions = [
-    cursorCondition,
-    processInstanceQuery,
-    typeCondition,
-    searchCondition,
-    authorizationCondition,
-  ].filter(Boolean);
+        const searchCondition = search
+          ? constructTextSearch({ column: table.search, query: search })
+          : undefined;
 
-  const whereClause =
-    whereConditions.length > 0 ? and(...whereConditions) : undefined;
-
-  // Get profiles with their process instances
-  const profileList = await db._query.profiles.findMany({
-    where: whereClause,
-    ...decisionProfileQueryConfig,
-    orderBy: orderFn(profiles[orderBy]),
+        return and(
+          eq(table.type, EntityType.DECISION),
+          inArray(table.id, processInstanceSubquery),
+          inArray(
+            table.id,
+            db
+              .select({ profileId: profileUsers.profileId })
+              .from(profileUsers)
+              .where(eq(profileUsers.authUserId, user.id)),
+          ),
+          cursorCondition,
+          searchCondition,
+        )!;
+      },
+    },
+    with: {
+      headerImage: true,
+      avatarImage: true,
+      processInstance: {
+        with: {
+          process: true,
+          owner: {
+            with: {
+              avatarImage: true,
+              organization: true,
+            },
+          },
+          steward: {
+            with: {
+              avatarImage: true,
+            },
+          },
+          proposals: {
+            columns: {
+              id: true,
+              submittedByProfileId: true,
+            },
+          },
+        },
+      },
+      profileUsers: {
+        where: { authUserId: user.id },
+        with: {
+          roles: {
+            with: {
+              accessRole: {
+                with: {
+                  zonePermissions: {
+                    with: { accessZone: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { [orderBy]: dir },
     limit: limit + 1, // Fetch one extra to check hasMore
   });
 
-  // Transform profiles to include proposal and participant counts in processInstance
+  type DecisionProfileQueryResult = (typeof profileList)[number];
+
+  type DecisionProfileItem = Omit<
+    DecisionProfileQueryResult,
+    'processInstance' | 'profileUsers'
+  > & {
+    processInstance: NonNullable<
+      DecisionProfileQueryResult['processInstance']
+    > & {
+      proposalCount: number;
+      participantCount: number;
+      access: DecisionRolePermissions;
+    };
+  };
+
+  // Transform profiles to include proposal/participant counts and access permissions
   const profilesWithCounts = profileList.map((profile) => {
+    const { profileUsers: _, ...profileWithoutUsers } = profile;
+
     if (profile.processInstance) {
-      const instance = profile.processInstance as {
-        proposals: { id: string; submittedByProfileId: string | null }[];
-        [key: string]: unknown;
-      };
-      const proposalCount = instance.proposals?.length ?? 0;
+      const { proposals, ...instanceRest } = profile.processInstance;
+      const proposalCount = proposals?.length ?? 0;
       const uniqueParticipants = new Set(
-        instance.proposals?.map((proposal) => proposal.submittedByProfileId),
+        proposals?.map((proposal) => proposal.submittedByProfileId),
       );
       const participantCount = uniqueParticipants.size;
 
+      // Compute decision access from the joined profileUser roles
+      const profileUser = profile.profileUsers?.[0];
+      const roles = profileUser ? getNormalizedRoles(profileUser.roles) : [];
+      const collapsed = collapseRoles(roles);
+      const access = fromDecisionBitField(collapsed.decisions ?? 0);
+
       return {
-        ...profile,
+        ...profileWithoutUsers,
         processInstance: {
-          ...instance,
+          ...instanceRest,
+          proposals,
           proposalCount,
           participantCount,
+          access,
         },
       };
     }
-    return profile;
+
+    return profileWithoutUsers;
   });
 
   const hasMore = profilesWithCounts.length > limit;
@@ -216,5 +230,8 @@ export const listDecisionProfiles = async ({
         })
       : null;
 
-  return { items, next: nextCursor };
+  return {
+    items,
+    next: nextCursor,
+  } satisfies PaginatedResult<DecisionProfileItem>;
 };

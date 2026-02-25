@@ -695,5 +695,14 @@
   "Vote": "Vote",
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "Invite participants",
-  "Only invited participants can view and participate in this process": "Only invited participants can view and participate in this process"
+  "Only invited participants can view and participate in this process": "Only invited participants can view and participate in this process",
+  "Delete draft?": "Delete draft?",
+  "Delete {name}?": "Delete {name}?",
+  "This draft will be permanently deleted and can't be recovered.": "This draft will be permanently deleted and can't be recovered.",
+  "This decision will be permanently deleted and can't be recovered.": "This decision will be permanently deleted and can't be recovered.",
+  "Keep draft": "Keep draft",
+  "Delete draft": "Delete draft",
+  "Decision deleted successfully": "Decision deleted successfully",
+  "Failed to delete decision": "Failed to delete decision",
+  "Deleting...": "Deleting..."
 }

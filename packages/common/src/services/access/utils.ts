@@ -20,7 +20,7 @@ interface ZonePermission extends AccessRolePermissionOnAccessZone {
 interface AccessRole {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   zonePermissions?: ZonePermission[];
 }
 

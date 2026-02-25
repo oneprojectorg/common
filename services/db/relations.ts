@@ -86,6 +86,14 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.processInstances.profileId,
     }),
+    organization: r.one.organizations({
+      from: r.profiles.id,
+      to: r.organizations.profileId,
+    }),
+    profileUsers: r.many.profileUsers({
+      from: r.profiles.id,
+      to: r.profileUsers.profileId,
+    }),
   },
 
   /**
@@ -103,6 +111,12 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processInstances.profileId,
       to: r.profiles.id,
       alias: 'processInstance_profile',
+    }),
+    owner: r.one.profiles({
+      from: r.processInstances.ownerProfileId,
+      to: r.profiles.id,
+      alias: 'processInstance_owner',
+      optional: false,
     }),
     steward: r.one.profiles({
       from: r.processInstances.stewardProfileId,
@@ -165,6 +179,36 @@ export const relations = defineRelations(schema, (r) => ({
     accessRole: r.one.accessRoles({
       from: r.profileUserToAccessRoles.accessRoleId,
       to: r.accessRoles.id,
+      optional: false,
+    }),
+  },
+
+  /**
+   * Access role relations
+   *
+   * Links access roles to their zone permissions.
+   */
+  accessRoles: {
+    zonePermissions: r.many.accessRolePermissionsOnAccessZones({
+      from: r.accessRoles.id,
+      to: r.accessRolePermissionsOnAccessZones.accessRoleId,
+    }),
+  },
+
+  /**
+   * Access role permissions on access zones relations (join table)
+   *
+   * Links the join table to the access role and access zone.
+   */
+  accessRolePermissionsOnAccessZones: {
+    accessRole: r.one.accessRoles({
+      from: r.accessRolePermissionsOnAccessZones.accessRoleId,
+      to: r.accessRoles.id,
+      optional: false,
+    }),
+    accessZone: r.one.accessZones({
+      from: r.accessRolePermissionsOnAccessZones.accessZoneId,
+      to: r.accessZones.id,
       optional: false,
     }),
   },

@@ -1,7 +1,17 @@
+'use client';
+
+import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
+import { Button } from '@op/ui/Button';
+import { Menu, MenuItem } from '@op/ui/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { OptionMenu } from '@op/ui/OptionMenu';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { useState } from 'react';
 import { LuCalendar } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
 
 import { TranslatedText } from '../TranslatedText';
@@ -26,8 +36,24 @@ const isClosingSoon = (dateString: string) => {
 };
 
 export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
   const { processInstance } = item;
   const isDraft = processInstance.status === ProcessStatus.DRAFT;
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const canDelete =
+    isDraft &&
+    (processInstance.access?.delete || processInstance.access?.admin);
+
+  const deleteMutation = trpc.decision.deleteDecision.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Decision deleted successfully') });
+      utils.decision.listDecisionProfiles.invalidate();
+    },
+    onError: () => {
+      toast.error({ message: t('Failed to delete decision') });
+    },
+  });
 
   // Get current phase from instanceData phases
   const currentPhase = processInstance.instanceData?.phases?.find(
@@ -41,38 +67,107 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
     ? processInstance.owner
     : (processInstance.steward ?? processInstance.owner);
 
+  const handleDeleteConfirm = () => {
+    deleteMutation.mutate({ instanceId: processInstance.id });
+    setShowDeleteModal(false);
+  };
+
   return (
-    <Link
-      href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
-      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
-    >
-      <DecisionCardHeader
-        name={processInstance.name || item.name}
-        currentState={currentPhaseName}
-        stewardName={displayProfile?.name}
-        stewardAvatarPath={displayProfile?.avatarImage?.name}
-        chipClassName={
-          isDraft ? 'bg-neutral-gray1 text-neutral-charcoal' : undefined
-        }
-      >
-        {closingDate && (
-          <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
-            <DecisionClosingDate closingDate={closingDate} />
+    <>
+      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-tealWhite sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+        <Link
+          href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
+          className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
+        >
+          <DecisionCardHeader
+            name={processInstance.name || item.name}
+            currentState={currentPhaseName}
+            stewardName={displayProfile?.name}
+            stewardAvatarPath={displayProfile?.avatarImage?.name}
+            chipClassName={
+              isDraft ? 'bg-neutral-gray1 text-neutral-charcoal' : undefined
+            }
+          >
+            {closingDate && (
+              <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
+                <DecisionClosingDate closingDate={closingDate} />
+              </div>
+            )}
+          </DecisionCardHeader>
+
+          <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+            <DecisionStat
+              number={processInstance.participantCount ?? 0}
+              label="Participants"
+            />
+            <DecisionStat
+              number={processInstance.proposalCount ?? 0}
+              label="Proposals"
+            />
+          </div>
+        </Link>
+
+        {canDelete && (
+          <div className="flex items-center pt-4 pr-2 sm:pt-0 sm:pl-12">
+            <OptionMenu variant="outline" className="rounded-md">
+              <Menu className="min-w-28 p-2">
+                <MenuItem key="settings" href={`/decisions/${item.slug}/edit`}>
+                  {t('Settings')}
+                </MenuItem>
+                <MenuItem
+                  key="delete"
+                  onAction={() => setShowDeleteModal(true)}
+                  className="text-functional-red"
+                >
+                  {t('Delete')}
+                </MenuItem>
+              </Menu>
+            </OptionMenu>
           </div>
         )}
-      </DecisionCardHeader>
-
-      <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
-        <DecisionStat
-          number={processInstance.participantCount ?? 0}
-          label="Participants"
-        />
-        <DecisionStat
-          number={processInstance.proposalCount ?? 0}
-          label="Proposals"
-        />
       </div>
-    </Link>
+
+      <Modal
+        isOpen={showDeleteModal}
+        onOpenChange={(open) => !open && setShowDeleteModal(false)}
+        surface="flat"
+      >
+        <ModalHeader className="pl-6 text-left">
+          {isDraft
+            ? t('Delete draft?')
+            : t('Delete {name}?', {
+                name: processInstance.name || item.name,
+              })}
+        </ModalHeader>
+        <ModalBody>
+          <p>
+            {isDraft
+              ? t(
+                  "This draft will be permanently deleted and can't be recovered.",
+                )
+              : t(
+                  "This decision will be permanently deleted and can't be recovered.",
+                )}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
+            {isDraft ? t('Keep draft') : t('Cancel')}
+          </Button>
+          <Button
+            color="destructive"
+            onPress={handleDeleteConfirm}
+            isDisabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending
+              ? t('Deleting...')
+              : isDraft
+                ? t('Delete draft')
+                : t('Delete')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </>
   );
 };
 

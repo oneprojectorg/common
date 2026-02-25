@@ -694,5 +694,14 @@
   "Vote": "Vote",
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "Invitar participantes",
-  "Only invited participants can view and participate in this process": "Solo los participantes invitados pueden ver y participar en este proceso"
+  "Only invited participants can view and participate in this process": "Solo los participantes invitados pueden ver y participar en este proceso",
+  "Delete draft?": "¿Eliminar borrador?",
+  "Delete {name}?": "¿Eliminar {name}?",
+  "This draft will be permanently deleted and can't be recovered.": "Este borrador se eliminará permanentemente y no se podrá recuperar.",
+  "This decision will be permanently deleted and can't be recovered.": "Esta decisión se eliminará permanentemente y no se podrá recuperar.",
+  "Keep draft": "Conservar borrador",
+  "Delete draft": "Eliminar borrador",
+  "Decision deleted successfully": "Decisión eliminada exitosamente",
+  "Failed to delete decision": "Error al eliminar la decisión",
+  "Deleting...": "Eliminando..."
 }

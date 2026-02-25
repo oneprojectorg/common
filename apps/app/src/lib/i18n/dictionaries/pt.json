@@ -690,5 +690,14 @@
   "Vote": "Vote",
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "Convidar participantes",
-  "Only invited participants can view and participate in this process": "Apenas participantes convidados podem ver e participar deste processo"
+  "Only invited participants can view and participate in this process": "Apenas participantes convidados podem ver e participar deste processo",
+  "Delete draft?": "Excluir rascunho?",
+  "Delete {name}?": "Excluir {name}?",
+  "This draft will be permanently deleted and can't be recovered.": "Este rascunho será excluído permanentemente e não poderá ser recuperado.",
+  "This decision will be permanently deleted and can't be recovered.": "Esta decisão será excluída permanentemente e não poderá ser recuperada.",
+  "Keep draft": "Manter rascunho",
+  "Delete draft": "Excluir rascunho",
+  "Decision deleted successfully": "Decisão excluída com sucesso",
+  "Failed to delete decision": "Falha ao excluir a decisão",
+  "Deleting...": "Excluindo..."
 }

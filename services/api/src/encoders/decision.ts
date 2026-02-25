@@ -174,6 +174,19 @@ const instanceDataWithSchemaEncoder = z.object({
   proposalTemplate: jsonSchemaEncoder.optional(),
 });
 
+/** Decision access permissions encoder */
+const decisionAccessEncoder = z.object({
+  delete: z.boolean(),
+  update: z.boolean(),
+  read: z.boolean(),
+  create: z.boolean(),
+  admin: z.boolean(),
+  inviteMembers: z.boolean(),
+  review: z.boolean(),
+  submitProposals: z.boolean(),
+  vote: z.boolean(),
+});
+
 /** Process instance encoder  */
 export const processInstanceWithSchemaEncoder = createSelectSchema(
   processInstances,
@@ -196,6 +209,7 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
     steward: baseProfileEncoder.nullish(),
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
+    access: decisionAccessEncoder.optional(),
   });
 
 /** Decision profile encoder  */

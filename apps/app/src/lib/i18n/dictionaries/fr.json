@@ -694,5 +694,14 @@
   "Vote": "Vote",
   "Advanced permissions": "Advanced permissions",
   "Invite participants": "Inviter des participants",
-  "Only invited participants can view and participate in this process": "Seuls les participants invités peuvent voir et participer à ce processus"
+  "Only invited participants can view and participate in this process": "Seuls les participants invités peuvent voir et participer à ce processus",
+  "Delete draft?": "Supprimer le brouillon ?",
+  "Delete {name}?": "Supprimer {name} ?",
+  "This draft will be permanently deleted and can't be recovered.": "Ce brouillon sera définitivement supprimé et ne pourra pas être récupéré.",
+  "This decision will be permanently deleted and can't be recovered.": "Cette décision sera définitivement supprimée et ne pourra pas être récupérée.",
+  "Keep draft": "Conserver le brouillon",
+  "Delete draft": "Supprimer le brouillon",
+  "Decision deleted successfully": "Décision supprimée avec succès",
+  "Failed to delete decision": "Échec de la suppression de la décision",
+  "Deleting...": "Suppression..."
 }
