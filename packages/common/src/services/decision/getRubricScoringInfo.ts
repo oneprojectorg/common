@@ -1,9 +1,8 @@
 import type { RubricTemplateSchema, XFormat } from './types';
 
 /** Scoring info for a single rubric criterion. */
-export interface RubricCriterion<K extends string = string> {
-  key: K;
-  title: string;
+export interface RubricCriterion {
+  key: string;
   /** `schema.maximum` for scored criteria, 0 otherwise. */
   maxPoints: number;
   /** `true` when `type === 'integer'` — i.e. the field contributes points. */
@@ -11,8 +10,8 @@ export interface RubricCriterion<K extends string = string> {
 }
 
 /** Derived scoring metadata for a rubric template schema. */
-export interface RubricScoringInfo<K extends string = string> {
-  criteria: RubricCriterion<K>[];
+export interface RubricScoringInfo {
+  criteria: RubricCriterion[];
   /** Sum of `maxPoints` across scored criteria. */
   totalPoints: number;
   /** Count of criteria per `x-format` value. */
@@ -28,14 +27,12 @@ export interface RubricScoringInfo<K extends string = string> {
  * Used by both frontend (footer summary, preview pts labels) and backend
  * (score aggregation later).
  */
-export function getRubricScoringInfo<T extends RubricTemplateSchema>(
-  schema: T,
-): RubricScoringInfo<string & keyof T['properties']> {
-  type K = string & keyof T['properties'];
-
+export function getRubricScoringInfo(
+  schema: RubricTemplateSchema,
+): RubricScoringInfo {
   const properties = schema.properties ?? {};
 
-  const criteria: RubricCriterion<K>[] = [];
+  const criteria: RubricCriterion[] = [];
   const summary: Partial<Record<XFormat, number>> = {};
   let totalPoints = 0;
 
@@ -48,8 +45,7 @@ export function getRubricScoringInfo<T extends RubricTemplateSchema>(
       : 0;
 
     criteria.push({
-      key: key as K,
-      title: typeof prop.title === 'string' ? prop.title : key,
+      key,
       maxPoints,
       scored,
     });

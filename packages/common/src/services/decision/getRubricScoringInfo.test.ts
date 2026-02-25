@@ -116,22 +116,6 @@ describe('getRubricScoringInfo', () => {
     });
   });
 
-  it('uses property key as title fallback when title is missing', () => {
-    const schema: RubricTemplateSchema = {
-      type: 'object',
-      properties: {
-        untitledField: {
-          type: 'string',
-          'x-format': 'short-text',
-        },
-      },
-    };
-
-    const info = getRubricScoringInfo(schema);
-
-    expect(info.criteria[0]!.title).toBe('untitledField');
-  });
-
   it('handles empty schema gracefully', () => {
     const schema: RubricTemplateSchema = { type: 'object' };
     const info = getRubricScoringInfo(schema);
