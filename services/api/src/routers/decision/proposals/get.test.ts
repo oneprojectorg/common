@@ -808,6 +808,152 @@ describe.concurrent('getProposal', () => {
     });
   });
 
+  it('should allow org admin without profile access via org-level fallback', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // grantAccess: false means the setup creator has no profile-level access,
+    // but as the org creator they have the org Admin role which has decisions: READ
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: false,
+    });
+
+    const { instance } = setup.instances[0]!;
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.id,
+      proposalData: { title: 'Org Admin Fallback Proposal' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.proposalData).toMatchObject({
+      title: 'Org Admin Fallback Proposal',
+    });
+  });
+
+  it('should allow org member without profile access via org-level fallback', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: false,
+    });
+
+    const { instance } = setup.instances[0]!;
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.id,
+      proposalData: { title: 'Org Member Fallback Proposal' },
+    });
+
+    // Member has no profile-level access (instanceProfileIds: []),
+    // but the org Member role has decisions: READ so the fallback should pass
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+
+    const caller = await createAuthenticatedCaller(memberUser.email);
+
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.proposalData).toMatchObject({
+      title: 'Org Member Fallback Proposal',
+    });
+  });
+
+  it('should allow user with profile access who is not in the organization', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: false,
+    });
+
+    const { instance, profileId } = setup.instances[0]!;
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.id,
+      proposalData: { title: 'Cross-Org Profile Access Proposal' },
+    });
+
+    // Create a user in a different org, then grant them profile-level access
+    // to the first setup's instance — they are NOT in setup's org
+    const otherSetup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+
+    await testData.grantProfileAccess(
+      profileId,
+      otherSetup.user.id,
+      otherSetup.userEmail,
+      false,
+    );
+
+    const caller = await createAuthenticatedCaller(otherSetup.userEmail);
+
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.proposalData).toMatchObject({
+      title: 'Cross-Org Profile Access Proposal',
+    });
+  });
+
+  it('should throw UNAUTHORIZED when user is not in the organization and has no profile access', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: false,
+    });
+
+    const { instance } = setup.instances[0]!;
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.id,
+      proposalData: { title: 'Unauthorized Proposal' },
+    });
+
+    // Create a separate setup — this user belongs to a different organization
+    const otherSetup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+
+    const caller = await createAuthenticatedCaller(otherSetup.userEmail);
+
+    await expect(
+      caller.decision.getProposal({ profileId: proposal.profileId }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
   it('should return proposal with attachments when attachments exist', async ({
     task,
     onTestFinished,
