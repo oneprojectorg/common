@@ -618,7 +618,7 @@ export const updateDecisionInstanceInputSchema = z.object({
     .optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
-  /** Proposal template (JSON Schema + embedded UI Schema) */
+  /** Proposal template (JSON Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
   /** Rubric template (JSON Schema defining evaluation criteria) */
   rubricTemplate: jsonSchemaEncoder.optional(),

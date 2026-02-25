@@ -42,7 +42,7 @@ export const updateDecisionInstance = async ({
   config?: ProcessConfig;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
-  /** Proposal template (JSON Schema + embedded UI Schema) */
+  /** Proposal template (JSON Schema) */
   proposalTemplate?: Record<string, unknown>;
   /** Rubric template (JSON Schema defining evaluation criteria) */
   rubricTemplate?: Record<string, unknown>;
