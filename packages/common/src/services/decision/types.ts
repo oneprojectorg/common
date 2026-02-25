@@ -16,15 +16,26 @@ export type JsonSchema = JSONSchema7;
  */
 export type XFormat = 'short-text' | 'long-text' | 'money' | 'dropdown';
 
-/** JSON Schema 7 property extended with proposal-specific vendor extensions. */
-export interface ProposalPropertySchema extends JSONSchema7 {
+/** JSON Schema 7 property extended with `x-format` vendor extension. */
+export interface XFormatPropertySchema extends JSONSchema7 {
   'x-format'?: XFormat;
 }
 
 /** JSON Schema 7 extended with proposal template vendor extensions. */
 export interface ProposalTemplateSchema extends JSONSchema7 {
   [key: string]: unknown;
-  properties?: Record<string, ProposalPropertySchema>;
+  properties?: Record<string, XFormatPropertySchema>;
+  'x-field-order'?: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Rubric template types
+// ---------------------------------------------------------------------------
+
+/** JSON Schema 7 extended with rubric template vendor extensions. */
+export interface RubricTemplateSchema extends JSONSchema7 {
+  [key: string]: unknown;
+  properties?: Record<string, XFormatPropertySchema>;
   'x-field-order'?: string[];
 }
 

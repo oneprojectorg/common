@@ -7,6 +7,7 @@ import type { JSONSchema7 } from 'json-schema';
 import { CommonError, ValidationError } from '../../../utils';
 import { schemaValidator } from '../schemaValidator';
 import type { SelectionPipeline } from '../selectionPipeline/types';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
 import type {
   DecisionSchemaDefinition,
   PhaseRules,
@@ -40,8 +41,10 @@ export interface DecisionInstanceData {
   templateName?: string;
   templateDescription?: string;
   phases: PhaseInstanceData[];
-  /** Proposal template (JSON Schema + embedded UI Schema) */
-  proposalTemplate?: JSONSchema7 & { ui?: UiSchema };
+  /** Proposal template (JSON Schema) */
+  proposalTemplate?: ProposalTemplateSchema;
+  /** Rubric template (JSON Schema defining evaluation criteria) */
+  rubricTemplate?: RubricTemplateSchema;
 }
 
 export interface PhaseOverride {

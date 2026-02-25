@@ -15,8 +15,8 @@ import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import type {
-  ProposalPropertySchema,
   ProposalTemplateSchema,
+  XFormatPropertySchema,
 } from '../../../proposalEditor/compileProposalSchema';
 import {
   type FieldType,
@@ -287,7 +287,7 @@ export function TemplateEditorContent({
   );
 
   const handleUpdateJsonSchema = useCallback(
-    (fieldId: string, updates: Partial<ProposalPropertySchema>) => {
+    (fieldId: string, updates: Partial<XFormatPropertySchema>) => {
       setTemplate((prev) => {
         const existing = getFieldSchema(prev, fieldId);
         if (!existing) {

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
-import type { ProposalPropertySchema } from './types';
+import type { XFormatPropertySchema } from './types';
 
 /**
  * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
@@ -136,7 +136,7 @@ export interface SchemaOption {
 export function buildCategorySchema(
   categories: string[],
   existing?: Record<string, unknown>,
-): ProposalPropertySchema {
+): XFormatPropertySchema {
   const { enum: _legacyEnum, ...rest } = existing ?? {};
 
   return {
@@ -158,7 +158,7 @@ export function buildCategorySchema(
  * are filtered out — callers receive only user-visible options.
  */
 export function parseSchemaOptions(
-  schema: ProposalPropertySchema | null | undefined,
+  schema: XFormatPropertySchema | null | undefined,
 ): SchemaOption[] {
   if (!schema) {
     return [];
@@ -196,7 +196,7 @@ export function parseSchemaOptions(
  * with at least one non-null string value.
  */
 export function schemaHasOptions(
-  schema: ProposalPropertySchema | null | undefined,
+  schema: XFormatPropertySchema | null | undefined,
 ): boolean {
   return parseSchemaOptions(schema).length > 0;
 }

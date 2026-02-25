@@ -128,6 +128,23 @@ export class SchemaValidator {
   }
 
   /**
+   * Validate rubric data against a rubric template schema.
+   * Throws ValidationError if validation fails.
+   */
+  validateRubricData(rubricTemplate: JSONSchema7, rubricData: unknown): void {
+    const result = this.validate(rubricTemplate, rubricData);
+
+    if (!result.valid) {
+      const errorMessage = Object.values(result.errors).join(', ');
+
+      throw new ValidationError(
+        `Rubric validation failed: ${errorMessage}`,
+        result.errors,
+      );
+    }
+  }
+
+  /**
    * Get human-readable field path from AJV error
    */
   private getFieldPath(instancePath: string, keyword: string): string {

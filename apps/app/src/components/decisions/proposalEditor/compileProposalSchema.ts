@@ -1,12 +1,12 @@
 import {
-  type ProposalPropertySchema,
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   type XFormat,
+  type XFormatPropertySchema,
   getProposalTemplateFieldOrder,
 } from '@op/common/client';
 
-export type { ProposalPropertySchema, ProposalTemplateSchema, XFormat };
+export type { XFormatPropertySchema, ProposalTemplateSchema, XFormat };
 
 /** System fields that must always be present. Others are conditionally added. */
 const REQUIRED_SYSTEM_FIELDS = new Set(['title']);
@@ -31,7 +31,7 @@ export interface ProposalFieldDescriptor {
   /** Whether this is a system field (title, category, budget). */
   isSystem: boolean;
   /** The raw property schema definition for this field. */
-  schema: ProposalPropertySchema;
+  schema: XFormatPropertySchema;
 }
 
 // ---------------------------------------------------------------------------

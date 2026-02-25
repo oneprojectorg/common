@@ -68,6 +68,9 @@ export * from './voting';
 // Re-export VoteData type from schema for convenience
 export type { VoteData } from '@op/db/schema';
 
+// Schema validation
+export { schemaValidator } from './schemaValidator';
+
 // Types
 export * from './types';
 export type {

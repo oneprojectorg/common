@@ -172,6 +172,7 @@ const instanceDataWithSchemaEncoder = z.object({
     .optional(),
   phases: z.array(instancePhaseDataEncoder).optional(),
   proposalTemplate: jsonSchemaEncoder.optional(),
+  rubricTemplate: jsonSchemaEncoder.optional(),
 });
 
 /** Decision access permissions encoder */
@@ -619,6 +620,8 @@ export const updateDecisionInstanceInputSchema = z.object({
   phases: z.array(instancePhaseDataInputEncoder).optional(),
   /** Proposal template (JSON Schema + embedded UI Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
+  /** Rubric template (JSON Schema defining evaluation criteria) */
+  rubricTemplate: jsonSchemaEncoder.optional(),
 });
 
 export const updateInstanceInputSchema = createInstanceInputSchema

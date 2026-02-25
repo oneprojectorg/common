@@ -30,6 +30,7 @@ export const updateDecisionInstance = async ({
   config,
   phases,
   proposalTemplate,
+  rubricTemplate,
   user,
 }: {
   instanceId: string;
@@ -43,6 +44,8 @@ export const updateDecisionInstance = async ({
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema + embedded UI Schema) */
   proposalTemplate?: Record<string, unknown>;
+  /** Rubric template (JSON Schema defining evaluation criteria) */
+  rubricTemplate?: Record<string, unknown>;
   user: User;
 }) => {
   // Fetch existing instance
@@ -74,6 +77,11 @@ export const updateDecisionInstance = async ({
     schemaValidator.validateJsonSchema(proposalTemplate);
   }
 
+  // Validate rubricTemplate is a structurally valid JSON Schema before persisting
+  if (rubricTemplate !== undefined) {
+    schemaValidator.validateJsonSchema(rubricTemplate);
+  }
+
   // Build update data
   const updateData: Record<string, unknown> = {};
 
@@ -93,12 +101,18 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
-  // Apply config, phase overrides, and/or proposalTemplate to existing instanceData
+  // Apply config, phase overrides, and/or template updates to existing instanceData
   const hasConfigUpdate = config !== undefined;
   const hasPhaseUpdates = phases && phases.length > 0;
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
+  const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
-  if (hasConfigUpdate || hasPhaseUpdates || hasProposalTemplateUpdate) {
+  if (
+    hasConfigUpdate ||
+    hasPhaseUpdates ||
+    hasProposalTemplateUpdate ||
+    hasRubricTemplateUpdate
+  ) {
     const existingInstanceData =
       existingInstance.instanceData as DecisionInstanceData;
 
@@ -147,6 +161,14 @@ export const updateDecisionInstance = async ({
       updatedInstanceData = {
         ...updatedInstanceData,
         proposalTemplate,
+      } as DecisionInstanceData;
+    }
+
+    // Apply rubric template update (replace entirely)
+    if (hasRubricTemplateUpdate) {
+      updatedInstanceData = {
+        ...updatedInstanceData,
+        rubricTemplate,
       } as DecisionInstanceData;
     }
 
