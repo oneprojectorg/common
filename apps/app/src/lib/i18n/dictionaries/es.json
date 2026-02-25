@@ -862,5 +862,8 @@
   "No {type} found.": "No se encontraron {type}.",
   "Could not load search results": "No se pudieron cargar los resultados de búsqueda",
   "Timeline not set": "Cronograma no establecido",
-  "Section not found": "Sección no encontrada"
+  "Section not found": "Sección no encontrada",
+  "Participant Preview": "Vista previa del participante",
+  "Review Proposal": "Revisar propuesta",
+  "pts": "pts"
 }

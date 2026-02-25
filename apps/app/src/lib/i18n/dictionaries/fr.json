@@ -862,5 +862,8 @@
   "No {type} found.": "Aucun {type} trouvé.",
   "Could not load search results": "Impossible de charger les résultats de recherche",
   "Timeline not set": "Calendrier non défini",
-  "Section not found": "Section introuvable"
+  "Section not found": "Section introuvable",
+  "Participant Preview": "Aperçu du participant",
+  "Review Proposal": "Évaluer la proposition",
+  "pts": "pts"
 }

@@ -870,5 +870,8 @@
   "No {type} found.": "কোনো {type} পাওয়া যায়নি।",
   "Could not load search results": "অনুসন্ধানের ফলাফল লোড করা যায়নি",
   "Timeline not set": "সময়সীমা নির্ধারিত হয়নি",
-  "Section not found": "বিভাগ পাওয়া যায়নি"
+  "Section not found": "বিভাগ পাওয়া যায়নি",
+  "Participant Preview": "অংশগ্রহণকারীর পূর্বরূপ",
+  "Review Proposal": "প্রস্তাব পর্যালোচনা",
+  "pts": "পয়েন্ট"
 }
