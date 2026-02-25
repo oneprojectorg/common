@@ -483,6 +483,7 @@
   "Headline is required": "Headline is required",
   "Description is required": "Description is required",
   "End date is required": "End date is required",
+  "End date must be on or after the start date": "End date must be on or after the start date",
   "This phase has validation errors": "This phase has validation errors",
   "Phase name": "Phase name",
   "No phases defined": "No phases defined",

@@ -219,6 +219,14 @@ export const PhaseEditor = ({
     });
   };
 
+  // Compare the date portions of two ISO datetime strings.
+  // Returns negative if a < b, 0 if equal, positive if a > b.
+  const compareDateStrings = (a: string, b: string): number => {
+    const dateA = a.split('T')[0] ?? '';
+    const dateB = b.split('T')[0] ?? '';
+    return dateA.localeCompare(dateB);
+  };
+
   const getPhaseErrors = (phase: PhaseDefinition) => {
     const errors: Record<string, string> = {};
     if (!phase.name?.trim()) {
@@ -232,6 +240,14 @@ export const PhaseEditor = ({
     }
     if (!phase.endDate) {
       errors.endDate = t('End date is required');
+    }
+    // Within-phase date validation: end date must be >= start date
+    if (
+      phase.startDate &&
+      phase.endDate &&
+      compareDateStrings(phase.endDate, phase.startDate) < 0
+    ) {
+      errors.endDate = t('End date must be on or after the start date');
     }
     return errors;
   };
@@ -411,6 +427,7 @@ export const PhaseEditor = ({
                         <DatePicker
                           label={t('Start date')}
                           value={safeParseDateString(phase.startDate)}
+                          maxValue={safeParseDateString(phase.endDate)}
                           onChange={(date) =>
                             updatePhase(phase.id, {
                               startDate: formatDateValue(date),
@@ -426,6 +443,7 @@ export const PhaseEditor = ({
                           label={t('End date')}
                           isRequired
                           value={safeParseDateString(phase.endDate)}
+                          minValue={safeParseDateString(phase.startDate)}
                           onChange={(date) => {
                             updatePhase(phase.id, {
                               endDate: formatDateValue(date),

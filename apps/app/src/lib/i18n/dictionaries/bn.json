@@ -489,6 +489,7 @@
   "Headline is required": "শিরোনাম আবশ্যক",
   "Description is required": "বিবরণ আবশ্যক",
   "End date is required": "শেষ তারিখ আবশ্যক",
+  "End date must be on or after the start date": "শেষ তারিখ শুরুর তারিখের সমান বা পরে হতে হবে",
   "This phase has validation errors": "এই পর্যায়ে বৈধতা ত্রুটি রয়েছে",
   "Add a label for this phase.": "এই পর্যায়ের জন্য একটি লেবেল যোগ করুন।",
   "Phase name": "পর্যায়ের নাম",
