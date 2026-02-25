@@ -5,6 +5,8 @@ import type { TermWithChildren } from '@op/common';
 import { MultiSelectComboBox, type Option } from '@op/ui/MultiSelectComboBox';
 import { useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 type FlattenedTerm = Option & {
   level: number;
   hasChildren: boolean;
@@ -52,6 +54,7 @@ export const TermsMultiSelect = ({
   errorMessage?: string;
   showDefinitions?: boolean;
 }) => {
+  const t = useTranslations();
   const [termsQuery, setTermsQuery] = useState('');
   const { data: terms, isLoading } = trpc.taxonomy.getTerms.useQuery({
     name: taxonomy,
@@ -63,7 +66,7 @@ export const TermsMultiSelect = ({
   return (
     <MultiSelectComboBox
       label={label}
-      placeholder={placeholder ?? 'Select one or more…'}
+      placeholder={placeholder ?? t('Select one or more')}
       isRequired={isRequired}
       onChange={(value) => onChange(value)}
       onInputUpdate={(inputValue) => {

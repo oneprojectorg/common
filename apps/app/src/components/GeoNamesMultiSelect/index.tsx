@@ -5,6 +5,8 @@ import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 export const GeoNamesMultiSelect = ({
   label,
   value,
@@ -16,6 +18,7 @@ export const GeoNamesMultiSelect = ({
   onChange: (value: Array<Option>) => void;
   isRequired?: boolean;
 }) => {
+  const t = useTranslations();
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
   const { data: geoNames, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
     {
@@ -29,7 +32,7 @@ export const GeoNamesMultiSelect = ({
 
   return (
     <MultiSelectComboBox
-      placeholder="Select locations…"
+      placeholder={t('Select locations')}
       enableLocalSearch={false}
       label={label}
       isRequired={isRequired}
