@@ -481,28 +481,49 @@ describe.concurrent('updateDecisionInstance', () => {
       ],
       properties: {
         innovation: {
-          type: 'number',
+          type: 'integer',
           title: 'Innovation',
           description: 'How innovative is the proposal?',
           'x-format': 'dropdown',
           minimum: 1,
           maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Below Average' },
+            { const: 3, title: 'Average' },
+            { const: 4, title: 'Good' },
+            { const: 5, title: 'Excellent' },
+          ],
         },
         feasibility: {
-          type: 'number',
+          type: 'integer',
           title: 'Feasibility',
           description: 'How feasible is the proposal to implement?',
           'x-format': 'dropdown',
           minimum: 1,
           maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Below Average' },
+            { const: 3, title: 'Average' },
+            { const: 4, title: 'Good' },
+            { const: 5, title: 'Excellent' },
+          ],
         },
         communityImpact: {
-          type: 'number',
+          type: 'integer',
           title: 'Community Impact',
           description: 'What is the expected impact on the community?',
           'x-format': 'dropdown',
           minimum: 1,
           maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Below Average' },
+            { const: 3, title: 'Average' },
+            { const: 4, title: 'Good' },
+            { const: 5, title: 'Excellent' },
+          ],
         },
         overallComments: {
           type: 'string',
@@ -539,7 +560,19 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(
       (instanceData.rubricTemplate?.properties as Record<string, unknown>)
         ?.innovation,
-    ).toMatchObject({ 'x-format': 'dropdown', minimum: 1, maximum: 5 });
+    ).toMatchObject({
+      type: 'integer',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 5,
+      oneOf: [
+        { const: 1, title: 'Poor' },
+        { const: 2, title: 'Below Average' },
+        { const: 3, title: 'Average' },
+        { const: 4, title: 'Good' },
+        { const: 5, title: 'Excellent' },
+      ],
+    });
     expect(
       (instanceData.rubricTemplate?.properties as Record<string, unknown>)
         ?.overallComments,
