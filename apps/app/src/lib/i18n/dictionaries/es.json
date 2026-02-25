@@ -481,6 +481,7 @@
   "Headline is required": "El titular es obligatorio",
   "Description is required": "La descripción es obligatoria",
   "End date is required": "La fecha de fin es obligatoria",
+  "End date must be on or after the start date": "La fecha de fin debe ser igual o posterior a la fecha de inicio",
   "This phase has validation errors": "Esta fase tiene errores de validación",
   "Add a label for this phase.": "Añade una etiqueta para esta fase.",
   "Phase name": "Nombre de fase",

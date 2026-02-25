@@ -482,6 +482,7 @@
   "Headline is required": "Le titre est obligatoire",
   "Description is required": "La description est obligatoire",
   "End date is required": "La date de fin est obligatoire",
+  "End date must be on or after the start date": "La date de fin doit être égale ou postérieure à la date de début",
   "This phase has validation errors": "Cette phase contient des erreurs de validation",
   "Add a label for this phase.": "Ajoutez un libellé pour cette phase.",
   "Phase name": "Nom de la phase",
