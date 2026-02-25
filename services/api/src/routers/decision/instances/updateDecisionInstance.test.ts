@@ -368,6 +368,91 @@ describe.concurrent('updateDecisionInstance', () => {
     }
   });
 
+  it('should accept and persist a valid proposalTemplate', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const validTemplate = {
+      type: 'object',
+      properties: {
+        title: { type: 'string', title: 'Project Title' },
+        budget: { type: 'number', minimum: 0 },
+      },
+      required: ['title'],
+    };
+
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      proposalTemplate: validTemplate,
+    });
+
+    expect(result.processInstance.id).toBe(instance.instance.id);
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+    expect(instanceData.proposalTemplate).toBeDefined();
+    expect(instanceData.proposalTemplate?.properties).toHaveProperty('title');
+    expect(instanceData.proposalTemplate?.properties).toHaveProperty('budget');
+  });
+
+  it('should reject an invalid proposalTemplate and not persist it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const beforeInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const beforeData = beforeInstance!.instanceData as DecisionInstanceData;
+
+    // Invalid: "bogus" is not a valid JSON Schema type
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: instance.instance.id,
+        proposalTemplate: { type: 'bogus' },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+
+    // Verify nothing was persisted
+    const afterInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const afterData = afterInstance!.instanceData as DecisionInstanceData;
+    expect(afterData.proposalTemplate).toEqual(beforeData.proposalTemplate);
+  });
+
   it('should update phases on a published instance when some phases have no dates', async ({
     task,
     onTestFinished,
