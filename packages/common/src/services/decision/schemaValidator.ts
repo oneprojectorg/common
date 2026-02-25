@@ -108,20 +108,40 @@ export class SchemaValidator {
   }
 
   /**
-   * Validate proposal data against a proposal template schema
-   * Throws ValidationError if validation fails
+   * Validate proposal data against a proposal template schema.
+   * Throws ValidationError if validation fails.
    */
   validateProposalData(
     proposalTemplate: JSONSchema7,
     proposalData: unknown,
   ): void {
-    const result = this.validate(proposalTemplate, proposalData);
+    this.validateDataOrThrow(proposalTemplate, proposalData, 'Proposal');
+  }
+
+  /**
+   * Validate rubric data against a rubric template schema.
+   * Throws ValidationError if validation fails.
+   */
+  validateRubricData(rubricTemplate: JSONSchema7, rubricData: unknown): void {
+    this.validateDataOrThrow(rubricTemplate, rubricData, 'Rubric');
+  }
+
+  /**
+   * Shared helper: validate data against a schema, throwing a
+   * labelled ValidationError on failure.
+   */
+  private validateDataOrThrow(
+    schema: JSONSchema7,
+    data: unknown,
+    label: string,
+  ): void {
+    const result = this.validate(schema, data);
 
     if (!result.valid) {
       const errorMessage = Object.values(result.errors).join(', ');
 
       throw new ValidationError(
-        `Proposal validation failed: ${errorMessage}`,
+        `${label} validation failed: ${errorMessage}`,
         result.errors,
       );
     }

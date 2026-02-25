@@ -453,6 +453,173 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(afterData.proposalTemplate).toEqual(beforeData.proposalTemplate);
   });
 
+  it('should accept and persist a valid rubricTemplate', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const validRubricTemplate = {
+      type: 'object',
+      'x-field-order': [
+        'innovation',
+        'feasibility',
+        'communityImpact',
+        'overallComments',
+      ],
+      properties: {
+        innovation: {
+          type: 'integer',
+          title: 'Innovation',
+          description: 'How innovative is the proposal?',
+          'x-format': 'dropdown',
+          minimum: 1,
+          maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Below Average' },
+            { const: 3, title: 'Average' },
+            { const: 4, title: 'Good' },
+            { const: 5, title: 'Excellent' },
+          ],
+        },
+        feasibility: {
+          type: 'integer',
+          title: 'Feasibility',
+          description: 'How feasible is the proposal to implement?',
+          'x-format': 'dropdown',
+          minimum: 1,
+          maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Below Average' },
+            { const: 3, title: 'Average' },
+            { const: 4, title: 'Good' },
+            { const: 5, title: 'Excellent' },
+          ],
+        },
+        communityImpact: {
+          type: 'integer',
+          title: 'Community Impact',
+          description: 'What is the expected impact on the community?',
+          'x-format': 'dropdown',
+          minimum: 1,
+          maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Below Average' },
+            { const: 3, title: 'Average' },
+            { const: 4, title: 'Good' },
+            { const: 5, title: 'Excellent' },
+          ],
+        },
+        overallComments: {
+          type: 'string',
+          title: 'Overall Comments',
+          description: 'Provide detailed feedback for the proposer.',
+          'x-format': 'long-text',
+        },
+      },
+      required: ['innovation', 'feasibility', 'communityImpact'],
+    };
+
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      rubricTemplate: validRubricTemplate,
+    });
+
+    expect(result.processInstance.id).toBe(instance.instance.id);
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+    expect(instanceData.rubricTemplate).toBeDefined();
+    expect(instanceData.rubricTemplate).toMatchObject({
+      'x-field-order': [
+        'innovation',
+        'feasibility',
+        'communityImpact',
+        'overallComments',
+      ],
+      required: ['innovation', 'feasibility', 'communityImpact'],
+    });
+    expect(
+      (instanceData.rubricTemplate?.properties as Record<string, unknown>)
+        ?.innovation,
+    ).toMatchObject({
+      type: 'integer',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 5,
+      oneOf: [
+        { const: 1, title: 'Poor' },
+        { const: 2, title: 'Below Average' },
+        { const: 3, title: 'Average' },
+        { const: 4, title: 'Good' },
+        { const: 5, title: 'Excellent' },
+      ],
+    });
+    expect(
+      (instanceData.rubricTemplate?.properties as Record<string, unknown>)
+        ?.overallComments,
+    ).toMatchObject({ 'x-format': 'long-text' });
+  });
+
+  it('should reject an invalid rubricTemplate and not persist it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const beforeInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const beforeData = beforeInstance!.instanceData as DecisionInstanceData;
+
+    // Invalid: "bogus" is not a valid JSON Schema type
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: instance.instance.id,
+        rubricTemplate: { type: 'bogus' },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+
+    // Verify nothing was persisted
+    const afterInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const afterData = afterInstance!.instanceData as DecisionInstanceData;
+    expect(afterData.rubricTemplate).toEqual(beforeData.rubricTemplate);
+  });
+
   it('should update phases on a published instance when some phases have no dates', async ({
     task,
     onTestFinished,

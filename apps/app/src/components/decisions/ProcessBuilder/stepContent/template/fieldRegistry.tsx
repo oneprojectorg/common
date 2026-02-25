@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
 import { LuAlignLeft, LuChevronDown, LuLetterText } from 'react-icons/lu';
 
-import type { ProposalPropertySchema } from '../../../proposalEditor/compileProposalSchema';
+import type { XFormatPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
 
@@ -11,8 +11,8 @@ import { FieldConfigDropdown } from './FieldConfigDropdown';
  */
 export interface FieldConfigProps {
   field: FieldView;
-  fieldSchema: ProposalPropertySchema;
-  onUpdateJsonSchema: (updates: Partial<ProposalPropertySchema>) => void;
+  fieldSchema: XFormatPropertySchema;
+  onUpdateJsonSchema: (updates: Partial<XFormatPropertySchema>) => void;
 }
 
 /**

@@ -10,7 +10,7 @@ import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalPropertySchema } from '../../../proposalEditor/compileProposalSchema';
+import type { XFormatPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import type { FieldView } from '../../../proposalTemplate';
 import {
   getFieldConfigComponent,
@@ -20,7 +20,7 @@ import {
 
 interface FieldCardProps {
   field: FieldView;
-  fieldSchema: ProposalPropertySchema;
+  fieldSchema: XFormatPropertySchema;
   errors?: string[];
   controls?: SortableItemControls;
   onRemove?: (fieldId: string) => void;
@@ -30,7 +30,7 @@ interface FieldCardProps {
   onUpdateRequired?: (fieldId: string, isRequired: boolean) => void;
   onUpdateJsonSchema?: (
     fieldId: string,
-    updates: Partial<ProposalPropertySchema>,
+    updates: Partial<XFormatPropertySchema>,
   ) => void;
 }
 
