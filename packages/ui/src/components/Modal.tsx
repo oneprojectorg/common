@@ -24,6 +24,28 @@ const modalStyles = tv({
   base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding outline-hidden backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md entering:animate-in entering:duration-500 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-500 exiting:ease-in exiting:fade-out',
 });
 
+const headerStyles = tv({
+  base: 'z-30 flex w-full items-center bg-white',
+  variants: {
+    surface: {
+      default: 'sticky top-0 min-h-16 border-b',
+      flat: 'pt-6',
+    },
+  },
+  defaultVariants: { surface: 'default' },
+});
+
+const footerStyles = tv({
+  base: 'flex w-full flex-col-reverse justify-end gap-4 bg-white px-6 py-3 sm:flex-row',
+  variants: {
+    surface: {
+      default: 'absolute bottom-0 border-t sm:sticky',
+      flat: '',
+    },
+  },
+  defaultVariants: { surface: 'default' },
+});
+
 type ModalContextType = {
   isDismissable?: boolean;
   onClose?: () => void;
@@ -41,7 +63,6 @@ export const ModalHeader = ({
 }) => {
   const { isDismissable, onClose, surface } = useContext(ModalContext);
   const overlayState = useContext(OverlayTriggerStateContext);
-  const isFlat = surface === 'flat';
 
   const handleClose = () => {
     if (onClose) {
@@ -52,12 +73,7 @@ export const ModalHeader = ({
   };
 
   return (
-    <div
-      className={cn(
-        'z-30 flex w-full items-center bg-white',
-        isFlat ? 'px-6 pt-6' : 'sticky top-0 min-h-16 border-b',
-      )}
-    >
+    <div className={headerStyles({ surface })}>
       <div className="relative flex w-full items-center justify-center">
         {isDismissable && (
           <button
@@ -116,19 +132,8 @@ export const ModalFooter = ({
   children: ReactNode;
 }) => {
   const { surface } = useContext(ModalContext);
-  const isFlat = surface === 'flat';
 
-  return (
-    <div
-      className={cn(
-        'flex w-full flex-col-reverse justify-end gap-4 bg-white px-6 py-3 sm:flex-row',
-        !isFlat && 'absolute bottom-0 border-t sm:sticky',
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={footerStyles({ surface, className })}>{children}</div>;
 };
 
 export const ModalStepper = memo(

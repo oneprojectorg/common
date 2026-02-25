@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -128,51 +127,46 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         )}
       </div>
 
-      <DialogTrigger
+      <Modal
         isOpen={showDeleteModal}
         onOpenChange={(open) => !open && setShowDeleteModal(false)}
+        surface="flat"
       >
-        <Modal
-          isOpen={showDeleteModal}
-          onOpenChange={(open) => !open && setShowDeleteModal(false)}
-          surface="flat"
-        >
-          <ModalHeader className="pl-6 text-left">
+        <ModalHeader className="pl-6 text-left">
+          {isDraft
+            ? t('Delete draft?')
+            : t('Delete {name}?', {
+                name: processInstance.name || item.name,
+              })}
+        </ModalHeader>
+        <ModalBody>
+          <p>
             {isDraft
-              ? t('Delete draft?')
-              : t('Delete {name}?', {
-                  name: processInstance.name || item.name,
-                })}
-          </ModalHeader>
-          <ModalBody>
-            <p>
-              {isDraft
-                ? t(
-                    "This draft will be permanently deleted and can't be recovered.",
-                  )
-                : t(
-                    "This decision will be permanently deleted and can't be recovered.",
-                  )}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
-              {isDraft ? t('Keep draft') : t('Cancel')}
-            </Button>
-            <Button
-              color="destructive"
-              onPress={handleDeleteConfirm}
-              isDisabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending
-                ? t('Deleting...')
-                : isDraft
-                  ? t('Delete draft')
-                  : t('Delete')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </DialogTrigger>
+              ? t(
+                  "This draft will be permanently deleted and can't be recovered.",
+                )
+              : t(
+                  "This decision will be permanently deleted and can't be recovered.",
+                )}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
+            {isDraft ? t('Keep draft') : t('Cancel')}
+          </Button>
+          <Button
+            color="destructive"
+            onPress={handleDeleteConfirm}
+            isDisabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending
+              ? t('Deleting...')
+              : isDraft
+                ? t('Delete draft')
+                : t('Delete')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </>
   );
 };
