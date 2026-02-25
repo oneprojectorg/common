@@ -10,6 +10,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
   PhaseOverride,
@@ -67,6 +68,11 @@ export const updateDecisionInstance = async ({
   });
 
   assertAccess({ profile: permission.ADMIN }, profileUser?.roles ?? []);
+
+  // Validate proposalTemplate is a structurally valid JSON Schema before persisting
+  if (proposalTemplate !== undefined) {
+    schemaValidator.validateJsonSchema(proposalTemplate);
+  }
 
   // Build update data
   const updateData: Record<string, unknown> = {};

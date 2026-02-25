@@ -34,6 +34,23 @@ export class SchemaValidator {
   }
 
   /**
+   * Validates that a value is a compilable JSON Schema (including vendor
+   * extensions like x-field-order and x-format registered on this instance).
+   * @throws ValidationError if the schema cannot be compiled
+   */
+  validateJsonSchema(schema: Record<string, unknown>): void {
+    try {
+      this.ajv.compile(schema as JSONSchema7);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown schema error';
+      throw new ValidationError(`Invalid JSON Schema: ${message}`, {
+        schema: message,
+      });
+    }
+  }
+
+  /**
    * Validate data against a JSON Schema
    */
   validate(schema: JSONSchema7, data: unknown): SchemaValidationResult {
