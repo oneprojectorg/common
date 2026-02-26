@@ -15,9 +15,9 @@ import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
+import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { z } from 'zod';
 import { create } from 'zustand';
-import GoogleIcon from '~icons/logos/google-icon';
 
 import { CommonLogo } from './CommonLogo';
 

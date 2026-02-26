@@ -3,7 +3,6 @@ import { getPreviewApiUrl } from '@op/core/previews';
 import { withPostHogConfig } from '@posthog/nextjs-config';
 import dotenv from 'dotenv';
 import createNextIntlPlugin from 'next-intl/plugin';
-import Icons from 'unplugin-icons/webpack';
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
 
@@ -51,56 +50,22 @@ const config = {
     minimumCacheTTL: 31536000, // 1 year — assets are content-addressed
   },
   serverExternalPackages: ['sharp', 'onnxruntime-node'],
-
-  webpack: (cfg, { isServer }) => {
-    // In e2e mode, swap the real TipTap client for an in-process mock
-    // so the server never makes HTTP calls to TipTap Cloud.
-    if (process.env.E2E === 'true') {
-      cfg.resolve.alias = {
-        ...cfg.resolve.alias,
-        '@op/collab': '@op/collab/testing',
-      };
-    }
-
-    // Grab the existing rule that handles SVG imports
-    const fileLoaderRule = cfg.module.rules.find((rule) =>
-      rule.test?.test?.('.svg'),
-    );
-
-    cfg.module.rules.push(
-      // Reapply the existing rule, but only for svg imports ending in ?url
-      {
-        ...fileLoaderRule,
-        test: /\.svg$/i,
-        resourceQuery: /url/, // *.svg?url
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
-      // Convert all other *.svg imports to React components
-      {
-        test: /\.svg$/i,
-        issuer: fileLoaderRule.issuer,
-        resourceQuery: { not: [...fileLoaderRule.resourceQuery.not, /url/] }, // exclude if *.svg?url
-        use: ['@svgr/webpack'],
-      },
-    );
-
-    cfg.plugins.push(
-      Icons({
-        compiler: 'jsx',
-        jsx: 'react',
-      }),
-    );
-
-    // Modify the file loader rule to ignore *.svg, since we have it handled now.
-    fileLoaderRule.exclude = /\.svg$/i;
-
-    if (!isServer) {
-      cfg.resolve.fallback = {
-        // Disable the 'tls' module on the client side
-        tls: false,
-      };
-    }
-
-    return cfg;
+    },
+    resolveAlias: {
+      // Disable the 'tls' module on the client side
+      tls: { browser: '' },
+      // In e2e mode, swap the real TipTap client for an in-process mock
+      // so the server never makes HTTP calls to TipTap Cloud.
+      ...(process.env.E2E === 'true'
+        ? { '@op/collab': '@op/collab/testing' }
+        : {}),
+    },
   },
   async headers() {
     return [

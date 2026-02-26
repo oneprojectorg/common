@@ -5,10 +5,10 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
-    "build": "next build --webpack",
+    "build": "next build",
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
-    "dev": "next dev -p 3100 --webpack",
-    "dev:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next dev -p 4100 --webpack",
+    "dev": "next dev -p 3100",
+    "dev:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next dev -p 4100",
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\" \"!.next\"",
     "start": "next start -p 3100",
     "typecheck": "tsgo --noEmit"
@@ -101,7 +101,6 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@iconify/json": "2.2.311",
     "@op/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "4.1.18",
     "@tanstack/react-query-devtools": "5.66.11",
@@ -114,7 +113,6 @@
     "postcss": "^8.5.3",
     "tailwindcss": "4.1.18",
     "typescript": "5.7.3",
-    "unplugin-icons": "22.1.0",
     "vitest": "catalog:"
   }
 }

@@ -6,7 +6,6 @@
         "name": "next"
       }
     ],
-    "types": ["unplugin-icons/types/react"],
     "strict": true,
     "strictNullChecks": true,
     "alwaysStrict": true,

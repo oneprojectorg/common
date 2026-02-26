@@ -1,6 +1,4 @@
-import GithubIcon from '~icons/carbon/logo-github';
-import LinkedinIcon from '~icons/carbon/logo-linkedin';
-import TwitterIcon from '~icons/carbon/logo-x';
+import { LuGithub, LuLinkedin, LuTwitter } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 
@@ -11,9 +9,9 @@ export interface SocialLink {
 }
 
 const iconMap = {
-  github: GithubIcon,
-  twitter: TwitterIcon,
-  linkedin: LinkedinIcon,
+  github: LuGithub,
+  twitter: LuTwitter,
+  linkedin: LuLinkedin,
 };
 
 const socialLinks: SocialLink[] = [
