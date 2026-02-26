@@ -23,6 +23,7 @@ const withAnalytics: MiddlewareBuilderBase<TContextWithAnalytics> = async ({
       try {
         // We are only identifying One Project users by email, matching frontend logic
         const properties: Record<string, any> = {};
+        properties.authUserId = user.id;
 
         if (posthogSessionId) {
           properties.$session_id = posthogSessionId;
