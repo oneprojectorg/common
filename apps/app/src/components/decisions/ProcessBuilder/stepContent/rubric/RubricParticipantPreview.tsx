@@ -31,7 +31,7 @@ export function RubricParticipantPreview({
 
   return (
     <aside className="hidden flex-1 basis-1/2 overflow-y-auto border-l bg-neutral-offWhite p-14 xl:block">
-      <div className="max-w-lg rounded-lg bg-white p-6">
+      <div className="rounded-lg bg-white p-6">
         <div className="mb-6 flex items-center gap-2 text-sm text-neutral-500">
           <LuEye className="size-4" />
           <span>{t('Participant Preview')}</span>
