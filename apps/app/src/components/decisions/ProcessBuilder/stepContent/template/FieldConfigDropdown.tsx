@@ -169,7 +169,7 @@ function FieldConfigDropdownOptions({
                   }}
                   className={`p-2 ${
                     options.length <= 2
-                      ? 'cursor-default opacity-30 text-neutral-gray3'
+                      ? 'cursor-default text-neutral-gray3 opacity-30'
                       : 'text-neutral-gray3 hover:text-neutral-charcoal'
                   }`}
                 >
