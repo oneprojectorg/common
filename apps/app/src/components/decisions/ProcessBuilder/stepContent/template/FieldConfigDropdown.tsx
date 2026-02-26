@@ -3,6 +3,7 @@
 import { Button } from '@op/ui/Button';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { useEffect, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 
@@ -149,15 +150,33 @@ function FieldConfigDropdownOptions({
                 }}
                 className="w-full"
               />
-              <Button
-                color="ghost"
-                size="small"
-                aria-label={t('Remove option')}
-                onPress={() => handleRemoveOption(option.id)}
-                className="p-2 text-neutral-gray3 hover:text-neutral-charcoal"
-              >
-                <LuX className="size-4" />
-              </Button>
+              <TooltipTrigger isDisabled={options.length > 2}>
+                <Button
+                  color="ghost"
+                  size="small"
+                  aria-label={t('Remove option')}
+                  aria-disabled={options.length <= 2 || undefined}
+                  aria-description={
+                    options.length <= 2
+                      ? t('At least two options are required')
+                      : undefined
+                  }
+                  excludeFromTabOrder={options.length <= 2}
+                  onPress={() => {
+                    if (options.length > 2) {
+                      handleRemoveOption(option.id);
+                    }
+                  }}
+                  className={`p-2 ${
+                    options.length <= 2
+                      ? 'cursor-default text-neutral-gray3 opacity-30'
+                      : 'text-neutral-gray3 hover:text-neutral-charcoal'
+                  }`}
+                >
+                  <LuX className="size-4" />
+                </Button>
+                <Tooltip>{t('At least two options are required')}</Tooltip>
+              </TooltipTrigger>
             </div>
           );
         }}
