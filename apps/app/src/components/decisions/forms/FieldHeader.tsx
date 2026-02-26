@@ -17,16 +17,19 @@ export function FieldHeader({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      {title && (
-        <div className="flex items-baseline justify-between gap-2">
+      {title &&
+        (badge ? (
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="font-serif text-title-sm14 text-neutral-charcoal">
+              {title}
+            </span>
+            <span className="shrink-0 text-xs text-neutral-gray4">{badge}</span>
+          </div>
+        ) : (
           <span className="font-serif text-title-sm14 text-neutral-charcoal">
             {title}
           </span>
-          {badge && (
-            <span className="shrink-0 text-xs text-neutral-gray4">{badge}</span>
-          )}
-        </div>
-      )}
+        ))}
       {description && (
         <p className="text-sm text-neutral-charcoal">{description}</p>
       )}
