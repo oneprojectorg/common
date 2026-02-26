@@ -1,9 +1,13 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { RubricTemplateSchema } from '@op/common/client';
 import { Suspense } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import type { SectionProps } from '../../contentRegistry';
+import { CodeAnimation } from './RubricComingSoonAnimation';
 import { RubricParticipantPreview } from './RubricParticipantPreview';
 
 /**
@@ -91,6 +95,22 @@ const DUMMY_RUBRIC_TEMPLATE: RubricTemplateSchema = {
 };
 
 function CriteriaSectionContent(_props: SectionProps) {
+  const t = useTranslations();
+  const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
+
+  if (!rubricBuilderEnabled) {
+    return (
+      <div className="flex h-full flex-row">
+        <div className="mx-auto flex flex-1 flex-col items-center justify-center gap-4 p-4 py-16 md:p-8">
+          <CodeAnimation />
+          <span className="text-neutral-gray4">
+            {t('We are currently working on this, stay tuned!')}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col md:flex-row">
       {/* Left panel — blank placeholder for the future rubric builder */}
