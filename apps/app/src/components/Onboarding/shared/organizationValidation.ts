@@ -1,6 +1,8 @@
 import { zodUrl } from '@op/common/validation';
 import { z } from 'zod';
 
+import type { TranslateFn } from '@/lib/i18n';
+
 export const multiSelectOptionValidator = z.object({
   id: z.string(),
   label: z.string().max(200),
@@ -8,7 +10,7 @@ export const multiSelectOptionValidator = z.object({
   data: z.record(z.string(), z.any()).prefault({}),
 });
 
-export const createOrganizationFormValidator = (t: (key: string) => string) =>
+export const createOrganizationFormValidator = (t: TranslateFn) =>
   z.object({
     name: z
       .string({
@@ -66,10 +68,11 @@ export const createOrganizationFormValidator = (t: (key: string) => string) =>
     orgBannerImageId: z.string().optional(),
   });
 
-// Static validator for type inference and external schema composition
+// Static validator for type inference and external schema composition.
+// Must mirror createOrganizationFormValidator's structure (without translated error messages).
 export const organizationFormValidator = z.object({
   name: z.string().min(1).max(100),
-  website: z.string().optional(),
+  website: zodUrl({ isRequired: true, error: 'Enter a valid website address' }),
   email: z.email().max(200),
   orgType: z.string().max(200).min(1),
   bio: z.string().max(150).min(1),

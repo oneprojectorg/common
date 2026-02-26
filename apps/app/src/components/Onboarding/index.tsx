@@ -153,10 +153,7 @@ export const OnboardingFlow = () => {
           if (errorInfo.isConnectionError) {
             toast.error({
               title: t('Connection issue'),
-              message:
-                errorInfo.message +
-                ' ' +
-                t('Please try submitting the form again.'),
+              message: t('Please try submitting the form again.'),
             });
           } else {
             toast.error({

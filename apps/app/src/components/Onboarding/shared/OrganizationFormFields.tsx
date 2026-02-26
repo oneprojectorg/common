@@ -105,8 +105,8 @@ export const OrganizationFormFields = ({
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
         toast.error({
-          message: t('File too large. Maximum size: {maxSizeMB}MB', {
-            maxSizeMB,
+          message: t('File too large. Maximum size: {size}MB', {
+            size: maxSizeMB,
           }),
         });
         return;

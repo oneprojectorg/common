@@ -161,7 +161,7 @@ const SelectProfileStep = ({
       <div className="flex flex-col gap-4 px-6 py-4">
         <p id="select-accounts-label">
           {t(
-            'Please select the account you’d like to delete. This action cannot be undone.',
+            "Please select the account you'd like to delete. This action cannot be undone.",
           )}
         </p>
         <RadioGroup

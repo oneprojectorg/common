@@ -40,8 +40,14 @@ export const ProfileSearchResultsSuspense = ({
   return totalResults > 0 ? (
     <>
       <ListPageLayoutHeader>
-        <span className="text-neutral-gray4">{t('Results for')}</span>{' '}
-        <span className="text-neutral-black">{query}</span>
+        <span className="text-neutral-gray4">
+          {t.rich('Results for <highlight>{query}</highlight>', {
+            query: query,
+            highlight: (chunks: React.ReactNode) => (
+              <span className="text-neutral-black">{chunks}</span>
+            ),
+          })}
+        </span>
       </ListPageLayoutHeader>
       {individualSearchEnabled ? (
         <TabbedProfileSearchResults profiles={profileSearchResults} />
@@ -58,8 +64,14 @@ export const ProfileSearchResultsSuspense = ({
   ) : (
     <>
       <ListPageLayoutHeader className="flex justify-center gap-2">
-        <span className="text-neutral-gray4">{t('No results for')}</span>{' '}
-        <span className="text-neutral-black">{query}</span>
+        <span className="text-neutral-gray4">
+          {t.rich('No results for <highlight>{query}</highlight>', {
+            query: query,
+            highlight: (chunks: React.ReactNode) => (
+              <span className="text-neutral-black">{chunks}</span>
+            ),
+          })}
+        </span>
       </ListPageLayoutHeader>
       <div className="flex justify-center">
         <span className="max-w-96 text-center text-neutral-black">
@@ -88,22 +100,22 @@ export const TabbedProfileSearchResults = ({
     <Tabs key={defaultSelectedKey} defaultSelectedKey={defaultSelectedKey}>
       <TabList variant="pill">
         {profiles.map(({ type, results }) => {
-          const typeName = match(type, {
-            [EntityType.INDIVIDUAL]: 'Individual',
-            [EntityType.ORG]: 'Organization',
+          const label = match(type, {
+            [EntityType.INDIVIDUAL]: t('Individuals'),
+            [EntityType.ORG]: t('Organizations'),
           });
           return (
             <Tab id={type} variant="pill" className="gap-2" key={`${type}-tab`}>
-              {t(typeName)}s
+              {label}
               <span className="text-neutral-gray4">{results.length}</span>
             </Tab>
           );
         })}
       </TabList>
       {profiles.map(({ type, results }) => {
-        const typeName = match(type, {
-          [EntityType.INDIVIDUAL]: 'Individual',
-          [EntityType.ORG]: 'Organization',
+        const label = match(type, {
+          [EntityType.INDIVIDUAL]: t('individuals'),
+          [EntityType.ORG]: t('organizations'),
         });
         return (
           <TabPanel key={`${type}-panel`} id={type}>
@@ -111,9 +123,7 @@ export const TabbedProfileSearchResults = ({
               <ProfileSummaryList profiles={results} />
             ) : (
               <div className="mt-2 w-full rounded p-8 text-center text-neutral-gray4">
-                {t('No {type} found.', {
-                  type: t(typeName).toLocaleLowerCase() + 's',
-                })}
+                {t('No {type} found.', { type: label })}
               </div>
             )}
           </TabPanel>

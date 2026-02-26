@@ -1,5 +1,7 @@
 import { toast } from '@op/ui/Toast';
 
+import type { TranslateFn } from '@/lib/i18n';
+
 /**
  * Handles tRPC validation errors from mutation responses.
  * Displays appropriate toast messages based on error shape.
@@ -7,7 +9,7 @@ import { toast } from '@op/ui/Toast';
 export function handleMutationError(
   error: { data?: unknown; message?: string },
   operationType: 'create' | 'update' | 'submit',
-  t: (key: string, params?: Record<string, string | number>) => string,
+  t: TranslateFn,
 ) {
   console.error(`Failed to ${operationType} proposal:`, error);
 

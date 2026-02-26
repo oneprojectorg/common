@@ -5,8 +5,9 @@
  * Why: We need to shift to getTranslations but it doesn't yet support our dictionaries so we wrap this here so we can easily shift it out when it does.
  */
 import { useTranslations } from '@/lib/i18n';
+import type { MessageKey } from '@/lib/i18n';
 
-export const TranslatedText = ({ text }: { text: string }) => {
+export const TranslatedText = ({ text }: { text: MessageKey }) => {
   const t = useTranslations();
   return t(text);
 };
