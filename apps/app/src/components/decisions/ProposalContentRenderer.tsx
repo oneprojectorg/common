@@ -1,14 +1,12 @@
 'use client';
 
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { viewerProseStyles } from '@op/ui/RichTextEditor';
 import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { compileProposalSchema } from './forms/proposal';
 import type { FieldDescriptor } from './forms/types';
-import {
-  type ProposalTemplateSchema,
-  compileProposalSchema,
-} from './proposalEditor/compileProposalSchema';
 
 interface ProposalContentRendererProps {
   /** The proposal template schema (from processSchema or instanceData). */

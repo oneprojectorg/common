@@ -6,7 +6,7 @@ import { LuEye } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { compileRubricSchema } from '../../../forms/compileRubricSchema';
+import { compileRubricSchema } from '../../../forms/rubric';
 import { RubricFormRenderer } from './RubricFormRenderer';
 
 /**

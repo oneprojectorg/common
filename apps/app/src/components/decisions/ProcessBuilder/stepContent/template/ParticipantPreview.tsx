@@ -1,16 +1,14 @@
 'use client';
 
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { useMemo } from 'react';
 import { LuEye } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { compileProposalSchema } from '../../../forms/proposal';
 import { ProposalFormRenderer } from '../../../proposalEditor/ProposalFormRenderer';
-import {
-  type ProposalTemplateSchema,
-  compileProposalSchema,
-} from '../../../proposalEditor/compileProposalSchema';
 import type { ProposalDraftFields } from '../../../proposalEditor/useProposalDraft';
 
 const EMPTY_DRAFT: ProposalDraftFields = {

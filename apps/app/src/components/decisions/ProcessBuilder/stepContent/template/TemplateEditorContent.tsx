@@ -2,6 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { SYSTEM_FIELD_KEYS } from '@op/common/client';
+import type {
+  ProposalTemplateSchema,
+  XFormatPropertySchema,
+} from '@op/common/client';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { FieldConfigCard } from '@op/ui/FieldConfigCard';
@@ -14,10 +18,6 @@ import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type {
-  ProposalTemplateSchema,
-  XFormatPropertySchema,
-} from '../../../proposalEditor/compileProposalSchema';
 import {
   type FieldType,
   type FieldView,
