@@ -13,10 +13,10 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
-import { assertAccess, checkPermission, permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
@@ -166,18 +166,17 @@ export const getProposal = async ({
     ]),
   ]);
 
-  // Check that user has read access on the instance's profile
-  if (proposal.processInstance?.profileId) {
-    const instanceProfileUser = await getProfileAccessUser({
-      user,
-      profileId: proposal.processInstance.profileId,
-    });
-
-    assertAccess(
-      [{ decisions: permission.READ }, { decisions: permission.ADMIN }],
-      instanceProfileUser?.roles ?? [],
-    );
-  }
+  // Check that user has read access on the instance's profile,
+  // falling back to org-level access for legacy proposals
+  await assertInstanceProfileAccess({
+    user: { id: user.id },
+    instance: proposal.processInstance,
+    profilePermissions: { decisions: permission.READ },
+    orgFallbackPermissions: [
+      { decisions: permission.READ },
+      { decisions: permission.ADMIN },
+    ],
+  });
 
   // Generate signed URLs for attachments
   let attachmentsWithUrls = proposal.attachments ?? [];
