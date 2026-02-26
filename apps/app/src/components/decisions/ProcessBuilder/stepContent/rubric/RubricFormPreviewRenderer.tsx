@@ -1,6 +1,7 @@
 'use client';
 
 import type { XFormatPropertySchema } from '@op/common/client';
+import { isRationaleField } from '@op/common/client';
 import { Select } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
 
@@ -8,11 +9,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { FieldHeader } from '../../../forms/FieldHeader';
 import type { FieldDescriptor } from '../../../forms/types';
-
-/** `__rationale` companion field — rendered inline under the parent criterion. */
-function isRationaleField(key: string): boolean {
-  return key.endsWith('__rationale');
-}
 
 /** Yes/no field: `type: "string"` with exactly `"yes"` and `"no"` oneOf entries. */
 function isYesNoField(schema: XFormatPropertySchema): boolean {
