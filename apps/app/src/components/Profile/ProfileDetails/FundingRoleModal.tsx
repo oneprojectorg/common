@@ -5,6 +5,8 @@ import { Dialog } from '@op/ui/RAC';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { useState, useTransition } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 export type FundingRole = 'funder' | 'fundee' | 'funderAndFundee';
 
 interface FundingRoleModalProps {
@@ -20,6 +22,7 @@ export const FundingRoleModal = ({
   isOpen,
   onClose,
 }: FundingRoleModalProps) => {
+  const t = useTranslations();
   const [selectedRole, setSelectedRole] = useState<FundingRole | null>(null);
   const [isSubmitting, startTransition] = useTransition();
 
@@ -38,11 +41,11 @@ export const FundingRoleModal = ({
     <Dialog>
       {({ close }) => (
         <div>
-          <ModalHeader>Specify your funding relationship</ModalHeader>
+          <ModalHeader>{t('Specify your funding relationship')}</ModalHeader>
           <ModalBody>
             <div>
               <RadioGroup
-                label="How do your organizations support each other?"
+                label={t('How do your organizations support each other?')}
                 value={selectedRole || ''}
                 onChange={(value: string) =>
                   setSelectedRole(value as FundingRole)
@@ -51,28 +54,41 @@ export const FundingRoleModal = ({
               >
                 <Radio value="funder">
                   <div className="flex flex-col">
-                    <div>Your organization funds {organizationName}</div>
+                    <div>
+                      {t('Your organization funds {organizationName}', {
+                        organizationName,
+                      })}
+                    </div>
                     <div className="text-sm text-neutral-gray4">
-                      Your organization provides financial support to{' '}
-                      {organizationName}.
+                      {t(
+                        'Your organization provides financial support to {organizationName}.',
+                        { organizationName },
+                      )}
                     </div>
                   </div>
                 </Radio>
                 <Radio value="fundee">
                   <div className="flex flex-col">
-                    <div>{organizationName} funds your organization</div>
+                    <div>
+                      {t('{organizationName} funds your organization', {
+                        organizationName,
+                      })}
+                    </div>
                     <div className="text-sm text-neutral-gray4">
-                      {organizationName} provides financial support to your
-                      organization.
+                      {t(
+                        '{organizationName} provides financial support to your organization.',
+                        { organizationName },
+                      )}
                     </div>
                   </div>
                 </Radio>
                 <Radio value="funderAndFundee">
                   <div className="flex flex-col">
-                    <div>Mutual funding</div>
+                    <div>{t('Mutual funding')}</div>
                     <div className="text-sm text-neutral-gray4">
-                      Both organizations provide financial support to each
-                      other.
+                      {t(
+                        'Both organizations provide financial support to each other.',
+                      )}
                     </div>
                   </div>
                 </Radio>
@@ -89,7 +105,7 @@ export const FundingRoleModal = ({
               type="button"
               className="w-full sm:w-fit"
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               color="primary"
@@ -99,7 +115,7 @@ export const FundingRoleModal = ({
               onPress={handleSave}
               className="w-full sm:w-fit"
             >
-              {isSubmitting ? <LoadingSpinner /> : 'Save'}
+              {isSubmitting ? <LoadingSpinner /> : t('Save')}
             </Button>
           </ModalFooter>
         </div>

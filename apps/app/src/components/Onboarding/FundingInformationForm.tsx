@@ -15,30 +15,44 @@ import { ToggleRow } from '../layout/split/form/ToggleRow';
 import { multiSelectOptionValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
+const createFundingValidator = (t: (key: string) => string) =>
+  z.object({
+    isReceivingFunds: z.boolean().prefault(false).optional(),
+    isOfferingFunds: z.boolean().prefault(false).optional(),
+    acceptingApplications: z.boolean().prefault(false).optional(),
+    receivingFundsDescription: z
+      .string()
+      .max(200, {
+        error: t('Must be at most 200 characters'),
+      })
+      .optional(),
+    receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
+    receivingFundsLink: zodUrl({
+      error: t('Enter a valid website address'),
+    }),
+    offeringFundsTerms: z.array(multiSelectOptionValidator).optional(),
+    offeringFundsDescription: z
+      .string()
+      .max(200, {
+        error: t('Must be at most 200 characters'),
+      })
+      .optional(),
+    offeringFundsLink: zodUrl({
+      error: t('Enter a valid website address'),
+    }),
+  });
+
+// Static validator for type inference and external schema composition
 export const validator = z.object({
   isReceivingFunds: z.boolean().prefault(false).optional(),
   isOfferingFunds: z.boolean().prefault(false).optional(),
   acceptingApplications: z.boolean().prefault(false).optional(),
-  receivingFundsDescription: z
-    .string()
-    .max(200, {
-      error: 'Must be at most 200 characters',
-    })
-    .optional(),
+  receivingFundsDescription: z.string().max(200).optional(),
   receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
-  receivingFundsLink: zodUrl({
-    error: 'Enter a valid website address',
-  }),
+  receivingFundsLink: z.string().optional(),
   offeringFundsTerms: z.array(multiSelectOptionValidator).optional(),
-  offeringFundsDescription: z
-    .string()
-    .max(200, {
-      error: 'Must be at most 200 characters',
-    })
-    .optional(),
-  offeringFundsLink: zodUrl({
-    error: 'Enter a valid website address',
-  }),
+  offeringFundsDescription: z.string().max(200).optional(),
+  offeringFundsLink: z.string().optional(),
 });
 
 export const FundingInformationForm = ({
@@ -57,7 +71,7 @@ export const FundingInformationForm = ({
   const form = useAppForm({
     defaultValues: fundingInformation,
     validators: {
-      onBlur: validator,
+      onBlur: createFundingValidator(t),
     },
     onSubmit: ({ value }) => {
       setFundingInformation(value); // Persist to store on submit

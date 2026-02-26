@@ -4,6 +4,8 @@ import { formatCurrency, formatDateRange } from '@/utils/formatting';
 import type { processPhaseSchema } from '@op/api/encoders';
 import type { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 type ProcessPhase = z.infer<typeof processPhaseSchema>;
 
 interface DecisionStatsProps {
@@ -19,22 +21,23 @@ export function DecisionStats({
   proposalCount,
   daysRemaining,
 }: DecisionStatsProps) {
+  const t = useTranslations();
   return (
     <div className="space-y-6">
       {/* Current Phase */}
       <div>
         <h3 className="text-xs font-semibold tracking-wider text-neutral-gray2 uppercase">
-          CURRENT PHASE
+          {t('Current Phase')}
         </h3>
         <p className="mt-1 text-lg font-medium text-neutral-charcoal">
-          {currentPhase?.name || 'Proposal Submissions'}
+          {currentPhase?.name || t('Proposal Submissions')}
         </p>
         {currentPhase?.phase && (
           <p className="mt-1 text-sm text-neutral-gray3">
             {formatDateRange(
               currentPhase.phase.startDate,
               currentPhase.phase.endDate,
-            ) || 'Timeline not set'}
+            ) || t('Timeline not set')}
           </p>
         )}
       </div>
@@ -45,7 +48,9 @@ export function DecisionStats({
       <div className="space-y-3">
         {budget && (
           <div className="flex justify-between">
-            <span className="text-sm text-neutral-gray3">Total Budget</span>
+            <span className="text-sm text-neutral-gray3">
+              {t('Total Budget')}
+            </span>
             <span className="text-sm font-medium text-neutral-charcoal">
               {formatCurrency(budget)}
             </span>
@@ -53,14 +58,16 @@ export function DecisionStats({
         )}
         <div className="flex justify-between">
           <span className="text-sm text-neutral-gray3">
-            Proposals Submitted
+            {t('Proposals Submitted')}
           </span>
           <span className="text-sm font-medium text-neutral-charcoal">
             {proposalCount}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-sm text-neutral-gray3">Days Remaining</span>
+          <span className="text-sm text-neutral-gray3">
+            {t('Days Remaining')}
+          </span>
           <span className="text-sm font-medium text-neutral-charcoal">
             {daysRemaining !== null ? daysRemaining : '14'}
           </span>

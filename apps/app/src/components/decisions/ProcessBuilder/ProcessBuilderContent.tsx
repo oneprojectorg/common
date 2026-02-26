@@ -2,6 +2,8 @@
 
 import { useUser } from '@/utils/UserProvider';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { type SectionProps, getContentComponent } from './contentRegistry';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
@@ -11,6 +13,7 @@ export function ProcessBuilderContent({
   instanceId,
   decisionName,
 }: SectionProps) {
+  const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
   const { currentStep, currentSection } =
     useProcessNavigation(navigationConfig);
@@ -28,7 +31,7 @@ export function ProcessBuilderContent({
   );
 
   if (!ContentComponent) {
-    return <div>Section not found</div>;
+    return <div>{t('Section not found')}</div>;
   }
 
   return (

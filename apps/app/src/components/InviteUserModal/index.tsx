@@ -70,7 +70,7 @@ export const InviteUserModal = ({
       handleInviteSuccess();
     },
     onError: (error) => {
-      handleInviteError(error, 'Failed to send invite');
+      handleInviteError(error, t('Failed to send invite'));
     },
   });
 
@@ -236,7 +236,7 @@ export const InviteUserModal = ({
                 selectedKey={activeTab}
                 onSelectionChange={(key) => setActiveTab(key as string)}
               >
-                <TabList aria-label="Invite options">
+                <TabList aria-label={t('Invite options')}>
                   <Tab id="existing">{t('Add to my organization')}</Tab>
                   {inviteUserEnabled ? (
                     <Tab id="new">{t('Invite a new organization')}</Tab>

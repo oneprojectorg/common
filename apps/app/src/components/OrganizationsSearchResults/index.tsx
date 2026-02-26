@@ -21,6 +21,7 @@ export const ProfileSearchResultsSuspense = ({
   query: string;
   limit?: number;
 }) => {
+  const t = useTranslations();
   const individualSearchEnabled = useFeatureFlag('individual_search');
 
   const [profileSearchResults] = trpc.profile.search.useSuspenseQuery({
@@ -39,7 +40,7 @@ export const ProfileSearchResultsSuspense = ({
   return totalResults > 0 ? (
     <>
       <ListPageLayoutHeader>
-        <span className="text-neutral-gray4">Results for</span>{' '}
+        <span className="text-neutral-gray4">{t('Results for')}</span>{' '}
         <span className="text-neutral-black">{query}</span>
       </ListPageLayoutHeader>
       {individualSearchEnabled ? (
@@ -57,13 +58,14 @@ export const ProfileSearchResultsSuspense = ({
   ) : (
     <>
       <ListPageLayoutHeader className="flex justify-center gap-2">
-        <span className="text-neutral-gray4">No results for </span>
+        <span className="text-neutral-gray4">{t('No results for')}</span>{' '}
         <span className="text-neutral-black">{query}</span>
       </ListPageLayoutHeader>
       <div className="flex justify-center">
         <span className="max-w-96 text-center text-neutral-black">
-          You may want to try using different keywords, checking for typos, or
-          adjusting your filters.
+          {t(
+            'You may want to try using different keywords, checking for typos, or adjusting your filters.',
+          )}
         </span>
       </div>
     </>
@@ -109,7 +111,9 @@ export const TabbedProfileSearchResults = ({
               <ProfileSummaryList profiles={results} />
             ) : (
               <div className="mt-2 w-full rounded p-8 text-center text-neutral-gray4">
-                No {t(typeName).toLocaleLowerCase()}s found.
+                {t('No {type} found.', {
+                  type: t(typeName).toLocaleLowerCase() + 's',
+                })}
               </div>
             )}
           </TabPanel>
@@ -117,6 +121,11 @@ export const TabbedProfileSearchResults = ({
       })}
     </Tabs>
   );
+};
+
+const SearchResultsErrorFallback = () => {
+  const t = useTranslations();
+  return <div>{t('Could not load search results')}</div>;
 };
 
 export const ProfileSearchResults = ({
@@ -127,7 +136,7 @@ export const ProfileSearchResults = ({
   limit?: number;
 }) => {
   return (
-    <ErrorBoundary fallback={<div>Could not load search results</div>}>
+    <ErrorBoundary fallback={<SearchResultsErrorFallback />}>
       <Suspense fallback={<ProfileListSkeleton />}>
         <ProfileSearchResultsSuspense query={query} limit={limit} />
       </Suspense>

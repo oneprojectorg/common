@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
 import { Portal } from '../Portal';
 import { DecisionInvitesFormSuspense } from './DecisionInvitesForm';
@@ -57,6 +59,7 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 );
 
 export const OnboardingFlow = () => {
+  const t = useTranslations();
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [invitesComplete, setInvitesComplete] = useState(false);
@@ -122,8 +125,8 @@ export const OnboardingFlow = () => {
     (formData: FormValues) => {
       if (!isOnline) {
         toast.error({
-          title: 'No connection',
-          message: 'Please check your internet connection and try again.',
+          title: t('No connection'),
+          message: t('Please check your internet connection and try again.'),
         });
         return;
       }
@@ -149,13 +152,15 @@ export const OnboardingFlow = () => {
 
           if (errorInfo.isConnectionError) {
             toast.error({
-              title: 'Connection issue',
+              title: t('Connection issue'),
               message:
-                errorInfo.message + ' Please try submitting the form again.',
+                errorInfo.message +
+                ' ' +
+                t('Please try submitting the form again.'),
             });
           } else {
             toast.error({
-              title: "That didn't work",
+              title: t("That didn't work"),
               message: errorInfo.message,
             });
           }

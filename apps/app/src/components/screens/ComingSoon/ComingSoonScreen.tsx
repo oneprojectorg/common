@@ -1,9 +1,13 @@
+'use client';
+
 import { ButtonLink } from '@op/ui/Button';
 import { LogoLoop } from '@op/ui/LogoLoop';
 import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 import Image from 'next/image';
+
+import { useTranslations } from '@/lib/i18n';
 
 import {
   AnimatedGradientBackground,
@@ -12,6 +16,7 @@ import {
 import { WaitlistSignup } from './WaitlistSignup';
 
 export const ComingSoonScreen = () => {
+  const t = useTranslations();
   return (
     <>
       <div className="pointer-events-none absolute top-0 z-10 h-50 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
@@ -28,7 +33,7 @@ export const ComingSoonScreen = () => {
           color="secondary"
           className="rounded-lg text-black shadow-md"
         >
-          Log in
+          {t('Log in')}
         </ButtonLink>
       </motion.header>
 
@@ -41,11 +46,11 @@ export const ComingSoonScreen = () => {
           >
             <h1 className="flex flex-col font-serif text-title-md text-balance text-neutral-charcoal sm:text-3xl">
               <span>
-                Helping people decide together how to use their resources
+                {t('Helping people decide together how to use their resources')}
               </span>
               <span className="font-serif text-title-md sm:text-3xl">
                 <AnimatedGradientText>
-                  simply, intuitively, and effectively.
+                  {t('simply, intuitively, and effectively.')}
                 </AnimatedGradientText>
               </span>
             </h1>
@@ -75,26 +80,30 @@ export const ComingSoonScreen = () => {
           <FadeInWrapper>
             <p className="flex flex-col space-y-4 text-balance sm:block sm:max-w-144 sm:text-lg">
               <span>
-                Built for{' '}
-                <FancyWord className="bg-redPurple">communities</FancyWord>{' '}
-                ready to share power and co-create{' '}
-                <FancyWord className="bg-redPurple">social change</FancyWord>
-                — and <FancyWord className="bg-redPurple">
-                  funders
+                {t('Built for')}{' '}
+                <FancyWord className="bg-redPurple">
+                  {t('communities')}
                 </FancyWord>{' '}
-                who trust them to lead.{' '}
+                {t('ready to share power and co-create')}{' '}
+                <FancyWord className="bg-redPurple">
+                  {t('social change')}
+                </FancyWord>
+                {' — '}
+                {t('and')}{' '}
+                <FancyWord className="bg-redPurple">{t('funders')}</FancyWord>{' '}
+                {t('who trust them to lead.')}{' '}
               </span>
-              <span>No setup headaches. No learning curve. </span>
+              <span>{t('No setup headaches. No learning curve.')} </span>
               <span>
-                Common just works, instantly, for{' '}
-                <FancyWord className="bg-redPurple">everyone</FancyWord>.
+                {t('Common just works, instantly, for')}{' '}
+                <FancyWord className="bg-redPurple">{t('everyone')}</FancyWord>.
               </span>
             </p>
           </FadeInWrapper>
         </section>
         <FadeInWrapper>
           <section className="space-y-6">
-            <h3 className="text-base">Trusted by</h3>
+            <h3 className="text-base">{t('Trusted by')}</h3>
             <LogoLoop
               logos={logos}
               speed={20}
@@ -110,23 +119,27 @@ export const ComingSoonScreen = () => {
         </FadeInWrapper>
         <FadeInWrapper>
           <section className="flex flex-col items-center gap-6 p-6">
-            <h2 className="font-serif text-title-md">Get early access</h2>
+            <h2 className="font-serif text-title-md">
+              {t('Get early access')}
+            </h2>
             <div className="sm:text-lg">
               <p>
-                We’re getting ready to welcome more organizations to Common.
+                {t(
+                  "We're getting ready to welcome more organizations to Common.",
+                )}
               </p>
-              <p>Sign up now to hold your spot.</p>
+              <p>{t('Sign up now to hold your spot.')}</p>
             </div>
             <WaitlistSignup />
           </section>
         </FadeInWrapper>
       </main>
       <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-neutral-gray4 sm:mt-0 sm:flex-row sm:gap-4">
-        <p>Beautifully designed</p>
+        <p>{t('Beautifully designed')}</p>
         <p>•</p>
-        <p>Easy to set up</p>
+        <p>{t('Easy to set up')}</p>
         <p>•</p>
-        <p>No training required</p>
+        <p>{t('No training required')}</p>
       </footer>
     </>
   );

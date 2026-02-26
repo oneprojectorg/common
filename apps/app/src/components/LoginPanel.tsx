@@ -19,6 +19,8 @@ import { z } from 'zod';
 import { create } from 'zustand';
 import GoogleIcon from '~icons/logos/google-icon';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { CommonLogo } from './CommonLogo';
 
 interface LoginState {
@@ -58,6 +60,7 @@ const useLoginStore = create<LoginState>((set) => ({
 
 export const LoginPanel = () => {
   const supabase = createSBBrowserClient();
+  const t = useTranslations();
 
   const { mounted } = useMount();
   const searchParams = useSearchParams();
@@ -136,7 +139,7 @@ export const LoginPanel = () => {
         window.location.reload();
       }
     } else {
-      setTokenError(error?.message ?? 'Failed to verify code');
+      setTokenError(error?.message ?? t('Failed to verify code'));
     }
   }, [email, token]);
 
@@ -150,27 +153,31 @@ export const LoginPanel = () => {
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
             <Header1 className="text-center">
               {user?.error?.name === 'AuthRetryableFetchError'
-                ? 'Connection Issue'
+                ? t('Connection issue')
                 : (() => {
                     if (login.isError || error || tokenError) {
                       if (
                         combinedError?.includes('invite') ||
                         combinedError?.includes('waitlist')
                       ) {
-                        return 'Stay tuned!';
+                        return t('Stay tuned!');
                       }
 
-                      return 'Oops!';
+                      return t('Oops!');
                     }
 
                     if (!loginSuccess) {
                       if (isSignup) {
-                        return `Sign up to ${APP_NAME}`;
+                        return t('Sign up to {appName}', {
+                          appName: APP_NAME,
+                        });
                       }
 
                       return (
                         <div className="flex flex-col gap-2">
-                          <span className="sm:text-base">Welcome to</span>
+                          <span className="sm:text-base">
+                            {t('Welcome to')}
+                          </span>
                           <span>
                             <CommonLogo className="h-8 w-auto" />
                           </span>
@@ -182,7 +189,7 @@ export const LoginPanel = () => {
                       <div className="flex flex-col items-center justify-center gap-4">
                         <CheckIcon />
                         <span className="text-title-base sm:text-title-lg">
-                          Email sent!
+                          {t('Email sent!')}
                         </span>
                       </div>
                     );
@@ -191,26 +198,33 @@ export const LoginPanel = () => {
 
             <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
               {user?.error?.name === 'AuthRetryableFetchError'
-                ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
+                ? t(
+                    "{appName} can't connect to the internet. Please check your internet connection and try again.",
+                    { appName: APP_NAME },
+                  )
                 : (() => {
                     if (combinedError || tokenError) {
                       return (
                         <span className={cn(tokenError && 'text-red-500')}>
                           {combinedError ||
                             tokenError ||
-                            'There was an error signing you in.'}
+                            t('There was an error signing you in.')}
                         </span>
                       );
                     }
 
                     if (!loginSuccess) {
-                      return 'Connect with aligned organizations and funders building a new economy together';
+                      return t(
+                        'Connect with aligned organizations and funders building a new economy together',
+                      );
                     }
 
                     return (
                       <span>
-                        A code was sent to <span>{email}</span>. Type the code
-                        below to sign in.
+                        {t(
+                          'A code was sent to {email}. Type the code below to sign in.',
+                          { email },
+                        )}
                       </span>
                     );
                   })()}
@@ -232,12 +246,12 @@ export const LoginPanel = () => {
                         }}
                       >
                         <GoogleIcon className="size-4" />
-                        Continue with Google
+                        {t('Continue with Google')}
                       </Button>
 
                       <div className="flex w-full items-center justify-center gap-4 text-midGray">
                         <div className="h-px grow bg-current" />
-                        <span>or</span>
+                        <span>{t('or')}</span>
                         <div className="h-px grow bg-current" />
                       </div>
                     </>
@@ -257,8 +271,8 @@ export const LoginPanel = () => {
                         }}
                       >
                         <TextField
-                          aria-label="Email"
-                          label="Organization email"
+                          aria-label={t('Email')}
+                          label={t('Organization email')}
                           isRequired
                           inputProps={{
                             placeholder: 'admin@yourorganization.org',
@@ -296,7 +310,7 @@ export const LoginPanel = () => {
                         }}
                       >
                         <TextField
-                          aria-label="Code"
+                          aria-label={t('Code')}
                           inputProps={{
                             placeholder: '1234567890',
                             spellCheck: false,
@@ -335,7 +349,7 @@ export const LoginPanel = () => {
                       {isRefetchingUser ? (
                         <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-500" />
                       ) : (
-                        'Try again'
+                        t('Try again')
                       )}
                     </Button>
                   ) : (
@@ -363,12 +377,12 @@ export const LoginPanel = () => {
                         <LoadingSpinner />
                       ) : loginSuccess ? (
                         isSignup ? (
-                          'Sign up'
+                          t('Sign up')
                         ) : (
-                          'Login'
+                          t('Login')
                         )
                       ) : (
-                        'Sign in'
+                        t('Sign in')
                       )}
                     </Button>
                   )}
@@ -380,7 +394,7 @@ export const LoginPanel = () => {
                     color="gradient"
                     className="flex w-full items-center justify-center"
                   >
-                    Back to home
+                    {t('Back to home')}
                   </ButtonLink>
 
                   <SocialLinks iconClassName="size-5 text-neutral-500" />
@@ -393,13 +407,16 @@ export const LoginPanel = () => {
                 <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
                   {isSignup ? (
                     <span>
-                      You'll receive a code to confirm your account. Can't find
-                      it? Check your spam folder.
+                      {t(
+                        "You'll receive a code to confirm your account. Can't find it? Check your spam folder.",
+                      )}
                     </span>
                   ) : (
                     <>
-                      <span>Don&apos;t have an account?</span>
-                      <span>We will automatically create one for you.</span>
+                      <span>{t("Don't have an account?")}</span>
+                      <span>
+                        {t('We will automatically create one for you.')}
+                      </span>
                     </>
                   )}
                 </div>

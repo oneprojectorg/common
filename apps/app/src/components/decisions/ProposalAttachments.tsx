@@ -101,11 +101,15 @@ export function ProposalAttachments({
 
     for (const file of filesToUpload) {
       if (file.size > MAX_SIZE_BYTES) {
-        toast.error({ message: `File too large: ${file.name}` });
+        toast.error({
+          message: t('File too large: {name}', { name: file.name }),
+        });
         continue;
       }
       if (!ACCEPTED_TYPES.includes(file.type)) {
-        toast.error({ message: `Unsupported file type: ${file.name}` });
+        toast.error({
+          message: t('Unsupported file type: {name}', { name: file.name }),
+        });
         continue;
       }
 

@@ -79,7 +79,7 @@ export function DiscussionModal({
       isDismissable
       className="h-svh text-left"
     >
-      <ModalHeader>{authorName}'s Post</ModalHeader>
+      <ModalHeader>{t("{authorName}'s Post", { authorName })}</ModalHeader>
 
       <div className="flex flex-col gap-4">
         <div
@@ -103,7 +103,10 @@ export function DiscussionModal({
               <CommentSkeleton />
             </PostFeed>
           ) : comments.length > 0 ? (
-            <div role="feed" aria-label={`${comments.length} comments`}>
+            <div
+              role="feed"
+              aria-label={t('{count} comments', { count: comments.length })}
+            >
               <PostFeed className="border-none">
                 {comments.map((comment, i) => (
                   <React.Fragment key={comment.id}>
@@ -131,9 +134,9 @@ export function DiscussionModal({
             <div
               className="py-8 text-center text-gray-500"
               role="status"
-              aria-label="No comments"
+              aria-label={t('No comments')}
             >
-              No comments yet. Be the first to comment!
+              {t('No comments yet. Be the first to comment!')}
             </div>
           )}
         </div>
@@ -143,7 +146,13 @@ export function DiscussionModal({
           <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
             <PostUpdate
               parentPostId={post.id}
-              placeholder={`Comment${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
+              placeholder={
+                user.currentProfile?.name
+                  ? t('Comment as {name}...', {
+                      name: user.currentProfile.name,
+                    })
+                  : t('Comment...')
+              }
               label={t('Comment')}
               onSuccess={scrollToOriginalPost}
             />

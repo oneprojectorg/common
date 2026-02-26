@@ -505,6 +505,7 @@ export const DiscussionModalContainer = ({
 };
 
 export const usePostFeedActions = () => {
+  const t = useTranslations();
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
     post?: Post | null;
@@ -523,7 +524,7 @@ export const usePostFeedActions = () => {
       void utils.posts.getPosts.invalidate();
     },
     onError: (err) => {
-      toast.error({ message: err.message || 'Failed to update reaction' });
+      toast.error({ message: err.message || t('Failed to update reaction') });
     },
   });
 
