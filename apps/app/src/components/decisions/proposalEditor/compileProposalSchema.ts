@@ -6,6 +6,8 @@ import {
   getProposalTemplateFieldOrder,
 } from '@op/common/client';
 
+import type { FieldDescriptor } from '../forms/types';
+
 export type { XFormatPropertySchema, ProposalTemplateSchema, XFormat };
 
 /** System fields that must always be present. Others are conditionally added. */
@@ -13,21 +15,6 @@ const REQUIRED_SYSTEM_FIELDS = new Set(['title']);
 
 /** Default `x-format` when a dynamic field omits the extension. */
 const DEFAULT_X_FORMAT: XFormat = 'short-text';
-
-/**
- * A compiled field descriptor produced by a schema compiler. Describes a
- * single field with everything needed to render it.
- */
-export interface FieldDescriptor {
-  /** Property key in the schema (e.g. "title", "summary"). */
-  key: string;
-  /** Resolved display format. */
-  format: XFormat;
-  /** Whether this is a system field (title, category, budget). Only relevant for proposals. */
-  isSystem?: boolean;
-  /** The raw property schema definition for this field. */
-  schema: XFormatPropertySchema;
-}
 
 // ---------------------------------------------------------------------------
 // compileProposalSchema

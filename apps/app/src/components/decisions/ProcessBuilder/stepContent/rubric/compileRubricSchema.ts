@@ -4,7 +4,7 @@ import type {
   XFormatPropertySchema,
 } from '@op/common/client';
 
-import type { FieldDescriptor } from '../../../proposalEditor/compileProposalSchema';
+import type { FieldDescriptor } from '../../../forms/types';
 
 const DEFAULT_X_FORMAT: XFormat = 'short-text';
 

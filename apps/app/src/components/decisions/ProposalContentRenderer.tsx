@@ -4,8 +4,8 @@ import { viewerProseStyles } from '@op/ui/RichTextEditor';
 import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
+import type { FieldDescriptor } from './forms/types';
 import {
-  type FieldDescriptor,
   type ProposalTemplateSchema,
   compileProposalSchema,
 } from './proposalEditor/compileProposalSchema';

@@ -6,7 +6,7 @@ import { ToggleButton } from '@op/ui/ToggleButton';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { FieldDescriptor } from '../../../proposalEditor/compileProposalSchema';
+import type { FieldDescriptor } from '../../../forms/types';
 
 type OneOfEntry = { const: string | number; title: string };
 

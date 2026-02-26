@@ -13,7 +13,7 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
-import type { FieldDescriptor } from './compileProposalSchema';
+import type { FieldDescriptor } from '../forms/types';
 import type { ProposalDraftFields } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
