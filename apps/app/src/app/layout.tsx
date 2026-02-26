@@ -5,7 +5,7 @@ import '@op/styles';
 import { Toast } from '@op/ui/Toast';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getMessages } from 'next-intl/server';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
@@ -14,6 +14,7 @@ import { IconProvider } from '../components/IconProvider';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
+import { I18nProvider } from '../lib/i18n';
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -72,6 +73,7 @@ export const viewport: Viewport = {
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const ssrCookies = await getSSRCookies();
   const locale = await getLocale();
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale} className="h-full">
@@ -85,13 +87,15 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >
-          <OTelBrowserProvider>
-            <PostHogProvider>
-              <NuqsAdapter>
-                <IconProvider>{children}</IconProvider>
-              </NuqsAdapter>
-            </PostHogProvider>
-          </OTelBrowserProvider>
+          <I18nProvider locale={locale} messages={messages}>
+            <OTelBrowserProvider>
+              <PostHogProvider>
+                <NuqsAdapter>
+                  <IconProvider>{children}</IconProvider>
+                </NuqsAdapter>
+              </PostHogProvider>
+            </OTelBrowserProvider>
+          </I18nProvider>
           <ReactQueryDevtools initialIsOpen={false} />
           <Toast />
         </body>
