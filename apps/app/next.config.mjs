@@ -50,6 +50,9 @@ const config = {
     minimumCacheTTL: 31536000, // 1 year — assets are content-addressed
   },
   serverExternalPackages: ['sharp', 'onnxruntime-node'],
+  experimental: {
+    authInterrupts: true,
+  },
 
   webpack: (cfg, { isServer }) => {
     // In e2e mode, swap the real TipTap client for an in-process mock
