@@ -6,8 +6,8 @@ import { LuEye } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { compileRubricSchema } from '../../../forms/compileRubricSchema';
 import { RubricFormRenderer } from './RubricFormRenderer';
-import { compileRubricSchema } from './compileRubricSchema';
 
 /**
  * Live participant preview panel for rubric criteria.
