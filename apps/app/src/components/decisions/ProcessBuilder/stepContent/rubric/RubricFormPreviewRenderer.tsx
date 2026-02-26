@@ -48,7 +48,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
               badge={t('Yes/No')}
               className="gap-1"
             />
-            <ToggleButton size="small" />
+            <ToggleButton size="small" className="w-fit" />
           </div>
         );
       }
