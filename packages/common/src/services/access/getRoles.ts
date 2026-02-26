@@ -63,22 +63,24 @@ export const getRoles = async (params?: {
    * Accepts either the raw schema columns (for select-based queries)
    * or aliased table columns (for db.query which aliases tables).
    */
-  const buildWhereCondition = (cols: typeof accessRoles): SQL => {
+  const buildWhereCondition = (accessRoleCols: typeof accessRoles): SQL => {
     const cursorCondition = decodedCursor
       ? or(
-          compareFn(cols.name, decodedCursor.value),
+          compareFn(accessRoleCols.name, decodedCursor.value),
           and(
-            eq(cols.name, decodedCursor.value),
-            compareFn(cols.id, decodedCursor.id),
+            eq(accessRoleCols.name, decodedCursor.value),
+            compareFn(accessRoleCols.id, decodedCursor.id),
           ),
         )
       : undefined;
 
-    const profileCond = profileId
-      ? eq(cols.profileId, profileId)
-      : isNull(cols.profileId);
+    const profileCondition = profileId
+      ? eq(accessRoleCols.profileId, profileId)
+      : isNull(accessRoleCols.profileId);
 
-    return cursorCondition ? and(profileCond, cursorCondition)! : profileCond;
+    return cursorCondition
+      ? and(profileCondition, cursorCondition)!
+      : profileCondition;
   };
 
   // Use join-based query when zoneName is provided for DB-level filtering
