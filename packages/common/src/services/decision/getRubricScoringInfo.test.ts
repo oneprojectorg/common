@@ -8,7 +8,7 @@ import type { RubricTemplateSchema } from './types';
  *
  * 6 criteria + 2 rationale companion fields:
  *   - 2 scored (integer, dropdown): innovation (max 5), feasibility (max 5)
- *   - 2 rationale (long-text): innovation_rationale, feasibility_rationale
+ *   - 2 rationale (long-text): innovation__rationale, feasibility__rationale
  *   - 1 yes/no (dropdown, string)
  *   - 1 multiple-choice (dropdown, string)
  *   - 2 text fields (short-text + long-text)
@@ -19,9 +19,9 @@ const seiRubricTemplate = {
   type: 'object',
   'x-field-order': [
     'innovation',
-    'innovation_rationale',
+    'innovation__rationale',
     'feasibility',
-    'feasibility_rationale',
+    'feasibility__rationale',
     'meetsEligibility',
     'focusArea',
     'strengthsSummary',
@@ -43,7 +43,7 @@ const seiRubricTemplate = {
         { const: 5, title: 'Excellent' },
       ],
     },
-    innovation_rationale: {
+    innovation__rationale: {
       type: 'string',
       title: 'Reason(s) and Insight(s)',
       'x-format': 'long-text',
@@ -63,7 +63,7 @@ const seiRubricTemplate = {
         { const: 5, title: 'Excellent' },
       ],
     },
-    feasibility_rationale: {
+    feasibility__rationale: {
       type: 'string',
       title: 'Reason(s) and Insight(s)',
       'x-format': 'long-text',
@@ -105,9 +105,9 @@ const seiRubricTemplate = {
   },
   required: [
     'innovation',
-    'innovation_rationale',
+    'innovation__rationale',
     'feasibility',
-    'feasibility_rationale',
+    'feasibility__rationale',
     'meetsEligibility',
   ],
 } as const satisfies RubricTemplateSchema;
@@ -125,12 +125,12 @@ describe('getRubricScoringInfo', () => {
     expect(scored.map((c) => c.maxPoints)).toEqual([5, 5]);
   });
 
-  it('excludes _rationale companion fields from criteria list', () => {
+  it('excludes __rationale companion fields from criteria list', () => {
     const info = getRubricScoringInfo(seiRubricTemplate);
     const keys = info.criteria.map((c) => c.key);
 
-    expect(keys).not.toContain('innovation_rationale');
-    expect(keys).not.toContain('feasibility_rationale');
+    expect(keys).not.toContain('innovation__rationale');
+    expect(keys).not.toContain('feasibility__rationale');
   });
 
   it('produces correct summary counts keyed by x-format', () => {

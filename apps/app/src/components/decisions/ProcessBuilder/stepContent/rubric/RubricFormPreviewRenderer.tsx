@@ -9,9 +9,9 @@ import { useTranslations } from '@/lib/i18n';
 import { FieldHeader } from '../../../forms/FieldHeader';
 import type { FieldDescriptor } from '../../../forms/types';
 
-/** `_rationale` companion field — rendered inline under the parent criterion. */
+/** `__rationale` companion field — rendered inline under the parent criterion. */
 function isRationaleField(key: string): boolean {
-  return key.endsWith('_rationale');
+  return key.endsWith('__rationale');
 }
 
 /** Yes/no field: `type: "string"` with exactly `"yes"` and `"no"` oneOf entries. */
