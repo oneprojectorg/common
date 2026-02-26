@@ -85,7 +85,7 @@ export const MyBallot = ({
                     isSelected={true}
                     shape="circle"
                     borderColor="light"
-                    aria-label="Selected proposal"
+                    aria-label={t('Selected proposal')}
                     isDisabled={true}
                   />
                 }

@@ -15,7 +15,7 @@ export const SidebarNav = () => {
   const decisionsTabEnabled = useFeatureFlag('decisions_tab_enabled');
 
   return (
-    <Sidebar className="border-r" label="Navigation">
+    <Sidebar className="border-r" label={t('Navigation')}>
       <nav className="flex flex-col gap-1 p-4">
         <NavLink href="/" active={pathname === '/'}>
           <LuHouse className="size-4" /> {t('Home')}

@@ -5,6 +5,8 @@ import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 
+import { TranslatedText } from '../TranslatedText';
+
 export const DecisionCardHeader = ({
   name,
   currentState,
@@ -33,7 +35,7 @@ export const DecisionCardHeader = ({
             chipClassName ?? 'bg-primary-tealWhite text-primary-tealBlack'
           }
         >
-          {currentState}
+          <TranslatedText text={currentState} />
         </Chip>
       ) : null}
     </div>

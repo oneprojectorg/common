@@ -271,7 +271,7 @@ export const LoginPanel = () => {
                         }}
                       >
                         <TextField
-                          aria-label="Email"
+                          aria-label={t('Email')}
                           label={t('Organization email')}
                           isRequired
                           inputProps={{
@@ -310,7 +310,7 @@ export const LoginPanel = () => {
                         }}
                       >
                         <TextField
-                          aria-label="Code"
+                          aria-label={t('Code')}
                           inputProps={{
                             placeholder: '1234567890',
                             spellCheck: false,

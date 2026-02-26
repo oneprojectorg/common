@@ -15,10 +15,13 @@ import {
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { Suspense, useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const ActiveDecisionsNotificationsSuspense = () => {
+  const t = useTranslations();
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   const [{ items: decisions }] =
@@ -35,7 +38,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
 
   return (
     <NotificationPanel>
-      <NotificationPanelHeader title="Active Decisions" count={count} />
+      <NotificationPanelHeader title={t('Active Decisions')} count={count} />
       <NotificationPanelList>
         {decisions.map((decision) => {
           const instance = decision.processInstance;
@@ -60,7 +63,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
                   href={`/decisions/${decision.slug}`}
                   onPress={() => setNavigatingId(decision.id)}
                 >
-                  {isNavigating ? <LoadingSpinner /> : 'Participate'}
+                  {isNavigating ? <LoadingSpinner /> : t('Participate')}
                 </ButtonLink>
               </NotificationPanelActions>
             </NotificationPanelItem>

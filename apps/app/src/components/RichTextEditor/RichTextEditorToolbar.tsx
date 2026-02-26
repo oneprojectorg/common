@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useRef } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 export interface RichTextEditorToolbarProps {
   editor: Editor | null;
   className?: string;
@@ -35,6 +37,7 @@ export function RichTextEditorToolbar({
   editor,
   className = '',
 }: RichTextEditorToolbarProps) {
+  const t = useTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // File upload setup for images only
@@ -114,7 +117,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={noEditor || !editor.can().undo()}
           className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title="Undo"
+          title={t('Undo')}
         >
           <Undo className="size-4" />
         </button>
@@ -122,7 +125,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={noEditor || !editor.can().redo()}
           className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title="Redo"
+          title={t('Redo')}
         >
           <Redo className="h-4 w-4" />
         </button>
@@ -138,7 +141,7 @@ export function RichTextEditorToolbar({
           className={btnClass(
             editor?.isActive('heading', { level: 1 }) ?? false,
           )}
-          title="Heading 1"
+          title={t('Heading 1')}
         >
           <Heading1 className="h-4 w-4" />
         </button>
@@ -150,7 +153,7 @@ export function RichTextEditorToolbar({
           className={btnClass(
             editor?.isActive('heading', { level: 2 }) ?? false,
           )}
-          title="Heading 2"
+          title={t('Heading 2')}
         >
           <Heading2 className="h-4 w-4" />
         </button>
@@ -162,7 +165,7 @@ export function RichTextEditorToolbar({
           className={btnClass(
             editor?.isActive('heading', { level: 3 }) ?? false,
           )}
-          title="Heading 3"
+          title={t('Heading 3')}
         >
           <Heading3 className="h-4 w-4" />
         </button>
@@ -174,7 +177,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleBold().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('bold') ?? false)}
-          title="Bold"
+          title={t('Bold')}
         >
           <Bold className="h-4 w-4" />
         </button>
@@ -182,7 +185,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleItalic().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('italic') ?? false)}
-          title="Italic"
+          title={t('Italic')}
         >
           <Italic className="h-4 w-4" />
         </button>
@@ -190,7 +193,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleUnderline().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('underline') ?? false)}
-          title="Underline"
+          title={t('Underline')}
         >
           <UnderlineIcon className="h-4 w-4" />
         </button>
@@ -198,7 +201,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleStrike().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('strike') ?? false)}
-          title="Strikethrough"
+          title={t('Strikethrough')}
         >
           <Strikethrough className="h-4 w-4" />
         </button>
@@ -206,7 +209,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleCode().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('code') ?? false)}
-          title="Code"
+          title={t('Code')}
         >
           <Code className="h-4 w-4" />
         </button>
@@ -218,7 +221,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('bulletList') ?? false)}
-          title="Bullet List"
+          title={t('Bullet List')}
         >
           <List className="h-4 w-4" />
         </button>
@@ -226,7 +229,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('orderedList') ?? false)}
-          title="Numbered List"
+          title={t('Numbered List')}
         >
           <ListOrdered className="h-4 w-4" />
         </button>
@@ -234,7 +237,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive('blockquote') ?? false)}
-          title="Blockquote"
+          title={t('Blockquote')}
         >
           <Quote className="h-4 w-4" />
         </button>
@@ -246,7 +249,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().setTextAlign('left').run()}
           disabled={noEditor}
           className={btnClass(editor?.isActive({ textAlign: 'left' }) ?? false)}
-          title="Align Left"
+          title={t('Align Left')}
         >
           <AlignLeft className="h-4 w-4" />
         </button>
@@ -256,7 +259,7 @@ export function RichTextEditorToolbar({
           className={btnClass(
             editor?.isActive({ textAlign: 'center' }) ?? false,
           )}
-          title="Align Center"
+          title={t('Align Center')}
         >
           <AlignCenter className="h-4 w-4" />
         </button>
@@ -266,7 +269,7 @@ export function RichTextEditorToolbar({
           className={btnClass(
             editor?.isActive({ textAlign: 'right' }) ?? false,
           )}
-          title="Align Right"
+          title={t('Align Right')}
         >
           <AlignRight className="h-4 w-4" />
         </button>
@@ -278,7 +281,7 @@ export function RichTextEditorToolbar({
           onClick={addLink}
           disabled={noEditor}
           className={btnClass(editor?.isActive('link') ?? false)}
-          title="Add Link"
+          title={t('Add Link')}
         >
           <LinkIcon className="h-4 w-4" />
         </button>
@@ -286,7 +289,7 @@ export function RichTextEditorToolbar({
           onClick={addEmbedLink}
           disabled={noEditor}
           className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title="Embed Link Preview"
+          title={t('Embed Link Preview')}
         >
           <Link2 className="h-4 w-4" />
         </button>
@@ -294,7 +297,7 @@ export function RichTextEditorToolbar({
           onClick={handleImageUpload}
           disabled={noEditor}
           className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title="Add Image"
+          title={t('Add Image')}
         >
           <ImageIcon className="h-4 w-4" />
         </button>
@@ -302,7 +305,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().setHorizontalRule().run()}
           disabled={noEditor}
           className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title="Add Horizontal Rule"
+          title={t('Add Horizontal Rule')}
         >
           <Minus className="h-4 w-4" />
         </button>

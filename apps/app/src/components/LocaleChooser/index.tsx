@@ -10,6 +10,7 @@ import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';
 
 import { useRouter as useI18nRouter, usePathname } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 import { i18nConfig } from '@/lib/i18n/config';
 
 interface LocaleChooserProps {
@@ -25,6 +26,7 @@ const localeDisplayNames: Record<string, string> = {
 };
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
+  const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const i18nRouter = useI18nRouter();
   const pathname = usePathname();
@@ -43,7 +45,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
     <Select
       selectedKey={currentLocale}
       onSelectionChange={handleSelectionChange}
-      aria-label="Select language"
+      aria-label={t('Select language')}
       customTrigger={
         <>
           <IconButton

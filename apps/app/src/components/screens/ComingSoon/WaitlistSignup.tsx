@@ -16,14 +16,9 @@ import { LuX } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 import { z } from 'zod';
 
-import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
+import { useTranslations } from '@/lib/i18n';
 
-const validator = z.object({
-  firstName: z.string().min(1, 'Please enter your first name'),
-  lastName: z.string().min(1, 'Please enter your last name'),
-  email: z.email({ error: 'Please enter a valid email address' }),
-  organizationName: z.string(),
-});
+import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 
 const overlayStyles = tv({
   base: 'absolute top-0 left-0 isolate z-20 h-(--page-height) w-full bg-black/10 text-center backdrop-blur-[3px]',
@@ -49,10 +44,11 @@ const modalStyles = tv({
   },
 });
 export const WaitlistSignup = () => {
+  const t = useTranslations();
   const [isSubmitted, setIsSubmitted] = useState(false);
   return (
     <DialogTrigger>
-      <Button>Decide with us</Button>
+      <Button>{t('Decide with us')}</Button>
       <ModalOverlay isDismissable className={overlayStyles}>
         <div className="sticky top-0 left-0 box-border flex h-(--visual-viewport-height) w-full items-center justify-center">
           <Modal isDismissable className={modalStyles}>
@@ -71,6 +67,15 @@ export const WaitlistSignup = () => {
 };
 
 const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
+  const t = useTranslations();
+
+  const validator = z.object({
+    firstName: z.string().min(1, t('Please enter your first name')),
+    lastName: z.string().min(1, t('Please enter your last name')),
+    email: z.email({ error: t('Please enter a valid email address') }),
+    organizationName: z.string(),
+  });
+
   const form = useAppForm({
     defaultValues: {
       firstName: '',
@@ -97,8 +102,8 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         } else {
           console.error(await res.json());
           toast.error({
-            title: 'Something went wrong',
-            message: 'We were not able to sign you up. Please try again.',
+            title: t('Something went wrong'),
+            message: t('We were not able to sign you up. Please try again.'),
           });
           return;
         }
@@ -114,7 +119,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           className="w-full bg-blueGreen bg-clip-text text-center font-serif text-xl font-extralight tracking-tight text-transparent italic sm:text-2xl"
           slot="title"
         >
-          Common
+          {t('Common')}
         </Heading>
         <IconButton
           className="absolute top-3 right-3 size-8 text-neutral-gray3"
@@ -124,8 +129,9 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         </IconButton>
       </div>
       <p className="px-8 text-center">
-        Get early access. We’re getting ready to welcome more organizations to
-        Common. Sign up now to hold your spot.
+        {t(
+          "Get early access. We're getting ready to welcome more organizations to Common. Sign up now to hold your spot.",
+        )}
       </p>
       <form
         className="flex flex-col gap-6 p-8"
@@ -141,14 +147,14 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
             <field.TextField
               autoFocus
               id="firstName"
-              label="First name"
+              label={t('First name')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               isRequired
               inputProps={{
-                placeholder: 'First name here',
+                placeholder: t('First name here'),
               }}
             />
           )}
@@ -158,14 +164,14 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           children={(field) => (
             <field.TextField
               id="lastName"
-              label="Last name"
+              label={t('Last name')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               isRequired
               inputProps={{
-                placeholder: 'Last name here',
+                placeholder: t('Last name here'),
               }}
             />
           )}
@@ -175,7 +181,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           children={(field) => (
             <field.TextField
               id="email"
-              label="Email address"
+              label={t('Email address')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -192,13 +198,13 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           children={(field) => (
             <field.TextField
               id="organizationName"
-              label="Organization"
+              label={t('Organization')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               inputProps={{
-                placeholder: 'Organization name',
+                placeholder: t('Organization name'),
               }}
             />
           )}
@@ -210,7 +216,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
               className="w-auto sm:w-auto"
               isDisabled={isSubmitting}
             >
-              {isSubmitting ? <LoadingSpinner /> : 'Join the waitlist'}
+              {isSubmitting ? <LoadingSpinner /> : t('Join the waitlist')}
             </form.SubmitButton>
           )}
         </form.Subscribe>
@@ -219,31 +225,35 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
   );
 };
 
-const WaitlistSignupSuccess = () => (
-  <>
-    <div className="relative px-6 pt-16">
-      <Heading
-        className="w-full text-center font-serif text-xl font-extralight tracking-tight sm:text-2xl"
-        slot="title"
-      >
-        You're on the list!
-      </Heading>
-      <IconButton
-        className="absolute top-3 left-3 size-8 text-neutral-gray3"
-        slot="close"
-      >
-        <LuX className="size-6" />
-      </IconButton>
-    </div>
-    <div className="flex flex-col items-center gap-6 p-8 text-center">
-      <p>
-        We can’t wait to see you on Common, as an early collaborator in creating
-        an economy that works for everyone.
-      </p>
-      <p>We'll be in touch soon!</p>
-      <Button color="secondary" className="w-9/10" slot="close">
-        Done
-      </Button>
-    </div>
-  </>
-);
+const WaitlistSignupSuccess = () => {
+  const t = useTranslations();
+  return (
+    <>
+      <div className="relative px-6 pt-16">
+        <Heading
+          className="w-full text-center font-serif text-xl font-extralight tracking-tight sm:text-2xl"
+          slot="title"
+        >
+          {t("You're on the list!")}
+        </Heading>
+        <IconButton
+          className="absolute top-3 left-3 size-8 text-neutral-gray3"
+          slot="close"
+        >
+          <LuX className="size-6" />
+        </IconButton>
+      </div>
+      <div className="flex flex-col items-center gap-6 p-8 text-center">
+        <p>
+          {t(
+            "We can't wait to see you on Common, as an early collaborator in creating an economy that works for everyone.",
+          )}
+        </p>
+        <p>{t("We'll be in touch soon!")}</p>
+        <Button color="secondary" className="w-9/10" slot="close">
+          {t('Done')}
+        </Button>
+      </div>
+    </>
+  );
+};

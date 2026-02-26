@@ -7,6 +7,8 @@ import { Menu, MenuItem } from '@op/ui/Menu';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 
+import { useTranslations } from '@/lib/i18n';
+
 export const DeletePost = ({
   post,
   profileId,
@@ -14,6 +16,7 @@ export const DeletePost = ({
   post: Post;
   profileId: string;
 }) => {
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const router = useRouter();
 
@@ -44,7 +47,7 @@ export const DeletePost = ({
       void utils.organization.listPosts.invalidate();
       void utils.organization.listAllPosts.invalidate();
       router.refresh();
-      toast.success({ message: 'Post deleted' });
+      toast.success({ message: t('Post deleted') });
     },
     onError: (error, _variables, context) => {
       // Rollback optimistic update for comments on error
@@ -53,7 +56,7 @@ export const DeletePost = ({
         utils.posts.getPosts.setData(queryKey, context.previousComments);
       }
 
-      toast.error({ message: error.message || 'Failed to delete post' });
+      toast.error({ message: error.message || t('Failed to delete post') });
     },
   });
 
@@ -77,7 +80,7 @@ export const DeletePost = ({
         key="delete"
         className="!bg-transparent px-3 py-1 pr-3 pl-3 text-functional-red"
       >
-        Delete
+        {t('Delete')}
       </MenuItem>
     </Menu>
   );

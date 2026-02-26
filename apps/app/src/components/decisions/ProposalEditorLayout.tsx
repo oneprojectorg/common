@@ -58,12 +58,12 @@ export function ProposalEditorLayout({
           className="flex items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
         >
           <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
-          <span className="hidden sm:block">Back</span>
+          <span className="hidden sm:block">{t('Back')}</span>
         </button>
 
         <div className="flex justify-center text-lg font-medium text-neutral-black">
           <span className="hidden sm:block">
-            {title ? title : 'Untitled Proposal'}
+            {title ? title : t('Untitled Proposal')}
           </span>
         </div>
 

@@ -735,7 +735,7 @@ const PostUpdateWithUser = ({
                 {createPost.isPending || createOrganizationPost.isPending ? (
                   <LoadingSpinner />
                 ) : (
-                  label
+                  t(label)
                 )}
               </Button>
             </div>

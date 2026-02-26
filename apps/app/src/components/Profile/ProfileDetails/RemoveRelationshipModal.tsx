@@ -7,11 +7,14 @@ import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { FormEvent, useTransition } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 export const RemoveRelationshipModal = ({
   relationship,
 }: {
   relationship: Relationship;
 }) => {
+  const t = useTranslations();
   const removeRelationship = trpc.organization.removeRelationship.useMutation();
 
   const [isSubmitting, startTransition] = useTransition();
@@ -26,10 +29,10 @@ export const RemoveRelationshipModal = ({
         });
 
         toast.success({
-          message: 'Relationship removed',
+          message: t('Relationship removed'),
         });
       } catch (e) {
-        toast.error({ message: 'Could not remove relationship' });
+        toast.error({ message: t('Could not remove relationship') });
       }
 
       close();
@@ -41,15 +44,18 @@ export const RemoveRelationshipModal = ({
       <Dialog>
         {({ close }) => (
           <form onSubmit={(e) => handleSubmit(e, close)} className="contents">
-            <ModalHeader>Remove relationship</ModalHeader>
+            <ModalHeader>{t('Remove relationship')}</ModalHeader>
             <ModalBody>
               <div>
-                Are you sure you want to remove the Funding relationship with{' '}
-                {relationship.relationshipType}?
+                {t(
+                  'Are you sure you want to remove the {relationshipType} relationship?',
+                  { relationshipType: relationship.relationshipType },
+                )}
               </div>
               <div>
-                You’ll need to send a new request to restore this relationship
-                on your profile.
+                {t(
+                  "You'll need to send a new request to restore this relationship on your profile.",
+                )}
               </div>
             </ModalBody>
             <ModalFooter>
@@ -59,7 +65,7 @@ export const RemoveRelationshipModal = ({
                 type="button"
                 className="w-full sm:w-fit"
               >
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 color="destructive"
@@ -67,7 +73,7 @@ export const RemoveRelationshipModal = ({
                 isPending={isSubmitting}
                 className="w-full sm:w-fit"
               >
-                {isSubmitting ? <LoadingSpinner /> : 'Remove'}
+                {isSubmitting ? <LoadingSpinner /> : t('Remove')}
               </Button>
             </ModalFooter>
           </form>

@@ -8,6 +8,8 @@ import { cn } from '@op/ui/utils';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
+
 declare global {
   interface Window {
     iframely?: {
@@ -37,6 +39,7 @@ function getDomain(url: string): string {
 
 export const LinkPreview = memo(
   ({ url, className, onRemove }: LinkPreviewProps) => {
+    const t = useTranslations();
     const {
       data: previewData,
       isLoading: loading,
@@ -105,7 +108,7 @@ export const LinkPreview = memo(
               onRemove();
             }}
             className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1 focus-visible:opacity-100"
-            aria-label="Remove preview"
+            aria-label={t('Remove preview')}
           >
             <LuX className="size-4" />
           </button>

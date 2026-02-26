@@ -69,8 +69,8 @@ export const CreateOrganizationForm = forwardRef<
   const submitCreate = async (formData: any) => {
     if (!isOnline) {
       toast.error({
-        title: 'No connection',
-        message: 'Please check your internet connection and try again.',
+        title: t('No connection'),
+        message: t('Please check your internet connection and try again.'),
       });
       return;
     }
@@ -97,12 +97,15 @@ export const CreateOrganizationForm = forwardRef<
 
       if (errorInfo.isConnectionError) {
         toast.error({
-          title: 'Connection issue',
-          message: errorInfo.message + ' Please try submitting the form again.',
+          title: t('Connection issue'),
+          message:
+            errorInfo.message +
+            ' ' +
+            t('Please try submitting the form again.'),
         });
       } else {
         toast.error({
-          title: "That didn't work",
+          title: t("That didn't work"),
           message: errorInfo.message,
         });
       }
@@ -141,7 +144,12 @@ export const CreateOrganizationForm = forwardRef<
       ];
       if (!acceptedTypes.includes(file.type)) {
         toast.error({
-          message: `That file type is not supported. Accepted types: ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')}`,
+          message: t(
+            'That file type is not supported. Accepted types: {types}',
+            {
+              types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
+            },
+          ),
         });
         return;
       }
@@ -149,7 +157,9 @@ export const CreateOrganizationForm = forwardRef<
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
         toast.error({
-          message: `File too large. Maximum size: ${maxSizeMB}MB`,
+          message: t('File too large. Maximum size: {size}MB', {
+            size: maxSizeMB,
+          }),
         });
         return;
       }
@@ -229,7 +239,7 @@ export const CreateOrganizationForm = forwardRef<
               onChange={field.handleChange}
               inputProps={{
                 icon: <LuLink className="size-4 text-neutral-black" />,
-                placeholder: "Enter your organization's website here",
+                placeholder: t("Enter your organization's website here"),
               }}
               errorMessage={getFieldErrorMessage(field)}
             />
@@ -406,9 +416,7 @@ export const CreateOrganizationForm = forwardRef<
             children={(field) => (
               <>
                 <ToggleRow>
-                  <span>
-                    Is your organization <i>seeking</i> funding?
-                  </span>
+                  <span>{t('Is your organization seeking funding?')}</span>
                   <ToggleButton
                     isSelected={field.state.value as boolean}
                     onChange={field.handleChange}
@@ -434,7 +442,9 @@ export const CreateOrganizationForm = forwardRef<
                       children={(field) => (
                         <div className="flex flex-col gap-2">
                           <field.TextField
-                            label="Where can people contribute to your organization?"
+                            label={t(
+                              'Where can people contribute to your organization?',
+                            )}
                             value={field.state.value as string}
                             onBlur={field.handleBlur}
                             onChange={field.handleChange}
@@ -443,13 +453,13 @@ export const CreateOrganizationForm = forwardRef<
                               icon: (
                                 <LuLink className="size-4 text-neutral-black" />
                               ),
-                              placeholder: 'Add your contribution page here',
+                              placeholder: t('Add your contribution page here'),
                             }}
                           />
                           <span className="text-left text-sm text-neutral-gray4">
-                            Add a link to your donation page, Open Collective,
-                            GoFundMe or any platform where supporters can
-                            contribute or learn more about how.
+                            {t(
+                              'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
+                            )}
                           </span>
                         </div>
                       )}
@@ -467,9 +477,7 @@ export const CreateOrganizationForm = forwardRef<
             children={(field) => (
               <>
                 <ToggleRow>
-                  <span>
-                    Does your organization <i>offer</i> funding?
-                  </span>
+                  <span>{t('Does your organization offer funding?')}</span>
                   <ToggleButton
                     isSelected={field.state.value as boolean}
                     onChange={field.handleChange}
@@ -482,7 +490,9 @@ export const CreateOrganizationForm = forwardRef<
                     children={(acceptingApplicationsField) => (
                       <>
                         <ToggleRow>
-                          Are organizations currently able to apply for funding?
+                          {t(
+                            'Are organizations currently able to apply for funding?',
+                          )}
                           <ToggleButton
                             isSelected={
                               acceptingApplicationsField.state.value as boolean
@@ -497,15 +507,16 @@ export const CreateOrganizationForm = forwardRef<
                               children={(field) => (
                                 <field.TextField
                                   useTextArea
-                                  label="What is your funding process?"
+                                  label={t('What is your funding process?')}
                                   value={field.state.value as string}
                                   onBlur={field.handleBlur}
                                   onChange={field.handleChange}
                                   errorMessage={getFieldErrorMessage(field)}
                                   textareaProps={{
                                     className: 'min-h-32',
-                                    placeholder:
+                                    placeholder: t(
                                       "Enter a description of the type of funding you're seeking (e.g., grants, integrated capital, etc.)",
+                                    ),
                                   }}
                                 />
                               )}
@@ -519,8 +530,8 @@ export const CreateOrganizationForm = forwardRef<
                                 <field.TextField
                                   label={
                                     acceptingApplicationsField.state.value
-                                      ? 'Where can organizations apply?'
-                                      : 'Where can organizations learn more?'
+                                      ? t('Where can organizations apply?')
+                                      : t('Where can organizations learn more?')
                                   }
                                   value={field.state.value as string}
                                   onBlur={field.handleBlur}
@@ -529,8 +540,12 @@ export const CreateOrganizationForm = forwardRef<
                                   inputProps={{
                                     placeholder: acceptingApplicationsField
                                       .state.value
-                                      ? 'Add a link where organizations can apply for funding'
-                                      : 'Add a link to learn more about your funding process',
+                                      ? t(
+                                          'Add a link where organizations can apply for funding',
+                                        )
+                                      : t(
+                                          'Add a link to learn more about your funding process',
+                                        ),
                                     icon: (
                                       <LuLink className="size-4 text-neutral-black" />
                                     ),
@@ -539,9 +554,9 @@ export const CreateOrganizationForm = forwardRef<
                                 <span className="text-sm text-neutral-gray4">
                                   {acceptingApplicationsField.state.value
                                     ? null
-                                    : `Add a link where others can learn more about how
-                                    to they might receive funding from your
-                                    organization now or in the future.`}
+                                    : t(
+                                        'Add a link where others can learn more about how to they might receive funding from your organization now or in the future.',
+                                      )}
                                 </span>
                               </div>
                             )}

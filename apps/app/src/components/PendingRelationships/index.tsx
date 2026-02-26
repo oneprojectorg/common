@@ -13,10 +13,13 @@ import {
 } from '@op/ui/NotificationPanel';
 import { Suspense, useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
+  const t = useTranslations();
   const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
     slug,
   });
@@ -58,7 +61,10 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
 
   return (
     <NotificationPanel>
-      <NotificationPanelHeader title="Relationship Requests" count={count} />
+      <NotificationPanelHeader
+        title={t('Relationship Requests')}
+        count={count}
+      />
       <NotificationPanelList>
         {organizations.map((org) => {
           const relationships = org.relationships
@@ -87,16 +93,20 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       <>
                         <span className="font-normal">
                           {' '}
-                          will now appear as a
+                          {t('will now appear as a')}
                         </span>{' '}
-                        {relationships ?? 'related organization'}{' '}
-                        <span className="font-normal"> on your profile.</span>
+                        {relationships ?? t('related organization')}{' '}
+                        <span className="font-normal">
+                          {' '}
+                          {t('on your profile.')}
+                        </span>
                       </>
                     ) : null}
                   </span>
                   {!isAccepted ? (
                     <span>
-                      Added you as a {relationships ?? 'related organization'}
+                      {t('Added you as a')}{' '}
+                      {relationships ?? t('related organization')}
                     </span>
                   ) : null}
                 </div>
@@ -116,7 +126,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       }}
                       isDisabled={isPending}
                     >
-                      {remove.isPending ? <LoadingSpinner /> : 'Decline'}
+                      {remove.isPending ? <LoadingSpinner /> : t('Decline')}
                     </Button>
                     <Button
                       size="small"
@@ -129,7 +139,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       }
                       isDisabled={isPending}
                     >
-                      {approve.isPending ? <LoadingSpinner /> : 'Accept'}
+                      {approve.isPending ? <LoadingSpinner /> : t('Accept')}
                     </Button>
                   </>
                 ) : null}

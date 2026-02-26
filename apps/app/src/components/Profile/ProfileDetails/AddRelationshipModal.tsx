@@ -35,6 +35,7 @@ const RemoveRelationshipModalContent = ({
   profileId: string;
   onClose: () => void;
 }) => {
+  const t = useTranslations();
   const removeRelationship = trpc.organization.removeRelationship.useMutation();
   const [isSubmitting, startTransition] = useTransition();
 
@@ -55,34 +56,37 @@ const RemoveRelationshipModalContent = ({
         });
 
         toast.success({
-          message: 'Relationship removed',
+          message: t('Relationship removed'),
         });
         onClose();
       } catch (e) {
-        toast.error({ message: 'Could not remove relationship' });
+        toast.error({ message: t('Could not remove relationship') });
       }
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="contents">
-      <ModalHeader>Remove relationship</ModalHeader>
+      <ModalHeader>{t('Remove relationship')}</ModalHeader>
       <ModalBody>
         <div>
-          Are you sure you want to remove the {relationship.relationshipType}{' '}
-          relationship?
+          {t(
+            'Are you sure you want to remove the {relationshipType} relationship?',
+            { relationshipType: relationship.relationshipType },
+          )}
         </div>
         <div>
-          You'll need to send a new request to restore this relationship on your
-          profile.
+          {t(
+            "You'll need to send a new request to restore this relationship on your profile.",
+          )}
         </div>
       </ModalBody>
       <ModalFooter>
         <Button onPress={onClose} color="neutral" type="button">
-          Cancel
+          {t('Cancel')}
         </Button>
         <Button color="destructive" type="submit" isPending={isSubmitting}>
-          {isSubmitting ? <LoadingSpinner /> : 'Remove'}
+          {isSubmitting ? <LoadingSpinner /> : t('Remove')}
         </Button>
       </ModalFooter>
     </form>
@@ -136,10 +140,14 @@ export const AddRelationshipModalSuspense = ({
         <DropDownButton
           label={
             <>
-              {`${relationships.length} relationship${relationships.length === 1 ? '' : 's'}`}{' '}
+              {relationships.length === 1
+                ? t('{count} relationship', { count: relationships.length })
+                : t('{count} relationships', {
+                    count: relationships.length,
+                  })}{' '}
               {user.currentProfile ? (
                 <>
-                  with
+                  {t('with')}
                   <OrganizationAvatar
                     profile={user.currentProfile}
                     className="size-6"
@@ -178,7 +186,9 @@ export const AddRelationshipModalSuspense = ({
               </Button>
               {relationship.pending && (
                 <Tooltip>
-                  Pending confirmation from {profile.profile.name}
+                  {t('Pending confirmation from {name}', {
+                    name: profile.profile.name,
+                  })}
                 </Tooltip>
               )}
               <RemoveRelationshipModal relationship={relationship} />

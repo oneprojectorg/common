@@ -120,7 +120,14 @@ export const BaseUpdateProfileForm = forwardRef<
 
         if (!acceptedImageTypes.includes(file.type)) {
           toast.error({
-            message: `That file type is not supported. Accepted types: ${acceptedImageTypes.map((t) => t.split('/')[1]).join(', ')}`,
+            message: t(
+              'That file type is not supported. Accepted types: {types}',
+              {
+                types: acceptedImageTypes
+                  .map((type) => type.split('/')[1])
+                  .join(', '),
+              },
+            ),
           });
           return;
         }
@@ -128,7 +135,9 @@ export const BaseUpdateProfileForm = forwardRef<
         if (file.size > DEFAULT_MAX_SIZE) {
           const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
           toast.error({
-            message: `File too large. Maximum size: ${maxSizeMB}MB`,
+            message: t('File too large. Maximum size: {size}MB', {
+              size: maxSizeMB,
+            }),
           });
           return;
         }
