@@ -10,6 +10,14 @@ import { CodeAnimation } from './RubricComingSoonAnimation';
 import { RubricParticipantPreview } from './RubricParticipantPreview';
 import { DUMMY_RUBRIC_TEMPLATE } from './dummyRubricTemplate';
 
+export default function CriteriaSection(props: SectionProps) {
+  return (
+    <Suspense>
+      <CriteriaSectionContent {...props} />
+    </Suspense>
+  );
+}
+
 function CriteriaSectionContent(_props: SectionProps) {
   const t = useTranslations();
   const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
@@ -32,13 +40,5 @@ function CriteriaSectionContent(_props: SectionProps) {
         {t('We are currently working on this, stay tuned!')}
       </span>
     </div>
-  );
-}
-
-export default function CriteriaSection(props: SectionProps) {
-  return (
-    <Suspense>
-      <CriteriaSectionContent {...props} />
-    </Suspense>
   );
 }
