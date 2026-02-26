@@ -57,8 +57,8 @@ export const addUsersToOrganizationRouter = router({
             where: (table, { inArray }) =>
               inArray(table.authUserId, allAuthUserIds),
           }),
-          db._query.accessRoles.findMany({
-            where: (table, { inArray }) => inArray(table.id, allRoleIds),
+          db.query.accessRoles.findMany({
+            where: { id: { in: allRoleIds } },
             columns: { id: true },
           }),
         ]);

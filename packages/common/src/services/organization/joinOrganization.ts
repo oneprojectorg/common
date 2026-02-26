@@ -1,11 +1,10 @@
 import { cache } from '@op/cache';
-import { TransactionType, db, eq } from '@op/db/client';
+import { TransactionType, db } from '@op/db/client';
 import {
   type AccessRole,
   type CommonUser,
   type Organization,
   OrganizationUser,
-  accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
@@ -113,8 +112,8 @@ const determineTargetRole = async (
   roleId?: AccessRole['id'],
 ): Promise<AccessRole> => {
   if (roleId) {
-    const role = await db._query.accessRoles.findFirst({
-      where: eq(accessRoles.id, roleId),
+    const role = await db.query.accessRoles.findFirst({
+      where: { id: roleId },
     });
 
     if (role) {

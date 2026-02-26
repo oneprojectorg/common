@@ -394,8 +394,8 @@ if (firstUser) {
             email: user.email!,
           })
           .returning(),
-        db._query.accessRoles.findFirst({
-          where: (table, { eq }) => eq(table.name, 'Admin'),
+        db.query.accessRoles.findFirst({
+          where: { name: 'Admin', profileId: { isNull: true } },
         }),
         db
           .update(users)

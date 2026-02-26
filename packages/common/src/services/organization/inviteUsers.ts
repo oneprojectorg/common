@@ -112,8 +112,8 @@ export const inviteUsersToOrganization = async (
         // User exists - check if they're already in this organization
         if (existingUser.organizationUsers.length === 0) {
           // User exists but not in this organization - add them directly
-          const targetRole = await db._query.accessRoles.findFirst({
-            where: (table, { eq }) => eq(table.id, roleId),
+          const targetRole = await db.query.accessRoles.findFirst({
+            where: { id: roleId },
           });
 
           if (targetRole) {

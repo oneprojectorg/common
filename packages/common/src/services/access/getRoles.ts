@@ -1,4 +1,15 @@
-import { and, asc, db, desc, eq, gt, isNull, lt, or } from '@op/db/client';
+import {
+  type SQL,
+  and,
+  asc,
+  db,
+  desc,
+  eq,
+  gt,
+  isNull,
+  lt,
+  or,
+} from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
@@ -47,25 +58,30 @@ export const getRoles = async (params?: {
   const decodedCursor = cursor ? decodeCursor<RoleCursor>(cursor) : undefined;
   const compareFn = dir === 'asc' ? gt : lt;
 
-  // ORDER BY name, id - compound condition for consistent pagination
-  const cursorCondition = decodedCursor
-    ? or(
-        compareFn(accessRoles.name, decodedCursor.value),
-        and(
-          eq(accessRoles.name, decodedCursor.value),
-          compareFn(accessRoles.id, decodedCursor.id),
-        ),
-      )
-    : undefined;
+  /**
+   * Builds a where condition using the provided table columns.
+   * Accepts either the raw schema columns (for select-based queries)
+   * or aliased table columns (for db.query which aliases tables).
+   */
+  const buildWhereCondition = (accessRoleCols: typeof accessRoles): SQL => {
+    const cursorCondition = decodedCursor
+      ? or(
+          compareFn(accessRoleCols.name, decodedCursor.value),
+          and(
+            eq(accessRoleCols.name, decodedCursor.value),
+            compareFn(accessRoleCols.id, decodedCursor.id),
+          ),
+        )
+      : undefined;
 
-  // Profile condition: either specific profile or global roles (NULL)
-  const profileCondition = profileId
-    ? eq(accessRoles.profileId, profileId)
-    : isNull(accessRoles.profileId);
+    const profileCondition = profileId
+      ? eq(accessRoleCols.profileId, profileId)
+      : isNull(accessRoleCols.profileId);
 
-  const whereCondition = cursorCondition
-    ? and(profileCondition, cursorCondition)
-    : profileCondition;
+    return cursorCondition
+      ? and(profileCondition, cursorCondition)!
+      : profileCondition;
+  };
 
   // Use join-based query when zoneName is provided for DB-level filtering
   if (zoneName) {
@@ -90,7 +106,7 @@ export const getRoles = async (params?: {
           ),
         ),
       )
-      .where(whereCondition)
+      .where(buildWhereCondition(accessRoles))
       .orderBy(
         dir === 'desc' ? desc(accessRoles.name) : asc(accessRoles.name),
         dir === 'desc' ? desc(accessRoles.id) : asc(accessRoles.id),
@@ -117,12 +133,14 @@ export const getRoles = async (params?: {
   }
 
   // Simple query without permissions when no zoneName
-  const roles = await db._query.accessRoles.findMany({
-    where: () => whereCondition,
-    orderBy: (table, { asc, desc }) => {
-      const orderFn = dir === 'desc' ? desc : asc;
-      return [orderFn(table.name), orderFn(table.id)];
+  const roles = await db.query.accessRoles.findMany({
+    where: {
+      RAW: (table) => buildWhereCondition(table),
     },
+    orderBy:
+      dir === 'desc'
+        ? { name: 'desc', id: 'desc' }
+        : { name: 'asc', id: 'asc' },
     limit: limit + 1,
   });
 
