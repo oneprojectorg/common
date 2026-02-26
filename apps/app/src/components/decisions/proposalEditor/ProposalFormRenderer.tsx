@@ -13,6 +13,7 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
+import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
 import type { ProposalDraftFields } from './useProposalDraft';
 
@@ -51,31 +52,6 @@ function extractOptions(
     value: opt.value,
     label: opt.title,
   }));
-}
-
-/** Renders title and description header for a dynamic field. */
-function FieldHeader({
-  title,
-  description,
-}: {
-  title?: string;
-  description?: string;
-}) {
-  if (!title && !description) {
-    return null;
-  }
-  return (
-    <div className="flex flex-col gap-2">
-      {title && (
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
-          {title}
-        </span>
-      )}
-      {description && (
-        <p className="text-sm text-neutral-charcoal">{description}</p>
-      )}
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------

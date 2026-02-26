@@ -4,33 +4,8 @@ import { Select } from '@op/ui/Select';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FieldHeader } from '../../../forms/FieldHeader';
 import type { FieldDescriptor } from '../../../forms/types';
-
-/** Title + description header for a criterion. */
-function CriterionHeader({
-  title,
-  description,
-}: {
-  title?: string;
-  description?: string;
-}) {
-  if (!title && !description) {
-    return null;
-  }
-
-  return (
-    <div className="flex flex-col gap-1">
-      {title && (
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
-          {title}
-        </span>
-      )}
-      {description && (
-        <p className="text-sm text-neutral-charcoal">{description}</p>
-      )}
-    </div>
-  );
-}
 
 /** Static placeholder for a single rubric criterion. */
 function RubricField({ field }: { field: FieldDescriptor }) {
@@ -41,10 +16,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     case 'dropdown': {
       return (
         <div className="flex flex-col gap-3">
-          <CriterionHeader
-            title={schema.title}
-            description={schema.description}
-          />
+          <FieldHeader title={schema.title} description={schema.description} />
           <Select
             variant="pill"
             size="medium"
@@ -62,10 +34,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     case 'long-text': {
       return (
         <div className="flex flex-col gap-3">
-          <CriterionHeader
-            title={schema.title}
-            description={schema.description}
-          />
+          <FieldHeader title={schema.title} description={schema.description} />
           <div
             className={`${format === 'long-text' ? 'min-h-32' : 'min-h-8'} text-neutral-gray3`}
           >
