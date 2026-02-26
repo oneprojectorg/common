@@ -10,7 +10,7 @@ import { ToggleButton } from '@op/ui/ToggleButton';
 import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
-import type { MessageKey } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 
 import type { FieldView } from '../../../proposalTemplate';
 import {
@@ -101,7 +101,7 @@ export function FieldCard({
           <div className="mt-4 space-y-1">
             {errors.map((error) => (
               <p key={error} className="text-functional-red">
-                {t(error as MessageKey)}
+                {t(error as TranslationKey)}
               </p>
             ))}
           </div>

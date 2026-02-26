@@ -13,7 +13,7 @@ import { LuCalendar } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
-import type { MessageKey } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 
 import { TranslatedText } from '../TranslatedText';
 import { DecisionCardHeader } from './DecisionCardHeader';
@@ -268,7 +268,7 @@ const DecisionStat = ({
   className,
 }: {
   number: number;
-  label: MessageKey;
+  label: TranslationKey;
   className?: string;
 }) => (
   <div

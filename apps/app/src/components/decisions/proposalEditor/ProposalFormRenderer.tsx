@@ -5,8 +5,8 @@ import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import type { Editor } from '@tiptap/react';
 
-import { useTranslations } from '@/lib/i18n/routing';
-import type { TranslateFn } from '@/lib/i18n/routing';
+import { useTranslations } from '@/lib/i18n';
+import type { TranslateFn } from '@/lib/i18n';
 
 import {
   CollaborativeBudgetField,

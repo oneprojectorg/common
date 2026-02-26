@@ -1,6 +1,6 @@
 // Process Builder Navigation Configuration
 // Steps and sections are defined here with `as const` - types are derived from this config
-import type { MessageKey } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 
 export const STEPS = [
   { id: 'general', labelKey: 'General' },
@@ -26,7 +26,7 @@ export const SECTIONS_BY_STEP = {
   ],
 } as const satisfies Record<
   StepId,
-  readonly { id: string; labelKey: MessageKey }[]
+  readonly { id: string; labelKey: TranslationKey }[]
 >;
 
 // Derive SectionId from all sections across all steps

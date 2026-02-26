@@ -1,7 +1,7 @@
 import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import { z } from 'zod';
 
-import type { MessageKey } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 
 import { getFieldErrors, getFields } from '../../proposalTemplate';
 import type { SectionId } from '../navigationConfig';
@@ -13,7 +13,7 @@ export interface ValidationSummary {
   sections: Record<SectionId, boolean>;
   stepsRemaining: number;
   isReadyToLaunch: boolean;
-  checklist: { id: string; labelKey: MessageKey; isValid: boolean }[];
+  checklist: { id: string; labelKey: TranslationKey; isValid: boolean }[];
 }
 
 // ============ Zod Schemas ============
@@ -67,7 +67,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
 
 interface ChecklistItem {
   id: string;
-  labelKey: MessageKey;
+  labelKey: TranslationKey;
   validate: (data: ProcessBuilderInstanceData | undefined) => boolean;
 }
 
