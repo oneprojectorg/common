@@ -40,7 +40,6 @@
     "prettier-plugin-sql": "^0.18.1"
   },
   "devDependencies": {
-    "@iconify/json": "2.2.311",
     "@op/core": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@react-three/drei": "^10.0.4",
@@ -107,7 +106,6 @@
     "tsx": "^4.19.3",
     "turbo": "^2.4.4",
     "typescript": "5.7.3",
-    "unplugin-icons": "22.1.0",
     "use-error-boundary": "^2.0.6",
     "zod": "catalog:",
     "zustand": "^5.0.3"
@@ -118,7 +116,6 @@
   },
   "pnpm": {
     "overrides": {
-      "@iconify/json": "$@iconify/json",
       "@opentelemetry/sdk-metrics": "^2.2.0",
       "@react-three/drei": "$@react-three/drei",
       "@react-three/fiber": "$@react-three/fiber",
@@ -171,7 +168,6 @@
       "turbo": "$turbo",
       "typescript": "$typescript",
       "undici": "5.27.1",
-      "unplugin-icons": "$unplugin-icons",
       "use-error-boundary": "$use-error-boundary",
       "zustand": "$zustand"
     }

@@ -79,7 +79,6 @@ async function runDepcheck(packageDir: string): Promise<void> {
       // Ignore dependencies that might be used indirectly (e.g., via config files)
       // or are known false positives for depcheck.
       'postcss', // Used via postcss.config.js
-      '@iconify/json', // Used by unplugin-icons
       '@storybook/*', // Used by storybook
     ],
   };
