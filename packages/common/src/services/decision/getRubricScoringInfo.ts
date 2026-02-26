@@ -37,6 +37,9 @@ export function getRubricScoringInfo(
   let totalPoints = 0;
 
   for (const [key, prop] of Object.entries(properties)) {
+    // Skip _rationale companion fields — they're metadata, not criteria.
+    if (key.endsWith('_rationale')) continue;
+
     const scored = prop.type === 'integer';
     const maxPoints = scored
       ? typeof prop.maximum === 'number'

@@ -6,19 +6,22 @@ import type { RubricTemplateSchema } from './types';
 /**
  * SEI-style rubric template fixture.
  *
- * 6 criteria total:
+ * 6 criteria + 2 rationale companion fields:
  *   - 2 scored (integer, dropdown): innovation (max 5), feasibility (max 5)
+ *   - 2 rationale (long-text): innovation_rationale, feasibility_rationale
  *   - 1 yes/no (dropdown, string)
  *   - 1 multiple-choice (dropdown, string)
  *   - 2 text fields (short-text + long-text)
  *
- * Expected: totalPoints = 10, 2 scored criteria.
+ * Expected: totalPoints = 10, 2 scored criteria. Rationale fields excluded.
  */
 const seiRubricTemplate = {
   type: 'object',
   'x-field-order': [
     'innovation',
+    'innovation_rationale',
     'feasibility',
+    'feasibility_rationale',
     'meetsEligibility',
     'focusArea',
     'strengthsSummary',
@@ -40,6 +43,11 @@ const seiRubricTemplate = {
         { const: 5, title: 'Excellent' },
       ],
     },
+    innovation_rationale: {
+      type: 'string',
+      title: 'Reason(s) and Insight(s)',
+      'x-format': 'long-text',
+    },
     feasibility: {
       type: 'integer',
       title: 'Feasibility',
@@ -54,6 +62,11 @@ const seiRubricTemplate = {
         { const: 4, title: 'Good' },
         { const: 5, title: 'Excellent' },
       ],
+    },
+    feasibility_rationale: {
+      type: 'string',
+      title: 'Reason(s) and Insight(s)',
+      'x-format': 'long-text',
     },
     meetsEligibility: {
       type: 'string',
@@ -90,7 +103,13 @@ const seiRubricTemplate = {
       'x-format': 'long-text',
     },
   },
-  required: ['innovation', 'feasibility', 'meetsEligibility'],
+  required: [
+    'innovation',
+    'innovation_rationale',
+    'feasibility',
+    'feasibility_rationale',
+    'meetsEligibility',
+  ],
 } as const satisfies RubricTemplateSchema;
 
 describe('getRubricScoringInfo', () => {
@@ -106,9 +125,18 @@ describe('getRubricScoringInfo', () => {
     expect(scored.map((c) => c.maxPoints)).toEqual([5, 5]);
   });
 
+  it('excludes _rationale companion fields from criteria list', () => {
+    const info = getRubricScoringInfo(seiRubricTemplate);
+    const keys = info.criteria.map((c) => c.key);
+
+    expect(keys).not.toContain('innovation_rationale');
+    expect(keys).not.toContain('feasibility_rationale');
+  });
+
   it('produces correct summary counts keyed by x-format', () => {
     const info = getRubricScoringInfo(seiRubricTemplate);
 
+    // Rationale fields (long-text) are excluded from summary counts
     expect(info.summary).toEqual({
       dropdown: 4,
       'short-text': 1,
