@@ -14,25 +14,25 @@ function CriteriaSectionContent(_props: SectionProps) {
   const t = useTranslations();
   const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
 
-  if (!rubricBuilderEnabled) {
+  if (rubricBuilderEnabled) {
     return (
-      <div className="flex h-full flex-row">
-        <div className="mx-auto flex flex-1 flex-col items-center justify-center gap-4 p-4 py-16 md:p-8">
-          <CodeAnimation />
-          <span className="text-neutral-gray4">
-            {t('We are currently working on this, stay tuned!')}
-          </span>
-        </div>
+      <div className="flex h-full flex-col md:flex-row">
+        {/* Left panel — placeholder for the future rubric builder */}
+        <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8" />
+
+        <RubricParticipantPreview template={DUMMY_RUBRIC_TEMPLATE} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col md:flex-row">
-      {/* Left panel — placeholder for the future rubric builder */}
-      <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8" />
-
-      <RubricParticipantPreview template={DUMMY_RUBRIC_TEMPLATE} />
+    <div className="flex h-full flex-row">
+      <div className="mx-auto flex flex-1 flex-col items-center justify-center gap-4 p-4 py-16 md:p-8">
+        <CodeAnimation />
+        <span className="text-neutral-gray4">
+          {t('We are currently working on this, stay tuned!')}
+        </span>
+      </div>
     </div>
   );
 }
