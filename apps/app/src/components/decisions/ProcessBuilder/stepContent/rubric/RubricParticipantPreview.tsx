@@ -7,13 +7,13 @@ import { LuEye } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../../../forms/rubric';
-import { RubricFormRenderer } from './RubricFormRenderer';
+import { RubricFormPreviewRenderer } from './RubricFormPreviewRenderer';
 
 /**
  * Live participant preview panel for rubric criteria.
  *
  * Mirrors the proposal `ParticipantPreview` pattern: compiles the rubric
- * template into field descriptors and renders them via `RubricFormRenderer`
+ * template into field descriptors and renders them via `RubricFormPreviewRenderer`
  * in a static, non-interactive preview aside panel.
  */
 export function RubricParticipantPreview({
@@ -41,7 +41,7 @@ export function RubricParticipantPreview({
           {t('Review Proposal')}
         </h2>
 
-        <RubricFormRenderer fields={fields} />
+        <RubricFormPreviewRenderer fields={fields} />
       </div>
     </aside>
   );

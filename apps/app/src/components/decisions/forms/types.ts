@@ -9,8 +9,8 @@ export interface FieldDescriptor {
   key: string;
   /** Resolved display format. */
   format: XFormat;
-  /** Whether this is a system field (title, category, budget). Only relevant for proposals. */
-  isSystem?: boolean;
   /** The raw property schema definition for this field. */
   schema: XFormatPropertySchema;
+  /** Whether this is a system field (title, category, budget). Only relevant for proposals. */
+  isSystem?: boolean;
 }
