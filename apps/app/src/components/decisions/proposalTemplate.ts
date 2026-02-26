@@ -67,7 +67,16 @@ export function createFieldJsonSchema(type: FieldType): ProposalTemplateSchema {
     case 'long_text':
       return withXFormat({ type: 'string' }, 'long-text');
     case 'dropdown':
-      return withXFormat({ type: 'string', oneOf: [] }, 'dropdown');
+      return withXFormat(
+        {
+          type: 'string',
+          oneOf: [
+            { const: 'Option 1', title: 'Option 1' },
+            { const: 'Option 2', title: 'Option 2' },
+          ],
+        },
+        'dropdown',
+      );
   }
 }
 

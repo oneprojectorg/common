@@ -153,6 +153,7 @@ function FieldConfigDropdownOptions({
                 color="ghost"
                 size="small"
                 aria-label={t('Remove option')}
+                isDisabled={options.length <= 2}
                 onPress={() => handleRemoveOption(option.id)}
                 className="p-2 text-neutral-gray3 hover:text-neutral-charcoal"
               >
