@@ -6,84 +6,60 @@ import { ToggleButton } from '@op/ui/ToggleButton';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalFieldDescriptor } from '../../../proposalEditor/compileProposalSchema';
+import type { FieldDescriptor } from '../../../proposalEditor/compileProposalSchema';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+type OneOfEntry = { const: string | number; title: string };
 
-/**
- * Detect whether a dropdown field represents a yes/no toggle.
- * Convention: `type: "string"` with exactly 2 `oneOf` entries whose
- * `const` values are `"yes"` and `"no"`.
- */
-function isYesNoField(schema: XFormatPropertySchema): boolean {
-  if (schema.type !== 'string' || !Array.isArray(schema.oneOf)) {
-    return false;
-  }
-  if (schema.oneOf.length !== 2) {
-    return false;
-  }
-  const values = new Set(
-    schema.oneOf
-      .filter(
-        (e): e is { const: string } =>
-          typeof e === 'object' &&
-          e !== null &&
-          typeof (e as Record<string, unknown>).const === 'string',
-      )
-      .map((e) => e.const),
+/** Narrow a `oneOf` entry to a typed `{ const, title }` pair. */
+function isOneOfEntry(entry: unknown): entry is OneOfEntry {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    'const' in entry &&
+    'title' in entry &&
+    typeof (entry as OneOfEntry).title === 'string'
   );
+}
+
+/** Yes/no toggle: `type: "string"` with exactly `"yes"` and `"no"` entries. */
+function isYesNoField(schema: XFormatPropertySchema): boolean {
+  if (
+    schema.type !== 'string' ||
+    !Array.isArray(schema.oneOf) ||
+    schema.oneOf.length !== 2
+  ) {
+    return false;
+  }
+  const values = new Set(schema.oneOf.filter(isOneOfEntry).map((e) => e.const));
   return values.has('yes') && values.has('no');
 }
 
-/**
- * Check whether a dropdown field is a scored integer scale (e.g. 1-5 rating).
- * Convention: `type: "integer"` with `oneOf` entries whose `const` are numbers.
- */
+/** Scored integer scale (e.g. 1-5 rating). */
 function isScoredDropdown(schema: XFormatPropertySchema): boolean {
   return schema.type === 'integer' && Array.isArray(schema.oneOf);
 }
 
-/**
- * Extract options from a schema's `oneOf`, handling both string and integer
- * const values. Returns `{ value, label }` pairs suitable for `<Select>`.
- *
- * For integer scales, appends " pts" to the label (e.g. "Excellent (5 pts)").
- */
-function extractRubricOptions(
+/** Extract `{ value, label }` pairs from `oneOf`. Appends point labels for scored fields. */
+function extractOptions(
   schema: XFormatPropertySchema,
   ptsLabel: string,
 ): { value: string; label: string }[] {
   if (!Array.isArray(schema.oneOf)) {
     return [];
   }
-  const isScored = isScoredDropdown(schema);
 
-  return schema.oneOf
-    .filter(
-      (entry): entry is { const: string | number; title: string } =>
-        typeof entry === 'object' &&
-        entry !== null &&
-        'const' in entry &&
-        'title' in entry &&
-        typeof (entry as Record<string, unknown>).title === 'string',
-    )
-    .map((entry) => {
-      const value = String(entry.const);
-      const label =
-        isScored && typeof entry.const === 'number'
-          ? `${entry.title} (${entry.const} ${ptsLabel})`
-          : entry.title;
-      return { value, label };
-    });
+  const scored = isScoredDropdown(schema);
+
+  return schema.oneOf.filter(isOneOfEntry).map((entry) => ({
+    value: String(entry.const),
+    label:
+      scored && typeof entry.const === 'number'
+        ? `${entry.title} (${entry.const} ${ptsLabel})`
+        : entry.title,
+  }));
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-/** Renders title and description header for a criterion. */
+/** Title + description header for a criterion, with optional point badge. */
 function CriterionHeader({
   title,
   description,
@@ -93,11 +69,12 @@ function CriterionHeader({
   title?: string;
   description?: string;
   maxPoints?: number;
-  ptsLabel: string;
+  ptsLabel?: string;
 }) {
   if (!title && !description) {
     return null;
   }
+
   return (
     <div className="flex flex-col gap-1">
       {title && (
@@ -105,7 +82,7 @@ function CriterionHeader({
           <span className="font-serif text-title-sm14 text-neutral-charcoal">
             {title}
           </span>
-          {maxPoints != null && maxPoints > 0 && (
+          {maxPoints != null && maxPoints > 0 && ptsLabel && (
             <span className="shrink-0 text-xs text-neutral-gray4">
               {maxPoints} {ptsLabel}
             </span>
@@ -119,49 +96,32 @@ function CriterionHeader({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Field renderer
-// ---------------------------------------------------------------------------
-
-/**
- * Renders a single rubric criterion field in preview mode.
- *
- * Dispatches by `x-format` with rubric-specific differentiation:
- * - `dropdown` + `type: "integer"` + `oneOf` -> scored rating scale with "X pts" labels
- * - `dropdown` + yes/no `oneOf` -> toggle switch
- * - `dropdown` + string `oneOf` -> multiple choice select
- * - `short-text` / `long-text` -> text area placeholder
- */
-function renderRubricField(
-  field: ProposalFieldDescriptor,
-  t: (key: string, params?: Record<string, string | number>) => string,
-): React.ReactNode {
+/** Renders a single rubric criterion based on its `x-format`. */
+function RubricField({ field }: { field: FieldDescriptor }) {
+  const t = useTranslations();
   const { format, schema } = field;
   const ptsLabel = t('pts');
 
   switch (format) {
     case 'dropdown': {
-      // Yes/No toggle
       if (isYesNoField(schema)) {
         return (
           <div className="flex flex-col gap-3">
             <CriterionHeader
               title={schema.title}
               description={schema.description}
-              ptsLabel={ptsLabel}
             />
             <ToggleButton size="small" />
           </div>
         );
       }
 
-      // Scored integer scale or plain multiple choice
       const maxPoints = isScoredDropdown(schema)
         ? typeof schema.maximum === 'number'
           ? schema.maximum
           : 0
         : 0;
-      const options = extractRubricOptions(schema, ptsLabel);
+      const options = extractOptions(schema, ptsLabel);
 
       return (
         <div className="flex flex-col gap-3">
@@ -188,30 +148,17 @@ function renderRubricField(
       );
     }
 
-    case 'short-text': {
-      return (
-        <div className="flex flex-col gap-3">
-          <CriterionHeader
-            title={schema.title}
-            description={schema.description}
-            ptsLabel={ptsLabel}
-          />
-          <div className="min-h-8 text-neutral-gray3">
-            {t('Start typing...')}
-          </div>
-        </div>
-      );
-    }
-
+    case 'short-text':
     case 'long-text': {
       return (
         <div className="flex flex-col gap-3">
           <CriterionHeader
             title={schema.title}
             description={schema.description}
-            ptsLabel={ptsLabel}
           />
-          <div className="min-h-32 text-neutral-gray3">
+          <div
+            className={`${format === 'long-text' ? 'min-h-32' : 'min-h-8'} text-neutral-gray3`}
+          >
             {t('Start typing...')}
           </div>
         </div>
@@ -220,38 +167,22 @@ function renderRubricField(
 
     default: {
       console.warn(
-        `[RubricFormRenderer] Unimplemented x-format "${format}" for field "${field.key}"`,
+        `[RubricFormRenderer] Unsupported x-format "${format}" for "${field.key}"`,
       );
       return null;
     }
   }
 }
 
-// ---------------------------------------------------------------------------
-// RubricFormRenderer
-// ---------------------------------------------------------------------------
-
 /**
  * Schema-driven form renderer for rubric preview.
- *
- * Takes compiled field descriptors (same shape as proposal fields) and
- * renders the correct rubric-specific component for each criterion.
- * Always renders in static preview mode (non-interactive).
- *
- * Unlike `ProposalFormRenderer`, rubrics have no system fields — all
- * criteria are rendered in a flat vertical stack.
+ * Renders compiled field descriptors as a static, non-interactive vertical stack.
  */
-export function RubricFormRenderer({
-  fields,
-}: {
-  fields: ProposalFieldDescriptor[];
-}) {
-  const t = useTranslations();
-
+export function RubricFormRenderer({ fields }: { fields: FieldDescriptor[] }) {
   return (
     <div className="pointer-events-none flex flex-col gap-6">
       {fields.map((field) => (
-        <div key={field.key}>{renderRubricField(field, t)}</div>
+        <RubricField key={field.key} field={field} />
       ))}
     </div>
   );

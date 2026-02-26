@@ -14,22 +14,17 @@ const REQUIRED_SYSTEM_FIELDS = new Set(['title']);
 /** Default `x-format` when a dynamic field omits the extension. */
 const DEFAULT_X_FORMAT: XFormat = 'short-text';
 
-// ---------------------------------------------------------------------------
-// Compiled field descriptor
-// ---------------------------------------------------------------------------
-
 /**
- * A field descriptor produced by the schema compiler. Each entry describes
- * a single field in the proposal form, with all the information needed to
- * render the correct collaborative component.
+ * A compiled field descriptor produced by a schema compiler. Describes a
+ * single field with everything needed to render it.
  */
-export interface ProposalFieldDescriptor {
+export interface FieldDescriptor {
   /** Property key in the schema (e.g. "title", "summary"). */
   key: string;
   /** Resolved display format. */
   format: XFormat;
-  /** Whether this is a system field (title, category, budget). */
-  isSystem: boolean;
+  /** Whether this is a system field (title, category, budget). Only relevant for proposals. */
+  isSystem?: boolean;
   /** The raw property schema definition for this field. */
   schema: XFormatPropertySchema;
 }
@@ -54,7 +49,7 @@ export interface ProposalFieldDescriptor {
  */
 export function compileProposalSchema(
   proposalTemplate: ProposalTemplateSchema,
-): ProposalFieldDescriptor[] {
+): FieldDescriptor[] {
   const templateProperties = proposalTemplate.properties ?? {};
 
   for (const key of REQUIRED_SYSTEM_FIELDS) {
@@ -65,18 +60,18 @@ export function compileProposalSchema(
 
   const { all } = getProposalTemplateFieldOrder(proposalTemplate);
 
-  return all
-    .map((key) => {
-      const propSchema = templateProperties[key];
-      if (!propSchema) {
-        return null;
-      }
-      return {
+  return all.flatMap((key): FieldDescriptor[] => {
+    const propSchema = templateProperties[key];
+    if (!propSchema) {
+      return [];
+    }
+    return [
+      {
         key,
         format: propSchema['x-format'] ?? DEFAULT_X_FORMAT,
         isSystem: SYSTEM_FIELD_KEYS.has(key),
         schema: propSchema,
-      };
-    })
-    .filter((d): d is ProposalFieldDescriptor => d !== null);
+      },
+    ];
+  });
 }

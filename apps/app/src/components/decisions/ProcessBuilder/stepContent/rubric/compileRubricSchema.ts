@@ -4,53 +4,42 @@ import type {
   XFormatPropertySchema,
 } from '@op/common/client';
 
-import type { ProposalFieldDescriptor } from '../../../proposalEditor/compileProposalSchema';
+import type { FieldDescriptor } from '../../../proposalEditor/compileProposalSchema';
 
-/** Default `x-format` when a rubric field omits the extension. */
 const DEFAULT_X_FORMAT: XFormat = 'short-text';
 
 /**
  * Compiles a rubric template schema into field descriptors for rendering.
  *
- * Same shape as `compileProposalSchema` output, but without system-field
- * handling — all rubric criteria are treated as dynamic fields.
- * Respects `x-field-order` for ordering, falls back to property order.
+ * Similar to `compileProposalSchema` but without system-field handling —
+ * all rubric criteria are treated as dynamic fields.
  */
 export function compileRubricSchema(
-  rubricTemplate: RubricTemplateSchema,
-): ProposalFieldDescriptor[] {
-  const properties = rubricTemplate.properties ?? {};
+  template: RubricTemplateSchema,
+): FieldDescriptor[] {
+  const properties = template.properties ?? {};
+  const propertyKeys = Object.keys(properties);
 
-  if (Object.keys(properties).length === 0) {
+  if (propertyKeys.length === 0) {
     return [];
   }
 
-  const fieldOrder = rubricTemplate['x-field-order'] ?? [];
-
-  // Ordered keys: explicit order first, then any remaining properties
+  const fieldOrder = template['x-field-order'] ?? [];
   const seen = new Set<string>();
   const orderedKeys: string[] = [];
 
-  for (const key of fieldOrder) {
+  for (const key of [...fieldOrder, ...propertyKeys]) {
     if (!seen.has(key) && properties[key]) {
       seen.add(key);
       orderedKeys.push(key);
     }
   }
-  for (const key of Object.keys(properties)) {
-    if (!seen.has(key)) {
-      seen.add(key);
-      orderedKeys.push(key);
-    }
-  }
 
-  return orderedKeys.map((key) => {
-    const propSchema = properties[key] as XFormatPropertySchema;
-    return {
-      key,
-      format: propSchema['x-format'] ?? DEFAULT_X_FORMAT,
-      isSystem: false,
-      schema: propSchema,
-    };
-  });
+  return orderedKeys.map((key) => ({
+    key,
+    format:
+      (properties[key] as XFormatPropertySchema)['x-format'] ??
+      DEFAULT_X_FORMAT,
+    schema: properties[key] as XFormatPropertySchema,
+  }));
 }

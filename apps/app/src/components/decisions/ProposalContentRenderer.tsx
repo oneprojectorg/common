@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import {
-  type ProposalFieldDescriptor,
+  type FieldDescriptor,
   type ProposalTemplateSchema,
   compileProposalSchema,
 } from './proposalEditor/compileProposalSchema';
@@ -61,7 +61,7 @@ function ViewField({
   field,
   html,
 }: {
-  field: ProposalFieldDescriptor;
+  field: FieldDescriptor;
   html: string | undefined;
 }) {
   const { schema } = field;
