@@ -176,7 +176,7 @@ export function OverviewSectionForm({
   });
 
   return (
-    <div className="size-full">
+    <div className="size-full [scrollbar-gutter:stable]">
       <form
         onSubmit={(e) => {
           e.preventDefault();
