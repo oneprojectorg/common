@@ -86,15 +86,12 @@ export function RubricCriterionCard({
         )}
         <AccordionTrigger className="flex flex-1 cursor-pointer items-center gap-2 overflow-hidden">
           <AccordionIndicator />
-          <span className="shrink-0 text-left font-medium text-neutral-charcoal">
+          <span className="shrink-0 text-left font-serif text-neutral-charcoal">
             {t('Criterion {number}', { number: index })}
           </span>
-          {criterion.label.trim() !== '' &&
-            criterion.label !== t('New criterion') && (
-              <span className="truncate text-left text-neutral-gray4">
-                {criterion.label}
-              </span>
-            )}
+          <span className="truncate text-left text-neutral-gray4">
+            {criterion.label || t('New criterion')}
+          </span>
           <span className="ml-auto flex shrink-0 items-center gap-1.5">
             <span className="rounded-sm bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
               {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
