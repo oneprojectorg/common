@@ -69,7 +69,6 @@ export function RubricEditorContent({
   const [template, setTemplate] =
     useState<RubricTemplateSchema>(initialTemplate);
   const isInitialLoadRef = useRef(true);
-  const hasUserEditedRef = useRef(false);
 
   // Validation: "show on blur, clear on change"
   const [criterionErrors, setCriterionErrors] = useState<Map<string, string[]>>(
@@ -121,15 +120,10 @@ export function RubricEditorContent({
   );
   debouncedSaveRef.current = () => debouncedSave.isPending();
 
-  // Trigger debounced save when template changes.
-  // Only saves after a user-initiated edit — not on initial load or when
-  // the debounced callback reference changes.
+  // Trigger debounced save when template changes (skip initial load)
   useEffect(() => {
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
-      return;
-    }
-    if (!hasUserEditedRef.current) {
       return;
     }
 
@@ -139,101 +133,86 @@ export function RubricEditorContent({
 
   // --- Handlers ---
 
-  /** Mark as user-edited and update template state. */
-  const editTemplate = useCallback(
-    (updater: (prev: RubricTemplateSchema) => RubricTemplateSchema) => {
-      hasUserEditedRef.current = true;
-      setTemplate(updater);
+  const handleAddCriterion = useCallback(() => {
+    const criterionId = crypto.randomUUID().slice(0, 8);
+    const label = t('New criterion');
+    setTemplate((prev) => addCriterion(prev, criterionId, 'scored', label));
+    setExpandedKeys((prev) => new Set([...prev, criterionId]));
+  }, [t]);
+
+  const handleRemoveCriterion = useCallback((criterionId: string) => {
+    setTemplate((prev) => removeCriterion(prev, criterionId));
+    setCriterionErrors((prev) => {
+      const next = new Map(prev);
+      next.delete(criterionId);
+      return next;
+    });
+  }, []);
+
+  const handleReorderCriteria = useCallback((newItems: CriterionView[]) => {
+    setTemplate((prev) =>
+      reorderCriteria(
+        prev,
+        newItems.map((item) => item.id),
+      ),
+    );
+  }, []);
+
+  const handleUpdateLabel = useCallback(
+    (criterionId: string, label: string) => {
+      setTemplate((prev) => updateCriterionLabel(prev, criterionId, label));
     },
     [],
   );
 
-  const handleAddCriterion = useCallback(() => {
-    const criterionId = crypto.randomUUID().slice(0, 8);
-    const label = t('New criterion');
-    editTemplate((prev) => addCriterion(prev, criterionId, 'scored', label));
-    setExpandedKeys((prev) => new Set([...prev, criterionId]));
-  }, [t, editTemplate]);
-
-  const handleRemoveCriterion = useCallback(
-    (criterionId: string) => {
-      editTemplate((prev) => removeCriterion(prev, criterionId));
-      setCriterionErrors((prev) => {
-        const next = new Map(prev);
-        next.delete(criterionId);
-        return next;
-      });
-    },
-    [editTemplate],
-  );
-
-  const handleReorderCriteria = useCallback(
-    (newItems: CriterionView[]) => {
-      editTemplate((prev) =>
-        reorderCriteria(
-          prev,
-          newItems.map((item) => item.id),
-        ),
-      );
-    },
-    [editTemplate],
-  );
-
-  const handleUpdateLabel = useCallback(
-    (criterionId: string, label: string) => {
-      editTemplate((prev) => updateCriterionLabel(prev, criterionId, label));
-    },
-    [editTemplate],
-  );
-
   const handleUpdateDescription = useCallback(
     (criterionId: string, description: string) => {
-      editTemplate((prev) =>
+      setTemplate((prev) =>
         updateCriterionDescription(prev, criterionId, description || undefined),
       );
     },
-    [editTemplate],
+    [],
   );
 
   const handleUpdateRequired = useCallback(
     (criterionId: string, required: boolean) => {
-      editTemplate((prev) => setCriterionRequired(prev, criterionId, required));
+      setTemplate((prev) => setCriterionRequired(prev, criterionId, required));
     },
-    [editTemplate],
+    [],
   );
 
   const handleChangeType = useCallback(
     (criterionId: string, newType: RubricCriterionType) => {
-      editTemplate((prev) => changeCriterionType(prev, criterionId, newType));
+      setTemplate((prev) => changeCriterionType(prev, criterionId, newType));
     },
-    [editTemplate],
+    [],
   );
 
   const handleUpdateJsonSchema = useCallback(
     (criterionId: string, updates: Record<string, unknown>) => {
-      editTemplate((prev) =>
+      setTemplate((prev) =>
         updateCriterionJsonSchema(prev, criterionId, updates),
       );
     },
-    [editTemplate],
+    [],
   );
 
   const handleUpdateMaxPoints = useCallback(
     (criterionId: string, maxPoints: number) => {
-      editTemplate((prev) =>
+      setTemplate((prev) =>
         updateScoredMaxPoints(prev, criterionId, maxPoints),
       );
     },
-    [editTemplate],
+    [],
   );
 
   const handleUpdateScoreLabel = useCallback(
     (criterionId: string, scoreIndex: number, label: string) => {
-      editTemplate((prev) =>
+      setTemplate((prev) =>
         updateScoreLabel(prev, criterionId, scoreIndex, label),
       );
     },
-    [editTemplate],
+    [],
   );
 
   const handleCriterionBlur = useCallback(
