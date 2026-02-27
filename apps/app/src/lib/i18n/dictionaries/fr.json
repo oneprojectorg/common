@@ -884,5 +884,9 @@
   "Scored": "Noté",
   "Select from custom options": "Sélectionner parmi des options personnalisées",
   "Simple yes or no answer": "Réponse simple oui ou non",
-  "Yes / No": "Oui / Non"
+  "Yes / No": "Oui / Non",
+  "Review Criteria": "Critères d'évaluation",
+  "No review criteria yet": "Pas encore de critères d'évaluation",
+  "Add criteria to help reviewers evaluate proposals consistently": "Ajoutez des critères pour aider les évaluateurs à évaluer les propositions de manière cohérente",
+  "Add your first criterion": "Ajoutez votre premier critère"
 }

@@ -5,11 +5,12 @@ import type { RubricTemplateSchema } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { Accordion } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import type { Key } from '@op/ui/RAC';
 import { Sortable } from '@op/ui/Sortable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuPlus } from 'react-icons/lu';
+import { LuLeaf, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -232,83 +233,100 @@ export function RubricEditorContent({
         <div className="mx-auto max-w-160 space-y-4">
           <div className="flex items-center justify-between">
             <Header2 className="font-serif text-title-sm">
-              {t('Rubric criteria')}
+              {t('Review Criteria')}
             </Header2>
             <SaveStatusIndicator
               status={saveState.status}
               savedAt={saveState.savedAt}
             />
           </div>
-          <p className="text-neutral-charcoal">
-            {t('Define how reviewers will evaluate proposals')}
-          </p>
-          <hr />
 
           {criteria.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
-              <p className="text-neutral-gray4">{t('No criteria defined')}</p>
+            <div className="rounded-lg border p-16">
+              <EmptyState icon={<LuLeaf className="size-5" />}>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <span className="font-medium text-neutral-charcoal">
+                    {t('No review criteria yet')}
+                  </span>
+                  <span>
+                    {t(
+                      'Add criteria to help reviewers evaluate proposals consistently',
+                    )}
+                  </span>
+                  <Button
+                    color="primary"
+                    className="mt-2"
+                    onPress={handleAddCriterion}
+                  >
+                    <LuPlus className="size-4" />
+                    {t('Add your first criterion')}
+                  </Button>
+                </div>
+              </EmptyState>
             </div>
           ) : (
-            <Accordion
-              allowsMultipleExpanded
-              variant="unstyled"
-              expandedKeys={expandedKeys}
-              onExpandedChange={setExpandedKeys}
-            >
-              <Sortable
-                items={criteria}
-                onChange={handleReorderCriteria}
-                dragTrigger="handle"
-                getItemLabel={(criterion) => criterion.label}
-                className="gap-3"
-                renderDragPreview={(items) => {
-                  const criterion = items[0];
-                  if (!criterion) {
-                    return null;
-                  }
-                  return <RubricCriterionDragPreview criterion={criterion} />;
-                }}
-                renderDropIndicator={RubricCriterionDropIndicator}
-                aria-label={t('Rubric criteria')}
+            <>
+              <Accordion
+                allowsMultipleExpanded
+                variant="unstyled"
+                expandedKeys={expandedKeys}
+                onExpandedChange={setExpandedKeys}
               >
-                {(criterion, controls) => {
-                  const snapshotErrors =
-                    criterionErrors.get(criterion.id) ?? [];
-                  const liveErrors = getCriterionErrors(criterion);
-                  const displayedErrors = snapshotErrors.filter((e) =>
-                    liveErrors.includes(e),
-                  );
+                <Sortable
+                  items={criteria}
+                  onChange={handleReorderCriteria}
+                  dragTrigger="handle"
+                  getItemLabel={(criterion) => criterion.label}
+                  className="gap-3"
+                  renderDragPreview={(items) => {
+                    const criterion = items[0];
+                    if (!criterion) {
+                      return null;
+                    }
+                    return <RubricCriterionDragPreview criterion={criterion} />;
+                  }}
+                  renderDropIndicator={RubricCriterionDropIndicator}
+                  aria-label={t('Rubric criteria')}
+                >
+                  {(criterion, controls) => {
+                    const snapshotErrors =
+                      criterionErrors.get(criterion.id) ?? [];
+                    const liveErrors = getCriterionErrors(criterion);
+                    const displayedErrors = snapshotErrors.filter((e) =>
+                      liveErrors.includes(e),
+                    );
 
-                  return (
-                    <RubricCriterionCard
-                      key={criterion.id}
-                      criterion={criterion}
-                      errors={displayedErrors}
-                      controls={controls}
-                      onRemove={handleRemoveCriterion}
-                      onBlur={handleCriterionBlur}
-                      onUpdateLabel={handleUpdateLabel}
-                      onUpdateDescription={handleUpdateDescription}
-                      onUpdateRequired={handleUpdateRequired}
-                      onChangeType={handleChangeType}
-                      onUpdateJsonSchema={handleUpdateJsonSchema}
-                      onUpdateMaxPoints={handleUpdateMaxPoints}
-                      onUpdateScoreLabel={handleUpdateScoreLabel}
-                    />
-                  );
-                }}
-              </Sortable>
-            </Accordion>
+                    return (
+                      <RubricCriterionCard
+                        key={criterion.id}
+                        criterion={criterion}
+                        errors={displayedErrors}
+                        controls={controls}
+                        onRemove={handleRemoveCriterion}
+                        onBlur={handleCriterionBlur}
+                        onUpdateLabel={handleUpdateLabel}
+                        onUpdateDescription={handleUpdateDescription}
+                        onUpdateRequired={handleUpdateRequired}
+                        onChangeType={handleChangeType}
+                        onUpdateJsonSchema={handleUpdateJsonSchema}
+                        onUpdateMaxPoints={handleUpdateMaxPoints}
+                        onUpdateScoreLabel={handleUpdateScoreLabel}
+                      />
+                    );
+                  }}
+                </Sortable>
+              </Accordion>
+
+              <Button
+                color="secondary"
+                className="w-full text-primary-teal hover:text-primary-tealBlack"
+                onPress={handleAddCriterion}
+              >
+                <LuPlus className="size-4" />
+                {t('Add criterion')}
+              </Button>
+            </>
           )}
-
-          <Button
-            color="secondary"
-            className="w-full text-primary-teal hover:text-primary-tealBlack"
-            onPress={handleAddCriterion}
-          >
-            <LuPlus className="size-4" />
-            {t('Add criterion')}
-          </Button>
         </div>
       </main>
 

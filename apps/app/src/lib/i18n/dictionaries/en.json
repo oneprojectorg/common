@@ -885,5 +885,9 @@
   "Scored": "Scored",
   "Select from custom options": "Select from custom options",
   "Simple yes or no answer": "Simple yes or no answer",
-  "Yes / No": "Yes / No"
+  "Yes / No": "Yes / No",
+  "Review Criteria": "Review Criteria",
+  "No review criteria yet": "No review criteria yet",
+  "Add criteria to help reviewers evaluate proposals consistently": "Add criteria to help reviewers evaluate proposals consistently",
+  "Add your first criterion": "Add your first criterion"
 }

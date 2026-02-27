@@ -892,5 +892,9 @@
   "Scored": "স্কোরযুক্ত",
   "Select from custom options": "কাস্টম বিকল্প থেকে নির্বাচন করুন",
   "Simple yes or no answer": "সহজ হ্যাঁ বা না উত্তর",
-  "Yes / No": "হ্যাঁ / না"
+  "Yes / No": "হ্যাঁ / না",
+  "Review Criteria": "পর্যালোচনার মানদণ্ড",
+  "No review criteria yet": "এখনো কোনো পর্যালোচনার মানদণ্ড নেই",
+  "Add criteria to help reviewers evaluate proposals consistently": "পর্যালোচকদের ধারাবাহিকভাবে প্রস্তাব মূল্যায়নে সহায়তার জন্য মানদণ্ড যোগ করুন",
+  "Add your first criterion": "আপনার প্রথম মানদণ্ড যোগ করুন"
 }

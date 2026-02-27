@@ -880,5 +880,9 @@
   "Scored": "Pontuado",
   "Select from custom options": "Selecionar entre opções personalizadas",
   "Simple yes or no answer": "Resposta simples de sim ou não",
-  "Yes / No": "Sim / Não"
+  "Yes / No": "Sim / Não",
+  "Review Criteria": "Critérios de avaliação",
+  "No review criteria yet": "Ainda não há critérios de avaliação",
+  "Add criteria to help reviewers evaluate proposals consistently": "Adicione critérios para ajudar os avaliadores a avaliar propostas de forma consistente",
+  "Add your first criterion": "Adicione seu primeiro critério"
 }
