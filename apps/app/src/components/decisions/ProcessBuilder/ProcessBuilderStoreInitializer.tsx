@@ -35,8 +35,21 @@ export function ProcessBuilderStoreInitializer({
   const serverDataRef = useRef(serverData);
   serverDataRef.current = serverData;
 
+  // Guard against re-seeding when other components call rehydrate(),
+  // which re-fires all onFinishHydration listeners. Without this,
+  // navigating between sections would overwrite user edits with stale
+  // server data from the initial page load.
+  const hasSeeded = useRef(false);
+
   useEffect(() => {
+    hasSeeded.current = false;
+
     const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
+      if (hasSeeded.current) {
+        return;
+      }
+      hasSeeded.current = true;
+
       const existing =
         useProcessBuilderStore.getState().instances[decisionProfileId];
 

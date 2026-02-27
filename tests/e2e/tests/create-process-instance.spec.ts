@@ -3,6 +3,15 @@ import { expect, test } from '../fixtures/index.js';
 // Use a wider viewport so the participant preview panel (xl:block >= 1280px) is visible.
 test.use({ viewport: { width: 1440, height: 900 } });
 
+/** Resolves when the next updateDecisionInstance mutation succeeds. */
+function waitForAutoSave(page: import('@playwright/test').Page) {
+  return page.waitForResponse(
+    (resp) =>
+      resp.url().includes('decision.updateDecisionInstance') && resp.ok(),
+    { timeout: 10000 },
+  );
+}
+
 test.describe('Create Process Instance', () => {
   test('can create a decision process and reach launch-ready state', async ({
     authenticatedPage,
@@ -33,17 +42,13 @@ test.describe('Create Process Instance', () => {
     // 4. Fill in the process name
     await authenticatedPage.getByLabel('Process Name').fill('E2E Test Process');
 
-    // 5. Fill in the description
+    // 5. Fill in the description — start listening for the auto-save response
+    //    before the final input so we don't miss the debounced mutation
+    const overviewSaved = waitForAutoSave(authenticatedPage);
     await authenticatedPage
       .getByLabel('Description')
       .fill('A process created by E2E tests');
-
-    // Wait for the debounced auto-save (1000ms) to flush to the API.
-    // For draft instances, the store initializer always prefers server data,
-    // so we reload after each section to get fresh server state.
-    // eslint-disable-next-line playwright/no-wait-for-timeout
-    await authenticatedPage.waitForTimeout(2000);
-    await authenticatedPage.reload({ waitUntil: 'networkidle' });
+    await overviewSaved;
 
     // ── Step 1: General – Phases ────────────────────────────────────────
 
@@ -101,10 +106,9 @@ test.describe('Create Process Instance', () => {
       await endDateInput.press('Enter');
     }
 
-    // Wait for phases auto-save to flush, then reload
-    // eslint-disable-next-line playwright/no-wait-for-timeout
-    await authenticatedPage.waitForTimeout(2000);
-    await authenticatedPage.reload({ waitUntil: 'networkidle' });
+    // Wait for the phases auto-save to complete
+    const phasesSaved = waitForAutoSave(authenticatedPage);
+    await phasesSaved;
 
     // ── Step 1: General – Proposal Categories ───────────────────────────
 
@@ -129,6 +133,8 @@ test.describe('Create Process Instance', () => {
       .getByLabel('Full description')
       .fill('Expand access to quality education in underserved communities');
 
+    // Start listening before the action that triggers auto-save
+    const categorySaved = waitForAutoSave(authenticatedPage);
     await authenticatedPage
       .getByRole('button', { name: 'Add category' })
       .click();
@@ -138,9 +144,7 @@ test.describe('Create Process Instance', () => {
       authenticatedPage.getByText('Education', { exact: true }),
     ).toBeVisible();
 
-    // Wait for category auto-save to flush
-    // eslint-disable-next-line playwright/no-wait-for-timeout
-    await authenticatedPage.waitForTimeout(1500);
+    await categorySaved;
 
     // ── Step 2: Proposal Template ───────────────────────────────────────
 
@@ -155,6 +159,7 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 10000 });
 
     // 11. Enable the Budget field in the template
+    const templateSaved = waitForAutoSave(authenticatedPage);
     await authenticatedPage
       .getByRole('button', { name: 'Show in template?' })
       .click();
@@ -174,15 +179,11 @@ test.describe('Create Process Instance', () => {
       authenticatedPage.getByRole('button', { name: 'Add budget' }),
     ).toBeVisible({ timeout: 5000 });
 
+    await templateSaved;
+
     // ── Final: Verify Launch Process button is enabled ──────────────────
 
-    // 13. Wait for template auto-save to flush, then reload so the store
-    //     initializer picks up all saved data from the server
-    // eslint-disable-next-line playwright/no-wait-for-timeout
-    await authenticatedPage.waitForTimeout(2000);
-    await authenticatedPage.reload({ waitUntil: 'networkidle' });
-
-    // 14. Verify the Launch Process button is enabled (not disabled)
+    // 13. Verify the Launch Process button is enabled (not disabled)
     const launchButton = authenticatedPage.getByRole('button', {
       name: 'Launch Process',
     });
