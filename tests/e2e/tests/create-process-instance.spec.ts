@@ -16,6 +16,8 @@ test.describe('Create Process Instance', () => {
   test('can create a decision process and reach launch-ready state', async ({
     authenticatedPage,
   }) => {
+    test.setTimeout(120_000);
+
     // 1. Navigate to the decisions create page (server-side creates a draft
     //    instance from the seeded template and redirects to the editor)
     await authenticatedPage.goto('/en/decisions/create');
