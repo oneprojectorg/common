@@ -451,7 +451,7 @@ export function ensureLockedFields(
       ...result,
       properties: {
         ...result.properties,
-        category: categorySchema as ProposalTemplateSchema,
+        category: categorySchema,
       },
     };
   } else if (getFieldSchema(result, 'category')) {
