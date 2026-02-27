@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -87,6 +88,7 @@ const ProcessBuilderHeaderContent = ({
   slug?: string;
 }) => {
   const t = useTranslations();
+  const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
   const router = useRouter();
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
@@ -239,7 +241,9 @@ const ProcessBuilderHeaderContent = ({
                   className="flex h-full cursor-pointer items-center gap-2"
                 >
                   {t(step.labelKey)}
-                  {step.id === 'rubric' && <ComingSoonIndicator />}
+                  {step.id === 'rubric' && !rubricBuilderEnabled && (
+                    <ComingSoonIndicator />
+                  )}
                 </Tab>
               ))}
             </TabList>
