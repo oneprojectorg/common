@@ -151,13 +151,7 @@ const ProcessBuilderHeaderContent = ({
         stewardProfileId: storeData?.stewardProfileId || undefined,
         phases: storeData?.phases,
         proposalTemplate: storeData?.proposalTemplate,
-        config: storeData?.categories
-          ? {
-              categories: storeData.categories,
-              requireCategorySelection: storeData.requireCategorySelection,
-              allowMultipleCategories: storeData.allowMultipleCategories,
-            }
-          : undefined,
+        config: storeData?.config,
       });
     }
   };

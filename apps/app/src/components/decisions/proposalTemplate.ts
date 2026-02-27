@@ -1,7 +1,7 @@
 /**
  * Proposal Template — JSON Schema utilities.
  *
- * A ProposalTemplate is a plain JSON Schema. Field ordering is stored as a
+ * Uses `ProposalTemplateSchema` from `@op/common`. Field ordering is stored as a
  * top-level `x-field-order` array. Per-field widget selection is driven by `x-format`
  * on each property (consumed by the renderer's FORMAT_REGISTRY).
  *
@@ -9,21 +9,19 @@
  * via vendor extensions (`x-*` properties).
  */
 import {
-  ProposalTemplateSchema,
+  type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   buildCategorySchema,
   parseSchemaOptions,
   schemaHasOptions,
 } from '@op/common/client';
 
-// ---------------------------------------------------------------------------
-// Core types
-// ---------------------------------------------------------------------------
+export type { ProposalTemplateSchema };
 
 export type FieldType = 'short_text' | 'long_text' | 'dropdown';
 
 /**
- * Flat read-only view of a single field, derived from a ProposalTemplate.
+ * Flat read-only view of a single field, derived from a proposal template.
  * Gives builder/renderer code a friendly object instead of requiring
  * multiple reader calls per field.
  */
@@ -260,7 +258,7 @@ export function getFieldErrors(field: FieldView): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Immutable mutators — each returns a new ProposalTemplate
+// Immutable mutators — each returns a new template
 // ---------------------------------------------------------------------------
 
 export function addField(

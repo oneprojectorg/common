@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { getFieldErrors, getFields } from '../../proposalTemplate';
 import type { SectionId } from '../navigationConfig';
-import type { FormInstanceData } from '../stores/useProcessBuilderStore';
+import type { ProcessBuilderInstanceData } from '../stores/useProcessBuilderStore';
 
 // ============ Types ============
 
@@ -37,9 +37,13 @@ const phasesSchema = z.object({
 
 // ============ Section Validators ============
 
-type SectionValidator = (data: FormInstanceData | undefined) => boolean;
+type SectionValidator = (
+  data: ProcessBuilderInstanceData | undefined,
+) => boolean;
 
-function validateTemplateEditor(data: FormInstanceData | undefined): boolean {
+function validateTemplateEditor(
+  data: ProcessBuilderInstanceData | undefined,
+): boolean {
   if (!data?.proposalTemplate) {
     return false;
   }
@@ -62,7 +66,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
 interface ChecklistItem {
   id: string;
   labelKey: string;
-  validate: (data: FormInstanceData | undefined) => boolean;
+  validate: (data: ProcessBuilderInstanceData | undefined) => boolean;
 }
 
 /**
@@ -121,7 +125,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
 // ============ Validation ============
 
 export function validateAll(
-  data: FormInstanceData | undefined,
+  data: ProcessBuilderInstanceData | undefined,
 ): ValidationSummary {
   const sections = {} as Record<SectionId, boolean>;
   for (const [sectionId, validator] of Object.entries(SECTION_VALIDATORS)) {

@@ -31,55 +31,28 @@
  * - `saveStates[decisionId]` - UI save indicator state
  */
 import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
-import type { ProposalCategory, ProposalTemplateSchema } from '@op/common';
+import type { ProposalTemplateSchema } from '@op/common';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 // ============ Store-specific Types ============
 
 /**
- * Extended instance data for form state.
- * Includes fields stored separately in the DB but tracked together for form convenience.
+ * Editable instance data for the process builder.
  *
- * Backend-aligned fields (from InstanceData):
- * - budget, hideBudget, fieldValues, currentPhaseId, stateData, phases
- *
- * Form-only fields (not yet in backend, stored in localStorage only):
- * - steward, objective, includeReview, isPrivate
+ * Mirrors the server shape: inherits `config`, `phases`, etc. from
+ * `InstanceData` and adds instance-column fields (`name`, `description`,
+ * `stewardProfileId`) that live outside the JSON blob.
  */
-export interface FormInstanceData
+export interface ProcessBuilderInstanceData
   extends Omit<Partial<InstanceData>, 'proposalTemplate'> {
-  /** Instance name (stored in processInstances.name, not instanceData) */
+  // Instance columns (not in instanceData JSON)
   name?: string;
-  /** Instance description (stored in processInstances.description, not instanceData) */
   description?: string;
-
-  // Form-only fields (not in backend InstanceData yet)
-  // TODO: Add these to backend schema when ready to persist
-  /** Profile ID of the steward */
   stewardProfileId?: string;
-  /** Process objective description */
-  objective?: string;
-  /** Total budget available */
-  budget?: number;
-  /** Whether to hide budget from participants */
-  hideBudget?: boolean;
-  /** Whether to include proposal review phase */
-  includeReview?: boolean;
-  /** Whether to keep process private */
-  isPrivate?: boolean;
-  /** Whether to organize proposals into categories */
-  organizeByCategories?: boolean;
-  /** Whether to require collaborative proposals */
-  requireCollaborativeProposals?: boolean;
-  /** Proposal template (JSON Schema) */
+
+  // Override InstanceData's proposalTemplate with form-specific type
   proposalTemplate?: ProposalTemplateSchema;
-  /** Proposal categories */
-  categories?: ProposalCategory[];
-  /** Whether proposers must select at least one category */
-  requireCategorySelection?: boolean;
-  /** Whether proposers can select more than one category */
-  allowMultipleCategories?: boolean;
 }
 
 // ============ UI-only Types ============
@@ -95,16 +68,18 @@ interface SaveState {
 
 interface ProcessBuilderState {
   // Instance data keyed by decisionId
-  instances: Record<string, FormInstanceData>;
+  instances: Record<string, ProcessBuilderInstanceData>;
   // Save state keyed by decisionId
   saveStates: Record<string, SaveState>;
 
   // Actions for instance data
   setInstanceData: (
     decisionId: string,
-    data: Partial<FormInstanceData>,
+    data: Partial<ProcessBuilderInstanceData>,
   ) => void;
-  getInstanceData: (decisionId: string) => FormInstanceData | undefined;
+  getInstanceData: (
+    decisionId: string,
+  ) => ProcessBuilderInstanceData | undefined;
 
   // Actions for phase data (operates on phases array)
   setPhaseData: (
@@ -118,11 +93,11 @@ interface ProcessBuilderState {
   ) => InstancePhaseData | undefined;
 
   // Actions for proposal template
-  setProposalTemplate: (
+  setProposalTemplateSchema: (
     decisionId: string,
     template: ProposalTemplateSchema,
   ) => void;
-  getProposalTemplate: (
+  getProposalTemplateSchema: (
     decisionId: string,
   ) => ProposalTemplateSchema | undefined;
 
@@ -146,15 +121,19 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
 
       // Instance data actions
       setInstanceData: (decisionId, data) =>
-        set((state) => ({
-          instances: {
-            ...state.instances,
-            [decisionId]: {
-              ...state.instances[decisionId],
-              ...data,
+        set((state) => {
+          const existing = state.instances[decisionId];
+          return {
+            instances: {
+              ...state.instances,
+              [decisionId]: {
+                ...existing,
+                ...data,
+                config: { ...existing?.config, ...data.config },
+              },
             },
-          },
-        })),
+          };
+        }),
 
       getInstanceData: (decisionId) => get().instances[decisionId],
 
@@ -197,7 +176,7 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
       },
 
       // Proposal template actions
-      setProposalTemplate: (decisionId, template) =>
+      setProposalTemplateSchema: (decisionId, template) =>
         set((state) => ({
           instances: {
             ...state.instances,
@@ -208,7 +187,7 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
           },
         })),
 
-      getProposalTemplate: (decisionId) =>
+      getProposalTemplateSchema: (decisionId) =>
         get().instances[decisionId]?.proposalTemplate,
 
       // Save state actions

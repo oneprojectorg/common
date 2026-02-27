@@ -70,10 +70,10 @@ export function TemplateEditorContent({
     (s) => s.instances[decisionProfileId],
   );
   const rawCategories =
-    storeData?.categories ?? instanceData?.config?.categories;
+    storeData?.config?.categories ?? instanceData?.config?.categories;
   const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
   const requireCategorySelection =
-    storeData?.requireCategorySelection ??
+    storeData?.config?.requireCategorySelection ??
     instanceData?.config?.requireCategorySelection ??
     false;
   const hasCategories = categories.length > 0;
@@ -128,8 +128,8 @@ export function TemplateEditorContent({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
-  const setProposalTemplate = useProcessBuilderStore(
-    (s) => s.setProposalTemplate,
+  const setProposalTemplateSchema = useProcessBuilderStore(
+    (s) => s.setProposalTemplateSchema,
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
@@ -201,7 +201,7 @@ export function TemplateEditorContent({
         categories,
         requireCategorySelection,
       });
-      setProposalTemplate(decisionProfileId, normalized);
+      setProposalTemplateSchema(decisionProfileId, normalized);
 
       if (isDraft) {
         updateInstance.mutate({

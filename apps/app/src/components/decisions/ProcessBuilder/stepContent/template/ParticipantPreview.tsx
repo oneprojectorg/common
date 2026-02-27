@@ -22,7 +22,7 @@ const EMPTY_DRAFT: ProposalDraftFields = {
 /**
  * Live participant preview panel shown alongside the template builder.
  *
- * Converts the builder's `ProposalTemplate` into compiled field descriptors
+ * Converts the builder's `ProposalTemplateSchema` into compiled field descriptors
  * and renders them via `ProposalFormRenderer` in static preview mode — no
  * Yjs, TipTap, or collaboration providers are created.
  */
