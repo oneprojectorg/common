@@ -31,7 +31,7 @@
  * - `saveStates[decisionId]` - UI save indicator state
  */
 import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
-import type { ProposalTemplateSchema } from '@op/common';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from '@op/common';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -100,6 +100,15 @@ interface ProcessBuilderState {
   getProposalTemplateSchema: (
     decisionId: string,
   ) => ProposalTemplateSchema | undefined;
+
+  // Actions for rubric template
+  setRubricTemplateSchema: (
+    decisionId: string,
+    template: RubricTemplateSchema,
+  ) => void;
+  getRubricTemplateSchema: (
+    decisionId: string,
+  ) => RubricTemplateSchema | undefined;
 
   // Actions for save state
   setSaveStatus: (decisionId: string, status: SaveStatus) => void;
@@ -189,6 +198,21 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
 
       getProposalTemplateSchema: (decisionId) =>
         get().instances[decisionId]?.proposalTemplate,
+
+      // Rubric template actions
+      setRubricTemplateSchema: (decisionId, template) =>
+        set((state) => ({
+          instances: {
+            ...state.instances,
+            [decisionId]: {
+              ...state.instances[decisionId],
+              rubricTemplate: template,
+            },
+          },
+        })),
+
+      getRubricTemplateSchema: (decisionId) =>
+        get().instances[decisionId]?.rubricTemplate,
 
       // Save state actions
       setSaveStatus: (decisionId, status) =>

@@ -1,9 +1,16 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useRef } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
-import { LuGripVertical, LuLock, LuX } from 'react-icons/lu';
+import { use, useLayoutEffect, useRef } from 'react';
+import type { Key } from 'react-aria-components';
+import {
+  Button as AriaButton,
+  DisclosurePanel as DisclosurePanelPrimitive,
+  Disclosure as DisclosurePrimitive,
+  DisclosureStateContext,
+  Button as TriggerButton,
+} from 'react-aria-components';
+import { LuChevronRight, LuGripVertical, LuLock, LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { AutoSizeInput } from './AutoSizeInput';
@@ -46,12 +53,37 @@ export interface FieldConfigCardProps {
   className?: string;
   /** Whether the card is locked (non-editable, no drag handle or remove button) */
   locked?: boolean;
+  /** Extra content rendered in the header row after the label (e.g. points badge) */
+  headerExtra?: ReactNode;
+
+  // --- Collapsible (accordion) props ---
+
+  /**
+   * Enable accordion/collapsible behavior. When true, the body (description +
+   * children) is hidden behind a disclosure toggle and animates open/closed.
+   * The card must be placed inside an `<Accordion>` (DisclosureGroup) for
+   * group-level expand control, or used standalone with controlled/uncontrolled
+   * expansion via `isExpanded` / `defaultExpanded`.
+   */
+  collapsible?: boolean;
+  /** Unique id for this disclosure (required when inside an Accordion group) */
+  disclosureId?: Key;
+  /** Controlled expansion state */
+  isExpanded?: boolean;
+  /** Default expansion state (uncontrolled) */
+  defaultExpanded?: boolean;
+  /** Callback when expansion changes */
+  onExpandedChange?: (isExpanded: boolean) => void;
 }
 
 /**
  * A configurable card component for form builders.
  * Features a header with drag handle, icon, editable label, and remove button,
  * plus an optional description field and slot for additional configuration.
+ *
+ * When `collapsible` is true the body content is wrapped in a React Aria
+ * Disclosure panel with smooth height animation, and a chevron toggle is
+ * added to the header.
  */
 export function FieldConfigCard({
   icon: Icon,
@@ -70,6 +102,12 @@ export function FieldConfigCard({
   children,
   className,
   locked = false,
+  headerExtra,
+  collapsible = false,
+  disclosureId,
+  isExpanded,
+  defaultExpanded,
+  onExpandedChange,
 }: FieldConfigCardProps) {
   const isDragging = controls?.isDragging ?? false;
   const labelInputRef = useRef<HTMLInputElement>(null!);
@@ -94,87 +132,197 @@ export function FieldConfigCard({
             {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
           </TooltipTrigger>
           <span className="flex-1 text-neutral-charcoal">{label}</span>
+          {headerExtra}
         </div>
         {children}
       </div>
     );
   }
 
+  const header = (
+    <div className="flex w-full items-center gap-2">
+      <div className="flex min-w-0 grow items-center gap-2">
+        {controls && (
+          <DragHandle
+            {...controls.dragHandleProps}
+            aria-label={dragHandleAriaLabel}
+          />
+        )}
+        {collapsible && <CollapsibleIndicator />}
+        <div className="flex min-w-0 items-center gap-2 rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1 focus-within:border-neutral-gray2 focus-within:bg-white">
+          <TooltipTrigger>
+            <AriaButton
+              className="flex shrink-0 items-center text-neutral-gray4"
+              onPress={() => labelInputRef.current?.focus()}
+            >
+              <Icon className="size-4" />
+            </AriaButton>
+            {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
+          </TooltipTrigger>
+          <div className="min-w-0 overflow-hidden">
+            <AutoSizeInput
+              inputRef={labelInputRef}
+              value={label}
+              onChange={(value) => onLabelChange?.(value)}
+              className="text-neutral-charcoal"
+              aria-label={labelInputAriaLabel}
+            />
+          </div>
+        </div>
+        {headerExtra}
+      </div>
+      {onRemove && (
+        <Button
+          color="ghost"
+          size="small"
+          aria-label={removeAriaLabel}
+          onPress={onRemove}
+          className="p-2 text-neutral-gray4 hover:text-neutral-charcoal"
+        >
+          <LuX className="size-4" />
+        </Button>
+      )}
+    </div>
+  );
+
+  const body = (
+    <div className="px-8">
+      {onDescriptionChange && (
+        <div className="mt-4">
+          <TextField
+            label={descriptionLabel}
+            value={description ?? ''}
+            onChange={onDescriptionChange}
+            useTextArea
+            textareaProps={{
+              placeholder: descriptionPlaceholder,
+              className: 'min-h-24 resize-none',
+            }}
+          />
+        </div>
+      )}
+      {children}
+    </div>
+  );
+
+  // Non-collapsible variant: render header + body directly
+  if (!collapsible) {
+    return (
+      <div
+        className={cn(
+          'rounded-lg border bg-white px-3 py-4',
+          isDragging && 'opacity-50',
+          className,
+        )}
+      >
+        {header}
+        {body}
+      </div>
+    );
+  }
+
+  // Collapsible variant: wrap in Disclosure primitive
   return (
-    <div
+    <DisclosurePrimitive
+      id={disclosureId}
+      isExpanded={isExpanded}
+      defaultExpanded={defaultExpanded}
+      onExpandedChange={onExpandedChange}
       className={cn(
-        'rounded-lg border bg-white px-3 py-4',
+        'group/field-config rounded-lg border bg-white px-3 py-4',
         isDragging && 'opacity-50',
         className,
       )}
     >
-      {/* Header: drag handle, icon, label input, remove button */}
-      <div className="flex w-full items-center gap-2">
-        <div className="flex min-w-0 grow items-center gap-2">
-          {controls && (
-            <DragHandle
-              {...controls.dragHandleProps}
-              aria-label={dragHandleAriaLabel}
-            />
-          )}
-          <div className="flex min-w-0 items-center gap-2 rounded border border-neutral-gray1 bg-neutral-gray1 px-2 py-1 focus-within:border-neutral-gray2 focus-within:bg-white">
-            <TooltipTrigger>
-              <AriaButton
-                className="flex shrink-0 items-center text-neutral-gray4"
-                onPress={() => labelInputRef.current?.focus()}
-              >
-                <Icon className="size-4" />
-              </AriaButton>
-              {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
-            </TooltipTrigger>
-            <div className="min-w-0 overflow-hidden">
-              <AutoSizeInput
-                inputRef={labelInputRef}
-                value={label}
-                onChange={(value) => onLabelChange?.(value)}
-                className="text-neutral-charcoal"
-                aria-label={labelInputAriaLabel}
-              />
-            </div>
-          </div>
-        </div>
-        {onRemove && (
-          <Button
-            color="ghost"
-            size="small"
-            aria-label={removeAriaLabel}
-            onPress={onRemove}
-            className="p-2 text-neutral-gray4 hover:text-neutral-charcoal"
-          >
-            <LuX className="size-4" />
-          </Button>
-        )}
-      </div>
-
-      {/* Body: description and custom config */}
-      <div className="px-8">
-        {/* Description field */}
-        {onDescriptionChange && (
-          <div className="mt-4">
-            <TextField
-              label={descriptionLabel}
-              value={description ?? ''}
-              onChange={onDescriptionChange}
-              useTextArea
-              textareaProps={{
-                placeholder: descriptionPlaceholder,
-                className: 'min-h-24 resize-none',
-              }}
-            />
-          </div>
-        )}
-
-        {/* Additional config slot */}
-        {children}
-      </div>
-    </div>
+      {header}
+      <AnimatedDisclosurePanel>{body}</AnimatedDisclosurePanel>
+    </DisclosurePrimitive>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Collapsible sub-components
+// ---------------------------------------------------------------------------
+
+/**
+ * Chevron indicator that toggles the disclosure. Rotates 90° when expanded.
+ * Rendered as a React Aria `Button` with `slot="trigger"` so it integrates
+ * with the parent `Disclosure` primitive.
+ */
+function CollapsibleIndicator() {
+  return (
+    <TriggerButton
+      slot="trigger"
+      className="flex shrink-0 cursor-pointer items-center rounded p-0.5 text-neutral-gray4 outline-none hover:text-neutral-charcoal focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <LuChevronRight className="size-4 transition-transform duration-200 group-data-[expanded]/field-config:rotate-90" />
+    </TriggerButton>
+  );
+}
+
+/**
+ * Animated disclosure panel that mirrors the height-transition logic from
+ * the Accordion component. Uses the `--disclosure-panel-height` CSS custom
+ * property for smooth expand/collapse animations.
+ */
+function AnimatedDisclosurePanel({ children }: { children: ReactNode }) {
+  const state = use(DisclosureStateContext);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (state?.isExpanded) {
+        panel.style.setProperty('--disclosure-panel-height', 'auto');
+      } else {
+        panel.style.setProperty('--disclosure-panel-height', '0px');
+      }
+      return;
+    }
+
+    if (state?.isExpanded) {
+      if (
+        panel.style.getPropertyValue('--disclosure-panel-height') === 'auto'
+      ) {
+        return;
+      }
+
+      panel.removeAttribute('hidden');
+      const height = panel.scrollHeight;
+      panel.style.setProperty('--disclosure-panel-height', `${height}px`);
+
+      const onTransitionEnd = () => {
+        panel.style.setProperty('--disclosure-panel-height', 'auto');
+        panel.removeEventListener('transitionend', onTransitionEnd);
+      };
+      panel.addEventListener('transitionend', onTransitionEnd);
+    } else {
+      const height = panel.scrollHeight;
+      panel.style.setProperty('--disclosure-panel-height', `${height}px`);
+      void panel.offsetHeight;
+      panel.style.setProperty('--disclosure-panel-height', '0px');
+    }
+  }, [state?.isExpanded]);
+
+  return (
+    <DisclosurePanelPrimitive
+      ref={panelRef}
+      className="h-[var(--disclosure-panel-height)] overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none [&[hidden]]:![content-visibility:visible]"
+    >
+      {children}
+    </DisclosurePanelPrimitive>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Drag preview
+// ---------------------------------------------------------------------------
 
 export interface FieldConfigCardDragPreviewProps {
   /** Icon component to display next to the label */
