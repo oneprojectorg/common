@@ -888,5 +888,21 @@
   "Review Criteria": "Criterios de revisión",
   "No review criteria yet": "Aún no hay criterios de revisión",
   "Add criteria to help reviewers evaluate proposals consistently": "Agregue criterios para ayudar a los revisores a evaluar propuestas de manera consistente",
-  "Add your first criterion": "Agregue su primer criterio"
+  "Add your first criterion": "Agregue su primer criterio",
+  "Criterion {number}": "Criterio {number}",
+  "Criterion name": "Nombre del criterio",
+  "Criterion label is required": "La etiqueta del criterio es obligatoria",
+  "Drag to reorder criterion": "Arrastrar para reordenar criterio",
+  "e.g., Goal Alignment": "p. ej., Alineación con objetivos",
+  "Add a short, clear name for this evaluation criterion": "Agregue un nombre corto y claro para este criterio de evaluación",
+  "What should reviewers evaluate? Be specific about what you're looking for.": "¿Qué deben evaluar los revisores? Sea específico sobre lo que busca.",
+  "Help reviewers understand what to assess": "Ayude a los revisores a entender qué evaluar",
+  "How should reviewers score this?": "¿Cómo deben puntuar esto los revisores?",
+  "Rating Scale": "Escala de calificación",
+  "Reviewers select a number with descriptions for each point value": "Los revisores seleccionan un número con descripciones para cada valor de punto",
+  "Simple binary assessment": "Evaluación binaria simple",
+  "Text response only": "Solo respuesta de texto",
+  "No score, just written feedback": "Sin puntuación, solo retroalimentación escrita",
+  "Score labels cannot be empty": "Las etiquetas de puntuación no pueden estar vacías",
+  "Start typing...": "Comience a escribir..."
 }

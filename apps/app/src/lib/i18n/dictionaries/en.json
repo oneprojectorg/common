@@ -889,5 +889,21 @@
   "Review Criteria": "Review Criteria",
   "No review criteria yet": "No review criteria yet",
   "Add criteria to help reviewers evaluate proposals consistently": "Add criteria to help reviewers evaluate proposals consistently",
-  "Add your first criterion": "Add your first criterion"
+  "Add your first criterion": "Add your first criterion",
+  "Criterion {number}": "Criterion {number}",
+  "Criterion name": "Criterion name",
+  "Criterion label is required": "Criterion label is required",
+  "Drag to reorder criterion": "Drag to reorder criterion",
+  "e.g., Goal Alignment": "e.g., Goal Alignment",
+  "Add a short, clear name for this evaluation criterion": "Add a short, clear name for this evaluation criterion",
+  "What should reviewers evaluate? Be specific about what you're looking for.": "What should reviewers evaluate? Be specific about what you're looking for.",
+  "Help reviewers understand what to assess": "Help reviewers understand what to assess",
+  "How should reviewers score this?": "How should reviewers score this?",
+  "Rating Scale": "Rating Scale",
+  "Reviewers select a number with descriptions for each point value": "Reviewers select a number with descriptions for each point value",
+  "Simple binary assessment": "Simple binary assessment",
+  "Text response only": "Text response only",
+  "No score, just written feedback": "No score, just written feedback",
+  "Score labels cannot be empty": "Score labels cannot be empty",
+  "Start typing...": "Start typing..."
 }

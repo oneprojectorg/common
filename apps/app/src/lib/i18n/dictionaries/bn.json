@@ -896,5 +896,21 @@
   "Review Criteria": "পর্যালোচনার মানদণ্ড",
   "No review criteria yet": "এখনো কোনো পর্যালোচনার মানদণ্ড নেই",
   "Add criteria to help reviewers evaluate proposals consistently": "পর্যালোচকদের ধারাবাহিকভাবে প্রস্তাব মূল্যায়নে সহায়তার জন্য মানদণ্ড যোগ করুন",
-  "Add your first criterion": "আপনার প্রথম মানদণ্ড যোগ করুন"
+  "Add your first criterion": "আপনার প্রথম মানদণ্ড যোগ করুন",
+  "Criterion {number}": "মানদণ্ড {number}",
+  "Criterion name": "মানদণ্ডের নাম",
+  "Criterion label is required": "মানদণ্ডের লেবেল আবশ্যক",
+  "Drag to reorder criterion": "মানদণ্ড পুনর্বিন্যাস করতে টানুন",
+  "e.g., Goal Alignment": "যেমন, লক্ষ্য সারিবদ্ধকরণ",
+  "Add a short, clear name for this evaluation criterion": "এই মূল্যায়ন মানদণ্ডের জন্য একটি সংক্ষিপ্ত, স্পষ্ট নাম যোগ করুন",
+  "What should reviewers evaluate? Be specific about what you're looking for.": "পর্যালোচকদের কী মূল্যায়ন করা উচিত? আপনি কী খুঁজছেন সে সম্পর্কে সুনির্দিষ্ট হন।",
+  "Help reviewers understand what to assess": "পর্যালোচকদের কী মূল্যায়ন করতে হবে তা বুঝতে সাহায্য করুন",
+  "How should reviewers score this?": "পর্যালোচকরা কীভাবে এটি স্কোর করবেন?",
+  "Rating Scale": "রেটিং স্কেল",
+  "Reviewers select a number with descriptions for each point value": "পর্যালোচকরা প্রতিটি পয়েন্ট মানের বিবরণ সহ একটি সংখ্যা নির্বাচন করেন",
+  "Simple binary assessment": "সহজ বাইনারি মূল্যায়ন",
+  "Text response only": "শুধুমাত্র পাঠ্য প্রতিক্রিয়া",
+  "No score, just written feedback": "কোনো স্কোর নেই, শুধু লিখিত প্রতিক্রিয়া",
+  "Score labels cannot be empty": "স্কোর লেবেল খালি রাখা যাবে না",
+  "Start typing...": "টাইপ শুরু করুন..."
 }

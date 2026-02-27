@@ -888,5 +888,21 @@
   "Review Criteria": "Critères d'évaluation",
   "No review criteria yet": "Pas encore de critères d'évaluation",
   "Add criteria to help reviewers evaluate proposals consistently": "Ajoutez des critères pour aider les évaluateurs à évaluer les propositions de manière cohérente",
-  "Add your first criterion": "Ajoutez votre premier critère"
+  "Add your first criterion": "Ajoutez votre premier critère",
+  "Criterion {number}": "Critère {number}",
+  "Criterion name": "Nom du critère",
+  "Criterion label is required": "Le libellé du critère est obligatoire",
+  "Drag to reorder criterion": "Glisser pour réordonner le critère",
+  "e.g., Goal Alignment": "p. ex., Alignement des objectifs",
+  "Add a short, clear name for this evaluation criterion": "Ajoutez un nom court et clair pour ce critère d'évaluation",
+  "What should reviewers evaluate? Be specific about what you're looking for.": "Que doivent évaluer les évaluateurs ? Soyez précis sur ce que vous recherchez.",
+  "Help reviewers understand what to assess": "Aidez les évaluateurs à comprendre quoi évaluer",
+  "How should reviewers score this?": "Comment les évaluateurs doivent-ils noter ceci ?",
+  "Rating Scale": "Échelle de notation",
+  "Reviewers select a number with descriptions for each point value": "Les évaluateurs sélectionnent un nombre avec des descriptions pour chaque valeur de point",
+  "Simple binary assessment": "Évaluation binaire simple",
+  "Text response only": "Réponse textuelle uniquement",
+  "No score, just written feedback": "Pas de note, uniquement des commentaires écrits",
+  "Score labels cannot be empty": "Les libellés des notes ne peuvent pas être vides",
+  "Start typing...": "Commencez à écrire..."
 }
