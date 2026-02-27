@@ -912,5 +912,7 @@
   "Text response only": "শুধুমাত্র পাঠ্য প্রতিক্রিয়া",
   "No score, just written feedback": "কোনো স্কোর নেই, শুধু লিখিত প্রতিক্রিয়া",
   "Score labels cannot be empty": "স্কোর লেবেল খালি রাখা যাবে না",
-  "Start typing...": "টাইপ শুরু করুন..."
+  "Start typing...": "টাইপ শুরু করুন...",
+  "Delete criterion": "মানদণ্ড মুছুন",
+  "Are you sure you want to delete this criterion? This action cannot be undone.": "আপনি কি নিশ্চিত যে এই মানদণ্ডটি মুছতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।"
 }

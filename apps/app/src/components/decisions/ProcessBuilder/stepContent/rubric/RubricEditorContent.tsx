@@ -7,6 +7,7 @@ import { Accordion, AccordionItem } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import type { Key } from '@op/ui/RAC';
 import { Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
@@ -76,6 +77,11 @@ export function RubricEditorContent({
   // Accordion expansion state
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
 
+  // Delete confirmation modal
+  const [criterionToDelete, setCriterionToDelete] = useState<string | null>(
+    null,
+  );
+
   const setRubricTemplateSchema = useProcessBuilderStore(
     (s) => s.setRubricTemplateSchema,
   );
@@ -139,13 +145,21 @@ export function RubricEditorContent({
   }, [t]);
 
   const handleRemoveCriterion = useCallback((criterionId: string) => {
-    setTemplate((prev) => removeCriterion(prev, criterionId));
+    setCriterionToDelete(criterionId);
+  }, []);
+
+  const confirmRemoveCriterion = useCallback(() => {
+    if (!criterionToDelete) {
+      return;
+    }
+    setTemplate((prev) => removeCriterion(prev, criterionToDelete));
     setCriterionErrors((prev) => {
       const next = new Map(prev);
-      next.delete(criterionId);
+      next.delete(criterionToDelete);
       return next;
     });
-  }, []);
+    setCriterionToDelete(null);
+  }, [criterionToDelete]);
 
   const handleReorderCriteria = useCallback((newItems: CriterionView[]) => {
     setTemplate((prev) =>
@@ -309,6 +323,41 @@ export function RubricEditorContent({
       </main>
 
       <RubricParticipantPreview template={template} />
+
+      <Modal
+        isDismissable
+        isOpen={criterionToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCriterionToDelete(null);
+          }
+        }}
+      >
+        <ModalHeader>{t('Delete criterion')}</ModalHeader>
+        <ModalBody>
+          <p>
+            {t(
+              'Are you sure you want to delete this criterion? This action cannot be undone.',
+            )}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="secondary"
+            className="w-full sm:w-fit"
+            onPress={() => setCriterionToDelete(null)}
+          >
+            {t('Cancel')}
+          </Button>
+          <Button
+            color="destructive"
+            className="w-full sm:w-fit"
+            onPress={confirmRemoveCriterion}
+          >
+            {t('Delete')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

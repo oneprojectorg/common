@@ -900,5 +900,7 @@
   "Text response only": "Apenas resposta de texto",
   "No score, just written feedback": "Sem pontuação, apenas feedback escrito",
   "Score labels cannot be empty": "Os rótulos das notas não podem estar vazios",
-  "Start typing...": "Comece a digitar..."
+  "Start typing...": "Comece a digitar...",
+  "Delete criterion": "Excluir critério",
+  "Are you sure you want to delete this criterion? This action cannot be undone.": "Tem certeza de que deseja excluir este critério? Esta ação não pode ser desfeita."
 }
