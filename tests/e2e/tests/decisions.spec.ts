@@ -30,12 +30,25 @@ test.describe('Decisions', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // 5. Click the "Submit a proposal" button
+    // 5. Click the "Submit a proposal" button and capture the mutation response
     const submitButton = authenticatedPage.getByRole('button', {
       name: 'Submit a proposal',
     });
     await expect(submitButton).toBeVisible({ timeout: 5000 });
-    await submitButton.click();
+
+    const [response] = await Promise.all([
+      authenticatedPage.waitForResponse(
+        (resp) => resp.url().includes('decision.createProposal'),
+        { timeout: 15000 },
+      ),
+      submitButton.click(),
+    ]);
+
+    // Log mutation result to help diagnose CI failures
+    const responseBody = await response.text();
+    console.log('createProposal response status:', response.status());
+    console.log('createProposal response body:', responseBody);
+    expect(response.status()).toBe(200);
 
     // 6. Wait for navigation to the proposal edit page
     // The URL pattern is /decisions/{slug}/proposal/{profileId}/edit
