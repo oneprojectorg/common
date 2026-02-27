@@ -6,7 +6,7 @@
  * `x-format` on each property (consumed by the renderer's rubric field logic).
  *
  * Mirrors the architecture of `proposalTemplate.ts` but tailored to rubric
- * criteria: scored dropdowns, yes/no, custom dropdowns, and long text.
+ * criteria: rating scale, yes/no, and text response.
  */
 import type {
   RubricTemplateSchema,
@@ -19,11 +19,7 @@ export type { RubricTemplateSchema };
 // Criterion types
 // ---------------------------------------------------------------------------
 
-export type RubricCriterionType =
-  | 'scored'
-  | 'yes_no'
-  | 'dropdown'
-  | 'long_text';
+export type RubricCriterionType = 'scored' | 'yes_no' | 'long_text';
 
 /**
  * Flat read-only view of a single rubric criterion, derived from the template.
@@ -40,8 +36,6 @@ export interface CriterionView {
   maxPoints?: number;
   /** Labels for each score level (index 0 = score 1). Scored criteria only. */
   scoreLabels: string[];
-  /** Options for dropdown criteria. */
-  options: { id: string; value: string }[];
 }
 
 // ---------------------------------------------------------------------------
@@ -86,15 +80,6 @@ export function createCriterionJsonSchema(
         oneOf: [
           { const: 'yes', title: 'Yes' },
           { const: 'no', title: 'No' },
-        ],
-      };
-    case 'dropdown':
-      return {
-        type: 'string',
-        'x-format': 'dropdown',
-        oneOf: [
-          { const: 'Option 1', title: 'Option 1' },
-          { const: 'Option 2', title: 'Option 2' },
         ],
       };
     case 'long_text':
@@ -142,11 +127,6 @@ export function inferCriterionType(
       ) {
         return 'yes_no';
       }
-    }
-
-    // Generic dropdown
-    if (schema.type === 'string') {
-      return 'dropdown';
     }
   }
 
@@ -249,29 +229,6 @@ export function getCriterionScoreLabels(
     .map((e) => e.title);
 }
 
-export function getCriterionOptions(
-  template: RubricTemplateSchema,
-  criterionId: string,
-): { id: string; value: string }[] {
-  const schema = getCriterionSchema(template, criterionId);
-  if (!schema || schema.type !== 'string' || !Array.isArray(schema.oneOf)) {
-    return [];
-  }
-  return schema.oneOf
-    .filter(
-      (e): e is { const: string; title: string } =>
-        typeof e === 'object' &&
-        e !== null &&
-        'const' in e &&
-        'title' in e &&
-        typeof (e as { const: unknown }).const === 'string',
-    )
-    .map((e, i) => ({
-      id: `${criterionId}-opt-${i}`,
-      value: e.title,
-    }));
-}
-
 // ---------------------------------------------------------------------------
 // Composite readers
 // ---------------------------------------------------------------------------
@@ -293,7 +250,6 @@ export function getCriterion(
     required: isCriterionRequired(template, criterionId),
     maxPoints: getCriterionMaxPoints(template, criterionId),
     scoreLabels: getCriterionScoreLabels(template, criterionId),
-    options: getCriterionOptions(template, criterionId),
   };
 }
 
@@ -322,15 +278,6 @@ export function getCriterionErrors(criterion: CriterionView): string[] {
 
   if (!criterion.label.trim()) {
     errors.push('Criterion label is required');
-  }
-
-  if (criterion.criterionType === 'dropdown') {
-    if (criterion.options.length < 2) {
-      errors.push('At least two options are required');
-    }
-    if (criterion.options.some((o) => !o.value.trim())) {
-      errors.push('Options cannot be empty');
-    }
   }
 
   if (criterion.criterionType === 'scored') {

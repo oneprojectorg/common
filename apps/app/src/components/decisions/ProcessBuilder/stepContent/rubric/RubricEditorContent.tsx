@@ -3,12 +3,13 @@
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
-import { Accordion } from '@op/ui/Accordion';
+import { Accordion, AccordionItem } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import type { Key } from '@op/ui/RAC';
 import { Sortable } from '@op/ui/Sortable';
+import { cn } from '@op/ui/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
@@ -23,13 +24,10 @@ import {
   changeCriterionType,
   createEmptyRubricTemplate,
   getCriteria,
-  getCriterion,
   getCriterionErrors,
   removeCriterion,
   reorderCriteria,
-  setCriterionRequired,
   updateCriterionDescription,
-  updateCriterionJsonSchema,
   updateCriterionLabel,
   updateScoreLabel,
   updateScoredMaxPoints,
@@ -174,25 +172,9 @@ export function RubricEditorContent({
     [],
   );
 
-  const handleUpdateRequired = useCallback(
-    (criterionId: string, required: boolean) => {
-      setTemplate((prev) => setCriterionRequired(prev, criterionId, required));
-    },
-    [],
-  );
-
   const handleChangeType = useCallback(
     (criterionId: string, newType: RubricCriterionType) => {
       setTemplate((prev) => changeCriterionType(prev, criterionId, newType));
-    },
-    [],
-  );
-
-  const handleUpdateJsonSchema = useCallback(
-    (criterionId: string, updates: Record<string, unknown>) => {
-      setTemplate((prev) =>
-        updateCriterionJsonSchema(prev, criterionId, updates),
-      );
     },
     [],
   );
@@ -213,18 +195,6 @@ export function RubricEditorContent({
       );
     },
     [],
-  );
-
-  const handleCriterionBlur = useCallback(
-    (criterionId: string) => {
-      const criterion = getCriterion(template, criterionId);
-      if (criterion) {
-        setCriterionErrors((prev) =>
-          new Map(prev).set(criterionId, getCriterionErrors(criterion)),
-        );
-      }
-    },
-    [template],
   );
 
   return (
@@ -279,16 +249,19 @@ export function RubricEditorContent({
                   getItemLabel={(criterion) => criterion.label}
                   className="gap-3"
                   renderDragPreview={(items) => {
-                    const criterion = items[0];
-                    if (!criterion) {
+                    const item = items[0];
+                    if (!item) {
                       return null;
                     }
-                    return <RubricCriterionDragPreview criterion={criterion} />;
+                    const idx = criteria.findIndex((c) => c.id === item.id) + 1;
+                    return <RubricCriterionDragPreview index={idx} />;
                   }}
                   renderDropIndicator={RubricCriterionDropIndicator}
                   aria-label={t('Rubric criteria')}
                 >
                   {(criterion, controls) => {
+                    const idx =
+                      criteria.findIndex((c) => c.id === criterion.id) + 1;
                     const snapshotErrors =
                       criterionErrors.get(criterion.id) ?? [];
                     const liveErrors = getCriterionErrors(criterion);
@@ -297,21 +270,26 @@ export function RubricEditorContent({
                     );
 
                     return (
-                      <RubricCriterionCard
-                        key={criterion.id}
-                        criterion={criterion}
-                        errors={displayedErrors}
-                        controls={controls}
-                        onRemove={handleRemoveCriterion}
-                        onBlur={handleCriterionBlur}
-                        onUpdateLabel={handleUpdateLabel}
-                        onUpdateDescription={handleUpdateDescription}
-                        onUpdateRequired={handleUpdateRequired}
-                        onChangeType={handleChangeType}
-                        onUpdateJsonSchema={handleUpdateJsonSchema}
-                        onUpdateMaxPoints={handleUpdateMaxPoints}
-                        onUpdateScoreLabel={handleUpdateScoreLabel}
-                      />
+                      <AccordionItem
+                        id={criterion.id}
+                        className={cn(
+                          'rounded-lg border bg-white',
+                          controls.isDragging && 'opacity-50',
+                        )}
+                      >
+                        <RubricCriterionCard
+                          criterion={criterion}
+                          index={idx}
+                          errors={displayedErrors}
+                          controls={controls}
+                          onRemove={handleRemoveCriterion}
+                          onUpdateLabel={handleUpdateLabel}
+                          onUpdateDescription={handleUpdateDescription}
+                          onChangeType={handleChangeType}
+                          onUpdateMaxPoints={handleUpdateMaxPoints}
+                          onUpdateScoreLabel={handleUpdateScoreLabel}
+                        />
+                      </AccordionItem>
                     );
                   }}
                 </Sortable>
