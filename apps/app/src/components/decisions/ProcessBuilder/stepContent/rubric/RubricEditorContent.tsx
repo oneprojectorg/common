@@ -213,7 +213,7 @@ export function RubricEditorContent({
 
   return (
     <div className="flex h-full flex-col md:flex-row">
-      <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
+      <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
         <div className="mx-auto max-w-160 space-y-4">
           <div className="flex items-center justify-between">
             <Header2 className="font-serif text-title-sm">

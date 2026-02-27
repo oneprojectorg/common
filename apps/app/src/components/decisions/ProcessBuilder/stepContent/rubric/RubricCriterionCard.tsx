@@ -84,12 +84,12 @@ export function RubricCriterionCard({
             aria-label={t('Drag to reorder criterion')}
           />
         )}
-        <AccordionTrigger className="flex cursor-pointer items-center">
+        <AccordionTrigger className="flex flex-1 cursor-pointer items-center gap-2">
           <AccordionIndicator />
+          <span className="flex-1 font-medium text-neutral-charcoal">
+            {t('Criterion {number}', { number: index })}
+          </span>
         </AccordionTrigger>
-        <span className="flex-1 font-medium text-neutral-charcoal">
-          {t('Criterion {number}', { number: index })}
-        </span>
         {onRemove && (
           <Button
             color="ghost"
