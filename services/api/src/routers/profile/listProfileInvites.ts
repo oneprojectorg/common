@@ -13,6 +13,7 @@ const outputSchema = z.array(
   z.object({
     id: z.string(),
     email: z.string(),
+    accessRoleId: z.string(),
     createdAt: z.string().nullable(),
     inviteeProfile: profileMinimalEncoder.nullable(),
   }),
@@ -32,6 +33,7 @@ export const listProfileInvitesRouter = router({
       return invites.map((invite) => ({
         id: invite.id,
         email: invite.email,
+        accessRoleId: invite.accessRoleId,
         createdAt: invite.createdAt,
         inviteeProfile: invite.inviteeProfile ?? null,
       }));
