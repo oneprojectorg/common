@@ -14,7 +14,7 @@ concurrency:
 jobs:
   e2e:
     name: E2E Tests (shard ${{ matrix.shard }}/2)
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 30
 
     strategy:
