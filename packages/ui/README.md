@@ -76,6 +76,7 @@ After adding a component:
 1. **Use existing components**: Where possible, replace Intent UI dependencies with existing `@op/ui` components. For example, replace the Intent UI checkbox import with `@/components/Checkbox`.
 
 2. **Export the component**: Add an export to `package.json`:
+
    ```json
    {
      "exports": {
@@ -94,7 +95,6 @@ Intent UI components use CSS variables that are mapped to `@op/styles` tokens in
 
 - **Colors**: `--primary`, `--secondary`, `--danger`, etc. mapped to teal/neutral/red tokens
 - **Border color**: Default border color set via `var(--border)` on all elements
-- **Border radius**: Calc-based system using `--radius-lg` as the base (0.375rem)
 
 To customize colors, edit the mappings in `intent-ui-theme.css`.
 
