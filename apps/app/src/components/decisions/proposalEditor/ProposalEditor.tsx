@@ -8,6 +8,7 @@ import {
   type proposalEncoder,
 } from '@op/api/encoders';
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
@@ -26,12 +27,9 @@ import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
+import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
-import {
-  type ProposalTemplateSchema,
-  compileProposalSchema,
-} from './compileProposalSchema';
 import { handleMutationError } from './handleMutationError';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';

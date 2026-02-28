@@ -1,8 +1,8 @@
+import type { XFormatPropertySchema } from '@op/common/client';
 import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
 import { LuAlignLeft, LuChevronDown, LuLetterText } from 'react-icons/lu';
 
-import type { XFormatPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
 

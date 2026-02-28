@@ -1,14 +1,12 @@
 'use client';
 
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { viewerProseStyles } from '@op/ui/RichTextEditor';
 import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
-import {
-  type ProposalFieldDescriptor,
-  type ProposalTemplateSchema,
-  compileProposalSchema,
-} from './proposalEditor/compileProposalSchema';
+import { compileProposalSchema } from './forms/proposal';
+import type { FieldDescriptor } from './forms/types';
 
 interface ProposalContentRendererProps {
   /** The proposal template schema (from processSchema or instanceData). */
@@ -61,7 +59,7 @@ function ViewField({
   field,
   html,
 }: {
-  field: ProposalFieldDescriptor;
+  field: FieldDescriptor;
   html: string | undefined;
 }) {
   const { schema } = field;

@@ -863,5 +863,9 @@
   "No {type} found.": "No {type} found.",
   "Could not load search results": "Could not load search results",
   "Timeline not set": "Timeline not set",
-  "Section not found": "Section not found"
+  "Section not found": "Section not found",
+  "Participant Preview": "Participant Preview",
+  "Review Proposal": "Review Proposal",
+  "pts": "pts",
+  "Yes/No": "Yes/No"
 }

@@ -8,6 +8,7 @@ import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { parseProposalData } from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
@@ -29,7 +30,6 @@ import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
-import type { ProposalTemplateSchema } from './proposalEditor/compileProposalSchema';
 
 type Proposal = RouterOutput['decision']['getProposal'];
 

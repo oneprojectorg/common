@@ -1,5 +1,6 @@
 'use client';
 
+import type { XFormatPropertySchema } from '@op/common/client';
 import {
   FieldConfigCard,
   FieldConfigCardDragPreview,
@@ -10,7 +11,6 @@ import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { XFormatPropertySchema } from '../../../proposalEditor/compileProposalSchema';
 import type { FieldView } from '../../../proposalTemplate';
 import {
   getFieldConfigComponent,

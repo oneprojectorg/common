@@ -13,7 +13,8 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
-import type { ProposalFieldDescriptor } from './compileProposalSchema';
+import { FieldHeader } from '../forms/FieldHeader';
+import type { FieldDescriptor } from '../forms/types';
 import type { ProposalDraftFields } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
@@ -22,7 +23,7 @@ import type { ProposalDraftFields } from './useProposalDraft';
 
 interface ProposalFormRendererProps {
   /** Compiled field descriptors from `compileProposalSchema`. */
-  fields: ProposalFieldDescriptor[];
+  fields: FieldDescriptor[];
   /** Current draft values for system fields. */
   draft: ProposalDraftFields;
   /** Called when any system field value changes. */
@@ -45,37 +46,12 @@ interface ProposalFormRendererProps {
  * both `oneOf` and legacy `enum` formats.
  */
 function extractOptions(
-  schema: ProposalFieldDescriptor['schema'],
+  schema: FieldDescriptor['schema'],
 ): { value: string; label: string }[] {
   return parseSchemaOptions(schema).map((opt) => ({
     value: opt.value,
     label: opt.title,
   }));
-}
-
-/** Renders title and description header for a dynamic field. */
-function FieldHeader({
-  title,
-  description,
-}: {
-  title?: string;
-  description?: string;
-}) {
-  if (!title && !description) {
-    return null;
-  }
-  return (
-    <div className="flex flex-col gap-2">
-      {title && (
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
-          {title}
-        </span>
-      )}
-      {description && (
-        <p className="text-sm text-neutral-charcoal">{description}</p>
-      )}
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -88,7 +64,7 @@ function FieldHeader({
  * markup) but without any Yjs/TipTap collaboration dependencies.
  */
 function renderField(
-  field: ProposalFieldDescriptor,
+  field: FieldDescriptor,
   draft: ProposalDraftFields,
   onFieldChange: (key: string, value: unknown) => void,
   t: (key: string, params?: Record<string, string | number>) => string,
@@ -303,7 +279,7 @@ export function ProposalFormRenderer({
   const budgetField = fields.find((f) => f.key === 'budget');
   const dynamicFields = fields.filter((f) => !f.isSystem);
 
-  const render = (field: ProposalFieldDescriptor) =>
+  const render = (field: FieldDescriptor) =>
     renderField(
       field,
       draft,

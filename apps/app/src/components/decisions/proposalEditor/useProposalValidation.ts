@@ -4,11 +4,10 @@ import {
   getProposalFragmentNames,
   schemaValidator,
 } from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { useCallback } from 'react';
 import * as Y from 'yjs';
 import type { Doc } from 'yjs';
-
-import type { ProposalTemplateSchema } from './compileProposalSchema';
 
 /**
  * Recursively extracts the text content from an XmlElement,
