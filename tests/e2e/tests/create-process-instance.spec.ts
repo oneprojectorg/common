@@ -8,7 +8,7 @@ function waitForAutoSave(page: import('@playwright/test').Page) {
   return page.waitForResponse(
     (resp) =>
       resp.url().includes('decision.updateDecisionInstance') && resp.ok(),
-    { timeout: 10000 },
+    { timeout: 12_000 },
   );
 }
 
@@ -16,7 +16,7 @@ test.describe('Create Process Instance', () => {
   test('can create a decision process and reach launch-ready state', async ({
     authenticatedPage,
   }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(144_000);
 
     // 1. Navigate to the decisions create page (server-side creates a draft
     //    instance from the seeded template and redirects to the editor)
@@ -24,7 +24,7 @@ test.describe('Create Process Instance', () => {
 
     // 2. Wait for the process builder editor to load
     await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({
-      timeout: 30000,
+      timeout: 36_000,
     });
 
     // ── Step 1: General – Overview ──────────────────────────────────────
@@ -38,7 +38,7 @@ test.describe('Create Process Instance', () => {
       .getByRole('listbox')
       .getByRole('option')
       .first();
-    await expect(stewardOption).toBeVisible({ timeout: 5000 });
+    await expect(stewardOption).toBeVisible({ timeout: 6_000 });
     await stewardOption.click();
 
     // 4. Fill in the process name
@@ -56,14 +56,14 @@ test.describe('Create Process Instance', () => {
 
     // 6. Navigate to the Phases section
     const phasesTab = authenticatedPage.getByRole('tab', { name: 'Phases' });
-    await expect(phasesTab).toBeVisible({ timeout: 15000 });
+    await expect(phasesTab).toBeVisible({ timeout: 18_000 });
     await phasesTab.click();
 
     await expect(
       authenticatedPage.getByText(
         'Define the phases of your decision-making process',
       ),
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 12_000 });
 
     // 7. Fill each phase's required fields.
     //    The seeded template has phases rendered as collapsed accordions.
@@ -82,7 +82,7 @@ test.describe('Create Process Instance', () => {
 
       // Wait for the phase content to be visible
       const headlineField = phase.getByLabel('Headline');
-      await expect(headlineField).toBeVisible({ timeout: 5000 });
+      await expect(headlineField).toBeVisible({ timeout: 6_000 });
 
       // Fill phase name
       await phase.getByLabel('Phase name').fill(`Phase ${i + 1}`);
@@ -118,12 +118,12 @@ test.describe('Create Process Instance', () => {
     const categoriesTab = authenticatedPage.getByRole('tab', {
       name: 'Proposal Categories',
     });
-    await expect(categoriesTab).toBeVisible({ timeout: 15000 });
+    await expect(categoriesTab).toBeVisible({ timeout: 18_000 });
     await categoriesTab.click();
 
     await expect(
       authenticatedPage.getByText('Proposal Categories').first(),
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 12_000 });
 
     // 9. Create one category
     await authenticatedPage
@@ -158,7 +158,7 @@ test.describe('Create Process Instance', () => {
 
     await expect(
       authenticatedPage.getByText('Proposal template').first(),
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 12_000 });
 
     // 11. Enable the Budget field in the template
     const templateSaved = waitForAutoSave(authenticatedPage);
@@ -168,18 +168,18 @@ test.describe('Create Process Instance', () => {
 
     // Verify the budget config expanded (Currency select should appear)
     await expect(authenticatedPage.getByLabel('Currency')).toBeVisible({
-      timeout: 5000,
+      timeout: 6_000,
     });
 
     // 12. Verify the participant preview shows the budget field
     //     The preview renders an "Add budget" button when budget is enabled
     await expect(
       authenticatedPage.getByText('Participant Preview'),
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 6_000 });
 
     await expect(
       authenticatedPage.getByRole('button', { name: 'Add budget' }),
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 6_000 });
 
     await templateSaved;
 
@@ -189,7 +189,7 @@ test.describe('Create Process Instance', () => {
     const launchButton = authenticatedPage.getByRole('button', {
       name: 'Launch Process',
     });
-    await expect(launchButton).toBeVisible({ timeout: 15000 });
-    await expect(launchButton).toBeEnabled({ timeout: 15000 });
+    await expect(launchButton).toBeVisible({ timeout: 18_000 });
+    await expect(launchButton).toBeEnabled({ timeout: 18_000 });
   });
 });

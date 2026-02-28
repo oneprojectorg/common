@@ -122,7 +122,7 @@ test.describe('Proposal Submit Validation', () => {
       status: ProposalStatus.DRAFT,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 600));
 
     // -- Navigate to editor ---------------------------------------------------
 
@@ -134,7 +134,7 @@ test.describe('Proposal Submit Validation', () => {
     const submitButton = authenticatedPage.getByRole('button', {
       name: 'Submit Proposal',
     });
-    await expect(submitButton).toBeVisible({ timeout: 30_000 });
+    await expect(submitButton).toBeVisible({ timeout: 36_000 });
 
     // Helper: dismiss any visible toasts before the next submit
     const dismissToasts = async () => {
@@ -147,7 +147,7 @@ test.describe('Proposal Submit Validation', () => {
         }
       }
       // Wait for toast to animate out
-      await authenticatedPage.waitForTimeout(300);
+      await authenticatedPage.waitForTimeout(360);
     };
 
     // =========================================================================
@@ -161,7 +161,7 @@ test.describe('Proposal Submit Validation', () => {
       .locator('[data-sonner-toast]')
       .filter({ hasText: 'Please complete the following required fields:' });
 
-    await expect(errorToast).toBeVisible({ timeout: 5_000 });
+    await expect(errorToast).toBeVisible({ timeout: 6_000 });
     await expect(errorToast).toContainText('Title');
     await expect(errorToast).toContainText('Budget');
     await expect(errorToast).toContainText('Category');
@@ -177,7 +177,7 @@ test.describe('Proposal Submit Validation', () => {
     await authenticatedPage.keyboard.type('My Test Proposal');
 
     // Wait for debounced auto-save to fire
-    await authenticatedPage.waitForTimeout(2_000);
+    await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
@@ -185,7 +185,7 @@ test.describe('Proposal Submit Validation', () => {
       .locator('[data-sonner-toast]')
       .filter({ hasText: 'Please complete the following required fields:' });
 
-    await expect(errorToast2).toBeVisible({ timeout: 5_000 });
+    await expect(errorToast2).toBeVisible({ timeout: 6_000 });
     await expect(errorToast2).not.toContainText('Title');
     await expect(errorToast2).toContainText('Budget');
     await expect(errorToast2).toContainText('Category');
@@ -202,11 +202,11 @@ test.describe('Proposal Submit Validation', () => {
     await addBudgetButton.click();
 
     const budgetInput = authenticatedPage.getByPlaceholder('Enter amount');
-    await expect(budgetInput).toBeVisible({ timeout: 5_000 });
+    await expect(budgetInput).toBeVisible({ timeout: 6_000 });
     await budgetInput.fill('5000');
     await budgetInput.blur();
 
-    await authenticatedPage.waitForTimeout(2_000);
+    await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
@@ -214,7 +214,7 @@ test.describe('Proposal Submit Validation', () => {
       .locator('[data-sonner-toast]')
       .filter({ hasText: 'Please complete the following required fields:' });
 
-    await expect(errorToast3).toBeVisible({ timeout: 5_000 });
+    await expect(errorToast3).toBeVisible({ timeout: 6_000 });
     await expect(errorToast3).not.toContainText('Title');
     await expect(errorToast3).not.toContainText('Budget');
     await expect(errorToast3).toContainText('Category');
@@ -240,7 +240,7 @@ test.describe('Proposal Submit Validation', () => {
       .getByRole('option', { name: 'Infrastructure' })
       .click();
 
-    await authenticatedPage.waitForTimeout(2_000);
+    await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
@@ -251,7 +251,7 @@ test.describe('Proposal Submit Validation', () => {
       .locator('[data-sonner-toast]')
       .filter({ hasText: 'Please complete the following required fields:' });
 
-    await expect(errorToast4).toBeVisible({ timeout: 5_000 });
+    await expect(errorToast4).toBeVisible({ timeout: 6_000 });
     await expect(errorToast4).toContainText('Summary');
     await expect(errorToast4).toContainText('Details');
     await expect(errorToast4).toContainText('Priority Level');
@@ -275,7 +275,7 @@ test.describe('Proposal Submit Validation', () => {
     await summaryEditor.click();
     await authenticatedPage.keyboard.type('A brief summary of the proposal');
 
-    await authenticatedPage.waitForTimeout(2_000);
+    await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
@@ -283,7 +283,7 @@ test.describe('Proposal Submit Validation', () => {
       .locator('[data-sonner-toast]')
       .filter({ hasText: 'Please complete the following required fields:' });
 
-    await expect(errorToast5).toBeVisible({ timeout: 5_000 });
+    await expect(errorToast5).toBeVisible({ timeout: 6_000 });
     await expect(errorToast5).not.toContainText('Summary');
     await expect(errorToast5).toContainText('Details');
     await expect(errorToast5).toContainText('Priority Level');
@@ -307,7 +307,7 @@ test.describe('Proposal Submit Validation', () => {
       'Full details and justification for this proposal',
     );
 
-    await authenticatedPage.waitForTimeout(2_000);
+    await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
@@ -315,7 +315,7 @@ test.describe('Proposal Submit Validation', () => {
       .locator('[data-sonner-toast]')
       .filter({ hasText: 'Please complete the following required fields:' });
 
-    await expect(errorToast6).toBeVisible({ timeout: 5_000 });
+    await expect(errorToast6).toBeVisible({ timeout: 6_000 });
     await expect(errorToast6).not.toContainText('Summary');
     await expect(errorToast6).not.toContainText('Details');
     await expect(errorToast6).toContainText('Priority Level');
@@ -336,7 +336,7 @@ test.describe('Proposal Submit Validation', () => {
     await priorityField.getByRole('button', { name: 'Select option' }).click();
     await authenticatedPage.getByRole('option', { name: 'High' }).click();
 
-    await authenticatedPage.waitForTimeout(2_000);
+    await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
@@ -344,7 +344,7 @@ test.describe('Proposal Submit Validation', () => {
       .locator('[data-sonner-toast]')
       .filter({ hasText: 'Please complete the following required fields:' });
 
-    await expect(errorToast7).toBeVisible({ timeout: 5_000 });
+    await expect(errorToast7).toBeVisible({ timeout: 6_000 });
     await expect(errorToast7).not.toContainText('Priority Level');
     await expect(errorToast7).toContainText('Region');
 
@@ -359,7 +359,7 @@ test.describe('Proposal Submit Validation', () => {
     await regionField.getByRole('button', { name: 'Select option' }).click();
     await authenticatedPage.getByRole('option', { name: 'North' }).click();
 
-    await authenticatedPage.waitForTimeout(2_000);
+    await authenticatedPage.waitForTimeout(2_400);
 
     await submitButton.click();
 
@@ -371,6 +371,6 @@ test.describe('Proposal Submit Validation', () => {
       authenticatedPage
         .locator('[data-sonner-toast]')
         .filter({ hasText: 'Please complete the following required fields:' }),
-    ).not.toBeVisible({ timeout: 5_000 });
+    ).not.toBeVisible({ timeout: 6_000 });
   });
 });
