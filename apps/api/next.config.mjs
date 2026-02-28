@@ -26,10 +26,7 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
-  experimental: {
-    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
-    instrumentationHook: true,
-  },
+  serverExternalPackages: ['sharp', 'onnxruntime-node'],
   webpack: (cfg) => {
     // In e2e mode, swap the real TipTap client for an in-process mock
     // so the API server never makes HTTP calls to TipTap Cloud.
