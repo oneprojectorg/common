@@ -1,5 +1,15 @@
 import type { RubricTemplateSchema, XFormat } from './types';
 
+/**
+ * `__rationale` companion fields are system-managed long-text fields
+ * that capture per-criterion reasoning. They follow the naming convention
+ * `<criterion_key>__rationale` and should be excluded from scoring,
+ * criteria counts, and rendered inline under their parent criterion.
+ */
+export function isRationaleField(key: string): boolean {
+  return key.endsWith('__rationale');
+}
+
 /** Scoring info for a single rubric criterion. */
 export interface RubricCriterion {
   key: string;
@@ -37,6 +47,8 @@ export function getRubricScoringInfo(
   let totalPoints = 0;
 
   for (const [key, prop] of Object.entries(properties)) {
+    if (isRationaleField(key)) continue;
+
     const scored = prop.type === 'integer';
     const maxPoints = scored
       ? typeof prop.maximum === 'number'

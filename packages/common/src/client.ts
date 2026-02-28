@@ -17,6 +17,7 @@ export {
   type SchemaValidationResult,
 } from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
+export { isRationaleField } from './services/decision/getRubricScoringInfo';
 
 // Translation constants (no server dependencies)
 export {
