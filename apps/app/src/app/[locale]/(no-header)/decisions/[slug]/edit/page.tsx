@@ -40,7 +40,7 @@ const EditDecisionPage = async ({
   };
 
   return (
-    <div className="bg-background relative flex h-dvh w-full flex-1 flex-col">
+    <div className="bg-background relative flex h-dvh w-full flex-1 flex-col overflow-y-hidden">
       <ProcessBuilderStoreInitializer
         decisionProfileId={decisionProfile.id}
         serverData={serverData}
@@ -49,7 +49,7 @@ const EditDecisionPage = async ({
       <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
       <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
         <ProcessBuilderSidebar instanceId={instanceId} />
-        <main className="h-full grow overflow-y-auto [scrollbar-gutter:stable]">
+        <main className="h-full grow overflow-y-auto">
           <ProcessBuilderContent
             decisionProfileId={decisionProfile.id}
             instanceId={instanceId}
