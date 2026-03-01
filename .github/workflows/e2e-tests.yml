@@ -43,7 +43,7 @@ jobs:
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
       # TipTap Cloud (collaborative editing - stub for tests)
       NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
-      # Centrifugo (realtime - stub values for tests)
+      # Centrifugo (realtime messaging server)
       CENTRIFUGO_API_URL: http://localhost:8000/api
       CENTRIFUGO_API_KEY: test_api_key
       CENTRIFUGO_TOKEN_SECRET: test_token_secret
@@ -126,6 +126,21 @@ jobs:
 
       - name: Seed test database
         run: pnpm w:db seed:e2e
+
+      - name: Start Centrifugo
+        run: |
+          docker run -d --rm --name centrifugo \
+            -p 8000:8000 \
+            --env-file services/realtime/.env.test \
+            centrifugo/centrifugo:v6 centrifugo
+          echo "Waiting for Centrifugo to be ready..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Centrifugo is ready"
+              break
+            fi
+            sleep 1
+          done
 
       - name: Run E2E tests
         run: pnpm -C ./tests/e2e exec playwright test --shard=${{ matrix.shard }}/2 --reporter=blob
