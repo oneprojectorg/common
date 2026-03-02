@@ -882,5 +882,7 @@
   "Add your organization's details": "আপনার সংস্থার বিবরণ যোগ করুন",
   "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.": "আপাতত, আমরা শুধুমাত্র প্রশাসক অ্যাকাউন্ট সমর্থন করছি। ভবিষ্যতে, আমরা সদস্য অ্যাকাউন্ট সমর্থন করতে সক্ষম হবো।",
   "Proposal Title": "প্রস্তাবের শিরোনাম",
-  "Start typing...": "টাইপ করা শুরু করুন..."
+  "Start typing...": "টাইপ করা শুরু করুন...",
+  "Reason(s) and Insight(s)": "কারণ এবং অন্তর্দৃষ্টি",
+  "Placeholder": "প্লেসহোল্ডার"
 }

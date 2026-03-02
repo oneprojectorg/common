@@ -875,5 +875,7 @@
   "Add your organization's details": "Ajoutez les détails de votre organisation",
   "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.": "Pour l'instant, nous ne gérons que les comptes administrateurs. À l'avenir, nous serons en mesure de gérer les comptes membres.",
   "Proposal Title": "Titre de la Proposition",
-  "Start typing...": "Commencez à taper..."
+  "Start typing...": "Commencez à taper...",
+  "Reason(s) and Insight(s)": "Raison(s) et aperçu(s)",
+  "Placeholder": "Espace réservé"
 }

@@ -875,5 +875,7 @@
   "Add your organization's details": "Agrega los detalles de tu organización",
   "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.": "Por ahora, solo estamos apoyando cuentas de administrador. En el futuro, podremos apoyar cuentas de miembros.",
   "Proposal Title": "Título de la Propuesta",
-  "Start typing...": "Empieza a escribir..."
+  "Start typing...": "Empieza a escribir...",
+  "Reason(s) and Insight(s)": "Razón(es) y perspectiva(s)",
+  "Placeholder": "Marcador de posición"
 }

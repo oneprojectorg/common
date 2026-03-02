@@ -875,5 +875,7 @@
   "Add your organization's details": "Add your organization's details",
   "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.": "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.",
   "Proposal Title": "Proposal Title",
-  "Start typing...": "Start typing..."
+  "Start typing...": "Start typing...",
+  "Reason(s) and Insight(s)": "Reason(s) and Insight(s)",
+  "Placeholder": "Placeholder"
 }
