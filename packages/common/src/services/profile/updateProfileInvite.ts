@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { type ProfileInvite, profileInvites } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -19,11 +20,14 @@ export const updateProfileInvite = async ({
   accessRoleId: string;
   user: User;
 }): Promise<ProfileInvite> => {
-  // Find the invite (must be pending)
+  // Find the invite with its profile name
   const invite = await db.query.profileInvites.findFirst({
     where: {
       id: inviteId,
       acceptedOn: { isNull: true },
+    },
+    with: {
+      profile: true,
     },
   });
 
@@ -62,6 +66,16 @@ export const updateProfileInvite = async ({
   if (!updated) {
     throw new CommonError('Failed to update invite');
   }
+
+  // Send notification to the invitee about the role change
+  await event.send({
+    name: Events.profileInviteRoleChanged.name,
+    data: {
+      email: invite.email,
+      newRoleName: role.name,
+      profileName: invite.profile?.name ?? '',
+    },
+  });
 
   return updated;
 };
