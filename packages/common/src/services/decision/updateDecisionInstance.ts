@@ -10,6 +10,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type {
   DecisionInstanceData,
   PhaseOverride,
@@ -45,8 +46,8 @@ export const updateDecisionInstance = async ({
   user: User;
 }) => {
   // Fetch existing instance
-  const existingInstance = await db._query.processInstances.findFirst({
-    where: eq(processInstances.id, instanceId),
+  const existingInstance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
   });
 
   if (!existingInstance) {
@@ -150,8 +151,8 @@ export const updateDecisionInstance = async ({
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {
     // Nothing to update, just return the existing profile
-    const profile = await db._query.profiles.findFirst({
-      where: eq(profiles.id, profileId),
+    const profile = await db.query.profiles.findFirst({
+      where: { id: profileId },
       with: {
         processInstance: true,
       },
@@ -184,14 +185,23 @@ export const updateDecisionInstance = async ({
 
     // Determine the final status (updated or existing)
     const finalStatus = status ?? existingInstance.status;
+    const isBeingPublished =
+      status === ProcessStatus.PUBLISHED &&
+      existingInstance.status === ProcessStatus.DRAFT;
 
     // If status is DRAFT, remove all transitions
     if (finalStatus === ProcessStatus.DRAFT) {
       await tx
         .delete(decisionProcessTransitions)
         .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
+    } else if (isBeingPublished) {
+      // When publishing a draft, create transitions for all date-based phases
+      await createTransitionsForProcess({
+        processInstance: updatedInstance,
+        tx,
+      });
     } else if (phases && phases.length > 0) {
-      // If phases were updated and not DRAFT, update the corresponding transitions
+      // If phases were updated and already published, update the corresponding transitions
       await updateTransitionsForProcess({
         processInstance: updatedInstance,
         tx,
@@ -200,8 +210,8 @@ export const updateDecisionInstance = async ({
   });
 
   // Fetch the profile with processInstance joined for the response
-  const profile = await db._query.profiles.findFirst({
-    where: eq(profiles.id, profileId),
+  const profile = await db.query.profiles.findFirst({
+    where: { id: profileId },
     with: {
       processInstance: true,
     },
