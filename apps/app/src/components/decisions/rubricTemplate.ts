@@ -225,7 +225,7 @@ export function getCriterionScoreLabels(
         'title' in e &&
         typeof (e as { title: unknown }).title === 'string',
     )
-    .sort((a, b) => a.const - b.const)
+    .sort((a, b) => b.const - a.const)
     .map((e) => e.title);
 }
 

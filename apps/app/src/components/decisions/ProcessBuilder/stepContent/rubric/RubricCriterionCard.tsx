@@ -208,6 +208,7 @@ function CriterionTypeSelector({
       value={value}
       onChange={(newValue) => onChange(newValue as RubricCriterionType)}
       orientation="vertical"
+      labelClassName="text-base"
     >
       {CRITERION_TYPES.map((type) => {
         const entry = CRITERION_TYPE_REGISTRY[type];
@@ -217,10 +218,8 @@ function CriterionTypeSelector({
             value={type}
             className="group flex items-start gap-2 py-2"
           >
-            <div>
-              <span className="text-sm font-medium text-neutral-charcoal">
-                {t(entry.labelKey)}
-              </span>
+            <div className="relative -top-0.5">
+              <span>{t(entry.labelKey)}</span>
               <p className="text-sm text-neutral-gray4">
                 {t(entry.descriptionKey)}
               </p>
@@ -262,24 +261,34 @@ function ScoredCriterionConfig({
       />
 
       <div className="space-y-2">
-        <h4 className="text-sm text-neutral-charcoal">{t('Score labels')}</h4>
-        {criterion.scoreLabels.map((label, scoreIndex) => (
-          <div key={scoreIndex} className="flex items-center gap-2">
-            <span className="w-6 shrink-0 text-right text-sm text-neutral-gray4">
-              {scoreIndex + 1}
-            </span>
-            <TextField
-              value={label}
-              onChange={(value) => onUpdateScoreLabel(scoreIndex, value)}
-              inputProps={{
-                placeholder: t('Label for score {number}', {
-                  number: scoreIndex + 1,
-                }),
-              }}
-              className="w-full"
-            />
-          </div>
-        ))}
+        <h4 className="text-neutral-charcoal">
+          {t('Define what each score means')}
+        </h4>
+        <p className="text-sm">
+          {t(
+            'Help reviewers score consistently by describing what each point value represents',
+          )}
+        </p>
+        <div className="space-y-4">
+          {criterion.scoreLabels.map((label, scoreIndex) => (
+            <div key={scoreIndex} className="flex items-start gap-2">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-right font-serif text-title-base text-neutral-gray4">
+                {scoreIndex + 1}
+              </span>
+              <TextField
+                useTextArea
+                value={label}
+                onChange={(value) => onUpdateScoreLabel(scoreIndex, value)}
+                textareaProps={{
+                  placeholder: t('Describe what earns {number} points...', {
+                    number: scoreIndex + 1,
+                  }),
+                }}
+                className="w-full"
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
