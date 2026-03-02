@@ -14,10 +14,18 @@ export const updateProfileInviteRouter = router({
     )
     .output(profileInviteEncoder)
     .mutation(async ({ ctx, input }) => {
-      return updateProfileInvite({
+      const invite = await updateProfileInvite({
         inviteId: input.inviteId,
         accessRoleId: input.accessRoleId,
         user: ctx.user,
       });
+
+      return {
+        id: invite.id,
+        email: invite.email,
+        accessRoleId: invite.accessRoleId,
+        createdAt: invite.createdAt,
+        inviteeProfile: invite.inviteeProfile,
+      };
     }),
 });

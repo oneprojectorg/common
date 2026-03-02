@@ -32,6 +32,11 @@ export const updateProfileInvite = async ({
       },
       with: {
         profile: true,
+        inviteeProfile: {
+          with: {
+            avatarImage: true,
+          },
+        },
       },
     }),
     db.query.accessRoles.findFirst({
@@ -72,5 +77,8 @@ export const updateProfileInvite = async ({
     throw new CommonError('Failed to update invite');
   }
 
-  return { ...updated, role };
+  return {
+    ...updated,
+    inviteeProfile: invite.inviteeProfile ?? null,
+  };
 };
