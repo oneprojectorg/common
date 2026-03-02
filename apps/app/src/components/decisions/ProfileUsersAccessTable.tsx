@@ -318,7 +318,12 @@ const MobileProfileUsersContent = ({
       {!isLoading && (
         <>
           {invites.map((invite) => (
-            <MobileInviteCard key={invite.id} invite={invite} profileId={profileId} roles={roles} />
+            <MobileInviteCard
+              key={invite.id}
+              invite={invite}
+              profileId={profileId}
+              roles={roles}
+            />
           ))}
           {profileUsers.map((profileUser) => (
             <MobileProfileUserCard
