@@ -1,8 +1,7 @@
 'use client';
 
-import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import type { ProfileUser } from '@op/api/encoders';
+import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -22,8 +21,6 @@ import { LuUsers } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
-
-type ProfileInvite = RouterOutput['profile']['listProfileInvites'][number];
 
 // Exported component with loading and error states
 export const ProfileUsersAccessTable = ({
