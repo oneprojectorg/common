@@ -108,22 +108,30 @@ async function createPublishedInstanceWithDueTransitions(
   const phases = [
     {
       phaseId: 'submission',
-      startDate: new Date(now.getTime() + offsets[0]!.startOffsetMs).toISOString(),
+      startDate: new Date(
+        now.getTime() + offsets[0]!.startOffsetMs,
+      ).toISOString(),
       endDate: new Date(now.getTime() + offsets[0]!.endOffsetMs).toISOString(),
     },
     {
       phaseId: 'review',
-      startDate: new Date(now.getTime() + offsets[1]!.startOffsetMs).toISOString(),
+      startDate: new Date(
+        now.getTime() + offsets[1]!.startOffsetMs,
+      ).toISOString(),
       endDate: new Date(now.getTime() + offsets[1]!.endOffsetMs).toISOString(),
     },
     {
       phaseId: 'voting',
-      startDate: new Date(now.getTime() + offsets[2]!.startOffsetMs).toISOString(),
+      startDate: new Date(
+        now.getTime() + offsets[2]!.startOffsetMs,
+      ).toISOString(),
       endDate: new Date(now.getTime() + offsets[2]!.endOffsetMs).toISOString(),
     },
     {
       phaseId: 'results',
-      startDate: new Date(now.getTime() + offsets[3]!.startOffsetMs).toISOString(),
+      startDate: new Date(
+        now.getTime() + offsets[3]!.startOffsetMs,
+      ).toISOString(),
     },
   ];
 
@@ -406,10 +414,11 @@ describe('processDecisionsTransitions', () => {
     const result = await processDecisionsTransitions();
 
     // The first transition should not be re-processed
-    const refreshedFirst =
-      await db._query.decisionProcessTransitions.findFirst({
+    const refreshedFirst = await db._query.decisionProcessTransitions.findFirst(
+      {
         where: eq(decisionProcessTransitions.id, firstTransition!.id),
-      });
+      },
+    );
 
     // The first transition should still have a completedAt set (it was pre-completed)
     expect(refreshedFirst!.completedAt).not.toBeNull();
@@ -430,10 +439,10 @@ describe('processDecisionsTransitions', () => {
       await createPublishedInstanceWithDueTransitions(testData, task.id);
 
     // Create another instance and corrupt its data
-    const {
-      templateId,
-      userEmail,
-    } = await createSimpleTemplate(testData, `${task.id}-bad`);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      `${task.id}-bad`,
+    );
     const caller2 = await createAuthenticatedCaller(userEmail);
 
     const now = new Date();
@@ -485,13 +494,9 @@ describe('processDecisionsTransitions', () => {
     });
 
     // Make its transitions due with staggered past dates
-    const badTransitions =
-      await db._query.decisionProcessTransitions.findMany({
-        where: eq(
-          decisionProcessTransitions.processInstanceId,
-          badInstanceId,
-        ),
-      });
+    const badTransitions = await db._query.decisionProcessTransitions.findMany({
+      where: eq(decisionProcessTransitions.processInstanceId, badInstanceId),
+    });
 
     badTransitions.sort(
       (a, b) =>
