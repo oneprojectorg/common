@@ -37,9 +37,7 @@ export const ProposalSubmittedEmail = ({
   );
 };
 
-ProposalSubmittedEmail.subject = (
-  proposalName: string,
-  processTitle: string,
-) => `Your proposal "${proposalName}" has been submitted to ${processTitle}`;
+ProposalSubmittedEmail.subject = (proposalName: string, processTitle: string) =>
+  `Your proposal "${proposalName}" has been submitted to ${processTitle}`;
 
 export default ProposalSubmittedEmail;
