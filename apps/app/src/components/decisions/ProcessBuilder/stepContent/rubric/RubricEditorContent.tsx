@@ -19,6 +19,7 @@ import { useTranslations } from '@/lib/i18n';
 import type {
   CriterionView,
   RubricCriterionType,
+  ScoredConfig,
 } from '../../../../decisions/rubricTemplate';
 import {
   addCriterion,
@@ -26,6 +27,7 @@ import {
   createEmptyRubricTemplate,
   getCriteria,
   getCriterionErrors,
+  getScoredConfig,
   removeCriterion,
   reorderCriteria,
   updateCriterionDescription,
@@ -81,6 +83,9 @@ export function RubricEditorContent({
   const [criterionToDelete, setCriterionToDelete] = useState<string | null>(
     null,
   );
+
+  // Cache scored config so switching type and back doesn't lose score labels
+  const scoredConfigCacheRef = useRef<Map<string, ScoredConfig>>(new Map());
 
   const setRubricTemplateSchema = useProcessBuilderStore(
     (s) => s.setRubricTemplateSchema,
@@ -158,6 +163,7 @@ export function RubricEditorContent({
       next.delete(criterionToDelete);
       return next;
     });
+    scoredConfigCacheRef.current.delete(criterionToDelete);
     setCriterionToDelete(null);
   }, [criterionToDelete]);
 
@@ -188,7 +194,21 @@ export function RubricEditorContent({
 
   const handleChangeType = useCallback(
     (criterionId: string, newType: RubricCriterionType) => {
-      setTemplate((prev) => changeCriterionType(prev, criterionId, newType));
+      setTemplate((prev) => {
+        // Stash scored config before switching away from scored
+        const currentConfig = getScoredConfig(prev, criterionId);
+        if (currentConfig) {
+          scoredConfigCacheRef.current.set(criterionId, currentConfig);
+        }
+
+        // Restore cached scored config when switching back to scored
+        const cached =
+          newType === 'scored'
+            ? scoredConfigCacheRef.current.get(criterionId)
+            : undefined;
+
+        return changeCriterionType(prev, criterionId, newType, cached);
+      });
     },
     [],
   );
