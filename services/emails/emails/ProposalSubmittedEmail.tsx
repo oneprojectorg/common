@@ -1,4 +1,4 @@
-import { Button, Section, Text } from '@react-email/components';
+import { Button, Heading, Section, Text } from '@react-email/components';
 
 import EmailTemplate from '../components/EmailTemplate';
 
@@ -15,6 +15,9 @@ export const ProposalSubmittedEmail = ({
     <EmailTemplate
       previewText={`Your proposal "${proposalName}" has been submitted to ${processTitle}`}
     >
+      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+        Proposal Submitted
+      </Heading>
       <Text className="my-8 text-lg">
         Your proposal <strong>{proposalName}</strong> has been submitted to{' '}
         <strong>{processTitle}</strong>.
