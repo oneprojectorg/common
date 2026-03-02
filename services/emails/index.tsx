@@ -111,7 +111,6 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
   return { data: results, errors };
 };
 
-export * from './emails/InviteRoleChangedEmail';
 export * from './emails/OPInvitationEmail';
 export * from './emails/OPRelationshipRequestEmail';
 export * from './emails/CommentNotificationEmail';

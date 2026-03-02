@@ -27,14 +27,6 @@ export const Events = {
       }),
     }),
   },
-  profileInviteRoleChanged: {
-    name: 'profile/invite-role-changed' as const,
-    schema: z.object({
-      email: z.string().email(),
-      newRoleName: z.string(),
-      profileName: z.string(),
-    }),
-  },
   profileInviteSent: {
     name: 'profile/invites-sent' as const,
     schema: z.object({
