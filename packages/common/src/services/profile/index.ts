@@ -10,6 +10,7 @@ export * from './inviteUsersToProfile';
 export * from './listProfileUsers';
 export * from './listProfileUserInvites';
 export * from './listUserInvites';
+export * from './updateProfileInvite';
 export * from './updateProfileUserRole';
 export * from './removeProfileUser';
 export * from './getProfileUserWithRelations';

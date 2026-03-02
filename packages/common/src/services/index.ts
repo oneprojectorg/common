@@ -14,6 +14,7 @@ export {
   acceptProfileInvite,
   declineProfileInvite,
   deleteProfileInvite,
+  updateProfileInvite,
   updateUserProfile,
   getProfile,
   searchProfiles,

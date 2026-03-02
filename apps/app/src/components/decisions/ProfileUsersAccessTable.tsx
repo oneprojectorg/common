@@ -153,6 +153,61 @@ const ProfileUserRoleSelect = ({
   );
 };
 
+const InviteRoleSelect = ({
+  inviteId,
+  currentRoleId,
+  profileId,
+  roles,
+  className = 'sm:w-32',
+}: {
+  inviteId: string;
+  currentRoleId: string;
+  profileId: string;
+  roles: { id: string; name: string }[];
+  className?: string;
+}) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  const updateInvite = trpc.profile.updateProfileInvite.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Role updated successfully') });
+      void utils.profile.listProfileInvites.invalidate({ profileId });
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to update role'),
+      });
+    },
+  });
+
+  const handleRoleChange = (roleId: string) => {
+    if (roleId && roleId !== currentRoleId) {
+      updateInvite.mutate({
+        inviteId,
+        accessRoleId: roleId,
+      });
+    }
+  };
+
+  return (
+    <Select
+      aria-label={t('Role')}
+      selectedKey={currentRoleId}
+      onSelectionChange={(key) => handleRoleChange(key as string)}
+      isDisabled={updateInvite.isPending}
+      size="small"
+      className={className}
+    >
+      {roles.map((role) => (
+        <SelectItem key={role.id} id={role.id}>
+          {role.name}
+        </SelectItem>
+      ))}
+    </Select>
+  );
+};
+
 const MobileProfileUserCard = ({
   profileUser,
   profileId,
@@ -209,14 +264,15 @@ const MobileProfileUserCard = ({
 
 const MobileInviteCard = ({
   invite,
+  profileId,
   roles,
 }: {
   invite: ProfileInvite;
+  profileId: string;
   roles: { id: string; name: string }[];
 }) => {
   const t = useTranslations();
   const displayName = invite.inviteeProfile?.name ?? invite.email;
-  const roleName = roles.find((r) => r.id === invite.accessRoleId)?.name;
 
   return (
     <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
@@ -232,9 +288,13 @@ const MobileInviteCard = ({
           </span>
         </div>
       </div>
-      {roleName && (
-        <span className="text-sm text-neutral-gray4">{roleName}</span>
-      )}
+      <InviteRoleSelect
+        inviteId={invite.id}
+        currentRoleId={invite.accessRoleId}
+        profileId={profileId}
+        roles={roles}
+        className="w-full"
+      />
     </div>
   );
 };
@@ -258,7 +318,12 @@ const MobileProfileUsersContent = ({
       {!isLoading && (
         <>
           {invites.map((invite) => (
-            <MobileInviteCard key={invite.id} invite={invite} roles={roles} />
+            <MobileInviteCard
+              key={invite.id}
+              invite={invite}
+              profileId={profileId}
+              roles={roles}
+            />
           ))}
           {profileUsers.map((profileUser) => (
             <MobileProfileUserCard
@@ -321,9 +386,6 @@ const ProfileUsersAccessTableContent = ({
         <TableBody>
           {invites.map((invite) => {
             const displayName = invite.inviteeProfile?.name ?? invite.email;
-            const roleName = roles.find(
-              (r) => r.id === invite.accessRoleId,
-            )?.name;
 
             return (
               <TableRow key={`invite-${invite.id}`} id={`invite-${invite.id}`}>
@@ -345,8 +407,13 @@ const ProfileUsersAccessTableContent = ({
                     {invite.email}
                   </span>
                 </TableCell>
-                <TableCell>
-                  <span className="text-sm text-neutral-gray4">{roleName}</span>
+                <TableCell className="text-right">
+                  <InviteRoleSelect
+                    inviteId={invite.id}
+                    currentRoleId={invite.accessRoleId}
+                    profileId={profileId}
+                    roles={roles}
+                  />
                 </TableCell>
               </TableRow>
             );
