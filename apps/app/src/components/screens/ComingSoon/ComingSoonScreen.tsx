@@ -80,23 +80,25 @@ export const ComingSoonScreen = () => {
           <FadeInWrapper>
             <p className="flex flex-col space-y-4 text-balance sm:block sm:max-w-144 sm:text-lg">
               <span>
-                {t('Built for')}{' '}
-                <FancyWord className="bg-redPurple">
-                  {t('communities')}
-                </FancyWord>{' '}
-                {t('ready to share power and co-create')}{' '}
-                <FancyWord className="bg-redPurple">
-                  {t('social change')}
-                </FancyWord>
-                {' — '}
-                {t('and')}{' '}
-                <FancyWord className="bg-redPurple">{t('funders')}</FancyWord>{' '}
-                {t('who trust them to lead.')}{' '}
+                {t.rich(
+                  'Built for <fancy>communities</fancy> ready to share power and co-create <fancy>social change</fancy> — and <fancy>funders</fancy> who trust them to lead.',
+                  {
+                    fancy: (chunks: React.ReactNode) => (
+                      <FancyWord className="bg-redPurple">{chunks}</FancyWord>
+                    ),
+                  },
+                )}
               </span>
               <span>{t('No setup headaches. No learning curve.')} </span>
               <span>
-                {t('Common just works, instantly, for')}{' '}
-                <FancyWord className="bg-redPurple">{t('everyone')}</FancyWord>.
+                {t.rich(
+                  'Common just works, instantly, for <fancy>everyone</fancy>.',
+                  {
+                    fancy: (chunks: React.ReactNode) => (
+                      <FancyWord className="bg-redPurple">{chunks}</FancyWord>
+                    ),
+                  },
+                )}
               </span>
             </p>
           </FadeInWrapper>

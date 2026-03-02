@@ -90,23 +90,24 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                   <span className="font-bold">
                     {org.profile.name}
                     {isAccepted ? (
-                      <>
-                        <span className="font-normal">
-                          {' '}
-                          {t('will now appear as a')}
-                        </span>{' '}
-                        {relationships ?? t('related organization')}{' '}
-                        <span className="font-normal">
-                          {' '}
-                          {t('on your profile.')}
-                        </span>
-                      </>
+                      <span className="font-normal">
+                        {' '}
+                        {t(
+                          'will now appear as a {relationship} on your profile.',
+                          {
+                            relationship:
+                              relationships ?? t('related organization'),
+                          },
+                        )}
+                      </span>
                     ) : null}
                   </span>
                   {!isAccepted ? (
                     <span>
-                      {t('Added you as a')}{' '}
-                      {relationships ?? t('related organization')}
+                      {t('Added you as a {relationship}', {
+                        relationship:
+                          relationships ?? t('related organization'),
+                      })}
                     </span>
                   ) : null}
                 </div>

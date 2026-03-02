@@ -104,8 +104,7 @@ export const InviteUserModal = ({
     if (errorInfo.isConnectionError) {
       toast.error({
         title: t('Connection issue'),
-        message:
-          errorInfo.message + ' ' + t('Please try sending the invite again.'),
+        message: t('Please try sending the invite again.'),
       });
     } else {
       toast.error({

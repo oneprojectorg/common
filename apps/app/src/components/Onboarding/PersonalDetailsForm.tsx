@@ -12,6 +12,7 @@ import { ReactNode, Suspense, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import type { TranslateFn } from '@/lib/i18n';
 
 import { StepProps } from '../MultiStepForm';
 import { FocusAreasField } from '../Profile/ProfileDetails/FocusAreasField';
@@ -22,7 +23,7 @@ import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 type FormFields = z.infer<typeof validator>;
 
-export const createValidator = (t: (key: string) => string) =>
+export const createValidator = (t: TranslateFn) =>
   z
     .object({
       fullName: z
@@ -163,8 +164,8 @@ export const PersonalDetailsForm = ({
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
         toast.error({
-          message: t('File too large. Maximum size: {maxSizeMB}MB', {
-            maxSizeMB,
+          message: t('File too large. Maximum size: {size}MB', {
+            size: maxSizeMB,
           }),
         });
         return;

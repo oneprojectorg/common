@@ -143,7 +143,7 @@ const PostFeedSection = async ({
         <>
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
             <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
-              <PostUpdate label="Post" />
+              <PostUpdate label={<TranslatedText text="Post" />} />
             </Surface>
           </Suspense>
           <hr />

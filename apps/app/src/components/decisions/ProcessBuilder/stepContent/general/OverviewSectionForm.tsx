@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import type { TranslateFn } from '@/lib/i18n';
 
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 
@@ -17,7 +18,7 @@ import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
-const createOverviewValidator = (t: (key: string) => string) =>
+const createOverviewValidator = (t: TranslateFn) =>
   z.object({
     stewardProfileId: z
       .string({ message: t('Select a steward for this process') })

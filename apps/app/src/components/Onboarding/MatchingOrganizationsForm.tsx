@@ -173,7 +173,7 @@ export const MatchingOrganizationsForm = ({
           <div>{t('Confirm Administrator Access')}</div>
           <div>
             {t(
-              "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.",
+              "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.",
             )}
           </div>
 

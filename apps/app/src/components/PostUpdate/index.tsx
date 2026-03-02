@@ -17,7 +17,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -64,7 +64,7 @@ const PostUpdateWithUser = ({
   profileId?: string; // Profile ID to associate the post with (can be any profile type)
   placeholder?: string;
   onSuccess?: () => void;
-  label: string;
+  label: ReactNode;
   proposalId?: string; // If provided, this is a proposal comment
   processInstanceId?: string; // Process instance ID for proposal comments
   characterLimit?: number;
@@ -735,7 +735,7 @@ const PostUpdateWithUser = ({
                 {createPost.isPending || createOrganizationPost.isPending ? (
                   <LoadingSpinner />
                 ) : (
-                  t(label)
+                  label
                 )}
               </Button>
             </div>
@@ -763,7 +763,7 @@ export const PostUpdate = ({
   profileId?: string;
   placeholder?: string;
   onSuccess?: () => void;
-  label: string;
+  label: ReactNode;
   proposalId?: string;
   processInstanceId?: string;
 }) => {

@@ -5,6 +5,7 @@ import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import type { TranslateFn } from '@/lib/i18n';
 
 import type { StepProps } from '../MultiStepForm';
 import { TermsMultiSelect } from '../TermsMultiSelect';
@@ -15,7 +16,7 @@ import { ToggleRow } from '../layout/split/form/ToggleRow';
 import { multiSelectOptionValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
-const createFundingValidator = (t: (key: string) => string) =>
+const createFundingValidator = (t: TranslateFn) =>
   z.object({
     isReceivingFunds: z.boolean().prefault(false).optional(),
     isOfferingFunds: z.boolean().prefault(false).optional(),
@@ -42,17 +43,18 @@ const createFundingValidator = (t: (key: string) => string) =>
     }),
   });
 
-// Static validator for type inference and external schema composition
+// Static validator for type inference and external schema composition.
+// Must mirror createFundingValidator's structure (without translated error messages).
 export const validator = z.object({
   isReceivingFunds: z.boolean().prefault(false).optional(),
   isOfferingFunds: z.boolean().prefault(false).optional(),
   acceptingApplications: z.boolean().prefault(false).optional(),
   receivingFundsDescription: z.string().max(200).optional(),
   receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
-  receivingFundsLink: z.string().optional(),
+  receivingFundsLink: zodUrl({ error: 'Enter a valid website address' }),
   offeringFundsTerms: z.array(multiSelectOptionValidator).optional(),
   offeringFundsDescription: z.string().max(200).optional(),
-  offeringFundsLink: z.string().optional(),
+  offeringFundsLink: zodUrl({ error: 'Enter a valid website address' }),
 });
 
 export const FundingInformationForm = ({
