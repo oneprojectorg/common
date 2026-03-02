@@ -351,7 +351,7 @@ export function TemplateEditorContent({
 
         <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
-            <Header2 className="hidden font-serif text-title-sm md:mt-8 md:block">
+            <Header2 className="hidden font-serif text-title-sm md:block">
               {t('Proposal template')}
             </Header2>
             <p className="text-neutral-charcoal">
