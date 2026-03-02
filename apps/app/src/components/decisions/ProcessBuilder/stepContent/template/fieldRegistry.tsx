@@ -3,6 +3,8 @@ import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
 import { LuAlignLeft, LuChevronDown, LuLetterText } from 'react-icons/lu';
 
+import type { TranslationKey } from '@/lib/i18n';
+
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
 
@@ -20,8 +22,8 @@ export interface FieldConfigProps {
  */
 interface FieldTypeRegistryEntry {
   icon: IconType;
-  labelKey: string;
-  placeholderKey: string;
+  labelKey: TranslationKey;
+  placeholderKey: TranslationKey;
   ConfigComponent?: ComponentType<FieldConfigProps>;
 }
 
@@ -52,7 +54,7 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
  */
 export const FIELD_CATEGORIES: {
   id: string;
-  labelKey: string;
+  labelKey: TranslationKey;
   types: FieldType[];
 }[] = [
   {
@@ -71,11 +73,11 @@ export function getFieldIcon(type: FieldType): IconType {
   return FIELD_TYPE_REGISTRY[type].icon;
 }
 
-export function getFieldLabelKey(type: FieldType): string {
+export function getFieldLabelKey(type: FieldType): TranslationKey {
   return FIELD_TYPE_REGISTRY[type].labelKey;
 }
 
-export function getFieldPlaceholderKey(type: FieldType): string {
+export function getFieldPlaceholderKey(type: FieldType): TranslationKey {
   return FIELD_TYPE_REGISTRY[type].placeholderKey;
 }
 

@@ -5,7 +5,8 @@ import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import type { Editor } from '@tiptap/react';
 
-import { useTranslations } from '@/lib/i18n/routing';
+import { useTranslations } from '@/lib/i18n';
+import type { TranslateFn } from '@/lib/i18n';
 
 import {
   CollaborativeBudgetField,
@@ -67,7 +68,7 @@ function renderField(
   field: FieldDescriptor,
   draft: ProposalDraftFields,
   onFieldChange: (key: string, value: unknown) => void,
-  t: (key: string, params?: Record<string, string | number>) => string,
+  t: TranslateFn,
   preview: boolean,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
