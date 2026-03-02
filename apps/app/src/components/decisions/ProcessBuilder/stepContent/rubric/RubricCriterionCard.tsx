@@ -42,7 +42,7 @@ interface RubricCriterionCardProps {
   onUpdateMaxPoints?: (criterionId: string, maxPoints: number) => void;
   onUpdateScoreLabel?: (
     criterionId: string,
-    scoreIndex: number,
+    scoreValue: number,
     label: string,
   ) => void;
 }
@@ -166,8 +166,8 @@ export function RubricCriterionCard({
                 onUpdateMaxPoints={(max) =>
                   onUpdateMaxPoints?.(criterion.id, max)
                 }
-                onUpdateScoreLabel={(scoreIndex, label) =>
-                  onUpdateScoreLabel?.(criterion.id, scoreIndex, label)
+                onUpdateScoreLabel={(scoreValue, label) =>
+                  onUpdateScoreLabel?.(criterion.id, scoreValue, label)
                 }
               />
             </>
@@ -242,7 +242,7 @@ function ScoredCriterionConfig({
 }: {
   criterion: CriterionView;
   onUpdateMaxPoints: (max: number) => void;
-  onUpdateScoreLabel: (index: number, label: string) => void;
+  onUpdateScoreLabel: (scoreValue: number, label: string) => void;
 }) {
   const t = useTranslations();
   const max = criterion.maxPoints ?? 5;
@@ -270,24 +270,27 @@ function ScoredCriterionConfig({
           )}
         </p>
         <div className="space-y-4">
-          {criterion.scoreLabels.map((label, scoreIndex) => (
-            <div key={scoreIndex} className="flex items-start gap-2">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-right font-serif text-title-base text-neutral-gray4">
-                {scoreIndex + 1}
-              </span>
-              <TextField
-                useTextArea
-                value={label}
-                onChange={(value) => onUpdateScoreLabel(scoreIndex, value)}
-                textareaProps={{
-                  placeholder: t('Describe what earns {number} points...', {
-                    number: scoreIndex + 1,
-                  }),
-                }}
-                className="w-full"
-              />
-            </div>
-          ))}
+          {criterion.scoreLabels.map((label, i) => {
+            const scoreValue = max - i;
+            return (
+              <div key={scoreValue} className="flex items-start gap-2">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-right font-serif text-title-base text-neutral-gray4">
+                  {scoreValue}
+                </span>
+                <TextField
+                  useTextArea
+                  value={label}
+                  onChange={(value) => onUpdateScoreLabel(scoreValue, value)}
+                  textareaProps={{
+                    placeholder: t('Describe what earns {number} points...', {
+                      number: scoreValue,
+                    }),
+                  }}
+                  className="w-full"
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

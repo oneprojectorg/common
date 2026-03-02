@@ -203,9 +203,9 @@ export function RubricEditorContent({
   );
 
   const handleUpdateScoreLabel = useCallback(
-    (criterionId: string, scoreIndex: number, label: string) => {
+    (criterionId: string, scoreValue: number, label: string) => {
       setTemplate((prev) =>
-        updateScoreLabel(prev, criterionId, scoreIndex, label),
+        updateScoreLabel(prev, criterionId, scoreValue, label),
       );
     },
     [],

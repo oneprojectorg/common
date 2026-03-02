@@ -217,7 +217,7 @@ export function getCriterionScoreLabels(
         'title' in e &&
         typeof (e as { title: unknown }).title === 'string',
     )
-    .sort((a, b) => a.const - b.const)
+    .sort((a, b) => b.const - a.const)
     .map((e) => e.title);
 }
 
@@ -482,11 +482,13 @@ export function updateScoredMaxPoints(
 
 /**
  * Update a single score label for a scored criterion.
+ * `scoreValue` is the 1-based score (the `.const` in the oneOf entry),
+ * not an array index.
  */
 export function updateScoreLabel(
   template: RubricTemplateSchema,
   criterionId: string,
-  scoreIndex: number,
+  scoreValue: number,
   label: string,
 ): RubricTemplateSchema {
   const schema = getCriterionSchema(template, criterionId);
@@ -494,8 +496,13 @@ export function updateScoreLabel(
     return template;
   }
 
-  const oneOf = schema.oneOf.map((entry, i) => {
-    if (i === scoreIndex && typeof entry === 'object' && entry !== null) {
+  const oneOf = schema.oneOf.map((entry) => {
+    if (
+      typeof entry === 'object' &&
+      entry !== null &&
+      'const' in entry &&
+      (entry as { const: number }).const === scoreValue
+    ) {
       return { ...entry, title: label };
     }
     return entry;
