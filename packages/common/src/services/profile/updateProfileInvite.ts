@@ -1,5 +1,5 @@
 import { and, db, eq, isNull } from '@op/db/client';
-import { type ProfileInvite, profileInvites } from '@op/db/schema';
+import { profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -22,7 +22,7 @@ export const updateProfileInvite = async ({
   inviteId: string;
   accessRoleId: string;
   user: User;
-}): Promise<ProfileInvite> => {
+}) => {
   // Fetch invite and validate role in parallel (independent queries)
   const [invite, role] = await Promise.all([
     db.query.profileInvites.findFirst({
@@ -72,5 +72,5 @@ export const updateProfileInvite = async ({
     throw new CommonError('Failed to update invite');
   }
 
-  return updated;
+  return { ...updated, role };
 };

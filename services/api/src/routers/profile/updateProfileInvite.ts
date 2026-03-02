@@ -1,6 +1,7 @@
 import { updateProfileInvite } from '@op/common';
 import { z } from 'zod';
 
+import { profileInviteEncoder } from '../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 export const updateProfileInviteRouter = router({
@@ -11,14 +12,12 @@ export const updateProfileInviteRouter = router({
         accessRoleId: z.string().uuid(),
       }),
     )
-    .output(z.object({ id: z.string() }))
+    .output(profileInviteEncoder)
     .mutation(async ({ ctx, input }) => {
-      const result = await updateProfileInvite({
+      return updateProfileInvite({
         inviteId: input.inviteId,
         accessRoleId: input.accessRoleId,
         user: ctx.user,
       });
-
-      return { id: result.id };
     }),
 });
