@@ -16,6 +16,7 @@ import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   Key,
+  type ReactNode,
   Suspense,
   useEffect,
   useMemo,
@@ -527,41 +528,20 @@ function ProfileInviteModalContent({
           <div className="flex flex-col gap-2">
             {/* Staged items (not yet sent) */}
             {currentRoleItems.map((item) => (
-              <div
+              <PersonRow
                 key={item.id}
-                className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-              >
-                <ProfileItem
-                  size="small"
-                  className="items-center gap-2"
-                  avatar={
-                    <Avatar placeholder={item.name} className="size-6 shrink-0">
-                      {item.avatarUrl ? (
-                        <Image
-                          src={item.avatarUrl}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : null}
-                    </Avatar>
-                  }
-                  title={item.name}
-                >
-                  {item.name !== item.email && (
+                name={item.name}
+                avatarUrl={item.avatarUrl}
+                subtitle={
+                  item.name !== item.email ? (
                     <div className="text-sm text-neutral-gray4">
                       {item.email}
                     </div>
-                  )}
-                </ProfileItem>
-                <IconButton
-                  size="small"
-                  onPress={() => handleRemoveItem(item.id)}
-                  aria-label={t('Remove {name}', { name: item.name })}
-                >
-                  <LuX className="size-4" />
-                </IconButton>
-              </div>
+                  ) : undefined
+                }
+                onRemove={() => handleRemoveItem(item.id)}
+                removeLabel={t('Remove {name}', { name: item.name })}
+              />
             ))}
 
             {/* Pending invites from server */}
@@ -572,29 +552,11 @@ function ProfileInviteModalContent({
                 : undefined;
 
               return (
-                <div
+                <PersonRow
                   key={invite.id}
-                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-                >
-                  <ProfileItem
-                    size="small"
-                    avatar={
-                      <Avatar
-                        placeholder={displayName}
-                        className="size-6 shrink-0"
-                      >
-                        {avatarUrl ? (
-                          <Image
-                            src={avatarUrl}
-                            alt={displayName}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : null}
-                      </Avatar>
-                    }
-                    title={displayName}
-                  >
+                  name={displayName}
+                  avatarUrl={avatarUrl}
+                  subtitle={
                     <div className="text-sm text-neutral-gray4">
                       {invite.inviteeProfile?.name && (
                         <>
@@ -605,63 +567,37 @@ function ProfileInviteModalContent({
                         {t('Invited')}
                       </span>
                     </div>
-                  </ProfileItem>
-                  <IconButton
-                    size="small"
-                    onPress={() => handleDeleteInvite(invite.id)}
-                    aria-label={t('Remove {name}', { name: displayName })}
-                  >
-                    <LuX className="size-4" />
-                  </IconButton>
-                </div>
+                  }
+                  onRemove={() => handleDeleteInvite(invite.id)}
+                  removeLabel={t('Remove {name}', { name: displayName })}
+                />
               );
             })}
 
             {/* Existing members */}
             {currentRoleMembers.map((user) => (
-              <div
+              <PersonRow
                 key={user.id}
-                className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-              >
-                <ProfileItem
-                  size="small"
-                  avatar={
-                    <Avatar
-                      placeholder={user.name ?? user.email}
-                      className="size-6 shrink-0"
-                    >
-                      {user.profile?.avatarImage?.name ? (
-                        <Image
-                          src={
-                            getPublicUrl(user.profile.avatarImage.name) ?? ''
-                          }
-                          alt={user.name ?? user.email}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : null}
-                    </Avatar>
-                  }
-                  title={user.name ?? user.email}
-                >
-                  {user.name && (
+                name={user.name ?? user.email}
+                avatarUrl={
+                  user.profile?.avatarImage?.name
+                    ? getPublicUrl(user.profile.avatarImage.name)
+                    : undefined
+                }
+                subtitle={
+                  user.name ? (
                     <div className="text-sm text-neutral-gray4">
                       {user.email}
                     </div>
-                  )}
-                </ProfileItem>
-                {!user.isOwner && (
-                  <IconButton
-                    size="small"
-                    onPress={() => handleRemoveUser(user.id)}
-                    aria-label={t('Remove {name}', {
-                      name: user.name ?? user.email,
-                    })}
-                  >
-                    <LuX className="size-4" />
-                  </IconButton>
-                )}
-              </div>
+                  ) : undefined
+                }
+                onRemove={
+                  !user.isOwner ? () => handleRemoveUser(user.id) : undefined
+                }
+                removeLabel={t('Remove {name}', {
+                  name: user.name ?? user.email,
+                })}
+              />
             ))}
 
             {/* Empty state */}
@@ -694,5 +630,42 @@ function ProfileInviteModalContent({
         </Button>
       </ModalFooter>
     </>
+  );
+}
+
+function PersonRow({
+  name,
+  avatarUrl,
+  subtitle,
+  onRemove,
+  removeLabel,
+}: {
+  name: string;
+  avatarUrl?: string;
+  subtitle?: ReactNode;
+  onRemove?: () => void;
+  removeLabel: string;
+}) {
+  return (
+    <div className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
+      <ProfileItem
+        size="small"
+        avatar={
+          <Avatar placeholder={name} className="size-6 shrink-0">
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt={name} fill className="object-cover" />
+            ) : null}
+          </Avatar>
+        }
+        title={name}
+      >
+        {subtitle}
+      </ProfileItem>
+      {onRemove && (
+        <IconButton size="small" onPress={onRemove} aria-label={removeLabel}>
+          <LuX className="size-4" />
+        </IconButton>
+      )}
+    </div>
   );
 }
