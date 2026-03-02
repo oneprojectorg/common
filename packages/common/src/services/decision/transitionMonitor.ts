@@ -1,6 +1,5 @@
 import { and, db, eq, isNull, lte, sql } from '@op/db/client';
 import {
-  type DecisionProcess,
   type DecisionProcessTransition,
   type ProcessInstance,
   ProcessStatus,
@@ -13,11 +12,9 @@ import { CommonError } from '../../utils';
 import { processResults } from './processResults';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
-/** Transition with nested process instance and process relations */
+/** Transition with nested process instance relation */
 type TransitionWithRelations = DecisionProcessTransition & {
-  processInstance: ProcessInstance & {
-    process: DecisionProcess;
-  };
+  processInstance: ProcessInstance;
 };
 
 /** Result of processing a single transition */
@@ -122,7 +119,11 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           }
         }
 
-        // Update instance state to the last successfully processed transition
+        // Update instance state to the last successfully processed transition.
+        // Note: This runs outside the per-transition completion updates, so if
+        // this fails after transitions are marked completed, the instance state
+        // will be out of sync. The sequential processing and break-on-error
+        // minimize this window, but operators should monitor for stuck instances.
         if (lastSuccessfulTransition) {
           await updateInstanceState(
             processInstanceId,
@@ -136,18 +137,18 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
                 `Processing results for process instance ${processInstanceId}`,
               );
 
-              const result = await processResults({
+              const processingResult = await processResults({
                 processInstanceId,
               });
 
-              if (!result.success) {
+              if (!processingResult.success) {
                 console.error(
                   `Results processing failed for process instance ${processInstanceId}:`,
-                  result.error,
+                  processingResult.error,
                 );
               } else {
                 console.log(
-                  `Results processed successfully for process instance ${processInstanceId}. Selected ${result.selectedProposalIds.length} proposals.`,
+                  `Results processed successfully for process instance ${processInstanceId}. Selected ${processingResult.selectedProposalIds.length} proposals.`,
                 );
               }
             } catch (error) {
@@ -187,16 +188,12 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
 async function processTransition(
   transitionId: string,
 ): Promise<ProcessedTransition> {
-  // Fetch transition with related process instance and process in a single query
+  // Fetch transition with related process instance in a single query
   const transitionResult = await db._query.decisionProcessTransitions.findFirst(
     {
       where: eq(decisionProcessTransitions.id, transitionId),
       with: {
-        processInstance: {
-          with: {
-            process: true,
-          },
-        },
+        processInstance: true,
       },
     },
   );
@@ -217,16 +214,19 @@ async function processTransition(
     );
   }
 
-  const process = processInstance.process;
-  if (!process) {
-    throw new CommonError(`Process not found: ${processInstance.processId}`);
-  }
-
   // Determine if transitioning to final state using instanceData.phases
   // In the new schema format, the last phase is always the final state
   const instanceData = processInstance.instanceData as DecisionInstanceData;
   const phases = instanceData.phases;
-  const lastPhaseId = phases[phases.length - 1]?.phaseId;
+
+  if (!phases || phases.length === 0) {
+    throw new CommonError(
+      `Process instance ${processInstance.id} has no phases defined in instanceData`,
+    );
+  }
+
+  // Safe to assert non-null after the length check above
+  const lastPhaseId = phases[phases.length - 1]!.phaseId;
   const isTransitioningToFinalState = transition.toStateId === lastPhaseId;
 
   // Only mark the transition as completed (state update happens after all transitions)
