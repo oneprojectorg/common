@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import { type ProfileInvite, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
@@ -64,7 +64,9 @@ export const updateProfileInvite = async ({
   const [updated] = await db
     .update(profileInvites)
     .set({ accessRoleId })
-    .where(eq(profileInvites.id, inviteId))
+    .where(
+      and(eq(profileInvites.id, inviteId), isNull(profileInvites.acceptedOn)),
+    )
     .returning();
 
   if (!updated) {
