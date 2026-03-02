@@ -68,6 +68,12 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
   const { data: rolesData, isPending: rolesPending } =
     trpc.profile.listRoles.useQuery({ profileId });
 
+  // Fetch pending invites to show alongside accepted members
+  const { data: invites } = trpc.profile.listProfileInvites.useQuery(
+    { profileId },
+    { retry: false },
+  );
+
   const { items: profileUsers = [], next } = data ?? {};
   const roles = rolesData?.items ?? [];
 
@@ -82,7 +88,7 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="font-serif text-title-sm font-light text-neutral-black">
-            {t('Members')}
+            {t('Participants')}
           </h2>
           <Button
             color="secondary"
@@ -112,6 +118,7 @@ export const ProfileUsersAccess = ({ profileId }: { profileId: string }) => {
           onRetry={() => void refetch()}
           roles={roles}
           isMobile={isMobile}
+          invites={invites ?? []}
         />
 
         <Pagination
