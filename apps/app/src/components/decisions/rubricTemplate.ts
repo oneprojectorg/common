@@ -44,14 +44,6 @@ export interface CriterionView {
 
 const DEFAULT_MAX_POINTS = 5;
 
-const DEFAULT_SCORE_LABELS: Record<number, string> = {
-  1: 'Poor',
-  2: 'Below Average',
-  3: 'Average',
-  4: 'Good',
-  5: 'Excellent',
-};
-
 /**
  * Create the JSON Schema for a given criterion type.
  */
@@ -63,7 +55,7 @@ export function createCriterionJsonSchema(
       const max = DEFAULT_MAX_POINTS;
       const oneOf = Array.from({ length: max }, (_, i) => ({
         const: i + 1,
-        title: DEFAULT_SCORE_LABELS[i + 1] ?? `${i + 1}`,
+        title: '',
       }));
       return {
         type: 'integer',
@@ -472,7 +464,7 @@ export function updateScoredMaxPoints(
 
   const oneOf = Array.from({ length: clampedMax }, (_, i) => ({
     const: i + 1,
-    title: existingLabels[i] ?? DEFAULT_SCORE_LABELS[i + 1] ?? `${i + 1}`,
+    title: existingLabels[i] ?? '',
   }));
 
   return {
