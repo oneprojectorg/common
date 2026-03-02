@@ -1,0 +1,54 @@
+# Ralph Progress Log
+Started: Mon Mar  2 16:23:28 CET 2026
+## Codebase Patterns
+- Events are defined in `services/events/src/types.ts` as a `const` object with `name` (string literal) and `schema` (zod) per event
+- Event naming convention: `domain/action` e.g. `proposal/submitted`, `profile/invites-sent`
+- Use `z.string().uuid()` for ID fields in event schemas
+- Email templates: use `EmailTemplate` wrapper, `@react-email/components` for `Button`/`Section`/`Text`, static `.subject` method pattern
+- Workflow functions: use `inngest.createFunction` with steps, `OPBatchSend` for batch emails, `alias` from drizzle for self-joins
+- tRPC event emission: use `waitUntil` from `@vercel/functions` to fire inngest events without blocking the response
+- DB schema: proposals → processInstances → profiles chain; profileUsers table links users (with email) to profiles
+---
+
+## 2026-03-02 - US-001
+- Added `proposalSubmitted` event to `services/events/src/types.ts`
+- Schema: `{ proposalId: z.string().uuid() }`, name: `proposal/submitted`
+- Files changed: `services/events/src/types.ts`
+- **Learnings for future iterations:**
+  - Events object uses `as const` for literal types - add new events before the closing `} as const`
+  - Follow alphabetical-ish ordering by domain (post, profile, proposal)
+---
+
+## 2026-03-02 - US-002
+- Created `ProposalSubmittedEmail` component at `services/emails/emails/ProposalSubmittedEmail.tsx`
+- Props: `proposalName`, `processTitle`, `proposalUrl`; static `.subject()` method
+- Button styled to match CommentNotificationEmail CTA pattern
+- Exported from `services/emails/index.tsx`
+- Files changed: `services/emails/emails/ProposalSubmittedEmail.tsx`, `services/emails/index.tsx`
+- **Learnings for future iterations:**
+  - Email components follow a consistent pattern: `EmailTemplate` wrapper, static `.subject` method, default prop values
+  - Button styling is standardized: `rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90`
+---
+
+## 2026-03-02 - US-003
+- Created `sendProposalSubmittedNotification` at `services/workflows/src/functions/notifications/sendProposalSubmittedNotification.ts`
+- Workflow: parse event → query proposal + process profile → query collaborators → batch send emails
+- Uses debounce (`key: proposalId`, `period: 1m`, `timeout: 3m`)
+- URL pattern: `/decisions/{slug}/proposal/{profileId}`
+- Exported from notifications index
+- Files changed: `services/workflows/src/functions/notifications/sendProposalSubmittedNotification.ts`, `services/workflows/src/functions/notifications/index.ts`
+- **Learnings for future iterations:**
+  - Use `alias` from `drizzle-orm/pg-core` for self-joins on the profiles table
+  - `processInstances.profileId` can be nullable — use `innerJoin` to filter out nulls
+  - `OPBatchSend` returns `{ data, errors }` — throw on errors for Inngest retries
+---
+
+## 2026-03-02 - US-004
+- Added inngest event emission to `services/api/src/routers/decision/proposals/submit.ts`
+- Uses `waitUntil` pattern consistent with existing analytics tracking
+- Sends `proposal/submitted` event with `{ proposalId: proposal.id }` after successful submission
+- Files changed: `services/api/src/routers/decision/proposals/submit.ts`
+- **Learnings for future iterations:**
+  - `waitUntil` from `@vercel/functions` is the standard pattern for fire-and-forget async work in tRPC mutations
+  - Import both `Events` and `inngest` from `@op/events` for event emission
+---
