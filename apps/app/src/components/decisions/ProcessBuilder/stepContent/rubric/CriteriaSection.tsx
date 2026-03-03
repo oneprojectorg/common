@@ -5,15 +5,19 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
+
 import type { SectionProps } from '../../contentRegistry';
 import { CodeAnimation } from './RubricComingSoonAnimation';
 import { RubricEditorContent } from './RubricEditorContent';
 
 export default function CriteriaSection(props: SectionProps) {
   return (
-    <Suspense>
-      <CriteriaSectionContent {...props} />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense>
+        <CriteriaSectionContent {...props} />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

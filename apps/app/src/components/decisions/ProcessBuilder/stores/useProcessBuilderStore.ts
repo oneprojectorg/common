@@ -45,14 +45,15 @@ import { createJSONStorage, persist } from 'zustand/middleware';
  * `stewardProfileId`) that live outside the JSON blob.
  */
 export interface ProcessBuilderInstanceData
-  extends Omit<Partial<InstanceData>, 'proposalTemplate'> {
+  extends Omit<Partial<InstanceData>, 'proposalTemplate' | 'rubricTemplate'> {
   // Instance columns (not in instanceData JSON)
   name?: string;
   description?: string;
   stewardProfileId?: string;
 
-  // Override InstanceData's proposalTemplate with form-specific type
+  // Override InstanceData's generic JSON Schema types with specific ones
   proposalTemplate?: ProposalTemplateSchema;
+  rubricTemplate?: RubricTemplateSchema;
 }
 
 // ============ UI-only Types ============
