@@ -22,3 +22,13 @@ Started: Tue Mar  3 16:01:28 CET 2026
   - When wrapping children for loading state, match the button's flex layout (`flex items-center gap-1`) in the invisible wrapper to preserve dimensions
   - `twMerge` correctly resolves `size-6` vs `size-4` conflicts, so passing className to LoadingSpinner works for size overrides
 ---
+
+## 2026-03-03 - US-002
+- Refactored ActiveDecisionsNotifications to use `isLoading` prop on ButtonLink
+- Files changed: `apps/app/src/components/ActiveDecisionsNotifications/index.tsx`
+- Replaced `{isNavigating ? <LoadingSpinner /> : t('Participate')}` with `isLoading={isNavigating}` and children always render `t('Participate')`
+- Removed `LoadingSpinner` import from the component
+- **Learnings for future iterations:**
+  - The `isLoading` prop on ButtonLink works identically to Button — just add the prop and keep children static
+  - ActiveDecisionsNotifications uses `navigatingId` state pattern to track which button is loading during navigation
+---

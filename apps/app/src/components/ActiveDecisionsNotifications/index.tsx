@@ -4,7 +4,6 @@ import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
 import { ButtonLink } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import {
   NotificationPanel,
   NotificationPanelActions,
@@ -62,8 +61,9 @@ const ActiveDecisionsNotificationsSuspense = () => {
                   className="w-full sm:w-auto"
                   href={`/decisions/${decision.slug}`}
                   onPress={() => setNavigatingId(decision.id)}
+                  isLoading={isNavigating}
                 >
-                  {isNavigating ? <LoadingSpinner /> : t('Participate')}
+                  {t('Participate')}
                 </ButtonLink>
               </NotificationPanelActions>
             </NotificationPanelItem>

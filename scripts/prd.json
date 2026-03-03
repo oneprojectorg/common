@@ -37,7 +37,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "File: apps/app/src/components/ActiveDecisionsNotifications/index.tsx. This component currently uses ButtonLink (not Button). Since the PRD scopes loading to Button and ButtonTooltip (not ButtonLink), either: (a) also add isLoading to ButtonLink for this use case, or (b) switch this to a Button with an onPress handler that navigates. Decide based on what makes sense — adding isLoading to ButtonLink is a small extension that follows the same pattern."
     }
   ]
