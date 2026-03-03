@@ -158,6 +158,7 @@ const VotingProposalsList = ({
   slug,
   canManageProposals = false,
   votedProposalIds = [],
+  translationState,
 }: ProposalsProps) => {
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -224,6 +225,9 @@ const VotingProposalsList = ({
           const isApproved = proposal.status === ProposalStatus.APPROVED;
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
+          const cardTranslation = proposal.profileId
+            ? translationState?.translations[proposal.profileId]
+            : undefined;
 
           // Render VotingProposalCard for approved proposals, regular ProposalCard for others
           if (isApproved) {
@@ -240,6 +244,7 @@ const VotingProposalsList = ({
                 <ProposalCardContent>
                   <ProposalCardHeader
                     proposal={proposal}
+                    translatedTitle={cardTranslation?.title}
                     menu={
                       (canManageProposals ||
                         proposal.isEditable ||
@@ -277,8 +282,15 @@ const VotingProposalsList = ({
                       )
                     }
                   />
-                  <ProposalCardMeta withLink={false} proposal={proposal} />
-                  <ProposalCardPreview proposal={proposal} />
+                  <ProposalCardMeta
+                    withLink={false}
+                    proposal={proposal}
+                    translatedCategory={cardTranslation?.category}
+                  />
+                  <ProposalCardPreview
+                    proposal={proposal}
+                    translatedPreview={cardTranslation?.preview}
+                  />
                 </ProposalCardContent>
                 <ProposalCardFooter>
                   <ButtonLink
@@ -298,6 +310,7 @@ const VotingProposalsList = ({
                   <ProposalCardContent>
                     <ProposalCardHeader
                       proposal={proposal}
+                      translatedTitle={cardTranslation?.title}
                       menu={
                         (canManageProposals || proposal.isEditable) && (
                           <ProposalCardMenu
@@ -307,8 +320,14 @@ const VotingProposalsList = ({
                         )
                       }
                     />
-                    <ProposalCardMeta proposal={proposal} />
-                    <ProposalCardPreview proposal={proposal} />
+                    <ProposalCardMeta
+                      proposal={proposal}
+                      translatedCategory={cardTranslation?.category}
+                    />
+                    <ProposalCardPreview
+                      proposal={proposal}
+                      translatedPreview={cardTranslation?.preview}
+                    />
                   </ProposalCardContent>
                 </div>
                 <ProposalCardContent>
@@ -370,6 +389,7 @@ const ViewProposalsList = ({
   slug,
   decisionSlug,
   canManageProposals = false,
+  translationState,
 }: ProposalsProps) => {
   if (!proposals || proposals.length === 0) {
     return <NoProposalsFound />;
@@ -388,6 +408,9 @@ const ViewProposalsList = ({
         const viewHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
           : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+        const cardTranslation = proposal.profileId
+          ? translationState?.translations[proposal.profileId]
+          : undefined;
 
         return (
           <ProposalCard key={proposal.id} proposal={proposal}>
@@ -396,6 +419,7 @@ const ViewProposalsList = ({
                 <ProposalCardHeader
                   proposal={proposal}
                   viewHref={viewHref}
+                  translatedTitle={cardTranslation?.title}
                   menu={
                     showMenu && (
                       <ProposalCardMenu
@@ -405,8 +429,14 @@ const ViewProposalsList = ({
                     )
                   }
                 />
-                <ProposalCardMeta proposal={proposal} />
-                <ProposalCardPreview proposal={proposal} />
+                <ProposalCardMeta
+                  proposal={proposal}
+                  translatedCategory={cardTranslation?.category}
+                />
+                <ProposalCardPreview
+                  proposal={proposal}
+                  translatedPreview={cardTranslation?.preview}
+                />
               </ProposalCardContent>
             </div>
             <ProposalCardContent>

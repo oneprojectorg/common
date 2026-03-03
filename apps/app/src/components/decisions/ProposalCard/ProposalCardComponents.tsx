@@ -84,16 +84,22 @@ export function ProposalCardHeader({
   menu,
   allocated,
   className,
+  translatedTitle,
 }: BaseProposalCardProps & {
   viewHref?: string;
   menu?: ReactNode;
   allocated?: string | number | null;
   className?: string;
+  translatedTitle?: string;
 }) {
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex max-w-full items-start justify-between gap-2">
-        <ProposalCardTitle proposal={proposal} viewHref={viewHref} />
+        <ProposalCardTitle
+          proposal={proposal}
+          viewHref={viewHref}
+          translatedTitle={translatedTitle}
+        />
         {menu}
       </div>
       <ProposalCardBudget proposal={proposal} allocated={allocated} />
@@ -109,15 +115,17 @@ export function ProposalCardTitle({
   viewHref,
   asLink = true,
   className,
+  translatedTitle,
 }: BaseProposalCardProps & {
   viewHref?: string;
   asLink?: boolean;
   className?: string;
+  translatedTitle?: string;
 }) {
   const t = useTranslations();
   const { title } = parseProposalData(proposal.proposalData);
 
-  const titleText = title || t('Untitled Proposal');
+  const titleText = translatedTitle ?? (title || t('Untitled Proposal'));
   const titleClasses =
     'max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black';
 
@@ -193,13 +201,18 @@ export function ProposalCardMeta({
   proposal,
   withLink = true,
   className,
+  translatedCategory,
 }: BaseProposalCardProps & {
   className?: string;
+  translatedCategory?: string;
 }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <ProposalCardAuthor proposal={proposal} withLink={withLink} />
-      <ProposalCardCategory proposal={proposal} />
+      <ProposalCardCategory
+        proposal={proposal}
+        translatedCategory={translatedCategory}
+      />
       <ProposalCardStatus proposal={proposal} />
     </div>
   );
@@ -256,12 +269,15 @@ export function ProposalCardAuthor({
 export function ProposalCardCategory({
   proposal,
   className,
+  translatedCategory,
 }: BaseProposalCardProps & {
   className?: string;
+  translatedCategory?: string;
 }) {
   const { category } = parseProposalData(proposal.proposalData);
+  const displayCategory = translatedCategory ?? category;
 
-  if (!category || !proposal.submittedBy) {
+  if (!displayCategory || !proposal.submittedBy) {
     return null;
   }
 
@@ -274,7 +290,7 @@ export function ProposalCardCategory({
           className,
         )}
       >
-        {category}
+        {displayCategory}
       </Chip>
     </>
   );
@@ -353,19 +369,23 @@ export function ProposalCardStatus({
 export function ProposalCardPreview({
   proposal,
   className,
+  translatedPreview,
 }: BaseProposalCardProps & {
   className?: string;
+  translatedPreview?: string;
 }) {
   const previewText = getProposalContentPreview(
     proposal.documentContent,
     (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
   );
 
-  if (previewText === null) {
+  const displayText = translatedPreview ?? previewText;
+
+  if (displayText === null) {
     return <DocumentNotAvailable className="py-4" />;
   }
 
-  if (!previewText) {
+  if (!displayText) {
     return null;
   }
 
@@ -376,7 +396,7 @@ export function ProposalCardPreview({
         className,
       )}
     >
-      {previewText}
+      {displayText}
     </p>
   );
 }
