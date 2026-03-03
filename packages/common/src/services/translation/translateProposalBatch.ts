@@ -1,19 +1,10 @@
+import { getTextPreview } from '@op/core';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
-import { translateBatch } from '@op/translation';
-import { DeepLClient } from 'deepl-node';
 
-import { CommonError } from '../../utils';
 import { getProposal } from '../decision/getProposal';
-import { LOCALE_TO_DEEPL } from './locales';
 import type { SupportedLocale } from './locales';
-
-/** Strips HTML tags to produce a plain-text preview. */
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').trim();
-}
-
-const PREVIEW_MAX_LENGTH = 200;
+import { runTranslateBatch } from './runTranslateBatch';
 
 /**
  * Translates proposal card-level content (title, category, preview text) for
@@ -66,7 +57,11 @@ export async function translateProposalBatch({
       const htmlContent = proposal.htmlContent as Record<string, string>;
       const firstHtml = Object.values(htmlContent).find(Boolean);
       if (firstHtml) {
-        const plainText = stripHtml(firstHtml).slice(0, PREVIEW_MAX_LENGTH);
+        const plainText = getTextPreview({
+          content: firstHtml,
+          maxLines: 3,
+          maxLength: 200,
+        });
         if (plainText) {
           entries.push({
             contentKey: `batch:${pid}:preview`,
@@ -82,18 +77,7 @@ export async function translateProposalBatch({
   }
 
   // 3. Translate via DeepL with cache-through
-  const apiKey = process.env.DEEPL_API_KEY;
-  if (!apiKey) {
-    throw new CommonError('DEEPL_API_KEY is not configured');
-  }
-
-  const deeplTargetCode = LOCALE_TO_DEEPL[targetLocale];
-  const client = new DeepLClient(apiKey);
-  const results = await translateBatch({
-    entries,
-    targetLocale: deeplTargetCode,
-    client,
-  });
+  const results = await runTranslateBatch(entries, targetLocale);
 
   // 4. Build response grouped by profileId
   const translations: Record<

@@ -625,9 +625,15 @@ export const ProposalsList = ({
     });
   }, [translateBatchMutation, allProposals, locale]);
 
-  const handleViewOriginal = () => setTranslationState(null);
+  const handleViewOriginal = useCallback(
+    () => setTranslationState(null),
+    [],
+  );
 
-  const languageNames = new Intl.DisplayNames([locale], { type: 'language' });
+  const languageNames = useMemo(
+    () => new Intl.DisplayNames([locale], { type: 'language' }),
+    [locale],
+  );
   const getLanguageName = (langCode: string) =>
     languageNames.of(langCode) ?? langCode;
 

@@ -374,10 +374,13 @@ export function ProposalCardPreview({
   className?: string;
   translatedPreview?: string;
 }) {
-  const previewText = getProposalContentPreview(
-    proposal.documentContent,
-    (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
-  );
+  const previewText =
+    translatedPreview === undefined
+      ? getProposalContentPreview(
+          proposal.documentContent,
+          (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
+        )
+      : undefined;
 
   const displayText = translatedPreview ?? previewText;
 
