@@ -113,6 +113,10 @@ export function RubricEditorContent({
 
   // Derive criterion views from the template
   const criteria = useMemo(() => getCriteria(template), [template]);
+  const criteriaIndexMap = useMemo(
+    () => new Map(criteria.map((c, i) => [c.id, i + 1])),
+    [criteria],
+  );
 
   // Debounced auto-save
   const debouncedSave = useDebouncedCallback(
@@ -305,7 +309,7 @@ export function RubricEditorContent({
                     if (!item) {
                       return null;
                     }
-                    const idx = criteria.findIndex((c) => c.id === item.id) + 1;
+                    const idx = criteriaIndexMap.get(item.id) ?? 1;
                     return (
                       <RubricCriterionDragPreview
                         criterion={item}
@@ -317,8 +321,7 @@ export function RubricEditorContent({
                   aria-label={t('Rubric criteria')}
                 >
                   {(criterion, controls) => {
-                    const idx =
-                      criteria.findIndex((c) => c.id === criterion.id) + 1;
+                    const idx = criteriaIndexMap.get(criterion.id) ?? 1;
                     const snapshotErrors =
                       criterionErrors.get(criterion.id) ?? [];
                     const liveErrors = getCriterionErrors(criterion);

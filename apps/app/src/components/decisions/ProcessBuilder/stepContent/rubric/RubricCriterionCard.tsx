@@ -93,16 +93,7 @@ export function RubricCriterionCard({
           <span className="truncate text-left text-neutral-gray4">
             {criterion.label || t('New criterion')}
           </span>
-          <span className="ml-auto flex shrink-0 items-center gap-1.5">
-            <span className="rounded-sm bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
-              {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
-            </span>
-            {criterion.criterionType === 'scored' && criterion.maxPoints && (
-              <span className="bg-primary-mint/20 text-primary-tealDark rounded-sm px-1.5 py-0.5 text-xs">
-                {criterion.maxPoints} {t('pts')}
-              </span>
-            )}
-          </span>
+          <CriterionBadges criterion={criterion} />
         </AccordionTrigger>
         {onRemove && (
           <Button
@@ -272,7 +263,9 @@ function ScoredCriterionConfig({
           )}
         </p>
         <div className="space-y-4">
-          {[...criterion.scoreLabels].reverse().map((label, i) => {
+          {criterion.scoreLabels.map((_, i) => {
+            const revIdx = criterion.scoreLabels.length - 1 - i;
+            const label = criterion.scoreLabels[revIdx]!;
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
@@ -300,6 +293,26 @@ function ScoredCriterionConfig({
 }
 
 // ---------------------------------------------------------------------------
+// Shared criterion badges (type + points)
+// ---------------------------------------------------------------------------
+
+function CriterionBadges({ criterion }: { criterion: CriterionView }) {
+  const t = useTranslations();
+  return (
+    <span className="ml-auto flex shrink-0 items-center gap-1.5">
+      <span className="rounded-sm bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
+        {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
+      </span>
+      {criterion.criterionType === 'scored' && criterion.maxPoints && (
+        <span className="bg-primary-mint/20 text-primary-tealDark rounded-sm px-1.5 py-0.5 text-xs">
+          {criterion.maxPoints} {t('pts')}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Drag preview
 // ---------------------------------------------------------------------------
 
@@ -323,19 +336,10 @@ export function RubricCriterionDragPreview({
       <span className="truncate text-neutral-gray4">
         {criterion.label || t('New criterion')}
       </span>
-      <span className="ml-auto flex shrink-0 items-center gap-1.5">
-        <span className="rounded-sm bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
-          {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
-        </span>
-        {criterion.criterionType === 'scored' && criterion.maxPoints && (
-          <span className="bg-primary-mint/20 text-primary-tealDark rounded-sm px-1.5 py-0.5 text-xs">
-            {criterion.maxPoints} {t('pts')}
-          </span>
-        )}
-        <div className="ml-0.5 grid w-8 place-items-center rounded">
-          <LuTrash2 className="size-4 shrink-0 text-neutral-gray3" />
-        </div>
-      </span>
+      <CriterionBadges criterion={criterion} />
+      <div className="grid w-8 place-items-center rounded">
+        <LuTrash2 className="size-4 shrink-0 text-neutral-gray3" />
+      </div>
     </div>
   );
 }
