@@ -7,21 +7,26 @@ import {
   ProposalStatus,
   type proposalEncoder,
 } from '@op/api/encoders';
+import type { SupportedLocale } from '@op/common/client';
 import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
+import { Link } from '@op/ui/Link';
 import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { useLocale } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { TranslateBanner } from './TranslateBanner';
 
 import { Bullet } from '../Bullet';
 import {
@@ -137,6 +142,14 @@ interface ProposalsProps {
   isLoading: boolean;
   canManageProposals?: boolean;
   votedProposalIds?: string[];
+  /** Batch translation data keyed by profileId */
+  translationState?: {
+    translations: Record<
+      string,
+      { title?: string; category?: string; preview?: string }
+    >;
+    sourceLocale: string;
+  } | null;
 }
 
 const VotingProposalsList = ({
@@ -548,6 +561,56 @@ export const ProposalsList = ({
   const { proposals: allProposals, canManageProposals = false } =
     proposalsData ?? {};
 
+  // --- Translation state ---
+  const locale = useLocale();
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [translationState, setTranslationState] = useState<{
+    translations: Record<
+      string,
+      { title?: string; category?: string; preview?: string }
+    >;
+    sourceLocale: string;
+  } | null>(null);
+
+  const translateBatchMutation =
+    trpc.translation.translateProposalBatch.useMutation({
+      onSuccess: (data) => {
+        setTranslationState({
+          translations: data.translations,
+          sourceLocale: data.sourceLocale,
+        });
+      },
+    });
+
+  const handleTranslate = useCallback(() => {
+    const profileIds = allProposals
+      ?.map((p) => p.profileId)
+      .filter(Boolean) as string[];
+    if (!profileIds?.length) {
+      return;
+    }
+    translateBatchMutation.mutate({
+      profileIds,
+      targetLocale: locale as SupportedLocale,
+    });
+  }, [translateBatchMutation, allProposals, locale]);
+
+  const handleViewOriginal = () => setTranslationState(null);
+
+  const languageNames = new Intl.DisplayNames([locale], { type: 'language' });
+  const getLanguageName = (langCode: string) =>
+    languageNames.of(langCode) ?? langCode;
+
+  const sourceLanguageName = translationState
+    ? getLanguageName(
+        translationState.sourceLocale.toLowerCase().split('-')[0] ?? '',
+      )
+    : '';
+  const targetLanguageName = getLanguageName(locale);
+
+  const showBanner =
+    locale !== 'en' && !bannerDismissed && !translationState;
+
   // Use the custom hook for filtering proposals
   const {
     filteredProposals: proposals,
@@ -686,6 +749,22 @@ export const ProposalsList = ({
         </div>
       </div>
 
+      {/* Translation attribution */}
+      {translationState && (
+        <p className="text-sm text-neutral-gray3">
+          {t('Translated from {language}', {
+            language: sourceLanguageName,
+          })}{' '}
+          &middot;{' '}
+          <Link
+            onPress={handleViewOriginal}
+            className="text-sm font-semibold"
+          >
+            {t('View original')}
+          </Link>
+        </p>
+      )}
+
       <Proposals
         isLoading={isLoading}
         proposals={proposals}
@@ -694,7 +773,17 @@ export const ProposalsList = ({
         decisionSlug={decisionSlug}
         canManageProposals={canManageProposals}
         votedProposalIds={selectedProposalIds}
+        translationState={translationState}
       />
+
+      {showBanner && (
+        <TranslateBanner
+          onTranslate={handleTranslate}
+          onDismiss={() => setBannerDismissed(true)}
+          isTranslating={translateBatchMutation.isPending}
+          languageName={targetLanguageName}
+        />
+      )}
     </div>
   );
 };
