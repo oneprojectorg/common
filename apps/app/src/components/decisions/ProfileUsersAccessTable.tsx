@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { ProfileUser } from '@op/api/encoders';
+import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -33,6 +33,7 @@ export const ProfileUsersAccessTable = ({
   onRetry,
   roles,
   isMobile,
+  invites,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -43,6 +44,7 @@ export const ProfileUsersAccessTable = ({
   onRetry: () => void;
   roles: { id: string; name: string }[];
   isMobile: boolean;
+  invites: ProfileInvite[];
 }) => {
   const t = useTranslations();
 
@@ -57,7 +59,7 @@ export const ProfileUsersAccessTable = ({
     );
   }
 
-  if (profileUsers.length === 0 && !isLoading) {
+  if (profileUsers.length === 0 && invites.length === 0 && !isLoading) {
     return (
       <EmptyState icon={<LuUsers className="size-6" />}>
         <span>{t('No members found')}</span>
@@ -72,6 +74,7 @@ export const ProfileUsersAccessTable = ({
         profileId={profileId}
         isLoading={isLoading}
         roles={roles}
+        invites={invites}
       />
     );
   }
@@ -84,6 +87,7 @@ export const ProfileUsersAccessTable = ({
       onSortChange={onSortChange}
       isLoading={isLoading}
       roles={roles}
+      invites={invites}
     />
   );
 };
@@ -137,6 +141,61 @@ const ProfileUserRoleSelect = ({
       selectedKey={currentRoleId || ''}
       onSelectionChange={(key) => handleRoleChange(key as string)}
       isDisabled={updateRoles.isPending}
+      size="small"
+      className={className}
+    >
+      {roles.map((role) => (
+        <SelectItem key={role.id} id={role.id}>
+          {role.name}
+        </SelectItem>
+      ))}
+    </Select>
+  );
+};
+
+const InviteRoleSelect = ({
+  inviteId,
+  currentRoleId,
+  profileId,
+  roles,
+  className = 'sm:w-32',
+}: {
+  inviteId: string;
+  currentRoleId: string;
+  profileId: string;
+  roles: { id: string; name: string }[];
+  className?: string;
+}) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  const updateInvite = trpc.profile.updateProfileInvite.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Role updated successfully') });
+      void utils.profile.listProfileInvites.invalidate({ profileId });
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to update role'),
+      });
+    },
+  });
+
+  const handleRoleChange = (roleId: string) => {
+    if (roleId && roleId !== currentRoleId) {
+      updateInvite.mutate({
+        inviteId,
+        accessRoleId: roleId,
+      });
+    }
+  };
+
+  return (
+    <Select
+      aria-label={t('Role')}
+      selectedKey={currentRoleId}
+      onSelectionChange={(key) => handleRoleChange(key as string)}
+      isDisabled={updateInvite.isPending}
       size="small"
       className={className}
     >
@@ -203,29 +262,79 @@ const MobileProfileUserCard = ({
   );
 };
 
+const MobileInviteCard = ({
+  invite,
+  profileId,
+  roles,
+}: {
+  invite: ProfileInvite;
+  profileId: string;
+  roles: { id: string; name: string }[];
+}) => {
+  const t = useTranslations();
+  const displayName = invite.inviteeProfile?.name ?? invite.email;
+
+  return (
+    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+      <div className="flex gap-4">
+        <ProfileAvatar profile={invite.inviteeProfile} className="size-10" />
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex flex-col">
+            <span className="text-base text-neutral-black">{displayName}</span>
+            <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
+          </div>
+          <span className="truncate text-base text-neutral-black">
+            {invite.email}
+          </span>
+        </div>
+      </div>
+      <InviteRoleSelect
+        inviteId={invite.id}
+        currentRoleId={invite.accessRoleId}
+        profileId={profileId}
+        roles={roles}
+        className="w-full"
+      />
+    </div>
+  );
+};
+
 const MobileProfileUsersContent = ({
   profileUsers,
   profileId,
   isLoading,
   roles,
+  invites,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
   isLoading: boolean;
   roles: { id: string; name: string }[];
+  invites: ProfileInvite[];
 }) => {
   return (
     <div className="flex flex-col gap-4">
       {isLoading && <Skeleton className="h-32 w-full" />}
-      {!isLoading &&
-        profileUsers.map((profileUser) => (
-          <MobileProfileUserCard
-            key={profileUser.id}
-            profileUser={profileUser}
-            profileId={profileId}
-            roles={roles}
-          />
-        ))}
+      {!isLoading && (
+        <>
+          {invites.map((invite) => (
+            <MobileInviteCard
+              key={invite.id}
+              invite={invite}
+              profileId={profileId}
+              roles={roles}
+            />
+          ))}
+          {profileUsers.map((profileUser) => (
+            <MobileProfileUserCard
+              key={profileUser.id}
+              profileUser={profileUser}
+              profileId={profileId}
+              roles={roles}
+            />
+          ))}
+        </>
+      )}
     </div>
   );
 };
@@ -238,6 +347,7 @@ const ProfileUsersAccessTableContent = ({
   onSortChange,
   isLoading,
   roles,
+  invites,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -245,6 +355,7 @@ const ProfileUsersAccessTableContent = ({
   onSortChange: (descriptor: SortDescriptor) => void;
   isLoading: boolean;
   roles: { id: string; name: string }[];
+  invites: ProfileInvite[];
 }) => {
   const t = useTranslations();
 
@@ -256,7 +367,7 @@ const ProfileUsersAccessTableContent = ({
         </div>
       )}
       <Table
-        aria-label={t('Members list')}
+        aria-label={t('Participants list')}
         className="w-full table-fixed"
         sortDescriptor={sortDescriptor}
         onSortChange={onSortChange}
@@ -273,6 +384,40 @@ const ProfileUsersAccessTableContent = ({
           </TableColumn>
         </TableHeader>
         <TableBody>
+          {invites.map((invite) => {
+            const displayName = invite.inviteeProfile?.name ?? invite.email;
+
+            return (
+              <TableRow key={`invite-${invite.id}`} id={`invite-${invite.id}`}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <ProfileAvatar profile={invite.inviteeProfile} />
+                    <div className="flex flex-col">
+                      <span className="text-base text-neutral-black">
+                        {displayName}
+                      </span>
+                      <span className="text-sm text-neutral-gray4">
+                        {t('Invited')}
+                      </span>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-base text-neutral-black">
+                    {invite.email}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <InviteRoleSelect
+                    inviteId={invite.id}
+                    currentRoleId={invite.accessRoleId}
+                    profileId={profileId}
+                    roles={roles}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
           {profileUsers.map((profileUser) => {
             const displayName =
               profileUser.profile?.name ||

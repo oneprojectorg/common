@@ -16,9 +16,11 @@ import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   Key,
+  type ReactNode,
   Suspense,
   useEffect,
   useMemo,
+  useOptimistic,
   useRef,
   useState,
   useTransition,
@@ -29,6 +31,8 @@ import { LuLeaf, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Bullet } from '../Bullet';
+import ErrorBoundary from '../ErrorBoundary';
 import { RoleSelector, RoleSelectorSkeleton } from './RoleSelector';
 import { isValidEmail, parseEmailPaste } from './emailUtils';
 
@@ -53,6 +57,51 @@ export const ProfileInviteModal = ({
   onOpenChange: (isOpen: boolean) => void;
 }) => {
   const t = useTranslations();
+
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={handleClose}
+      isDismissable
+      className="sm:max-w-xl"
+    >
+      <ModalHeader className="truncate">
+        {t('Invite participants to your decision-making process')}
+      </ModalHeader>
+
+      <ErrorBoundary>
+        <Suspense
+          fallback={
+            <ModalBody className="space-y-6">
+              <RoleSelectorSkeleton />
+              <div className="flex items-center justify-center p-8">
+                <LoadingSpinner className="size-6" />
+              </div>
+            </ModalBody>
+          }
+        >
+          <ProfileInviteModalContent
+            profileId={profileId}
+            onOpenChange={onOpenChange}
+          />
+        </Suspense>
+      </ErrorBoundary>
+    </Modal>
+  );
+};
+
+function ProfileInviteModalContent({
+  profileId,
+  onOpenChange,
+}: {
+  profileId: string;
+  onOpenChange: (isOpen: boolean) => void;
+}) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
@@ -60,13 +109,31 @@ export const ProfileInviteModal = ({
   const [selectedRoleName, setSelectedRoleName] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
-  const [isSubmitting, startTransition] = useTransition();
+  const [isSubmitting, startSendTransition] = useTransition();
+  const [, startOptimisticTransition] = useTransition();
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({
     top: 0,
     left: 0,
     width: 0,
   });
+
+  // Fetch existing pending invites and members
+  const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
+    profileId,
+  });
+  const [usersData] = trpc.profile.listUsers.useSuspenseQuery({ profileId });
+
+  const [optimisticInvites, dispatchRemoveInvite] = useOptimistic(
+    serverInvites,
+    (state, inviteId: string) => state.filter((i) => i.id !== inviteId),
+  );
+
+  const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
+    usersData.items,
+    (state, profileUserId: string) =>
+      state.filter((u) => u.id !== profileUserId),
+  );
 
   // Get items for current role
   const currentRoleItems = selectedItemsByRole[selectedRoleId] ?? [];
@@ -75,6 +142,21 @@ export const ProfileInviteModal = ({
   const allSelectedItems = useMemo(
     () => Object.values(selectedItemsByRole).flat(),
     [selectedItemsByRole],
+  );
+
+  // Filter server invites by current role
+  const currentRoleInvites = useMemo(
+    () => optimisticInvites.filter((i) => i.accessRoleId === selectedRoleId),
+    [optimisticInvites, selectedRoleId],
+  );
+
+  // Filter members by current role
+  const currentRoleMembers = useMemo(
+    () =>
+      optimisticUsers.filter((u) =>
+        u.roles.some((r) => r.id === selectedRoleId),
+      ),
+    [optimisticUsers, selectedRoleId],
   );
 
   // Update dropdown position when search query changes
@@ -112,45 +194,66 @@ export const ProfileInviteModal = ({
       .sort((a, b) => b.rank - a.rank);
   }, [searchResults]);
 
-  // Filter out already selected items (across all roles)
+  // Filter out already selected, already invited, and existing members
   const filteredResults = useMemo(() => {
     const selectedIds = new Set(allSelectedItems.map((item) => item.profileId));
     const selectedEmails = new Set(
       allSelectedItems.map((item) => item.email.toLowerCase()),
     );
+    const existingUserEmails = new Set(
+      optimisticUsers.map((u) => u.email.toLowerCase()),
+    );
+    const invitedEmails = new Set(
+      optimisticInvites.map((i) => i.email.toLowerCase()),
+    );
     return flattenedResults.filter(
       (result) =>
         !selectedIds.has(result.id) &&
         (!result.user?.email ||
-          !selectedEmails.has(result.user.email.toLowerCase())),
+          (!selectedEmails.has(result.user.email.toLowerCase()) &&
+            !existingUserEmails.has(result.user.email.toLowerCase()) &&
+            !invitedEmails.has(result.user.email.toLowerCase()))),
     );
-  }, [flattenedResults, allSelectedItems]);
+  }, [flattenedResults, allSelectedItems, optimisticUsers, optimisticInvites]);
 
   // Check if query is a valid email that hasn't been selected yet (across all roles)
   const canAddEmail = useMemo(() => {
     if (!isValidEmail(debouncedQuery)) {
       return false;
     }
-    const selectedEmails = new Set(
-      allSelectedItems.map((item) => item.email.toLowerCase()),
-    );
-    return !selectedEmails.has(debouncedQuery.toLowerCase());
-  }, [debouncedQuery, allSelectedItems]);
+    const lowerQuery = debouncedQuery.toLowerCase();
+    const takenEmails = new Set([
+      ...allSelectedItems.map((item) => item.email.toLowerCase()),
+      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticInvites.map((i) => i.email.toLowerCase()),
+    ]);
+    return !takenEmails.has(lowerQuery);
+  }, [debouncedQuery, allSelectedItems, optimisticUsers, optimisticInvites]);
 
-  // Invite mutation
+  // Mutations
   const inviteMutation = trpc.profile.invite.useMutation();
+  const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
+  const removeUserMutation = trpc.profile.removeUser.useMutation();
 
-  // Calculate total people count across all roles
+  // Calculate total people count across all roles (staged only)
   const totalPeople = allSelectedItems.length;
 
-  // Calculate counts by role for the tab badges
+  // Calculate counts by role for the tab badges (staged + server invites + members)
   const countsByRole = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const [roleId, items] of Object.entries(selectedItemsByRole)) {
       counts[roleId] = items.length;
     }
+    for (const invite of optimisticInvites) {
+      counts[invite.accessRoleId] = (counts[invite.accessRoleId] ?? 0) + 1;
+    }
+    for (const user of optimisticUsers) {
+      for (const role of user.roles) {
+        counts[role.id] = (counts[role.id] ?? 0) + 1;
+      }
+    }
     return counts;
-  }, [selectedItemsByRole]);
+  }, [selectedItemsByRole, optimisticInvites, optimisticUsers]);
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     if (!result.user?.email || !selectedRoleId) {
@@ -199,8 +302,32 @@ export const ProfileInviteModal = ({
     }));
   };
 
+  const handleDeleteInvite = (inviteId: string) => {
+    startOptimisticTransition(async () => {
+      dispatchRemoveInvite(inviteId);
+      try {
+        await deleteInviteMutation.mutateAsync({ inviteId });
+      } catch {
+        toast.error({ message: t('Failed to cancel invite') });
+      }
+      await utils.profile.listProfileInvites.invalidate({ profileId });
+    });
+  };
+
+  const handleRemoveUser = (profileUserId: string) => {
+    startOptimisticTransition(async () => {
+      dispatchRemoveUser(profileUserId);
+      try {
+        await removeUserMutation.mutateAsync({ profileUserId });
+      } catch {
+        toast.error({ message: t('Failed to remove user') });
+      }
+      await utils.profile.listUsers.invalidate({ profileId });
+    });
+  };
+
   const handleSend = () => {
-    startTransition(async () => {
+    startSendTransition(async () => {
       try {
         // Collect all invitations across all roles into a single array
         const invitations = Object.entries(selectedItemsByRole)
@@ -223,8 +350,9 @@ export const ProfileInviteModal = ({
         setSearchQuery('');
         onOpenChange(false);
 
-        // Invalidate the profile users list
+        // Invalidate both lists
         utils.profile.listUsers.invalidate({ profileId });
+        utils.profile.listProfileInvites.invalidate({ profileId });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to send invite');
@@ -239,9 +367,11 @@ export const ProfileInviteModal = ({
       return;
     }
 
-    const existingEmails = new Set(
-      allSelectedItems.map((item) => item.email.toLowerCase()),
-    );
+    const existingEmails = new Set([
+      ...allSelectedItems.map((item) => item.email.toLowerCase()),
+      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticInvites.map((i) => i.email.toLowerCase()),
+    ]);
     const emails = parseEmailPaste(pastedText, existingEmails);
     if (!emails) {
       return;
@@ -264,42 +394,30 @@ export const ProfileInviteModal = ({
     setSearchQuery('');
   };
 
-  const handleClose = () => {
-    setSelectedItemsByRole({});
-    setSearchQuery('');
-    onOpenChange(false);
-  };
-
   const handleTabChange = (key: Key) => {
     setSelectedRoleId(String(key));
   };
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={handleClose}
-      isDismissable
-      className="sm:max-w-xl"
-    >
-      <ModalHeader className="truncate">
-        {t('Invite participants to your decision-making process')}
-      </ModalHeader>
+  const hasNoItems =
+    currentRoleItems.length === 0 &&
+    currentRoleInvites.length === 0 &&
+    currentRoleMembers.length === 0;
 
+  return (
+    <>
       <ModalBody className="space-y-6">
         {/* Role Tabs */}
-        <Suspense fallback={<RoleSelectorSkeleton />}>
-          <RoleSelector
-            profileId={profileId}
-            selectedRoleId={selectedRoleId}
-            onSelectionChange={handleTabChange}
-            countsByRole={countsByRole}
-            onRolesLoaded={(roleId, roleName) => {
-              setSelectedRoleId(roleId);
-              setSelectedRoleName(roleName);
-            }}
-            onRoleNameChange={setSelectedRoleName}
-          />
-        </Suspense>
+        <RoleSelector
+          profileId={profileId}
+          selectedRoleId={selectedRoleId}
+          onSelectionChange={handleTabChange}
+          countsByRole={countsByRole}
+          onRolesLoaded={(roleId, roleName) => {
+            setSelectedRoleId(roleId);
+            setSelectedRoleName(roleName);
+          }}
+          onRoleNameChange={setSelectedRoleName}
+        />
 
         {/* Search Input */}
         <div ref={searchContainerRef} onPaste={handlePaste}>
@@ -399,52 +517,99 @@ export const ProfileInviteModal = ({
             document.body,
           )}
 
-        {/* Selected Items for Current Role */}
-        {currentRoleItems.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+        {/* People list for current role */}
+        <div className="flex flex-col gap-2">
+          {!hasNoItems && (
+            <span className="text-sm text-neutral-black">
+              {t('People with access')}
+            </span>
+          )}
+
+          <div className="flex flex-col gap-2">
+            {/* Staged items (not yet sent) */}
             {currentRoleItems.map((item) => (
-              <div
+              <PersonRow
                 key={item.id}
-                className="flex h-14 items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
-              >
-                <ProfileItem
-                  size="small"
-                  className="items-center gap-2"
-                  avatar={
-                    <Avatar placeholder={item.name} className="size-6 shrink-0">
-                      {item.avatarUrl ? (
-                        <Image
-                          src={item.avatarUrl}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : null}
-                    </Avatar>
-                  }
-                  title={item.name}
-                >
-                  <span className="text-sm text-neutral-gray4">
-                    {item.email}
-                  </span>
-                </ProfileItem>
-                <IconButton
-                  size="small"
-                  onPress={() => handleRemoveItem(item.id)}
-                  aria-label={t('Remove {name}', { name: item.name })}
-                >
-                  <LuX className="size-4" />
-                </IconButton>
-              </div>
+                name={item.name}
+                avatarUrl={item.avatarUrl}
+                subtitle={
+                  item.name !== item.email ? (
+                    <div className="text-sm text-neutral-gray4">
+                      {item.email}
+                    </div>
+                  ) : undefined
+                }
+                onRemove={() => handleRemoveItem(item.id)}
+                removeLabel={t('Remove {name}', { name: item.name })}
+              />
             ))}
-          </div>
-        ) : selectedRoleName ? (
-          <EmptyState icon={<LuLeaf />}>
-            {t('No {roleName}s have been added', {
-              roleName: selectedRoleName,
+
+            {/* Pending invites from server */}
+            {currentRoleInvites.map((invite) => {
+              const displayName = invite.inviteeProfile?.name ?? invite.email;
+              const avatarUrl = invite.inviteeProfile?.avatarImage?.name
+                ? getPublicUrl(invite.inviteeProfile.avatarImage.name)
+                : undefined;
+
+              return (
+                <PersonRow
+                  key={invite.id}
+                  name={displayName}
+                  avatarUrl={avatarUrl}
+                  subtitle={
+                    <div className="text-sm text-neutral-gray4">
+                      {invite.inviteeProfile?.name && (
+                        <>
+                          {invite.email} <Bullet />{' '}
+                        </>
+                      )}
+                      <span className="text-sm text-neutral-gray4">
+                        {t('Invited')}
+                      </span>
+                    </div>
+                  }
+                  onRemove={() => handleDeleteInvite(invite.id)}
+                  removeLabel={t('Remove {name}', { name: displayName })}
+                />
+              );
             })}
-          </EmptyState>
-        ) : null}
+
+            {/* Existing members */}
+            {currentRoleMembers.map((user) => (
+              <PersonRow
+                key={user.id}
+                name={user.name ?? user.email}
+                avatarUrl={
+                  user.profile?.avatarImage?.name
+                    ? getPublicUrl(user.profile.avatarImage.name)
+                    : undefined
+                }
+                subtitle={
+                  user.name ? (
+                    <div className="text-sm text-neutral-gray4">
+                      {user.email}
+                    </div>
+                  ) : undefined
+                }
+                onRemove={
+                  !user.isOwner ? () => handleRemoveUser(user.id) : undefined
+                }
+                removeLabel={t('Remove {name}', {
+                  name: user.name ?? user.email,
+                })}
+              />
+            ))}
+
+            {/* Empty state */}
+            {hasNoItems && selectedRoleName ? (
+              <EmptyState icon={<LuLeaf />}>
+                {t('No {roleName}s have been added', {
+                  roleName: selectedRoleName,
+                })}
+              </EmptyState>
+            ) : null}
+          </div>
+        </div>
       </ModalBody>
 
       <ModalFooter className="flex-row items-center justify-between">
@@ -464,6 +629,43 @@ export const ProfileInviteModal = ({
           {isSubmitting ? t('Sending...') : t('Send')}
         </Button>
       </ModalFooter>
-    </Modal>
+    </>
   );
-};
+}
+
+function PersonRow({
+  name,
+  avatarUrl,
+  subtitle,
+  onRemove,
+  removeLabel,
+}: {
+  name: string;
+  avatarUrl?: string;
+  subtitle?: ReactNode;
+  onRemove?: () => void;
+  removeLabel: string;
+}) {
+  return (
+    <div className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
+      <ProfileItem
+        size="small"
+        avatar={
+          <Avatar placeholder={name} className="size-6 shrink-0">
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt={name} fill className="object-cover" />
+            ) : null}
+          </Avatar>
+        }
+        title={name}
+      >
+        {subtitle}
+      </ProfileItem>
+      {onRemove && (
+        <IconButton size="small" onPress={onRemove} aria-label={removeLabel}>
+          <LuX className="size-4" />
+        </IconButton>
+      )}
+    </div>
+  );
+}
