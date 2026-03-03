@@ -13,10 +13,11 @@ interface ProposalContentRendererProps {
   proposalTemplate: ProposalTemplateSchema;
   /** Pre-rendered HTML per fragment key (from getProposal). */
   htmlContent?: Record<string, string>;
-  /** Optional translated field titles and descriptions keyed by field key. */
+  /** Optional translated field titles, descriptions, and option labels keyed by field key. */
   translatedMeta?: {
     fieldTitles: Record<string, string>;
     fieldDescriptions: Record<string, string>;
+    optionLabels: Record<string, Record<string, string>>;
   } | null;
 }
 

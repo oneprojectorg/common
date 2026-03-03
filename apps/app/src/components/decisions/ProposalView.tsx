@@ -17,7 +17,7 @@ import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -157,6 +157,43 @@ export function ProposalView({
     translatedHtmlContent?.translated ?? currentProposal.htmlContent;
   const proposalTemplate =
     (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
+
+  // Parse translated template metadata (field titles, descriptions, option labels)
+  // from the flat namespaced keys returned by translateProposal into structured objects.
+  const translatedMeta = useMemo(() => {
+    if (!translatedHtmlContent) {
+      return null;
+    }
+
+    const fieldTitles: Record<string, string> = {};
+    const fieldDescriptions: Record<string, string> = {};
+    const optionLabels: Record<string, Record<string, string>> = {};
+
+    for (const [key, value] of Object.entries(
+      translatedHtmlContent.translated,
+    )) {
+      if (key.startsWith('field_title:')) {
+        const fieldKey = key.slice('field_title:'.length);
+        fieldTitles[fieldKey] = value;
+      } else if (key.startsWith('field_desc:')) {
+        const fieldKey = key.slice('field_desc:'.length);
+        fieldDescriptions[fieldKey] = value;
+      } else if (key.startsWith('option:')) {
+        const rest = key.slice('option:'.length);
+        const colonIdx = rest.indexOf(':');
+        if (colonIdx !== -1) {
+          const fieldKey = rest.slice(0, colonIdx);
+          const optionValue = rest.slice(colonIdx + 1);
+          if (!optionLabels[fieldKey]) {
+            optionLabels[fieldKey] = {};
+          }
+          optionLabels[fieldKey][optionValue] = value;
+        }
+      }
+    }
+
+    return { fieldTitles, fieldDescriptions, optionLabels };
+  }, [translatedHtmlContent]);
 
   // Legacy proposals store HTML under a single "default" key with no collab doc.
   // Render them directly instead of going through the template-driven renderer.
@@ -309,6 +346,7 @@ export function ProposalView({
             <ProposalContentRenderer
               proposalTemplate={proposalTemplate}
               htmlContent={resolvedHtmlContent}
+              translatedMeta={translatedMeta}
             />
           ) : (
             <DocumentNotAvailable />
