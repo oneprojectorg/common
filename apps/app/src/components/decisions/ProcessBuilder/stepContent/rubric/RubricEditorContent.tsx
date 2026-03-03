@@ -27,6 +27,7 @@ import {
   getCriteria,
   getCriterionErrors,
   getCriterionSchema,
+  getCriterionType,
   removeCriterion,
   reorderCriteria,
   updateCriterionDescription,
@@ -203,15 +204,11 @@ export function RubricEditorContent({
     (criterionId: string, newType: RubricCriterionType) => {
       setTemplate((prev) => {
         // Stash scored config before switching away from scored
-        const schema = getCriterionSchema(prev, criterionId);
-        if (
-          schema?.type === 'integer' &&
-          typeof schema.maximum === 'number' &&
-          Array.isArray(schema.oneOf)
-        ) {
+        if (getCriterionType(prev, criterionId) === 'scored') {
+          const schema = getCriterionSchema(prev, criterionId);
           scoredConfigCacheRef.current.set(criterionId, {
-            maximum: schema.maximum,
-            oneOf: schema.oneOf,
+            maximum: (schema?.maximum as number) ?? 5,
+            oneOf: (schema?.oneOf as unknown[]) ?? [],
           });
         }
 
