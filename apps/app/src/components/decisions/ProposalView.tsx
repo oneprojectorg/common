@@ -6,7 +6,7 @@ import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import { parseProposalData, parseTranslatedMeta } from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
@@ -158,42 +158,13 @@ export function ProposalView({
   const proposalTemplate =
     (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
 
-  // Parse translated template metadata (field titles, descriptions, option labels)
-  // from the flat namespaced keys returned by translateProposal into structured objects.
-  const translatedMeta = useMemo(() => {
-    if (!translatedHtmlContent) {
-      return null;
-    }
-
-    const fieldTitles: Record<string, string> = {};
-    const fieldDescriptions: Record<string, string> = {};
-    const optionLabels: Record<string, Record<string, string>> = {};
-
-    for (const [key, value] of Object.entries(
-      translatedHtmlContent.translated,
-    )) {
-      if (key.startsWith('field_title:')) {
-        const fieldKey = key.slice('field_title:'.length);
-        fieldTitles[fieldKey] = value;
-      } else if (key.startsWith('field_desc:')) {
-        const fieldKey = key.slice('field_desc:'.length);
-        fieldDescriptions[fieldKey] = value;
-      } else if (key.startsWith('option:')) {
-        const rest = key.slice('option:'.length);
-        const colonIdx = rest.indexOf(':');
-        if (colonIdx !== -1) {
-          const fieldKey = rest.slice(0, colonIdx);
-          const optionValue = rest.slice(colonIdx + 1);
-          if (!optionLabels[fieldKey]) {
-            optionLabels[fieldKey] = {};
-          }
-          optionLabels[fieldKey][optionValue] = value;
-        }
-      }
-    }
-
-    return { fieldTitles, fieldDescriptions, optionLabels };
-  }, [translatedHtmlContent]);
+  const translatedMeta = useMemo(
+    () =>
+      translatedHtmlContent
+        ? parseTranslatedMeta(translatedHtmlContent.translated)
+        : null,
+    [translatedHtmlContent],
+  );
 
   // Legacy proposals store HTML under a single "default" key with no collab doc.
   // Render them directly instead of going through the template-driven renderer.
