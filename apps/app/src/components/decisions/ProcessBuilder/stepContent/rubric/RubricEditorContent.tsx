@@ -306,7 +306,12 @@ export function RubricEditorContent({
                       return null;
                     }
                     const idx = criteria.findIndex((c) => c.id === item.id) + 1;
-                    return <RubricCriterionDragPreview index={idx} />;
+                    return (
+                      <RubricCriterionDragPreview
+                        criterion={item}
+                        index={idx}
+                      />
+                    );
                   }}
                   renderDropIndicator={RubricCriterionDropIndicator}
                   aria-label={t('Rubric criteria')}

@@ -12,7 +12,7 @@ import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { DragHandle } from '@op/ui/Sortable';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
-import { LuGripVertical, LuTrash2 } from 'react-icons/lu';
+import { LuChevronRight, LuGripVertical, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -119,7 +119,8 @@ export function RubricCriterionCard({
 
       {/* Collapsible body */}
       <AccordionContent>
-        <div className="space-y-4 px-4 pb-4">
+        <hr />
+        <div className="space-y-4 px-4 pt-4 pb-4">
           {/* Criterion name */}
           <TextField
             label={t('Criterion name')}
@@ -302,13 +303,38 @@ function ScoredCriterionConfig({
 // Drag preview
 // ---------------------------------------------------------------------------
 
-export function RubricCriterionDragPreview({ index }: { index: number }) {
+export function RubricCriterionDragPreview({
+  criterion,
+  index,
+}: {
+  criterion: CriterionView;
+  index: number;
+}) {
   const t = useTranslations();
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 shadow-lg">
-      <LuGripVertical className="size-4 text-neutral-gray4" />
-      <span className="font-medium text-neutral-charcoal">
+    <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-lg">
+      <div className="grid size-6 place-items-center rounded bg-neutral-offWhite">
+        <LuGripVertical className="size-4 shrink-0 text-neutral-gray4" />
+      </div>
+      <LuChevronRight className="size-4 shrink-0 text-neutral-gray4" />
+      <span className="shrink-0 font-serif text-neutral-charcoal">
         {t('Criterion {number}', { number: index })}
+      </span>
+      <span className="truncate text-neutral-gray4">
+        {criterion.label || t('New criterion')}
+      </span>
+      <span className="ml-auto flex shrink-0 items-center gap-1.5">
+        <span className="rounded-sm bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
+          {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
+        </span>
+        {criterion.criterionType === 'scored' && criterion.maxPoints && (
+          <span className="bg-primary-mint/20 text-primary-tealDark rounded-sm px-1.5 py-0.5 text-xs">
+            {criterion.maxPoints} {t('pts')}
+          </span>
+        )}
+        <div className="ml-0.5 grid w-8 place-items-center rounded">
+          <LuTrash2 className="size-4 shrink-0 text-neutral-gray3" />
+        </div>
       </span>
     </div>
   );
