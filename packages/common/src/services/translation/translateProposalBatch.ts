@@ -88,13 +88,12 @@ export async function translateProposalBatch({
 
   for (const result of results) {
     // Key format: batch:<profileId>:<field>
-    const firstColon = result.contentKey.indexOf(':');
-    const lastColon = result.contentKey.lastIndexOf(':');
-    const profileId = result.contentKey.slice(firstColon + 1, lastColon);
-    const field = result.contentKey.slice(lastColon + 1) as
-      | 'title'
-      | 'category'
-      | 'preview';
+    const parts = result.contentKey.split(':');
+    if (parts.length < 3 || parts[0] !== 'batch') {
+      continue;
+    }
+    const field = parts[parts.length - 1] as 'title' | 'category' | 'preview';
+    const profileId = parts.slice(1, -1).join(':');
 
     if (!translations[profileId]) {
       translations[profileId] = {};
