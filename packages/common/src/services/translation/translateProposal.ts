@@ -5,6 +5,7 @@ import { DeepLClient } from 'deepl-node';
 
 import { CommonError } from '../../utils';
 import { getProposal } from '../decision/getProposal';
+import type { ProposalTemplateSchema } from '../decision/types';
 import { LOCALE_TO_DEEPL } from './locales';
 import type { SupportedLocale } from './locales';
 
@@ -56,6 +57,25 @@ export async function translateProposal({
         entries.push({
           contentKey: `proposal:${proposalId}:${fragmentName}`,
           text: html,
+        });
+      }
+    }
+  }
+
+  // Template field titles and descriptions
+  const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
+  if (template?.properties) {
+    for (const [fieldKey, property] of Object.entries(template.properties)) {
+      if (property.title) {
+        entries.push({
+          contentKey: `proposal:${proposalId}:field_title:${fieldKey}`,
+          text: property.title,
+        });
+      }
+      if (property.description) {
+        entries.push({
+          contentKey: `proposal:${proposalId}:field_desc:${fieldKey}`,
+          text: property.description,
         });
       }
     }
