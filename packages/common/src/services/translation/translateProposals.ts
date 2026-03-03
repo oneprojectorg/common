@@ -10,7 +10,7 @@ import { runTranslateBatch } from './runTranslateBatch';
  * Translates proposal card-level content (title, category, preview text) for
  * a batch of proposals in a single DeepL call.
  */
-export async function translateProposalBatch({
+export async function translateProposals({
   profileIds,
   targetLocale,
   user,

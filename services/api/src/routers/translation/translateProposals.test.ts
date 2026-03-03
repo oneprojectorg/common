@@ -39,7 +39,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe.concurrent('translation.translateProposalBatch', () => {
+describe.concurrent('translation.translateProposals', () => {
   it('should translate title and preview for multiple proposals', async ({
     task,
     onTestFinished,
@@ -122,7 +122,7 @@ describe.concurrent('translation.translateProposalBatch', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.translation.translateProposalBatch({
+    const result = await caller.translation.translateProposals({
       profileIds: [proposal1.profileId, proposal2.profileId],
       targetLocale: 'es',
     });
@@ -198,7 +198,7 @@ describe.concurrent('translation.translateProposalBatch', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.translation.translateProposalBatch({
+    const result = await caller.translation.translateProposals({
       profileIds: [proposal.profileId],
       targetLocale: 'es',
     });
@@ -255,7 +255,7 @@ describe.concurrent('translation.translateProposalBatch', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.translation.translateProposalBatch({
+    const result = await caller.translation.translateProposals({
       profileIds: [proposal.profileId],
       targetLocale: 'es',
     });

@@ -1,8 +1,8 @@
 import { mergeRouters } from '../../trpcFactory';
 import { translateProposalRouter } from './translateProposal';
-import { translateProposalBatchRouter } from './translateProposalBatch';
+import { translateProposalsRouter } from './translateProposals';
 
 export const translationRouter = mergeRouters(
   translateProposalRouter,
-  translateProposalBatchRouter,
+  translateProposalsRouter,
 );

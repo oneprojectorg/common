@@ -1,10 +1,10 @@
-import { SUPPORTED_LOCALES, translateProposalBatch } from '@op/common';
+import { SUPPORTED_LOCALES, translateProposals } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-export const translateProposalBatchRouter = router({
-  translateProposalBatch: commonAuthedProcedure()
+export const translateProposalsRouter = router({
+  translateProposals: commonAuthedProcedure()
     .input(
       z.object({
         profileIds: z.array(z.uuid()).min(1).max(100),
@@ -26,7 +26,7 @@ export const translateProposalBatchRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      return translateProposalBatch({
+      return translateProposals({
         profileIds: input.profileIds,
         targetLocale: input.targetLocale,
         user: ctx.user,

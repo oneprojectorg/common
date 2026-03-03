@@ -570,7 +570,7 @@ export const ProposalsList = ({
   } | null>(null);
 
   const translateBatchMutation =
-    trpc.translation.translateProposalBatch.useMutation({
+    trpc.translation.translateProposals.useMutation({
       onSuccess: (data) => {
         setTranslationState({
           translations: data.translations,
@@ -583,9 +583,7 @@ export const ProposalsList = ({
     if (!supportedLocale) {
       return;
     }
-    const profileIds = allProposals
-      ?.map((p) => p.profileId)
-      .filter(Boolean) as string[];
+    const profileIds = allProposals?.map((p) => p.profileId);
     if (!profileIds?.length) {
       return;
     }

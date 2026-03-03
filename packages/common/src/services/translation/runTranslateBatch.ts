@@ -8,7 +8,7 @@ import type { SupportedLocale } from './locales';
 
 /**
  * Shared helper that validates the DeepL API key, builds a client, and runs
- * a batch translation. Both `translateProposal` and `translateProposalBatch`
+ * a batch translation. Both `translateProposal` and `translateProposals`
  * delegate here so the key-check + client construction isn't duplicated.
  */
 export async function runTranslateBatch(
