@@ -15,9 +15,13 @@ export default {
     unstyled: {
       control: 'boolean',
     },
+    isLoading: {
+      control: 'boolean',
+    },
   },
   args: {
     isDisabled: false,
+    isLoading: false,
     children: 'Button',
   },
 };
@@ -39,6 +43,20 @@ export const Example = () => (
     <Button isDisabled size="small">
       Button
     </Button>
+    Loading:
+    <Button isLoading>Button</Button>
+    <Button isLoading color="secondary">
+      Button
+    </Button>
+    <Button isLoading color="destructive">
+      Button
+    </Button>
+    <Button isLoading size="small">
+      Button
+    </Button>
+    <Button isLoading size="small" color="secondary">
+      Button
+    </Button>
   </div>
 );
 
@@ -57,5 +75,18 @@ export const Secondary = {
 export const Destructive = {
   args: {
     color: 'destructive',
+  },
+};
+
+export const Loading = {
+  args: {
+    isLoading: true,
+  },
+};
+
+export const LoadingSmall = {
+  args: {
+    isLoading: true,
+    size: 'small',
   },
 };

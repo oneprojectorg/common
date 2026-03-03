@@ -4,6 +4,8 @@ import { Button as RACButton, Link as RACLink } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
+import { cn } from '../lib/utils';
+import { LoadingSpinner } from './LoadingSpinner';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
@@ -93,16 +95,46 @@ export interface ButtonProps
   extends React.ComponentProps<typeof RACButton>,
     ButtonVariants {
   className?: string;
+  isLoading?: boolean;
 }
 
 export const Button = (props: ButtonProps) => {
-  const { unstyled, ...rest } = props;
+  const { unstyled, isLoading, ...rest } = props;
+
+  const className = unstyled
+    ? props.className
+    : buttonStyle({
+        ...props,
+        isDisabled: isLoading ? false : props.isDisabled,
+        className: isLoading
+          ? cn(props.className, 'relative')
+          : props.className,
+      });
+
+  if (!isLoading) {
+    return <RACButton {...rest} className={className} />;
+  }
+
+  const { children, ...buttonRest } = rest;
 
   return (
-    <RACButton
-      {...rest}
-      className={unstyled ? props.className : buttonStyle(props)}
-    />
+    <RACButton {...buttonRest} isDisabled className={className}>
+      {(renderProps) => (
+        <>
+          <span className="invisible flex items-center gap-1">
+            {typeof children === 'function' ? children(renderProps) : children}
+          </span>
+          <span className="absolute inset-0 flex items-center justify-center">
+            <LoadingSpinner
+              className={cn(
+                'fill-transparent text-current',
+                props.size === 'small' ? 'size-4' : 'size-5',
+              )}
+            />
+          </span>
+        </>
+      )}
+    </RACButton>
   );
 };
 
@@ -110,10 +142,43 @@ export interface ButtonLinkProps
   extends React.ComponentProps<typeof RACLink>,
     ButtonVariants {
   className?: string;
+  isLoading?: boolean;
 }
 
 export const ButtonLink = (props: ButtonLinkProps) => {
-  return <RACLink {...props} className={buttonStyle(props)} />;
+  const { isLoading, ...rest } = props;
+
+  const className = buttonStyle({
+    ...props,
+    isDisabled: isLoading ? false : props.isDisabled,
+    className: isLoading ? cn(props.className, 'relative') : props.className,
+  });
+
+  if (!isLoading) {
+    return <RACLink {...rest} className={className} />;
+  }
+
+  const { children, ...linkRest } = rest;
+
+  return (
+    <RACLink {...linkRest} isDisabled className={className}>
+      {(renderProps) => (
+        <>
+          <span className="invisible flex items-center gap-1">
+            {typeof children === 'function' ? children(renderProps) : children}
+          </span>
+          <span className="absolute inset-0 flex items-center justify-center">
+            <LoadingSpinner
+              className={cn(
+                'fill-transparent text-current',
+                props.size === 'small' ? 'size-4' : 'size-5',
+              )}
+            />
+          </span>
+        </>
+      )}
+    </RACLink>
+  );
 };
 
 export interface ButtonTooltipProps extends ButtonProps {
