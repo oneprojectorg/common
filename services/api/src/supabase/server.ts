@@ -3,13 +3,25 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { logger } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
-import type { CookieOptions } from '@op/supabase/lib';
+import type { CookieOptions, UserResponse } from '@op/supabase/lib';
 import type { Database } from '@op/supabase/types';
 import 'server-only';
 
 import type { TContext } from '../types';
 
 const useUrl = OPURLConfig('APP');
+
+const authUserCache = new WeakMap<TContext, Promise<UserResponse>>();
+
+export function getCachedAuthUser(ctx: TContext): Promise<UserResponse> {
+  let promise = authUserCache.get(ctx);
+  if (!promise) {
+    const supabase = createSBAdminClient(ctx);
+    promise = supabase.auth.getUser();
+    authUserCache.set(ctx, promise);
+  }
+  return promise;
+}
 
 export const createSBAdminClient = (ctx: TContext) => {
   return createServerClient<Database>(

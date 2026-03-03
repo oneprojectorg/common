@@ -1,6 +1,6 @@
 import { UnauthorizedError, isUserEmailPlatformAdmin } from '@op/common';
 
-import { createSBAdminClient } from '../supabase/server';
+import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
@@ -10,8 +10,7 @@ import { verifyAuthentication } from '../utils/verifyAuthentication';
 export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   TContextWithUser
 > = async ({ ctx, next }) => {
-  const supabase = createSBAdminClient(ctx);
-  const data = await supabase.auth.getUser();
+  const data = await getCachedAuthUser(ctx);
 
   const user = verifyAuthentication(data);
 

@@ -2,7 +2,7 @@ import { cache } from '@op/cache';
 import { getAllowListUser } from '@op/common';
 import { TRPCError } from '@trpc/server';
 
-import { createSBAdminClient } from '../supabase/server';
+import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
@@ -10,8 +10,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
   ctx,
   next,
 }) => {
-  const supabase = createSBAdminClient(ctx);
-  const data = await supabase.auth.getUser();
+  const data = await getCachedAuthUser(ctx);
 
   const user = verifyAuthentication(data);
 
@@ -45,8 +44,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
 export const withAuthenticatedAdmin: MiddlewareBuilderBase<
   TContextWithUser
 > = async ({ ctx, next }) => {
-  const supabase = createSBAdminClient(ctx);
-  const data = await supabase.auth.getUser();
+  const data = await getCachedAuthUser(ctx);
 
   const user = verifyAuthentication(data, true);
 
