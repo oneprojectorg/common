@@ -15,7 +15,7 @@ import {
 import { AutoSizeInput } from '@op/ui/AutoSizeInput';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import type { Key } from '@op/ui/RAC';
 import { DisclosureStateContext } from '@op/ui/RAC';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
@@ -489,40 +489,15 @@ export const PhaseEditor = ({
         <LuPlus className="size-4" />
         {t('Add phase')}
       </Button>
-      <Modal
-        isDismissable
+      <ConfirmDeleteModal
         isOpen={phaseToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPhaseToDelete(null);
-          }
-        }}
-      >
-        <ModalHeader>{t('Delete phase')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              'Are you sure you want to delete this phase? This action cannot be undone.',
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setPhaseToDelete(null)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={confirmRemovePhase}
-          >
-            {t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        title={t('Delete phase')}
+        message={t(
+          'Are you sure you want to delete this phase? This action cannot be undone.',
+        )}
+        onConfirm={confirmRemovePhase}
+        onCancel={() => setPhaseToDelete(null)}
+      />
     </div>
   );
 };

@@ -7,7 +7,7 @@ import { Accordion, AccordionItem } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import type { Key } from '@op/ui/RAC';
 import { Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
@@ -370,40 +370,15 @@ export function RubricEditorContent({
 
       <RubricParticipantPreview template={template} />
 
-      <Modal
-        isDismissable
+      <ConfirmDeleteModal
         isOpen={criterionToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCriterionToDelete(null);
-          }
-        }}
-      >
-        <ModalHeader>{t('Delete criterion')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              'Are you sure you want to delete this criterion? This action cannot be undone.',
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setCriterionToDelete(null)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={confirmRemoveCriterion}
-          >
-            {t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        title={t('Delete criterion')}
+        message={t(
+          'Are you sure you want to delete this criterion? This action cannot be undone.',
+        )}
+        onConfirm={confirmRemoveCriterion}
+        onCancel={() => setCriterionToDelete(null)}
+      />
     </div>
   );
 }
