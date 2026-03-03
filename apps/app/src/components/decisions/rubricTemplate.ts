@@ -12,6 +12,7 @@ import type {
   RubricTemplateSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
+import type { JSONSchema7 } from 'json-schema';
 
 import type { TranslationKey } from '@/lib/i18n/routing';
 
@@ -41,10 +42,55 @@ export interface CriterionView {
 }
 
 // ---------------------------------------------------------------------------
-// Criterion type ↔ JSON Schema mapping
+// Internal helpers
 // ---------------------------------------------------------------------------
 
 const DEFAULT_MAX_POINTS = 5;
+
+/**
+ * Type guard that narrows a `JSONSchema7Definition` (which is
+ * `JSONSchema7 | boolean`) to `JSONSchema7`.
+ */
+function isSchemaObject(entry: JSONSchema7 | boolean): entry is JSONSchema7 {
+  return typeof entry !== 'boolean';
+}
+
+/**
+ * Extract oneOf entries as typed `JSONSchema7[]`, filtering out boolean
+ * definitions.
+ */
+function getOneOfEntries(schema: XFormatPropertySchema): JSONSchema7[] {
+  if (!Array.isArray(schema.oneOf)) {
+    return [];
+  }
+  return schema.oneOf.filter(isSchemaObject);
+}
+
+/**
+ * Update a single criterion's schema within a template. Returns the template
+ * unchanged if the criterion doesn't exist.
+ */
+function updateProperty(
+  template: RubricTemplateSchema,
+  criterionId: string,
+  updater: (schema: XFormatPropertySchema) => XFormatPropertySchema,
+): RubricTemplateSchema {
+  const schema = getCriterionSchema(template, criterionId);
+  if (!schema) {
+    return template;
+  }
+  return {
+    ...template,
+    properties: {
+      ...template.properties,
+      [criterionId]: updater(schema),
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Criterion type ↔ JSON Schema mapping
+// ---------------------------------------------------------------------------
 
 /**
  * Create the JSON Schema for a given criterion type.
@@ -101,19 +147,12 @@ export function inferCriterionType(
   }
 
   if (xFormat === 'dropdown') {
-    // Scored: integer type with maximum
-    if (schema.type === 'integer' && typeof schema.maximum === 'number') {
+    if (schema.type === 'integer' && schema.maximum != null) {
       return 'scored';
     }
 
-    // Yes/No: string with exactly two oneOf entries (yes, no)
-    if (schema.type === 'string' && Array.isArray(schema.oneOf)) {
-      const values = schema.oneOf
-        .filter(
-          (e): e is { const: string } =>
-            typeof e === 'object' && e !== null && 'const' in e,
-        )
-        .map((e) => e.const);
+    if (schema.type === 'string') {
+      const values = getOneOfEntries(schema).map((e) => e.const);
       if (
         values.length === 2 &&
         values.includes('yes') &&
@@ -131,26 +170,15 @@ export function inferCriterionType(
 // Readers
 // ---------------------------------------------------------------------------
 
-function asSchema(def: unknown): XFormatPropertySchema | undefined {
-  if (typeof def === 'object' && def !== null) {
-    return def as XFormatPropertySchema;
-  }
-  return undefined;
-}
-
 export function getCriterionOrder(template: RubricTemplateSchema): string[] {
-  return (template['x-field-order'] as string[] | undefined) ?? [];
+  return template['x-field-order'] ?? [];
 }
 
 export function getCriterionSchema(
   template: RubricTemplateSchema,
   criterionId: string,
 ): XFormatPropertySchema | undefined {
-  const props = template.properties;
-  if (!props) {
-    return undefined;
-  }
-  return asSchema(props[criterionId]);
+  return template.properties?.[criterionId];
 }
 
 export function getCriterionType(
@@ -168,27 +196,21 @@ export function getCriterionLabel(
   template: RubricTemplateSchema,
   criterionId: string,
 ): string {
-  const schema = getCriterionSchema(template, criterionId);
-  return (schema?.title as string | undefined) ?? '';
+  return getCriterionSchema(template, criterionId)?.title ?? '';
 }
 
 export function getCriterionDescription(
   template: RubricTemplateSchema,
   criterionId: string,
 ): string | undefined {
-  const schema = getCriterionSchema(template, criterionId);
-  return schema?.description;
+  return getCriterionSchema(template, criterionId)?.description;
 }
 
 export function isCriterionRequired(
   template: RubricTemplateSchema,
   criterionId: string,
 ): boolean {
-  const required = template.required;
-  if (!Array.isArray(required)) {
-    return false;
-  }
-  return required.includes(criterionId);
+  return template.required?.includes(criterionId) ?? false;
 }
 
 export function getCriterionMaxPoints(
@@ -207,17 +229,13 @@ export function getCriterionScoreLabels(
   criterionId: string,
 ): string[] {
   const schema = getCriterionSchema(template, criterionId);
-  if (!schema || schema.type !== 'integer' || !Array.isArray(schema.oneOf)) {
+  if (!schema || schema.type !== 'integer') {
     return [];
   }
-  return schema.oneOf
+  return getOneOfEntries(schema)
     .filter(
-      (e): e is { const: number; title: string } =>
-        typeof e === 'object' &&
-        e !== null &&
-        'const' in e &&
-        'title' in e &&
-        typeof (e as { title: unknown }).title === 'string',
+      (e): e is JSONSchema7 & { const: number; title: string } =>
+        typeof e.const === 'number' && typeof e.title === 'string',
     )
     .sort((a, b) => a.const - b.const)
     .map((e) => e.title);
@@ -337,18 +355,7 @@ export function updateCriterionLabel(
   criterionId: string,
   label: string,
 ): RubricTemplateSchema {
-  const schema = getCriterionSchema(template, criterionId);
-  if (!schema) {
-    return template;
-  }
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: { ...schema, title: label },
-    },
-  };
+  return updateProperty(template, criterionId, (s) => ({ ...s, title: label }));
 }
 
 export function updateCriterionDescription(
@@ -356,25 +363,15 @@ export function updateCriterionDescription(
   criterionId: string,
   description: string | undefined,
 ): RubricTemplateSchema {
-  const schema = getCriterionSchema(template, criterionId);
-  if (!schema) {
-    return template;
-  }
-
-  const updated = { ...schema };
-  if (description) {
-    updated.description = description;
-  } else {
-    delete updated.description;
-  }
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: updated,
-    },
-  };
+  return updateProperty(template, criterionId, (s) => {
+    const updated = { ...s };
+    if (description) {
+      updated.description = description;
+    } else {
+      delete updated.description;
+    }
+    return updated;
+  });
 }
 
 export function setCriterionRequired(
@@ -401,49 +398,28 @@ export function changeCriterionType(
   criterionId: string,
   newType: RubricCriterionType,
 ): RubricTemplateSchema {
-  const existing = getCriterionSchema(template, criterionId);
-  if (!existing) {
-    return template;
-  }
-
-  const newSchema: XFormatPropertySchema = {
-    ...createCriterionJsonSchema(newType),
-    title: existing.title,
-  };
-  if (existing.description) {
-    newSchema.description = existing.description;
-  }
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: newSchema,
-    },
-  };
+  return updateProperty(template, criterionId, (existing) => {
+    const newSchema: XFormatPropertySchema = {
+      ...createCriterionJsonSchema(newType),
+      title: existing.title,
+    };
+    if (existing.description) {
+      newSchema.description = existing.description;
+    }
+    return newSchema;
+  });
 }
 
 /**
  * Low-level updater for the raw JSON Schema of a criterion.
- * Used for updating score labels, max points, dropdown options, etc.
+ * Used for restoring cached scored config, etc.
  */
 export function updateCriterionJsonSchema(
   template: RubricTemplateSchema,
   criterionId: string,
   updates: Partial<XFormatPropertySchema>,
 ): RubricTemplateSchema {
-  const existing = getCriterionSchema(template, criterionId);
-  if (!existing) {
-    return template;
-  }
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: { ...existing, ...updates },
-    },
-  };
+  return updateProperty(template, criterionId, (s) => ({ ...s, ...updates }));
 }
 
 /**
@@ -469,17 +445,11 @@ export function updateScoredMaxPoints(
     title: existingLabels[i] ?? '',
   }));
 
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: {
-        ...schema,
-        maximum: clampedMax,
-        oneOf,
-      },
-    },
-  };
+  return updateProperty(template, criterionId, (s) => ({
+    ...s,
+    maximum: clampedMax,
+    oneOf,
+  }));
 }
 
 /**
@@ -499,24 +469,13 @@ export function updateScoreLabel(
   }
 
   const oneOf = schema.oneOf.map((entry) => {
-    if (
-      typeof entry === 'object' &&
-      entry !== null &&
-      'const' in entry &&
-      (entry as { const: number }).const === scoreValue
-    ) {
+    if (isSchemaObject(entry) && entry.const === scoreValue) {
       return { ...entry, title: label };
     }
     return entry;
   });
 
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: { ...schema, oneOf },
-    },
-  };
+  return updateProperty(template, criterionId, (s) => ({ ...s, oneOf }));
 }
 
 // ---------------------------------------------------------------------------
