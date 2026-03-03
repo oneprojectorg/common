@@ -1,18 +1,7 @@
 'use client';
 
+import { type ProcessPhase } from '@op/api/encoders';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
-
-interface ProcessPhase {
-  id: string;
-  name: string;
-  description?: string;
-  phase?: {
-    startDate?: string;
-    endDate?: string;
-    sortOrder?: number;
-  };
-  type?: 'initial' | 'intermediate' | 'final';
-}
 
 interface DecisionProcessStepperProps {
   phases: ProcessPhase[];
