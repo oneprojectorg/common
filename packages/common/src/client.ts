@@ -25,6 +25,7 @@ export {
   LOCALE_TO_DEEPL,
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';
+export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta';
 
 const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
 

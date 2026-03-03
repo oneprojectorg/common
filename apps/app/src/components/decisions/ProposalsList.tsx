@@ -7,17 +7,20 @@ import {
   ProposalStatus,
   type proposalEncoder,
 } from '@op/api/encoders';
+import { SUPPORTED_LOCALES, type SupportedLocale } from '@op/common/client';
 import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
+import { Link } from '@op/ui/Link';
 import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { useLocale } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 import type { z } from 'zod';
 
@@ -36,7 +39,9 @@ import {
   ProposalCardOwnerActions,
   ProposalCardPreview,
 } from './ProposalCard';
+import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import { TranslateBanner } from './TranslateBanner';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
@@ -548,6 +553,68 @@ export const ProposalsList = ({
   const { proposals: allProposals, canManageProposals = false } =
     proposalsData ?? {};
 
+  // --- Translation state ---
+  const locale = useLocale();
+  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
+    locale,
+  )
+    ? (locale as SupportedLocale)
+    : null;
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [translationState, setTranslationState] = useState<{
+    translations: Record<
+      string,
+      { title?: string; category?: string; preview?: string }
+    >;
+    sourceLocale: string;
+  } | null>(null);
+
+  const translateBatchMutation =
+    trpc.translation.translateProposals.useMutation({
+      onSuccess: (data) => {
+        setTranslationState({
+          translations: data.translations,
+          sourceLocale: data.sourceLocale,
+        });
+      },
+    });
+
+  const handleTranslate = useCallback(() => {
+    if (!supportedLocale) {
+      return;
+    }
+    const profileIds = allProposals?.map((p) => p.profileId);
+    if (!profileIds?.length) {
+      return;
+    }
+    translateBatchMutation.mutate({
+      profileIds,
+      targetLocale: supportedLocale,
+    });
+  }, [translateBatchMutation, allProposals, supportedLocale]);
+
+  const handleViewOriginal = useCallback(() => setTranslationState(null), []);
+
+  const languageNames = useMemo(
+    () => new Intl.DisplayNames([locale], { type: 'language' }),
+    [locale],
+  );
+  const getLanguageName = (langCode: string) =>
+    languageNames.of(langCode) ?? langCode;
+
+  const sourceLanguageName = translationState
+    ? getLanguageName(
+        translationState.sourceLocale.toLowerCase().split('-')[0] ?? '',
+      )
+    : '';
+  const targetLanguageName = getLanguageName(locale);
+
+  const showBanner =
+    !!supportedLocale &&
+    supportedLocale !== 'en' &&
+    !bannerDismissed &&
+    !translationState;
+
   // Use the custom hook for filtering proposals
   const {
     filteredProposals: proposals,
@@ -686,15 +753,41 @@ export const ProposalsList = ({
         </div>
       </div>
 
-      <Proposals
-        isLoading={isLoading}
-        proposals={proposals}
-        instanceId={instanceId}
-        slug={slug}
-        decisionSlug={decisionSlug}
-        canManageProposals={canManageProposals}
-        votedProposalIds={selectedProposalIds}
-      />
+      {/* Translation attribution */}
+      {translationState && (
+        <p className="text-sm text-neutral-gray3">
+          {t('Translated from {language}', {
+            language: sourceLanguageName,
+          })}{' '}
+          &middot;{' '}
+          <Link onPress={handleViewOriginal} className="text-sm font-semibold">
+            {t('View original')}
+          </Link>
+        </p>
+      )}
+
+      <ProposalTranslationProvider
+        translations={translationState?.translations ?? {}}
+      >
+        <Proposals
+          isLoading={isLoading}
+          proposals={proposals}
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+          canManageProposals={canManageProposals}
+          votedProposalIds={selectedProposalIds}
+        />
+      </ProposalTranslationProvider>
+
+      {showBanner && (
+        <TranslateBanner
+          onTranslate={handleTranslate}
+          onDismiss={() => setBannerDismissed(true)}
+          isTranslating={translateBatchMutation.isPending}
+          languageName={targetLanguageName}
+        />
+      )}
     </div>
   );
 };

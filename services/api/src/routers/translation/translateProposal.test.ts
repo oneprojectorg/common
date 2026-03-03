@@ -341,4 +341,193 @@ describe.concurrent('translation.translateProposal', () => {
       expect.objectContaining({ tagHandling: 'html' }),
     );
   });
+
+  it('should translate template field titles, descriptions, and dropdown options', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const proposalTemplate = {
+      type: 'object',
+      properties: {
+        category: {
+          type: 'string',
+          title: 'Project Category',
+          description: 'Select the category for your proposal',
+          'x-format': 'select',
+          oneOf: [
+            { const: 'infrastructure', title: 'Infrastructure' },
+            { const: 'education', title: 'Education' },
+            { const: 'health', title: 'Health Services' },
+          ],
+        },
+        summary: {
+          type: 'string',
+          title: 'Executive Summary',
+          description: 'Brief overview of your proposal',
+          'x-format': 'textarea',
+        },
+      },
+    };
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Template Fields Test' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Body content' }],
+        },
+      ],
+    });
+
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    // Verify template field titles are translated
+    expect(result.translated['field_title:category']).toBe(
+      '[ES] Project Category',
+    );
+    expect(result.translated['field_title:summary']).toBe(
+      '[ES] Executive Summary',
+    );
+
+    // Verify template field descriptions are translated
+    expect(result.translated['field_desc:category']).toBe(
+      '[ES] Select the category for your proposal',
+    );
+    expect(result.translated['field_desc:summary']).toBe(
+      '[ES] Brief overview of your proposal',
+    );
+
+    // Verify dropdown option labels are translated
+    expect(result.translated['option:category:infrastructure']).toBe(
+      '[ES] Infrastructure',
+    );
+    expect(result.translated['option:category:education']).toBe(
+      '[ES] Education',
+    );
+    expect(result.translated['option:category:health']).toBe(
+      '[ES] Health Services',
+    );
+
+    // Verify standard fields are still present
+    expect(result.translated['title']).toBe('[ES] Template Fields Test');
+    expect(result.sourceLocale).toBe('EN');
+    expect(result.targetLocale).toBe('es');
+  });
+
+  it('should use cached template field translations without calling DeepL', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const translationData = new TestTranslationDataManager(onTestFinished);
+
+    const proposalTemplate = {
+      type: 'object',
+      properties: {
+        region: {
+          type: 'string',
+          title: 'Target Region',
+          'x-format': 'text',
+        },
+      },
+    };
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Cached Template Test' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Some body' }],
+        },
+      ],
+    });
+
+    // Pre-seed the field title translation in the cache
+    await translationData.seedTranslation({
+      contentKey: `proposal:${proposal.id}:field_title:region`,
+      sourceText: 'Target Region',
+      translatedText: '[ES-CACHED] Target Region',
+      sourceLocale: 'EN',
+      targetLocale: 'ES',
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposal.id}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    // Field title should come from cache
+    expect(result.translated['field_title:region']).toBe(
+      '[ES-CACHED] Target Region',
+    );
+
+    // Title and body should go through DeepL mock
+    expect(result.translated['title']).toBe('[ES] Cached Template Test');
+  });
 });

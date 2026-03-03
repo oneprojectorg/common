@@ -6,7 +6,7 @@ import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import { parseProposalData, parseTranslatedMeta } from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
@@ -17,7 +17,7 @@ import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -157,6 +157,14 @@ export function ProposalView({
     translatedHtmlContent?.translated ?? currentProposal.htmlContent;
   const proposalTemplate =
     (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
+
+  const translatedMeta = useMemo(
+    () =>
+      translatedHtmlContent
+        ? parseTranslatedMeta(translatedHtmlContent.translated)
+        : null,
+    [translatedHtmlContent],
+  );
 
   // Legacy proposals store HTML under a single "default" key with no collab doc.
   // Render them directly instead of going through the template-driven renderer.
@@ -309,6 +317,7 @@ export function ProposalView({
             <ProposalContentRenderer
               proposalTemplate={proposalTemplate}
               htmlContent={resolvedHtmlContent}
+              translatedMeta={translatedMeta}
             />
           ) : (
             <DocumentNotAvailable />

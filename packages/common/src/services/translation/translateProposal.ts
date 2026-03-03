@@ -1,12 +1,11 @@
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
-import { translateBatch } from '@op/translation';
-import { DeepLClient } from 'deepl-node';
 
-import { CommonError } from '../../utils';
 import { getProposal } from '../decision/getProposal';
-import { LOCALE_TO_DEEPL } from './locales';
+import { parseSchemaOptions } from '../decision/proposalDataSchema';
+import type { ProposalTemplateSchema } from '../decision/types';
 import type { SupportedLocale } from './locales';
+import { runTranslateBatch } from './runTranslateBatch';
 
 /**
  * Translates a proposal's content (title, category, HTML fragments) into the
@@ -61,23 +60,42 @@ export async function translateProposal({
     }
   }
 
+  // Template field titles and descriptions
+  const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
+  if (template?.properties) {
+    for (const [fieldKey, property] of Object.entries(template.properties)) {
+      if (property.title) {
+        entries.push({
+          contentKey: `proposal:${proposalId}:field_title:${fieldKey}`,
+          text: property.title,
+        });
+      }
+      if (property.description) {
+        entries.push({
+          contentKey: `proposal:${proposalId}:field_desc:${fieldKey}`,
+          text: property.description,
+        });
+      }
+
+      // Dropdown option labels (oneOf or legacy enum)
+      const options = parseSchemaOptions(property);
+      for (const option of options) {
+        if (option.title) {
+          entries.push({
+            contentKey: `proposal:${proposalId}:option:${fieldKey}:${option.value}`,
+            text: option.title,
+          });
+        }
+      }
+    }
+  }
+
   if (entries.length === 0) {
     return { translated: {}, sourceLocale: '', targetLocale };
   }
 
   // 3. Translate via DeepL with cache-through
-  const apiKey = process.env.DEEPL_API_KEY;
-  if (!apiKey) {
-    throw new CommonError('DEEPL_API_KEY is not configured');
-  }
-
-  const deeplTargetCode = LOCALE_TO_DEEPL[targetLocale];
-  const client = new DeepLClient(apiKey);
-  const results = await translateBatch({
-    entries,
-    targetLocale: deeplTargetCode,
-    client,
-  });
+  const results = await runTranslateBatch(entries, targetLocale);
 
   // 4. Build response — strip the "proposal:<id>:" prefix to get the field name back
   const prefix = `proposal:${proposalId}:`;

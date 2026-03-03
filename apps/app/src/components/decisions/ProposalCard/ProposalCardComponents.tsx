@@ -27,6 +27,7 @@ import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
+import { useCardTranslation } from '../ProposalTranslationContext';
 import { getProposalContentPreview } from '../proposalContentUtils';
 
 export type Proposal = z.infer<typeof proposalEncoder>;
@@ -115,9 +116,10 @@ export function ProposalCardTitle({
   className?: string;
 }) {
   const t = useTranslations();
+  const cardTranslation = useCardTranslation(proposal.profileId);
   const { title } = parseProposalData(proposal.proposalData);
 
-  const titleText = title || t('Untitled Proposal');
+  const titleText = cardTranslation?.title ?? (title || t('Untitled Proposal'));
   const titleClasses =
     'max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black';
 
@@ -259,9 +261,11 @@ export function ProposalCardCategory({
 }: BaseProposalCardProps & {
   className?: string;
 }) {
+  const cardTranslation = useCardTranslation(proposal.profileId);
   const { category } = parseProposalData(proposal.proposalData);
+  const displayCategory = cardTranslation?.category ?? category;
 
-  if (!category || !proposal.submittedBy) {
+  if (!displayCategory || !proposal.submittedBy) {
     return null;
   }
 
@@ -274,7 +278,7 @@ export function ProposalCardCategory({
           className,
         )}
       >
-        {category}
+        {displayCategory}
       </Chip>
     </>
   );
@@ -356,16 +360,24 @@ export function ProposalCardPreview({
 }: BaseProposalCardProps & {
   className?: string;
 }) {
-  const previewText = getProposalContentPreview(
-    proposal.documentContent,
-    (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
-  );
+  const cardTranslation = useCardTranslation(proposal.profileId);
+  const translatedPreview = cardTranslation?.preview;
 
-  if (previewText === null) {
+  const previewText =
+    translatedPreview === undefined
+      ? getProposalContentPreview(
+          proposal.documentContent,
+          (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
+        )
+      : undefined;
+
+  const displayText = translatedPreview ?? previewText;
+
+  if (displayText === null) {
     return <DocumentNotAvailable className="py-4" />;
   }
 
-  if (!previewText) {
+  if (!displayText) {
     return null;
   }
 
@@ -376,7 +388,7 @@ export function ProposalCardPreview({
         className,
       )}
     >
-      {previewText}
+      {displayText}
     </p>
   );
 }
