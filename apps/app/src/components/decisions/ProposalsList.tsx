@@ -7,7 +7,7 @@ import {
   ProposalStatus,
   type proposalEncoder,
 } from '@op/api/encoders';
-import type { SupportedLocale } from '@op/common/client';
+import { SUPPORTED_LOCALES, type SupportedLocale } from '@op/common/client';
 import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
@@ -592,6 +592,11 @@ export const ProposalsList = ({
 
   // --- Translation state ---
   const locale = useLocale();
+  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
+    locale,
+  )
+    ? (locale as SupportedLocale)
+    : null;
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translationState, setTranslationState] = useState<{
     translations: Record<
@@ -612,6 +617,9 @@ export const ProposalsList = ({
     });
 
   const handleTranslate = useCallback(() => {
+    if (!supportedLocale) {
+      return;
+    }
     const profileIds = allProposals
       ?.map((p) => p.profileId)
       .filter(Boolean) as string[];
@@ -620,9 +628,9 @@ export const ProposalsList = ({
     }
     translateBatchMutation.mutate({
       profileIds,
-      targetLocale: locale as SupportedLocale,
+      targetLocale: supportedLocale,
     });
-  }, [translateBatchMutation, allProposals, locale]);
+  }, [translateBatchMutation, allProposals, supportedLocale]);
 
   const handleViewOriginal = useCallback(() => setTranslationState(null), []);
 
@@ -640,7 +648,11 @@ export const ProposalsList = ({
     : '';
   const targetLanguageName = getLanguageName(locale);
 
-  const showBanner = locale !== 'en' && !bannerDismissed && !translationState;
+  const showBanner =
+    !!supportedLocale &&
+    supportedLocale !== 'en' &&
+    !bannerDismissed &&
+    !translationState;
 
   // Use the custom hook for filtering proposals
   const {
