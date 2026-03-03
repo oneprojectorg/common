@@ -19,7 +19,6 @@ import { useTranslations } from '@/lib/i18n';
 import type {
   CriterionView,
   RubricCriterionType,
-  ScoredConfig,
 } from '../../../../decisions/rubricTemplate';
 import {
   addCriterion,
@@ -27,10 +26,11 @@ import {
   createEmptyRubricTemplate,
   getCriteria,
   getCriterionErrors,
-  getScoredConfig,
+  getCriterionSchema,
   removeCriterion,
   reorderCriteria,
   updateCriterionDescription,
+  updateCriterionJsonSchema,
   updateCriterionLabel,
   updateScoreLabel,
   updateScoredMaxPoints,
@@ -85,7 +85,9 @@ export function RubricEditorContent({
   );
 
   // Cache scored config so switching type and back doesn't lose score labels
-  const scoredConfigCacheRef = useRef<Map<string, ScoredConfig>>(new Map());
+  const scoredConfigCacheRef = useRef<
+    Map<string, { maximum: number; oneOf: unknown[] }>
+  >(new Map());
 
   const setRubricTemplateSchema = useProcessBuilderStore(
     (s) => s.setRubricTemplateSchema,
@@ -196,18 +198,33 @@ export function RubricEditorContent({
     (criterionId: string, newType: RubricCriterionType) => {
       setTemplate((prev) => {
         // Stash scored config before switching away from scored
-        const currentConfig = getScoredConfig(prev, criterionId);
-        if (currentConfig) {
-          scoredConfigCacheRef.current.set(criterionId, currentConfig);
+        const schema = getCriterionSchema(prev, criterionId);
+        if (
+          schema?.type === 'integer' &&
+          typeof schema.maximum === 'number' &&
+          Array.isArray(schema.oneOf)
+        ) {
+          scoredConfigCacheRef.current.set(criterionId, {
+            maximum: schema.maximum,
+            oneOf: schema.oneOf,
+          });
         }
 
-        // Restore cached scored config when switching back to scored
-        const cached =
-          newType === 'scored'
-            ? scoredConfigCacheRef.current.get(criterionId)
-            : undefined;
+        // Change the type (rebuilds schema from scratch)
+        let updated = changeCriterionType(prev, criterionId, newType);
 
-        return changeCriterionType(prev, criterionId, newType, cached);
+        // Restore cached scored config when switching back to scored
+        if (newType === 'scored') {
+          const cached = scoredConfigCacheRef.current.get(criterionId);
+          if (cached) {
+            updated = updateCriterionJsonSchema(updated, criterionId, {
+              maximum: cached.maximum,
+              oneOf: cached.oneOf as { const: number; title: string }[],
+            });
+          }
+        }
+
+        return updated;
       });
     },
     [],

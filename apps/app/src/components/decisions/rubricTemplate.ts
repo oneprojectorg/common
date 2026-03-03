@@ -391,56 +391,13 @@ export function setCriterionRequired(
 }
 
 /**
- * Scored configuration that can be cached in component state so the user
- * doesn't lose their score labels when temporarily switching criterion type.
- */
-export interface ScoredConfig {
-  maximum: number;
-  oneOf: { const: number; title: string }[];
-}
-
-/**
- * Extract the scored configuration from a criterion's schema.
- * Returns `undefined` if the criterion is not a scored type.
- */
-export function getScoredConfig(
-  template: RubricTemplateSchema,
-  criterionId: string,
-): ScoredConfig | undefined {
-  const schema = getCriterionSchema(template, criterionId);
-  if (
-    !schema ||
-    schema.type !== 'integer' ||
-    typeof schema.maximum !== 'number'
-  ) {
-    return undefined;
-  }
-  const oneOf = (Array.isArray(schema.oneOf) ? schema.oneOf : [])
-    .filter(
-      (e): e is { const: number; title: string } =>
-        typeof e === 'object' &&
-        e !== null &&
-        'const' in e &&
-        'title' in e &&
-        typeof (e as { title: unknown }).title === 'string',
-    )
-    .sort((a, b) => a.const - b.const);
-
-  return { maximum: schema.maximum, oneOf };
-}
-
-/**
  * Change a criterion's type while preserving its label, description, and
  * required status. The schema is rebuilt from scratch for the new type.
- *
- * If switching back to `scored` and a `cachedScoredConfig` is provided,
- * the cached maximum / oneOf are restored instead of generating blank defaults.
  */
 export function changeCriterionType(
   template: RubricTemplateSchema,
   criterionId: string,
   newType: RubricCriterionType,
-  cachedScoredConfig?: ScoredConfig,
 ): RubricTemplateSchema {
   const existing = getCriterionSchema(template, criterionId);
   if (!existing) {
@@ -453,12 +410,6 @@ export function changeCriterionType(
   };
   if (existing.description) {
     newSchema.description = existing.description;
-  }
-
-  // Restore cached scored config when switching back to scored
-  if (newType === 'scored' && cachedScoredConfig) {
-    newSchema.maximum = cachedScoredConfig.maximum;
-    newSchema.oneOf = cachedScoredConfig.oneOf;
   }
 
   return {
