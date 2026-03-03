@@ -13,6 +13,11 @@ interface ProposalContentRendererProps {
   proposalTemplate: ProposalTemplateSchema;
   /** Pre-rendered HTML per fragment key (from getProposal). */
   htmlContent?: Record<string, string>;
+  /** Optional translated field titles and descriptions keyed by field key. */
+  translatedMeta?: {
+    fieldTitles: Record<string, string>;
+    fieldDescriptions: Record<string, string>;
+  } | null;
 }
 
 /**
@@ -26,6 +31,7 @@ interface ProposalContentRendererProps {
 export function ProposalContentRenderer({
   proposalTemplate,
   htmlContent,
+  translatedMeta,
 }: ProposalContentRendererProps) {
   const dynamicFields = useMemo(() => {
     if (!proposalTemplate) {
@@ -45,6 +51,8 @@ export function ProposalContentRenderer({
           key={field.key}
           field={field}
           html={htmlContent?.[field.key]}
+          translatedTitle={translatedMeta?.fieldTitles[field.key]}
+          translatedDescription={translatedMeta?.fieldDescriptions[field.key]}
         />
       ))}
     </div>
@@ -58,25 +66,30 @@ export function ProposalContentRenderer({
 function ViewField({
   field,
   html,
+  translatedTitle,
+  translatedDescription,
 }: {
   field: FieldDescriptor;
   html: string | undefined;
+  translatedTitle?: string;
+  translatedDescription?: string;
 }) {
   const { schema } = field;
 
+  const title = translatedTitle ?? schema.title;
+  const description = translatedDescription ?? schema.description;
+
   return (
     <div className="flex flex-col gap-2">
-      {(schema.title || schema.description) && (
+      {(title || description) && (
         <div className="flex flex-col gap-2">
-          {schema.title && (
+          {title && (
             <span className="font-serif text-title-sm14 text-neutral-charcoal">
-              {schema.title}
+              {title}
             </span>
           )}
-          {schema.description && (
-            <p className="text-sm text-neutral-charcoal">
-              {schema.description}
-            </p>
+          {description && (
+            <p className="text-sm text-neutral-charcoal">{description}</p>
           )}
         </div>
       )}
