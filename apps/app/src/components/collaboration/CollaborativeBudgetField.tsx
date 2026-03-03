@@ -11,11 +11,18 @@ import { useTranslations } from '@/lib/i18n';
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_CURRENCY_SYMBOL = '$';
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: DEFAULT_CURRENCY_SYMBOL,
-};
+const getCurrencySymbol = (currency: string) =>
+  (0)
+    .toLocaleString(undefined, {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+    .replace(/\d/g, '')
+    .trim();
 
 interface CollaborativeBudgetFieldProps {
   maxAmount?: number;
@@ -65,9 +72,9 @@ export function CollaborativeBudgetField({
 
   const [isEditing, setIsEditing] = useState(false);
   const budgetAmount = budget?.amount ?? null;
-  const currencySymbol =
-    CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ??
-    DEFAULT_CURRENCY_SYMBOL;
+  const currencySymbol = getCurrencySymbol(
+    budget?.currency ?? DEFAULT_CURRENCY,
+  );
 
   // Track the NumberField width so the pill button can match it
   const [fieldWidth, setFieldWidth] = useState(0);
@@ -147,7 +154,12 @@ export function CollaborativeBudgetField({
       style={fieldWidth > 0 ? { minWidth: fieldWidth } : undefined}
     >
       {budgetAmount !== null
-        ? `${currencySymbol}${budgetAmount.toLocaleString()}`
+        ? budgetAmount.toLocaleString(undefined, {
+            style: 'currency',
+            currency: budget?.currency ?? DEFAULT_CURRENCY,
+            currencyDisplay: 'narrowSymbol',
+            maximumFractionDigits: 0,
+          })
         : t('Add budget')}
     </Button>
   );
