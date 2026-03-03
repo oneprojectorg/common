@@ -106,7 +106,9 @@ export const Button = (props: ButtonProps) => {
     : buttonStyle({
         ...props,
         isDisabled: isLoading ? false : props.isDisabled,
-        className: isLoading ? cn(props.className, 'relative') : props.className,
+        className: isLoading
+          ? cn(props.className, 'relative')
+          : props.className,
       });
 
   if (!isLoading) {
