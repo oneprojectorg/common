@@ -26,8 +26,6 @@ import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { TranslateBanner } from './TranslateBanner';
-
 import { Bullet } from '../Bullet';
 import {
   ProposalCard,
@@ -42,6 +40,7 @@ import {
   ProposalCardPreview,
 } from './ProposalCard';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import { TranslateBanner } from './TranslateBanner';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
@@ -625,10 +624,7 @@ export const ProposalsList = ({
     });
   }, [translateBatchMutation, allProposals, locale]);
 
-  const handleViewOriginal = useCallback(
-    () => setTranslationState(null),
-    [],
-  );
+  const handleViewOriginal = useCallback(() => setTranslationState(null), []);
 
   const languageNames = useMemo(
     () => new Intl.DisplayNames([locale], { type: 'language' }),
@@ -644,8 +640,7 @@ export const ProposalsList = ({
     : '';
   const targetLanguageName = getLanguageName(locale);
 
-  const showBanner =
-    locale !== 'en' && !bannerDismissed && !translationState;
+  const showBanner = locale !== 'en' && !bannerDismissed && !translationState;
 
   // Use the custom hook for filtering proposals
   const {
@@ -792,10 +787,7 @@ export const ProposalsList = ({
             language: sourceLanguageName,
           })}{' '}
           &middot;{' '}
-          <Link
-            onPress={handleViewOriginal}
-            className="text-sm font-semibold"
-          >
+          <Link onPress={handleViewOriginal} className="text-sm font-semibold">
             {t('View original')}
           </Link>
         </p>
