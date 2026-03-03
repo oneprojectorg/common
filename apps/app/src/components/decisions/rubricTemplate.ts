@@ -36,7 +36,7 @@ export interface CriterionView {
   required: boolean;
   /** Maximum points for scored criteria. */
   maxPoints?: number;
-  /** Labels for each score level (index 0 = score 1). Scored criteria only. */
+  /** Labels for each score level (index 0 = score 1, ascending). Scored criteria only. */
   scoreLabels: string[];
 }
 
@@ -219,7 +219,7 @@ export function getCriterionScoreLabels(
         'title' in e &&
         typeof (e as { title: unknown }).title === 'string',
     )
-    .sort((a, b) => b.const - a.const)
+    .sort((a, b) => a.const - b.const)
     .map((e) => e.title);
 }
 

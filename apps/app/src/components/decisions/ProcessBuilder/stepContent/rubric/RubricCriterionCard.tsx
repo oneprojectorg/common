@@ -271,7 +271,7 @@ function ScoredCriterionConfig({
           )}
         </p>
         <div className="space-y-4">
-          {criterion.scoreLabels.map((label, i) => {
+          {[...criterion.scoreLabels].reverse().map((label, i) => {
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
