@@ -7,7 +7,6 @@ import { Accordion, AccordionItem } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
-import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import type { Key } from '@op/ui/RAC';
 import { Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
@@ -36,6 +35,7 @@ import {
   updateScoreLabel,
   updateScoredMaxPoints,
 } from '../../../../decisions/rubricTemplate';
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';

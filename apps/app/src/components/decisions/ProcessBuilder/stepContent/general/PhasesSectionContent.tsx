@@ -15,7 +15,6 @@ import {
 import { AutoSizeInput } from '@op/ui/AutoSizeInput';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
-import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import type { Key } from '@op/ui/RAC';
 import { DisclosureStateContext } from '@op/ui/RAC';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
@@ -35,6 +34,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
 
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
