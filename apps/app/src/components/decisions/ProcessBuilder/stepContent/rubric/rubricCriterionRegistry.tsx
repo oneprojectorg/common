@@ -1,3 +1,5 @@
+import type { TranslationKey } from '@/lib/i18n/routing';
+
 import type { RubricCriterionType } from '../../../../decisions/rubricTemplate';
 
 /**
@@ -5,9 +7,9 @@ import type { RubricCriterionType } from '../../../../decisions/rubricTemplate';
  */
 interface CriterionTypeRegistryEntry {
   /** Translation key for the type label */
-  labelKey: string;
+  labelKey: TranslationKey;
   /** Translation key for a short description shown in the radio selector */
-  descriptionKey: string;
+  descriptionKey: TranslationKey;
 }
 
 export const CRITERION_TYPE_REGISTRY: Record<

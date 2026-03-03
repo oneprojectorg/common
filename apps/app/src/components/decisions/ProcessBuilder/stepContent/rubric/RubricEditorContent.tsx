@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n/routing';
 
 import type {
   CriterionView,
@@ -72,9 +73,9 @@ export function RubricEditorContent({
   const isInitialLoadRef = useRef(true);
 
   // Validation: "show on blur, clear on change"
-  const [criterionErrors, setCriterionErrors] = useState<Map<string, string[]>>(
-    new Map(),
-  );
+  const [criterionErrors, setCriterionErrors] = useState<
+    Map<string, TranslationKey[]>
+  >(new Map());
 
   // Accordion expansion state
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());

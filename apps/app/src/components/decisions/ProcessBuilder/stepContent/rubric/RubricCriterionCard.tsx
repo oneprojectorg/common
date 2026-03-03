@@ -15,6 +15,7 @@ import { TextField } from '@op/ui/TextField';
 import { LuGripVertical, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n/routing';
 
 import type {
   CriterionView,
@@ -33,7 +34,7 @@ interface RubricCriterionCardProps {
   criterion: CriterionView;
   /** 1-based display index for the header (e.g. "Criterion 1") */
   index: number;
-  errors?: string[];
+  errors?: TranslationKey[];
   controls?: SortableItemControls;
   onRemove?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;

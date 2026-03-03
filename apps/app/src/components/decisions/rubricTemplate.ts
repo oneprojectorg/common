@@ -13,6 +13,8 @@ import type {
   XFormatPropertySchema,
 } from '@op/common/client';
 
+import type { TranslationKey } from '@/lib/i18n/routing';
+
 export type { RubricTemplateSchema };
 
 // ---------------------------------------------------------------------------
@@ -265,8 +267,8 @@ export function getCriteria(template: RubricTemplateSchema): CriterionView[] {
  * Returns translation keys for validation errors on a criterion.
  * Pass each key through `t()` in the UI layer.
  */
-export function getCriterionErrors(criterion: CriterionView): string[] {
-  const errors: string[] = [];
+export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
+  const errors: TranslationKey[] = [];
 
   if (!criterion.label.trim()) {
     errors.push('Criterion label is required');
