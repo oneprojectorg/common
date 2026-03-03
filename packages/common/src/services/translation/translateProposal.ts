@@ -5,6 +5,7 @@ import { DeepLClient } from 'deepl-node';
 
 import { CommonError } from '../../utils';
 import { getProposal } from '../decision/getProposal';
+import { parseSchemaOptions } from '../decision/proposalDataSchema';
 import type { ProposalTemplateSchema } from '../decision/types';
 import { LOCALE_TO_DEEPL } from './locales';
 import type { SupportedLocale } from './locales';
@@ -77,6 +78,17 @@ export async function translateProposal({
           contentKey: `proposal:${proposalId}:field_desc:${fieldKey}`,
           text: property.description,
         });
+      }
+
+      // Dropdown option labels (oneOf or legacy enum)
+      const options = parseSchemaOptions(property);
+      for (const option of options) {
+        if (option.title) {
+          entries.push({
+            contentKey: `proposal:${proposalId}:option:${fieldKey}:${option.value}`,
+            text: option.title,
+          });
+        }
       }
     }
   }
