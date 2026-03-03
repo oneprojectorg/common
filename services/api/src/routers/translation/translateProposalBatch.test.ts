@@ -40,7 +40,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('translation.translateProposalBatch', () => {
-  it('should translate title, category, and preview for multiple proposals', async ({
+  it('should translate title and preview for multiple proposals', async ({
     task,
     onTestFinished,
   }) => {
@@ -134,13 +134,13 @@ describe.concurrent('translation.translateProposalBatch', () => {
     const t1 = result.translations[proposal1.profileId];
     expect(t1).toBeDefined();
     expect(t1?.title).toBe('[ES] Solar Panel Initiative');
-    expect(t1?.preview).toBeDefined();
+    expect(t1?.preview).toMatch(/^\[ES\] .*solar panels/i);
 
     // Verify proposal 2 translations are grouped by profileId
     const t2 = result.translations[proposal2.profileId];
     expect(t2).toBeDefined();
     expect(t2?.title).toBe('[ES] Water Purification Project');
-    expect(t2?.preview).toBeDefined();
+    expect(t2?.preview).toMatch(/^\[ES\] .*clean water/i);
   });
 
   it('should return cached batch translations without calling DeepL', async ({
@@ -213,7 +213,7 @@ describe.concurrent('translation.translateProposalBatch', () => {
     expect(t?.preview).toMatch(/^\[ES\] /);
   });
 
-  it('should return empty translations when proposals have no translatable content', async ({
+  it('should translate title but omit preview when document is empty', async ({
     task,
     onTestFinished,
   }) => {
@@ -229,8 +229,7 @@ describe.concurrent('translation.translateProposalBatch', () => {
       throw new Error('No instance created');
     }
 
-    // Create a proposal with empty title — createProposal requires title,
-    // but the batch function only includes non-empty fields
+    // Create a proposal with a title but an empty TipTap document
     const proposal = await testData.createProposal({
       callerEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
