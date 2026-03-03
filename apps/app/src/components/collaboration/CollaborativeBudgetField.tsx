@@ -17,11 +17,6 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: DEFAULT_CURRENCY_SYMBOL,
 };
 
-/** Formats a number as a locale-aware currency string (e.g. 5000 → "$5,000") */
-function formatBudgetDisplay(amount: number, currencySymbol: string): string {
-  return `${currencySymbol}${amount.toLocaleString()}`;
-}
-
 interface CollaborativeBudgetFieldProps {
   maxAmount?: number;
   initialValue?: BudgetData | null;
@@ -33,8 +28,9 @@ interface CollaborativeBudgetFieldProps {
  * Stores `MoneyAmount` (`{ amount, currency }`) as a JSON string in the shared doc
  * for future multi-currency support.
  *
- * Displays as a pill when a value exists, switching to an inline
- * NumberField on click for editing.
+ * Displays as a pill when a value exists or empty, switching to an inline
+ * NumberField on click for editing. The pill width matches the input width
+ * to prevent layout shifts.
  */
 export function CollaborativeBudgetField({
   maxAmount,
@@ -73,10 +69,22 @@ export function CollaborativeBudgetField({
     CURRENCY_SYMBOLS[budget?.currency ?? DEFAULT_CURRENCY] ??
     DEFAULT_CURRENCY_SYMBOL;
 
-  // Auto-focus when switching to edit mode
+  // Track the NumberField width so the pill button can match it
+  const [fieldWidth, setFieldWidth] = useState(0);
+
+  // Auto-focus when switching to edit mode, and measure the field width
+  // after the NumberField's internal effects have settled
   useEffect(() => {
     if (isEditing && budgetInputRef.current) {
       budgetInputRef.current.focus();
+      // Defer measurement so NumberField's value and prefix effects settle
+      const frame = requestAnimationFrame(() => {
+        const group = budgetInputRef.current?.closest('[role="group"]');
+        if (group instanceof HTMLElement && group.offsetWidth > 0) {
+          setFieldWidth(group.offsetWidth);
+        }
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [isEditing]);
 
@@ -111,40 +119,36 @@ export function CollaborativeBudgetField({
     setIsEditing(false);
   };
 
-  // No value and not editing → "Add budget" pill
-  if (budgetAmount === null && !isEditing) {
+  if (isEditing) {
     return (
-      <Button variant="pill" color="pill" onPress={handleStartEditing}>
-        {t('Add budget')}
-      </Button>
+      <NumberField
+        ref={budgetInputRef}
+        value={budgetAmount}
+        onChange={handleChange}
+        prefixText={currencySymbol}
+        inputProps={{
+          placeholder: maxAmount
+            ? t('Max {amount}', { amount: maxAmount.toLocaleString() })
+            : t('Enter amount'),
+          onBlur: handleBlur,
+          className: 'shadow-none',
+        }}
+        fieldClassName="w-auto rounded-md"
+      />
     );
   }
 
-  // Has a value and not editing → display as pill
-  if (budgetAmount !== null && !isEditing) {
-    return (
-      <Button variant="pill" color="pill" onPress={handleStartEditing}>
-        {formatBudgetDisplay(budgetAmount, currencySymbol)}
-      </Button>
-    );
-  }
-
-  // Editing mode → inline NumberField
   return (
-    <NumberField
-      ref={budgetInputRef}
-      value={budgetAmount}
-      onChange={handleChange}
-      prefixText={currencySymbol}
-      inputProps={{
-        placeholder: maxAmount
-          ? t('Max {amount}', {
-              amount: maxAmount.toLocaleString(),
-            })
-          : t('Enter amount'),
-        onBlur: handleBlur,
-      }}
-      fieldClassName="w-auto"
-    />
+    <Button
+      variant="pill"
+      color="pill"
+      onPress={handleStartEditing}
+      className="justify-start text-left"
+      style={fieldWidth > 0 ? { minWidth: fieldWidth } : undefined}
+    >
+      {budgetAmount !== null
+        ? `${currencySymbol}${budgetAmount.toLocaleString()}`
+        : t('Add budget')}
+    </Button>
   );
 }
