@@ -256,6 +256,7 @@ const ProcessBuilderHeaderContent = ({
 
 const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
   const t = useTranslations();
+  const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSteps, currentStep, setStep } =
     useProcessNavigation(navigationConfig);
@@ -297,7 +298,9 @@ const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
                 className="flex h-8 items-center gap-2 bg-transparent selected:bg-neutral-offWhite"
               >
                 {t(step.labelKey)}
-                {step.id === 'rubric' && <ComingSoonIndicator />}
+                {step.id === 'rubric' && !rubricBuilderEnabled && (
+                  <ComingSoonIndicator />
+                )}
               </Tab>
             ))}
           </TabList>
