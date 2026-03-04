@@ -5,6 +5,10 @@
  * top-level `x-field-order` array. Per-field widget selection is driven by `x-format`
  * on each property (consumed by the renderer's FORMAT_REGISTRY).
  *
+ * Generic JSON Schema operations are delegated to `templateUtils.ts`.
+ * This file adds proposal-specific logic: field types, options, locked fields,
+ * and category management.
+ *
  * No separate uiSchema is stored — everything lives in the JSON Schema itself
  * via vendor extensions (`x-*` properties).
  */
@@ -15,6 +19,19 @@ import {
   parseSchemaOptions,
   schemaHasOptions,
 } from '@op/common/client';
+
+import {
+  addProperty,
+  getPropertyDescription,
+  getPropertyLabel,
+  getPropertyOrder,
+  isPropertyRequired,
+  removeProperty,
+  reorderProperties,
+  setPropertyRequired,
+  updatePropertyDescription,
+  updatePropertyLabel,
+} from './templateUtils';
 
 export type { ProposalTemplateSchema };
 
@@ -90,13 +107,15 @@ function asSchema(def: unknown): ProposalTemplateSchema | undefined {
 }
 
 export function getFieldOrder(template: ProposalTemplateSchema): string[] {
-  return (template['x-field-order'] as string[] | undefined) ?? [];
+  return getPropertyOrder(template);
 }
 
 export function getFieldSchema(
   template: ProposalTemplateSchema,
   fieldId: string,
 ): ProposalTemplateSchema | undefined {
+  // Use asSchema to handle legacy schemas where properties may not match
+  // the XFormatPropertySchema type exactly.
   const props = template.properties;
   if (!props) {
     return undefined;
@@ -123,27 +142,21 @@ export function getFieldLabel(
   template: ProposalTemplateSchema,
   fieldId: string,
 ): string {
-  const schema = getFieldSchema(template, fieldId);
-  return (schema?.title as string | undefined) ?? '';
+  return getPropertyLabel(template, fieldId);
 }
 
 export function getFieldDescription(
   template: ProposalTemplateSchema,
   fieldId: string,
 ): string | undefined {
-  const schema = getFieldSchema(template, fieldId);
-  return schema?.description;
+  return getPropertyDescription(template, fieldId);
 }
 
 export function isFieldRequired(
   template: ProposalTemplateSchema,
   fieldId: string,
 ): boolean {
-  const required = template.required;
-  if (!Array.isArray(required)) {
-    return false;
-  }
-  return required.includes(fieldId);
+  return isPropertyRequired(template, fieldId);
 }
 
 export function getFieldOptions(
@@ -268,42 +281,21 @@ export function addField(
   label: string,
 ): ProposalTemplateSchema {
   const jsonSchema = { ...createFieldJsonSchema(type), title: label };
-  const order = getFieldOrder(template);
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [fieldId]: jsonSchema,
-    },
-    'x-field-order': [...order, fieldId],
-  };
+  return addProperty(template, fieldId, jsonSchema);
 }
 
 export function removeField(
   template: ProposalTemplateSchema,
   fieldId: string,
 ): ProposalTemplateSchema {
-  const { [fieldId]: _removed, ...restProps } = template.properties ?? {};
-  const order = getFieldOrder(template).filter((id) => id !== fieldId);
-  const required = (template.required ?? []).filter((id) => id !== fieldId);
-
-  return {
-    ...template,
-    properties: restProps,
-    required: required.length > 0 ? required : undefined,
-    'x-field-order': order,
-  };
+  return removeProperty(template, fieldId);
 }
 
 export function reorderFields(
   template: ProposalTemplateSchema,
   newOrder: string[],
 ): ProposalTemplateSchema {
-  return {
-    ...template,
-    'x-field-order': newOrder,
-  };
+  return reorderProperties(template, newOrder);
 }
 
 export function updateFieldLabel(
@@ -311,18 +303,7 @@ export function updateFieldLabel(
   fieldId: string,
   label: string,
 ): ProposalTemplateSchema {
-  const schema = getFieldSchema(template, fieldId);
-  if (!schema) {
-    return template;
-  }
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [fieldId]: { ...schema, title: label },
-    },
-  };
+  return updatePropertyLabel(template, fieldId, label);
 }
 
 export function updateFieldDescription(
@@ -330,25 +311,7 @@ export function updateFieldDescription(
   fieldId: string,
   description: string | undefined,
 ): ProposalTemplateSchema {
-  const schema = getFieldSchema(template, fieldId);
-  if (!schema) {
-    return template;
-  }
-
-  const updated = { ...schema };
-  if (description) {
-    updated.description = description;
-  } else {
-    delete updated.description;
-  }
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [fieldId]: updated,
-    },
-  };
+  return updatePropertyDescription(template, fieldId, description);
 }
 
 export function setFieldRequired(
@@ -356,14 +319,7 @@ export function setFieldRequired(
   fieldId: string,
   required: boolean,
 ): ProposalTemplateSchema {
-  const current = template.required ?? [];
-  const filtered = current.filter((id) => id !== fieldId);
-  const next = required ? [...filtered, fieldId] : filtered;
-
-  return {
-    ...template,
-    required: next.length > 0 ? next : undefined,
-  };
+  return setPropertyRequired(template, fieldId, required);
 }
 
 // ---------------------------------------------------------------------------

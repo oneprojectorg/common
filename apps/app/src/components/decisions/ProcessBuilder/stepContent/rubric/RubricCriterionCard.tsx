@@ -1,0 +1,402 @@
+'use client';
+
+import {
+  AccordionContent,
+  AccordionHeader,
+  AccordionIndicator,
+  AccordionTrigger,
+} from '@op/ui/Accordion';
+import { Button } from '@op/ui/Button';
+import { NumberField } from '@op/ui/NumberField';
+import { Radio, RadioGroup } from '@op/ui/RadioGroup';
+import { DragHandle } from '@op/ui/Sortable';
+import type { SortableItemControls } from '@op/ui/Sortable';
+import { TextField } from '@op/ui/TextField';
+import { useState } from 'react';
+import { LuChevronRight, LuGripVertical, LuTrash2 } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n/routing';
+
+import type {
+  CriterionView,
+  RubricCriterionType,
+} from '@/components/decisions/rubricTemplate';
+
+import {
+  CRITERION_TYPES,
+  CRITERION_TYPE_REGISTRY,
+} from './rubricCriterionRegistry';
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+interface RubricCriterionCardProps {
+  criterion: CriterionView;
+  /** 1-based display index for the header (e.g. "Criterion 1") */
+  index: number;
+  errors?: TranslationKey[];
+  controls?: SortableItemControls;
+  onRemove?: (criterionId: string) => void;
+  onUpdateLabel?: (criterionId: string, label: string) => void;
+  onUpdateDescription?: (criterionId: string, description: string) => void;
+  onChangeType?: (criterionId: string, newType: RubricCriterionType) => void;
+  onUpdateMaxPoints?: (criterionId: string, maxPoints: number) => void;
+  onUpdateScoreLabel?: (
+    criterionId: string,
+    scoreValue: number,
+    label: string,
+  ) => void;
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+/**
+ * A collapsible accordion card for a single rubric criterion.
+ *
+ * Built directly with Accordion primitives (not FieldConfigCard) to match
+ * the mockup: static "Criterion N" header, separate name/description fields
+ * in the body, and a criterion type radio selector.
+ *
+ * Must be rendered inside an `<AccordionItem>` which is inside an `<Accordion>`.
+ */
+export function RubricCriterionCard({
+  criterion,
+  index,
+  errors = [],
+  controls,
+  onRemove,
+  onUpdateLabel,
+  onUpdateDescription,
+  onChangeType,
+  onUpdateMaxPoints,
+  onUpdateScoreLabel,
+}: RubricCriterionCardProps) {
+  const t = useTranslations();
+
+  return (
+    <>
+      {/* Header: drag handle + chevron + "Criterion N" + delete button */}
+      <AccordionHeader className="flex items-center gap-2 px-3 py-2">
+        {controls && (
+          <DragHandle
+            {...controls.dragHandleProps}
+            aria-label={t('Drag to reorder criterion')}
+          />
+        )}
+        <AccordionTrigger className="flex flex-1 cursor-pointer items-center gap-2 overflow-hidden">
+          <AccordionIndicator />
+          <span className="shrink-0 text-left font-serif text-neutral-charcoal">
+            {t('Criterion {number}', { number: index })}
+          </span>
+          <span className="truncate text-left text-neutral-gray4">
+            {criterion.label || t('New criterion')}
+          </span>
+          <CriterionBadges criterion={criterion} />
+        </AccordionTrigger>
+        {onRemove && (
+          <Button
+            color="ghost"
+            size="small"
+            aria-label={t('Remove criterion')}
+            onPress={() => onRemove(criterion.id)}
+            className="p-2 text-neutral-gray4 hover:text-functional-red"
+          >
+            <LuTrash2 className="size-4" />
+          </Button>
+        )}
+      </AccordionHeader>
+
+      {/* Collapsible body */}
+      <AccordionContent>
+        <hr className="border-neutral-gray1" />
+        <div className="space-y-4 p-4">
+          {/* Criterion name */}
+          <TextField
+            label={t('Criterion name')}
+            isRequired
+            value={criterion.label}
+            onChange={(value) => onUpdateLabel?.(criterion.id, value)}
+            inputProps={{
+              placeholder: t('e.g., Goal Alignment'),
+            }}
+            description={t(
+              'Add a short, clear name for this evaluation criterion',
+            )}
+          />
+
+          {/* Description */}
+          <TextField
+            label={t('Description')}
+            isRequired
+            useTextArea
+            value={criterion.description ?? ''}
+            onChange={(value) => onUpdateDescription?.(criterion.id, value)}
+            textareaProps={{
+              placeholder: t(
+                "What should reviewers evaluate? Be specific about what you're looking for.",
+              ),
+              className: 'min-h-24 resize-none',
+            }}
+            description={t('Help reviewers understand what to assess')}
+          />
+
+          <hr />
+
+          {/* Criterion type radio selector */}
+          <CriterionTypeSelector
+            value={criterion.criterionType}
+            onChange={(newType) => onChangeType?.(criterion.id, newType)}
+          />
+
+          {/* Type-specific configuration */}
+          {criterion.criterionType === 'scored' && (
+            <>
+              <hr />
+              <ScoredCriterionConfig
+                criterion={criterion}
+                onUpdateMaxPoints={(max) =>
+                  onUpdateMaxPoints?.(criterion.id, max)
+                }
+                onUpdateScoreLabel={(scoreValue, label) =>
+                  onUpdateScoreLabel?.(criterion.id, scoreValue, label)
+                }
+              />
+            </>
+          )}
+
+          {/* Validation errors */}
+          {errors.length > 0 && (
+            <div className="space-y-1">
+              {errors.map((error) => (
+                <p key={error} className="text-sm text-functional-red">
+                  {t(error)}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </AccordionContent>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Criterion type radio selector
+// ---------------------------------------------------------------------------
+
+function CriterionTypeSelector({
+  value,
+  onChange,
+}: {
+  value: RubricCriterionType;
+  onChange: (type: RubricCriterionType) => void;
+}) {
+  const t = useTranslations();
+
+  return (
+    <RadioGroup
+      label={t('How should reviewers score this?')}
+      value={value}
+      onChange={(newValue) => onChange(newValue as RubricCriterionType)}
+      orientation="vertical"
+      labelClassName="text-base"
+    >
+      {CRITERION_TYPES.map((type) => {
+        const entry = CRITERION_TYPE_REGISTRY[type];
+        return (
+          <Radio
+            key={type}
+            value={type}
+            className="group flex items-start gap-2 py-2"
+          >
+            <div className="relative -top-0.5">
+              <span>{t(entry.labelKey)}</span>
+              <p className="text-sm text-neutral-gray4">
+                {t(entry.descriptionKey)}
+              </p>
+            </div>
+          </Radio>
+        );
+      })}
+    </RadioGroup>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Scored criterion config (max points + score labels)
+// ---------------------------------------------------------------------------
+
+function ScoredCriterionConfig({
+  criterion,
+  onUpdateMaxPoints,
+  onUpdateScoreLabel,
+}: {
+  criterion: CriterionView;
+  onUpdateMaxPoints: (max: number) => void;
+  onUpdateScoreLabel: (scoreValue: number, label: string) => void;
+}) {
+  const t = useTranslations();
+  const max = criterion.maxPoints ?? 5;
+
+  // Cache descriptions that would be lost when maxPoints decreases.
+  // Key is 1-based score value, value is the description text.
+  // Cache persists until user navigates away from this criterion card.
+  const [cachedDescriptions, setCachedDescriptions] = useState<
+    Record<number, string>
+  >({});
+
+  const handleMaxPointsChange = (value: number | null) => {
+    if (value === null || value < 2) {
+      return;
+    }
+
+    const newMax = value;
+
+    if (newMax < max) {
+      // Decreasing - cache descriptions that will be removed
+      const toCache: Record<number, string> = { ...cachedDescriptions };
+      for (let i = newMax + 1; i <= max; i++) {
+        const label = criterion.scoreLabels[i - 1]; // scoreLabels is 0-indexed
+        if (label) {
+          toCache[i] = label;
+        }
+      }
+      setCachedDescriptions(toCache);
+    } else if (newMax > max) {
+      // Increasing - restore cached descriptions after update
+      const labelsToRestore: Array<{ score: number; label: string }> = [];
+      for (let i = max + 1; i <= newMax; i++) {
+        const cached = cachedDescriptions[i];
+        if (cached) {
+          labelsToRestore.push({ score: i, label: cached });
+        }
+      }
+
+      // Clear restored items from cache
+      if (labelsToRestore.length > 0) {
+        const newCache = { ...cachedDescriptions };
+        labelsToRestore.forEach(({ score }) => delete newCache[score]);
+        setCachedDescriptions(newCache);
+
+        // Restore labels after state update
+        setTimeout(() => {
+          labelsToRestore.forEach(({ score, label }) => {
+            onUpdateScoreLabel(score, label);
+          });
+        }, 0);
+      }
+    }
+
+    onUpdateMaxPoints(newMax);
+  };
+
+  return (
+    <div className="space-y-4">
+      <NumberField
+        label={t('Max points')}
+        value={max}
+        onChange={handleMaxPointsChange}
+        errorMessage={max < 2 ? t('Minimum is 2') : undefined}
+        inputProps={{ className: 'w-20' }}
+      />
+
+      <div className="space-y-2">
+        <h4 className="text-neutral-charcoal">
+          {t('Define what each score means')}
+        </h4>
+        <p className="text-sm">
+          {t(
+            'Help reviewers score consistently by describing what each point value represents',
+          )}
+        </p>
+        <div className="space-y-4">
+          {criterion.scoreLabels.map((_, i) => {
+            const revIdx = criterion.scoreLabels.length - 1 - i;
+            const label = criterion.scoreLabels[revIdx]!;
+            const scoreValue = max - i;
+            return (
+              <div key={scoreValue} className="flex items-start gap-2">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-right font-serif text-title-base text-neutral-gray4">
+                  {scoreValue}
+                </span>
+                <TextField
+                  useTextArea
+                  value={label}
+                  onChange={(value) => onUpdateScoreLabel(scoreValue, value)}
+                  textareaProps={{
+                    placeholder: t('Describe what earns {number} points...', {
+                      number: scoreValue,
+                    }),
+                  }}
+                  className="w-full"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shared criterion badges (type + points)
+// ---------------------------------------------------------------------------
+
+function CriterionBadges({ criterion }: { criterion: CriterionView }) {
+  const t = useTranslations();
+  return (
+    <span className="ml-auto flex shrink-0 items-center gap-1.5">
+      <span className="rounded-sm bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
+        {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
+      </span>
+      {criterion.criterionType === 'scored' && criterion.maxPoints && (
+        <span className="bg-primary-mint/20 text-primary-tealDark rounded-sm px-1.5 py-0.5 text-xs">
+          {criterion.maxPoints} {t('pts')}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Drag preview
+// ---------------------------------------------------------------------------
+
+export function RubricCriterionDragPreview({
+  criterion,
+  index,
+}: {
+  criterion: CriterionView;
+  index: number;
+}) {
+  const t = useTranslations();
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-white p-3 shadow-lg">
+      <div className="grid size-6 place-items-center rounded bg-neutral-offWhite">
+        <LuGripVertical className="size-4 shrink-0 text-neutral-gray4" />
+      </div>
+      <LuChevronRight className="size-4 shrink-0 text-neutral-gray4" />
+      <span className="shrink-0 font-serif text-neutral-charcoal">
+        {t('Criterion {number}', { number: index })}
+      </span>
+      <span className="truncate text-neutral-gray4">
+        {criterion.label || t('New criterion')}
+      </span>
+      <CriterionBadges criterion={criterion} />
+      <div className="grid w-8 place-items-center rounded">
+        <LuTrash2 className="size-4 shrink-0 text-neutral-gray3" />
+      </div>
+    </div>
+  );
+}
+
+export function RubricCriterionDropIndicator() {
+  return (
+    <div className="flex h-12 items-center gap-2 rounded-lg border bg-neutral-offWhite" />
+  );
+}

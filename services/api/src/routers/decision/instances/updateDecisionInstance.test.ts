@@ -537,7 +537,9 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const result = await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
-      rubricTemplate: validRubricTemplate,
+      rubricTemplate: validRubricTemplate as typeof validRubricTemplate & {
+        type: 'object';
+      },
     });
 
     expect(result.processInstance.id).toBe(instance.instance.id);

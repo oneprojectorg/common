@@ -19,6 +19,48 @@ import { baseProfileEncoder } from './profiles';
 // JSON Schema types
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
+/**
+ * Typed encoder for rubric templates (READ path only).
+ *
+ * This provides strict typing so the frontend receives properly typed data
+ * from `instanceData.rubricTemplate` without needing type assertions.
+ *
+ * For the WRITE path (mutations), we use `jsonSchemaEncoder` instead because
+ * the frontend sends `RubricTemplateSchema` which extends `JSONSchema7` - a
+ * much broader type that doesn't fit this strict schema. Runtime validation
+ * still occurs via Zod; this encoder is primarily for TypeScript inference.
+ */
+const rubricTemplateEncoder = z
+  .object({
+    type: z.literal('object'),
+    properties: z
+      .record(
+        z.string(),
+        z
+          .object({
+            type: z.string().optional(),
+            title: z.string().optional(),
+            description: z.string().optional(),
+            minimum: z.number().optional(),
+            maximum: z.number().optional(),
+            oneOf: z
+              .array(
+                z.object({
+                  const: z.union([z.number(), z.string()]),
+                  title: z.string(),
+                }),
+              )
+              .optional(),
+            'x-format': z.string().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    required: z.array(z.string()).optional(),
+    'x-field-order': z.array(z.string()).optional(),
+  })
+  .passthrough();
+
 // ============================================================================
 // ProcessPhase encoder (for frontend UI components)
 // ============================================================================
@@ -198,7 +240,7 @@ const instanceDataWithSchemaEncoder = z.object({
     .optional(),
   phases: z.array(instancePhaseDataEncoder).optional(),
   proposalTemplate: jsonSchemaEncoder.optional(),
-  rubricTemplate: jsonSchemaEncoder.optional(),
+  rubricTemplate: rubricTemplateEncoder.optional(),
 });
 
 /** Decision access permissions encoder */
@@ -420,7 +462,7 @@ export const documentContentEncoder = z.discriminatedUnion('type', [
     fragments: z.record(
       z.string(),
       z.object({
-        type: z.string(),
+        type: z.string().optional(),
         content: z.array(z.unknown()).optional(),
       }),
     ),
@@ -596,7 +638,12 @@ export const updateDecisionInstanceInputSchema = z.object({
   phases: z.array(instancePhaseDataInputEncoder).optional(),
   /** Proposal template (JSON Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
-  /** Rubric template (JSON Schema defining evaluation criteria) */
+  /**
+   * Rubric template (JSON Schema defining evaluation criteria).
+   * Uses loose jsonSchemaEncoder for input because the frontend sends
+   * RubricTemplateSchema (extends JSONSchema7). See rubricTemplateEncoder
+   * for the typed read path.
+   */
   rubricTemplate: jsonSchemaEncoder.optional(),
 });
 

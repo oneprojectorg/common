@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type { ProposalCategory } from '@op/common';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
@@ -14,9 +15,9 @@ import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ensureLockedFields } from '../../../proposalTemplate';
-import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
+import { ensureLockedFields } from '@/components/decisions/proposalTemplate';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 const CATEGORY_TITLE_MAX_LENGTH = 40;
@@ -36,7 +37,7 @@ export function ProposalCategoriesSectionContent({
 
   // Fetch server data for seeding
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === 'draft';
+  const isDraft = instance.status === ProcessStatus.DRAFT;
   const serverConfig = instance.instanceData?.config;
 
   const storeData = useProcessBuilderStore(

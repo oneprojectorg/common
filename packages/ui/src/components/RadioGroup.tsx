@@ -12,6 +12,7 @@ import type {
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
+import { cn } from '../lib/utils';
 import { composeTailwindRenderProps } from '../utils';
 import { Description, FieldError, Label } from './Field';
 
@@ -20,6 +21,7 @@ export interface RadioGroupProps extends Omit<RACRadioGroupProps, 'children'> {
   children?: ReactNode;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
+  labelClassName?: string;
 }
 
 export const RadioGroup = (props: RadioGroupProps) => {
@@ -31,7 +33,7 @@ export const RadioGroup = (props: RadioGroupProps) => {
         'group flex flex-col gap-2',
       )}
     >
-      <Label className="text-neutral-charcoal">
+      <Label className={cn('text-neutral-charcoal', props.labelClassName)}>
         {props.label}
         {props.isRequired && <span className="text-functional-red"> *</span>}
       </Label>

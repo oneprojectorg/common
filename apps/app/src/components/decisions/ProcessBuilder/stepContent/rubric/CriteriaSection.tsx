@@ -5,32 +5,30 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { SectionProps } from '../../contentRegistry';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorMessage } from '@/components/ErrorMessage';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+
 import { CodeAnimation } from './RubricComingSoonAnimation';
-import { RubricParticipantPreview } from './RubricParticipantPreview';
-import { DUMMY_RUBRIC_TEMPLATE } from './dummyRubricTemplate';
+import { RubricEditorContent } from './RubricEditorContent';
+import { RubricEditorSkeleton } from './RubricEditorSkeleton';
 
 export default function CriteriaSection(props: SectionProps) {
   return (
-    <Suspense>
-      <CriteriaSectionContent {...props} />
-    </Suspense>
+    <ErrorBoundary fallback={<ErrorMessage />}>
+      <Suspense fallback={<RubricEditorSkeleton />}>
+        <CriteriaSectionContent {...props} />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
-function CriteriaSectionContent(_props: SectionProps) {
+function CriteriaSectionContent(props: SectionProps) {
   const t = useTranslations();
   const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
 
   if (rubricBuilderEnabled) {
-    return (
-      <div className="flex h-full flex-col md:flex-row">
-        {/* Left panel — placeholder for the future rubric builder */}
-        <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8" />
-
-        <RubricParticipantPreview template={DUMMY_RUBRIC_TEMPLATE} />
-      </div>
-    );
+    return <RubricEditorContent {...props} />;
   }
 
   return (

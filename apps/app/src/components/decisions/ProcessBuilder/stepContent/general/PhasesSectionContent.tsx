@@ -2,6 +2,7 @@
 
 import { parseDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import {
@@ -15,7 +16,6 @@ import {
 import { AutoSizeInput } from '@op/ui/AutoSizeInput';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import type { Key } from '@op/ui/RAC';
 import { DisclosureStateContext } from '@op/ui/RAC';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
@@ -33,12 +33,12 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
-
-import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import { ToggleRow } from '../../components/ToggleRow';
-import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
+import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
@@ -49,7 +49,7 @@ export function PhasesSectionContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
-  const isDraft = instance.status === 'draft';
+  const isDraft = instance.status === ProcessStatus.DRAFT;
 
   // Store: used as a localStorage buffer for non-draft edits only
   const storePhases = useProcessBuilderStore(
@@ -489,40 +489,15 @@ export const PhaseEditor = ({
         <LuPlus className="size-4" />
         {t('Add phase')}
       </Button>
-      <Modal
-        isDismissable
+      <ConfirmDeleteModal
         isOpen={phaseToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPhaseToDelete(null);
-          }
-        }}
-      >
-        <ModalHeader>{t('Delete phase')}</ModalHeader>
-        <ModalBody>
-          <p>
-            {t(
-              'Are you sure you want to delete this phase? This action cannot be undone.',
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            className="w-full sm:w-fit"
-            onPress={() => setPhaseToDelete(null)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="destructive"
-            className="w-full sm:w-fit"
-            onPress={confirmRemovePhase}
-          >
-            {t('Delete')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        title={t('Delete phase')}
+        message={t(
+          'Are you sure you want to delete this phase? This action cannot be undone.',
+        )}
+        onConfirm={confirmRemovePhase}
+        onCancel={() => setPhaseToDelete(null)}
+      />
     </div>
   );
 };
