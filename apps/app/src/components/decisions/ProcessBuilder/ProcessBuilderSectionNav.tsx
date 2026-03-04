@@ -1,8 +1,5 @@
 'use client';
 
-import { Key } from '@op/ui/RAC';
-import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-
 import { useTranslations } from '@/lib/i18n';
 
 import { useNavigationConfig } from './useNavigationConfig';
@@ -15,43 +12,34 @@ export const ProcessBuilderSidebar = ({
 }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
-  const { visibleSections, currentSection, currentStep, setSection } =
+  const { visibleSections, currentSection, setSection } =
     useProcessNavigation(navigationConfig);
 
-  const handleSelectionChange = (key: Key) => {
-    setSection(String(key));
-  };
-
-  // Don't render sidebar for single-section steps
-  // These steps manage their own layout (e.g., template step with form builder)
-  if (visibleSections.length <= 1) {
-    return null;
-  }
-
   return (
-    <nav className="h-auto shrink-0 overflow-x-auto overflow-y-hidden p-0 py-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
-      <Tabs
-        key={currentStep?.id}
-        orientation="vertical"
-        selectedKey={currentSection?.id}
-        onSelectionChange={handleSelectionChange}
-      >
-        <TabList
-          aria-label={t('Section navigation')}
-          className="scrollbar-none flex w-full gap-4 border-none md:flex-col md:gap-1"
-        >
-          {visibleSections.map((section) => (
-            <Tab
-              key={section.id}
-              id={section.id}
-              variant="pill"
-              className="cursor-pointer first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:text-charcoal md:selected:bg-neutral-offWhite"
-            >
-              {t(section.labelKey)}
-            </Tab>
-          ))}
-        </TabList>
-      </Tabs>
+    <nav
+      aria-label={t('Section navigation')}
+      className="hidden shrink-0 md:sticky md:top-0 md:flex md:h-full md:w-60 md:flex-col md:overflow-y-auto md:border-r md:p-4"
+    >
+      <ul className="flex flex-col gap-1">
+        {visibleSections.map((section) => {
+          const isActive = currentSection?.id === section.id;
+          return (
+            <li key={section.id}>
+              <button
+                type="button"
+                onClick={() => setSection(section.id)}
+                className={`w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  isActive
+                    ? 'bg-primary-tealWhite text-primary font-medium'
+                    : 'text-charcoal hover:bg-neutral-gray1'
+                }`}
+              >
+                {t(section.labelKey)}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 };
