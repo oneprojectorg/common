@@ -102,15 +102,32 @@ const ProcessBuilderHeaderContent = ({
   );
 };
 
-const MobileSidebarWithProfile = ({ instanceId, slug }: { instanceId: string; slug?: string }) => {
+const MobileSidebarWithProfile = ({
+  instanceId,
+  slug,
+}: {
+  instanceId: string;
+  slug?: string;
+}) => {
   const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
     { slug: slug! },
     { enabled: !!slug },
   );
-  return <MobileSidebar instanceId={instanceId} decisionProfileId={decisionProfile?.id} />;
+  return (
+    <MobileSidebar
+      instanceId={instanceId}
+      decisionProfileId={decisionProfile?.id}
+    />
+  );
 };
 
-const MobileSidebar = ({ instanceId, decisionProfileId }: { instanceId: string; decisionProfileId?: string }) => {
+const MobileSidebar = ({
+  instanceId,
+  decisionProfileId,
+}: {
+  instanceId: string;
+  decisionProfileId?: string;
+}) => {
   const t = useTranslations();
   const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
   const navigationConfig = useNavigationConfig(instanceId);
@@ -118,8 +135,8 @@ const MobileSidebar = ({ instanceId, decisionProfileId }: { instanceId: string; 
     useProcessNavigation(navigationConfig);
   const { setOpen } = useSidebar();
 
-  const storePhases = useProcessBuilderStore(
-    (s) => (decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined),
+  const storePhases = useProcessBuilderStore((s) =>
+    decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
   );
 
   const { data: instance } = trpc.decision.getInstance.useQuery(

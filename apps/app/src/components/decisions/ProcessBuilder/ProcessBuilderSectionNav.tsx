@@ -22,8 +22,8 @@ export const ProcessBuilderSidebar = ({
   const { visibleSections, currentSection, setSection } =
     useProcessNavigation(navigationConfig);
 
-  const storePhases = useProcessBuilderStore(
-    (s) => (decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined),
+  const storePhases = useProcessBuilderStore((s) =>
+    decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
   );
 
   const { data: instance } = trpc.decision.getInstance.useQuery(
