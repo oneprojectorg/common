@@ -54,14 +54,18 @@ export const TextField = ({
   ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
   children?: React.ReactNode;
 }) => {
-  const [charCount, setCharCount] = useState(
-    () => (props.value ?? props.defaultValue ?? '').length,
+  const isControlled = props.value !== undefined;
+  const [uncontrolledCount, setUncontrolledCount] = useState(
+    () => (props.defaultValue ?? '').length,
   );
+  const charCount = isControlled ? (props.value?.length ?? 0) : uncontrolledCount;
 
   const isInvalid = !!errorMessage && errorMessage.length > 0;
 
   const handleChange = (value: string) => {
-    setCharCount(value.length);
+    if (!isControlled) {
+      setUncontrolledCount(value.length);
+    }
     props.onChange?.(value);
   };
 
