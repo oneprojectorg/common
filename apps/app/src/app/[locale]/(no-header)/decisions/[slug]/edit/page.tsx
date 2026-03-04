@@ -2,6 +2,7 @@ import { createClient } from '@op/api/serverClient';
 import { notFound } from 'next/navigation';
 
 import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
+import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSectionNav';
 import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
@@ -57,6 +58,11 @@ const EditDecisionPage = async ({
           />
         </main>
       </div>
+      <ProcessBuilderFooter
+        instanceId={instanceId}
+        slug={slug}
+        decisionProfileId={decisionProfile.id}
+      />
     </div>
   );
 };
