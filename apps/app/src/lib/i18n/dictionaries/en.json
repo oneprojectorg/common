@@ -682,6 +682,7 @@
   "Failed to remove user": "Failed to remove user",
   "No one has been invited yet": "No one has been invited yet",
   "Invited": "Invited",
+  "Pending notification": "Pending notification",
   "Failed to cancel invite": "Failed to cancel invite",
   "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.",
   "No categories defined yet": "No categories defined yet",

@@ -25,6 +25,7 @@ export const updateProfileInviteRouter = router({
         email: invite.email,
         accessRoleId: invite.accessRoleId,
         createdAt: invite.createdAt,
+        notified: invite.notified,
         inviteeProfile: invite.inviteeProfile,
       };
     }),

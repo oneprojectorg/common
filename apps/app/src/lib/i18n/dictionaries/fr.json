@@ -681,6 +681,7 @@
   "Failed to remove user": "Échec de la suppression de l'utilisateur",
   "No one has been invited yet": "Personne n'a encore été invité",
   "Invited": "Invité",
+  "Pending notification": "Notification en attente",
   "Failed to cancel invite": "Échec de l'annulation de l'invitation",
   "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "Définissez les catégories que les propositions de ce processus doivent faire avancer. Les proposants sélectionneront les catégories que leur proposition soutient.",
   "No categories defined yet": "Aucune catégorie définie pour le moment",

@@ -434,7 +434,14 @@ const MobileInviteCard = ({
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
             <span className="text-base text-neutral-black">{displayName}</span>
-            <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
+              {!invite.notified && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                  {t('Pending notification')}
+                </span>
+              )}
+            </div>
           </div>
           <span className="truncate text-base text-neutral-black">
             {invite.email}
@@ -557,9 +564,16 @@ const ProfileUsersAccessTableContent = ({
                       <span className="text-base text-neutral-black">
                         {displayName}
                       </span>
-                      <span className="text-sm text-neutral-gray4">
-                        {t('Invited')}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-neutral-gray4">
+                          {t('Invited')}
+                        </span>
+                        {!invite.notified && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                            {t('Pending notification')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </TableCell>

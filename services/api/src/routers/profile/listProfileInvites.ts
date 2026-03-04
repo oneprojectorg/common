@@ -27,6 +27,7 @@ export const listProfileInvitesRouter = router({
         email: invite.email,
         accessRoleId: invite.accessRoleId,
         createdAt: invite.createdAt,
+        notified: invite.notified,
         inviteeProfile: invite.inviteeProfile ?? null,
       }));
     }),
