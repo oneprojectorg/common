@@ -6,15 +6,17 @@ import { Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorMessage } from '@/components/ErrorMessage';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 
-import type { SectionProps } from '../../contentRegistry';
 import { CodeAnimation } from './RubricComingSoonAnimation';
 import { RubricEditorContent } from './RubricEditorContent';
+import { RubricEditorSkeleton } from './RubricEditorSkeleton';
 
 export default function CriteriaSection(props: SectionProps) {
   return (
-    <ErrorBoundary>
-      <Suspense>
+    <ErrorBoundary fallback={<ErrorMessage />}>
+      <Suspense fallback={<RubricEditorSkeleton />}>
         <CriteriaSectionContent {...props} />
       </Suspense>
     </ErrorBoundary>
