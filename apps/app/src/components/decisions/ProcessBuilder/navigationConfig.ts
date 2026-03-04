@@ -53,3 +53,27 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
     participants: ['roles', 'participants'],
   },
 };
+
+// Flat sidebar items for the unified sidebar navigation
+export interface SidebarItem {
+  id: SectionId;
+  labelKey: TranslationKey;
+  parentStepId?: StepId;
+}
+
+export const SIDEBAR_ITEMS: SidebarItem[] = [
+  { id: 'overview', labelKey: 'Overview', parentStepId: 'general' },
+  { id: 'phases', labelKey: 'Phases', parentStepId: 'general' },
+  {
+    id: 'proposalCategories',
+    labelKey: 'Proposal Categories',
+    parentStepId: 'general',
+  },
+  {
+    id: 'templateEditor',
+    labelKey: 'Proposal Template',
+    parentStepId: 'template',
+  },
+  { id: 'roles', labelKey: 'Roles & permissions', parentStepId: 'participants' },
+  { id: 'participants', labelKey: 'Participants', parentStepId: 'participants' },
+];
