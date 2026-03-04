@@ -281,14 +281,14 @@ export function OverviewSectionForm({
             />
 
             {/* Toggle Options */}
-            <div className="space-y-8">
+            <div className="space-y-4">
               <form.AppField
                 name="organizeByCategories"
                 children={(field) => (
                   <ToggleRow
                     label={t('Organize proposals into categories')}
-                    tooltip={t(
-                      'Group proposals into categories for better organization and evaluation',
+                    description={t(
+                      'Group proposals into categories for better organization and evaluation.',
                     )}
                   >
                     <field.ToggleButton
@@ -305,8 +305,8 @@ export function OverviewSectionForm({
                 children={(field) => (
                   <ToggleRow
                     label={t('Require collaborative proposals')}
-                    tooltip={t(
-                      'Require proposals to be co-authored by multiple participants',
+                    description={t(
+                      'Require proposals to be co-authored by at least 2 participants.',
                     )}
                   >
                     <field.ToggleButton
@@ -328,14 +328,14 @@ export function OverviewSectionForm({
               name="isPrivate"
               children={(field) => (
                 <ToggleRow
-                  label={t('Keep this process private')}
-                  tooltip={t(
-                    'Only invited participants can view and participate in this process',
+                  label={t('Open for learning')}
+                  description={t(
+                    'Anyone on Common can view this process. Only invited participants can submit.',
                   )}
                 >
                   <field.ToggleButton
-                    isSelected={field.state.value}
-                    onChange={field.handleChange}
+                    isSelected={!field.state.value}
+                    onChange={(value) => field.handleChange(!value)}
                     size="small"
                   />
                 </ToggleRow>
