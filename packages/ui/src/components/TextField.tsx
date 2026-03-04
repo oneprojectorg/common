@@ -58,7 +58,9 @@ export const TextField = ({
   const [uncontrolledCount, setUncontrolledCount] = useState(
     () => (props.defaultValue ?? '').length,
   );
-  const charCount = isControlled ? (props.value?.length ?? 0) : uncontrolledCount;
+  const charCount = isControlled
+    ? (props.value?.length ?? 0)
+    : uncontrolledCount;
 
   const isInvalid = !!errorMessage && errorMessage.length > 0;
 
@@ -69,14 +71,11 @@ export const TextField = ({
     props.onChange?.(value);
   };
 
-  const nearLimit = maxLength != null && maxLength - charCount <= 5;
-
   const counterElement = maxLength != null && (
     <span
       className={cn(
         'text-sm text-neutral-gray4',
         'group-data-[disabled=true]:opacity-50',
-        nearLimit && 'font-bold',
         (charCount === maxLength || isInvalid) && 'text-functional-red',
       )}
     >
