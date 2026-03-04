@@ -1,11 +1,9 @@
-import { type TransactionType, db, eq } from '@op/db/client';
+import { type TransactionType, db, eq, inArray } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
-import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
-import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ScheduledTransition } from './types';
+import { buildExpectedTransitions } from './buildExpectedTransitions';
 
 export interface UpdateTransitionsInput {
   processInstance: ProcessInstance;
@@ -34,16 +32,7 @@ export async function updateTransitionsForProcess({
   const dbClient = tx ?? db;
 
   try {
-    // Type assertion: instanceData is `unknown` in DB to support legacy formats for viewing,
-    // but this function is only called for new DecisionInstanceData processes
-    const instanceData = processInstance.instanceData as DecisionInstanceData;
-    const phases = instanceData.phases;
-
-    if (!phases || phases.length === 0) {
-      throw new CommonError(
-        'Process instance must have at least one phase configured',
-      );
-    }
+    const expectedTransitions = buildExpectedTransitions(processInstance);
 
     // Get existing transitions
     const existingTransitions =
@@ -61,40 +50,6 @@ export async function updateTransitionsForProcess({
       deleted: 0,
     };
 
-    // Build expected transitions for phases with date-based advancement
-    // A transition is created FROM a phase (when it ends) TO the next phase
-    const expectedTransitions: ScheduledTransition[] = [];
-
-    phases.forEach((currentPhase, index) => {
-      const nextPhase = phases[index + 1];
-      // Skip last phase (no next phase to transition to)
-      if (!nextPhase) {
-        return;
-      }
-
-      // Only create transition if current phase uses date-based advancement
-      if (currentPhase.rules?.advancement?.method !== 'date') {
-        return;
-      }
-
-      // Schedule transition when the current phase ends
-      const scheduledDate = currentPhase.endDate;
-
-      if (!scheduledDate) {
-        throw new CommonError(
-          `Phase "${currentPhase.phaseId}" must have an end date for date-based advancement (instance: ${processInstance.id})`,
-        );
-      }
-
-      // DB columns are named fromStateId/toStateId but store phase IDs
-      expectedTransitions.push({
-        processInstanceId: processInstance.id,
-        fromStateId: currentPhase.phaseId,
-        toStateId: nextPhase.phaseId,
-        scheduledDate: new Date(scheduledDate).toISOString(),
-      });
-    });
-
     // Calculate transitions to delete upfront (those not in expected set and not completed)
     // Use composite key (fromStateId:toStateId) to match both fields
     const expectedTransitionKeys = new Set(
@@ -109,74 +64,74 @@ export async function updateTransitionsForProcess({
         ) && !transition.completedAt,
     );
 
-    // Run update/create and delete operations in parallel since they operate on mutually exclusive sets
-    const [updateResults] = await Promise.all([
-      // Update existing transitions or create new ones
-      pMap(
-        expectedTransitions,
-        async (expected) => {
-          // Find matching existing transition by both fromStateId and toStateId
-          const existing = existingTransitions.find(
-            (transition) =>
-              transition.fromStateId === expected.fromStateId &&
-              transition.toStateId === expected.toStateId,
-          );
+    // Partition expected transitions into updates and creates
+    const toCreate: typeof expectedTransitions = [];
+    const toUpdate: { id: string; scheduledDate: string }[] = [];
 
-          if (existing) {
-            // If transition is already completed, don't update it (results phase is locked)
-            if (existing.completedAt) {
-              return { action: 'skipped' as const };
-            }
+    for (const expected of expectedTransitions) {
+      const existing = existingTransitions.find(
+        (transition) =>
+          transition.fromStateId === expected.fromStateId &&
+          transition.toStateId === expected.toStateId,
+      );
 
-            // Update the scheduled date if it changed (compare as timestamps to handle format differences)
-            if (
-              new Date(existing.scheduledDate).getTime() !==
-              new Date(expected.scheduledDate).getTime()
-            ) {
-              await dbClient
-                .update(decisionProcessTransitions)
-                .set({
-                  scheduledDate: expected.scheduledDate,
-                })
-                .where(eq(decisionProcessTransitions.id, existing.id));
+      if (existing) {
+        // If transition is already completed, don't update it (results phase is locked)
+        if (existing.completedAt) {
+          continue;
+        }
 
-              return { action: 'updated' as const };
-            }
+        // Update the scheduled date if it changed
+        if (existing.scheduledDate !== expected.scheduledDate) {
+          toUpdate.push({
+            id: existing.id,
+            scheduledDate: expected.scheduledDate,
+          });
+        }
+      } else {
+        toCreate.push(expected);
+      }
+    }
 
-            return { action: 'unchanged' as const };
-          } else {
-            // Create new transition for this phase
-            await dbClient.insert(decisionProcessTransitions).values({
-              processInstanceId: expected.processInstanceId,
-              fromStateId: expected.fromStateId,
-              toStateId: expected.toStateId,
-              scheduledDate: expected.scheduledDate,
-            });
+    // Execute all DB operations concurrently
+    const ops: Promise<void>[] = [];
 
-            return { action: 'created' as const };
-          }
-        },
-        { concurrency: 5 },
-      ),
-      // Delete transitions that are no longer in the expected set
-      pMap(
-        transitionsToDelete,
-        async (transition) => {
-          await dbClient
-            .delete(decisionProcessTransitions)
-            .where(eq(decisionProcessTransitions.id, transition.id));
-        },
-        { concurrency: 5 },
-      ),
-    ]);
+    // Batch delete
+    if (transitionsToDelete.length > 0) {
+      const idsToDelete = transitionsToDelete.map((t) => t.id);
+      ops.push(
+        dbClient
+          .delete(decisionProcessTransitions)
+          .where(inArray(decisionProcessTransitions.id, idsToDelete))
+          .then(() => {}),
+      );
+    }
 
-    // Aggregate results
-    result.updated = updateResults.filter(
-      (update) => update.action === 'updated',
-    ).length;
-    result.created = updateResults.filter(
-      (update) => update.action === 'created',
-    ).length;
+    // Batch insert
+    if (toCreate.length > 0) {
+      ops.push(
+        dbClient
+          .insert(decisionProcessTransitions)
+          .values(toCreate)
+          .then(() => {}),
+      );
+    }
+
+    // Updates must remain individual (different values per row)
+    for (const update of toUpdate) {
+      ops.push(
+        dbClient
+          .update(decisionProcessTransitions)
+          .set({ scheduledDate: update.scheduledDate })
+          .where(eq(decisionProcessTransitions.id, update.id))
+          .then(() => {}),
+      );
+    }
+
+    await Promise.all(ops);
+
+    result.updated = toUpdate.length;
+    result.created = toCreate.length;
     result.deleted = transitionsToDelete.length;
 
     return result;

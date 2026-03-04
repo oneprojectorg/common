@@ -1,7 +1,5 @@
 import { and, db, eq, isNull, lte, sql } from '@op/db/client';
 import {
-  type DecisionProcessTransition,
-  type ProcessInstance,
   ProcessStatus,
   decisionProcessTransitions,
   processInstances,
@@ -12,16 +10,10 @@ import { CommonError } from '../../utils';
 import { processResults } from './processResults';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
-/** Transition with nested process instance relation */
-type TransitionWithRelations = DecisionProcessTransition & {
-  processInstance: ProcessInstance;
-};
-
 /** Result of processing a single transition */
 interface ProcessedTransition {
   toStateId: string;
   isTransitioningToFinalState: boolean;
-  processInstanceId: string;
 }
 
 export interface ProcessDecisionsTransitionsResult {
@@ -47,8 +39,8 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
   };
 
   try {
-    // Query due transitions, filtering to only include published instances
-    // Draft, completed, and cancelled instances should not have their transitions processed
+    // Query due transitions with process instance data in a single query
+    // (avoids N+1 re-fetches per transition in processTransition)
     const dueTransitions = await db
       .select({
         id: decisionProcessTransitions.id,
@@ -57,6 +49,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
         toStateId: decisionProcessTransitions.toStateId,
         scheduledDate: decisionProcessTransitions.scheduledDate,
         completedAt: decisionProcessTransitions.completedAt,
+        instanceData: processInstances.instanceData,
       })
       .from(decisionProcessTransitions)
       .innerJoin(
@@ -97,9 +90,13 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
         // Process this process's transitions sequentially
         for (const transition of transitions) {
           try {
-            // Process transition (marks completedAt, returns state info)
-            lastSuccessfulTransition = await processTransition(transition.id);
-            result.processed++;
+            // Process transition (marks completedAt, returns state info).
+            // Returns null if another worker already completed this transition.
+            const processed = await processTransition(transition);
+            if (processed) {
+              lastSuccessfulTransition = processed;
+              result.processed++;
+            }
           } catch (error) {
             result.failed++;
 
@@ -175,7 +172,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
 }
 
 /**
- * Processes a single transition by ID.
+ * Processes a single transition using pre-fetched data.
  * Marks the transition as completed and returns info needed for state update.
  * The actual instance state update happens after all transitions are processed.
  *
@@ -185,43 +182,20 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
  * transitions in the queue may not yet have updated the instance state.
  * The sequential processing ensures correct state progression.
  */
-async function processTransition(
-  transitionId: string,
-): Promise<ProcessedTransition> {
-  // Fetch transition with related process instance in a single query
-  const transitionResult = await db._query.decisionProcessTransitions.findFirst(
-    {
-      where: eq(decisionProcessTransitions.id, transitionId),
-      with: {
-        processInstance: true,
-      },
-    },
-  );
-
-  if (!transitionResult) {
-    throw new CommonError(
-      `Transition not found: ${transitionId}. It may have been deleted or the ID is invalid.`,
-    );
-  }
-
-  // Type assertion for the nested relations (Drizzle's type inference doesn't handle nested `with` well)
-  const transition = transitionResult as TransitionWithRelations;
-
-  const processInstance = transition.processInstance;
-  if (!processInstance) {
-    throw new CommonError(
-      `Process instance not found: ${transition.processInstanceId}`,
-    );
-  }
-
+async function processTransition(transition: {
+  id: string;
+  processInstanceId: string;
+  toStateId: string;
+  instanceData: unknown;
+}): Promise<ProcessedTransition | null> {
   // Determine if transitioning to final state using instanceData.phases
   // In the new schema format, the last phase is always the final state
-  const instanceData = processInstance.instanceData as DecisionInstanceData;
+  const instanceData = transition.instanceData as DecisionInstanceData;
   const phases = instanceData.phases;
 
   if (!phases || phases.length === 0) {
     throw new CommonError(
-      `Process instance ${processInstance.id} has no phases defined in instanceData`,
+      `Process instance ${transition.processInstanceId} has no phases defined in instanceData`,
     );
   }
 
@@ -229,19 +203,31 @@ async function processTransition(
   const lastPhaseId = phases[phases.length - 1]!.phaseId;
   const isTransitioningToFinalState = transition.toStateId === lastPhaseId;
 
-  // Only mark the transition as completed (state update happens after all transitions)
-  await db
+  // Only mark the transition as completed (state update happens after all transitions).
+  // The WHERE completedAt IS NULL guard + returning() check prevent double-processing
+  // if a concurrent monitor run already handled this transition.
+  const updated = await db
     .update(decisionProcessTransitions)
     .set({
       completedAt: new Date().toISOString(),
     })
-    .where(eq(decisionProcessTransitions.id, transitionId));
+    .where(
+      and(
+        eq(decisionProcessTransitions.id, transition.id),
+        isNull(decisionProcessTransitions.completedAt),
+      ),
+    )
+    .returning({ id: decisionProcessTransitions.id });
+
+  if (updated.length === 0) {
+    // Another worker already completed this transition — skip it
+    return null;
+  }
 
   // Return info needed for state update
   return {
     toStateId: transition.toStateId,
     isTransitioningToFinalState,
-    processInstanceId: transition.processInstanceId,
   };
 }
 
@@ -257,6 +243,7 @@ async function updateInstanceState(
     .update(processInstances)
     .set({
       currentStateId: toStateId,
+      updatedAt: new Date().toISOString(),
       instanceData: sql`jsonb_set(
         ${processInstances.instanceData},
         '{currentPhaseId}',

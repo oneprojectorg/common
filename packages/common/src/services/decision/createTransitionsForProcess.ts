@@ -3,8 +3,7 @@ import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
-import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ScheduledTransition } from './types';
+import { buildExpectedTransitions } from './buildExpectedTransitions';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
@@ -30,50 +29,7 @@ export async function createTransitionsForProcess({
   const dbClient = tx ?? db;
 
   try {
-    // Type assertion: instanceData is `unknown` in DB to support legacy formats for viewing,
-    // but this function is only called for new DecisionInstanceData processes
-    const instanceData = processInstance.instanceData as DecisionInstanceData;
-    const phases = instanceData.phases;
-
-    if (!phases || phases.length === 0) {
-      throw new CommonError(
-        'Process instance must have at least one phase configured',
-      );
-    }
-
-    // Create transitions for phases that use date-based advancement
-    // A transition is created FROM a phase (when it ends) TO the next phase
-    const transitionsToCreate: ScheduledTransition[] = [];
-
-    phases.forEach((currentPhase, index) => {
-      const nextPhase = phases[index + 1];
-      // Skip last phase (no next phase to transition to)
-      if (!nextPhase) {
-        return;
-      }
-
-      // Only create transition if current phase uses date-based advancement
-      if (currentPhase.rules?.advancement?.method !== 'date') {
-        return;
-      }
-
-      // Schedule transition when the current phase ends
-      const scheduledDate = currentPhase.endDate;
-
-      if (!scheduledDate) {
-        throw new CommonError(
-          `Phase "${currentPhase.phaseId}" must have an end date for date-based advancement (instance: ${processInstance.id})`,
-        );
-      }
-
-      // DB columns are named fromStateId/toStateId but store phase IDs
-      transitionsToCreate.push({
-        processInstanceId: processInstance.id,
-        fromStateId: currentPhase.phaseId,
-        toStateId: nextPhase.phaseId,
-        scheduledDate: new Date(scheduledDate).toISOString(),
-      });
-    });
+    const transitionsToCreate = buildExpectedTransitions(processInstance);
 
     if (transitionsToCreate.length === 0) {
       return { transitions: [] };

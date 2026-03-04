@@ -18,6 +18,7 @@ export * from './getDecisionBySlug';
 // Transition management
 export { TransitionEngine } from './transitionEngine';
 export type { TransitionCheckResult } from './transitionEngine';
+export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';
 export * from './updateTransitionsForProcess';
 export * from './transitionMonitor';

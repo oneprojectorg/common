@@ -206,6 +206,12 @@ describe('processDecisionsTransitions', () => {
       task.id,
     );
 
+    // Capture updatedAt before processing
+    const beforeInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instanceId),
+    });
+    const updatedAtBefore = beforeInstance!.updatedAt;
+
     const result = await processDecisionsTransitions();
 
     expect(result.processed).toBeGreaterThanOrEqual(1);
@@ -223,6 +229,12 @@ describe('processDecisionsTransitions', () => {
     const instanceData = instance!.instanceData as DecisionInstanceData;
     expect(instanceData.currentPhaseId).toBe('results');
     expect(instance!.currentStateId).toBe('results');
+
+    // Verify updatedAt was set by the monitor
+    expect(instance!.updatedAt).toBeDefined();
+    expect(new Date(instance!.updatedAt!).getTime()).toBeGreaterThan(
+      new Date(updatedAtBefore!).getTime(),
+    );
 
     // Verify transitions are marked completed
     const completedTransitions =
@@ -298,7 +310,7 @@ describe('processDecisionsTransitions', () => {
       scheduledDate: pastDate.toISOString(),
     });
 
-    const monitorResult = await processDecisionsTransitions();
+    await processDecisionsTransitions();
 
     // The transition should NOT have been processed because the instance is DRAFT
     const transitions = await db._query.decisionProcessTransitions.findMany({
@@ -320,12 +332,12 @@ describe('processDecisionsTransitions', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
     // Create a published instance with future transitions (don't make them due)
-    const { instanceId, transitions } =
+    const { instanceId } =
       await createPublishedInstanceWithDueTransitions(testData, task.id, {
         makeDue: false,
       });
 
-    const result = await processDecisionsTransitions();
+    await processDecisionsTransitions();
 
     // Future transitions should not be processed
     const refreshedTransitions =
