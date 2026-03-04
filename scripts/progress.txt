@@ -1,0 +1,131 @@
+## Codebase Patterns
+- Navigation config is in `apps/app/src/components/decisions/ProcessBuilder/navigationConfig.ts` with `as const` patterns for type derivation
+- Content registry maps step/section → React components in `contentRegistry.tsx`
+- Translation keys use the string itself as the key (e.g., `'Overview'`, `'Phases'`)
+- Uses `nuqs` for URL-based query state management
+- Section IDs: overview, phases, proposalCategories, templateEditor, criteria, roles, participants
+- Step IDs: general, template, rubric, participants
+- `TranslationKey` type comes from `@/lib/i18n`
+- Instance phases use `phaseId` field; template phases (PhaseDefinition) use `id` — normalize when mapping
+- `trpc.decision.getInstance` query is shared across useNavigationConfig, PhasesSectionContent, and sidebar — all hit the same cache
+- Footer re-implements Launch/Save logic from the old header: `trpc.decision.updateDecisionInstance` mutation for saves, `LaunchProcessModal` for draft launches
+- `ProcessStatus` enum from `@op/api/encoders` for draft/published/completed/cancelled status checks
+- `useProcessBuilderValidation(decisionProfileId)` returns `ValidationSummary` with `stepsRemaining`, `isReadyToLaunch`, and `checklist`
+- useProcessNavigation now uses a single `section` query param (flat model) with backward compat `step` param cleanup
+- visibleSections is derived from SIDEBAR_ITEMS filtered by navigationConfig (steps enabled + sections allowed)
+- currentStep is derived from currentSection's parentStepId for backward compat with header/sidebar consumers
+- ProcessBuilderContent uses getContentComponentFlat for flat section→component lookup
+
+# Ralph Progress Log
+Started: Wed Mar  4 12:58:07 CET 2026
+---
+
+## 2026-03-04 - US-001
+- Implemented flat SIDEBAR_ITEMS array in navigationConfig.ts with all 6 sections in display order
+- Added SidebarItem interface with id (SectionId), labelKey (TranslationKey), and optional parentStepId (StepId)
+- Added getContentComponentFlat(sectionId) to contentRegistry.tsx with flat section→component mapping
+- Kept existing STEPS, SECTIONS_BY_STEP, and getContentComponent for backward compatibility
+- Files changed: navigationConfig.ts, contentRegistry.tsx
+- **Learnings for future iterations:**
+  - SectionId type is derived from SECTIONS_BY_STEP values, so new SIDEBAR_ITEMS must use existing SectionId values
+  - labelKey values must match existing translation keys (they're already in the dictionary files)
+  - The rubric/criteria section is excluded from SIDEBAR_ITEMS per PRD (only 6 items listed)
+---
+
+## 2026-03-04 - US-002
+- Refactored useProcessNavigation to use single `section` query param instead of `step` + `section`
+- visibleSections now derived from flat SIDEBAR_ITEMS filtered by navigationConfig
+- Added backward compat: legacy `step` query param is cleaned up on load
+- currentStep derived from currentSection's parentStepId (keeps header/mobile sidebar consumers working)
+- Updated ProcessBuilderContent to use getContentComponentFlat instead of getContentComponent
+- Files changed: useProcessNavigation.ts, ProcessBuilderContent.tsx
+- **Learnings for future iterations:**
+  - The hook still returns visibleSteps, currentStep, and setStep for backward compat with ProcessBuilderHeader tabs and MobileSidebar
+  - SidebarItem.id type is `SectionId` (string union), but nuqs returns `string | null`, so consumers may need a cast
+  - ProcessBuilderSectionNav.tsx and ProcessBuilderHeader.tsx still use the old step-based patterns (visibleSteps, currentStep, setStep) - they'll be updated in US-003/US-005
+---
+
+## 2026-03-04 - US-003
+- Refactored ProcessBuilderSidebar from React Aria Tabs to a plain `<nav>` with `<ul>/<li>/<button>` structure
+- Active item uses `bg-primary-tealWhite text-primary font-medium`; inactive uses `text-charcoal hover:bg-neutral-gray1`
+- Sidebar is 240px wide (`md:w-60`) on desktop, sticky, scrollable, hidden on mobile (mobile sidebar handled separately in US-007)
+- Removed the `visibleSections.length <= 1` guard — flat model always shows the sidebar
+- Removed unused `Key` import from `@op/ui/RAC` and `Tab/TabList/Tabs` from `@op/ui/Tabs`
+- Files changed: ProcessBuilderSectionNav.tsx
+- **Learnings for future iterations:**
+  - `bg-primary-tealWhite` maps to `--op-teal-white` (180 43% 97%) — the lightest teal token for active/selected backgrounds
+  - `text-primary` maps to `--op-teal-500` via `--color-primary` in shared-styles.css
+  - The sidebar is `hidden` on mobile (`hidden md:flex`) since mobile navigation is handled by the MobileSidebar in the header (US-007)
+  - `md:w-60` = 240px which matches the PRD requirement
+---
+
+## 2026-03-04 - US-004
+- Added dynamic phase sub-items below the "Phases" item in the sidebar
+- Phase names pulled from `trpc.decision.getInstance` query (shares cache with `useNavigationConfig`)
+- Fallback chain: instanceData.phases → process.processSchema.phases → empty
+- Sub-items use `LuCornerDownRight` icon with `text-xs` (12px) vs top-level `text-sm` (14px)
+- Clicking a phase sub-item navigates to the phases section via `setSection('phases')`
+- Phases with empty/missing names are filtered out
+- Files changed: ProcessBuilderSectionNav.tsx
+- **Learnings for future iterations:**
+  - The `trpc.decision.getInstance` query is already cached from `useNavigationConfig`, so adding it to the sidebar has zero extra network cost
+  - Instance phases use `phaseId` field (not `id`), template phases use `id` field — need to normalize
+  - `InstancePhaseData.name` is optional; `PhaseDefinition.name` is required — always filter empty names from instance data
+---
+
+## 2026-03-04 - US-005
+- Simplified ProcessBuilderHeaderContent to show only: Home link + house icon, chevron separator, process name, user avatar
+- Removed horizontal step tabs navigation bar entirely
+- Removed Launch/Save button and StepsRemainingPopover from header (will be in footer per US-006)
+- Header is now a single row at h-14 (56px)
+- Removed unused imports: ProcessStatus, Button, DialogTrigger, Popover, toast, useRouter, useState, and several icons
+- Removed StepsRemainingPopover and related validation code from this file
+- Kept SidebarProvider wrapping and MobileSidebar (unchanged, to be updated in US-007)
+- Kept ComingSoonIndicator for MobileSidebar usage
+- Files changed: ProcessBuilderHeader.tsx
+- **Learnings for future iterations:**
+  - The Launch/Save logic (mutations, LaunchProcessModal, validation) was entirely removed from the header — US-006 must re-implement this in the footer
+  - `instanceId` param was removed from ProcessBuilderHeaderContent since it only needed `slug` for the display name query
+  - MobileSidebar still uses the old step-based navigation (visibleSteps, currentStep, setStep) — US-007 needs to update this
+---
+
+## 2026-03-04 - US-006
+- Created new ProcessBuilderFooter component as a sticky footer bar with top border and backdrop blur
+- Exit button (bottom-left) with rotated LuLogOut icon links to `/decisions/${slug}`
+- Back button next to Exit uses `router.back()` for browser history navigation
+- Launch Process / Update Process button (bottom-right) with validation gating and StepsRemainingPopover
+- Re-implemented the Launch/Save logic from the old header: `updateDecisionInstance` mutation for saves, `LaunchProcessModal` for drafts
+- Added footer to edit page layout below the sidebar+content area
+- Added "Exit" translation key to all 5 dictionary files (en, es, fr, pt, bn)
+- Files changed: ProcessBuilderFooter.tsx (new), page.tsx (edit layout), all 5 dictionary files
+- **Learnings for future iterations:**
+  - The footer needs `instanceId`, `slug`, and `decisionProfileId` — all available in the server component page.tsx
+  - Popover placement should be `top end` (not `bottom end`) since the footer is at the bottom of the viewport
+  - Exit uses a plain `<Link>` (not `<Button>`) since it navigates to a new route, while Back uses `router.back()` for history
+---
+
+## 2026-03-04 - US-007
+- Updated MobileSidebar in ProcessBuilderHeader.tsx from step-based Tabs to flat section-based navigation
+- Replaced `visibleSteps`/`currentStep`/`setStep` with `visibleSections`/`currentSection`/`setSection`
+- Added dynamic phase sub-items matching the desktop sidebar (reuses same `trpc.decision.getInstance` cache)
+- Selecting any item calls `setOpen(false)` to close the mobile drawer
+- Removed unused imports: `Key` from `@op/ui/RAC`, `Tab`/`TabList`/`Tabs` from `@op/ui/Tabs`
+- Removed `ComingSoonIndicator` component (no longer needed since rubric step is excluded from sidebar items)
+- Added `useMemo` and `LuCornerDownRight` imports
+- Files changed: ProcessBuilderHeader.tsx
+- **Learnings for future iterations:**
+  - The mobile sidebar and desktop sidebar now render identical navigation items — any future nav changes should update both
+  - `Sidebar` component with `mobileOnly` prop handles the drawer behavior; `useSidebar().setOpen(false)` closes it
+  - Phase sub-items logic is duplicated between ProcessBuilderSidebar and MobileSidebar — could be extracted into a shared hook if more consumers need it
+---
+
+## 2026-03-04 - US-008
+- Verified all user-facing strings in ProcessBuilderSidebar, ProcessBuilderHeader, and ProcessBuilderFooter use `t('...')`
+- Verified all translation keys exist in all 5 dictionary files (en, es, fr, pt, bn)
+- No hardcoded user-facing strings found — no code changes needed
+- Keys verified: Section navigation, Home, New process, Exit, Back, Changes saved successfully, Failed to save changes, Launch, Update, Launch Process, Update Process, {stepCount...} remaining, Complete these steps to launch, Overview, Phases, Proposal Categories, Proposal Template, Roles & permissions, Participants
+- Typecheck passes
+- **Learnings for future iterations:**
+  - Prior stories (US-003 through US-007) already added translation keys as they went — this verification story found zero missing keys
+  - The "Roles" sidebar item uses key "Roles & permissions" (not "Roles") — check navigationConfig.ts for actual labelKey values
+---

@@ -1,0 +1,139 @@
+{
+  "project": "Decision Builder Sidebar",
+  "branchName": "ralph/decision-builder-sidebar",
+  "description": "Refactor the decision process builder navigation from a two-level model (horizontal step tabs + vertical section tabs) into a single unified left sidebar with tree-style menu items",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Flatten navigation config and content registry",
+      "description": "As a developer, I need to refactor the navigation configuration from a two-level (step → section) model to a flat list of sections so the sidebar can directly select any content section.",
+      "acceptanceCriteria": [
+        "Create a flat SIDEBAR_ITEMS array in navigationConfig.ts that lists all sections in display order: overview, phases, proposalCategories, templateEditor, roles, participants",
+        "Each item has: id (SectionId), labelKey (TranslationKey), and optional parentStepId (StepId) for content registry lookup",
+        "Update contentRegistry.tsx to export a getContentComponentFlat(sectionId) function that maps section IDs directly to components without requiring stepId",
+        "Keep existing STEPS, SECTIONS_BY_STEP, and getContentComponent for backward compatibility during migration",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Update useProcessNavigation hook for flat model",
+      "description": "As a developer, I need the navigation hook to use a single section query parameter instead of step + section so the flat sidebar can drive navigation.",
+      "acceptanceCriteria": [
+        "useProcessNavigation uses a single 'section' query parameter instead of 'step' + 'section'",
+        "All sections are addressable directly (e.g., ?section=overview, ?section=phases, ?section=proposalCategories, ?section=templateEditor, ?section=roles, ?section=participants)",
+        "Hook returns currentSection, visibleSections, and setSection (no more step-level state)",
+        "Backward compatibility: if old ?step=general&section=overview params are present, derive the correct section and redirect",
+        "ProcessBuilderContent.tsx updated to use the flat content lookup",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Create unified sidebar navigation component",
+      "description": "As a process builder user, I want all navigation items in a single left sidebar so I can see the full process structure at a glance.",
+      "acceptanceCriteria": [
+        "Refactor ProcessBuilderSectionNav.tsx (ProcessBuilderSidebar) to render all navigation items from the flat SIDEBAR_ITEMS config",
+        "Top-level items displayed: Overview, Phases, Proposal Categories, Proposal Template, Roles, Participants",
+        "Active item highlighted with teal text and light teal background (bg-primary-teal96White / text-primary)",
+        "Sidebar is 240px wide on desktop with a right border separator (border-r)",
+        "Items are rendered as clickable buttons/tabs that call setSection from the updated hook",
+        "Sidebar is sticky and scrollable if items overflow",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Add dynamic phase sub-items under Phases in sidebar",
+      "description": "As a process builder user, I want to see the configured phases listed under Phases in the sidebar so I can navigate directly to a specific phase.",
+      "acceptanceCriteria": [
+        "Phase sub-items appear indented below the Phases item in the sidebar",
+        "Sub-items use a LuCornerDownRight icon from react-icons/lu with smaller text (text-sm / 12px) compared to top-level items (text-base / 14px)",
+        "Phase names are pulled dynamically from the process builder store or tRPC query",
+        "Clicking a phase sub-item navigates to the phases section (since per-phase config views don't exist yet, navigate to the Phases section)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Simplify header to breadcrumbs only",
+      "description": "As a process builder user, I want a clean minimal header showing only breadcrumbs and user avatar so the sidebar handles all process navigation.",
+      "acceptanceCriteria": [
+        "Header shows only: Home link with house icon, chevron separator, process name, and user avatar on the right",
+        "Horizontal step tabs are removed from the header entirely",
+        "Launch/Save button is removed from the header (will be in bottom bar)",
+        "Validation steps-remaining popover is removed from the header (will be in bottom bar)",
+        "Header is a single row at ~56px height",
+        "SidebarProvider wrapping is preserved for mobile trigger functionality",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create bottom action bar with Launch/Save button",
+      "description": "As a process builder user, I want the Launch Process / Save button in a sticky bottom bar alongside Exit and Back so all actions are consistently at the bottom.",
+      "acceptanceCriteria": [
+        "New ProcessBuilderFooter component renders as a sticky footer bar with top border and backdrop blur",
+        "Exit button with rotated LuLogOut icon on the bottom-left navigates back to decision list or home",
+        "Back button next to Exit (secondary style)",
+        "Launch Process / Update Process button on the bottom-right (primary teal style)",
+        "Validation steps-remaining indicator appears next to the Launch button",
+        "Footer is added to the edit page layout below the sidebar+content area",
+        "The existing progress bar / stepper in the center is kept as-is (no logic changes)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Update mobile navigation to use unified sidebar",
+      "description": "As a mobile user, I want the sidebar to be accessible via a hamburger trigger so I can navigate on small screens.",
+      "acceptanceCriteria": [
+        "On mobile, sidebar is hidden by default and toggled via the existing SidebarTrigger in the header",
+        "Mobile sidebar shows the same unified navigation items as the desktop sidebar",
+        "Selecting a sidebar item on mobile closes the sidebar drawer and navigates to the section",
+        "The MobileSidebar component in ProcessBuilderHeader is updated to use the flat navigation items instead of step tabs",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Add translation keys for all new sidebar strings",
+      "description": "As a developer, I need to ensure all new user-facing strings are properly internationalized across all language files.",
+      "acceptanceCriteria": [
+        "All sidebar labels use t('...') from useTranslations hook",
+        "New translation keys (Exit, Back, any new labels) are added to ALL .json files in apps/app/src/lib/i18n/dictionaries/",
+        "No hardcoded user-facing strings remain in ProcessBuilderSidebar, ProcessBuilderHeader, or ProcessBuilderFooter",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "All translation keys were already added in prior stories (US-003, US-005, US-006, US-007). Verified all keys present in all 5 dictionary files."
+    }
+  ]
+}
