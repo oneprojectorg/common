@@ -1,5 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
+import { LuCornerDownRight } from 'react-icons/lu';
+
+import { trpc } from '@op/api/client';
 import { useTranslations } from '@/lib/i18n';
 
 import { useNavigationConfig } from './useNavigationConfig';
@@ -14,6 +18,25 @@ export const ProcessBuilderSidebar = ({
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSections, currentSection, setSection } =
     useProcessNavigation(navigationConfig);
+
+  const { data: instance } = trpc.decision.getInstance.useQuery(
+    { instanceId },
+    { enabled: !!instanceId },
+  );
+
+  const phases = useMemo(() => {
+    const instancePhases = instance?.instanceData?.phases;
+    if (instancePhases?.length) {
+      return instancePhases
+        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .filter((p) => p.name);
+    }
+    const templatePhases = instance?.process?.processSchema?.phases;
+    if (templatePhases?.length) {
+      return templatePhases.map((p) => ({ id: p.id, name: p.name }));
+    }
+    return [];
+  }, [instance]);
 
   return (
     <nav
@@ -36,6 +59,22 @@ export const ProcessBuilderSidebar = ({
               >
                 {t(section.labelKey)}
               </button>
+              {section.id === 'phases' && phases.length > 0 && (
+                <ul className="mt-0.5 flex flex-col gap-0.5">
+                  {phases.map((phase) => (
+                    <li key={phase.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSection('phases')}
+                        className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-left text-xs text-charcoal transition-colors hover:bg-neutral-gray1"
+                      >
+                        <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
+                        <span className="truncate">{phase.name}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           );
         })}
