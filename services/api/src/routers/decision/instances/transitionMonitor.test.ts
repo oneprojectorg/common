@@ -332,10 +332,13 @@ describe('processDecisionsTransitions', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
     // Create a published instance with future transitions (don't make them due)
-    const { instanceId } =
-      await createPublishedInstanceWithDueTransitions(testData, task.id, {
+    const { instanceId } = await createPublishedInstanceWithDueTransitions(
+      testData,
+      task.id,
+      {
         makeDue: false,
-      });
+      },
+    );
 
     await processDecisionsTransitions();
 
