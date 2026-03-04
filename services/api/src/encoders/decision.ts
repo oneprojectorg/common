@@ -19,6 +19,42 @@ import { baseProfileEncoder } from './profiles';
 // JSON Schema types
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
+/**
+ * Typed encoder for rubric templates. Matches the `RubricTemplateSchema`
+ * interface from `@op/common` so the frontend receives properly typed data
+ * without needing type assertions.
+ */
+const rubricTemplateEncoder = z
+  .object({
+    type: z.literal('object'),
+    properties: z
+      .record(
+        z.string(),
+        z
+          .object({
+            type: z.string().optional(),
+            title: z.string().optional(),
+            description: z.string().optional(),
+            minimum: z.number().optional(),
+            maximum: z.number().optional(),
+            oneOf: z
+              .array(
+                z.object({
+                  const: z.union([z.number(), z.string()]),
+                  title: z.string(),
+                }),
+              )
+              .optional(),
+            'x-format': z.string().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    required: z.array(z.string()).optional(),
+    'x-field-order': z.array(z.string()).optional(),
+  })
+  .passthrough();
+
 // ============================================================================
 // ProcessPhase encoder (for frontend UI components)
 // ============================================================================
@@ -198,7 +234,7 @@ const instanceDataWithSchemaEncoder = z.object({
     .optional(),
   phases: z.array(instancePhaseDataEncoder).optional(),
   proposalTemplate: jsonSchemaEncoder.optional(),
-  rubricTemplate: jsonSchemaEncoder.optional(),
+  rubricTemplate: rubricTemplateEncoder.optional(),
 });
 
 /** Decision access permissions encoder */
@@ -420,7 +456,7 @@ export const documentContentEncoder = z.discriminatedUnion('type', [
     fragments: z.record(
       z.string(),
       z.object({
-        type: z.string(),
+        type: z.string().optional(),
         content: z.array(z.unknown()).optional(),
       }),
     ),
