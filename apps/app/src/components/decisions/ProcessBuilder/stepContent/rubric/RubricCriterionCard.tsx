@@ -12,6 +12,7 @@ import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { DragHandle } from '@op/ui/Sortable';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
+import { useState } from 'react';
 import { LuChevronRight, LuGripVertical, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -241,16 +242,64 @@ function ScoredCriterionConfig({
   const t = useTranslations();
   const max = criterion.maxPoints ?? 5;
 
+  // Cache descriptions that would be lost when maxPoints decreases.
+  // Key is 1-based score value, value is the description text.
+  // Cache persists until user navigates away from this criterion card.
+  const [cachedDescriptions, setCachedDescriptions] = useState<
+    Record<number, string>
+  >({});
+
+  const handleMaxPointsChange = (value: number | null) => {
+    if (value === null || value < 2) {
+      return;
+    }
+
+    const newMax = value;
+
+    if (newMax < max) {
+      // Decreasing - cache descriptions that will be removed
+      const toCache: Record<number, string> = { ...cachedDescriptions };
+      for (let i = newMax + 1; i <= max; i++) {
+        const label = criterion.scoreLabels[i - 1]; // scoreLabels is 0-indexed
+        if (label) {
+          toCache[i] = label;
+        }
+      }
+      setCachedDescriptions(toCache);
+    } else if (newMax > max) {
+      // Increasing - restore cached descriptions after update
+      const labelsToRestore: Array<{ score: number; label: string }> = [];
+      for (let i = max + 1; i <= newMax; i++) {
+        const cached = cachedDescriptions[i];
+        if (cached) {
+          labelsToRestore.push({ score: i, label: cached });
+        }
+      }
+
+      // Clear restored items from cache
+      if (labelsToRestore.length > 0) {
+        const newCache = { ...cachedDescriptions };
+        labelsToRestore.forEach(({ score }) => delete newCache[score]);
+        setCachedDescriptions(newCache);
+
+        // Restore labels after state update
+        setTimeout(() => {
+          labelsToRestore.forEach(({ score, label }) => {
+            onUpdateScoreLabel(score, label);
+          });
+        }, 0);
+      }
+    }
+
+    onUpdateMaxPoints(newMax);
+  };
+
   return (
     <div className="space-y-4">
       <NumberField
         label={t('Max points')}
         value={max}
-        onChange={(value) => {
-          if (value !== null && value >= 2) {
-            onUpdateMaxPoints(value);
-          }
-        }}
+        onChange={handleMaxPointsChange}
         errorMessage={max < 2 ? t('Minimum is 2') : undefined}
         inputProps={{ className: 'w-20' }}
       />
