@@ -66,8 +66,8 @@ export const ProcessBuilderSidebar = ({
                 onClick={() => setSection(section.id)}
                 className={`w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-base transition-colors ${
                   isActive
-                    ? 'bg-primary-tealWhite text-primary'
-                    : 'text-neutral-black hover:bg-neutral-gray1'
+                    ? 'bg-primary-tealWhite font-medium text-primary'
+                    : 'text-charcoal hover:bg-neutral-gray1'
                 }`}
               >
                 {t(section.labelKey)}

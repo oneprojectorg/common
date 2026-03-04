@@ -1,7 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
-
 import { trpc } from '@op/api/client';
 import {
   Sidebar,
@@ -9,6 +7,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@op/ui/Sidebar';
+import { useMemo } from 'react';
 import { LuChevronRight, LuCornerDownRight, LuHouse } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -193,7 +192,7 @@ const MobileSidebar = ({
                   onClick={() => handleSectionClick(section.id)}
                   className={`w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors ${
                     isActive
-                      ? 'bg-primary-tealWhite text-primary font-medium'
+                      ? 'bg-primary-tealWhite font-medium text-primary'
                       : 'text-charcoal hover:bg-neutral-gray1'
                   }`}
                 >
