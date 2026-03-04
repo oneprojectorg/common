@@ -2,10 +2,6 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Popover } from '@op/ui/Popover';
 import { Key } from '@op/ui/RAC';
 import {
   Sidebar,
@@ -14,29 +10,15 @@ import {
   useSidebar,
 } from '@op/ui/Sidebar';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import {
-  LuCheck,
-  LuChevronRight,
-  LuCircle,
-  LuCircleAlert,
-  LuHouse,
-  LuPlus,
-  LuSave,
-} from 'react-icons/lu';
+import { LuChevronRight, LuHouse } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
-import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
-import type { ValidationSummary } from './validation/processBuilderValidation';
-import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderHeader = ({
   instanceId,
@@ -81,29 +63,19 @@ const CreateModeHeader = () => {
 };
 
 const ProcessBuilderHeaderContent = ({
-  instanceId,
   slug,
 }: {
   instanceId: string;
   slug?: string;
 }) => {
   const t = useTranslations();
-  const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
-  const router = useRouter();
-  const navigationConfig = useNavigationConfig(instanceId);
-  const { visibleSteps, currentStep, setStep } =
-    useProcessNavigation(navigationConfig);
-  const hasSteps = visibleSteps.length > 0;
 
   const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
     { slug: slug! },
     { enabled: !!slug },
   );
 
-  const processInstance = decisionProfile?.processInstance;
-  const instanceStatus = processInstance?.status as ProcessStatus | undefined;
   const decisionProfileId = decisionProfile?.id;
-  const validation = useProcessBuilderValidation(decisionProfileId);
 
   const storeData = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId] : undefined,
@@ -111,145 +83,23 @@ const ProcessBuilderHeaderContent = ({
   const displayName =
     storeData?.name || decisionProfile?.name || t('New process');
 
-  const { setOpen } = useSidebar();
-  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
-
-  const isDraft = instanceStatus === ProcessStatus.DRAFT;
-  const isTerminalStatus =
-    instanceStatus === ProcessStatus.COMPLETED ||
-    instanceStatus === ProcessStatus.CANCELLED;
-
-  const utils = trpc.useUtils();
-
-  // Save mutation for non-draft states
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => {
-      toast.success({ message: t('Changes saved successfully') });
-      if (slug) {
-        router.push(`/decisions/${slug}`);
-      }
-    },
-    onError: (error) => {
-      toast.error({
-        message: t('Failed to save changes'),
-        title: error.message,
-      });
-    },
-    onSettled: () => {
-      if (slug) {
-        void utils.decision.getDecisionBySlug.invalidate({ slug });
-      }
-    },
-  });
-
-  const handleLaunchOrSave = () => {
-    if (isDraft) {
-      setIsLaunchModalOpen(true);
-    } else {
-      updateInstance.mutate({
-        instanceId,
-        name: storeData?.name || undefined,
-        description: storeData?.description || undefined,
-        stewardProfileId: storeData?.stewardProfileId || undefined,
-        phases: storeData?.phases,
-        proposalTemplate: storeData?.proposalTemplate,
-        config: storeData?.config,
-      });
-    }
-  };
-
-  const handleSelectionChange = (key: Key) => {
-    setStep(String(key));
-    setOpen(false);
-  };
-
   return (
-    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between gap-2 border-b bg-white sm:h-28 sm:flex-col sm:gap-0">
-      <div className="relative z-10 flex h-14 w-full items-center justify-between gap-2 overflow-hidden pl-4 sm:border-b md:pl-8">
-        <div className="relative z-10 flex items-center gap-2 overflow-hidden">
-          {hasSteps && <SidebarTrigger className="size-4 sm:hidden" />}
-
-          <Link
-            href="/"
-            className="hidden items-center gap-2 text-primary sm:flex"
-          >
-            <LuHouse className="size-4" />
-            {t('Home')}
-          </Link>
-          <LuChevronRight className="hidden size-4 sm:block" />
-
-          <span className="truncate">{displayName}</span>
-        </div>
-        <div className="relative z-10 flex gap-4 pr-4 md:pr-8">
-          {hasSteps && (
-            <div className="flex gap-2">
-              {validation.stepsRemaining > 0 && (
-                <StepsRemainingPopover validation={validation} />
-              )}
-              <Button
-                className="h-8 rounded-sm"
-                onPress={handleLaunchOrSave}
-                isDisabled={
-                  updateInstance.isPending ||
-                  !validation.isReadyToLaunch ||
-                  isTerminalStatus
-                }
-              >
-                {isDraft ? (
-                  <LuPlus className="size-4" />
-                ) : (
-                  <LuSave className="size-4" />
-                )}
-                <span className="md:hidden">
-                  {isDraft ? t('Launch') : t('Update')}
-                </span>
-                <span className="hidden md:inline">
-                  {isDraft ? t('Launch Process') : t('Update Process')}
-                </span>
-              </Button>
-            </div>
-          )}
-          <UserAvatarMenu className="hidden sm:block" />
-        </div>
+    <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
+      <div className="flex items-center gap-2 pl-4 md:pl-8">
+        <SidebarTrigger className="size-4 sm:hidden" />
+        <Link
+          href="/"
+          className="hidden items-center gap-2 text-primary sm:flex"
+        >
+          <LuHouse className="size-4" />
+          {t('Home')}
+        </Link>
+        <LuChevronRight className="hidden size-4 sm:block" />
+        <span className="truncate">{displayName}</span>
       </div>
-
-      {slug && decisionProfileId && (
-        <LaunchProcessModal
-          isOpen={isLaunchModalOpen}
-          onOpenChange={setIsLaunchModalOpen}
-          instanceId={instanceId}
-          processName={displayName}
-          slug={slug}
-          decisionProfileId={decisionProfileId}
-        />
-      )}
-      {hasSteps && (
-        <nav className="z-0 hidden h-14 w-full px-4 sm:flex md:px-8">
-          <Tabs
-            selectedKey={currentStep?.id}
-            onSelectionChange={handleSelectionChange}
-            className="h-full"
-          >
-            <TabList
-              aria-label={t('Process steps')}
-              className="h-full border-none"
-            >
-              {visibleSteps.map((step) => (
-                <Tab
-                  key={step.id}
-                  id={step.id}
-                  className="flex h-full cursor-pointer items-center gap-2"
-                >
-                  {t(step.labelKey)}
-                  {step.id === 'rubric' && !rubricBuilderEnabled && (
-                    <ComingSoonIndicator />
-                  )}
-                </Tab>
-              ))}
-            </TabList>
-          </Tabs>
-        </nav>
-      )}
+      <div className="pr-4 md:pr-8">
+        <UserAvatarMenu className="hidden sm:block" />
+      </div>
     </header>
   );
 };
@@ -316,55 +166,5 @@ const ComingSoonIndicator = () => {
     <span className="rounded-full bg-neutral-gray1 px-2 py-0.5 text-sm text-neutral-gray4">
       {t('Coming soon')}
     </span>
-  );
-};
-
-const StepsRemainingPopover = ({
-  validation,
-}: {
-  validation: ValidationSummary;
-}) => {
-  const t = useTranslations();
-
-  return (
-    <DialogTrigger>
-      <Button
-        className="flex aspect-square h-8 gap-2 rounded-sm md:aspect-auto"
-        color="warn"
-      >
-        <LuCircleAlert className="size-4 shrink-0" />
-        <span className="hidden md:block">
-          {t('{stepCount, plural, =1 {1 step} other {# steps}} remaining', {
-            stepCount: validation.stepsRemaining,
-          })}
-        </span>
-      </Button>
-      <Popover
-        placement="bottom end"
-        className="w-72 rounded-lg border bg-white p-4 shadow-lg"
-      >
-        <p className="mb-3 font-medium text-neutral-black">
-          {t('Complete these steps to launch')}
-        </p>
-        <ul className="space-y-3">
-          {validation.checklist.map((item) => (
-            <li key={item.id} className="flex items-center gap-2">
-              {item.isValid ? (
-                <LuCheck className="size-5 shrink-0 text-functional-green" />
-              ) : (
-                <LuCircle className="size-5 shrink-0 text-neutral-gray4" />
-              )}
-              <span
-                className={
-                  item.isValid ? 'text-functional-green' : 'text-neutral-black'
-                }
-              >
-                {t(item.labelKey)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Popover>
-    </DialogTrigger>
   );
 };
