@@ -64,10 +64,10 @@ export const ProcessBuilderSidebar = ({
               <button
                 type="button"
                 onClick={() => setSection(section.id)}
-                className={`w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                className={`w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-base transition-colors ${
                   isActive
-                    ? 'bg-primary-tealWhite font-medium text-primary'
-                    : 'text-charcoal hover:bg-neutral-gray1'
+                    ? 'bg-primary-tealWhite text-primary'
+                    : 'text-neutral-black hover:bg-neutral-gray1'
                 }`}
               >
                 {t(section.labelKey)}
@@ -79,7 +79,7 @@ export const ProcessBuilderSidebar = ({
                       <button
                         type="button"
                         onClick={() => setSection('phases')}
-                        className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-left text-xs text-charcoal transition-colors hover:bg-neutral-gray1"
+                        className="flex w-full cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-left text-sm text-neutral-black transition-colors hover:bg-neutral-gray1"
                       >
                         <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
                         <span className="truncate">{phase.name}</span>
