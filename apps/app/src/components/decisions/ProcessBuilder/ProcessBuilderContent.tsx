@@ -4,7 +4,8 @@ import { useUser } from '@/utils/UserProvider';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { type SectionProps, getContentComponent } from './contentRegistry';
+import { type SectionProps, getContentComponentFlat } from './contentRegistry';
+import { type SectionId } from './navigationConfig';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
@@ -15,8 +16,7 @@ export function ProcessBuilderContent({
 }: SectionProps) {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
-  const { currentStep, currentSection } =
-    useProcessNavigation(navigationConfig);
+  const { currentSection } = useProcessNavigation(navigationConfig);
 
   const access = useUser();
   const isAdmin = access.getPermissionsForProfile(decisionProfileId).admin;
@@ -25,9 +25,8 @@ export function ProcessBuilderContent({
     throw new Error('UNAUTHORIZED');
   }
 
-  const ContentComponent = getContentComponent(
-    currentStep?.id,
-    currentSection?.id,
+  const ContentComponent = getContentComponentFlat(
+    currentSection?.id as SectionId | undefined,
   );
 
   if (!ContentComponent) {
