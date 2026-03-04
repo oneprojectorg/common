@@ -5,8 +5,9 @@
  * top-level `x-field-order` array. Per-criterion widget selection is driven by
  * `x-format` on each property (consumed by the renderer's rubric field logic).
  *
- * Mirrors the architecture of `proposalTemplate.ts` but tailored to rubric
- * criteria: rating scale, yes/no, and text response.
+ * Generic JSON Schema operations are delegated to `templateUtils.ts`.
+ * This file adds rubric-specific logic: criterion types, scored config, and
+ * type inference from schema shape.
  */
 import type {
   RubricTemplateSchema,
@@ -15,6 +16,22 @@ import type {
 import type { JSONSchema7 } from 'json-schema';
 
 import type { TranslationKey } from '@/lib/i18n/routing';
+
+import {
+  addProperty,
+  getPropertyDescription,
+  getPropertyLabel,
+  getPropertyOrder,
+  getPropertySchema,
+  isPropertyRequired,
+  isSchemaObject,
+  removeProperty,
+  reorderProperties,
+  setPropertyRequired,
+  updateProperty,
+  updatePropertyDescription,
+  updatePropertyLabel,
+} from './templateUtils';
 
 export type { RubricTemplateSchema };
 
@@ -48,14 +65,6 @@ export interface CriterionView {
 const DEFAULT_MAX_POINTS = 5;
 
 /**
- * Type guard that narrows a `JSONSchema7Definition` (which is
- * `JSONSchema7 | boolean`) to `JSONSchema7`.
- */
-function isSchemaObject(entry: JSONSchema7 | boolean): entry is JSONSchema7 {
-  return typeof entry !== 'boolean';
-}
-
-/**
  * Extract oneOf entries as typed `JSONSchema7[]`, filtering out boolean
  * definitions.
  */
@@ -64,28 +73,6 @@ function getOneOfEntries(schema: XFormatPropertySchema): JSONSchema7[] {
     return [];
   }
   return schema.oneOf.filter(isSchemaObject);
-}
-
-/**
- * Update a single criterion's schema within a template. Returns the template
- * unchanged if the criterion doesn't exist.
- */
-function updateProperty(
-  template: RubricTemplateSchema,
-  criterionId: string,
-  updater: (schema: XFormatPropertySchema) => XFormatPropertySchema,
-): RubricTemplateSchema {
-  const schema = getCriterionSchema(template, criterionId);
-  if (!schema) {
-    return template;
-  }
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: updater(schema),
-    },
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -167,18 +154,18 @@ export function inferCriterionType(
 }
 
 // ---------------------------------------------------------------------------
-// Readers
+// Readers (delegating to shared utils where possible)
 // ---------------------------------------------------------------------------
 
 export function getCriterionOrder(template: RubricTemplateSchema): string[] {
-  return template['x-field-order'] ?? [];
+  return getPropertyOrder(template);
 }
 
 export function getCriterionSchema(
   template: RubricTemplateSchema,
   criterionId: string,
 ): XFormatPropertySchema | undefined {
-  return template.properties?.[criterionId];
+  return getPropertySchema(template, criterionId);
 }
 
 export function getCriterionType(
@@ -196,21 +183,21 @@ export function getCriterionLabel(
   template: RubricTemplateSchema,
   criterionId: string,
 ): string {
-  return getCriterionSchema(template, criterionId)?.title ?? '';
+  return getPropertyLabel(template, criterionId);
 }
 
 export function getCriterionDescription(
   template: RubricTemplateSchema,
   criterionId: string,
 ): string | undefined {
-  return getCriterionSchema(template, criterionId)?.description;
+  return getPropertyDescription(template, criterionId);
 }
 
 export function isCriterionRequired(
   template: RubricTemplateSchema,
   criterionId: string,
 ): boolean {
-  return template.required?.includes(criterionId) ?? false;
+  return isPropertyRequired(template, criterionId);
 }
 
 export function getCriterionMaxPoints(
@@ -312,42 +299,21 @@ export function addCriterion(
   label: string,
 ): RubricTemplateSchema {
   const jsonSchema = { ...createCriterionJsonSchema(type), title: label };
-  const order = getCriterionOrder(template);
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [criterionId]: jsonSchema,
-    },
-    'x-field-order': [...order, criterionId],
-  };
+  return addProperty(template, criterionId, jsonSchema);
 }
 
 export function removeCriterion(
   template: RubricTemplateSchema,
   criterionId: string,
 ): RubricTemplateSchema {
-  const { [criterionId]: _removed, ...restProps } = template.properties ?? {};
-  const order = getCriterionOrder(template).filter((id) => id !== criterionId);
-  const required = (template.required ?? []).filter((id) => id !== criterionId);
-
-  return {
-    ...template,
-    properties: restProps,
-    required: required.length > 0 ? required : undefined,
-    'x-field-order': order,
-  };
+  return removeProperty(template, criterionId);
 }
 
 export function reorderCriteria(
   template: RubricTemplateSchema,
   newOrder: string[],
 ): RubricTemplateSchema {
-  return {
-    ...template,
-    'x-field-order': newOrder,
-  };
+  return reorderProperties(template, newOrder);
 }
 
 export function updateCriterionLabel(
@@ -355,7 +321,7 @@ export function updateCriterionLabel(
   criterionId: string,
   label: string,
 ): RubricTemplateSchema {
-  return updateProperty(template, criterionId, (s) => ({ ...s, title: label }));
+  return updatePropertyLabel(template, criterionId, label);
 }
 
 export function updateCriterionDescription(
@@ -363,15 +329,7 @@ export function updateCriterionDescription(
   criterionId: string,
   description: string | undefined,
 ): RubricTemplateSchema {
-  return updateProperty(template, criterionId, (s) => {
-    const updated = { ...s };
-    if (description) {
-      updated.description = description;
-    } else {
-      delete updated.description;
-    }
-    return updated;
-  });
+  return updatePropertyDescription(template, criterionId, description);
 }
 
 export function setCriterionRequired(
@@ -379,14 +337,7 @@ export function setCriterionRequired(
   criterionId: string,
   required: boolean,
 ): RubricTemplateSchema {
-  const current = template.required ?? [];
-  const filtered = current.filter((id) => id !== criterionId);
-  const next = required ? [...filtered, criterionId] : filtered;
-
-  return {
-    ...template,
-    required: next.length > 0 ? next : undefined,
-  };
+  return setPropertyRequired(template, criterionId, required);
 }
 
 /**
@@ -437,7 +388,7 @@ export function updateScoredMaxPoints(
     return template;
   }
 
-  const clampedMax = Math.max(2, Math.min(newMax, 10));
+  const clampedMax = Math.max(2, newMax);
   const existingLabels = getCriterionScoreLabels(template, criterionId);
 
   const oneOf = Array.from({ length: clampedMax }, (_, i) => ({
