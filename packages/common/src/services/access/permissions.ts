@@ -4,7 +4,7 @@ import {
   accessRoles,
   organizationUserToAccessRoles,
 } from '@op/db/schema';
-import { toBitField } from 'access-zones';
+import { permission, toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
@@ -65,6 +65,27 @@ export async function createRole({
       accessZoneId: zone.id,
       permission: toBitField(permissions),
     });
+
+    // Scoped roles always get profile READ
+    if (zoneName !== 'profile') {
+      const profileZone = await tx.query.accessZones.findFirst({
+        where: { name: 'profile' },
+      });
+
+      if (profileZone) {
+        await tx.insert(accessRolePermissionsOnAccessZones).values({
+          accessRoleId: role.id,
+          accessZoneId: profileZone.id,
+          permission: permission.READ,
+        });
+      }
+    } else if (!permissions.read) {
+      // If creating on the profile zone but read wasn't set, force it
+      await tx
+        .update(accessRolePermissionsOnAccessZones)
+        .set({ permission: toBitField({ ...permissions, read: true }) })
+        .where(eq(accessRolePermissionsOnAccessZones.accessRoleId, role.id));
+    }
 
     return {
       id: role.id,
