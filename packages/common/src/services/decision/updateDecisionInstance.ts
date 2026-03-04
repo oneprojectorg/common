@@ -4,7 +4,6 @@ import {
   ProcessStatus,
   decisionProcessTransitions,
   processInstances,
-  profileInvites,
   profiles,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
@@ -275,12 +274,7 @@ export const updateDecisionInstance = async ({
           invitations,
         },
       });
-
-      // Mark all queued invites as notified
-      await db
-        .update(profileInvites)
-        .set({ notified: true })
-        .where(eq(profileInvites.profileId, profileId));
+      // notified=true is set by the Inngest workflow after successful email delivery
     }
   }
 
