@@ -60,3 +60,41 @@ export const Validation = (args: any) => (
 Validation.args = {
   isRequired: true,
 };
+
+export const WithCharacterLimit = () => (
+  <div className="flex w-96 flex-col gap-8">
+    <TextField
+      label="Title"
+      description="Enter a title"
+      maxLength={50}
+      inputProps={{ placeholder: 'Placeholder' }}
+    />
+    <TextField
+      label="Description"
+      description="Enter a description"
+      maxLength={250}
+      useTextArea
+      textareaProps={{ placeholder: 'Placeholder' }}
+    />
+    <TextField
+      label="With error"
+      maxLength={50}
+      errorMessage="This field is required"
+      inputProps={{ placeholder: 'Placeholder' }}
+    />
+    <TextField
+      label="With error and helper text"
+      description="Enter a title"
+      maxLength={50}
+      errorMessage="This field is required"
+      inputProps={{ placeholder: 'Placeholder' }}
+    />
+    <TextField
+      label="Disabled"
+      description="Helper text"
+      maxLength={50}
+      isDisabled
+      inputProps={{ placeholder: 'Placeholder' }}
+    />
+  </div>
+);

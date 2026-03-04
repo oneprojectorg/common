@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { TextField as AriaTextField } from 'react-aria-components';
 import type {
   TextFieldProps as AriaTextFieldProps,
@@ -30,6 +31,7 @@ export interface TextFieldProps extends AriaTextFieldProps {
   labelClassName?: string;
   errorClassName?: string;
   useTextArea?: boolean;
+  maxLength?: number;
 }
 
 export const TextField = ({
@@ -44,6 +46,7 @@ export const TextField = ({
   labelClassName,
   errorClassName,
   useTextArea,
+  maxLength,
   children,
   isRequired, // we pull this out as it conflicts with other form validation libraries
   ...props
@@ -51,10 +54,38 @@ export const TextField = ({
   ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
   children?: React.ReactNode;
 }) => {
+  const [charCount, setCharCount] = useState(
+    () => (props.value ?? props.defaultValue ?? '').length,
+  );
+
+  const isInvalid = !!errorMessage && errorMessage.length > 0;
+
+  const handleChange = (value: string) => {
+    setCharCount(value.length);
+    props.onChange?.(value);
+  };
+
+  const nearLimit = maxLength != null && maxLength - charCount <= 5;
+
+  const counterElement = maxLength != null && (
+    <span
+      className={cn(
+        'text-sm text-neutral-gray4',
+        'group-data-[disabled=true]:opacity-50',
+        nearLimit && 'font-bold',
+        (charCount === maxLength || isInvalid) && 'text-functional-red',
+      )}
+    >
+      {charCount}/{maxLength}
+    </span>
+  );
+
   return (
     <AriaTextField
       {...props}
-      isInvalid={!!errorMessage && errorMessage.length > 0}
+      onChange={handleChange}
+      maxLength={maxLength}
+      isInvalid={isInvalid}
       className={composeTailwindRenderProps(
         props.className,
         'group flex flex-col gap-1',
@@ -94,12 +125,24 @@ export const TextField = ({
         {children}
       </FieldGroup>
 
-      {description && (
-        <Description className={descriptionClassName}>
-          {description}
-        </Description>
+      {description ? (
+        <div className="flex justify-between">
+          <Description className={descriptionClassName}>
+            {description}
+          </Description>
+          {counterElement}
+        </div>
+      ) : (
+        counterElement && (
+          <div className="flex justify-between">
+            <FieldError className={errorClassName}>{errorMessage}</FieldError>
+            {counterElement}
+          </div>
+        )
       )}
-      <FieldError className={errorClassName}>{errorMessage}</FieldError>
+      {(description || !counterElement) && (
+        <FieldError className={errorClassName}>{errorMessage}</FieldError>
+      )}
     </AriaTextField>
   );
 };
