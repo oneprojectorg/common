@@ -102,13 +102,6 @@ export const ProcessBuilderFooter = ({
             <LuLogOut className="size-4 rotate-180" />
             {t('Exit')}
           </Link>
-          <Button
-            color="neutral"
-            className="h-8 rounded-md"
-            onPress={() => router.back()}
-          >
-            {t('Back')}
-          </Button>
         </div>
 
         <div className="flex items-center gap-2">
