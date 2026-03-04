@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type { RubricTemplateSchema } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { Accordion, AccordionItem } from '@op/ui/Accordion';
@@ -12,14 +13,19 @@ import { Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
 
+import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import type {
   CriterionView,
   RubricCriterionType,
-} from '../../../../decisions/rubricTemplate';
+} from '@/components/decisions/rubricTemplate';
 import {
   addCriterion,
   changeCriterionType,
@@ -35,11 +41,8 @@ import {
   updateCriterionLabel,
   updateScoreLabel,
   updateScoredMaxPoints,
-} from '../../../../decisions/rubricTemplate';
-import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
-import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+} from '@/components/decisions/rubricTemplate';
+
 import {
   RubricCriterionCard,
   RubricCriterionDragPreview,
@@ -57,7 +60,7 @@ export function RubricEditorContent({
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === 'draft';
+  const isDraft = instance.status === ProcessStatus.DRAFT;
   const utils = trpc.useUtils();
   const instanceData = instance.instanceData;
 
@@ -88,17 +91,19 @@ export function RubricEditorContent({
 
   // Cache scored config so switching type and back doesn't lose score labels
   const scoredConfigCacheRef = useRef<
-    Map<string, { maximum: number; oneOf: unknown[] }>
+    Map<string, { maximum: number; oneOf: { const: number; title: string }[] }>
   >(new Map());
 
-  const setRubricTemplateSchema = useProcessBuilderStore(
-    (s) => s.setRubricTemplateSchema,
-  );
-  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
-  const markSaved = useProcessBuilderStore((s) => s.markSaved);
-  const saveState = useProcessBuilderStore((s) =>
-    s.getSaveState(decisionProfileId),
-  );
+  const { setRubricTemplateSchema, setSaveStatus, markSaved, getSaveState } =
+    useProcessBuilderStore(
+      useShallow((s) => ({
+        setRubricTemplateSchema: s.setRubricTemplateSchema,
+        setSaveStatus: s.setSaveStatus,
+        markSaved: s.markSaved,
+        getSaveState: s.getSaveState,
+      })),
+    );
+  const saveState = getSaveState(decisionProfileId);
 
   const debouncedSaveRef = useRef<() => boolean>(null);
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
@@ -115,11 +120,12 @@ export function RubricEditorContent({
   // Derive criterion views from the template
   const criteria = useMemo(() => getCriteria(template), [template]);
   const criteriaIndexMap = useMemo(
-    () => new Map(criteria.map((c, i) => [c.id, i + 1])),
+    () => new Map(criteria.map((c, i) => [c.id, i])),
     [criteria],
   );
 
-  // Debounced auto-save
+  // TODO: Extract this debounced auto-save pattern into a shared useAutoSave() hook
+  // (same pattern is used in TemplateEditorContent and useProposalDraft)
   const debouncedSave = useDebouncedCallback(
     (updatedTemplate: RubricTemplateSchema) => {
       setRubricTemplateSchema(decisionProfileId, updatedTemplate);
@@ -206,9 +212,18 @@ export function RubricEditorContent({
         // Stash scored config before switching away from scored
         if (getCriterionType(prev, criterionId) === 'scored') {
           const schema = getCriterionSchema(prev, criterionId);
+          const oneOfEntries = (schema?.oneOf ?? []).filter(
+            (e): e is { const: number; title: string } =>
+              typeof e === 'object' &&
+              e !== null &&
+              'const' in e &&
+              typeof (e as Record<string, unknown>).const === 'number' &&
+              'title' in e &&
+              typeof (e as Record<string, unknown>).title === 'string',
+          );
           scoredConfigCacheRef.current.set(criterionId, {
-            maximum: (schema?.maximum as number) ?? 5,
-            oneOf: (schema?.oneOf as unknown[]) ?? [],
+            maximum: schema?.maximum ?? 5,
+            oneOf: oneOfEntries,
           });
         }
 
@@ -221,7 +236,7 @@ export function RubricEditorContent({
           if (cached) {
             updated = updateCriterionJsonSchema(updated, criterionId, {
               maximum: cached.maximum,
-              oneOf: cached.oneOf as { const: number; title: string }[],
+              oneOf: cached.oneOf,
             });
           }
         }
@@ -306,11 +321,11 @@ export function RubricEditorContent({
                     if (!item) {
                       return null;
                     }
-                    const idx = criteriaIndexMap.get(item.id) ?? 1;
+                    const idx = criteriaIndexMap.get(item.id) ?? 0;
                     return (
                       <RubricCriterionDragPreview
                         criterion={item}
-                        index={idx}
+                        index={idx + 1}
                       />
                     );
                   }}
@@ -318,7 +333,7 @@ export function RubricEditorContent({
                   aria-label={t('Rubric criteria')}
                 >
                   {(criterion, controls) => {
-                    const idx = criteriaIndexMap.get(criterion.id) ?? 1;
+                    const idx = criteriaIndexMap.get(criterion.id) ?? 0;
                     const snapshotErrors =
                       criterionErrors.get(criterion.id) ?? [];
                     const liveErrors = getCriterionErrors(criterion);
@@ -336,7 +351,7 @@ export function RubricEditorContent({
                       >
                         <RubricCriterionCard
                           criterion={criterion}
-                          index={idx}
+                          index={idx + 1}
                           errors={displayedErrors}
                           controls={controls}
                           onRemove={handleRemoveCriterion}
@@ -354,7 +369,7 @@ export function RubricEditorContent({
 
               <Button
                 color="secondary"
-                className="w-full text-primary-teal hover:text-primary-tealBlack"
+                className="w-full"
                 onPress={handleAddCriterion}
               >
                 <LuPlus className="size-4" />

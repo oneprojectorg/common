@@ -20,9 +20,15 @@ import { baseProfileEncoder } from './profiles';
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
 /**
- * Typed encoder for rubric templates. Matches the `RubricTemplateSchema`
- * interface from `@op/common` so the frontend receives properly typed data
- * without needing type assertions.
+ * Typed encoder for rubric templates (READ path only).
+ *
+ * This provides strict typing so the frontend receives properly typed data
+ * from `instanceData.rubricTemplate` without needing type assertions.
+ *
+ * For the WRITE path (mutations), we use `jsonSchemaEncoder` instead because
+ * the frontend sends `RubricTemplateSchema` which extends `JSONSchema7` - a
+ * much broader type that doesn't fit this strict schema. Runtime validation
+ * still occurs via Zod; this encoder is primarily for TypeScript inference.
  */
 const rubricTemplateEncoder = z
   .object({
@@ -632,7 +638,12 @@ export const updateDecisionInstanceInputSchema = z.object({
   phases: z.array(instancePhaseDataInputEncoder).optional(),
   /** Proposal template (JSON Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
-  /** Rubric template (JSON Schema defining evaluation criteria) */
+  /**
+   * Rubric template (JSON Schema defining evaluation criteria).
+   * Uses loose jsonSchemaEncoder for input because the frontend sends
+   * RubricTemplateSchema (extends JSONSchema7). See rubricTemplateEncoder
+   * for the typed read path.
+   */
   rubricTemplate: jsonSchemaEncoder.optional(),
 });
 
