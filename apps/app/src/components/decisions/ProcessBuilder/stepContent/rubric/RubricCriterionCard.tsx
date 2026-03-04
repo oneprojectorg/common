@@ -20,7 +20,8 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 import type {
   CriterionView,
   RubricCriterionType,
-} from '../../../../decisions/rubricTemplate';
+} from '@/components/decisions/rubricTemplate';
+
 import {
   CRITERION_TYPES,
   CRITERION_TYPE_REGISTRY,
@@ -110,8 +111,8 @@ export function RubricCriterionCard({
 
       {/* Collapsible body */}
       <AccordionContent>
-        <hr />
-        <div className="space-y-4 px-4 pt-4 pb-4">
+        <hr className="border-neutral-gray1" />
+        <div className="space-y-4 p-4">
           {/* Criterion name */}
           <TextField
             label={t('Criterion name')}
@@ -246,10 +247,11 @@ function ScoredCriterionConfig({
         label={t('Max points')}
         value={max}
         onChange={(value) => {
-          if (value !== null && value >= 2 && value <= 10) {
+          if (value !== null && value >= 2) {
             onUpdateMaxPoints(value);
           }
         }}
+        errorMessage={max < 2 ? t('Minimum is 2') : undefined}
         inputProps={{ className: 'w-20' }}
       />
 
@@ -325,7 +327,7 @@ export function RubricCriterionDragPreview({
 }) {
   const t = useTranslations();
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-lg">
+    <div className="flex items-center gap-2 rounded-lg border bg-white p-3 shadow-lg">
       <div className="grid size-6 place-items-center rounded bg-neutral-offWhite">
         <LuGripVertical className="size-4 shrink-0 text-neutral-gray4" />
       </div>

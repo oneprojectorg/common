@@ -882,6 +882,7 @@
   "Describe what earns {number} points...": "Décrivez ce qui mérite {number} points...",
   "Define what each score means": "Définissez ce que signifie chaque note",
   "Max points": "Points maximum",
+  "Minimum is 2": "Le minimum est 2",
   "New criterion": "Nouveau critère",
   "Remove criterion": "Supprimer le critère",
   "Rubric criteria": "Critères de la grille",

@@ -889,6 +889,7 @@
   "Describe what earns {number} points...": "{number} পয়েন্ট পেতে কী প্রয়োজন তা বর্ণনা করুন...",
   "Define what each score means": "প্রতিটি স্কোরের অর্থ নির্ধারণ করুন",
   "Max points": "সর্বোচ্চ পয়েন্ট",
+  "Minimum is 2": "সর্বনিম্ন 2",
   "New criterion": "নতুন মানদণ্ড",
   "Remove criterion": "মানদণ্ড সরান",
   "Rubric criteria": "রুব্রিক মানদণ্ড",
