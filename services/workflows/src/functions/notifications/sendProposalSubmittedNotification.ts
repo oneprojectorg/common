@@ -101,8 +101,6 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
 
         return {
           sent: data.length,
-          failed: errors.length,
-          errors,
         };
       } catch (error) {
         console.error('Failed to send proposal submitted notifications:', {
@@ -114,7 +112,7 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
     });
 
     return {
-      message: `${result.sent} proposal submitted notification(s) sent, ${result.failed} failed`,
+      message: `${result.sent} proposal submitted notification(s) sent`,
     };
   },
 );
