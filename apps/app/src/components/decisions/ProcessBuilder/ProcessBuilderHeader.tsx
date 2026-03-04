@@ -32,7 +32,7 @@ export const ProcessBuilderHeader = ({
   return (
     <SidebarProvider>
       <ProcessBuilderHeaderContent instanceId={instanceId} slug={slug} />
-      <MobileSidebar instanceId={instanceId} />
+      <MobileSidebarWithProfile instanceId={instanceId} slug={slug} />
     </SidebarProvider>
   );
 };
@@ -102,7 +102,15 @@ const ProcessBuilderHeaderContent = ({
   );
 };
 
-const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
+const MobileSidebarWithProfile = ({ instanceId, slug }: { instanceId: string; slug?: string }) => {
+  const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
+    { slug: slug! },
+    { enabled: !!slug },
+  );
+  return <MobileSidebar instanceId={instanceId} decisionProfileId={decisionProfile?.id} />;
+};
+
+const MobileSidebar = ({ instanceId, decisionProfileId }: { instanceId: string; decisionProfileId?: string }) => {
   const t = useTranslations();
   const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
   const navigationConfig = useNavigationConfig(instanceId);
@@ -110,12 +118,22 @@ const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
     useProcessNavigation(navigationConfig);
   const { setOpen } = useSidebar();
 
+  const storePhases = useProcessBuilderStore(
+    (s) => (decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined),
+  );
+
   const { data: instance } = trpc.decision.getInstance.useQuery(
     { instanceId },
     { enabled: !!instanceId },
   );
 
   const phases = useMemo(() => {
+    // Prefer Zustand store phases (updated immediately on edit) over API data
+    if (storePhases?.length) {
+      return storePhases
+        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .filter((p) => p.name);
+    }
     const instancePhases = instance?.instanceData?.phases;
     if (instancePhases?.length) {
       return instancePhases
@@ -127,7 +145,7 @@ const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
       return templatePhases.map((p) => ({ id: p.id, name: p.name }));
     }
     return [];
-  }, [instance]);
+  }, [storePhases, instance]);
 
   const handleSectionClick = (sectionId: string) => {
     setSection(sectionId);

@@ -6,18 +6,25 @@ import { LuCornerDownRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 
 export const ProcessBuilderSidebar = ({
   instanceId,
+  decisionProfileId,
 }: {
   instanceId: string;
+  decisionProfileId?: string;
 }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
   const { visibleSections, currentSection, setSection } =
     useProcessNavigation(navigationConfig);
+
+  const storePhases = useProcessBuilderStore(
+    (s) => (decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined),
+  );
 
   const { data: instance } = trpc.decision.getInstance.useQuery(
     { instanceId },
@@ -25,6 +32,12 @@ export const ProcessBuilderSidebar = ({
   );
 
   const phases = useMemo(() => {
+    // Prefer Zustand store phases (updated immediately on edit) over API data
+    if (storePhases?.length) {
+      return storePhases
+        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .filter((p) => p.name);
+    }
     const instancePhases = instance?.instanceData?.phases;
     if (instancePhases?.length) {
       return instancePhases
@@ -36,7 +49,7 @@ export const ProcessBuilderSidebar = ({
       return templatePhases.map((p) => ({ id: p.id, name: p.name }));
     }
     return [];
-  }, [instance]);
+  }, [storePhases, instance]);
 
   return (
     <nav
