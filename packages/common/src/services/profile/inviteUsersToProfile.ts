@@ -1,6 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { allowList, ProcessStatus, profileInvites } from '@op/db/schema';
+import { ProcessStatus, allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -70,9 +70,14 @@ export const inviteUsersToProfile = async ({
     assertProfile(profileId),
     // Get the requester's profile for the inviter name
     assertProfile(requesterProfileId),
-    // Get all target roles
+    // Get all target roles with their zone permissions (needed to detect admin roles)
     db.query.accessRoles.findMany({
       where: { id: { in: uniqueRoleIds } },
+      with: {
+        zonePermissions: {
+          with: { accessZone: true },
+        },
+      },
     }),
     // Get all users with their profile memberships for this profile
     db._query.users.findMany({
@@ -136,6 +141,19 @@ export const inviteUsersToProfile = async ({
       `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
     );
   }
+
+  // Identify roles that include decisions: ADMIN — these bypass draft queueing
+  const adminRoleIds = new Set(
+    targetRoles
+      .filter((role) =>
+        role.zonePermissions.some(
+          (zp) =>
+            zp.accessZone.name === 'decisions' &&
+            (zp.permission & permission.ADMIN) !== 0,
+        ),
+      )
+      .map((role) => role.id),
+  );
 
   const results = {
     successful: [] as string[],
@@ -261,20 +279,21 @@ export const inviteUsersToProfile = async ({
   }
 
   // Determine if emails should be sent immediately or queued.
-  // Invites to draft processes are queued (notified=false) until publish.
+  // Invites to draft processes are queued (notified=false) until publish,
+  // UNLESS the role being assigned includes decisions: ADMIN.
   // Check both proposal-level (via proposal -> processInstance) and
   // decision-level (direct processInstance profile) relationships.
   const processInstanceStatus =
     proposalWithDecision?.processInstance?.status ??
     processInstanceForProfile?.status;
-  const shouldNotify = processInstanceStatus !== ProcessStatus.DRAFT;
+  const isDraft = processInstanceStatus === ProcessStatus.DRAFT;
 
   // Batch insert and send event in a single transaction
   // If event.send fails, we rollback the DB inserts
   if (profileInviteEntries.length > 0) {
     const inviteEntries = profileInviteEntries.map((entry) => ({
       ...entry,
-      notified: shouldNotify,
+      notified: !isDraft || adminRoleIds.has(entry.accessRoleId),
     }));
 
     await db.transaction(async (tx) => {
@@ -286,14 +305,18 @@ export const inviteUsersToProfile = async ({
         .values(inviteEntries)
         .returning({ id: profileInvites.id });
 
-      // Only send email event if the process is not in draft
-      if (shouldNotify) {
+      // Send email events only for invites marked as notified
+      const notifiedIndices = inviteEntries
+        .map((entry, idx) => (entry.notified ? idx : -1))
+        .filter((idx) => idx !== -1);
+
+      if (notifiedIndices.length > 0) {
         await event.send({
           name: Events.profileInviteSent.name,
           data: {
             senderProfileId: requesterProfileId,
-            inviteIds: insertedInvites.map((inv) => inv.id),
-            invitations: emailsToInvite,
+            inviteIds: notifiedIndices.map((idx) => insertedInvites[idx]!.id),
+            invitations: notifiedIndices.map((idx) => emailsToInvite[idx]!),
           },
         });
       }
