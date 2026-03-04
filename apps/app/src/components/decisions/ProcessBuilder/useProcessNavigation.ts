@@ -6,20 +6,68 @@ import { useCallback, useEffect, useMemo } from 'react';
 import {
   DEFAULT_NAVIGATION_CONFIG,
   type NavigationConfig,
-  SECTIONS_BY_STEP,
+  SIDEBAR_ITEMS,
   STEPS,
+  type SectionId,
   type StepId,
 } from './navigationConfig';
 
 export function useProcessNavigation(
   navigationConfig: NavigationConfig = DEFAULT_NAVIGATION_CONFIG,
 ) {
-  const [stepParam, setStepParam] = useQueryState('step', { history: 'push' });
   const [sectionParam, setSectionParam] = useQueryState('section', {
     history: 'push',
   });
 
-  // Filter to visible steps only
+  // Legacy params for backward compatibility
+  const [legacyStepParam, setLegacyStepParam] = useQueryState('step', {
+    history: 'replace',
+  });
+
+  // Filter SIDEBAR_ITEMS to only visible sections based on navigationConfig
+  const visibleSections = useMemo(() => {
+    return SIDEBAR_ITEMS.filter((item) => {
+      const stepId = item.parentStepId;
+      if (!stepId) {
+        return true;
+      }
+      // Step must be visible
+      if (navigationConfig.steps?.[stepId] !== true) {
+        return false;
+      }
+      // Section must be in allowed sections for its step
+      const allowedSectionIds = navigationConfig.sections?.[stepId];
+      if (!allowedSectionIds) {
+        return false;
+      }
+      return allowedSectionIds.some((id) => id === item.id);
+    });
+  }, [navigationConfig.steps, navigationConfig.sections]);
+
+  // Backward compatibility: derive section from old step+section params
+  useEffect(() => {
+    if (legacyStepParam && !sectionParam) {
+      // Old URL format: ?step=general&section=overview → ?section=overview
+      // or just ?step=general → derive first section of that step
+      setLegacyStepParam(null);
+    }
+  }, [legacyStepParam, sectionParam, setLegacyStepParam]);
+
+  // Current section (fallback to first visible section)
+  const currentSection = useMemo(() => {
+    const found = visibleSections.find((s) => s.id === sectionParam);
+    return found ?? visibleSections[0];
+  }, [sectionParam, visibleSections]);
+
+  // Derive currentStep from currentSection's parentStepId (for backward compat with consumers)
+  const currentStep = useMemo(() => {
+    if (!currentSection?.parentStepId) {
+      return STEPS[0];
+    }
+    return STEPS.find((s) => s.id === currentSection.parentStepId) ?? STEPS[0];
+  }, [currentSection]);
+
+  // Keep legacy visibleSteps for backward compat with header/sidebar consumers
   const visibleSteps = useMemo(
     () =>
       STEPS.filter((s) => {
@@ -29,64 +77,22 @@ export function useProcessNavigation(
     [navigationConfig.steps],
   );
 
-  // Current step (fallback to first visible step)
-  const currentStep = useMemo(() => {
-    const found = visibleSteps.find((s) => s.id === stepParam);
-    return found ?? visibleSteps[0];
-  }, [stepParam, visibleSteps]);
-
-  // Get visible sections for current step
-  const visibleSections = useMemo(() => {
-    if (!currentStep) {
-      return [];
-    }
-
-    const allSections = SECTIONS_BY_STEP[currentStep.id];
-    const allowedSectionIds = navigationConfig.sections?.[currentStep.id];
-
-    // If no section config, show no sections
-    if (!allowedSectionIds) {
-      return [];
-    }
-
-    // Filter to only allowed sections
-    return allSections.filter((s) =>
-      allowedSectionIds.some((id) => id === s.id),
-    );
-  }, [currentStep, navigationConfig.sections]);
-
-  // Current section (fallback to first visible section)
-  const currentSection = useMemo(() => {
-    const found = visibleSections.find((s) => s.id === sectionParam);
-    return found ?? visibleSections[0];
-  }, [sectionParam, visibleSections]);
-
-  // Replace invalid params in URL
+  // Replace invalid section param in URL
   useEffect(() => {
-    if (stepParam && !visibleSteps.some((s) => s.id === stepParam)) {
-      setStepParam(null);
-    }
     if (sectionParam && !visibleSections.some((s) => s.id === sectionParam)) {
       setSectionParam(currentSection?.id ?? null);
     }
-  }, [
-    stepParam,
-    sectionParam,
-    visibleSteps,
-    visibleSections,
-    currentSection,
-    setStepParam,
-    setSectionParam,
-  ]);
+  }, [sectionParam, visibleSections, currentSection, setSectionParam]);
 
-  // Hide section param for single-section steps
-  useEffect(() => {
-    if (sectionParam && visibleSections.length <= 1) {
-      setSectionParam(null);
-    }
-  }, [sectionParam, visibleSections.length, setSectionParam]);
+  // Handle section change
+  const setSection = useCallback(
+    (newSectionId: SectionId | string) => {
+      setSectionParam(newSectionId);
+    },
+    [setSectionParam],
+  );
 
-  // Handle step change - resets section to first of new step
+  // Handle step change - maps to first section of that step (backward compat for header tabs)
   const setStep = useCallback(
     (newStepId: StepId | string) => {
       const newStep = visibleSteps.find((s) => s.id === newStepId);
@@ -94,30 +100,13 @@ export function useProcessNavigation(
         return;
       }
 
-      // Get first section of the new step
-      const newStepSections = SECTIONS_BY_STEP[newStep.id];
-      const allowedSectionIds = navigationConfig.sections?.[newStep.id];
-      const firstVisibleSection = allowedSectionIds
-        ? newStepSections.find((s) =>
-            allowedSectionIds.some((id) => id === s.id),
-          )
-        : newStepSections[0];
-
-      setStepParam(newStepId);
-      // Only set section param if step has multiple sections
-      setSectionParam(
-        newStepSections.length > 1 ? (firstVisibleSection?.id ?? null) : null,
+      // Find first visible sidebar item belonging to this step
+      const firstSection = visibleSections.find(
+        (item) => item.parentStepId === newStep.id,
       );
+      setSectionParam(firstSection?.id ?? null);
     },
-    [visibleSteps, navigationConfig.sections, setStepParam, setSectionParam],
-  );
-
-  // Handle section change
-  const setSection = useCallback(
-    (newSectionId: string) => {
-      setSectionParam(newSectionId);
-    },
-    [setSectionParam],
+    [visibleSteps, visibleSections, setSectionParam],
   );
 
   return {
