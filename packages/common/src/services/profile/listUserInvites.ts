@@ -22,6 +22,7 @@ export const listUserInvites = async ({
   const invites = await db.query.profileInvites.findMany({
     where: {
       email: { ilike: user.email },
+      notified: true,
       ...(pending === true && { acceptedOn: { isNull: true } }),
       ...(pending === false && { acceptedOn: { isNotNull: true } }),
       ...(entityType && { profileEntityType: entityType }),
