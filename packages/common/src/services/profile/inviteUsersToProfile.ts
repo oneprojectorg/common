@@ -281,7 +281,10 @@ export const inviteUsersToProfile = async ({
       if (allowListEntries.length > 0) {
         await tx.insert(allowList).values(allowListEntries);
       }
-      await tx.insert(profileInvites).values(inviteEntries);
+      const insertedInvites = await tx
+        .insert(profileInvites)
+        .values(inviteEntries)
+        .returning({ id: profileInvites.id });
 
       // Only send email event if the process is not in draft
       if (shouldNotify) {
@@ -289,6 +292,7 @@ export const inviteUsersToProfile = async ({
           name: Events.profileInviteSent.name,
           data: {
             senderProfileId: requesterProfileId,
+            inviteIds: insertedInvites.map((inv) => inv.id),
             invitations: emailsToInvite,
           },
         });

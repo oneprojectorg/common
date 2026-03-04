@@ -31,6 +31,7 @@ export const Events = {
     name: 'profile/invites-sent' as const,
     schema: z.object({
       senderProfileId: z.string(),
+      inviteIds: z.array(z.string()).optional(),
       invitations: z.array(
         z.object({
           email: z.string().email(),

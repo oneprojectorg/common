@@ -271,6 +271,7 @@ export const updateDecisionInstance = async ({
         name: Events.profileInviteSent.name,
         data: {
           senderProfileId,
+          inviteIds: queuedInvites.map((inv) => inv.id),
           invitations,
         },
       });
