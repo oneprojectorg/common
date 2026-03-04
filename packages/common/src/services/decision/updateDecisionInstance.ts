@@ -1,10 +1,13 @@
+import { OPURLConfig } from '@op/core';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
   processInstances,
+  profileInvites,
   profiles,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -226,6 +229,59 @@ export const updateDecisionInstance = async ({
       });
     }
   });
+
+  // When publishing, send queued invite emails for this process instance's profile
+  const isPublishing =
+    status === ProcessStatus.PUBLISHED &&
+    existingInstance.status !== ProcessStatus.PUBLISHED;
+
+  if (isPublishing) {
+    const queuedInvites = await db.query.profileInvites.findMany({
+      where: {
+        profileId,
+        notified: false,
+      },
+      with: {
+        profile: true,
+        inviter: true,
+      },
+    });
+
+    if (queuedInvites.length > 0) {
+      const baseUrl = OPURLConfig('APP').ENV_URL;
+      const decisionProfile = await db.query.profiles.findFirst({
+        where: { id: profileId },
+      });
+      const decisionSlug = decisionProfile?.slug;
+
+      const invitations = queuedInvites.map((invite) => ({
+        email: invite.email,
+        inviterName: invite.inviter.name || 'A team member',
+        profileName: invite.profile.name,
+        inviteUrl: decisionSlug
+          ? `${baseUrl}/decisions/${decisionSlug}`
+          : baseUrl,
+        personalMessage: invite.message ?? undefined,
+      }));
+
+      // Use the first invite's inviter as the sender
+      const senderProfileId = queuedInvites[0]!.invitedBy;
+
+      await event.send({
+        name: Events.profileInviteSent.name,
+        data: {
+          senderProfileId,
+          invitations,
+        },
+      });
+
+      // Mark all queued invites as notified
+      await db
+        .update(profileInvites)
+        .set({ notified: true })
+        .where(eq(profileInvites.profileId, profileId));
+    }
+  }
 
   // Fetch the profile with processInstance joined for the response
   const profile = await db._query.profiles.findFirst({
