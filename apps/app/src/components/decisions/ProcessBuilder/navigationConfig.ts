@@ -74,6 +74,14 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     labelKey: 'Proposal Template',
     parentStepId: 'template',
   },
-  { id: 'roles', labelKey: 'Roles & permissions', parentStepId: 'participants' },
-  { id: 'participants', labelKey: 'Participants', parentStepId: 'participants' },
+  {
+    id: 'roles',
+    labelKey: 'Roles & permissions',
+    parentStepId: 'participants',
+  },
+  {
+    id: 'participants',
+    labelKey: 'Participants',
+    parentStepId: 'participants',
+  },
 ];
