@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import { trpc } from '@op/api/client';
 import {
   Sidebar,
@@ -7,7 +9,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@op/ui/Sidebar';
-import { useMemo } from 'react';
 import { LuChevronRight, LuCornerDownRight, LuHouse } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
