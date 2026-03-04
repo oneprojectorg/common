@@ -1,6 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { allowList, profileInvites } from '@op/db/schema';
+import { allowList, ProcessStatus, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -64,6 +64,7 @@ export const inviteUsersToProfile = async ({
     existingPendingInvites,
     profileUser,
     proposalWithDecision,
+    processInstanceForProfile,
   ] = await Promise.all([
     // Get the target profile details
     assertProfile(profileId),
@@ -106,6 +107,10 @@ export const inviteUsersToProfile = async ({
           with: { profile: true },
         },
       },
+    }),
+    // Check if this profile belongs directly to a process instance (decision-level invites)
+    db.query.processInstances.findFirst({
+      where: { profileId },
     }),
   ]);
 
@@ -255,23 +260,39 @@ export const inviteUsersToProfile = async ({
     });
   }
 
+  // Determine if emails should be sent immediately or queued.
+  // Invites to draft processes are queued (notified=false) until publish.
+  // Check both proposal-level (via proposal -> processInstance) and
+  // decision-level (direct processInstance profile) relationships.
+  const processInstanceStatus =
+    proposalWithDecision?.processInstance?.status ??
+    processInstanceForProfile?.status;
+  const shouldNotify = processInstanceStatus !== ProcessStatus.DRAFT;
+
   // Batch insert and send event in a single transaction
   // If event.send fails, we rollback the DB inserts
   if (profileInviteEntries.length > 0) {
+    const inviteEntries = profileInviteEntries.map((entry) => ({
+      ...entry,
+      notified: shouldNotify,
+    }));
+
     await db.transaction(async (tx) => {
       if (allowListEntries.length > 0) {
         await tx.insert(allowList).values(allowListEntries);
       }
-      await tx.insert(profileInvites).values(profileInviteEntries);
+      await tx.insert(profileInvites).values(inviteEntries);
 
-      // Send event inside transaction - failure rolls back DB changes
-      await event.send({
-        name: Events.profileInviteSent.name,
-        data: {
-          senderProfileId: requesterProfileId,
-          invitations: emailsToInvite,
-        },
-      });
+      // Only send email event if the process is not in draft
+      if (shouldNotify) {
+        await event.send({
+          name: Events.profileInviteSent.name,
+          data: {
+            senderProfileId: requesterProfileId,
+            invitations: emailsToInvite,
+          },
+        });
+      }
     });
 
     // Mark all as successful since transaction completed
