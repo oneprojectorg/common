@@ -1,9 +1,9 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { useMemo } from 'react';
 import { LuCornerDownRight } from 'react-icons/lu';
 
-import { trpc } from '@op/api/client';
 import { useTranslations } from '@/lib/i18n';
 
 import { useNavigationConfig } from './useNavigationConfig';
@@ -53,7 +53,7 @@ export const ProcessBuilderSidebar = ({
                 onClick={() => setSection(section.id)}
                 className={`w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors ${
                   isActive
-                    ? 'bg-primary-tealWhite text-primary font-medium'
+                    ? 'bg-primary-tealWhite font-medium text-primary'
                     : 'text-charcoal hover:bg-neutral-gray1'
                 }`}
               >
