@@ -1,16 +1,16 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useMemo } from 'react';
+
+
 import { trpc } from '@op/api/client';
-import { Key } from '@op/ui/RAC';
 import {
   Sidebar,
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from '@op/ui/Sidebar';
-import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { LuChevronRight, LuHouse } from 'react-icons/lu';
+import { LuChevronRight, LuCornerDownRight, LuHouse } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -108,19 +108,38 @@ const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
   const t = useTranslations();
   const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
   const navigationConfig = useNavigationConfig(instanceId);
-  const { visibleSteps, currentStep, setStep } =
+  const { visibleSections, currentSection, setSection } =
     useProcessNavigation(navigationConfig);
-  const hasSteps = visibleSteps.length > 0;
   const { setOpen } = useSidebar();
 
-  const handleSelectionChange = (key: Key) => {
-    setStep(String(key));
+  const { data: instance } = trpc.decision.getInstance.useQuery(
+    { instanceId },
+    { enabled: !!instanceId },
+  );
+
+  const phases = useMemo(() => {
+    const instancePhases = instance?.instanceData?.phases;
+    if (instancePhases?.length) {
+      return instancePhases
+        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .filter((p) => p.name);
+    }
+    const templatePhases = instance?.process?.processSchema?.phases;
+    if (templatePhases?.length) {
+      return templatePhases.map((p) => ({ id: p.id, name: p.name }));
+    }
+    return [];
+  }, [instance]);
+
+  const handleSectionClick = (sectionId: string) => {
+    setSection(sectionId);
     setOpen(false);
   };
 
-  if (!hasSteps) {
+  if (visibleSections.length === 0) {
     return null;
   }
+
   return (
     <Sidebar mobileOnly>
       <nav className="flex flex-col gap-2 px-4 py-2">
@@ -130,41 +149,43 @@ const MobileSidebar = ({ instanceId }: { instanceId: string }) => {
         </Link>
         <hr />
 
-        <Tabs
-          selectedKey={currentStep?.id}
-          onSelectionChange={handleSelectionChange}
-          className="h-full"
-        >
-          <TabList
-            aria-label={t('Process steps')}
-            className="w-full"
-            orientation="vertical"
-          >
-            {visibleSteps.map((step) => (
-              <Tab
-                key={step.id}
-                id={step.id}
-                variant="pill"
-                className="flex h-8 items-center gap-2 bg-transparent selected:bg-neutral-offWhite"
-              >
-                {t(step.labelKey)}
-                {step.id === 'rubric' && !rubricBuilderEnabled && (
-                  <ComingSoonIndicator />
+        <ul className="flex flex-col gap-1">
+          {visibleSections.map((section) => {
+            const isActive = currentSection?.id === section.id;
+            return (
+              <li key={section.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSectionClick(section.id)}
+                  className={`w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                    isActive
+                      ? 'bg-primary-tealWhite text-primary font-medium'
+                      : 'text-charcoal hover:bg-neutral-gray1'
+                  }`}
+                >
+                  {t(section.labelKey)}
+                </button>
+                {section.id === 'phases' && phases.length > 0 && (
+                  <ul className="mt-0.5 flex flex-col gap-0.5">
+                    {phases.map((phase) => (
+                      <li key={phase.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleSectionClick('phases')}
+                          className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-left text-xs text-charcoal transition-colors hover:bg-neutral-gray1"
+                        >
+                          <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
+                          <span className="truncate">{phase.name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </Tab>
-            ))}
-          </TabList>
-        </Tabs>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
     </Sidebar>
-  );
-};
-
-const ComingSoonIndicator = () => {
-  const t = useTranslations();
-  return (
-    <span className="rounded-full bg-neutral-gray1 px-2 py-0.5 text-sm text-neutral-gray4">
-      {t('Coming soon')}
-    </span>
   );
 };
