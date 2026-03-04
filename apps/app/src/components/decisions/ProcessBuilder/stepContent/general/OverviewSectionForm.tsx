@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { SelectItem } from '@op/ui/Select';
 import { useEffect, useRef } from 'react';
@@ -9,12 +10,11 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
 
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
+import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
-
-import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import { ToggleRow } from '../../components/ToggleRow';
-import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
@@ -78,7 +78,7 @@ export function OverviewSectionForm({
   const utils = trpc.useUtils();
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === 'draft';
+  const isDraft = instance.status === ProcessStatus.DRAFT;
 
   // Store: used as a localStorage buffer for non-draft edits only
   const instanceData = useProcessBuilderStore(

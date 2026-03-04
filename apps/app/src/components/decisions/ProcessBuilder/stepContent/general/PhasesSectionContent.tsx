@@ -2,6 +2,7 @@
 
 import { parseDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import {
@@ -32,13 +33,12 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
-
-import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
-import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import { ToggleRow } from '../../components/ToggleRow';
-import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
+import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
@@ -49,7 +49,7 @@ export function PhasesSectionContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
-  const isDraft = instance.status === 'draft';
+  const isDraft = instance.status === ProcessStatus.DRAFT;
 
   // Store: used as a localStorage buffer for non-draft edits only
   const storePhases = useProcessBuilderStore(

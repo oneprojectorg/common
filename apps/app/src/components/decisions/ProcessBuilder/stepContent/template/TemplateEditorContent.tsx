@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import type {
   ProposalTemplateSchema,
@@ -18,6 +19,8 @@ import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import {
   type FieldType,
   type FieldView,
@@ -33,9 +36,8 @@ import {
   setFieldRequired,
   updateFieldDescription,
   updateFieldLabel,
-} from '../../../proposalTemplate';
-import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+} from '@/components/decisions/proposalTemplate';
+
 import { AddFieldMenu } from './AddFieldMenu';
 import { BudgetFieldConfig } from './BudgetFieldConfig';
 import {
@@ -62,7 +64,7 @@ export function TemplateEditorContent({
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === 'draft';
+  const isDraft = instance.status === ProcessStatus.DRAFT;
   const utils = trpc.useUtils();
   const instanceData = instance.instanceData;
 
