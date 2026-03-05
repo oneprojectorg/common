@@ -6,6 +6,8 @@ import { LuCornerDownRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { TranslationKey } from '@/lib/i18n';
+
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
@@ -19,8 +21,6 @@ export const ProcessBuilderSidebar = ({
 }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
-  const { visibleSections, currentSection, setSection } =
-    useProcessNavigation(navigationConfig);
 
   const storePhases = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
@@ -35,21 +35,24 @@ export const ProcessBuilderSidebar = ({
     // Prefer Zustand store phases (updated immediately on edit) over API data
     if (storePhases?.length) {
       return storePhases
-        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
         .filter((p) => p.name);
     }
     const instancePhases = instance?.instanceData?.phases;
     if (instancePhases?.length) {
       return instancePhases
-        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
         .filter((p) => p.name);
     }
     const templatePhases = instance?.process?.processSchema?.phases;
     if (templatePhases?.length) {
-      return templatePhases.map((p) => ({ id: p.id, name: p.name }));
+      return templatePhases.map((p) => ({ phaseId: p.id, name: p.name }));
     }
     return [];
   }, [storePhases, instance]);
+
+  const { visibleSections, currentSection, setSection } =
+    useProcessNavigation(navigationConfig, phases);
 
   return (
     <nav
@@ -70,12 +73,14 @@ export const ProcessBuilderSidebar = ({
                     : 'text-charcoal hover:bg-neutral-gray1'
                 }`}
               >
-                {t(section.labelKey)}
+                {section.isDynamic
+                  ? section.labelKey
+                  : t(section.labelKey as TranslationKey)}
               </button>
               {section.id === 'phases' && phases.length > 0 && (
                 <ul className="mt-0.5 flex flex-col gap-0.5">
                   {phases.map((phase) => (
-                    <li key={phase.id}>
+                    <li key={phase.phaseId}>
                       <button
                         type="button"
                         onClick={() => setSection('phases')}
