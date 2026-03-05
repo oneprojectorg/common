@@ -917,5 +917,7 @@
   "Delete criterion": "Supprimer le critère",
   "Are you sure you want to delete this criterion? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer ce critère ? Cette action est irréversible.",
   "Not configured yet": "Pas encore configuré",
-  "Configured": "Configuré"
+  "Configured": "Configuré",
+  "Next": "Suivant",
+  "Back": "Retour"
 }

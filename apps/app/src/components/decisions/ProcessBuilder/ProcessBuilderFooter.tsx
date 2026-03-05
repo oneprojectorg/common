@@ -7,8 +7,10 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
+  LuArrowLeft,
+  LuArrowRight,
   LuCheck,
   LuCircle,
   LuCircleAlert,
@@ -21,6 +23,8 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
+import { useNavigationConfig } from './useNavigationConfig';
+import { useProcessNavigation } from './useProcessNavigation';
 import type { ValidationSummary } from './validation/processBuilderValidation';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
@@ -38,6 +42,40 @@ export const ProcessBuilderFooter = ({
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
 
   const validation = useProcessBuilderValidation(decisionProfileId);
+  const navigationConfig = useNavigationConfig(instanceId);
+
+  const storePhases = useProcessBuilderStore((s) =>
+    decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
+  );
+
+  const { data: instance } = trpc.decision.getInstance.useQuery(
+    { instanceId },
+    { enabled: !!instanceId },
+  );
+
+  const phases = useMemo(() => {
+    if (storePhases?.length) {
+      return storePhases
+        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
+        .filter((p) => p.name);
+    }
+    const instancePhases = instance?.instanceData?.phases;
+    if (instancePhases?.length) {
+      return instancePhases
+        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
+        .filter((p) => p.name);
+    }
+    const templatePhases = instance?.process?.processSchema?.phases;
+    if (templatePhases?.length) {
+      return templatePhases.map((p) => ({ phaseId: p.id, name: p.name }));
+    }
+    return [];
+  }, [storePhases, instance]);
+
+  const { goNext, goBack, hasNext, hasPrev } = useProcessNavigation(
+    navigationConfig,
+    phases,
+  );
 
   const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
     { slug },
@@ -102,9 +140,29 @@ export const ProcessBuilderFooter = ({
             <LuLogOut className="size-4 rotate-180" />
             {t('Exit')}
           </Link>
+          {hasPrev && (
+            <button
+              type="button"
+              onClick={goBack}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-neutral-gray2 px-3 text-sm text-primary transition-colors hover:bg-neutral-gray1"
+            >
+              <LuArrowLeft className="size-4" />
+              {t('Back')}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {hasNext && (
+            <button
+              type="button"
+              onClick={goNext}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-neutral-gray2 px-3 text-sm text-primary transition-colors hover:bg-neutral-gray1"
+            >
+              {t('Next')}
+              <LuArrowRight className="size-4" />
+            </button>
+          )}
           {validation.stepsRemaining > 0 && (
             <StepsRemainingPopover validation={validation} />
           )}
