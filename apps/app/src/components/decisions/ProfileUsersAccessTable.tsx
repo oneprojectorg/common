@@ -437,7 +437,7 @@ const MobileInviteCard = ({
             <div className="flex items-center gap-2">
               <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
               {!invite.notified && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                <span className="text-sm text-neutral-gray4">
                   {t('Pending notification')}
                 </span>
               )}
@@ -569,7 +569,7 @@ const ProfileUsersAccessTableContent = ({
                           {t('Invited')}
                         </span>
                         {!invite.notified && (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                          <span className="text-sm text-neutral-gray4">
                             {t('Pending notification')}
                           </span>
                         )}
