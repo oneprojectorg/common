@@ -11,10 +11,11 @@ const variantToIntent = {
 } as const;
 
 const variantStyles = {
-  warning: 'text-[hsl(var(--op-yellow-600))]',
-  alert: 'text-[var(--fg,hsl(var(--op-neutral-950)))]',
-  neutral:
-    'text-[var(--fg,hsl(var(--op-neutral-950)))] border-[var(--border,hsl(var(--op-neutral-400)))] bg-[var(--muted,hsl(var(--op-neutral-50)))]',
+  warning:
+    'border-primary-orange1 text-orange1-600 [background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),var(--color-primary-orange1)]',
+  alert:
+    'border-functional-red text-black [background:linear-gradient(rgba(255,255,255,0.96),rgba(255,255,255,0.96)),var(--color-functional-red)]',
+  neutral: 'border-neutral-gray2 bg-neutral-offWhite text-neutral-black',
 } as const;
 
 export function AlertBanner({
@@ -33,10 +34,11 @@ export function AlertBanner({
       intent={variantToIntent[variant]}
       indicator={false}
       className={cn(
-        'flex items-center gap-1 rounded-lg p-4 shadow-light',
+        'flex w-full items-center gap-1 rounded-lg border p-4 shadow-light',
         variantStyles[variant],
         className,
       )}
+      contentClassName="flex min-w-0 items-center gap-1"
     >
       <span className="shrink-0 [&>svg]:size-4">
         {icon ?? <LuInfo className="size-4" />}

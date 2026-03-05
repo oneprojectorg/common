@@ -5,12 +5,14 @@ import { cn } from '../../lib/utils';
 export interface NoteProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   intent?: 'default' | 'info' | 'warning' | 'danger' | 'success';
   indicator?: boolean;
+  contentClassName?: string;
 }
 
 export function Note({
   indicator = true,
   intent = 'default',
   className,
+  contentClassName,
   ...props
 }: NoteProps) {
   const iconMap: Record<
@@ -30,7 +32,7 @@ export function Note({
     <div
       data-slot="note"
       className={cn([
-        'grid w-full grid-cols-[auto_1fr] overflow-hidden rounded-lg border border-current/15 p-4 text-base/6 backdrop-blur-2xl sm:text-sm/6',
+        'grid w-full grid-cols-[auto_1fr] overflow-hidden rounded-lg border p-4 text-base/6 backdrop-blur-2xl sm:text-sm/6',
         '*:[a]:hover:underline **:[strong]:font-medium',
         intent === 'default' && 'bg-muted/50 text-secondary-fg',
         intent === 'info' &&
@@ -68,7 +70,12 @@ export function Note({
           </div>
         </div>
       )}
-      <div className="text-pretty group-has-data-[slot=icon]:col-start-2">
+      <div
+        className={cn(
+          'text-pretty group-has-data-[slot=icon]:col-start-2',
+          contentClassName,
+        )}
+      >
         {props.children}
       </div>
     </div>
