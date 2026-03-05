@@ -1,0 +1,131 @@
+{
+  "project": "OP Common",
+  "branchName": "ralph/stepper-navigation",
+  "description": "Decision Builder Stepper Navigation & Phase Pages - Add Next/Back stepper buttons, validation-based progress bar, and individual phase configuration pages to the Process Builder",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Update navigation config to support dynamic phase sections",
+      "description": "As a developer, I need the navigation system to support dynamic phase sections so the sidebar and stepper can include individual phases in the navigation flow.",
+      "acceptanceCriteria": [
+        "navigationConfig.ts supports dynamic sections computed from the current phase list",
+        "useProcessNavigation returns an ordered list of all navigable sections including individual phase sections",
+        "Navigation order: Overview → Phases Summary → Phase 1 → Phase 2 → ... → Proposal Categories → Proposal Template → Roles → Participants",
+        "Dynamic phase sections use URL pattern ?section=phase-{phaseId}",
+        "Adding/removing phases dynamically updates the navigation order",
+        "useProcessNavigation exposes goNext(), goBack(), hasNext, hasPrev helpers",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "This is the foundation that all other stories depend on. Modify useProcessNavigation.ts and navigationConfig.ts. Phase sections are inserted between the 'phases' summary section and 'proposalCategories'. Read phase data from the Zustand store or tRPC query, matching the existing pattern in ProcessBuilderSectionNav.tsx."
+    },
+    {
+      "id": "US-002",
+      "title": "Create individual phase page component",
+      "description": "As a process builder user, I want each phase to have its own dedicated configuration page so I can focus on one phase at a time.",
+      "acceptanceCriteria": [
+        "New PhaseDetailPage component renders the full phase edit form for a single phase",
+        "Form includes: phase name, headline, description, additional info (rich text), start date, end date, and phase controls (toggles for proposals/voting)",
+        "Phase is identified by extracting the phaseId from the section URL parameter (phase-{phaseId})",
+        "Autosave with debounce works the same as the existing accordion form",
+        "SaveStatusIndicator is shown in the page header",
+        "Delete phase button navigates back to ?section=phases after deletion",
+        "Register the component in contentRegistry.tsx for dynamic phase section IDs",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Extract the existing phase form from PhasesSectionContent.tsx into a standalone PhaseDetailPage component. The component receives the phaseId from the section URL param. Reuse existing form fields, validation, and autosave logic. Place in stepContent/general/PhaseDetailPage.tsx."
+    },
+    {
+      "id": "US-003",
+      "title": "Convert Phases section to summary/overview view",
+      "description": "As a process builder user, I want the main Phases section to show a summary list so I can see the big picture and navigate to individual phases.",
+      "acceptanceCriteria": [
+        "Phases summary section shows a list of all phases with names and configuration status",
+        "Each phase in the list is clickable and navigates to ?section=phase-{phaseId}",
+        "Add phase button remains at the bottom and navigates to the new phase's detail page after creation",
+        "Phase reordering via drag and drop remains available on the summary view",
+        "The full accordion edit form is removed from the summary view",
+        "Delete confirmation modal works from the summary view",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Refactor PhasesSectionContent.tsx to be a summary/list view. Keep the Sortable drag-and-drop for reordering. Each phase item shows name and a brief status indicator (e.g. 'Not configured yet' or a checkmark). Clicking navigates to the phase detail page."
+    },
+    {
+      "id": "US-004",
+      "title": "Update sidebar to show individual phase sub-items",
+      "description": "As a process builder user, I want to see each phase listed under Phases in the sidebar so I can jump directly to any phase's configuration.",
+      "acceptanceCriteria": [
+        "Each phase appears as a sub-item under Phases in the sidebar, indented with corner-down-right icon",
+        "Phase sub-items use the dynamic section IDs (phase-{phaseId})",
+        "Clicking a phase sub-item sets ?section=phase-{phaseId} and renders the phase detail page",
+        "Active phase sub-item is highlighted with the active style (teal bg + text)",
+        "Sub-items update dynamically when phases are added or removed",
+        "Mobile sidebar also shows phase sub-items",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Update ProcessBuilderSectionNav.tsx and the MobileSidebar in ProcessBuilderHeader.tsx. Phase sub-items already exist as clickable items but currently only navigate to ?section=phases. Update them to navigate to ?section=phase-{phaseId} instead."
+    },
+    {
+      "id": "US-005",
+      "title": "Add Next and Back buttons to footer",
+      "description": "As a process builder user, I want Next and Back buttons in the footer so I can navigate through sections sequentially.",
+      "acceptanceCriteria": [
+        "Next button appears on the right side of the footer, styled as a secondary button (border, teal text, h-10, rounded-lg)",
+        "Back button appears next to Exit on the left side, styled as a secondary button",
+        "Clicking Next navigates to the next visible section via goNext()",
+        "Clicking Back navigates to the previous visible section via goBack()",
+        "Back button is hidden on the first section (Overview)",
+        "Next button is hidden on the last section (Participants)",
+        "Launch/Update Process button remains in the footer alongside the stepper buttons",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Modify ProcessBuilderFooter.tsx. The footer layout from Figma: left=[Exit, Back], center=[progress bar], right=[Next, Launch/Update]. Use useProcessNavigation's goNext/goBack/hasNext/hasPrev. Exit button uses tertiary style with rotated LuLogOut icon."
+    },
+    {
+      "id": "US-006",
+      "title": "Add validation-based progress bar to footer",
+      "description": "As a process builder user, I want to see a progress bar showing how complete my process configuration is.",
+      "acceptanceCriteria": [
+        "Progress bar appears centered in the footer between the left and right button groups",
+        "Bar has 4px height, rounded-full, gray background (#D0D3D4/bg-neutral-gray2)",
+        "Fill uses a gradient from green (#3EC300) to teal (#0396A6)",
+        "Text label shows '{X}% complete' next to the bar",
+        "Progress percentage is calculated from useProcessBuilderValidation (completed checks / total checks)",
+        "Progress updates reactively as the user fills in required fields",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Add a completionPercentage getter to useProcessBuilderValidation.ts (checklist items with isValid=true / total checklist items * 100, rounded). Render in ProcessBuilderFooter.tsx. The gradient can be a CSS background-image on the fill bar. On mobile, consider hiding the progress bar text or making it more compact."
+    },
+    {
+      "id": "US-007",
+      "title": "Add translation keys for stepper UI strings",
+      "description": "As a developer, I need all new user-facing strings properly internationalized.",
+      "acceptanceCriteria": [
+        "Translation keys added for: 'Next', 'Back', '{count}% complete', 'Not configured yet', and any other new strings",
+        "Keys added to ALL language files in apps/app/src/lib/i18n/dictionaries/",
+        "All new strings use t('...') from useTranslations",
+        "No hardcoded user-facing strings in any modified files",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Check all language files in the dictionaries folder. Some keys like 'Next' and 'Back' may already exist. Verify and add any missing ones. Use t('{count}% complete', { count: percentage }) for the progress text."
+    }
+  ]
+}

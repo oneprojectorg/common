@@ -1,0 +1,105 @@
+# Ralph Progress Log
+Started: Thu Mar  5 11:11:45 CET 2026
+---
+
+## Codebase Patterns
+- `SidebarItem.labelKey` is typed as `TranslationKey | string` — use `section.isDynamic ? section.labelKey : t(section.labelKey as TranslationKey)` pattern when rendering
+- `useProcessNavigation` accepts optional `phases: PhaseNavItem[]` param; dynamic phase sections are inserted between 'phases' and 'proposalCategories' in the navigation order
+- Phase section IDs follow pattern `phase-{phaseId}` — use `phaseToSectionId()` / `sectionIdToPhaseId()` / `isPhaseSection()` helpers from navigationConfig.ts
+- Sidebar phase data uses 3-tier priority: Zustand store > instanceData.phases > processSchema.phases
+- `getContentComponentFlat` checks `isPhaseSection()` first for dynamic phase sections, then falls back to flat registry
+- Phase detail saves the full phases array to the API (not just the single phase) — the API expects all phases in the update
+- `tsgo` caches JSON imports in `tsconfig.tsbuildinfo` — delete that file if new dictionary keys aren't recognized by typecheck
+
+---
+
+## 2026-03-05 - US-001
+- Implemented dynamic phase sections in navigation config
+- Added `phaseToSectionId`, `sectionIdToPhaseId`, `isPhaseSection` helpers to navigationConfig.ts
+- Extended `SidebarItem` with `isDynamic` flag and widened `labelKey` type
+- Updated `useProcessNavigation` to accept phases and insert dynamic sections, added `goNext()`, `goBack()`, `hasNext`, `hasPrev` helpers
+- Updated sidebar and header to handle dynamic label rendering
+- Files changed: navigationConfig.ts, useProcessNavigation.ts, ProcessBuilderSectionNav.tsx, ProcessBuilderHeader.tsx
+- **Learnings for future iterations:**
+  - `t()` from `useTranslations` is strictly typed to `TranslationKey` — dynamic labels need conditional rendering
+  - `useProcessNavigation` phases param defaults to `[]` so existing consumers are unaffected
+  - The sidebar already had phase sub-items; now phases are also first-class navigation items
+---
+
+## 2026-03-05 - US-002
+- Created PhaseDetailPage component with full phase edit form (name, headline, description, additional info, dates, phase controls)
+- Created PhaseDetailSection wrapper with Zustand hydration and Suspense support
+- Updated contentRegistry.tsx to resolve dynamic `phase-{phaseId}` section IDs to PhaseDetailSection
+- Reused same autosave pattern (debounced save, store-first for non-draft, API mutation for draft)
+- Reused same validation pattern (touch-based field validation with error messages)
+- Delete phase navigates back to `?section=phases`
+- Files changed: contentRegistry.tsx, PhaseDetailPage.tsx (new), PhaseDetailSection.tsx (new)
+- **Learnings for future iterations:**
+  - `getContentComponentFlat` signature widened to accept `SectionId | string` to support dynamic phase sections
+  - `useProcessNavigation()` can be called without args in PhaseDetailPage since it only needs `currentSection` and `setSection`
+  - The `'Phase'` singular translation key doesn't exist — only `'Phases'` is in the dictionary. Check existing keys before using new ones.
+  - Phase detail saves the full phases array (not just the single phase) to match the API contract
+---
+
+## 2026-03-05 - US-003
+- Converted PhasesSectionContent from accordion-based editor to summary/list view
+- Each phase shows name + configuration status ("Configured" with checkmark or "Not configured yet")
+- Clicking a phase navigates to `?section=phase-{phaseId}` (detail page)
+- Drag-and-drop reordering preserved via Sortable
+- "Add phase" creates a new phase and immediately navigates to its detail page
+- Delete confirmation modal works from summary view with trash icon per phase
+- Removed all accordion, form fields, PhaseControls, and inline editing from summary view
+- Added "Configured" and "Not configured yet" translation keys to all 5 language files
+- Files changed: PhasesSectionContent.tsx, en.json, es.json, fr.json, pt.json, bn.json
+- **Learnings for future iterations:**
+  - Phase configuration status is determined by checking required fields (name, headline, description, endDate)
+  - `useProcessNavigation()` can be called with no args when you only need `setSection`
+  - `phaseToSectionId()` from navigationConfig.ts is the canonical way to build phase section URLs
+---
+
+## 2026-03-05 - US-004
+- Updated desktop sidebar (ProcessBuilderSectionNav.tsx) phase sub-items to navigate to `?section=phase-{phaseId}` instead of `?section=phases`
+- Updated mobile sidebar (MobileSidebar in ProcessBuilderHeader.tsx) phase sub-items with same navigation fix
+- Added active state highlighting (teal bg + text) for phase sub-items when that phase is the current section
+- Fixed mobile sidebar to pass phases to `useProcessNavigation` and use `phaseId` field consistently
+- Reordered hooks in MobileSidebar to define `phases` before `useProcessNavigation` call
+- Files changed: ProcessBuilderSectionNav.tsx, ProcessBuilderHeader.tsx
+- **Learnings for future iterations:**
+  - Mobile sidebar had `{ id, name }` shape for phases while desktop had `{ phaseId, name }` — now both use `phaseId` to match `PhaseNavItem` type
+  - `useProcessNavigation` must receive `phases` param for dynamic sections to appear in the navigation — mobile sidebar was missing this
+  - Use `isPhaseSection(currentSection.id)` guard before comparing section IDs to avoid false matches
+---
+
+## 2026-03-05 - US-005
+- Added Back button (left side, next to Exit) and Next button (right side, next to Launch/Update) to ProcessBuilderFooter
+- Back is hidden on first section, Next is hidden on last section via `hasPrev`/`hasNext`
+- Added phases computation and `useProcessNavigation` hook to footer for `goNext`/`goBack` helpers
+- Added "Next" and "Back" translation keys to all 5 language files
+- Buttons styled as secondary (border, teal text, h-10, rounded-lg) per AC
+- Files changed: ProcessBuilderFooter.tsx, en.json, es.json, fr.json, pt.json, bn.json
+- **Learnings for future iterations:**
+  - `tsgo` caches JSON imports in `tsconfig.tsbuildinfo` — delete that file if new dictionary keys aren't recognized
+  - `tsc` (standard) works correctly with new keys even when `tsgo` doesn't — useful as a fallback check
+  - Footer needs same phase data pattern as sidebar (3-tier: store > instanceData > processSchema) for navigation to work
+---
+
+## 2026-03-05 - US-006
+- Added `completionPercentage` to `ValidationSummary` interface and computed it in `validateAll()`
+- Added centered progress bar in footer using CSS grid (3-column layout: left/center/right)
+- Bar: h-1, rounded-full, bg-neutral-gray2 background, green-to-teal gradient fill
+- Text label "{count}% complete" hidden on mobile, visible on md+
+- Added "{count}% complete" translation key to all 5 language files
+- Files changed: processBuilderValidation.ts, ProcessBuilderFooter.tsx, en/es/fr/pt/bn.json
+- **Learnings for future iterations:**
+  - Footer switched from `flex justify-between` to `grid grid-cols-3` to support centered progress bar
+  - Must delete `tsconfig.tsbuildinfo` before typecheck when adding new dictionary keys
+---
+
+## 2026-03-05 - US-007
+- Verified all translation keys already exist in all 5 language files (en, es, fr, pt, bn)
+- Keys added across US-003/US-005/US-006: "Next", "Back", "{count}% complete", "Not configured yet", "Configured"
+- All user-facing strings in modified files use `t()` from useTranslations
+- No code changes needed — all ACs satisfied by prior stories
+- **Learnings for future iterations:**
+  - Translation keys are best added as part of the story that introduces the strings, not deferred to a separate story
+---
