@@ -1,10 +1,10 @@
-import { invalidateMultiple } from '@op/cache';
 import { type TransactionType, db } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
+import { invalidateProfileUserCacheForRole } from '../access/permissions';
 import { assertProfileAdmin } from '../assert';
 import {
   type DecisionRolePermissions,
@@ -192,26 +192,7 @@ export async function updateDecisionRoles({
     });
   }
 
-  const joinRows = await db.query.profileUserToAccessRoles.findMany({
-    where: { accessRoleId: roleId },
-  });
-
-  if (joinRows.length > 0) {
-    const profileUserIds = joinRows.map((r) => r.profileUserId);
-    const affectedProfileUsers = await db.query.profileUsers.findMany({
-      where: { id: { in: profileUserIds } },
-    });
-
-    if (affectedProfileUsers.length > 0) {
-      await invalidateMultiple({
-        type: 'profileUser',
-        paramsList: affectedProfileUsers.map((pu) => [
-          pu.profileId,
-          pu.authUserId,
-        ]),
-      });
-    }
-  }
+  await invalidateProfileUserCacheForRole(roleId);
 
   return { roleId, decisionPermissions };
 }

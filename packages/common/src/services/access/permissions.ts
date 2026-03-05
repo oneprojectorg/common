@@ -11,7 +11,7 @@ import { and, eq } from 'drizzle-orm';
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 
-async function invalidateProfileUserCacheForRole(roleId: string) {
+export async function invalidateProfileUserCacheForRole(roleId: string) {
   const joinRows = await db.query.profileUserToAccessRoles.findMany({
     where: { accessRoleId: roleId },
   });
@@ -205,30 +205,11 @@ export async function deleteRole({
 
   await assertProfileAdmin(user, role.profileId);
 
-  // Query affected users before deleting (cascade will remove the join rows)
-  const joinRows = await db.query.profileUserToAccessRoles.findMany({
-    where: { accessRoleId: roleId },
-  });
-  const profileUserIds = joinRows.map((r) => r.profileUserId);
-  const affectedProfileUsers =
-    profileUserIds.length > 0
-      ? await db.query.profileUsers.findMany({
-          where: { id: { in: profileUserIds } },
-        })
-      : [];
+  // Invalidate before delete (cascade will remove the join rows we query)
+  await invalidateProfileUserCacheForRole(roleId);
 
   // Delete the role (cascade will handle permissions)
   await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
-
-  if (affectedProfileUsers.length > 0) {
-    await invalidateMultiple({
-      type: 'profileUser',
-      paramsList: affectedProfileUsers.map((pu) => [
-        pu.profileId,
-        pu.authUserId,
-      ]),
-    });
-  }
 
   return { success: true, deletedId: roleId };
 }
