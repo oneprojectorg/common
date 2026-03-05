@@ -4,9 +4,12 @@ import { LuInfo } from 'react-icons/lu';
 import { cn } from '../lib/utils';
 
 const variantStyles = {
-  warning: 'border-yellow-500 text-yellow-600 bg-[hsl(var(--op-yellow-500)/0.08)]',
-  alert: 'border-red-500 text-black bg-[hsl(var(--op-red-500)/0.04)]',
-  neutral: 'border-lightGray text-black bg-whiteish',
+  warning:
+    'border-[var(--warning)] text-[hsl(var(--op-yellow-600))] bg-[var(--warning-subtle)]',
+  alert:
+    'border-[var(--danger)] text-[var(--fg,hsl(var(--op-neutral-950)))] bg-[var(--danger-subtle)]',
+  neutral:
+    'border-[var(--border,hsl(var(--op-neutral-400)))] text-[var(--fg,hsl(var(--op-neutral-950)))] bg-[var(--muted,hsl(var(--op-neutral-50)))]',
 } as const;
 
 export function AlertBanner({
@@ -23,7 +26,7 @@ export function AlertBanner({
   return (
     <div
       className={cn(
-        'flex w-full items-center gap-1 rounded-md border p-4 shadow-light',
+        'flex w-full items-center gap-1 rounded-lg border p-4 shadow-light',
         variantStyles[variant],
         className,
       )}
