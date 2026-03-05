@@ -125,7 +125,7 @@ export function FileDropZone(props: FileDropZoneProps) {
       >
         <Button className={styles.button()} isDisabled={isDisabled}>
           <div className={styles.iconWrapper()}>
-            <LuFilePlus2 className={styles.icon()} strokeWidth={1} />
+            <LuFilePlus2 className={styles.icon()} />
           </div>
           <div className={styles.labelWrapper()}>
             <Text slot="label" className={styles.label()}>
