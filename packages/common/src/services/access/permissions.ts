@@ -1,3 +1,4 @@
+import { invalidateMultiple } from '@op/cache';
 import { db } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
@@ -9,6 +10,28 @@ import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
+
+async function invalidateProfileUserCacheForRole(roleId: string) {
+  const joinRows = await db.query.profileUserToAccessRoles.findMany({
+    where: { accessRoleId: roleId },
+  });
+
+  if (joinRows.length === 0) {
+    return;
+  }
+
+  const profileUserIds = joinRows.map((r) => r.profileUserId);
+  const profileUsers = await db.query.profileUsers.findMany({
+    where: { id: { in: profileUserIds } },
+  });
+
+  if (profileUsers.length > 0) {
+    await invalidateMultiple({
+      type: 'profileUser',
+      paramsList: profileUsers.map((pu) => [pu.profileId, pu.authUserId]),
+    });
+  }
+}
 
 export type Permissions = {
   admin: boolean;
@@ -152,6 +175,8 @@ export async function updateRolePermissions({
     });
   }
 
+  await invalidateProfileUserCacheForRole(roleId);
+
   return role;
 }
 
@@ -180,8 +205,30 @@ export async function deleteRole({
 
   await assertProfileAdmin(user, role.profileId);
 
+  // Query affected users before deleting (cascade will remove the join rows)
+  const joinRows = await db.query.profileUserToAccessRoles.findMany({
+    where: { accessRoleId: roleId },
+  });
+  const profileUserIds = joinRows.map((r) => r.profileUserId);
+  const affectedProfileUsers =
+    profileUserIds.length > 0
+      ? await db.query.profileUsers.findMany({
+          where: { id: { in: profileUserIds } },
+        })
+      : [];
+
   // Delete the role (cascade will handle permissions)
   await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
+
+  if (affectedProfileUsers.length > 0) {
+    await invalidateMultiple({
+      type: 'profileUser',
+      paramsList: affectedProfileUsers.map((pu) => [
+        pu.profileId,
+        pu.authUserId,
+      ]),
+    });
+  }
 
   return { success: true, deletedId: roleId };
 }
