@@ -929,5 +929,7 @@
   "{roleName} plural": "{roleName}",
   "Launch process?": "প্রক্রিয়া চালু করবেন?",
   "Launching your process will notify": "আপনার প্রক্রিয়া চালু করলে বিজ্ঞপ্তি পাবেন",
-  "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 জন অংশগ্রহণকারী} other {# জন অংশগ্রহণকারী}}।"
+  "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 জন অংশগ্রহণকারী} other {# জন অংশগ্রহণকারী}}।",
+  "Not configured yet": "এখনও কনফিগার করা হয়নি",
+  "Configured": "কনফিগার করা হয়েছে"
 }

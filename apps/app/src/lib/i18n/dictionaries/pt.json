@@ -922,5 +922,7 @@
   "{roleName} plural": "{roleName}s",
   "Launch process?": "Lançar processo?",
   "Launching your process will notify": "O lançamento do seu processo notificará",
-  "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 participante} other {# participantes}}."
+  "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 participante} other {# participantes}}.",
+  "Not configured yet": "Ainda não configurado",
+  "Configured": "Configurado"
 }
