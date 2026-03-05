@@ -3,8 +3,10 @@
 import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
+import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -17,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
+import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuChevronDown, LuUsers } from 'react-icons/lu';
 
@@ -36,6 +39,7 @@ export const ProfileUsersAccessTable = ({
   roles,
   isMobile,
   invites,
+  processName,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -47,6 +51,7 @@ export const ProfileUsersAccessTable = ({
   roles: { id: string; name: string }[];
   isMobile: boolean;
   invites: ProfileInvite[];
+  processName?: string;
 }) => {
   const t = useTranslations();
 
@@ -77,6 +82,7 @@ export const ProfileUsersAccessTable = ({
         isLoading={isLoading}
         roles={roles}
         invites={invites}
+        processName={processName}
       />
     );
   }
@@ -90,6 +96,7 @@ export const ProfileUsersAccessTable = ({
       isLoading={isLoading}
       roles={roles}
       invites={invites}
+      processName={processName}
     />
   );
 };
@@ -105,16 +112,21 @@ const ProfileUserRoleSelect = ({
   currentRoleId,
   profileId,
   roles,
+  userName,
+  processName,
   className = 'sm:w-32',
 }: {
   profileUserId: string;
   currentRoleId?: string;
   profileId: string;
   roles: { id: string; name: string }[];
+  userName: string;
+  processName?: string;
   className?: string;
 }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
 
   const updateRoles = trpc.profile.updateUserRoles.useMutation({
     onSuccess: () => {
@@ -132,6 +144,7 @@ const ProfileUserRoleSelect = ({
     onSuccess: () => {
       toast.success({ message: t('User removed from process') });
       void utils.profile.listUsers.invalidate({ profileId });
+      setIsRemoveModalOpen(false);
     },
     onError: (error) => {
       toast.error({
@@ -154,49 +167,90 @@ const ProfileUserRoleSelect = ({
     roles.find((r) => r.id === currentRoleId)?.name ?? t('Role');
 
   return (
-    <MenuTrigger>
-      <Button
-        color="secondary"
-        size="small"
-        className={`${className} justify-between`}
-        isDisabled={isPending}
-      >
-        {currentRoleName}
-        <LuChevronDown className="size-4" />
-      </Button>
-      <Popover placement="bottom end">
-        <Menu
-          aria-label={t('Role')}
-          selectionMode="single"
-          selectedKeys={currentRoleId ? [currentRoleId] : []}
-          onSelectionChange={(keys) => {
-            const selected = [...keys][0] as string | undefined;
-            if (selected) {
-              handleRoleChange(selected);
-            }
-          }}
-          onAction={(key) => {
-            if (key === 'remove') {
-              removeUser.mutate({ profileUserId });
-            }
-          }}
+    <>
+      <MenuTrigger>
+        <Button
+          color="secondary"
+          size="small"
+          className={`${className} justify-between`}
+          isDisabled={isPending}
         >
-          {roles.map((role) => (
-            <MenuItem
-              key={role.id}
-              id={role.id}
-              className="group-selected:text-primary-teal [&>span:first-child]:group-selected:text-primary-teal"
-            >
-              {role.name}
+          {currentRoleName}
+          <LuChevronDown className="size-4" />
+        </Button>
+        <Popover placement="bottom end">
+          <Menu
+            aria-label={t('Role')}
+            selectionMode="single"
+            selectedKeys={currentRoleId ? [currentRoleId] : []}
+            onSelectionChange={(keys) => {
+              const selected = [...keys][0] as string | undefined;
+              if (selected) {
+                handleRoleChange(selected);
+              }
+            }}
+            onAction={(key) => {
+              if (key === 'remove') {
+                setIsRemoveModalOpen(true);
+              }
+            }}
+          >
+            {roles.map((role) => (
+              <MenuItem
+                key={role.id}
+                id={role.id}
+                className="group-selected:text-primary-teal [&>span:first-child]:group-selected:text-primary-teal"
+              >
+                {role.name}
+              </MenuItem>
+            ))}
+            <MenuSeparator />
+            <MenuItem id="remove" className="text-functional-red">
+              {t('Remove from process')}
             </MenuItem>
-          ))}
-          <MenuSeparator />
-          <MenuItem id="remove" className="text-functional-red">
-            {t('Remove from process')}
-          </MenuItem>
-        </Menu>
-      </Popover>
-    </MenuTrigger>
+          </Menu>
+        </Popover>
+      </MenuTrigger>
+      <DialogTrigger
+        isOpen={isRemoveModalOpen}
+        onOpenChange={setIsRemoveModalOpen}
+      >
+        <Modal isDismissable>
+          <ModalHeader>
+            {t('Remove {name}', { name: userName })}
+          </ModalHeader>
+          <ModalBody>
+            <p>
+              {processName
+                ? t(
+                    'Are you sure you want to remove {name} from "{processName}"?',
+                    { name: userName, processName },
+                  )
+                : t('Are you sure you want to remove {name} from this process?', {
+                    name: userName,
+                  })}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="secondary"
+              className="w-full sm:w-fit"
+              onPress={() => setIsRemoveModalOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="destructive"
+              className="w-full sm:w-fit"
+              onPress={() => removeUser.mutate({ profileUserId })}
+              isDisabled={removeUser.isPending}
+            >
+              {removeUser.isPending ? t('Removing...') : t('Remove')}
+            </Button>
+          </ModalFooter>
+        </Modal>
+      </DialogTrigger>
+    </>
   );
 };
 
