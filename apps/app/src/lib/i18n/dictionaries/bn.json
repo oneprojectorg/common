@@ -933,5 +933,6 @@
   "Not configured yet": "এখনও কনফিগার করা হয়নি",
   "Configured": "কনফিগার করা হয়েছে",
   "Next": "পরবর্তী",
-  "Back": "পিছনে"
+  "Back": "পিছনে",
+  "{count}% complete": "{count}% সম্পূর্ণ"
 }

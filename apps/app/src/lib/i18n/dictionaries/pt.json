@@ -926,5 +926,6 @@
   "Not configured yet": "Ainda não configurado",
   "Configured": "Configurado",
   "Next": "Próximo",
-  "Back": "Voltar"
+  "Back": "Voltar",
+  "{count}% complete": "{count}% concluído"
 }
