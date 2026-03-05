@@ -1,0 +1,49 @@
+{
+  "project": "OP Common",
+  "branchName": "alert-banner",
+  "description": "Refactor AlertBanner to use Intent UI Note component as base, maintaining same API and Figma visual spec",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Refactor AlertBanner to use Intent UI Note as base",
+      "description": "As a developer, I want the AlertBanner built on Intent UI's Note component so that it follows the same patterns as other UI components in the library.",
+      "acceptanceCriteria": [
+        "Fetch Intent UI Note component source from https://intentui.com/r/note.json and use it as the base for AlertBanner",
+        "Replace @heroicons/react icons with react-icons/lu equivalents (LuInfo for info icon) — do NOT add @heroicons/react as a dependency",
+        "Replace twMerge/twJoin from tailwind-merge with the project's cn() utility from ../lib/utils",
+        "Adapt Note's grid layout to flex row with gap-1 for single-line banner (matching Figma spec)",
+        "Simplify Note's double-circle icon wrapper to a flat 16x16px icon",
+        "Map Note's intent prop to our variant prop: warning->Warning, danger->Alert, default->Neutral",
+        "Warning variant: border --warning (op-yellow-500), text --op-yellow-600, subtle orange bg",
+        "Alert variant: border --danger (op-red-500), text --fg/--op-neutral-950, subtle red bg",
+        "Neutral variant: border --border/--op-neutral-400, text --fg/--op-neutral-950, bg --muted/--op-neutral-50",
+        "All variants: drop shadow 0 0 16px rgba(20,35,38,0.04), padding 16px, border-radius 8px",
+        "Single-line text truncation with text-ellipsis whitespace-nowrap overflow-hidden",
+        "Public API unchanged: variant ('warning'|'alert'|'neutral', default 'warning'), icon (optional ReactNode), children (ReactNode), className (optional string)",
+        "Component file stays at packages/ui/src/components/AlertBanner.tsx, export stays as ./AlertBanner in package.json",
+        "All colors use --op-* CSS custom properties or Intent UI semantic tokens (--warning, --danger, etc.), no hardcoded hex",
+        "Typecheck passes (pnpm w:ui typecheck)"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Verify Storybook stories work with refactored component",
+      "description": "As a developer, I want the existing Storybook stories to continue working after the refactor with no changes needed.",
+      "acceptanceCriteria": [
+        "Existing stories at packages/ui/stories/AlertBanner.stories.tsx render without errors — no changes to story file should be needed since public API is preserved",
+        "All variant stories (Warning, Alert, Neutral) display correctly",
+        "CustomIcon story works with custom LuTriangleAlert icon",
+        "LongText story shows truncation behavior",
+        "AllVariants story shows all three stacked vertically",
+        "Typecheck passes (pnpm w:ui typecheck)",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    }
+  ]
+}

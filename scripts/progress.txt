@@ -1,0 +1,39 @@
+# Ralph Progress Log
+Started: Thu Mar  5 19:20:57 CET 2026
+---
+
+## Codebase Patterns
+- Intent UI semantic tokens (--warning, --danger, --border, --muted, --fg) are mapped to --op-* tokens in `packages/styles/intent-ui-theme.css`
+- `shadow-light` is defined in `packages/styles/shared-styles.css` as `0px 0px 16px 0px rgba(20,35,38,0.04)`
+- Use `cn()` from `../lib/utils` (clsx + twMerge) for className merging in @op/ui components
+- Use `react-icons/lu` for icons, never @heroicons/react
+- Tailwind arbitrary values with CSS vars: `border-[var(--warning)]`, `bg-[var(--warning-subtle)]`
+- Use fallback values in CSS var for robustness: `var(--fg,hsl(var(--op-neutral-950)))`
+
+---
+
+## 2026-03-05 - US-001
+- Refactored AlertBanner to use Intent UI Note component patterns as base
+- Replaced hardcoded Tailwind color classes with Intent UI semantic tokens (--warning, --danger, --border, --muted)
+- Warning variant uses --warning border, op-yellow-600 text, --warning-subtle bg
+- Alert variant uses --danger border, --fg text, --danger-subtle bg
+- Neutral variant uses --border border, --fg text, --muted bg
+- Changed `rounded-md` to `rounded-lg` (8px border-radius per Figma spec)
+- Files changed: packages/ui/src/components/AlertBanner.tsx
+- **Learnings for future iterations:**
+  - The Intent UI theme CSS already maps semantic tokens to --op-* values, so use semantic tokens when possible
+  - `shadow-light` already matches the Figma spec shadow exactly
+  - Public API was preserved — no changes needed to stories
+---
+
+## 2026-03-05 - US-002
+- Verified all Storybook stories render correctly with the refactored AlertBanner
+- All 6 stories (Warning, Alert, Neutral, CustomIcon, LongText, AllVariants) display as expected
+- Browser verified via Playwright on Storybook at localhost:6007
+- No changes needed to stories file — public API fully preserved
+- Files changed: none (verification only)
+- **Learnings for future iterations:**
+  - Storybook dev server script is `pnpm dev` from packages/ui directory, runs on port 3600
+  - Use iframe URL pattern `localhost:{port}/iframe.html?id={story-id}&viewMode=story` for direct story access
+  - Story IDs use kebab-case: `alertbanner--warning`, `alertbanner--all-variants`
+---
