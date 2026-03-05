@@ -9,8 +9,6 @@ import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import {
-  LuArrowLeft,
-  LuArrowRight,
   LuCheck,
   LuCircle,
   LuCircleAlert,
@@ -135,7 +133,7 @@ export const ProcessBuilderFooter = ({
         <div className="flex items-center gap-2">
           <Link
             href={`/decisions/${slug}`}
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-neutral-gray2 px-3 text-sm text-charcoal transition-colors hover:bg-neutral-gray1"
+            className="inline-flex h-10 items-center gap-1 px-2 text-sm text-charcoal transition-colors hover:bg-neutral-gray1"
           >
             <LuLogOut className="size-4 rotate-180" />
             {t('Exit')}
@@ -144,9 +142,8 @@ export const ProcessBuilderFooter = ({
             <button
               type="button"
               onClick={goBack}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-neutral-gray2 px-3 text-sm text-primary transition-colors hover:bg-neutral-gray1"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
             >
-              <LuArrowLeft className="size-4" />
               {t('Back')}
             </button>
           )}
@@ -174,10 +171,9 @@ export const ProcessBuilderFooter = ({
             <button
               type="button"
               onClick={goNext}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-neutral-gray2 px-3 text-sm text-primary transition-colors hover:bg-neutral-gray1"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
             >
               {t('Next')}
-              <LuArrowRight className="size-4" />
             </button>
           )}
           {validation.stepsRemaining > 0 && (

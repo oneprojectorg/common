@@ -62,23 +62,23 @@ export const ProcessBuilderSidebar = ({
       className="hidden shrink-0 md:sticky md:top-0 md:flex md:h-full md:w-60 md:flex-col md:overflow-y-auto md:border-r md:p-4"
     >
       <ul className="flex flex-col gap-1">
-        {visibleSections.map((section) => {
-          const isActive = currentSection?.id === section.id;
-          return (
-            <li key={section.id}>
-              <button
-                type="button"
-                onClick={() => setSection(section.id)}
-                className={`w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-base transition-colors ${
-                  isActive
-                    ? 'bg-primary-tealWhite font-medium text-primary'
-                    : 'text-charcoal hover:bg-neutral-gray1'
-                }`}
-              >
-                {section.isDynamic
-                  ? section.labelKey
-                  : t(section.labelKey as TranslationKey)}
-              </button>
+        {visibleSections
+          .filter((section) => !section.isDynamic)
+          .map((section) => {
+            const isActive = currentSection?.id === section.id;
+            return (
+              <li key={section.id}>
+                <button
+                  type="button"
+                  onClick={() => setSection(section.id)}
+                  className={`w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-base transition-colors ${
+                    isActive
+                      ? 'bg-primary-tealWhite text-primary'
+                      : 'text-neutral-black hover:bg-neutral-gray1'
+                  }`}
+                >
+                  {t(section.labelKey as TranslationKey)}
+                </button>
               {section.id === 'phases' && phases.length > 0 && (
                 <ul className="mt-0.5 flex flex-col gap-0.5">
                   {phases.map((phase) => {
@@ -106,9 +106,9 @@ export const ProcessBuilderSidebar = ({
                   })}
                 </ul>
               )}
-            </li>
-          );
-        })}
+              </li>
+            );
+          })}
       </ul>
     </nav>
   );

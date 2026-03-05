@@ -11,6 +11,7 @@ import {
   type SectionId,
   type SidebarItem,
   type StepId,
+  isPhaseSection,
   phaseToSectionId,
 } from './navigationConfig';
 
@@ -121,9 +122,15 @@ export function useProcessNavigation(
     [navigationConfig.steps],
   );
 
-  // Replace invalid section param in URL
+  // Replace invalid section param in URL (skip dynamic phase sections —
+  // not all hook consumers receive the phases list, so phase-* IDs may be
+  // absent from visibleSections without being truly invalid)
   useEffect(() => {
-    if (sectionParam && !visibleSections.some((s) => s.id === sectionParam)) {
+    if (
+      sectionParam &&
+      !visibleSections.some((s) => s.id === sectionParam) &&
+      !isPhaseSection(sectionParam)
+    ) {
       setSectionParam(currentSection?.id ?? null);
     }
   }, [sectionParam, visibleSections, currentSection, setSectionParam]);
