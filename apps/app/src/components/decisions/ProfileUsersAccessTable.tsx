@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@op/ui/ui/table';
 import type { SortDescriptor } from 'react-aria-components';
-import { LuCheck, LuChevronDown, LuUsers } from 'react-icons/lu';
+import { LuChevronDown, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -167,26 +167,29 @@ const ProfileUserRoleSelect = ({
       <Popover placement="bottom end">
         <Menu
           aria-label={t('Role')}
+          selectionMode="single"
+          selectedKeys={currentRoleId ? [currentRoleId] : []}
+          onSelectionChange={(keys) => {
+            const selected = [...keys][0] as string | undefined;
+            if (selected) {
+              handleRoleChange(selected);
+            }
+          }}
           onAction={(key) => {
-            const keyStr = key as string;
-            if (keyStr === 'remove') {
+            if (key === 'remove') {
               removeUser.mutate({ profileUserId });
-            } else {
-              handleRoleChange(keyStr);
             }
           }}
         >
-          {roles.map((role) => {
-            const isSelected = currentRoleId === role.id;
-            return (
-              <MenuItem key={role.id} id={role.id}>
-                {isSelected && <LuCheck className="size-4 text-primary-teal" />}
-                <span className={isSelected ? 'text-primary-teal' : ''}>
-                  {role.name}
-                </span>
-              </MenuItem>
-            );
-          })}
+          {roles.map((role) => (
+            <MenuItem
+              key={role.id}
+              id={role.id}
+              className="group-selected:text-primary-teal [&>span:first-child]:group-selected:text-primary-teal"
+            >
+              {role.name}
+            </MenuItem>
+          ))}
           <MenuSeparator />
           <MenuItem id="remove" className="text-functional-red">
             {t('Remove from process')}
