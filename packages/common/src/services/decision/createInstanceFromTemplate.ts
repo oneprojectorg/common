@@ -26,6 +26,8 @@ export type CreateInstanceFromTemplateCoreOptions = {
   description?: string;
   phases?: PhaseOverride[];
   ownerProfileId: string;
+  /** Defaults to ownerProfileId when not provided */
+  stewardProfileId?: string;
   creatorAuthUserId: string;
   creatorEmail: string;
   stewardProfileId?: string;
@@ -44,6 +46,7 @@ export const createInstanceFromTemplateCore = async ({
   description,
   phases,
   ownerProfileId,
+  stewardProfileId = ownerProfileId,
   creatorAuthUserId,
   creatorEmail,
   stewardProfileId,
