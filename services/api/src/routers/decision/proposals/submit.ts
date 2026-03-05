@@ -1,4 +1,5 @@
 import { submitProposal } from '@op/common';
+import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -26,6 +27,14 @@ export const submitProposalRouter = router({
       waitUntil(
         trackProposalSubmitted(ctx, proposal.processInstanceId, proposal.id, {
           created_timestamp: Date.now(),
+        }),
+      );
+
+      // Send proposal submitted event for notification workflow
+      waitUntil(
+        inngest.send({
+          name: Events.proposalSubmitted.name,
+          data: { proposalId: proposal.id },
         }),
       );
 

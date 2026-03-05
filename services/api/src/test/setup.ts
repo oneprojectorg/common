@@ -60,10 +60,14 @@ const mockPlatformAdminEmails = {
 // Mock the event system to avoid Inngest API calls in tests
 vi.mock('@op/events', async () => {
   const actual = await vi.importActual('@op/events');
+  const mockSend = vi.fn().mockResolvedValue({ ids: ['mock-event-id'] });
   return {
     ...actual,
+    inngest: {
+      send: mockSend,
+    },
     event: {
-      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
+      send: mockSend,
     },
   };
 });

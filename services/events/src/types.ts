@@ -42,4 +42,10 @@ export const Events = {
       ),
     }),
   },
+  proposalSubmitted: {
+    name: 'proposal/submitted' as const,
+    schema: z.object({
+      proposalId: z.string().uuid(),
+    }),
+  },
 } as const;
