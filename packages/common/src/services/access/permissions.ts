@@ -4,6 +4,8 @@ import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   organizationUserToAccessRoles,
+  profileUserToAccessRoles,
+  profileUsers,
 } from '@op/db/schema';
 import { permission, toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
@@ -12,23 +14,22 @@ import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 
 export async function invalidateProfileUserCacheForRole(roleId: string) {
-  const joinRows = await db.query.profileUserToAccessRoles.findMany({
-    where: { accessRoleId: roleId },
-  });
+  const affectedUsers = await db
+    .select({
+      profileId: profileUsers.profileId,
+      authUserId: profileUsers.authUserId,
+    })
+    .from(profileUserToAccessRoles)
+    .innerJoin(
+      profileUsers,
+      eq(profileUserToAccessRoles.profileUserId, profileUsers.id),
+    )
+    .where(eq(profileUserToAccessRoles.accessRoleId, roleId));
 
-  if (joinRows.length === 0) {
-    return;
-  }
-
-  const profileUserIds = joinRows.map((r) => r.profileUserId);
-  const profileUsers = await db.query.profileUsers.findMany({
-    where: { id: { in: profileUserIds } },
-  });
-
-  if (profileUsers.length > 0) {
+  if (affectedUsers.length > 0) {
     await invalidateMultiple({
       type: 'profileUser',
-      paramsList: profileUsers.map((pu) => [pu.profileId, pu.authUserId]),
+      paramsList: affectedUsers.map((u) => [u.profileId, u.authUserId]),
     });
   }
 }
