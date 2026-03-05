@@ -14,8 +14,8 @@ import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
-import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { LuTrash2 } from 'react-icons/lu';
 import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 import type { z } from 'zod';
 
@@ -254,7 +254,7 @@ export function ProposalCardMenu({
     if (proposal.isEditable) {
       items.push({
         key: 'delete',
-        icon: <Trash2 className="size-5" />,
+        icon: <LuTrash2 className="size-5" />,
         label: t('Delete'),
         onAction: () => {
           setIsMenuSheetOpen(false);

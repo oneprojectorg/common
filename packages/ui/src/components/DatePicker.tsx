@@ -1,10 +1,10 @@
 'use client';
 
 import { parseDate } from '@internationalized/date';
-import { CalendarIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DateValue } from 'react-aria-components';
 import { Button as AriaButton, DialogTrigger } from 'react-aria-components';
+import { LuCalendar } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { Calendar } from './Calendar';
@@ -210,7 +210,7 @@ export const DatePicker = <T extends DateValue>({
               props.isDisabled && 'cursor-not-allowed text-lightGray',
             )}
           >
-            <CalendarIcon className="size-4" />
+            <LuCalendar className="size-4" />
           </AriaButton>
         </TextField>
         <Popover className="w-62 p-0" placement="bottom start">

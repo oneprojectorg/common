@@ -1,9 +1,8 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { Edit, Heart } from 'lucide-react';
 import { ReactNode } from 'react';
-import { LuArrowLeft, LuBookmark } from 'react-icons/lu';
+import { LuArrowLeft, LuBookmark, LuHeart, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
@@ -62,7 +61,7 @@ export function ProposalViewLayout({
               onPress={() => router.push(editHref)}
               className="px-4 py-2"
             >
-              <Edit className="h-4 w-4" />
+              <LuPencil className="h-4 w-4" />
               {t('Edit')}
             </Button>
           )}
@@ -73,7 +72,7 @@ export function ProposalViewLayout({
             onPress={onLike}
             isDisabled={isLoading}
           >
-            <Heart className="size-4" />
+            <LuHeart className="size-4" />
             {isLiked ? t('Liked') : t('Like')}
           </Button>
           <Button

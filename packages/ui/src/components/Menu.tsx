@@ -1,6 +1,5 @@
 'use client';
 
-import { Check, ChevronRight } from 'lucide-react';
 import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
@@ -13,6 +12,7 @@ import type {
   MenuItemProps,
   SeparatorProps,
 } from 'react-aria-components';
+import { LuCheck, LuChevronRight } from 'react-icons/lu';
 
 import { VariantProps, cn, tv } from '../lib/utils';
 import { DropdownSection, dropdownItemStyles } from './ListBox';
@@ -89,14 +89,14 @@ export const MenuItem = (
           <>
             {selectionMode !== 'none' && (
               <span className="flex w-4 items-center">
-                {isSelected && <Check aria-hidden className="size-4" />}
+                {isSelected && <LuCheck aria-hidden className="size-4" />}
               </span>
             )}
             <span className="flex flex-1 items-center gap-2 truncate font-normal group-selected:font-semibold">
               {children}
             </span>
             {hasSubmenu && (
-              <ChevronRight aria-hidden className="absolute right-2 size-4" />
+              <LuChevronRight aria-hidden className="absolute right-2 size-4" />
             )}
           </>
         ),

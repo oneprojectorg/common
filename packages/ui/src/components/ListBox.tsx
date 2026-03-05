@@ -1,6 +1,5 @@
 'use client';
 
-import { Check } from 'lucide-react';
 import {
   ListBox as AriaListBox,
   ListBoxItem as AriaListBoxItem,
@@ -14,6 +13,7 @@ import type {
   ListBoxItemProps as RACListBoxItemProps,
   SectionProps,
 } from 'react-aria-components';
+import { LuCheck } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
@@ -139,7 +139,7 @@ export const DropdownItem = (
             {children}
           </span>
           <span className="flex w-5 items-center">
-            {isSelected && <Check className="size-4" />}
+            {isSelected && <LuCheck className="size-4" />}
           </span>
         </>
       ))}

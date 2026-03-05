@@ -1,24 +1,24 @@
 'use client';
 
 import type { Editor } from '@tiptap/react';
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Italic,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-  Quote,
-  Strikethrough,
-  Underline as UnderlineIcon,
-} from 'lucide-react';
 import { useCallback } from 'react';
+import {
+  LuAlignCenter,
+  LuAlignLeft,
+  LuAlignRight,
+  LuBold,
+  LuCode,
+  LuHeading1,
+  LuHeading2,
+  LuHeading3,
+  LuItalic,
+  LuLink,
+  LuList,
+  LuListOrdered,
+  LuQuote,
+  LuStrikethrough,
+  LuUnderline,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -81,7 +81,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Heading 1')}
       >
-        <Heading1 className="size-4" />
+        <LuHeading1 className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -91,7 +91,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Heading 2')}
       >
-        <Heading2 className="size-4" />
+        <LuHeading2 className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -101,7 +101,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Heading 3')}
       >
-        <Heading3 className="size-4" />
+        <LuHeading3 className="size-4" />
       </button>
 
       <div className="mx-1 h-4 w-px bg-gray-300" />
@@ -115,7 +115,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Bold')}
       >
-        <Bold className="size-4" />
+        <LuBold className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -125,7 +125,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Italic')}
       >
-        <Italic className="size-4" />
+        <LuItalic className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -135,7 +135,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('underline') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Underline')}
       >
-        <UnderlineIcon className="size-4" />
+        <LuUnderline className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -145,7 +145,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('strike') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Strikethrough')}
       >
-        <Strikethrough className="size-4" />
+        <LuStrikethrough className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -155,7 +155,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('code') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Code')}
       >
-        <Code className="size-4" />
+        <LuCode className="size-4" />
       </button>
 
       <div className="mx-1 h-4 w-px bg-gray-300" />
@@ -169,7 +169,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bulletList') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Bullet List')}
       >
-        <List className="size-4" />
+        <LuList className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -179,7 +179,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('orderedList') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Numbered List')}
       >
-        <ListOrdered className="size-4" />
+        <LuListOrdered className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -189,7 +189,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('blockquote') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Blockquote')}
       >
-        <Quote className="size-4" />
+        <LuQuote className="size-4" />
       </button>
 
       <div className="mx-1 h-4 w-px bg-gray-300" />
@@ -203,7 +203,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Align Left')}
       >
-        <AlignLeft className="size-4" />
+        <LuAlignLeft className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -213,7 +213,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Align Center')}
       >
-        <AlignCenter className="size-4" />
+        <LuAlignCenter className="size-4" />
       </button>
       <button
         onClick={() => {
@@ -223,7 +223,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Align Right')}
       >
-        <AlignRight className="size-4" />
+        <LuAlignRight className="size-4" />
       </button>
 
       <div className="mx-1 h-4 w-px bg-gray-300" />
@@ -237,7 +237,7 @@ export function RichTextEditorFloatingToolbar({
         className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('link') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title={t('Add Link')}
       >
-        <LinkIcon className="size-4" />
+        <LuLink className="size-4" />
       </button>
     </div>
   );

@@ -7,9 +7,8 @@ import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
-import { Heart, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { LuBookmark } from 'react-icons/lu';
+import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -61,7 +60,7 @@ export function ProposalCardActions({
         className="w-full text-nowrap"
         isDisabled={isLoading}
       >
-        <Heart className="size-4" />
+        <LuHeart className="size-4" />
         {isLikedByUser ? t('Liked') : t('Like')}
       </Button>
       <Button
@@ -124,7 +123,7 @@ export function ProposalCardOwnerActions({
           size="small"
           className="w-full"
         >
-          <Pencil className="size-4" />
+          <LuPencil className="size-4" />
           {t('Edit')}
         </ButtonLink>
         <DialogTrigger
@@ -138,7 +137,7 @@ export function ProposalCardOwnerActions({
             className="w-full"
             isDisabled={deleteProposalMutation.isPending}
           >
-            <Trash2 className="size-4" />
+            <LuTrash2 className="size-4" />
             {t('Delete')}
           </Button>
           <Modal isDismissable>

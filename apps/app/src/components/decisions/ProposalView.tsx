@@ -14,11 +14,10 @@ import { Header1 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { Heart, MessageCircle } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { LuBookmark } from 'react-icons/lu';
+import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -283,13 +282,13 @@ export function ProposalView({
               {/* Engagement Stats */}
               <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-neutral-gray4">
                 <div className="flex items-center gap-1">
-                  <Heart className="h-4 w-4" />
+                  <LuHeart className="h-4 w-4" />
                   <span>
                     {currentProposal.likesCount || 0} {t('Likes')}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <MessageCircle className="h-4 w-4" />
+                  <LuMessageCircle className="h-4 w-4" />
                   <span>
                     {currentProposal.commentsCount || 0}{' '}
                     {(currentProposal.commentsCount || 0) !== 1

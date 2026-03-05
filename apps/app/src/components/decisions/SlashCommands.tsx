@@ -3,18 +3,6 @@
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { Suggestion, SuggestionOptions } from '@tiptap/suggestion';
-import {
-  Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Link2,
-  List,
-  ListOrdered,
-  Minus,
-  Quote,
-  Type,
-} from 'lucide-react';
 import React, {
   forwardRef,
   useEffect,
@@ -22,6 +10,18 @@ import React, {
   useState,
 } from 'react';
 import { createRoot } from 'react-dom/client';
+import {
+  LuCode,
+  LuHeading1,
+  LuHeading2,
+  LuHeading3,
+  LuLink2,
+  LuList,
+  LuListOrdered,
+  LuMinus,
+  LuQuote,
+  LuType,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -125,7 +125,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Text',
         description: 'Just start typing with plain text.',
         searchTerms: ['p', 'paragraph'],
-        icon: Type,
+        icon: LuType,
         command: ({ editor, range }) => {
           editor
             .chain()
@@ -139,7 +139,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Heading 1',
         description: 'Big section heading.',
         searchTerms: ['title', 'big', 'large'],
-        icon: Heading1,
+        icon: LuHeading1,
         command: ({ editor, range }) => {
           editor
             .chain()
@@ -153,7 +153,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Heading 2',
         description: 'Medium section heading.',
         searchTerms: ['subtitle', 'medium'],
-        icon: Heading2,
+        icon: LuHeading2,
         command: ({ editor, range }) => {
           editor
             .chain()
@@ -167,7 +167,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Heading 3',
         description: 'Small section heading.',
         searchTerms: ['subtitle', 'small'],
-        icon: Heading3,
+        icon: LuHeading3,
         command: ({ editor, range }) => {
           editor
             .chain()
@@ -181,7 +181,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Bullet List',
         description: 'Create a simple bullet list.',
         searchTerms: ['unordered', 'point'],
-        icon: List,
+        icon: LuList,
         command: ({ editor, range }) => {
           editor.chain().focus().deleteRange(range).toggleBulletList().run();
         },
@@ -190,7 +190,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Numbered List',
         description: 'Create a list with numbering.',
         searchTerms: ['ordered'],
-        icon: ListOrdered,
+        icon: LuListOrdered,
         command: ({ editor, range }) => {
           editor.chain().focus().deleteRange(range).toggleOrderedList().run();
         },
@@ -199,7 +199,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Quote',
         description: 'Capture a quote.',
         searchTerms: ['blockquote'],
-        icon: Quote,
+        icon: LuQuote,
         command: ({ editor, range }) => {
           editor
             .chain()
@@ -214,7 +214,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Code',
         description: 'Capture a code snippet.',
         searchTerms: ['codeblock'],
-        icon: Code,
+        icon: LuCode,
         command: ({ editor, range }) => {
           editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
         },
@@ -223,7 +223,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Divider',
         description: 'Visually divide blocks.',
         searchTerms: ['horizontal', 'rule', 'hr'],
-        icon: Minus,
+        icon: LuMinus,
         command: ({ editor, range }) => {
           editor.chain().focus().deleteRange(range).setHorizontalRule().run();
         },
@@ -232,7 +232,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         title: 'Link Embed',
         description: 'Embed a link with preview.',
         searchTerms: ['embed', 'preview', 'iframely', 'url'],
-        icon: Link2,
+        icon: LuLink2,
         command: ({ editor, range }) => {
           const url = window.prompt('Enter the URL to embed:');
           if (url && url.trim()) {

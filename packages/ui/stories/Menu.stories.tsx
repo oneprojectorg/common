@@ -1,6 +1,6 @@
 import type { Meta } from '@storybook/react-vite';
-import { MoreHorizontal } from 'lucide-react';
 import { MenuTrigger, SubmenuTrigger } from 'react-aria-components';
+import { LuEllipsis } from 'react-icons/lu';
 
 import { Button } from '../src/components/Button';
 import {
@@ -23,7 +23,7 @@ export default meta;
 export const Example = (args: any) => (
   <MenuTrigger>
     <Button className="px-2">
-      <MoreHorizontal className="size-5" />
+      <LuEllipsis className="size-5" />
     </Button>
     <Menu {...args}>
       <MenuItem id="new">New…</MenuItem>
@@ -45,7 +45,7 @@ DisabledItems.args = {
 export const Sections = (args: any) => (
   <MenuTrigger>
     <Button className="px-2">
-      <MoreHorizontal className="size-5" />
+      <LuEllipsis className="size-5" />
     </Button>
     <Menu {...args}>
       <MenuSection title="Your Content">
@@ -67,7 +67,7 @@ export const Sections = (args: any) => (
 export const Submenu = (args: any) => (
   <MenuTrigger>
     <Button className="px-2">
-      <MoreHorizontal className="size-5" />
+      <LuEllipsis className="size-5" />
     </Button>
     <Menu {...args}>
       <MenuItem id="new">New…</MenuItem>

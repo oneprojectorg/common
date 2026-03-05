@@ -1,11 +1,11 @@
 'use client';
 
-import { SearchIcon, XIcon } from 'lucide-react';
 import { SearchField as AriaSearchField } from 'react-aria-components';
 import type {
   SearchFieldProps as AriaSearchFieldProps,
   ValidationResult,
 } from 'react-aria-components';
+import { LuSearch, LuX } from 'react-icons/lu';
 
 import { composeTailwindRenderProps } from '../utils';
 import { Button } from './Button';
@@ -37,7 +37,7 @@ export const SearchField = ({
     >
       {label && <Label>{label}</Label>}
       <FieldGroup className="relative">
-        <SearchIcon
+        <LuSearch
           aria-hidden
           className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-darkGray"
         />
@@ -51,7 +51,7 @@ export const SearchField = ({
           color="ghost"
           className="absolute top-1/2 right-1 aspect-square w-6 -translate-y-1/2 p-0 group-empty:invisible"
         >
-          <XIcon aria-hidden className="size-4" />
+          <LuX aria-hidden className="size-4" />
         </Button>
       </FieldGroup>
       {description && <Description>{description}</Description>}
