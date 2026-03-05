@@ -7,6 +7,7 @@ import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
+import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
 import {
   LuCheck,
@@ -22,7 +23,6 @@ import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { phaseToSectionId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
-import { useProcessNavigation } from '../../useProcessNavigation';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
@@ -65,7 +65,8 @@ export function PhasesSectionContent({
   })();
   const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
   const t = useTranslations();
-  const { setSection } = useProcessNavigation();
+  const [, setSectionParam] = useQueryState('section', { history: 'push' });
+  const setSection = (sectionId: string) => setSectionParam(sectionId);
 
   const utils = trpc.useUtils();
   const debouncedSaveRef = useRef<() => boolean>(null);
@@ -80,10 +81,8 @@ export function PhasesSectionContent({
     },
   });
 
-  const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
-    setSaveStatus(decisionProfileId, 'saving');
-
-    const phasesPayload = data.map((phase) => ({
+  const toPayload = (data: PhaseDefinition[]) =>
+    data.map((phase) => ({
       phaseId: phase.id,
       name: phase.name,
       description: phase.description,
@@ -94,6 +93,10 @@ export function PhasesSectionContent({
       rules: phase.rules,
     }));
 
+  const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
+    setSaveStatus(decisionProfileId, 'saving');
+
+    const phasesPayload = toPayload(data);
     setInstanceData(decisionProfileId, { phases: phasesPayload });
 
     if (isDraft) {
@@ -124,6 +127,8 @@ export function PhasesSectionContent({
     };
     const updated = [...phases, newPhase];
     setPhases(updated);
+    // Immediately update store so navigation sees the new phase
+    setInstanceData(decisionProfileId, { phases: toPayload(updated) });
     debouncedSave(updated);
     setSection(phaseToSectionId(newPhase.id));
   };
@@ -134,7 +139,11 @@ export function PhasesSectionContent({
     if (!phaseToDelete) {
       return;
     }
-    updatePhases((prev) => prev.filter((p) => p.id !== phaseToDelete));
+    const updated = phases.filter((p) => p.id !== phaseToDelete);
+    setPhases(updated);
+    // Immediately update store so navigation reflects the removal
+    setInstanceData(decisionProfileId, { phases: toPayload(updated) });
+    debouncedSave(updated);
     setPhaseToDelete(null);
   };
 

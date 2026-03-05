@@ -149,8 +149,8 @@ export const ProcessBuilderFooter = ({
           )}
         </div>
 
-        <div className="flex flex-col items-center gap-1">
-          <div className="h-1 w-full max-w-48 overflow-hidden rounded-full bg-neutral-gray2">
+        <div className="flex items-center gap-4">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2">
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
@@ -159,7 +159,7 @@ export const ProcessBuilderFooter = ({
               }}
             />
           </div>
-          <span className="hidden text-xs text-neutral-gray4 md:block">
+          <span className="hidden shrink-0 text-sm text-charcoal md:block">
             {t('{count}% complete', {
               count: validation.completionPercentage,
             })}
