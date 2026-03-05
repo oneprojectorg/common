@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
-import { AlertBanner } from '../src/components/ui/alert-banner';
+import { AlertBanner } from '../src/components/AlertBanner';
 
 const meta: Meta<typeof AlertBanner> = {
   title: 'AlertBanner',

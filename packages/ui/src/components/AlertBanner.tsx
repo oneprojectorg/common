@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { LuCircleAlert, LuCircleCheck, LuInfo } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 
-import { cn } from '../../lib/utils';
+import { cn } from '../lib/utils';
 
 const alertBannerStyles = tv({
   slots: {

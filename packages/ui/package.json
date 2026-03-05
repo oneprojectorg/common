@@ -72,7 +72,7 @@
     "./utils/formatting": "./src/utils/formatting.ts",
     "./lib/primitive": "./src/lib/primitive.ts",
     "./hooks/use-media-query": "./src/hooks/use-media-query.ts",
-    "./AlertBanner": "./src/components/ui/alert-banner.tsx",
+    "./AlertBanner": "./src/components/AlertBanner.tsx",
     "./ui/table": "./src/components/ui/table.tsx"
   },
   "module": "./src/index.ts",
