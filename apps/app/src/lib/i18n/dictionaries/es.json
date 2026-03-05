@@ -924,5 +924,7 @@
   "Launching your process will notify": "Al lanzar su proceso se notificará a",
   "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 participante} other {# participantes}}.",
   "Not configured yet": "Aún no configurado",
-  "Configured": "Configurado"
+  "Configured": "Configurado",
+  "Next": "Siguiente",
+  "Back": "Atrás"
 }
