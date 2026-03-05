@@ -117,6 +117,22 @@ export function OverviewSectionForm({
     name: p.name,
   }));
 
+  // Ensure the current steward appears in the dropdown so the Select can
+  // render its name — even when the viewer isn't the owner and their own
+  // profile list doesn't include the steward.
+  if (
+    instance.steward &&
+    !profileItems.some((p) => p.id === instance.steward?.id)
+  ) {
+    profileItems.push({
+      id: instance.steward.id,
+      name: instance.steward.name ?? '',
+    });
+  }
+
+  // Only the process owner can change the steward
+  const isProcessOwner = userProfiles?.some((p) => p.id === instance.owner?.id);
+
   // Debounced save: draft persists to API; non-draft only buffers locally.
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
     setSaveStatus(decisionProfileId, 'saving');
@@ -218,6 +234,7 @@ export function OverviewSectionForm({
                 <field.Select
                   label={t('Who is stewarding this process?')}
                   placeholder={t('Select')}
+                  isDisabled={!isProcessOwner}
                   selectedKey={field.state.value || null}
                   onSelectionChange={(key) => field.handleChange(key as string)}
                   onBlur={field.handleBlur}
