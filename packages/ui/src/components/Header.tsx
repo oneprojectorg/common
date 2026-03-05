@@ -50,7 +50,9 @@ export const Header4 = ({
   className?: string;
 }) => {
   return (
-    <h4 className={cn('font-serif text-title-sm14 text-neutral-black', className)}>
+    <h4
+      className={cn('font-serif text-title-sm14 text-neutral-black', className)}
+    >
       {children}
     </h4>
   );

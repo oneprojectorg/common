@@ -1,6 +1,7 @@
 'use client';
 
 import { useFileUpload } from '@/hooks/useFileUpload';
+import { cn } from '@op/ui/utils';
 import type { Editor } from '@tiptap/react';
 import {
   AlignCenter,
@@ -110,7 +111,12 @@ export function RichTextEditorToolbar({
     `shrink-0 rounded p-2 hover:bg-gray-100 ${active ? 'bg-gray-200' : ''}`;
 
   return (
-    <div className={`justify-between border-b px-6 py-2 text-neutral-charcoal ${className}`}>
+    <div
+      className={cn(
+        'justify-between border-b px-6 py-2 text-neutral-charcoal',
+        className,
+      )}
+    >
       <div className="mx-auto scrollbar-hide flex max-w-fit min-w-0 items-center gap-1 overflow-x-auto">
         {/* Undo/Redo */}
         <button

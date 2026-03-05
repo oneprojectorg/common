@@ -97,9 +97,7 @@ function SidebarContent({
       </div>
 
       <div className="mt-2 md:mt-4">
-        <Header4 className="mb-2">
-          {t('Fields')}
-        </Header4>
+        <Header4 className="mb-2">{t('Fields')}</Header4>
         <ul className="space-y-1">
           {fields.map((field) => {
             const Icon =
