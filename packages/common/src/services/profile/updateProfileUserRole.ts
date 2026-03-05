@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
 import { profileUserToAccessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -101,6 +102,11 @@ export const updateProfileUserRoles = async ({
       }
     });
   }
+
+  await invalidate({
+    type: 'profileUser',
+    params: [targetProfileId, targetProfileUser.authUserId],
+  });
 
   // Fetch and return the updated profile user with full relations
   const updatedProfileUser = await getProfileUserWithRelations(profileUserId);

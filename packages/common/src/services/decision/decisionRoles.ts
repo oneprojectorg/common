@@ -4,6 +4,7 @@ import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
+import { invalidateProfileUserCacheForRole } from '../access/permissions';
 import { assertProfileAdmin } from '../assert';
 import {
   type DecisionRolePermissions,
@@ -190,6 +191,8 @@ export async function updateDecisionRoles({
       permission: bitfield,
     });
   }
+
+  await invalidateProfileUserCacheForRole(roleId);
 
   return { roleId, decisionPermissions };
 }

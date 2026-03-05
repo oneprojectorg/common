@@ -1,14 +1,38 @@
+import { invalidateMultiple } from '@op/cache';
 import { db } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   organizationUserToAccessRoles,
+  profileUserToAccessRoles,
+  profileUsers,
 } from '@op/db/schema';
 import { permission, toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
+
+export async function invalidateProfileUserCacheForRole(roleId: string) {
+  const affectedUsers = await db
+    .select({
+      profileId: profileUsers.profileId,
+      authUserId: profileUsers.authUserId,
+    })
+    .from(profileUserToAccessRoles)
+    .innerJoin(
+      profileUsers,
+      eq(profileUserToAccessRoles.profileUserId, profileUsers.id),
+    )
+    .where(eq(profileUserToAccessRoles.accessRoleId, roleId));
+
+  if (affectedUsers.length > 0) {
+    await invalidateMultiple({
+      type: 'profileUser',
+      paramsList: affectedUsers.map((u) => [u.profileId, u.authUserId]),
+    });
+  }
+}
 
 export type Permissions = {
   admin: boolean;
@@ -152,6 +176,8 @@ export async function updateRolePermissions({
     });
   }
 
+  await invalidateProfileUserCacheForRole(roleId);
+
   return role;
 }
 
@@ -179,6 +205,9 @@ export async function deleteRole({
   }
 
   await assertProfileAdmin(user, role.profileId);
+
+  // Invalidate before delete (cascade will remove the join rows we query)
+  await invalidateProfileUserCacheForRole(roleId);
 
   // Delete the role (cascade will handle permissions)
   await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
