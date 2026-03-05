@@ -2,8 +2,9 @@
 
 import { type ComponentType } from 'react';
 
-import type { SectionId, StepId } from './navigationConfig';
+import { isPhaseSection, type SectionId, type StepId } from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
+import PhaseDetailSection from './stepContent/general/PhaseDetailSection';
 import PhasesSection from './stepContent/general/PhasesSection';
 import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
 import ParticipantsSection from './stepContent/participants/ParticipantsSection';
@@ -65,10 +66,13 @@ const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
 };
 
 export function getContentComponentFlat(
-  sectionId: SectionId | undefined,
+  sectionId: SectionId | string | undefined,
 ): SectionComponent | null {
   if (!sectionId) {
     return null;
+  }
+  if (isPhaseSection(sectionId)) {
+    return PhaseDetailSection;
   }
   return FLAT_CONTENT_REGISTRY[sectionId] ?? null;
 }
