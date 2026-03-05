@@ -5,9 +5,8 @@ import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Popover } from '@op/ui/Popover';
+import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import {
@@ -20,7 +19,7 @@ import {
 } from '@op/ui/ui/table';
 import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
-import { LuCheck, LuChevronDown, LuUsers } from 'react-icons/lu';
+import { LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -162,54 +161,33 @@ const ProfileUserRoleSelect = ({
   };
 
   const isPending = updateRoles.isPending || removeUser.isPending;
-  const currentRoleName =
-    roles.find((r) => r.id === currentRoleId)?.name ?? t('Role');
 
   return (
     <>
-      <MenuTrigger>
-        <Button
-          unstyled
-          className={`${className} flex h-8 min-w-0 flex-row items-center justify-between rounded-sm border p-2 px-3 text-base leading-3 text-neutral-black outline outline-0 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-neutral-gray4`}
-          isDisabled={isPending}
-        >
-          {currentRoleName}
-          <LuChevronDown className="ml-2 size-4 min-h-4 min-w-4 text-neutral-charcoal" />
-        </Button>
-        <Popover placement="bottom end">
-          <Menu
-            aria-label={t('Role')}
-            onAction={(key) => {
-              const keyStr = key as string;
-              if (keyStr === 'remove') {
-                setIsRemoveModalOpen(true);
-              } else {
-                handleRoleChange(keyStr);
-              }
-            }}
-          >
-            {roles.map((role) => {
-              const isSelected = currentRoleId === role.id;
-              return (
-                <MenuItem key={role.id} id={role.id}>
-                  <span className="flex w-4 items-center">
-                    {isSelected && (
-                      <LuCheck className="size-4 text-primary-teal" />
-                    )}
-                  </span>
-                  <span className={isSelected ? 'text-primary-teal' : ''}>
-                    {role.name}
-                  </span>
-                </MenuItem>
-              );
-            })}
-            <MenuItem id="remove" className="text-functional-red">
-              <span className="w-4" />
-              {t('Remove from process')}
-            </MenuItem>
-          </Menu>
-        </Popover>
-      </MenuTrigger>
+      <Select
+        aria-label={t('Role')}
+        selectedKey={currentRoleId || ''}
+        onSelectionChange={(key) => {
+          const keyStr = key as string;
+          if (keyStr === 'remove') {
+            setIsRemoveModalOpen(true);
+          } else {
+            handleRoleChange(keyStr);
+          }
+        }}
+        isDisabled={isPending}
+        size="small"
+        className={className}
+      >
+        {roles.map((role) => (
+          <SelectItem key={role.id} id={role.id}>
+            {role.name}
+          </SelectItem>
+        ))}
+        <SelectItem id="remove" className="text-functional-red">
+          {t('Remove from process')}
+        </SelectItem>
+      </Select>
       <DialogTrigger
         isOpen={isRemoveModalOpen}
         onOpenChange={setIsRemoveModalOpen}
@@ -225,9 +203,7 @@ const ProfileUserRoleSelect = ({
                   )
                 : t(
                     'Are you sure you want to remove {name} from this process?',
-                    {
-                      name: userName,
-                    },
+                    { name: userName },
                   )}
             </p>
           </ModalBody>
@@ -310,54 +286,33 @@ const InviteRoleSelect = ({
   };
 
   const isPending = updateInvite.isPending || deleteInvite.isPending;
-  const currentRoleName =
-    roles.find((r) => r.id === currentRoleId)?.name ?? t('Role');
 
   return (
     <>
-      <MenuTrigger>
-        <Button
-          unstyled
-          className={`${className} flex h-8 min-w-0 flex-row items-center justify-between rounded-sm border p-2 px-3 text-base leading-3 text-neutral-black outline outline-0 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-neutral-gray4`}
-          isDisabled={isPending}
-        >
-          {currentRoleName}
-          <LuChevronDown className="ml-2 size-4 min-h-4 min-w-4 text-neutral-charcoal" />
-        </Button>
-        <Popover placement="bottom end">
-          <Menu
-            aria-label={t('Role')}
-            onAction={(key) => {
-              const keyStr = key as string;
-              if (keyStr === 'remove') {
-                setIsRemoveModalOpen(true);
-              } else {
-                handleRoleChange(keyStr);
-              }
-            }}
-          >
-            {roles.map((role) => {
-              const isSelected = currentRoleId === role.id;
-              return (
-                <MenuItem key={role.id} id={role.id}>
-                  <span className="flex w-4 items-center">
-                    {isSelected && (
-                      <LuCheck className="size-4 text-primary-teal" />
-                    )}
-                  </span>
-                  <span className={isSelected ? 'text-primary-teal' : ''}>
-                    {role.name}
-                  </span>
-                </MenuItem>
-              );
-            })}
-            <MenuItem id="remove" className="text-functional-red">
-              <span className="w-4" />
-              {t('Remove from process')}
-            </MenuItem>
-          </Menu>
-        </Popover>
-      </MenuTrigger>
+      <Select
+        aria-label={t('Role')}
+        selectedKey={currentRoleId}
+        onSelectionChange={(key) => {
+          const keyStr = key as string;
+          if (keyStr === 'remove') {
+            setIsRemoveModalOpen(true);
+          } else {
+            handleRoleChange(keyStr);
+          }
+        }}
+        isDisabled={isPending}
+        size="small"
+        className={className}
+      >
+        {roles.map((role) => (
+          <SelectItem key={role.id} id={role.id}>
+            {role.name}
+          </SelectItem>
+        ))}
+        <SelectItem id="remove" className="text-functional-red">
+          {t('Remove from process')}
+        </SelectItem>
+      </Select>
       <DialogTrigger
         isOpen={isRemoveModalOpen}
         onOpenChange={setIsRemoveModalOpen}
@@ -373,9 +328,7 @@ const InviteRoleSelect = ({
                   )
                 : t(
                     'Are you sure you want to remove {name} from this process?',
-                    {
-                      name: inviteeName,
-                    },
+                    { name: inviteeName },
                   )}
             </p>
           </ModalBody>
