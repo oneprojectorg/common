@@ -2,14 +2,19 @@ import { ReactNode } from 'react';
 import { LuInfo } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
+import { Note } from './ui/note';
+
+const variantToIntent = {
+  warning: 'warning',
+  alert: 'danger',
+  neutral: 'default',
+} as const;
 
 const variantStyles = {
-  warning:
-    'border-[var(--warning)] text-[hsl(var(--op-yellow-600))] bg-[var(--warning-subtle)]',
-  alert:
-    'border-[var(--danger)] text-[var(--fg,hsl(var(--op-neutral-950)))] bg-[var(--danger-subtle)]',
+  warning: 'text-[hsl(var(--op-yellow-600))]',
+  alert: 'text-[var(--fg,hsl(var(--op-neutral-950)))]',
   neutral:
-    'border-[var(--border,hsl(var(--op-neutral-400)))] text-[var(--fg,hsl(var(--op-neutral-950)))] bg-[var(--muted,hsl(var(--op-neutral-50)))]',
+    'text-[var(--fg,hsl(var(--op-neutral-950)))] border-[var(--border,hsl(var(--op-neutral-400)))] bg-[var(--muted,hsl(var(--op-neutral-50)))]',
 } as const;
 
 export function AlertBanner({
@@ -24,9 +29,11 @@ export function AlertBanner({
   className?: string;
 }) {
   return (
-    <div
+    <Note
+      intent={variantToIntent[variant]}
+      indicator={false}
       className={cn(
-        'flex w-full items-center gap-1 rounded-lg border p-4 shadow-light',
+        'flex items-center gap-1 rounded-lg p-4 shadow-light',
         variantStyles[variant],
         className,
       )}
@@ -37,6 +44,6 @@ export function AlertBanner({
       <span className="truncate text-sm leading-[1.5] font-normal">
         {children}
       </span>
-    </div>
+    </Note>
   );
 }
