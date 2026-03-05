@@ -556,6 +556,7 @@
   "Keep this process private": "Garder ce processus privé",
   "Only invited members can view and participate in this process": "Seuls les membres invités peuvent voir et participer à ce processus",
   "Process Overview": "Aperçu du processus",
+  "Only the process owner can change the steward.": "Seul le propriétaire du processus peut modifier le responsable.",
   "Organize proposals into categories": "Organiser les propositions en catégories",
   "Group proposals into categories for better organization and evaluation": "Regrouper les propositions en catégories pour une meilleure organisation et évaluation",
   "Require collaborative proposals": "Exiger des propositions collaboratives",

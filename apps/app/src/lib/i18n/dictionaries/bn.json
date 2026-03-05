@@ -563,6 +563,7 @@
   "Keep this process private": "এই প্রক্রিয়াটি ব্যক্তিগত রাখুন",
   "Only invited members can view and participate in this process": "শুধুমাত্র আমন্ত্রিত সদস্যরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন",
   "Process Overview": "প্রক্রিয়া সংক্ষেপ",
+  "Only the process owner can change the steward.": "শুধুমাত্র প্রক্রিয়ার মালিক তত্ত্বাবধায়ক পরিবর্তন করতে পারেন।",
   "Organize proposals into categories": "প্রস্তাবগুলি বিভাগে সংগঠিত করুন",
   "Group proposals into categories for better organization and evaluation": "ভালো সংগঠন এবং মূল্যায়নের জন্য প্রস্তাবগুলি বিভাগে গোষ্ঠীবদ্ধ করুন",
   "Require collaborative proposals": "সহযোগী প্রস্তাব প্রয়োজন",
