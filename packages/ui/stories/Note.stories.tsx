@@ -1,16 +1,23 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
-import { AlertBanner } from '../src/components/AlertBanner';
+import { Note } from '../src/components/ui/note';
 
-const meta: Meta<typeof AlertBanner> = {
-  title: 'AlertBanner',
-  component: AlertBanner,
+const meta: Meta<typeof Note> = {
+  title: 'Note',
+  component: Note,
   tags: ['autodocs'],
+  args: {
+    variant: 'banner',
+  },
   argTypes: {
+    intent: {
+      control: 'select',
+      options: ['default', 'info', 'warning', 'danger', 'success'],
+    },
     variant: {
       control: 'select',
-      options: ['warning', 'alert', 'neutral'],
+      options: ['default', 'banner'],
     },
     children: {
       control: 'text',
@@ -20,32 +27,32 @@ const meta: Meta<typeof AlertBanner> = {
 
 export default meta;
 
-type Story = StoryObj<typeof AlertBanner>;
+type Story = StoryObj<typeof Note>;
 
 export const Warning: Story = {
   args: {
-    variant: 'warning',
+    intent: 'warning',
     children: 'This action requires your attention before proceeding.',
   },
 };
 
 export const Alert: Story = {
   args: {
-    variant: 'alert',
+    intent: 'danger',
     children: 'There was a critical error processing your request.',
   },
 };
 
 export const Neutral: Story = {
   args: {
-    variant: 'neutral',
+    intent: 'default',
     children: 'Your session will expire in 5 minutes.',
   },
 };
 
 export const CustomIcon: Story = {
   args: {
-    variant: 'warning',
+    intent: 'warning',
     icon: <LuTriangleAlert className="size-4" />,
     children: 'Warning with a custom triangle icon.',
   },
@@ -53,22 +60,30 @@ export const CustomIcon: Story = {
 
 export const LongText: Story = {
   args: {
-    variant: 'warning',
+    intent: 'warning',
     children:
-      'This is a very long message that should be truncated with an ellipsis when it overflows the container width. It keeps going and going to demonstrate the text-overflow behavior of the AlertBanner component.',
+      'This is a very long message that should be truncated with an ellipsis when it overflows the container width. It keeps going and going to demonstrate the text-overflow behavior of the Note component.',
   },
 };
 
-export const AllVariants = () => (
+export const BannerVariants = () => (
   <div className="flex w-96 flex-col gap-4">
-    <AlertBanner variant="warning">
+    <Note variant="banner" intent="warning">
       Warning: This action requires your attention.
-    </AlertBanner>
-    <AlertBanner variant="alert">
+    </Note>
+    <Note variant="banner" intent="danger">
       Alert: There was a critical error processing your request.
-    </AlertBanner>
-    <AlertBanner variant="neutral">
+    </Note>
+    <Note variant="banner" intent="default">
       Info: Your session will expire in 5 minutes.
-    </AlertBanner>
+    </Note>
   </div>
 );
+
+export const DefaultVariant: Story = {
+  args: {
+    variant: 'default',
+    intent: 'warning',
+    children: 'This uses the default Note styling with indicator.',
+  },
+};

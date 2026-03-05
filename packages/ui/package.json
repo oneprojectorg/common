@@ -6,7 +6,6 @@
   "type": "module",
   "exports": {
     "./Accordion": "./src/components/ui/accordion.tsx",
-    "./AlertBanner": "./src/components/AlertBanner.tsx",
     "./AutoSizeInput": "./src/components/AutoSizeInput.tsx",
     "./Avatar": "./src/components/Avatar/index.tsx",
     "./AvatarUploader": "./src/components/AvatarUploader.tsx",
