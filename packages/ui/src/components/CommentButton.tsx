@@ -27,6 +27,7 @@ const MessageCircleIcon = ({ className }: { className?: string }) => (
       strokeWidth="1"
       strokeLinecap="round"
       strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
       fill="none"
     />
   </svg>
