@@ -7,9 +7,9 @@ import {
   DEFAULT_NAVIGATION_CONFIG,
   type NavigationConfig,
   SIDEBAR_ITEMS,
-  type SidebarItem,
   STEPS,
   type SectionId,
+  type SidebarItem,
   type StepId,
   phaseToSectionId,
 } from './navigationConfig';

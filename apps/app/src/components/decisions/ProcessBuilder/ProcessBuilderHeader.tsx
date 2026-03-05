@@ -10,7 +10,7 @@ import {
 import { useMemo } from 'react';
 import { LuChevronRight, LuCornerDownRight, LuHouse } from 'react-icons/lu';
 
-import { Link, useTranslations, type TranslationKey } from '@/lib/i18n';
+import { Link, type TranslationKey, useTranslations } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
@@ -163,8 +163,10 @@ const MobileSidebar = ({
     return [];
   }, [storePhases, instance]);
 
-  const { visibleSections, currentSection, setSection } =
-    useProcessNavigation(navigationConfig, phases);
+  const { visibleSections, currentSection, setSection } = useProcessNavigation(
+    navigationConfig,
+    phases,
+  );
 
   const handleSectionClick = (sectionId: string) => {
     setSection(sectionId);

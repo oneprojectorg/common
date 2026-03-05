@@ -2,7 +2,11 @@
 
 import { type ComponentType } from 'react';
 
-import { isPhaseSection, type SectionId, type StepId } from './navigationConfig';
+import {
+  type SectionId,
+  type StepId,
+  isPhaseSection,
+} from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
 import PhaseDetailSection from './stepContent/general/PhaseDetailSection';
 import PhasesSection from './stepContent/general/PhasesSection';

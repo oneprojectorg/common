@@ -158,8 +158,7 @@ export const ProcessBuilderFooter = ({
               className="h-full rounded-full transition-all duration-300"
               style={{
                 width: `${validation.completionPercentage}%`,
-                backgroundImage:
-                  'linear-gradient(to right, #3EC300, #0396A6)',
+                backgroundImage: 'linear-gradient(to right, #3EC300, #0396A6)',
               }}
             />
           </div>
