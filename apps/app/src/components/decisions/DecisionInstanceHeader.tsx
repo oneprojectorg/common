@@ -29,7 +29,7 @@ export const DecisionInstanceHeader = ({
   const access = useUser();
   const isAdmin =
     decisionProfileId &&
-    access.getPermissionsForProfile(decisionProfileId).admin;
+    access.getPermissionsForProfile(decisionProfileId).decisions.admin;
 
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
