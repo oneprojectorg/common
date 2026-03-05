@@ -70,7 +70,7 @@ export const updateDecisionInstance = async ({
     profileId,
   });
 
-  assertAccess({ profile: permission.ADMIN }, profileUser?.roles ?? []);
+  assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
   // Validate proposalTemplate is a structurally valid JSON Schema before persisting
   if (proposalTemplate !== undefined) {
