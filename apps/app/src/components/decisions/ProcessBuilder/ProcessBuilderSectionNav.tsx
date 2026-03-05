@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import { LuCornerDownRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-
 import type { TranslationKey } from '@/lib/i18n';
 
 import { isPhaseSection, phaseToSectionId } from './navigationConfig';
@@ -52,8 +51,10 @@ export const ProcessBuilderSidebar = ({
     return [];
   }, [storePhases, instance]);
 
-  const { visibleSections, currentSection, setSection } =
-    useProcessNavigation(navigationConfig, phases);
+  const { visibleSections, currentSection, setSection } = useProcessNavigation(
+    navigationConfig,
+    phases,
+  );
 
   return (
     <nav

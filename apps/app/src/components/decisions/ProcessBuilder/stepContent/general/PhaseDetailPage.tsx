@@ -30,9 +30,7 @@ export function PhaseDetailPage({
   decisionProfileId,
 }: SectionProps) {
   const { currentSection, setSection } = useProcessNavigation();
-  const phaseId = currentSection
-    ? sectionIdToPhaseId(currentSection.id)
-    : null;
+  const phaseId = currentSection ? sectionIdToPhaseId(currentSection.id) : null;
 
   if (!phaseId) {
     return null;
@@ -97,9 +95,7 @@ function PhaseDetailForm({
   })();
 
   const initialPhase = allPhases.find((p) => p.id === phaseId);
-  const [phase, setPhase] = useState<PhaseDefinition | undefined>(
-    initialPhase,
-  );
+  const [phase, setPhase] = useState<PhaseDefinition | undefined>(initialPhase);
 
   const utils = trpc.useUtils();
   const debouncedSaveRef = useRef<() => boolean>(null);
@@ -279,7 +275,9 @@ function PhaseDetailForm({
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-title-sm">{phase.name || t('Phases')}</h2>
+        <h2 className="font-serif text-title-sm">
+          {phase.name || t('Phases')}
+        </h2>
         <SaveStatusIndicator
           status={saveState.status}
           savedAt={saveState.savedAt}
@@ -318,9 +316,7 @@ function PhaseDetailForm({
           )}
         />
         <div className="space-y-2">
-          <label className="block text-sm">
-            {t('Additional information')}
-          </label>
+          <label className="block text-sm">{t('Additional information')}</label>
           <RichTextEditorWithToolbar
             content={phase.additionalInfo ?? ''}
             onChange={(content) => updatePhase({ additionalInfo: content })}
@@ -345,10 +341,7 @@ function PhaseDetailForm({
               }
             />
           </div>
-          <div
-            className="flex-1"
-            onBlur={() => markTouched('endDate')}
-          >
+          <div className="flex-1" onBlur={() => markTouched('endDate')}>
             <DatePicker
               label={t('End date')}
               isRequired
