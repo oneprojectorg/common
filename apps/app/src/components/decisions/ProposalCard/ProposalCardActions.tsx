@@ -118,7 +118,12 @@ export function ProposalCardOwnerActions({
   return (
     <>
       <div className="flex w-full items-center gap-4">
-        <ButtonLink href={editHref} color="secondary" className="w-full">
+        <ButtonLink
+          href={editHref}
+          color="secondary"
+          size="small"
+          className="w-full"
+        >
           <Pencil className="size-4" />
           {t('Edit')}
         </ButtonLink>
@@ -129,6 +134,7 @@ export function ProposalCardOwnerActions({
           <Button
             onPress={() => setIsDeleteModalOpen(true)}
             color="secondary"
+            size="small"
             className="w-full"
             isDisabled={deleteProposalMutation.isPending}
           >

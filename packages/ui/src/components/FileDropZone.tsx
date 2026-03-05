@@ -45,8 +45,8 @@ const dropZoneStyles = tv({
     root: 'group/dropzone flex w-full',
     button: [
       'flex flex-1 cursor-pointer flex-col items-center justify-center gap-6',
-      'rounded-2xl border border-dashed border-neutral-gray2 bg-neutral-offWhite',
-      'px-12 py-8',
+      'rounded-lg border border-dashed border-neutral-gray2 bg-neutral-offWhite',
+      'px-12 py-6',
       'outline-hidden transition-colors duration-200',
       'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500',
       'group-data-[drop-target]/dropzone:border-teal-500 group-data-[drop-target]/dropzone:bg-teal-50/30',

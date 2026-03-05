@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
+import { Header4 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
@@ -61,10 +62,10 @@ export function ProposalEditorLayout({
           <span className="hidden sm:block">{t('Back')}</span>
         </button>
 
-        <div className="flex justify-center text-lg font-medium text-neutral-black">
-          <span className="hidden sm:block">
+        <div className="flex justify-center">
+          <Header4 className="hidden sm:block">
             {title ? title : t('Untitled Proposal')}
-          </span>
+          </Header4>
         </div>
 
         <div className="flex items-center justify-end gap-4">

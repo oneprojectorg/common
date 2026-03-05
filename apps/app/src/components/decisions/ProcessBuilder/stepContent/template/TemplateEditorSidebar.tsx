@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
+import { Header4 } from '@op/ui/Header';
 import { Sidebar, useSidebar } from '@op/ui/Sidebar';
 import type { IconType } from 'react-icons';
 import { LuAlignJustify } from 'react-icons/lu';
@@ -96,9 +97,7 @@ function SidebarContent({
       </div>
 
       <div className="mt-2 md:mt-4">
-        <h3 className="mb-2 text-sm font-medium text-neutral-gray4">
-          {t('Fields')}
-        </h3>
+        <Header4 className="mb-2">{t('Fields')}</Header4>
         <ul className="space-y-1">
           {fields.map((field) => {
             const Icon =
@@ -109,7 +108,7 @@ function SidebarContent({
             }
             return (
               <li key={field.id}>
-                <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-neutral-charcoal">
+                <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-base text-neutral-charcoal">
                   <Icon className="size-4 shrink-0 text-neutral-gray4" />
                   <span className="truncate">{field.label}</span>
                 </div>
