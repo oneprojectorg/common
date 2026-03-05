@@ -5,10 +5,9 @@ import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
+import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
-import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import {
@@ -21,7 +20,7 @@ import {
 } from '@op/ui/ui/table';
 import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
-import { LuChevronDown, LuUsers } from 'react-icons/lu';
+import { LuCheck, LuChevronDown, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -170,42 +169,42 @@ const ProfileUserRoleSelect = ({
     <>
       <MenuTrigger>
         <Button
-          color="secondary"
-          size="small"
-          className={`${className} justify-between`}
+          unstyled
+          className={`${className} flex h-8 min-w-0 flex-row items-center justify-between rounded-sm border p-2 px-3 text-base leading-3 text-neutral-black outline outline-0 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-neutral-gray4`}
           isDisabled={isPending}
         >
           {currentRoleName}
-          <LuChevronDown className="size-4" />
+          <LuChevronDown className="ml-2 size-4 min-h-4 min-w-4 text-neutral-charcoal" />
         </Button>
         <Popover placement="bottom end">
           <Menu
             aria-label={t('Role')}
-            selectionMode="single"
-            selectedKeys={currentRoleId ? [currentRoleId] : []}
-            onSelectionChange={(keys) => {
-              const selected = [...keys][0] as string | undefined;
-              if (selected) {
-                handleRoleChange(selected);
-              }
-            }}
             onAction={(key) => {
-              if (key === 'remove') {
+              const keyStr = key as string;
+              if (keyStr === 'remove') {
                 setIsRemoveModalOpen(true);
+              } else {
+                handleRoleChange(keyStr);
               }
             }}
           >
-            {roles.map((role) => (
-              <MenuItem
-                key={role.id}
-                id={role.id}
-                className="group-selected:text-primary-teal [&>span:first-child]:group-selected:text-primary-teal"
-              >
-                {role.name}
-              </MenuItem>
-            ))}
-            <MenuSeparator />
+            {roles.map((role) => {
+              const isSelected = currentRoleId === role.id;
+              return (
+                <MenuItem key={role.id} id={role.id}>
+                  <span className="flex w-4 items-center">
+                    {isSelected && (
+                      <LuCheck className="size-4 text-primary-teal" />
+                    )}
+                  </span>
+                  <span className={isSelected ? 'text-primary-teal' : ''}>
+                    {role.name}
+                  </span>
+                </MenuItem>
+              );
+            })}
             <MenuItem id="remove" className="text-functional-red">
+              <span className="w-4" />
               {t('Remove from process')}
             </MenuItem>
           </Menu>
@@ -216,9 +215,7 @@ const ProfileUserRoleSelect = ({
         onOpenChange={setIsRemoveModalOpen}
       >
         <Modal isDismissable>
-          <ModalHeader>
-            {t('Remove {name}', { name: userName })}
-          </ModalHeader>
+          <ModalHeader>{t('Remove {name}', { name: userName })}</ModalHeader>
           <ModalBody>
             <p>
               {processName
@@ -226,9 +223,12 @@ const ProfileUserRoleSelect = ({
                     'Are you sure you want to remove {name} from "{processName}"?',
                     { name: userName, processName },
                   )
-                : t('Are you sure you want to remove {name} from this process?', {
-                    name: userName,
-                  })}
+                : t(
+                    'Are you sure you want to remove {name} from this process?',
+                    {
+                      name: userName,
+                    },
+                  )}
             </p>
           </ModalBody>
           <ModalFooter>
@@ -259,16 +259,21 @@ const InviteRoleSelect = ({
   currentRoleId,
   profileId,
   roles,
+  inviteeName,
+  processName,
   className = 'sm:w-32',
 }: {
   inviteId: string;
   currentRoleId: string;
   profileId: string;
   roles: { id: string; name: string }[];
+  inviteeName: string;
+  processName?: string;
   className?: string;
 }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
 
   const updateInvite = trpc.profile.updateProfileInvite.useMutation({
     onSuccess: () => {
@@ -282,6 +287,19 @@ const InviteRoleSelect = ({
     },
   });
 
+  const deleteInvite = trpc.profile.deleteProfileInvite.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Invite removed from process') });
+      void utils.profile.listProfileInvites.invalidate({ profileId });
+      setIsRemoveModalOpen(false);
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to remove invite'),
+      });
+    },
+  });
+
   const handleRoleChange = (roleId: string) => {
     if (roleId && roleId !== currentRoleId) {
       updateInvite.mutate({
@@ -291,21 +309,96 @@ const InviteRoleSelect = ({
     }
   };
 
+  const isPending = updateInvite.isPending || deleteInvite.isPending;
+  const currentRoleName =
+    roles.find((r) => r.id === currentRoleId)?.name ?? t('Role');
+
   return (
-    <Select
-      aria-label={t('Role')}
-      selectedKey={currentRoleId}
-      onSelectionChange={(key) => handleRoleChange(key as string)}
-      isDisabled={updateInvite.isPending}
-      size="small"
-      className={className}
-    >
-      {roles.map((role) => (
-        <SelectItem key={role.id} id={role.id}>
-          {role.name}
-        </SelectItem>
-      ))}
-    </Select>
+    <>
+      <MenuTrigger>
+        <Button
+          unstyled
+          className={`${className} flex h-8 min-w-0 flex-row items-center justify-between rounded-sm border p-2 px-3 text-base leading-3 text-neutral-black outline outline-0 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-neutral-gray4`}
+          isDisabled={isPending}
+        >
+          {currentRoleName}
+          <LuChevronDown className="ml-2 size-4 min-h-4 min-w-4 text-neutral-charcoal" />
+        </Button>
+        <Popover placement="bottom end">
+          <Menu
+            aria-label={t('Role')}
+            onAction={(key) => {
+              const keyStr = key as string;
+              if (keyStr === 'remove') {
+                setIsRemoveModalOpen(true);
+              } else {
+                handleRoleChange(keyStr);
+              }
+            }}
+          >
+            {roles.map((role) => {
+              const isSelected = currentRoleId === role.id;
+              return (
+                <MenuItem key={role.id} id={role.id}>
+                  <span className="flex w-4 items-center">
+                    {isSelected && (
+                      <LuCheck className="size-4 text-primary-teal" />
+                    )}
+                  </span>
+                  <span className={isSelected ? 'text-primary-teal' : ''}>
+                    {role.name}
+                  </span>
+                </MenuItem>
+              );
+            })}
+            <MenuItem id="remove" className="text-functional-red">
+              <span className="w-4" />
+              {t('Remove from process')}
+            </MenuItem>
+          </Menu>
+        </Popover>
+      </MenuTrigger>
+      <DialogTrigger
+        isOpen={isRemoveModalOpen}
+        onOpenChange={setIsRemoveModalOpen}
+      >
+        <Modal isDismissable>
+          <ModalHeader>{t('Remove {name}', { name: inviteeName })}</ModalHeader>
+          <ModalBody>
+            <p>
+              {processName
+                ? t(
+                    'Are you sure you want to remove {name} from "{processName}"?',
+                    { name: inviteeName, processName },
+                  )
+                : t(
+                    'Are you sure you want to remove {name} from this process?',
+                    {
+                      name: inviteeName,
+                    },
+                  )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="secondary"
+              className="w-full sm:w-fit"
+              onPress={() => setIsRemoveModalOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="destructive"
+              className="w-full sm:w-fit"
+              onPress={() => deleteInvite.mutate({ inviteId })}
+              isDisabled={deleteInvite.isPending}
+            >
+              {deleteInvite.isPending ? t('Removing...') : t('Remove')}
+            </Button>
+          </ModalFooter>
+        </Modal>
+      </DialogTrigger>
+    </>
   );
 };
 
@@ -313,10 +406,12 @@ const MobileProfileUserCard = ({
   profileUser,
   profileId,
   roles,
+  processName,
 }: {
   profileUser: ProfileUser;
   profileId: string;
   roles: { id: string; name: string }[];
+  processName?: string;
 }) => {
   const displayName =
     profileUser.profile?.name ||
@@ -357,6 +452,8 @@ const MobileProfileUserCard = ({
         currentRoleId={currentRole?.id}
         profileId={profileId}
         roles={roles}
+        userName={displayName}
+        processName={processName}
         className="w-full"
       />
     </div>
@@ -367,10 +464,12 @@ const MobileInviteCard = ({
   invite,
   profileId,
   roles,
+  processName,
 }: {
   invite: ProfileInvite;
   profileId: string;
   roles: { id: string; name: string }[];
+  processName?: string;
 }) => {
   const t = useTranslations();
   const displayName = invite.inviteeProfile?.name ?? invite.email;
@@ -394,6 +493,8 @@ const MobileInviteCard = ({
         currentRoleId={invite.accessRoleId}
         profileId={profileId}
         roles={roles}
+        inviteeName={displayName}
+        processName={processName}
         className="w-full"
       />
     </div>
@@ -406,12 +507,14 @@ const MobileProfileUsersContent = ({
   isLoading,
   roles,
   invites,
+  processName,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
   isLoading: boolean;
   roles: { id: string; name: string }[];
   invites: ProfileInvite[];
+  processName?: string;
 }) => {
   return (
     <div className="flex flex-col gap-4">
@@ -424,6 +527,7 @@ const MobileProfileUsersContent = ({
               invite={invite}
               profileId={profileId}
               roles={roles}
+              processName={processName}
             />
           ))}
           {profileUsers.map((profileUser) => (
@@ -432,6 +536,7 @@ const MobileProfileUsersContent = ({
               profileUser={profileUser}
               profileId={profileId}
               roles={roles}
+              processName={processName}
             />
           ))}
         </>
@@ -449,6 +554,7 @@ const ProfileUsersAccessTableContent = ({
   isLoading,
   roles,
   invites,
+  processName,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -457,6 +563,7 @@ const ProfileUsersAccessTableContent = ({
   isLoading: boolean;
   roles: { id: string; name: string }[];
   invites: ProfileInvite[];
+  processName?: string;
 }) => {
   const t = useTranslations();
 
@@ -514,6 +621,8 @@ const ProfileUsersAccessTableContent = ({
                     currentRoleId={invite.accessRoleId}
                     profileId={profileId}
                     roles={roles}
+                    inviteeName={displayName}
+                    processName={processName}
                   />
                 </TableCell>
               </TableRow>
@@ -563,6 +672,8 @@ const ProfileUsersAccessTableContent = ({
                     currentRoleId={currentRole?.id}
                     profileId={profileId}
                     roles={roles}
+                    userName={displayName}
+                    processName={processName}
                   />
                 </TableCell>
               </TableRow>
