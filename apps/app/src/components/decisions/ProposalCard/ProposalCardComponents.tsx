@@ -53,7 +53,7 @@ export function ProposalCard({
     <Surface
       variant={isDraft ? 'filled' : 'empty'}
       className={cn(
-        'relative flex w-full min-w-80 flex-col justify-between gap-4 p-4',
+        'relative flex w-full min-w-80 flex-col justify-between gap-3 p-4',
         className,
       )}
       {...props}
@@ -383,10 +383,7 @@ export function ProposalCardPreview({
 
   return (
     <p
-      className={cn(
-        'mb-4 line-clamp-3 text-base text-neutral-charcoal',
-        className,
-      )}
+      className={cn('line-clamp-3 text-base text-neutral-charcoal', className)}
     >
       {displayText}
     </p>
