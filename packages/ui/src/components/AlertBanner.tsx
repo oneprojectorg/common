@@ -34,7 +34,7 @@ export function AlertBanner({
       <span className="shrink-0 [&>svg]:size-4">
         {icon ?? <LuInfo className="size-4" />}
       </span>
-      <span className="truncate text-sm font-normal leading-[1.5]">
+      <span className="truncate text-sm leading-[1.5] font-normal">
         {children}
       </span>
     </div>
