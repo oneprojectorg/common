@@ -228,6 +228,8 @@
   "Change to Member": "সদস্যে পরিবর্তন করুন",
   "Change to Admin": "প্রশাসক করুন",
   "Remove from organization": "সংস্থা থেকে সরান",
+  "Remove from process": "প্রক্রিয়া থেকে সরান",
+  "User removed from process": "ব্যবহারকারী প্রক্রিয়া থেকে সরানো হয়েছে",
   "Member": "সদস্য",
   "User changed to Admin successfully": "ব্যবহারকারীকে সফলভাবে প্রশাসকে পরিবর্তন করা হয়েছে",
   "User changed to Member successfully": "ব্যবহারকারীকে সফলভাবে সদস্যে পরিবর্তন করা হয়েছে",

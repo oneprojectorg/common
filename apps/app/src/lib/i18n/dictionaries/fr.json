@@ -228,6 +228,8 @@
   "Change to Member": "Changer en Membre",
   "Change to Admin": "Changer en Administrateur",
   "Remove from organization": "Supprimer de l'organisation",
+  "Remove from process": "Retirer du processus",
+  "User removed from process": "Utilisateur retiré du processus",
   "Member": "Membre",
   "User changed to Admin successfully": "Utilisateur changé en Administrateur avec succès",
   "User changed to Member successfully": "Utilisateur changé en Membre avec succès",

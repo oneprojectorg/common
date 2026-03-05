@@ -228,6 +228,8 @@
   "Change to Member": "Change to Member",
   "Change to Admin": "Change to Admin",
   "Remove from organization": "Remove from organization",
+  "Remove from process": "Remove from process",
+  "User removed from process": "User removed from process",
   "Member": "Member",
   "User changed to Admin successfully": "User changed to Admin successfully",
   "User changed to Member successfully": "User changed to Member successfully",

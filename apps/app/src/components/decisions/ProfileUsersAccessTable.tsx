@@ -4,6 +4,8 @@ import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
+import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
+import { Popover } from '@op/ui/Popover';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -16,7 +18,7 @@ import {
   TableRow,
 } from '@op/ui/ui/table';
 import type { SortDescriptor } from 'react-aria-components';
-import { LuUsers } from 'react-icons/lu';
+import { LuCheck, LuChevronDown, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -126,6 +128,18 @@ const ProfileUserRoleSelect = ({
     },
   });
 
+  const removeUser = trpc.profile.removeUser.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('User removed from process') });
+      void utils.profile.listUsers.invalidate({ profileId });
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to remove user'),
+      });
+    },
+  });
+
   const handleRoleChange = (roleId: string) => {
     if (roleId && roleId !== currentRoleId) {
       updateRoles.mutate({
@@ -135,21 +149,51 @@ const ProfileUserRoleSelect = ({
     }
   };
 
+  const isPending = updateRoles.isPending || removeUser.isPending;
+  const currentRoleName =
+    roles.find((r) => r.id === currentRoleId)?.name ?? t('Role');
+
   return (
-    <Select
-      aria-label={t('Role')}
-      selectedKey={currentRoleId || ''}
-      onSelectionChange={(key) => handleRoleChange(key as string)}
-      isDisabled={updateRoles.isPending}
-      size="small"
-      className={className}
-    >
-      {roles.map((role) => (
-        <SelectItem key={role.id} id={role.id}>
-          {role.name}
-        </SelectItem>
-      ))}
-    </Select>
+    <MenuTrigger>
+      <Button
+        color="secondary"
+        size="small"
+        className={`${className} justify-between`}
+        isDisabled={isPending}
+      >
+        {currentRoleName}
+        <LuChevronDown className="size-4" />
+      </Button>
+      <Popover placement="bottom end">
+        <Menu
+          aria-label={t('Role')}
+          onAction={(key) => {
+            const keyStr = key as string;
+            if (keyStr === 'remove') {
+              removeUser.mutate({ profileUserId });
+            } else {
+              handleRoleChange(keyStr);
+            }
+          }}
+        >
+          {roles.map((role) => {
+            const isSelected = currentRoleId === role.id;
+            return (
+              <MenuItem key={role.id} id={role.id}>
+                {isSelected && <LuCheck className="size-4 text-primary-teal" />}
+                <span className={isSelected ? 'text-primary-teal' : ''}>
+                  {role.name}
+                </span>
+              </MenuItem>
+            );
+          })}
+          <MenuSeparator />
+          <MenuItem id="remove" className="text-functional-red">
+            {t('Remove from process')}
+          </MenuItem>
+        </Menu>
+      </Popover>
+    </MenuTrigger>
   );
 };
 
