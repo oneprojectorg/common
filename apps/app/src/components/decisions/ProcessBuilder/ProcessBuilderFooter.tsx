@@ -131,7 +131,7 @@ export const ProcessBuilderFooter = ({
 
   return (
     <>
-      <footer className="sticky bottom-0 z-20 flex h-14 shrink-0 items-center justify-between border-t bg-white/80 px-4 backdrop-blur md:px-8">
+      <footer className="sticky bottom-0 z-20 grid h-14 shrink-0 grid-cols-3 items-center border-t bg-white/80 px-4 backdrop-blur md:px-8">
         <div className="flex items-center gap-2">
           <Link
             href={`/decisions/${slug}`}
@@ -152,7 +152,25 @@ export const ProcessBuilderFooter = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-1">
+          <div className="h-1 w-full max-w-48 overflow-hidden rounded-full bg-neutral-gray2">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${validation.completionPercentage}%`,
+                backgroundImage:
+                  'linear-gradient(to right, #3EC300, #0396A6)',
+              }}
+            />
+          </div>
+          <span className="hidden text-xs text-neutral-gray4 md:block">
+            {t('{count}% complete', {
+              count: validation.completionPercentage,
+            })}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-end gap-2">
           {hasNext && (
             <button
               type="button"

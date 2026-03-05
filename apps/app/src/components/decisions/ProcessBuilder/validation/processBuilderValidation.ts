@@ -13,6 +13,7 @@ export interface ValidationSummary {
   sections: Record<SectionId, boolean>;
   stepsRemaining: number;
   isReadyToLaunch: boolean;
+  completionPercentage: number;
   checklist: { id: string; labelKey: TranslationKey; isValid: boolean }[];
 }
 
@@ -141,11 +142,18 @@ export function validateAll(
   }));
 
   const stepsRemaining = checklist.filter((item) => !item.isValid).length;
+  const completionPercentage =
+    checklist.length > 0
+      ? Math.round(
+          ((checklist.length - stepsRemaining) / checklist.length) * 100,
+        )
+      : 0;
 
   return {
     sections,
     stepsRemaining,
     isReadyToLaunch: stepsRemaining === 0,
+    completionPercentage,
     checklist,
   };
 }
