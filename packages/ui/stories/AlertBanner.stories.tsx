@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
-import { Note } from '../src/components/ui/note';
+import { AlertBanner } from '../src/components/ui/alert-banner';
 
-const meta: Meta<typeof Note> = {
-  title: 'Note',
-  component: Note,
+const meta: Meta<typeof AlertBanner> = {
+  title: 'AlertBanner',
+  component: AlertBanner,
   tags: ['autodocs'],
   args: {
     variant: 'banner',
@@ -27,7 +27,7 @@ const meta: Meta<typeof Note> = {
 
 export default meta;
 
-type Story = StoryObj<typeof Note>;
+type Story = StoryObj<typeof AlertBanner>;
 
 export const Warning: Story = {
   args: {
@@ -62,21 +62,21 @@ export const LongText: Story = {
   args: {
     intent: 'warning',
     children:
-      'This is a very long message that should be truncated with an ellipsis when it overflows the container width. It keeps going and going to demonstrate the text-overflow behavior of the Note component.',
+      'This is a very long message that should be truncated with an ellipsis when it overflows the container width. It keeps going and going to demonstrate the text-overflow behavior of the AlertBanner component.',
   },
 };
 
 export const BannerVariants = () => (
   <div className="flex w-96 flex-col gap-4">
-    <Note variant="banner" intent="warning">
+    <AlertBanner variant="banner" intent="warning">
       Warning: This action requires your attention.
-    </Note>
-    <Note variant="banner" intent="danger">
+    </AlertBanner>
+    <AlertBanner variant="banner" intent="danger">
       Alert: There was a critical error processing your request.
-    </Note>
-    <Note variant="banner" intent="default">
+    </AlertBanner>
+    <AlertBanner variant="banner" intent="default">
       Info: Your session will expire in 5 minutes.
-    </Note>
+    </AlertBanner>
   </div>
 );
 
@@ -84,6 +84,6 @@ export const DefaultVariant: Story = {
   args: {
     variant: 'default',
     intent: 'warning',
-    children: 'This uses the default Note styling with indicator.',
+    children: 'This uses the default AlertBanner styling with indicator.',
   },
 };

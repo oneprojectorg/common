@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants';
 
 import { cn } from '../../lib/utils';
 
-const noteStyles = tv({
+const alertBannerStyles = tv({
   slots: {
     root: 'w-full overflow-hidden rounded-lg border p-4 *:[a]:hover:underline **:[strong]:font-medium',
     indicatorOuter:
@@ -89,7 +89,8 @@ const iconMap: Record<
   default: null,
 };
 
-export interface NoteProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
+export interface AlertBannerProps
+  extends React.HtmlHTMLAttributes<HTMLDivElement> {
   intent?: 'default' | 'info' | 'warning' | 'danger' | 'success';
   variant?: 'default' | 'banner';
   indicator?: boolean;
@@ -97,7 +98,7 @@ export interface NoteProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   contentClassName?: string;
 }
 
-export function Note({
+export function AlertBanner({
   indicator = true,
   intent = 'default',
   variant = 'default',
@@ -105,8 +106,8 @@ export function Note({
   className,
   contentClassName,
   ...props
-}: NoteProps) {
-  const styles = noteStyles({ intent, variant });
+}: AlertBannerProps) {
+  const styles = alertBannerStyles({ intent, variant });
   const IconComponent = iconMap[intent] || null;
 
   return (
