@@ -51,6 +51,31 @@ export async function createDecisionRole({
 }) {
   const client = tx ?? db;
 
+  // Scoped roles on a decision process always get profile READ
+  if (permissions['profile']) {
+    const existing = permissions['profile'];
+    if (existing.type === 'acrud') {
+      permissions = {
+        ...permissions,
+        profile: { type: 'acrud', value: { ...existing.value, read: true } },
+      };
+    }
+  } else {
+    permissions = {
+      ...permissions,
+      profile: {
+        type: 'acrud',
+        value: {
+          admin: false,
+          create: false,
+          read: true,
+          update: false,
+          delete: false,
+        },
+      },
+    };
+  }
+
   const zoneNames = Object.keys(permissions);
   const zones = await Promise.all(
     zoneNames.map((zoneName) =>
