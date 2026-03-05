@@ -118,7 +118,7 @@ export const Button = (props: ButtonProps) => {
   const { children, ...buttonRest } = rest;
 
   return (
-    <RACButton {...buttonRest} isDisabled className={className}>
+    <RACButton {...buttonRest} isPending className={className}>
       {(renderProps) => (
         <>
           <span className="invisible flex items-center gap-1">
@@ -161,7 +161,11 @@ export const ButtonLink = (props: ButtonLinkProps) => {
   const { children, ...linkRest } = rest;
 
   return (
-    <RACLink {...linkRest} isDisabled className={className}>
+    <RACLink
+      {...linkRest}
+      aria-disabled="true"
+      className={cn(className, 'pointer-events-none')}
+    >
       {(renderProps) => (
         <>
           <span className="invisible flex items-center gap-1">
