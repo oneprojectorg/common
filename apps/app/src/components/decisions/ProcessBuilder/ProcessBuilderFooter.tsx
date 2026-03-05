@@ -129,9 +129,9 @@ export const ProcessBuilderFooter = ({
 
   return (
     <>
-      <footer className="sticky bottom-0 z-20 shrink-0 border-t bg-white/80 backdrop-blur">
-        {/* Mobile: full-width progress bar at top of footer */}
-        <div className="h-1 overflow-hidden bg-neutral-gray2 md:hidden">
+      <footer className="sticky bottom-0 z-20 h-14 shrink-0 border-t bg-white/80 backdrop-blur">
+        {/* Mobile: full-width progress bar overlaying top edge */}
+        <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-neutral-gray2 md:hidden">
           <div
             className="h-full transition-all duration-300"
             style={{
@@ -141,7 +141,7 @@ export const ProcessBuilderFooter = ({
           />
         </div>
 
-        <div className="flex h-14 items-center justify-between px-4 md:grid md:grid-cols-3 md:px-8">
+        <div className="flex h-full items-center justify-between px-4 md:grid md:grid-cols-3 md:px-8">
           {/* Left: Exit + Back (Back desktop only) */}
           <div className="flex items-center gap-2">
             <Link
