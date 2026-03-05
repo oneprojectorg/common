@@ -21,6 +21,8 @@ import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';
 
+import { Note } from '@op/ui/Note';
+
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -72,20 +74,18 @@ export const ProfileUsersAccessTable = ({
     );
   }
 
-  if (isMobile) {
-    return (
-      <MobileProfileUsersContent
-        profileUsers={profileUsers}
-        profileId={profileId}
-        isLoading={isLoading}
-        roles={roles}
-        invites={invites}
-        processName={processName}
-      />
-    );
-  }
+  const hasPendingLaunchInvites = invites.some((invite) => !invite.notified);
 
-  return (
+  const content = isMobile ? (
+    <MobileProfileUsersContent
+      profileUsers={profileUsers}
+      profileId={profileId}
+      isLoading={isLoading}
+      roles={roles}
+      invites={invites}
+      processName={processName}
+    />
+  ) : (
     <ProfileUsersAccessTableContent
       profileUsers={profileUsers}
       profileId={profileId}
@@ -96,6 +96,19 @@ export const ProfileUsersAccessTable = ({
       invites={invites}
       processName={processName}
     />
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {hasPendingLaunchInvites && (
+        <Note variant="banner" intent="warning">
+          {t(
+            'This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.',
+          )}
+        </Note>
+      )}
+      {content}
+    </div>
   );
 };
 
@@ -438,7 +451,7 @@ const MobileInviteCard = ({
               <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
               {!invite.notified && (
                 <span className="text-sm text-neutral-gray4">
-                  {t('Pending notification')}
+                  {t('Pending launch')}
                 </span>
               )}
             </div>
@@ -570,7 +583,7 @@ const ProfileUsersAccessTableContent = ({
                         </span>
                         {!invite.notified && (
                           <span className="text-sm text-neutral-gray4">
-                            {t('Pending notification')}
+                            {t('Pending launch')}
                           </span>
                         )}
                       </div>
