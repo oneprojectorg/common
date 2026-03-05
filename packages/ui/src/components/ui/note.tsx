@@ -1,5 +1,6 @@
 import { LuCircleAlert, LuCircleCheck, LuInfo } from 'react-icons/lu';
-import { twJoin, twMerge } from 'tailwind-merge';
+
+import { cn } from '../../lib/utils';
 
 export interface NoteProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   intent?: 'default' | 'info' | 'warning' | 'danger' | 'success';
@@ -28,7 +29,7 @@ export function Note({
   return (
     <div
       data-slot="note"
-      className={twMerge([
+      className={cn([
         'grid w-full grid-cols-[auto_1fr] overflow-hidden rounded-lg border border-current/15 p-4 text-base/6 backdrop-blur-2xl sm:text-sm/6',
         '*:[a]:hover:underline **:[strong]:font-medium',
         intent === 'default' && 'bg-muted/50 text-secondary-fg',
@@ -46,7 +47,7 @@ export function Note({
     >
       {IconComponent && indicator && (
         <div
-          className={twJoin(
+          className={cn(
             'me-3 grid size-8 place-content-center rounded-full border-2',
             intent === 'warning' && 'border-warning-subtle-fg/40',
             intent === 'success' && 'border-success-subtle-fg/40',
@@ -55,7 +56,7 @@ export function Note({
           )}
         >
           <div
-            className={twJoin(
+            className={cn(
               'grid size-6 place-content-center rounded-full border-2',
               intent === 'warning' && 'border-warning-subtle-fg/85',
               intent === 'success' && 'border-success-subtle-fg/85',
