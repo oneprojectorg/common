@@ -229,6 +229,18 @@ export const updateDecisionInstance = async ({
     }
   });
 
+  // Fetch the profile with processInstance joined for the response
+  const profile = await db._query.profiles.findFirst({
+    where: eq(profiles.id, profileId),
+    with: {
+      processInstance: true,
+    },
+  });
+
+  if (!profile) {
+    throw new CommonError('Failed to fetch updated decision profile');
+  }
+
   // When publishing, send queued invite emails for this process instance's profile
   const isPublishing =
     status === ProcessStatus.PUBLISHED &&
@@ -248,17 +260,13 @@ export const updateDecisionInstance = async ({
 
     if (queuedInvites.length > 0) {
       const baseUrl = OPURLConfig('APP').ENV_URL;
-      const decisionProfile = await db.query.profiles.findFirst({
-        where: { id: profileId },
-      });
-      const decisionSlug = decisionProfile?.slug;
 
       const invitations = queuedInvites.map((invite) => ({
         email: invite.email,
         inviterName: invite.inviter.name || 'A team member',
         profileName: invite.profile.name,
-        inviteUrl: decisionSlug
-          ? `${baseUrl}/decisions/${decisionSlug}`
+        inviteUrl: profile.slug
+          ? `${baseUrl}/decisions/${profile.slug}`
           : baseUrl,
         personalMessage: invite.message ?? undefined,
       }));
@@ -276,18 +284,6 @@ export const updateDecisionInstance = async ({
       });
       // notified=true is set by the Inngest workflow after successful email delivery
     }
-  }
-
-  // Fetch the profile with processInstance joined for the response
-  const profile = await db._query.profiles.findFirst({
-    where: eq(profiles.id, profileId),
-    with: {
-      processInstance: true,
-    },
-  });
-
-  if (!profile) {
-    throw new CommonError('Failed to fetch updated decision profile');
   }
 
   return profile;

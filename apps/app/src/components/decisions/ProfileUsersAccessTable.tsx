@@ -6,6 +6,7 @@ import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Note } from '@op/ui/Note';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -20,8 +21,6 @@ import {
 import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';
-
-import { Note } from '@op/ui/Note';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -108,6 +107,20 @@ export const ProfileUsersAccessTable = ({
         </Note>
       )}
       {content}
+    </div>
+  );
+};
+
+const InviteStatusLabel = ({ notified }: { notified: boolean }) => {
+  const t = useTranslations();
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
+      {!notified && (
+        <span className="text-sm text-neutral-gray4">
+          {t('Pending launch')}
+        </span>
+      )}
     </div>
   );
 };
@@ -437,7 +450,6 @@ const MobileInviteCard = ({
   roles: { id: string; name: string }[];
   processName?: string;
 }) => {
-  const t = useTranslations();
   const displayName = invite.inviteeProfile?.name ?? invite.email;
 
   return (
@@ -447,14 +459,7 @@ const MobileInviteCard = ({
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
             <span className="text-base text-neutral-black">{displayName}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
-              {!invite.notified && (
-                <span className="text-sm text-neutral-gray4">
-                  {t('Pending launch')}
-                </span>
-              )}
-            </div>
+            <InviteStatusLabel notified={invite.notified} />
           </div>
           <span className="truncate text-base text-neutral-black">
             {invite.email}
@@ -577,16 +582,7 @@ const ProfileUsersAccessTableContent = ({
                       <span className="text-base text-neutral-black">
                         {displayName}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-neutral-gray4">
-                          {t('Invited')}
-                        </span>
-                        {!invite.notified && (
-                          <span className="text-sm text-neutral-gray4">
-                            {t('Pending launch')}
-                          </span>
-                        )}
-                      </div>
+                      <InviteStatusLabel notified={invite.notified} />
                     </div>
                   </div>
                 </TableCell>

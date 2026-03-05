@@ -142,18 +142,24 @@ export const inviteUsersToProfile = async ({
     );
   }
 
-  // Identify roles that include decisions: ADMIN — these bypass draft queueing
-  const adminRoleIds = new Set(
-    targetRoles
-      .filter((role) =>
-        role.zonePermissions.some(
-          (zp) =>
-            zp.accessZone.name === 'decisions' &&
-            (zp.permission & permission.ADMIN) !== 0,
-        ),
-      )
-      .map((role) => role.id),
-  );
+  // adminRoleIds is computed lazily — only needed when the process is in draft
+  let _adminRoleIds: Set<string> | undefined;
+  const getAdminRoleIds = () => {
+    if (!_adminRoleIds) {
+      _adminRoleIds = new Set(
+        targetRoles
+          .filter((role) =>
+            role.zonePermissions.some(
+              (zp) =>
+                zp.accessZone.name === 'decisions' &&
+                (zp.permission & permission.ADMIN) !== 0,
+            ),
+          )
+          .map((role) => role.id),
+      );
+    }
+    return _adminRoleIds;
+  };
 
   const results = {
     successful: [] as string[],
@@ -293,7 +299,7 @@ export const inviteUsersToProfile = async ({
   if (profileInviteEntries.length > 0) {
     const inviteEntries = profileInviteEntries.map((entry) => ({
       ...entry,
-      notified: !isDraft || adminRoleIds.has(entry.accessRoleId),
+      notified: !isDraft || getAdminRoleIds().has(entry.accessRoleId),
     }));
 
     await db.transaction(async (tx) => {
@@ -306,17 +312,24 @@ export const inviteUsersToProfile = async ({
         .returning({ id: profileInvites.id });
 
       // Send email events only for invites marked as notified
-      const notifiedIndices = inviteEntries
-        .map((entry, idx) => (entry.notified ? idx : -1))
-        .filter((idx) => idx !== -1);
+      const notifiedInvites = inviteEntries.flatMap((entry, idx) =>
+        entry.notified
+          ? [
+              {
+                inviteId: insertedInvites[idx]!.id,
+                email: emailsToInvite[idx]!,
+              },
+            ]
+          : [],
+      );
 
-      if (notifiedIndices.length > 0) {
+      if (notifiedInvites.length > 0) {
         await event.send({
           name: Events.profileInviteSent.name,
           data: {
             senderProfileId: requesterProfileId,
-            inviteIds: notifiedIndices.map((idx) => insertedInvites[idx]!.id),
-            invitations: notifiedIndices.map((idx) => emailsToInvite[idx]!),
+            inviteIds: notifiedInvites.map((n) => n.inviteId),
+            invitations: notifiedInvites.map((n) => n.email),
           },
         });
       }
