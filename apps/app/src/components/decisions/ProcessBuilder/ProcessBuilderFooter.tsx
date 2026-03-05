@@ -129,77 +129,103 @@ export const ProcessBuilderFooter = ({
 
   return (
     <>
-      <footer className="sticky bottom-0 z-20 grid h-14 shrink-0 grid-cols-3 items-center border-t bg-white/80 px-4 backdrop-blur md:px-8">
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/decisions/${slug}`}
-            className="inline-flex h-10 items-center gap-1 px-2 text-sm text-charcoal transition-colors hover:bg-neutral-gray1"
-          >
-            <LuLogOut className="size-4 rotate-180" />
-            {t('Exit')}
-          </Link>
-          {hasPrev && (
-            <button
-              type="button"
-              onClick={goBack}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
-            >
-              {t('Back')}
-            </button>
-          )}
+      <footer className="sticky bottom-0 z-20 shrink-0 border-t bg-white/80 backdrop-blur">
+        {/* Mobile: full-width progress bar at top of footer */}
+        <div className="h-1 overflow-hidden bg-neutral-gray2 md:hidden">
+          <div
+            className="h-full transition-all duration-300"
+            style={{
+              width: `${validation.completionPercentage}%`,
+              backgroundImage: 'linear-gradient(to right, #3EC300, #0396A6)',
+            }}
+          />
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2">
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{
-                width: `${validation.completionPercentage}%`,
-                backgroundImage: 'linear-gradient(to right, #3EC300, #0396A6)',
-              }}
-            />
-          </div>
-          <span className="hidden shrink-0 text-sm text-charcoal md:block">
-            {t('{count}% complete', {
-              count: validation.completionPercentage,
-            })}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-end gap-2">
-          {hasNext && (
-            <button
-              type="button"
-              onClick={goNext}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
+        <div className="flex h-14 items-center justify-between px-4 md:grid md:grid-cols-3 md:px-8">
+          {/* Left: Exit + Back (Back desktop only) */}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/decisions/${slug}`}
+              className="inline-flex h-10 items-center gap-1 px-2 text-sm text-charcoal transition-colors hover:bg-neutral-gray1"
             >
-              {t('Next')}
-            </button>
-          )}
-          {validation.stepsRemaining > 0 && (
-            <StepsRemainingPopover validation={validation} />
-          )}
-          <Button
-            className="h-8 rounded-md"
-            onPress={handleLaunchOrSave}
-            isDisabled={
-              updateInstance.isPending ||
-              !validation.isReadyToLaunch ||
-              isTerminalStatus
-            }
-          >
-            {isDraft ? (
-              <LuPlus className="size-4" />
-            ) : (
-              <LuSave className="size-4" />
+              <LuLogOut className="size-4 rotate-180" />
+              {t('Exit')}
+            </Link>
+            {hasPrev && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="hidden h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1 md:inline-flex"
+              >
+                {t('Back')}
+              </button>
             )}
-            <span className="md:hidden">
-              {isDraft ? t('Launch') : t('Update')}
+          </div>
+
+          {/* Center: Desktop progress bar + text */}
+          <div className="hidden md:flex md:items-center md:gap-4">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${validation.completionPercentage}%`,
+                  backgroundImage:
+                    'linear-gradient(to right, #3EC300, #0396A6)',
+                }}
+              />
+            </div>
+            <span className="shrink-0 text-sm text-charcoal">
+              {t('{count}% complete', {
+                count: validation.completionPercentage,
+              })}
             </span>
-            <span className="hidden md:inline">
-              {isDraft ? t('Launch Process') : t('Update Process')}
-            </span>
-          </Button>
+          </div>
+
+          {/* Right: Back (mobile only) + Next + Launch */}
+          <div className="flex items-center justify-end gap-2">
+            {hasPrev && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1 md:hidden"
+              >
+                {t('Back')}
+              </button>
+            )}
+            {hasNext && (
+              <button
+                type="button"
+                onClick={goNext}
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
+              >
+                {t('Next')}
+              </button>
+            )}
+            {validation.stepsRemaining > 0 && (
+              <StepsRemainingPopover validation={validation} />
+            )}
+            <Button
+              className="h-8 rounded-md"
+              onPress={handleLaunchOrSave}
+              isDisabled={
+                updateInstance.isPending ||
+                !validation.isReadyToLaunch ||
+                isTerminalStatus
+              }
+            >
+              {isDraft ? (
+                <LuPlus className="size-4" />
+              ) : (
+                <LuSave className="size-4" />
+              )}
+              <span className="md:hidden">
+                {isDraft ? t('Launch') : t('Update')}
+              </span>
+              <span className="hidden md:inline">
+                {isDraft ? t('Launch Process') : t('Update Process')}
+              </span>
+            </Button>
+          </div>
         </div>
       </footer>
 
