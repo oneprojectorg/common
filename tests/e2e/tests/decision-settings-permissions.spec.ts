@@ -1,6 +1,6 @@
 import {
   createDecisionInstance,
-  createUser,
+  createOrganization,
   getSeededTemplate,
   grantDecisionProfileAccess,
 } from '@op/test';
@@ -30,17 +30,18 @@ test.describe('Decision Settings Permissions', () => {
       schema: template.processSchema,
     });
 
-    // 3. Create a non-admin (member) user and grant them access
-    const memberEmail = `settings-perm-member-${Date.now()}@oneproject.org`;
-    const member = await createUser({
+    // 3. Create a member user with org membership, then grant decision profile access
+    const memberOrg = await createOrganization({
+      testId: `settings-perm-${Date.now()}`,
       supabaseAdmin,
-      email: memberEmail,
+      users: { admin: 1, member: 0 },
     });
+    const memberUser = memberOrg.adminUser;
 
     await grantDecisionProfileAccess({
       profileId: instance.profileId,
-      authUserId: member.id,
-      email: member.email,
+      authUserId: memberUser.authUserId,
+      email: memberUser.email,
       isAdmin: false,
     });
 
@@ -48,7 +49,7 @@ test.describe('Decision Settings Permissions', () => {
     const memberContext = await browser.newContext();
     const memberPage = await memberContext.newPage();
     await authenticateAsUser(memberPage, {
-      email: member.email,
+      email: memberUser.email,
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
