@@ -14,6 +14,7 @@ import { Link, useTranslations, type TranslationKey } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
+import { isPhaseSection, phaseToSectionId } from './navigationConfig';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
@@ -131,8 +132,6 @@ const MobileSidebar = ({
   const t = useTranslations();
   const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
   const navigationConfig = useNavigationConfig(instanceId);
-  const { visibleSections, currentSection, setSection } =
-    useProcessNavigation(navigationConfig);
   const { setOpen } = useSidebar();
 
   const storePhases = useProcessBuilderStore((s) =>
@@ -148,21 +147,24 @@ const MobileSidebar = ({
     // Prefer Zustand store phases (updated immediately on edit) over API data
     if (storePhases?.length) {
       return storePhases
-        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
         .filter((p) => p.name);
     }
     const instancePhases = instance?.instanceData?.phases;
     if (instancePhases?.length) {
       return instancePhases
-        .map((p) => ({ id: p.phaseId, name: p.name ?? '' }))
+        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
         .filter((p) => p.name);
     }
     const templatePhases = instance?.process?.processSchema?.phases;
     if (templatePhases?.length) {
-      return templatePhases.map((p) => ({ id: p.id, name: p.name }));
+      return templatePhases.map((p) => ({ phaseId: p.id, name: p.name }));
     }
     return [];
   }, [storePhases, instance]);
+
+  const { visibleSections, currentSection, setSection } =
+    useProcessNavigation(navigationConfig, phases);
 
   const handleSectionClick = (sectionId: string) => {
     setSection(sectionId);
@@ -202,18 +204,29 @@ const MobileSidebar = ({
                 </button>
                 {section.id === 'phases' && phases.length > 0 && (
                   <ul className="mt-0.5 flex flex-col gap-0.5">
-                    {phases.map((phase) => (
-                      <li key={phase.id}>
-                        <button
-                          type="button"
-                          onClick={() => handleSectionClick('phases')}
-                          className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-left text-xs text-charcoal transition-colors hover:bg-neutral-gray1"
-                        >
-                          <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
-                          <span className="truncate">{phase.name}</span>
-                        </button>
-                      </li>
-                    ))}
+                    {phases.map((phase) => {
+                      const phaseSectionId = phaseToSectionId(phase.phaseId);
+                      const isPhaseActive =
+                        currentSection?.id !== undefined &&
+                        isPhaseSection(currentSection.id) &&
+                        currentSection.id === phaseSectionId;
+                      return (
+                        <li key={phase.phaseId}>
+                          <button
+                            type="button"
+                            onClick={() => handleSectionClick(phaseSectionId)}
+                            className={`flex w-full cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-left text-sm transition-colors ${
+                              isPhaseActive
+                                ? 'bg-primary-tealWhite text-primary'
+                                : 'text-neutral-black hover:bg-neutral-gray1'
+                            }`}
+                          >
+                            <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
+                            <span className="truncate">{phase.name}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </li>
