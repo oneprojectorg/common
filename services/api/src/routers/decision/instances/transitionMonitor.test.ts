@@ -550,4 +550,49 @@ describe('processDecisionsTransitions', () => {
     });
     expect(goodInstance!.currentStateId).toBe('results');
   });
+
+  it('should handle concurrent workers without double-processing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const { instanceId } = await createPublishedInstanceWithDueTransitions(
+      testData,
+      task.id,
+    );
+
+    // Run two monitor invocations concurrently (simulates two Inngest workers)
+    const [result1, result2] = await Promise.all([
+      processDecisionsTransitions(),
+      processDecisionsTransitions(),
+    ]);
+
+    // Between the two runs, exactly 3 transitions should have been processed total
+    const totalProcessed = result1.processed + result2.processed;
+    expect(totalProcessed).toBeGreaterThanOrEqual(3);
+
+    // Neither run should have failures
+    expect(result1.failed).toBe(0);
+    expect(result2.failed).toBe(0);
+
+    // Instance should be at the final state
+    const instance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instanceId),
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+    expect(instanceData.currentPhaseId).toBe('results');
+    expect(instance!.currentStateId).toBe('results');
+
+    // Each transition should have completedAt set exactly once
+    const completedTransitions =
+      await db._query.decisionProcessTransitions.findMany({
+        where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+      });
+
+    expect(completedTransitions).toHaveLength(3);
+    for (const transition of completedTransitions) {
+      expect(transition.completedAt).not.toBeNull();
+    }
+  });
 });
