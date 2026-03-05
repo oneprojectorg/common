@@ -79,33 +79,33 @@ export const ProcessBuilderSidebar = ({
                 >
                   {t(section.labelKey as TranslationKey)}
                 </button>
-              {section.id === 'phases' && phases.length > 0 && (
-                <ul className="mt-0.5 flex flex-col gap-0.5">
-                  {phases.map((phase) => {
-                    const phaseSectionId = phaseToSectionId(phase.phaseId);
-                    const isPhaseActive =
-                      currentSection?.id !== undefined &&
-                      isPhaseSection(currentSection.id) &&
-                      currentSection.id === phaseSectionId;
-                    return (
-                      <li key={phase.phaseId}>
-                        <button
-                          type="button"
-                          onClick={() => setSection(phaseSectionId)}
-                          className={`flex w-full cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-left text-sm transition-colors ${
-                            isPhaseActive
-                              ? 'bg-primary-tealWhite text-primary'
-                              : 'text-neutral-black hover:bg-neutral-gray1'
-                          }`}
-                        >
-                          <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
-                          <span className="truncate">{phase.name}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                {section.id === 'phases' && phases.length > 0 && (
+                  <ul className="mt-0.5 flex flex-col gap-0.5">
+                    {phases.map((phase) => {
+                      const phaseSectionId = phaseToSectionId(phase.phaseId);
+                      const isPhaseActive =
+                        currentSection?.id !== undefined &&
+                        isPhaseSection(currentSection.id) &&
+                        currentSection.id === phaseSectionId;
+                      return (
+                        <li key={phase.phaseId}>
+                          <button
+                            type="button"
+                            onClick={() => setSection(phaseSectionId)}
+                            className={`flex w-full cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-left text-sm transition-colors ${
+                              isPhaseActive
+                                ? 'bg-primary-tealWhite text-primary'
+                                : 'text-neutral-black hover:bg-neutral-gray1'
+                            }`}
+                          >
+                            <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
+                            <span className="truncate">{phase.name}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </li>
             );
           })}

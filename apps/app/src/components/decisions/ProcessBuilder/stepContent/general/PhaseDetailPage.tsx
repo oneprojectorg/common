@@ -9,6 +9,7 @@ import { DatePicker } from '@op/ui/DatePicker';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
@@ -19,9 +20,8 @@ import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextE
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
-import { sectionIdToPhaseId } from '../../navigationConfig';
+import { isPhaseSection, sectionIdToPhaseId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
-import { useProcessNavigation } from '../../useProcessNavigation';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
@@ -29,8 +29,13 @@ export function PhaseDetailPage({
   instanceId,
   decisionProfileId,
 }: SectionProps) {
-  const { currentSection, setSection } = useProcessNavigation();
-  const phaseId = currentSection ? sectionIdToPhaseId(currentSection.id) : null;
+  const [sectionParam, setSectionParam] = useQueryState('section', {
+    history: 'push',
+  });
+  const phaseId =
+    sectionParam && isPhaseSection(sectionParam)
+      ? sectionIdToPhaseId(sectionParam)
+      : null;
 
   if (!phaseId) {
     return null;
@@ -42,7 +47,7 @@ export function PhaseDetailPage({
       instanceId={instanceId}
       decisionProfileId={decisionProfileId}
       phaseId={phaseId}
-      onDelete={() => setSection('phases')}
+      onDelete={() => setSectionParam('phases')}
     />
   );
 }

@@ -1,9 +1,8 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { useMemo } from 'react';
-
-import { useUser } from '@/utils/UserProvider';
 
 import { useTranslations } from '@/lib/i18n';
 
