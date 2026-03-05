@@ -10,7 +10,7 @@ import {
 import { useMemo } from 'react';
 import { LuChevronRight, LuCornerDownRight, LuHouse } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { Link, useTranslations, type TranslationKey } from '@/lib/i18n';
 
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
@@ -196,7 +196,9 @@ const MobileSidebar = ({
                       : 'text-charcoal hover:bg-neutral-gray1'
                   }`}
                 >
-                  {t(section.labelKey)}
+                  {section.isDynamic
+                    ? section.labelKey
+                    : t(section.labelKey as TranslationKey)}
                 </button>
                 {section.id === 'phases' && phases.length > 0 && (
                   <ul className="mt-0.5 flex flex-col gap-0.5">
