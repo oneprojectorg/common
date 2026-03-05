@@ -162,8 +162,7 @@ export function OverviewSectionForm({
 
   const form = useAppForm({
     defaultValues: {
-      stewardProfileId:
-        instanceData?.stewardProfileId || instance.steward?.id || '',
+      stewardProfileId: initialStewardProfileId,
       name: initialName,
       description: initialDescription,
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,

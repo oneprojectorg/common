@@ -30,7 +30,6 @@ export type CreateInstanceFromTemplateCoreOptions = {
   stewardProfileId?: string;
   creatorAuthUserId: string;
   creatorEmail: string;
-  stewardProfileId?: string;
   /** Defaults to DRAFT */
   status?: ProcessStatus;
 };
@@ -49,7 +48,6 @@ export const createInstanceFromTemplateCore = async ({
   stewardProfileId = ownerProfileId,
   creatorAuthUserId,
   creatorEmail,
-  stewardProfileId,
   status = ProcessStatus.DRAFT,
 }: CreateInstanceFromTemplateCoreOptions) => {
   const template = await getTemplate(templateId);
