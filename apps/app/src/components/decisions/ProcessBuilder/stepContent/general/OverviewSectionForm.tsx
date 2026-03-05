@@ -20,9 +20,7 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 const createOverviewValidator = (t: TranslateFn) =>
   z.object({
-    stewardProfileId: z
-      .string({ message: t('Select a steward for this process') })
-      .min(1, { message: t('Select a steward for this process') }),
+    stewardProfileId: z.string(),
     name: z
       .string({ message: t('Enter a process name') })
       .min(1, { message: t('Enter a process name') }),
@@ -164,7 +162,8 @@ export function OverviewSectionForm({
 
   const form = useAppForm({
     defaultValues: {
-      stewardProfileId: initialStewardProfileId,
+      stewardProfileId:
+        instanceData?.stewardProfileId || instance.steward?.id || '',
       name: initialName,
       description: initialDescription,
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
@@ -219,7 +218,6 @@ export function OverviewSectionForm({
               children={(field) => (
                 <field.Select
                   label={t('Who is stewarding this process?')}
-                  isRequired
                   placeholder={t('Select')}
                   selectedKey={field.state.value || null}
                   onSelectionChange={(key) => field.handleChange(key as string)}
