@@ -921,5 +921,9 @@
   "Configured": "Configuré",
   "Next": "Suivant",
   "Back": "Retour",
-  "{count}% complete": "{count}% terminé"
+  "{count}% complete": "{count}% terminé",
+  "Review your process": "Révisez votre processus",
+  "is ready to go live. Launching your process will invite and notify participants.": "est prêt à être lancé. Le lancement de votre processus invitera et notifiera les participants.",
+  "You can always edit and invite participants after launching.": "Vous pouvez toujours modifier et inviter des participants après le lancement.",
+  "Participants Invited": "Participants Invités"
 }
