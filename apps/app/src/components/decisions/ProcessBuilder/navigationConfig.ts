@@ -110,3 +110,14 @@ export function sectionIdToPhaseId(sectionId: string): string | null {
 export function isPhaseSection(sectionId: string): boolean {
   return sectionId.startsWith('phase-');
 }
+
+const SECTION_ID_SET = new Set<string>(
+  Object.values(SECTIONS_BY_STEP).flatMap((sections) =>
+    sections.map((s) => s.id),
+  ),
+);
+
+// Type guard to narrow an arbitrary string to SectionId
+export function isSectionId(id: string): id is SectionId {
+  return SECTION_ID_SET.has(id);
+}

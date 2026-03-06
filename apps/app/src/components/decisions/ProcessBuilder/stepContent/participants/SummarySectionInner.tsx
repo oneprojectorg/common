@@ -72,8 +72,8 @@ export function SummarySectionInner({
     const incompleteItems = checklist.filter((item) => !item.isValid);
 
     return (
-      <div className="mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8">
-        <div>
+      <div className="mx-auto w-full space-y-6 p-4 md:max-w-160 md:p-8">
+        <div className="flex flex-col gap-2">
           <p className="text-xs text-neutral-gray4">{t('Summary')}</p>
           <h2 className="font-serif text-title-sm">
             {t('Your process still needs more information')}
@@ -83,15 +83,19 @@ export function SummarySectionInner({
           <span className="font-bold">{processName}</span>{' '}
           {t('is missing information in order to go live.')}
         </p>
-        <div className="rounded-lg border">
+        <div className="flex flex-col gap-2 rounded-lg border p-4">
           {incompleteItems.map((item, index) => (
             <div
               key={item.id}
-              className={`flex items-center justify-between px-4 py-3 ${
-                index < incompleteItems.length - 1 ? 'border-b' : ''
+              className={`flex items-center justify-between${
+                index < incompleteItems.length - 1
+                  ? 'border-b border-neutral-gray1 pb-2'
+                  : ''
               }`}
             >
-              <span className="text-neutral-charcoal">{t(item.labelKey)}</span>
+              <span className="text-sm text-neutral-black">
+                {t(item.labelKey)}
+              </span>
               <Button
                 color="secondary"
                 className="shrink-0"
@@ -112,40 +116,34 @@ export function SummarySectionInner({
   }
 
   return (
-    <div className="mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8">
-      <div>
+    <div className="mx-auto w-full space-y-6 p-4 md:max-w-160 md:p-8">
+      <div className="flex flex-col gap-2">
         <p className="text-xs text-neutral-gray4">{t('Summary')} 🚀</p>
         <h2 className="font-serif text-title-sm">{t('Review your process')}</h2>
       </div>
-      <div className="space-y-2">
-        <p>
-          <span className="font-bold">{processName}</span>{' '}
-          {t(
-            'is ready to go live. Launching your process will invite and notify participants.',
-          )}
-        </p>
-        <p>
-          {t('You can always edit and invite participants after launching.')}
-        </p>
-      </div>
-      <div className="rounded-lg border">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <span className="text-neutral-gray4">{t('Phases')}</span>
-          <span className="text-right text-neutral-charcoal">
-            {phasesCount}
-          </span>
+      <p>
+        <span className="font-bold">{processName}</span>{' '}
+        {t(
+          'is ready to go live. Launching your process will invite and notify participants.',
+        )}
+      </p>
+      <p>{t('You can always edit and invite participants after launching.')}</p>
+      <div className="flex flex-col gap-2 rounded-lg border p-4">
+        <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
+          <span className="text-sm text-neutral-gray4">{t('Phases')}</span>
+          <span className="text-sm text-neutral-charcoal">{phasesCount}</span>
         </div>
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <span className="text-neutral-gray4">{t('Categories')}</span>
-          <span className="text-right text-neutral-charcoal">
+        <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
+          <span className="text-sm text-neutral-gray4">{t('Categories')}</span>
+          <span className="text-sm text-neutral-charcoal">
             {categories.length}
           </span>
         </div>
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-neutral-gray4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-neutral-gray4">
             {t('Participants Invited')}
           </span>
-          <span className="text-right text-neutral-charcoal">
+          <span className="text-sm text-neutral-charcoal">
             {participantsCount}
           </span>
         </div>
