@@ -156,7 +156,7 @@ export function OverviewSectionForm({
         name: values.name,
         description: values.description,
         stewardProfileId: isProcessOwner
-          ? (values.stewardProfileId || undefined)
+          ? values.stewardProfileId || undefined
           : undefined,
         config: {
           organizeByCategories: values.organizeByCategories,

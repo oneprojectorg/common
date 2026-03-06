@@ -156,7 +156,7 @@ const ProcessBuilderHeaderContent = ({
         name: storeData?.name || undefined,
         description: storeData?.description || undefined,
         stewardProfileId: isProcessOwner
-          ? (storeData?.stewardProfileId || undefined)
+          ? storeData?.stewardProfileId || undefined
           : undefined,
         phases: storeData?.phases,
         proposalTemplate: storeData?.proposalTemplate,
