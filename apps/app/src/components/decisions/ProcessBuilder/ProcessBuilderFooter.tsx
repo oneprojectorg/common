@@ -70,9 +70,12 @@ export const ProcessBuilderFooter = ({
     return [];
   }, [storePhases, instance]);
 
+  const excludedSectionIds = validation.isReadyToLaunch ? [] : ['summary'];
+
   const { goNext, goBack, hasNext, hasPrev } = useProcessNavigation(
     navigationConfig,
     phases,
+    excludedSectionIds,
   );
 
   const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
