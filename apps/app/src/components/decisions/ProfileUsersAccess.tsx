@@ -8,6 +8,7 @@ import { useCursorPagination, useDebounce, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
+import { Header2 } from '@op/ui/Header';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -103,9 +104,9 @@ export const ProfileUsersAccess = ({
   return (
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-4">
-        <h2 className="font-serif text-title-sm font-light text-neutral-black">
+        <Header2 className="font-serif text-title-sm">
           {t('Participants')}
-        </h2>
+        </Header2>
 
         {isDraft && (
           <AlertBanner variant="banner" intent="warning">

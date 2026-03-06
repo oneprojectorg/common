@@ -681,8 +681,8 @@
   "Failed to remove user": "Échec de la suppression de l'utilisateur",
   "No one has been invited yet": "Personne n'a encore été invité",
   "Invited": "Invité",
-  "Pending launch": "Lancement en attente",
-  "This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.": "Ce processus est encore en brouillon. Les participants ayant un accès en édition seront invités immédiatement. Les invitations des participants sans accès en édition seront envoyées au lancement du processus.",
+  "Pending launch": "En attente de lancement",
+  "This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.": "Ce processus est encore en brouillon. Les participants ayant un accès en édition seront invités immédiatement, les invitations des participants sans accès en édition seront envoyées lors du lancement du processus.",
   "Failed to cancel invite": "Échec de l'annulation de l'invitation",
   "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "Définissez les catégories que les propositions de ce processus doivent faire avancer. Les proposants sélectionneront les catégories que leur proposition soutient.",
   "No categories defined yet": "Aucune catégorie définie pour le moment",
@@ -917,9 +917,9 @@
   "Score labels cannot be empty": "Les libellés des notes ne peuvent pas être vides",
   "Delete criterion": "Supprimer le critère",
   "Are you sure you want to delete this criterion? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer ce critère ? Cette action est irréversible.",
-  "This process is still in draft. Participant invites will be sent when the process launches.": "This process is still in draft. Participant invites will be sent when the process launches.",
+  "This process is still in draft. Participant invites will be sent when the process launches.": "Ce processus est encore en brouillon. Les invitations aux participants seront envoyées lors du lancement du processus.",
   "{roleName} plural": "{roleName}s",
-  "Launch process?": "Launch process?",
-  "Launching your process will notify": "Launching your process will notify",
+  "Launch process?": "Lancer le processus ?",
+  "Launching your process will notify": "Le lancement de votre processus notifiera",
   "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 participant} other {# participants}}."
 }
