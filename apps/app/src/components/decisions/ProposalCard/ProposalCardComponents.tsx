@@ -16,10 +16,9 @@ import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { LuBookmark } from 'react-icons/lu';
+import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -409,11 +408,11 @@ export function ProposalCardMetrics({
       )}
     >
       <span className="flex items-center gap-1 truncate">
-        <Heart className="size-4" />
+        <LuHeart className="size-4" />
         {proposal.likesCount || 0} {t('Likes')}
       </span>
       <span className="flex items-center gap-1 truncate">
-        <MessageCircle className="size-4" />
+        <LuMessageCircle className="size-4" />
         {proposal.commentsCount || 0} {t('Comments')}
       </span>
       <span className="flex items-center gap-1 truncate">

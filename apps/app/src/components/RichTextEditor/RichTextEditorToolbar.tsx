@@ -3,29 +3,29 @@
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { cn } from '@op/ui/utils';
 import type { Editor } from '@tiptap/react';
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Image as ImageIcon,
-  Italic,
-  Link2,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-  Minus,
-  Quote,
-  Redo,
-  Strikethrough,
-  Underline as UnderlineIcon,
-  Undo,
-} from 'lucide-react';
 import { useCallback, useRef } from 'react';
+import {
+  LuAlignCenter,
+  LuAlignLeft,
+  LuAlignRight,
+  LuBold,
+  LuCode,
+  LuHeading1,
+  LuHeading2,
+  LuHeading3,
+  LuImage,
+  LuItalic,
+  LuLink,
+  LuLink2,
+  LuList,
+  LuListOrdered,
+  LuMinus,
+  LuQuote,
+  LuRedo,
+  LuStrikethrough,
+  LuUnderline,
+  LuUndo,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -125,7 +125,7 @@ export function RichTextEditorToolbar({
           className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Undo')}
         >
-          <Undo className="size-4" />
+          <LuUndo className="size-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().redo().run()}
@@ -133,7 +133,7 @@ export function RichTextEditorToolbar({
           className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Redo')}
         >
-          <Redo className="h-4 w-4" />
+          <LuRedo className="h-4 w-4" />
         </button>
 
         <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
@@ -149,7 +149,7 @@ export function RichTextEditorToolbar({
           )}
           title={t('Heading 1')}
         >
-          <Heading1 className="h-4 w-4" />
+          <LuHeading1 className="h-4 w-4" />
         </button>
         <button
           onClick={() =>
@@ -161,7 +161,7 @@ export function RichTextEditorToolbar({
           )}
           title={t('Heading 2')}
         >
-          <Heading2 className="h-4 w-4" />
+          <LuHeading2 className="h-4 w-4" />
         </button>
         <button
           onClick={() =>
@@ -173,7 +173,7 @@ export function RichTextEditorToolbar({
           )}
           title={t('Heading 3')}
         >
-          <Heading3 className="h-4 w-4" />
+          <LuHeading3 className="h-4 w-4" />
         </button>
 
         <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
@@ -185,7 +185,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('bold') ?? false)}
           title={t('Bold')}
         >
-          <Bold className="h-4 w-4" />
+          <LuBold className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleItalic().run()}
@@ -193,7 +193,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('italic') ?? false)}
           title={t('Italic')}
         >
-          <Italic className="h-4 w-4" />
+          <LuItalic className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleUnderline().run()}
@@ -201,7 +201,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('underline') ?? false)}
           title={t('Underline')}
         >
-          <UnderlineIcon className="h-4 w-4" />
+          <LuUnderline className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleStrike().run()}
@@ -209,7 +209,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('strike') ?? false)}
           title={t('Strikethrough')}
         >
-          <Strikethrough className="h-4 w-4" />
+          <LuStrikethrough className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleCode().run()}
@@ -217,7 +217,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('code') ?? false)}
           title={t('Code')}
         >
-          <Code className="h-4 w-4" />
+          <LuCode className="h-4 w-4" />
         </button>
 
         <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
@@ -229,7 +229,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('bulletList') ?? false)}
           title={t('Bullet List')}
         >
-          <List className="h-4 w-4" />
+          <LuList className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
@@ -237,7 +237,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('orderedList') ?? false)}
           title={t('Numbered List')}
         >
-          <ListOrdered className="h-4 w-4" />
+          <LuListOrdered className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
@@ -245,7 +245,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('blockquote') ?? false)}
           title={t('Blockquote')}
         >
-          <Quote className="h-4 w-4" />
+          <LuQuote className="h-4 w-4" />
         </button>
 
         <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
@@ -257,7 +257,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive({ textAlign: 'left' }) ?? false)}
           title={t('Align Left')}
         >
-          <AlignLeft className="h-4 w-4" />
+          <LuAlignLeft className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().setTextAlign('center').run()}
@@ -267,7 +267,7 @@ export function RichTextEditorToolbar({
           )}
           title={t('Align Center')}
         >
-          <AlignCenter className="h-4 w-4" />
+          <LuAlignCenter className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().setTextAlign('right').run()}
@@ -277,7 +277,7 @@ export function RichTextEditorToolbar({
           )}
           title={t('Align Right')}
         >
-          <AlignRight className="h-4 w-4" />
+          <LuAlignRight className="h-4 w-4" />
         </button>
 
         <div className="mx-2 h-6 w-px shrink-0 bg-gray-300" />
@@ -289,7 +289,7 @@ export function RichTextEditorToolbar({
           className={btnClass(editor?.isActive('link') ?? false)}
           title={t('Add Link')}
         >
-          <LinkIcon className="h-4 w-4" />
+          <LuLink className="h-4 w-4" />
         </button>
         <button
           onClick={addEmbedLink}
@@ -297,7 +297,7 @@ export function RichTextEditorToolbar({
           className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Embed Link Preview')}
         >
-          <Link2 className="h-4 w-4" />
+          <LuLink2 className="h-4 w-4" />
         </button>
         <button
           onClick={handleImageUpload}
@@ -305,7 +305,7 @@ export function RichTextEditorToolbar({
           className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Add Image')}
         >
-          <ImageIcon className="h-4 w-4" />
+          <LuImage className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().setHorizontalRule().run()}
@@ -313,7 +313,7 @@ export function RichTextEditorToolbar({
           className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Add Horizontal Rule')}
         >
-          <Minus className="h-4 w-4" />
+          <LuMinus className="h-4 w-4" />
         </button>
       </div>
 

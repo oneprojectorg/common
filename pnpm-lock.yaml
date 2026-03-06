@@ -128,7 +128,6 @@ overrides:
   immer: ^10.1.1
   js-yaml: ^4.1.0
   lodash: ^4.17.21
-  lucide-react: ^0.476.0
   motion: 12.4.7
   postcss: ^8.5.3
   postgres: ^3.4.5
@@ -280,9 +279,6 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
-      lucide-react:
-        specifier: ^0.476.0
-        version: 0.476.0(react@19.2.1)
       motion:
         specifier: 12.4.7
         version: 12.4.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -1067,9 +1063,6 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
-      lucide-react:
-        specifier: ^0.476.0
-        version: 0.476.0(react@19.2.1)
       react:
         specifier: ^19.0.1
         version: 19.2.1
@@ -7636,11 +7629,6 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
-
-  lucide-react@0.476.0:
-    resolution: {integrity: sha512-x6cLTk8gahdUPje0hSgLN1/MgiJH+Xl90Xoxy9bkPAsMPOUiyRSKR4JCDPGVCEpyqnZXH3exFWNItcvra9WzUQ==}
-    peerDependencies:
-      react: ^19.0.1
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -16551,10 +16539,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide-react@0.476.0(react@19.2.1):
-    dependencies:
-      react: 19.2.1
 
   lz-string@1.5.0: {}
 

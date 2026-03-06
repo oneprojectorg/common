@@ -1,7 +1,7 @@
 'use client';
 
-import { SmilePlus } from 'lucide-react';
 import { Button as RACButton } from 'react-aria-components';
+import { LuSmilePlus } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
@@ -88,7 +88,7 @@ export const ReactionButton = ({
         {...props}
         className={reactionButtonStyle({ size, active, className })}
       >
-        <SmilePlus className="h-4 w-4" />
+        <LuSmilePlus className="h-4 w-4" />
       </RACButton>
     );
   }

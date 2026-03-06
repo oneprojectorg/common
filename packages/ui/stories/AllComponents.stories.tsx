@@ -1,11 +1,5 @@
 // @ts-nocheck
 // TODO: commenting for a demo
-// import {
-// BoldIcon,
-// ItalicIcon,
-// MoreHorizontal,
-// UnderlineIcon,
-// } from 'lucide-react';
 // import { DialogTrigger, Group, MenuTrigger } from 'react-aria-components';
 // import { TimeField } from '../src/components/TimeField';
 // import { ToggleButton } from '../src/components/ToggleButton';

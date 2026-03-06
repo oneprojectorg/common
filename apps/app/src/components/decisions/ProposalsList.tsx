@@ -735,7 +735,7 @@ export const ProposalsList = ({
                 color="secondary"
                 size="small"
               >
-                <LuArrowDownToLine className="size-4 stroke-[1.5]" />
+                <LuArrowDownToLine className="size-4" />
                 {t('Click to download')}
               </ButtonLink>
             ) : (
@@ -745,7 +745,7 @@ export const ProposalsList = ({
                 color="secondary"
                 size="small"
               >
-                <LuArrowDownToLine className="size-4 stroke-[1.5]" />
+                <LuArrowDownToLine className="size-4" />
                 {isExporting ? t('Exporting...') : t('Export')}
               </Button>
             )

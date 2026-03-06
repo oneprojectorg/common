@@ -1,6 +1,6 @@
-import { Camera } from 'lucide-react';
 import { useRef } from 'react';
 import { useButton } from 'react-aria';
+import { LuCamera } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -66,7 +66,7 @@ export const AvatarUploader = ({
             {uploading ? (
               <LoadingSpinner />
             ) : (
-              <Camera className="stroke-offWhite" />
+              <LuCamera className="stroke-offWhite" />
             )}
           </button>
         </div>

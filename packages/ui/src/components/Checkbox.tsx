@@ -1,6 +1,5 @@
 'use client';
 
-import { Check, Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import {
   Checkbox as AriaCheckbox,
@@ -12,6 +11,7 @@ import type {
   CheckboxProps,
   ValidationResult,
 } from 'react-aria-components';
+import { LuCheck, LuMinus } from 'react-icons/lu';
 import { VariantProps, tv } from 'tailwind-variants';
 
 import { composeTailwindRenderProps, focusRing } from '../utils';
@@ -124,9 +124,15 @@ export const Checkbox = (props: CheckboxProps & CheckboxVariants) => {
             })}
           >
             {isIndeterminate ? (
-              <Minus aria-hidden className={iconStyles({ size: props.size })} />
+              <LuMinus
+                aria-hidden
+                className={iconStyles({ size: props.size })}
+              />
             ) : isSelected ? (
-              <Check aria-hidden className={iconStyles({ size: props.size })} />
+              <LuCheck
+                aria-hidden
+                className={iconStyles({ size: props.size })}
+              />
             ) : null}
           </div>
           {props.children}

@@ -14,9 +14,10 @@ export const CheckIcon = ({ className }: { className?: string }) => (
     <path
       d="M20 32.5L28 40.5L44 24.5"
       stroke="#3EC300"
-      strokeWidth="2"
+      strokeWidth="1"
       strokeLinecap="round"
       strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
     />
   </svg>
 );

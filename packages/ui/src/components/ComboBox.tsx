@@ -1,12 +1,12 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { ComboBox as AriaComboBox, ListBox } from 'react-aria-components';
 import type {
   ComboBoxProps as AriaComboBoxProps,
   ListBoxItemProps,
   ValidationResult,
 } from 'react-aria-components';
+import { LuChevronDown } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { composeTailwindRenderProps } from '../utils';
@@ -60,7 +60,7 @@ export const ComboBox = <T extends object>({
             props.buttonProps?.className,
           )}
         >
-          <ChevronDown aria-hidden className="size-4" />
+          <LuChevronDown aria-hidden className="size-4" />
         </Button>
       </FieldGroup>
       {description && <Description>{description}</Description>}

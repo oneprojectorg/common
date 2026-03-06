@@ -1,6 +1,6 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { LuCheck } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { formatDateRange } from '../utils/formatting';
@@ -42,7 +42,7 @@ const Step = ({
             'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
         )}
       >
-        {stepState === 'completed' ? <Check className="size-4" /> : index + 1}
+        {stepState === 'completed' ? <LuCheck className="size-4" /> : index + 1}
       </div>
       <div className="flex max-w-6 flex-col items-center justify-center text-sm text-nowrap text-neutral-black">
         <div>{phase.name}</div>

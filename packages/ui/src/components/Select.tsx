@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { ReactNode } from 'react';
 import {
   Select as AriaSelect,
@@ -13,6 +12,7 @@ import type {
   ListBoxItemProps,
   ValidationResult,
 } from 'react-aria-components';
+import { LuChevronDown } from 'react-icons/lu';
 import { VariantProps, tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
@@ -125,7 +125,10 @@ export const Select = <T extends object>({
               )}
             />
             {icon ?? (
-              <ChevronDown aria-hidden className={chevronStyles({ variant })} />
+              <LuChevronDown
+                aria-hidden
+                className={chevronStyles({ variant })}
+              />
             )}
           </span>
         </Button>

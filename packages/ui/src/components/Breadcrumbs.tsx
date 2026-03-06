@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
 import {
   Breadcrumb as AriaBreadcrumb,
   Breadcrumbs as AriaBreadcrumbs,
@@ -10,6 +9,7 @@ import type {
   BreadcrumbsProps,
   LinkProps,
 } from 'react-aria-components';
+import { LuChevronRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
 import { composeTailwindRenderProps } from '../utils';
@@ -36,7 +36,7 @@ export const Breadcrumb = (
       )}
     >
       <Link variant={props.href ? 'primary' : 'neutral'} {...props} />
-      {props.href && <ChevronRight className="size-3" />}
+      {props.href && <LuChevronRight className="size-3" />}
     </AriaBreadcrumb>
   );
 };

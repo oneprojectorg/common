@@ -1,6 +1,5 @@
 'use client';
 
-import { XIcon } from 'lucide-react';
 import { createContext, useContext } from 'react';
 import {
   Tag as AriaTag,
@@ -15,6 +14,7 @@ import type {
   TagProps as AriaTagProps,
   TagListProps,
 } from 'react-aria-components';
+import { LuX } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 import { tv } from 'tailwind-variants';
 
@@ -136,7 +136,7 @@ export const Tag = ({ children, color, ...props }: TagProps) => {
           {children}
           {allowsRemoving && (
             <Button slot="remove" className={removeButtonStyles}>
-              <XIcon aria-hidden className="size-3" />
+              <LuX aria-hidden className="size-3" />
             </Button>
           )}
         </>

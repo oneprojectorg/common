@@ -1,9 +1,9 @@
 'use client';
 
 import clsx from 'clsx';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { type ContextValue, useContextProps } from 'react-aria-components';
+import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
 import { Button } from './Button';
 
@@ -85,7 +85,7 @@ const PaginationNavigation = React.forwardRef<
           }
         }}
       >
-        <ChevronLeft className="size-4" />
+        <LuChevronLeft className="size-4" />
         Previous
       </Button>
       <Button
@@ -99,7 +99,7 @@ const PaginationNavigation = React.forwardRef<
         }}
       >
         Next
-        <ChevronRight className="size-4" />
+        <LuChevronRight className="size-4" />
       </Button>
     </nav>
   );

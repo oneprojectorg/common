@@ -1,6 +1,6 @@
 import type { Meta } from '@storybook/react-vite';
-import { HelpCircle } from 'lucide-react';
 import { DialogTrigger, Heading } from 'react-aria-components';
+import { LuCircleHelp } from 'react-icons/lu';
 
 import { Button } from '../src/components/Button';
 import { Dialog } from '../src/components/Dialog';
@@ -22,7 +22,7 @@ export default meta;
 export const Example = (args: any) => (
   <DialogTrigger>
     <Button variant="icon" aria-label="Help">
-      <HelpCircle className="size-4" />
+      <LuCircleHelp className="size-4" />
     </Button>
     <Popover {...args} className="max-w-[250px]">
       <Dialog>

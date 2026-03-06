@@ -1,7 +1,6 @@
 'use client';
 
 import { getLocalTimeZone, isToday } from '@internationalized/date';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Calendar as AriaCalendar,
   CalendarGridHeader as AriaCalendarGridHeader,
@@ -17,6 +16,7 @@ import type {
   CalendarProps as AriaCalendarProps,
   DateValue,
 } from 'react-aria-components';
+import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 
 import { focusRing } from '../utils';
@@ -55,9 +55,9 @@ export const CalendarHeader = () => {
         className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
       >
         {direction === 'rtl' ? (
-          <ChevronRight className="size-4" aria-hidden />
+          <LuChevronRight className="size-4" aria-hidden />
         ) : (
-          <ChevronLeft className="size-4" aria-hidden />
+          <LuChevronLeft className="size-4" aria-hidden />
         )}
       </Button>
       <Heading className="text-center text-base text-neutral-charcoal" />
@@ -67,9 +67,9 @@ export const CalendarHeader = () => {
         className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
       >
         {direction === 'rtl' ? (
-          <ChevronLeft className="size-4" aria-hidden />
+          <LuChevronLeft className="size-4" aria-hidden />
         ) : (
-          <ChevronRight className="size-4" aria-hidden />
+          <LuChevronRight className="size-4" aria-hidden />
         )}
       </Button>
     </header>
