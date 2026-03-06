@@ -23,6 +23,7 @@ export interface PhaseNavItem {
 export function useProcessNavigation(
   navigationConfig: NavigationConfig = DEFAULT_NAVIGATION_CONFIG,
   phases: PhaseNavItem[] = [],
+  excludedSectionIds: string[] = [],
 ) {
   const [sectionParam, setSectionParam] = useQueryState('section', {
     history: 'push',
@@ -50,7 +51,11 @@ export function useProcessNavigation(
       if (!allowedSectionIds) {
         return false;
       }
-      return allowedSectionIds.some((id) => id === item.id);
+      if (!allowedSectionIds.some((id) => id === item.id)) {
+        return false;
+      }
+      // Section must not be explicitly excluded
+      return !excludedSectionIds.includes(item.id);
     });
 
     // Insert dynamic phase sections after 'phases' item
@@ -75,7 +80,7 @@ export function useProcessNavigation(
       ...phaseSections,
       ...filtered.slice(phasesIndex + 1),
     ];
-  }, [navigationConfig.steps, navigationConfig.sections, phases]);
+  }, [navigationConfig.steps, navigationConfig.sections, phases, excludedSectionIds]);
 
   // Backward compatibility: derive section from old step+section params
   useEffect(() => {
@@ -86,11 +91,19 @@ export function useProcessNavigation(
     }
   }, [legacyStepParam, sectionParam, setLegacyStepParam]);
 
-  // Current section (fallback to first visible section)
+  // Current section (fallback to last visible section if excluded, else first)
   const currentSection = useMemo(() => {
     const found = visibleSections.find((s) => s.id === sectionParam);
-    return found ?? visibleSections[0];
-  }, [sectionParam, visibleSections]);
+    if (found) {
+      return found;
+    }
+    // If the current section was explicitly excluded, redirect to the last
+    // visible section (e.g., when summary is hidden, go back to participants)
+    if (sectionParam && excludedSectionIds.includes(sectionParam)) {
+      return visibleSections[visibleSections.length - 1] ?? visibleSections[0];
+    }
+    return visibleSections[0];
+  }, [sectionParam, visibleSections, excludedSectionIds]);
 
   // Current index in visible sections for next/back navigation
   const currentIndex = useMemo(() => {
