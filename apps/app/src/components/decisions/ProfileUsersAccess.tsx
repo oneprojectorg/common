@@ -155,7 +155,7 @@ export const ProfileUsersAccess = ({
 
         <ProfileInviteModal
           profileId={profileId}
-          instanceId={instanceId}
+          isDraft={isDraft}
           isOpen={isInviteModalOpen}
           onOpenChange={setIsInviteModalOpen}
         />

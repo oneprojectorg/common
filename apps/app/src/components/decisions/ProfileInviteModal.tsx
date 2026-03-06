@@ -3,7 +3,6 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { ProcessStatus } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
@@ -51,12 +50,12 @@ type SelectedItemsByRole = Record<string, SelectedItem[]>;
 
 export const ProfileInviteModal = ({
   profileId,
-  instanceId,
+  isDraft,
   isOpen,
   onOpenChange,
 }: {
   profileId: string;
-  instanceId?: string;
+  isDraft: boolean;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) => {
@@ -90,7 +89,7 @@ export const ProfileInviteModal = ({
         >
           <ProfileInviteModalContent
             profileId={profileId}
-            instanceId={instanceId}
+            isDraft={isDraft}
             onOpenChange={onOpenChange}
           />
         </Suspense>
@@ -101,11 +100,11 @@ export const ProfileInviteModal = ({
 
 function ProfileInviteModalContent({
   profileId,
-  instanceId,
+  isDraft,
   onOpenChange,
 }: {
   profileId: string;
-  instanceId?: string;
+  isDraft: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) {
   const t = useTranslations();
@@ -124,13 +123,6 @@ function ProfileInviteModalContent({
     left: 0,
     width: 0,
   });
-
-  // Fetch process instance to check draft status
-  const { data: instance } = trpc.decision.getInstance.useQuery(
-    { instanceId: instanceId! },
-    { enabled: !!instanceId },
-  );
-  const isDraft = instance?.status === ProcessStatus.DRAFT;
 
   // Fetch roles with decisions zone permissions to identify admin roles
   const { data: rolesWithPerms } = trpc.profile.listRoles.useQuery(
