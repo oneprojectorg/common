@@ -6,7 +6,7 @@ import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Note } from '@op/ui/Note';
+import { AlertBanner } from '@op/ui/AlertBanner';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -100,11 +100,11 @@ export const ProfileUsersAccessTable = ({
   return (
     <div className="flex flex-col gap-4">
       {hasPendingLaunchInvites && (
-        <Note variant="banner" intent="warning">
+        <AlertBanner variant="banner" intent="warning">
           {t(
             'This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.',
           )}
-        </Note>
+        </AlertBanner>
       )}
       {content}
     </div>
