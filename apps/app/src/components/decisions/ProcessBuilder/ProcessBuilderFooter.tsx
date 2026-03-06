@@ -53,15 +53,17 @@ export const ProcessBuilderFooter = ({
 
   const phases = useMemo(() => {
     if (storePhases?.length) {
-      return storePhases
-        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
-        .filter((p) => p.name);
+      return storePhases.map((p) => ({
+        phaseId: p.phaseId,
+        name: p.name ?? '',
+      }));
     }
     const instancePhases = instance?.instanceData?.phases;
     if (instancePhases?.length) {
-      return instancePhases
-        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
-        .filter((p) => p.name);
+      return instancePhases.map((p) => ({
+        phaseId: p.phaseId,
+        name: p.name ?? '',
+      }));
     }
     const templatePhases = instance?.process?.processSchema?.phases;
     if (templatePhases?.length) {

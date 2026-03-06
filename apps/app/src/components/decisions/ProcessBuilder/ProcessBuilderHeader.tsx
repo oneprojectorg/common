@@ -22,6 +22,7 @@ import {
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
+import { isPhaseValid } from './validation/processBuilderValidation';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderHeader = ({
@@ -151,21 +152,28 @@ const MobileSidebar = ({
   const phases = useMemo(() => {
     // Prefer Zustand store phases (updated immediately on edit) over API data
     if (storePhases?.length) {
-      return storePhases
-        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
-        .filter((p) => p.name);
+      return storePhases.map((p) => ({
+        phaseId: p.phaseId,
+        name: p.name ?? '',
+      }));
     }
     const instancePhases = instance?.instanceData?.phases;
     if (instancePhases?.length) {
-      return instancePhases
-        .map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }))
-        .filter((p) => p.name);
+      return instancePhases.map((p) => ({
+        phaseId: p.phaseId,
+        name: p.name ?? '',
+      }));
     }
     const templatePhases = instance?.process?.processSchema?.phases;
     if (templatePhases?.length) {
       return templatePhases.map((p) => ({ phaseId: p.id, name: p.name }));
     }
     return [];
+  }, [storePhases, instance]);
+
+  const phaseValidation = useMemo(() => {
+    const source = storePhases ?? instance?.instanceData?.phases ?? [];
+    return Object.fromEntries(source.map((p) => [p.phaseId, isPhaseValid(p)]));
   }, [storePhases, instance]);
 
   const { visibleSections, currentSection, setSection } = useProcessNavigation(
@@ -233,7 +241,12 @@ const MobileSidebar = ({
                               }`}
                             >
                               <LuCornerDownRight className="h-3 w-3 shrink-0 opacity-50" />
-                              <span className="truncate">{phase.name}</span>
+                              <span className="truncate">
+                                {phase.name || t('Untitled phase')}
+                              </span>
+                              {phaseValidation[phase.phaseId] === false && (
+                                <span className="ml-auto size-1.5 shrink-0 rounded-full bg-primary-teal" />
+                              )}
                             </button>
                           </li>
                         );
