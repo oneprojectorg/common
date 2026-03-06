@@ -14,6 +14,10 @@ export function SummarySectionInner({
 }: SectionProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  // Fetch up to the API maximum (100) to count active participants.
+  // The API does not expose a dedicated count endpoint, so we use the
+  // max page size. For profiles with >100 members the displayed count
+  // will be a minimum (usersData.next will be non-null in that case).
   const [usersData] = trpc.profile.listUsers.useSuspenseQuery({
     profileId: decisionProfileId,
     limit: 100,
@@ -42,8 +46,8 @@ export function SummarySectionInner({
     0;
 
   const categories = storeCategories ?? instanceCategories ?? [];
-  const participantsCount =
-    (usersData.items?.length ?? 0) + (invites?.length ?? 0);
+  const activeUsersCount = usersData.items?.length ?? 0;
+  const participantsCount = activeUsersCount + (invites?.length ?? 0);
 
   const processName = decisionName || instance.name || '';
 
