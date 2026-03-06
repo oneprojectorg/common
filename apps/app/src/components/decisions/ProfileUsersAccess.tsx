@@ -32,7 +32,7 @@ export const ProfileUsersAccess = ({
   processName,
 }: {
   profileId: string;
-  instanceId?: string;
+  instanceId: string;
   processName?: string;
 }) => {
   const t = useTranslations();
@@ -80,10 +80,9 @@ export const ProfileUsersAccess = ({
     trpc.profile.listRoles.useQuery({ profileId });
 
   // Check if process is in draft status
-  const { data: instance } = trpc.decision.getInstance.useQuery(
-    { instanceId: instanceId! },
-    { enabled: !!instanceId },
-  );
+  const { data: instance } = trpc.decision.getInstance.useQuery({
+    instanceId,
+  });
   const isDraft = instance?.status === ProcessStatus.DRAFT;
 
   // Fetch pending invites to show alongside accepted members
