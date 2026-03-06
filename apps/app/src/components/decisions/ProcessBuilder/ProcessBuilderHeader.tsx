@@ -18,7 +18,6 @@ import { isPhaseSection, phaseToSectionId } from './navigationConfig';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
-import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderHeader = ({
   instanceId,
@@ -131,11 +130,8 @@ const MobileSidebar = ({
   decisionProfileId?: string;
 }) => {
   const t = useTranslations();
-  const rubricBuilderEnabled = useFeatureFlag('rubric_builder');
   const navigationConfig = useNavigationConfig(instanceId);
   const { setOpen } = useSidebar();
-  const { isReadyToLaunch } = useProcessBuilderValidation(decisionProfileId);
-
   const storePhases = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
   );
@@ -165,12 +161,9 @@ const MobileSidebar = ({
     return [];
   }, [storePhases, instance]);
 
-  const excludedSectionIds = isReadyToLaunch ? [] : ['summary'];
-
   const { visibleSections, currentSection, setSection } = useProcessNavigation(
     navigationConfig,
     phases,
-    excludedSectionIds,
   );
 
   const handleSectionClick = (sectionId: string) => {

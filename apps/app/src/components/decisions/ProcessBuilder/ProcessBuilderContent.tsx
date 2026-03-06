@@ -11,7 +11,6 @@ import { type SectionId } from './navigationConfig';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
-import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export function ProcessBuilderContent({
   decisionProfileId,
@@ -49,14 +48,7 @@ export function ProcessBuilderContent({
     return [];
   }, [storePhases, instance]);
 
-  const { isReadyToLaunch } = useProcessBuilderValidation(decisionProfileId);
-  const excludedSectionIds = isReadyToLaunch ? [] : ['summary'];
-
-  const { currentSection } = useProcessNavigation(
-    navigationConfig,
-    phases,
-    excludedSectionIds,
-  );
+  const { currentSection } = useProcessNavigation(navigationConfig, phases);
 
   const access = useUser();
   const isAdmin = access.getPermissionsForProfile(decisionProfileId).admin;
