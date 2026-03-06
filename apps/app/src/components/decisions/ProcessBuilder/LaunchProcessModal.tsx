@@ -33,6 +33,13 @@ export const LaunchProcessModal = ({
     (s) => s.instances[decisionProfileId],
   );
 
+  const { data: invites } = trpc.profile.listProfileInvites.useQuery(
+    { profileId: decisionProfileId },
+    { enabled: isOpen },
+  );
+  const pendingNotificationCount =
+    invites?.filter((i) => !i.notifiedAt).length ?? 0;
+
   const phasesCount = instanceData?.phases?.length ?? 0;
   const categoriesCount = instanceData?.config?.categories?.length ?? 0;
   const showNoCategoriesWarning = categoriesCount === 0;
@@ -59,14 +66,23 @@ export const LaunchProcessModal = ({
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <ModalHeader>{t('Launch Process')}</ModalHeader>
+      <ModalHeader>{t('Launch process?')}</ModalHeader>
       <ModalBody className="flex flex-col gap-4">
-        <p className="text-neutral-charcoal">
-          {t(
-            'This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.',
-            { processName },
-          )}
-        </p>
+        {pendingNotificationCount > 0 ? (
+          <p className="text-neutral-charcoal">
+            {t(
+              'Launching your process will notify {count, plural, =1 {1 participant} other {# participants}}.',
+              { count: pendingNotificationCount },
+            )}
+          </p>
+        ) : (
+          <p className="text-neutral-charcoal">
+            {t(
+              'This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.',
+              { processName },
+            )}
+          </p>
+        )}
 
         {/* Summary Section */}
         <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-4">

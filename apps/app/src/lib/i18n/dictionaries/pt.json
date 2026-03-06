@@ -918,5 +918,7 @@
   "Delete criterion": "Excluir critério",
   "Are you sure you want to delete this criterion? This action cannot be undone.": "Tem certeza de que deseja excluir este critério? Esta ação não pode ser desfeita.",
   "This process is still in draft. Participant invites will be sent when the process launches.": "This process is still in draft. Participant invites will be sent when the process launches.",
-  "{roleName} plural": "{roleName}s"
+  "{roleName} plural": "{roleName}s",
+  "Launch process?": "Launch process?",
+  "Launching your process will notify {count, plural, =1 {1 participant} other {# participants}}.": "Launching your process will notify {count, plural, =1 {1 participant} other {# participants}}."
 }
