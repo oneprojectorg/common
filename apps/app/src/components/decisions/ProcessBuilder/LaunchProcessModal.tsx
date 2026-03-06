@@ -70,10 +70,13 @@ export const LaunchProcessModal = ({
       <ModalBody className="flex flex-col gap-4">
         {pendingNotificationCount > 0 ? (
           <p className="text-neutral-charcoal">
-            {t(
-              'Launching your process will notify {count, plural, =1 {1 participant} other {# participants}}.',
-              { count: pendingNotificationCount },
-            )}
+            {t('Launching your process will notify')}{' '}
+            <span className="font-bold">
+              {t(
+                '{count, plural, =1 {1 participant} other {# participants}}.',
+                { count: pendingNotificationCount },
+              )}
+            </span>
           </p>
         ) : (
           <p className="text-neutral-charcoal">

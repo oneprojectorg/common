@@ -927,5 +927,6 @@
   "This process is still in draft. Participant invites will be sent when the process launches.": "This process is still in draft. Participant invites will be sent when the process launches.",
   "{roleName} plural": "{roleName}",
   "Launch process?": "Launch process?",
-  "Launching your process will notify {count, plural, =1 {1 participant} other {# participants}}.": "Launching your process will notify {count, plural, =1 {1 participant} other {# participants}}."
+  "Launching your process will notify": "Launching your process will notify",
+  "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 participant} other {# participants}}."
 }
