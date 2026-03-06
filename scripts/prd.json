@@ -57,7 +57,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Follow the Figma design at node 6734:1689. Use the same layout pattern as other section pages (mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8). Read phases from useProcessBuilderStore, categories from instance data, participants from existing tRPC queries used on the Participants page."
     },
     {
@@ -74,7 +74,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "This should mostly work automatically if Summary is correctly the last item in visibleSections - hasNext will be false. The StepsRemaining popover already hides when stepsRemaining === 0. Verify these behaviors work correctly."
     },
     {
@@ -89,7 +89,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Check all .json files in the dictionaries folder. Some keys like 'Phases' and 'Categories' may already exist. Only add missing ones. Use t('{name} is ready to go live...', { name: processName }) for interpolation."
     }
   ]
