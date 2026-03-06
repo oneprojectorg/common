@@ -155,7 +155,9 @@ export function OverviewSectionForm({
         instanceId,
         name: values.name,
         description: values.description,
-        stewardProfileId: values.stewardProfileId || undefined,
+        stewardProfileId: isProcessOwner
+          ? (values.stewardProfileId || undefined)
+          : undefined,
         config: {
           organizeByCategories: values.organizeByCategories,
           requireCollaborativeProposals: values.requireCollaborativeProposals,
