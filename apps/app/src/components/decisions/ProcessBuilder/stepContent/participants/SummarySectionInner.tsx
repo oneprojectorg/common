@@ -72,14 +72,14 @@ export function SummarySectionInner({
     const incompleteItems = checklist.filter((item) => !item.isValid);
 
     return (
-      <div className="mx-auto w-full space-y-6 p-4 md:max-w-160 md:p-8">
+      <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-neutral-gray4">{t('Summary')}</p>
+          <p className="text-sm text-neutral-gray4">{t('Summary')}</p>
           <h2 className="font-serif text-title-base">
             {t('Your process still needs more information')}
           </h2>
         </div>
-        <p className="text-sm text-neutral-black">
+        <p className="text-base text-neutral-black">
           <span className="font-bold">{processName}</span>{' '}
           {t('is missing information in order to go live.')}
         </p>
@@ -116,9 +116,9 @@ export function SummarySectionInner({
   }
 
   return (
-    <div className="mx-auto w-full space-y-6 p-4 md:max-w-160 md:p-8">
+    <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-neutral-gray4">{t('Summary')} 🚀</p>
+        <p className="text-sm text-neutral-gray4">{t('Summary')} 🚀</p>
         <h2 className="font-serif text-title-base">
           {t('Review your process')}
         </h2>
