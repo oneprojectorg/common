@@ -23,6 +23,7 @@ export const SECTIONS_BY_STEP = {
   participants: [
     { id: 'roles', labelKey: 'Roles & permissions' },
     { id: 'participants', labelKey: 'Participants' },
+    { id: 'summary', labelKey: 'Summary' },
   ],
 } as const satisfies Record<
   StepId,
@@ -50,7 +51,7 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
     rubric: ['criteria'],
-    participants: ['roles', 'participants'],
+    participants: ['roles', 'participants', 'summary'],
   },
 };
 
@@ -83,6 +84,11 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'participants',
     labelKey: 'Participants',
+    parentStepId: 'participants',
+  },
+  {
+    id: 'summary',
+    labelKey: 'Summary',
     parentStepId: 'participants',
   },
 ];
