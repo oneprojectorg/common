@@ -62,6 +62,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   criteria: () => true,
   roles: () => true,
   participants: () => true,
+  summary: () => true,
 };
 
 // ============ Checklist Items ============
