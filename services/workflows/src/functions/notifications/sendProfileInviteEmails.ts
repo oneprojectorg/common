@@ -56,7 +56,7 @@ export const sendProfileInviteEmails = inngest.createFunction(
       await step.run('mark-invites-notified', async () => {
         await db
           .update(profileInvites)
-          .set({ notified: true })
+          .set({ notifiedAt: new Date().toISOString() })
           .where(inArray(profileInvites.id, inviteIds));
       });
     }

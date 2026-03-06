@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
+import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { AlertBanner } from '@op/ui/AlertBanner';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -73,7 +73,7 @@ export const ProfileUsersAccessTable = ({
     );
   }
 
-  const hasPendingLaunchInvites = invites.some((invite) => !invite.notified);
+  const hasPendingLaunchInvites = invites.some((invite) => !invite.notifiedAt);
 
   const content = isMobile ? (
     <MobileProfileUsersContent
@@ -111,12 +111,12 @@ export const ProfileUsersAccessTable = ({
   );
 };
 
-const InviteStatusLabel = ({ notified }: { notified: boolean }) => {
+const InviteStatusLabel = ({ notifiedAt }: { notifiedAt: string | null }) => {
   const t = useTranslations();
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
-      {!notified && (
+      {!notifiedAt && (
         <span className="text-sm text-neutral-gray4">
           {t('Pending launch')}
         </span>
@@ -459,7 +459,7 @@ const MobileInviteCard = ({
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
             <span className="text-base text-neutral-black">{displayName}</span>
-            <InviteStatusLabel notified={invite.notified} />
+            <InviteStatusLabel notifiedAt={invite.notifiedAt} />
           </div>
           <span className="truncate text-base text-neutral-black">
             {invite.email}
@@ -582,7 +582,7 @@ const ProfileUsersAccessTableContent = ({
                       <span className="text-base text-neutral-black">
                         {displayName}
                       </span>
-                      <InviteStatusLabel notified={invite.notified} />
+                      <InviteStatusLabel notifiedAt={invite.notifiedAt} />
                     </div>
                   </div>
                 </TableCell>

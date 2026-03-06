@@ -285,7 +285,7 @@ export const inviteUsersToProfile = async ({
   }
 
   // Determine if emails should be sent immediately or queued.
-  // Invites to draft processes are queued (notified=false) until publish,
+  // Invites to draft processes are queued (notifiedAt=null) until publish,
   // UNLESS the role being assigned includes decisions: ADMIN.
   // Check both proposal-level (via proposal -> processInstance) and
   // decision-level (direct processInstance profile) relationships.
@@ -297,23 +297,18 @@ export const inviteUsersToProfile = async ({
   // Batch insert and send event in a single transaction
   // If event.send fails, we rollback the DB inserts
   if (profileInviteEntries.length > 0) {
-    const inviteEntries = profileInviteEntries.map((entry) => ({
-      ...entry,
-      notified: !isDraft || getAdminRoleIds().has(entry.accessRoleId),
-    }));
-
     await db.transaction(async (tx) => {
       if (allowListEntries.length > 0) {
         await tx.insert(allowList).values(allowListEntries);
       }
       const insertedInvites = await tx
         .insert(profileInvites)
-        .values(inviteEntries)
+        .values(profileInviteEntries)
         .returning({ id: profileInvites.id });
 
-      // Send email events only for invites marked as notified
-      const notifiedInvites = inviteEntries.flatMap((entry, idx) =>
-        entry.notified
+      // Send email events only for invites that should be notified immediately
+      const notifiedInvites = profileInviteEntries.flatMap((entry, idx) =>
+        !isDraft || getAdminRoleIds().has(entry.accessRoleId)
           ? [
               {
                 inviteId: insertedInvites[idx]!.id,

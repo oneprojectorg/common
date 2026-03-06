@@ -250,7 +250,7 @@ export const updateDecisionInstance = async ({
     const queuedInvites = await db.query.profileInvites.findMany({
       where: {
         profileId,
-        notified: false,
+        notifiedAt: { isNull: true },
       },
       with: {
         profile: true,
@@ -282,7 +282,7 @@ export const updateDecisionInstance = async ({
           invitations,
         },
       });
-      // notified=true is set by the Inngest workflow after successful email delivery
+      // notifiedAt is set by the Inngest workflow after successful email delivery
     }
   }
 

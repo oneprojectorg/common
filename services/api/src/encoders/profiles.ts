@@ -106,7 +106,7 @@ export const profileInviteEncoder = createSelectSchema(profileInvites)
     email: true,
     accessRoleId: true,
     createdAt: true,
-    notified: true,
+    notifiedAt: true,
   })
   .extend({
     inviteeProfile: profileMinimalEncoder.nullable(),
