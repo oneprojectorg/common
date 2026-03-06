@@ -2,6 +2,7 @@
 
 import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type { SortDir } from '@op/common';
 import { useCursorPagination, useDebounce, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
@@ -77,6 +78,13 @@ export const ProfileUsersAccess = ({
   const { data: rolesData, isPending: rolesPending } =
     trpc.profile.listRoles.useQuery({ profileId });
 
+  // Check if process is in draft status
+  const { data: instance } = trpc.decision.getInstance.useQuery(
+    { instanceId: instanceId! },
+    { enabled: !!instanceId },
+  );
+  const isDraft = instance?.status === ProcessStatus.DRAFT;
+
   // Fetch pending invites to show alongside accepted members
   const { data: invites } = trpc.profile.listProfileInvites.useQuery(
     { profileId },
@@ -99,7 +107,7 @@ export const ProfileUsersAccess = ({
           {t('Participants')}
         </h2>
 
-        {invites?.some((invite) => !invite.notifiedAt) && (
+        {isDraft && (
           <AlertBanner variant="banner" intent="warning">
             {t(
               'This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.',

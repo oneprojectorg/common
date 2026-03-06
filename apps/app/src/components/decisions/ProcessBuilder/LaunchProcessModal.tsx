@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { LuInfo } from 'react-icons/lu';
@@ -33,10 +34,11 @@ export const LaunchProcessModal = ({
     (s) => s.instances[decisionProfileId],
   );
 
-  const { data: invites } = trpc.profile.listProfileInvites.useQuery(
-    { profileId: decisionProfileId },
-    { enabled: isOpen },
-  );
+  const { data: invites, isLoading: invitesLoading } =
+    trpc.profile.listProfileInvites.useQuery(
+      { profileId: decisionProfileId },
+      { enabled: isOpen },
+    );
   const pendingNotificationCount =
     invites?.filter((i) => !i.notifiedAt).length ?? 0;
 
@@ -68,7 +70,9 @@ export const LaunchProcessModal = ({
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
       <ModalHeader>{t('Launch process?')}</ModalHeader>
       <ModalBody className="flex flex-col gap-4">
-        {pendingNotificationCount > 0 ? (
+        {invitesLoading ? (
+          <Skeleton className="h-6 w-full" />
+        ) : pendingNotificationCount > 0 ? (
           <p className="text-neutral-charcoal">
             {t('Launching your process will notify')}{' '}
             <span className="font-bold">
