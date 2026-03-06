@@ -64,12 +64,16 @@ export function SummarySectionInner({
             'is ready to go live. Launching your process will invite and notify participants.',
           )}
         </p>
-        <p>{t('You can always edit and invite participants after launching.')}</p>
+        <p>
+          {t('You can always edit and invite participants after launching.')}
+        </p>
       </div>
       <div className="rounded-lg border">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <span className="text-neutral-gray4">{t('Phases')}</span>
-          <span className="text-right text-neutral-charcoal">{phasesCount}</span>
+          <span className="text-right text-neutral-charcoal">
+            {phasesCount}
+          </span>
         </div>
         <div className="flex items-center justify-between border-b px-4 py-3">
           <span className="text-neutral-gray4">{t('Categories')}</span>
@@ -78,7 +82,9 @@ export function SummarySectionInner({
           </span>
         </div>
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-neutral-gray4">{t('Participants Invited')}</span>
+          <span className="text-neutral-gray4">
+            {t('Participants Invited')}
+          </span>
           <span className="text-right text-neutral-charcoal">
             {participantsCount}
           </span>

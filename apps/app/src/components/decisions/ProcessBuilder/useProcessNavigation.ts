@@ -80,7 +80,12 @@ export function useProcessNavigation(
       ...phaseSections,
       ...filtered.slice(phasesIndex + 1),
     ];
-  }, [navigationConfig.steps, navigationConfig.sections, phases, excludedSectionIds]);
+  }, [
+    navigationConfig.steps,
+    navigationConfig.sections,
+    phases,
+    excludedSectionIds,
+  ]);
 
   // Backward compatibility: derive section from old step+section params
   useEffect(() => {
