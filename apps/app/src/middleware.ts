@@ -110,6 +110,14 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 
     const response = handleI18nRouting(request);
 
+    // Forward Supabase auth cookies (e.g. refreshed tokens) to the redirect
+    // response. Without this, a token refresh during the redirect drops the new
+    // refresh token — the browser retries with the stale one, gets a 400, and
+    // loops indefinitely (most visible on Safari).
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie);
+    });
+
     return response;
   }
 
