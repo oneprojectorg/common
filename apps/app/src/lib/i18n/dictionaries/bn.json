@@ -935,5 +935,9 @@
   "Configured": "কনফিগার করা হয়েছে",
   "Next": "পরবর্তী",
   "Back": "পিছনে",
-  "{count}% complete": "{count}% সম্পূর্ণ"
+  "{count}% complete": "{count}% সম্পূর্ণ",
+  "Review your process": "আপনার প্রক্রিয়া পর্যালোচনা করুন",
+  "is ready to go live. Launching your process will invite and notify participants.": "লাইভ হতে প্রস্তুত। আপনার প্রক্রিয়া চালু করলে অংশগ্রহণকারীদের আমন্ত্রণ জানানো এবং বিজ্ঞপ্তি পাঠানো হবে।",
+  "You can always edit and invite participants after launching.": "চালু করার পরেও আপনি সম্পাদনা করতে এবং অংশগ্রহণকারীদের আমন্ত্রণ জানাতে পারবেন।",
+  "Participants Invited": "আমন্ত্রিত অংশগ্রহণকারী"
 }
