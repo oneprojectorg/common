@@ -198,37 +198,29 @@ export const inviteUsersToProfile = async ({
     existingPendingInvites.map((invite) => invite.email.toLowerCase()),
   );
 
-  // Collect data for batch insert
+  // Collect data for batch operations
   const allowListEntries: Array<{
     email: string;
     organizationId: null;
     metadata: null;
   }> = [];
 
-  const profileInviteEntries: Array<{
+  const preparedInvites: Array<{
     email: string;
-    profileId: string;
-    profileEntityType: string;
     accessRoleId: string;
-    invitedBy: string;
     inviteeProfileId?: string;
-    message?: string;
-  }> = [];
-
-  const emailsToInvite: Array<{
-    email: string;
     authUserId?: string;
-    inviterName: string;
-    profileName: string;
-    inviteUrl: string;
-    personalMessage?: string;
   }> = [];
 
   // Process each invitation - validate and collect data
   for (const invitation of normalizedInvitations) {
     const { email, roleId } = invitation;
     const existingUser = usersByEmail.get(email);
-    const targetRole = rolesById.get(roleId)!;
+    const targetRole = rolesById.get(roleId);
+
+    if (!targetRole) {
+      continue;
+    }
 
     // Check for pending invite (applies to both existing and new users)
     if (pendingInviteEmailsSet.has(email)) {
@@ -262,25 +254,11 @@ export const inviteUsersToProfile = async ({
       allowListEmailsSet.add(email);
     }
 
-    // Collect profile invite entry
-    profileInviteEntries.push({
+    preparedInvites.push({
       email,
-      profileId,
-      profileEntityType: profile.type,
       accessRoleId: targetRole.id,
-      invitedBy: requesterProfileId,
       inviteeProfileId: existingUser?.profileId ?? undefined,
-      message: personalMessage,
-    });
-
-    // Collect email data for event
-    emailsToInvite.push({
-      email,
       authUserId: existingUser?.authUserId,
-      inviterName,
-      profileName,
-      inviteUrl,
-      personalMessage,
     });
   }
 
@@ -296,27 +274,35 @@ export const inviteUsersToProfile = async ({
 
   // Batch insert and send event in a single transaction
   // If event.send fails, we rollback the DB inserts
-  if (profileInviteEntries.length > 0) {
+  if (preparedInvites.length > 0) {
     await db.transaction(async (tx) => {
       if (allowListEntries.length > 0) {
         await tx.insert(allowList).values(allowListEntries);
       }
+
       const insertedInvites = await tx
         .insert(profileInvites)
-        .values(profileInviteEntries)
+        .values(
+          preparedInvites.map((inv) => ({
+            email: inv.email,
+            profileId,
+            profileEntityType: profile.type,
+            accessRoleId: inv.accessRoleId,
+            invitedBy: requesterProfileId,
+            inviteeProfileId: inv.inviteeProfileId,
+            message: personalMessage,
+          })),
+        )
         .returning({ id: profileInvites.id });
 
       // Send email events only for invites that should be notified immediately
-      const notifiedInvites = profileInviteEntries.flatMap((entry, idx) =>
-        !isDraft || getAdminRoleIds().has(entry.accessRoleId)
-          ? [
-              {
-                inviteId: insertedInvites[idx]!.id,
-                email: emailsToInvite[idx]!,
-              },
-            ]
-          : [],
-      );
+      const notifiedInvites = preparedInvites
+        .map((inv, idx) => ({ inv, inviteId: insertedInvites[idx]?.id }))
+        .filter(
+          (entry): entry is typeof entry & { inviteId: string } =>
+            !!entry.inviteId &&
+            (!isDraft || getAdminRoleIds().has(entry.inv.accessRoleId)),
+        );
 
       if (notifiedInvites.length > 0) {
         await event.send({
@@ -324,19 +310,28 @@ export const inviteUsersToProfile = async ({
           data: {
             senderProfileId: requesterProfileId,
             inviteIds: notifiedInvites.map((n) => n.inviteId),
-            invitations: notifiedInvites.map((n) => n.email),
+            invitations: notifiedInvites.map((n) => ({
+              email: n.inv.email,
+              authUserId: n.inv.authUserId,
+              inviterName,
+              profileName,
+              inviteUrl,
+              personalMessage,
+            })),
           },
         });
       }
     });
 
     // Mark all as successful since transaction completed
-    results.successful.push(...emailsToInvite.map((e) => e.email));
+    results.successful.push(...preparedInvites.map((inv) => inv.email));
     // Collect auth user IDs for existing users (for cache invalidation)
     results.existingUserAuthIds.push(
-      ...emailsToInvite
-        .filter((e): e is typeof e & { authUserId: string } => !!e.authUserId)
-        .map((e) => e.authUserId),
+      ...preparedInvites
+        .filter(
+          (inv): inv is typeof inv & { authUserId: string } => !!inv.authUserId,
+        )
+        .map((inv) => inv.authUserId),
     );
   }
 
