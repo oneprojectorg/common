@@ -240,14 +240,9 @@ export function OverviewSectionForm({
                   selectedKey={field.state.value || null}
                   onSelectionChange={(key) => field.handleChange(key as string)}
                   onBlur={field.handleBlur}
-                  description={`
-                    ${t(
-                      'The organization, coalition, committee or individual responsible for running this process.',
-                    )} 
-                    ${
-                      isProcessOwner &&
-                      t('Only the process owner can change the steward.')
-                    }`}
+                  description={t(
+                    'The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.',
+                  )}
                   errorMessage={getFieldErrorMessage(field)}
                 >
                   {profileItems.map((item) => (
