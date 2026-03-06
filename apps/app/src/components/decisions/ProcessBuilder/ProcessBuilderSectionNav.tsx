@@ -7,7 +7,11 @@ import { LuCornerDownRight } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 
-import { isPhaseSection, phaseToSectionId } from './navigationConfig';
+import {
+  isPhaseSection,
+  isSectionId,
+  phaseToSectionId,
+} from './navigationConfig';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
@@ -81,9 +85,10 @@ export const ProcessBuilderSidebar = ({
                   }`}
                 >
                   {t(section.labelKey as TranslationKey)}
-                  {validationSections[section.id as keyof typeof validationSections] === false && (
-                    <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />
-                  )}
+                  {isSectionId(section.id) &&
+                    validationSections[section.id] === false && (
+                      <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />
+                    )}
                 </button>
                 {section.id === 'phases' && phases.length > 0 && (
                   <ul className="mt-0.5 flex flex-col gap-0.5">
