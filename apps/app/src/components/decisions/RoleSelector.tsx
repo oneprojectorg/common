@@ -58,7 +58,7 @@ export const RoleSelector = ({
           return (
             <Tab key={role.id} id={role.id}>
               <span className="flex items-center gap-1">
-                {role.name}
+                {t('{roleName} plural', { roleName: role.name })}
                 {count > 0 && (
                   <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-teal px-1 text-xs text-neutral-offWhite">
                     {count}
