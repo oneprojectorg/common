@@ -1,131 +1,96 @@
 {
   "project": "OP Common",
-  "branchName": "ralph/stepper-navigation",
-  "description": "Decision Builder Stepper Navigation & Phase Pages - Add Next/Back stepper buttons, validation-based progress bar, and individual phase configuration pages to the Process Builder",
+  "branchName": "decision-builder-sidebar-stepper",
+  "description": "Process Builder Summary Step - Add a conditional Summary section that appears when all validation passes, showing process stats before launch",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Update navigation config to support dynamic phase sections",
-      "description": "As a developer, I need the navigation system to support dynamic phase sections so the sidebar and stepper can include individual phases in the navigation flow.",
+      "title": "Add Summary section to navigation config and content registry",
+      "description": "As a developer, I need to register a new 'summary' section ID in the navigation config, sidebar items, and content registry so the Summary page can be navigated to and rendered.",
       "acceptanceCriteria": [
-        "navigationConfig.ts supports dynamic sections computed from the current phase list",
-        "useProcessNavigation returns an ordered list of all navigable sections including individual phase sections",
-        "Navigation order: Overview → Phases Summary → Phase 1 → Phase 2 → ... → Proposal Categories → Proposal Template → Roles → Participants",
-        "Dynamic phase sections use URL pattern ?section=phase-{phaseId}",
-        "Adding/removing phases dynamically updates the navigation order",
-        "useProcessNavigation exposes goNext(), goBack(), hasNext, hasPrev helpers",
+        "Add 'summary' as a new section ID in navigationConfig.ts under the 'participants' step (or a new step)",
+        "Add a SIDEBAR_ITEMS entry for Summary with labelKey 'Summary' as the last item",
+        "Add 'summary' to SECTIONS_BY_STEP so it's included in the navigation flow",
+        "Create a placeholder SummarySectionContent component that renders 'Summary' heading",
+        "Register the Summary component in contentRegistry.tsx (both CONTENT_REGISTRY and FLAT_CONTENT_REGISTRY)",
+        "Add a Suspense-wrapped section component following the existing pattern",
+        "Add translation key 'Summary' to ALL language files in apps/app/src/lib/i18n/dictionaries/",
+        "Navigating to ?section=summary renders the placeholder component",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "This is the foundation that all other stories depend on. Modify useProcessNavigation.ts and navigationConfig.ts. Phase sections are inserted between the 'phases' summary section and 'proposalCategories'. Read phase data from the Zustand store or tRPC query, matching the existing pattern in ProcessBuilderSectionNav.tsx."
+      "notes": "Follow the pattern of existing sections. The summary section should be the very last in SIDEBAR_ITEMS. Place it under the 'participants' step in SECTIONS_BY_STEP or create a dedicated step. Add it to DEFAULT_NAVIGATION_CONFIG sections."
     },
     {
       "id": "US-002",
-      "title": "Create individual phase page component",
-      "description": "As a process builder user, I want each phase to have its own dedicated configuration page so I can focus on one phase at a time.",
+      "title": "Conditionally show Summary in sidebar based on validation",
+      "description": "As a user, I want the Summary section to only appear in the sidebar when all validation checks pass, so I know the process is ready to launch.",
       "acceptanceCriteria": [
-        "New PhaseDetailPage component renders the full phase edit form for a single phase",
-        "Form includes: phase name, headline, description, additional info (rich text), start date, end date, and phase controls (toggles for proposals/voting)",
-        "Phase is identified by extracting the phaseId from the section URL parameter (phase-{phaseId})",
-        "Autosave with debounce works the same as the existing accordion form",
-        "SaveStatusIndicator is shown in the page header",
-        "Delete phase button navigates back to ?section=phases after deletion",
-        "Register the component in contentRegistry.tsx for dynamic phase section IDs",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Summary sidebar item is hidden when isReadyToLaunch is false",
+        "Summary sidebar item appears at the bottom of the sidebar when isReadyToLaunch is true",
+        "The stepper (Next/Back) includes Summary in its sequence only when it is visible",
+        "If validation becomes invalid while on Summary, the user is redirected to the previous section (participants)",
+        "The mobile sidebar also conditionally shows/hides the Summary item",
+        "Typecheck passes"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Extract the existing phase form from PhasesSectionContent.tsx into a standalone PhaseDetailPage component. The component receives the phaseId from the section URL param. Reuse existing form fields, validation, and autosave logic. Place in stepContent/general/PhaseDetailPage.tsx."
+      "notes": "The conditional visibility should happen in useProcessNavigation or at the sidebar level. useProcessBuilderValidation provides isReadyToLaunch. Pass it to the navigation hook or filter visibleSections. The ProcessBuilderSectionNav and MobileSidebar in ProcessBuilderHeader both need the conditional logic."
     },
     {
       "id": "US-003",
-      "title": "Convert Phases section to summary/overview view",
-      "description": "As a process builder user, I want the main Phases section to show a summary list so I can see the big picture and navigate to individual phases.",
+      "title": "Build SummarySectionContent with process stats",
+      "description": "As a user, I want to see a summary of my process configuration before launching so I can confirm everything is correct.",
       "acceptanceCriteria": [
-        "Phases summary section shows a list of all phases with names and configuration status",
-        "Each phase in the list is clickable and navigates to ?section=phase-{phaseId}",
-        "Add phase button remains at the bottom and navigates to the new phase's detail page after creation",
-        "Phase reordering via drag and drop remains available on the summary view",
-        "The full accordion edit form is removed from the summary view",
-        "Delete confirmation modal works from the summary view",
+        "Display 'Summary 🚀' as a small text-xs label in text-neutral-gray4",
+        "Display 'Review your process' as the heading using font-serif text-title-sm",
+        "Display bold process name followed by 'is ready to go live. Launching your process will invite and notify participants.'",
+        "Display 'You can always edit and invite participants after launching.' as a second paragraph",
+        "Display a bordered summary table (rounded-lg border) with rows: Phases count, Categories count, Participants Invited count",
+        "Table rows separated by border-b, labels in text-neutral-gray4, values in text-charcoal text-right",
+        "Phases count comes from store phases or instance phases",
+        "Categories count comes from instance proposalCategories",
+        "Participants count comes from tRPC profile.listUsers or profile.listProfileInvites queries",
+        "All user-facing strings wrapped with t() and added to ALL language files",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "Refactor PhasesSectionContent.tsx to be a summary/list view. Keep the Sortable drag-and-drop for reordering. Each phase item shows name and a brief status indicator (e.g. 'Not configured yet' or a checkmark). Clicking navigates to the phase detail page."
+      "passes": false,
+      "notes": "Follow the Figma design at node 6734:1689. Use the same layout pattern as other section pages (mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8). Read phases from useProcessBuilderStore, categories from instance data, participants from existing tRPC queries used on the Participants page."
     },
     {
       "id": "US-004",
-      "title": "Update sidebar to show individual phase sub-items",
-      "description": "As a process builder user, I want to see each phase listed under Phases in the sidebar so I can jump directly to any phase's configuration.",
+      "title": "Hide Next button on Summary page",
+      "description": "As a user, when I'm on the Summary page I should not see the Next button since it's the last step, and the Launch Process button is the primary action.",
       "acceptanceCriteria": [
-        "Each phase appears as a sub-item under Phases in the sidebar, indented with corner-down-right icon",
-        "Phase sub-items use the dynamic section IDs (phase-{phaseId})",
-        "Clicking a phase sub-item sets ?section=phase-{phaseId} and renders the phase detail page",
-        "Active phase sub-item is highlighted with the active style (teal bg + text)",
-        "Sub-items update dynamically when phases are added or removed",
-        "Mobile sidebar also shows phase sub-items",
+        "The Next button is hidden when the current section is 'summary' (hasNext is false since it's the last section)",
+        "The Launch Process / Update Process button remains visible and enabled on the Summary page",
+        "The Back button still works to go back to the previous section (participants)",
+        "The progress bar shows 100% when on the Summary page",
+        "The StepsRemaining popover is hidden when on Summary (since validation is complete)",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "Update ProcessBuilderSectionNav.tsx and the MobileSidebar in ProcessBuilderHeader.tsx. Phase sub-items already exist as clickable items but currently only navigate to ?section=phases. Update them to navigate to ?section=phase-{phaseId} instead."
+      "passes": false,
+      "notes": "This should mostly work automatically if Summary is correctly the last item in visibleSections - hasNext will be false. The StepsRemaining popover already hides when stepsRemaining === 0. Verify these behaviors work correctly."
     },
     {
       "id": "US-005",
-      "title": "Add Next and Back buttons to footer",
-      "description": "As a process builder user, I want Next and Back buttons in the footer so I can navigate through sections sequentially.",
+      "title": "Add all translation keys for Summary step",
+      "description": "As a developer, I need all new user-facing strings properly internationalized across all language files.",
       "acceptanceCriteria": [
-        "Next button appears on the right side of the footer, styled as a secondary button (border, teal text, h-10, rounded-lg)",
-        "Back button appears next to Exit on the left side, styled as a secondary button",
-        "Clicking Next navigates to the next visible section via goNext()",
-        "Clicking Back navigates to the previous visible section via goBack()",
-        "Back button is hidden on the first section (Overview)",
-        "Next button is hidden on the last section (Participants)",
-        "Launch/Update Process button remains in the footer alongside the stepper buttons",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 5,
-      "passes": true,
-      "notes": "Modify ProcessBuilderFooter.tsx. The footer layout from Figma: left=[Exit, Back], center=[progress bar], right=[Next, Launch/Update]. Use useProcessNavigation's goNext/goBack/hasNext/hasPrev. Exit button uses tertiary style with rotated LuLogOut icon."
-    },
-    {
-      "id": "US-006",
-      "title": "Add validation-based progress bar to footer",
-      "description": "As a process builder user, I want to see a progress bar showing how complete my process configuration is.",
-      "acceptanceCriteria": [
-        "Progress bar appears centered in the footer between the left and right button groups",
-        "Bar has 4px height, rounded-full, gray background (#D0D3D4/bg-neutral-gray2)",
-        "Fill uses a gradient from green (#3EC300) to teal (#0396A6)",
-        "Text label shows '{X}% complete' next to the bar",
-        "Progress percentage is calculated from useProcessBuilderValidation (completed checks / total checks)",
-        "Progress updates reactively as the user fills in required fields",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 6,
-      "passes": true,
-      "notes": "Add a completionPercentage getter to useProcessBuilderValidation.ts (checklist items with isValid=true / total checklist items * 100, rounded). Render in ProcessBuilderFooter.tsx. The gradient can be a CSS background-image on the fill bar. On mobile, consider hiding the progress bar text or making it more compact."
-    },
-    {
-      "id": "US-007",
-      "title": "Add translation keys for stepper UI strings",
-      "description": "As a developer, I need all new user-facing strings properly internationalized.",
-      "acceptanceCriteria": [
-        "Translation keys added for: 'Next', 'Back', '{count}% complete', 'Not configured yet', and any other new strings",
+        "Translation keys added for: 'Summary', 'Review your process', '{name} is ready to go live. Launching your process will invite and notify participants.', 'You can always edit and invite participants after launching.', 'Phases', 'Categories', 'Participants Invited'",
         "Keys added to ALL language files in apps/app/src/lib/i18n/dictionaries/",
-        "All new strings use t('...') from useTranslations",
+        "All new strings in SummarySectionContent use t() from useTranslations",
         "No hardcoded user-facing strings in any modified files",
         "Typecheck passes"
       ],
-      "priority": 7,
-      "passes": true,
-      "notes": "Check all language files in the dictionaries folder. Some keys like 'Next' and 'Back' may already exist. Verify and add any missing ones. Use t('{count}% complete', { count: percentage }) for the progress text."
+      "priority": 5,
+      "passes": false,
+      "notes": "Check all .json files in the dictionaries folder. Some keys like 'Phases' and 'Categories' may already exist. Only add missing ones. Use t('{name} is ready to go live...', { name: processName }) for interpolation."
     }
   ]
 }
