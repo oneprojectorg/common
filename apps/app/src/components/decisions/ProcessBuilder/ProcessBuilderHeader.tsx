@@ -18,6 +18,7 @@ import { isPhaseSection, phaseToSectionId } from './navigationConfig';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
+import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderHeader = ({
   instanceId,
@@ -132,6 +133,8 @@ const MobileSidebar = ({
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
   const { setOpen } = useSidebar();
+  const { sections: validationSections } =
+    useProcessBuilderValidation(decisionProfileId);
   const storePhases = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
   );
@@ -194,13 +197,16 @@ const MobileSidebar = ({
                   <button
                     type="button"
                     onClick={() => handleSectionClick(section.id)}
-                    className={`w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-base transition-colors ${
+                    className={`flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-left text-base transition-colors ${
                       isActive
                         ? 'bg-primary-tealWhite text-primary'
                         : 'text-neutral-black hover:bg-neutral-gray1'
                     }`}
                   >
                     {t(section.labelKey as TranslationKey)}
+                    {validationSections[section.id as keyof typeof validationSections] === false && (
+                      <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />
+                    )}
                   </button>
                   {section.id === 'phases' && phases.length > 0 && (
                     <ul className="mt-0.5 flex flex-col gap-0.5">
