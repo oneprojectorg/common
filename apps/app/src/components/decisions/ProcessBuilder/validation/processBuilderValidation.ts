@@ -126,6 +126,17 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
 ];
 
+// ============ Phase Validation ============
+
+export function isPhaseValid(phase: {
+  name?: string | null;
+  headline?: string | null;
+  description?: string | null;
+  endDate?: string | null;
+}): boolean {
+  return phaseSchema.safeParse(phase).success;
+}
+
 // ============ Validation ============
 
 export function validateAll(
