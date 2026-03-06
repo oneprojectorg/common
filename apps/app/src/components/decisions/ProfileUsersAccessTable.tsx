@@ -2,7 +2,6 @@
 
 import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
-import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
@@ -73,9 +72,7 @@ export const ProfileUsersAccessTable = ({
     );
   }
 
-  const hasPendingLaunchInvites = invites.some((invite) => !invite.notifiedAt);
-
-  const content = isMobile ? (
+  return isMobile ? (
     <MobileProfileUsersContent
       profileUsers={profileUsers}
       profileId={profileId}
@@ -96,32 +93,14 @@ export const ProfileUsersAccessTable = ({
       processName={processName}
     />
   );
-
-  return (
-    <div className="flex flex-col gap-4">
-      {hasPendingLaunchInvites && (
-        <AlertBanner variant="banner" intent="warning">
-          {t(
-            'This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.',
-          )}
-        </AlertBanner>
-      )}
-      {content}
-    </div>
-  );
 };
 
 const InviteStatusLabel = ({ notifiedAt }: { notifiedAt: string | null }) => {
   const t = useTranslations();
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
-      {!notifiedAt && (
-        <span className="text-sm text-neutral-gray4">
-          {t('Pending launch')}
-        </span>
-      )}
-    </div>
+    <span className="text-sm text-neutral-gray4">
+      {notifiedAt ? t('Invited') : t('Pending launch')}
+    </span>
   );
 };
 
