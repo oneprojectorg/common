@@ -3,19 +3,10 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import {
-  LuCheck,
-  LuCircle,
-  LuCircleAlert,
-  LuLogOut,
-  LuPlus,
-  LuSave,
-} from 'react-icons/lu';
+import { LuLogOut, LuPlus, LuSave } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -23,7 +14,6 @@ import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
-import type { ValidationSummary } from './validation/processBuilderValidation';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderFooter = ({
@@ -203,9 +193,6 @@ export const ProcessBuilderFooter = ({
                 {t('Next')}
               </button>
             )}
-            {validation.stepsRemaining > 0 && (
-              <StepsRemainingPopover validation={validation} />
-            )}
             <Button
               className="h-8 rounded-md"
               onPress={handleLaunchOrSave}
@@ -240,55 +227,5 @@ export const ProcessBuilderFooter = ({
         decisionProfileId={decisionProfileId}
       />
     </>
-  );
-};
-
-const StepsRemainingPopover = ({
-  validation,
-}: {
-  validation: ValidationSummary;
-}) => {
-  const t = useTranslations();
-
-  return (
-    <DialogTrigger>
-      <Button
-        className="flex aspect-square h-8 gap-2 rounded-md md:aspect-auto"
-        color="warn"
-      >
-        <LuCircleAlert className="size-4 shrink-0" />
-        <span className="hidden md:block">
-          {t('{stepCount, plural, =1 {1 step} other {# steps}} remaining', {
-            stepCount: validation.stepsRemaining,
-          })}
-        </span>
-      </Button>
-      <Popover
-        placement="top end"
-        className="w-72 rounded-lg border bg-white p-4 shadow-lg"
-      >
-        <p className="mb-3 font-medium text-neutral-black">
-          {t('Complete these steps to launch')}
-        </p>
-        <ul className="space-y-3">
-          {validation.checklist.map((item) => (
-            <li key={item.id} className="flex items-center gap-2">
-              {item.isValid ? (
-                <LuCheck className="size-5 shrink-0 text-functional-green" />
-              ) : (
-                <LuCircle className="size-5 shrink-0 text-neutral-gray4" />
-              )}
-              <span
-                className={
-                  item.isValid ? 'text-functional-green' : 'text-neutral-black'
-                }
-              >
-                {t(item.labelKey)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Popover>
-    </DialogTrigger>
   );
 };
