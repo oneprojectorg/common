@@ -263,7 +263,7 @@ export const updateDecisionInstance = async ({
 
       const invitations = queuedInvites.map((invite) => ({
         email: invite.email,
-        inviterName: invite.inviter.name || 'A team member',
+        inviterName: invite.inviter?.name || 'A team member',
         profileName: invite.profile.name,
         inviteUrl: profile.slug
           ? `${baseUrl}/decisions/${profile.slug}`
@@ -272,7 +272,11 @@ export const updateDecisionInstance = async ({
       }));
 
       // Use the first invite's inviter as the sender
-      const senderProfileId = queuedInvites[0]!.invitedBy;
+      const firstInvite = queuedInvites[0];
+      if (!firstInvite) {
+        return;
+      }
+      const senderProfileId = firstInvite.invitedBy;
 
       await event.send({
         name: Events.profileInviteSent.name,
