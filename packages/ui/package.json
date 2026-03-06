@@ -109,7 +109,6 @@
     "cmdk": "^1.0.4",
     "framer-motion": "^12.7.4",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.476.0",
     "react": "^19.0.1",
     "react-aria": "^3.37.0",
     "react-aria-components": "^1.6.0",
