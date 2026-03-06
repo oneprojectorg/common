@@ -11,7 +11,6 @@ import { isPhaseSection, phaseToSectionId } from './navigationConfig';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
-import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderSidebar = ({
   instanceId,
@@ -22,7 +21,6 @@ export const ProcessBuilderSidebar = ({
 }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
-  const { isReadyToLaunch } = useProcessBuilderValidation(decisionProfileId);
 
   const storePhases = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
@@ -53,12 +51,9 @@ export const ProcessBuilderSidebar = ({
     return [];
   }, [storePhases, instance]);
 
-  const excludedSectionIds = isReadyToLaunch ? [] : ['summary'];
-
   const { visibleSections, currentSection, setSection } = useProcessNavigation(
     navigationConfig,
     phases,
-    excludedSectionIds,
   );
 
   return (

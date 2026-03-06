@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { PhaseDefinition } from '@op/api/encoders';
+import { type PhaseDefinition, ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';

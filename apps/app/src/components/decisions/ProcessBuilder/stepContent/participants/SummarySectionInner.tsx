@@ -1,11 +1,23 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Button } from '@op/ui/Button';
+import { useQueryState } from 'nuqs';
 
 import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { useProcessBuilderValidation } from '../../validation/useProcessBuilderValidation';
+
+const CHECKLIST_SECTION_MAP: Record<string, string> = {
+  processNameDescription: 'overview',
+  atLeastOnePhase: 'phases',
+  phaseDetails: 'phases',
+  proposalTemplate: 'templateEditor',
+  proposalTemplateErrors: 'templateEditor',
+  inviteMembers: 'participants',
+};
 
 export function SummarySectionInner({
   decisionProfileId,
@@ -33,6 +45,11 @@ export function SummarySectionInner({
     (s) => s.instances[decisionProfileId]?.config?.categories,
   );
 
+  const { isReadyToLaunch, checklist } =
+    useProcessBuilderValidation(decisionProfileId);
+
+  const [, setSectionParam] = useQueryState('section', { history: 'push' });
+
   const isDraft = instance.status === 'draft';
   const instancePhases = instance.instanceData?.phases;
   const instanceCategories = instance.instanceData?.config?.categories;
@@ -50,6 +67,49 @@ export function SummarySectionInner({
   const participantsCount = activeUsersCount + (invites?.length ?? 0);
 
   const processName = decisionName || instance.name || '';
+
+  if (!isReadyToLaunch) {
+    const incompleteItems = checklist.filter((item) => !item.isValid);
+
+    return (
+      <div className="mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8">
+        <div>
+          <p className="text-xs text-neutral-gray4">{t('Summary')}</p>
+          <h2 className="font-serif text-title-sm">
+            {t('Your process still needs more information')}
+          </h2>
+        </div>
+        <p>
+          <span className="font-bold">{processName}</span>{' '}
+          {t('is missing information in order to go live.')}
+        </p>
+        <div className="rounded-lg border">
+          {incompleteItems.map((item, index) => (
+            <div
+              key={item.id}
+              className={`flex items-center justify-between px-4 py-3 ${
+                index < incompleteItems.length - 1 ? 'border-b' : ''
+              }`}
+            >
+              <span className="text-neutral-charcoal">{t(item.labelKey)}</span>
+              <Button
+                color="secondary"
+                className="shrink-0"
+                onPress={() => {
+                  const sectionId = CHECKLIST_SECTION_MAP[item.id];
+                  if (sectionId) {
+                    void setSectionParam(sectionId);
+                  }
+                }}
+              >
+                {t('Take me there')}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8">
