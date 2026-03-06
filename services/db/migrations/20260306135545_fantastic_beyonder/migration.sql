@@ -1,0 +1,1 @@
+ALTER TABLE "profile_invites" ADD COLUMN "notified_at" timestamp with time zone;

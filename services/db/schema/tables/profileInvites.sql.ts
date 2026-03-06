@@ -49,6 +49,11 @@ export const profileInvites = pgTable(
         onDelete: 'cascade',
       }),
     message: text('message'),
+    // When the invite email was sent (null = queued / not yet sent)
+    notifiedAt: timestamp('notified_at', {
+      withTimezone: true,
+      mode: 'string',
+    }),
     // null = pending, set = accepted
     acceptedOn: timestamp('accepted_on', {
       withTimezone: true,
