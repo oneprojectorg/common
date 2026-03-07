@@ -71,8 +71,8 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "supabase-dev.toml already configures seed.sql (gitignored, created locally). Connectivity ensured via SUPABASE_URL=http://supabase:54321 for server-side and NEXT_PUBLIC_SUPABASE_URL for browser. Ports 54321-54324 mapped in docker-compose.yml."
     },
     {
       "id": "US-005",
