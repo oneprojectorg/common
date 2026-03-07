@@ -688,6 +688,8 @@
   "Failed to remove user": "ব্যবহারকারী সরাতে ব্যর্থ",
   "No one has been invited yet": "এখনও কাউকে আমন্ত্রণ করা হয়নি",
   "Invited": "আমন্ত্রিত",
+  "Pending launch": "লঞ্চ মুলতুবি",
+  "This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.": "এই প্রক্রিয়াটি এখনও খসড়া অবস্থায় আছে। সম্পাদনা অ্যাক্সেস সহ অংশগ্রহণকারীদের অবিলম্বে আমন্ত্রণ জানানো হবে, সম্পাদনা অ্যাক্সেস ছাড়া অংশগ্রহণকারীদের আমন্ত্রণ প্রক্রিয়া চালু হলে পাঠানো হবে।",
   "Failed to cancel invite": "আমন্ত্রণ বাতিল করতে ব্যর্থ",
   "Accepts PDF, DOCX, XLSX up to {size}MB": "PDF, DOCX, XLSX {size}MB পর্যন্ত গ্রহণ করে",
   "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "এই প্রক্রিয়ায় প্রস্তাবগুলি যে বিভাগগুলি এগিয়ে নেওয়া উচিত তা সংজ্ঞায়িত করুন। প্রস্তাবকারীরা তাদের প্রস্তাব কোন বিভাগগুলি সমর্থন করে তা নির্বাচন করবেন।",
@@ -921,5 +923,10 @@
   "No score, just written feedback": "কোনো স্কোর নেই, শুধু লিখিত প্রতিক্রিয়া",
   "Score labels cannot be empty": "স্কোর লেবেল খালি রাখা যাবে না",
   "Delete criterion": "মানদণ্ড মুছুন",
-  "Are you sure you want to delete this criterion? This action cannot be undone.": "আপনি কি নিশ্চিত যে এই মানদণ্ডটি মুছতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।"
+  "Are you sure you want to delete this criterion? This action cannot be undone.": "আপনি কি নিশ্চিত যে এই মানদণ্ডটি মুছতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "This process is still in draft. Participant invites will be sent when the process launches.": "এই প্রক্রিয়াটি এখনও খসড়া অবস্থায় আছে। প্রক্রিয়া চালু হলে অংশগ্রহণকারীদের আমন্ত্রণ পাঠানো হবে।",
+  "{roleName} plural": "{roleName}",
+  "Launch process?": "প্রক্রিয়া চালু করবেন?",
+  "Launching your process will notify": "আপনার প্রক্রিয়া চালু করলে বিজ্ঞপ্তি পাবেন",
+  "{count, plural, =1 {1 participant} other {# participants}}.": "{count, plural, =1 {1 জন অংশগ্রহণকারী} other {# জন অংশগ্রহণকারী}}।"
 }

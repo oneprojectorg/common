@@ -4,6 +4,7 @@ import type { SectionProps } from '../../contentRegistry';
 
 export default function ParticipantsSection({
   decisionProfileId,
+  instanceId,
   decisionName,
 }: SectionProps) {
   return (
@@ -11,6 +12,7 @@ export default function ParticipantsSection({
       <div className="mx-auto max-w-5xl">
         <ProfileUsersAccess
           profileId={decisionProfileId}
+          instanceId={instanceId}
           processName={decisionName}
         />
       </div>

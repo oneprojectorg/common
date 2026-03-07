@@ -2,10 +2,13 @@
 
 import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type { SortDir } from '@op/common';
 import { useCursorPagination, useDebounce, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
+import { Header2 } from '@op/ui/Header';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -25,9 +28,11 @@ const ITEMS_PER_PAGE = 25;
 
 export const ProfileUsersAccess = ({
   profileId,
+  instanceId,
   processName,
 }: {
   profileId: string;
+  instanceId: string;
   processName?: string;
 }) => {
   const t = useTranslations();
@@ -74,6 +79,12 @@ export const ProfileUsersAccess = ({
   const { data: rolesData, isPending: rolesPending } =
     trpc.profile.listRoles.useQuery({ profileId });
 
+  // Check if process is in draft status
+  const { data: instance } = trpc.decision.getInstance.useQuery({
+    instanceId,
+  });
+  const isDraft = instance?.status === ProcessStatus.DRAFT;
+
   // Fetch pending invites to show alongside accepted members
   const { data: invites } = trpc.profile.listProfileInvites.useQuery(
     { profileId },
@@ -92,10 +103,26 @@ export const ProfileUsersAccess = ({
   return (
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-serif text-title-sm font-light text-neutral-black">
-            {t('Participants')}
-          </h2>
+        <Header2 className="font-serif text-title-sm">
+          {t('Participants')}
+        </Header2>
+
+        {isDraft && (
+          <AlertBanner variant="banner" intent="warning">
+            {t(
+              'This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.',
+            )}
+          </AlertBanner>
+        )}
+
+        <div className="flex items-center justify-between gap-4">
+          <SearchField
+            placeholder={t('Search')}
+            value={searchQuery}
+            onChange={setSearchQuery}
+            size={isMobile ? 'small' : undefined}
+            className="w-full md:max-w-96"
+          />
           <Button
             color="secondary"
             size="small"
@@ -105,14 +132,6 @@ export const ProfileUsersAccess = ({
             {t('Invite')}
           </Button>
         </div>
-
-        <SearchField
-          placeholder={t('Search')}
-          value={searchQuery}
-          onChange={setSearchQuery}
-          size={isMobile ? 'small' : undefined}
-          className="w-full md:max-w-96"
-        />
 
         <ProfileUsersAccessTable
           profileUsers={profileUsers}
@@ -135,6 +154,7 @@ export const ProfileUsersAccess = ({
 
         <ProfileInviteModal
           profileId={profileId}
+          isDraft={isDraft}
           isOpen={isInviteModalOpen}
           onOpenChange={setIsInviteModalOpen}
         />

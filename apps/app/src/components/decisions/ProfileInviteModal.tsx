@@ -4,6 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
+import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
@@ -49,10 +50,12 @@ type SelectedItemsByRole = Record<string, SelectedItem[]>;
 
 export const ProfileInviteModal = ({
   profileId,
+  isDraft,
   isOpen,
   onOpenChange,
 }: {
   profileId: string;
+  isDraft: boolean;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) => {
@@ -86,6 +89,7 @@ export const ProfileInviteModal = ({
         >
           <ProfileInviteModalContent
             profileId={profileId}
+            isDraft={isDraft}
             onOpenChange={onOpenChange}
           />
         </Suspense>
@@ -96,9 +100,11 @@ export const ProfileInviteModal = ({
 
 function ProfileInviteModalContent({
   profileId,
+  isDraft,
   onOpenChange,
 }: {
   profileId: string;
+  isDraft: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) {
   const t = useTranslations();
@@ -117,6 +123,22 @@ function ProfileInviteModalContent({
     left: 0,
     width: 0,
   });
+
+  // Fetch roles with decisions zone permissions to identify admin roles
+  const { data: rolesWithPerms } = trpc.profile.listRoles.useQuery(
+    { profileId, zoneName: 'decisions' },
+    { enabled: isDraft },
+  );
+  const adminRoleIds = useMemo(() => {
+    if (!rolesWithPerms) {
+      return new Set<string>();
+    }
+    return new Set(
+      rolesWithPerms.items.filter((r) => r.permissions?.admin).map((r) => r.id),
+    );
+  }, [rolesWithPerms]);
+
+  const showDraftBanner = isDraft && !adminRoleIds.has(selectedRoleId);
 
   // Fetch existing pending invites and members
   const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
@@ -418,6 +440,14 @@ function ProfileInviteModalContent({
           }}
           onRoleNameChange={setSelectedRoleName}
         />
+
+        {showDraftBanner && (
+          <AlertBanner variant="banner" intent="warning">
+            {t(
+              'This process is still in draft. Participant invites will be sent when the process launches.',
+            )}
+          </AlertBanner>
+        )}
 
         {/* Search Input */}
         <div ref={searchContainerRef} onPaste={handlePaste}>

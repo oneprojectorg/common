@@ -72,20 +72,16 @@ export const ProfileUsersAccessTable = ({
     );
   }
 
-  if (isMobile) {
-    return (
-      <MobileProfileUsersContent
-        profileUsers={profileUsers}
-        profileId={profileId}
-        isLoading={isLoading}
-        roles={roles}
-        invites={invites}
-        processName={processName}
-      />
-    );
-  }
-
-  return (
+  return isMobile ? (
+    <MobileProfileUsersContent
+      profileUsers={profileUsers}
+      profileId={profileId}
+      isLoading={isLoading}
+      roles={roles}
+      invites={invites}
+      processName={processName}
+    />
+  ) : (
     <ProfileUsersAccessTableContent
       profileUsers={profileUsers}
       profileId={profileId}
@@ -96,6 +92,15 @@ export const ProfileUsersAccessTable = ({
       invites={invites}
       processName={processName}
     />
+  );
+};
+
+const InviteStatusLabel = ({ notifiedAt }: { notifiedAt: string | null }) => {
+  const t = useTranslations();
+  return (
+    <span className="text-sm text-neutral-gray4">
+      {notifiedAt ? t('Invited') : t('Pending launch')}
+    </span>
   );
 };
 
@@ -424,7 +429,6 @@ const MobileInviteCard = ({
   roles: { id: string; name: string }[];
   processName?: string;
 }) => {
-  const t = useTranslations();
   const displayName = invite.inviteeProfile?.name ?? invite.email;
 
   return (
@@ -434,7 +438,7 @@ const MobileInviteCard = ({
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
             <span className="text-base text-neutral-black">{displayName}</span>
-            <span className="text-sm text-neutral-gray4">{t('Invited')}</span>
+            <InviteStatusLabel notifiedAt={invite.notifiedAt} />
           </div>
           <span className="truncate text-base text-neutral-black">
             {invite.email}
@@ -557,9 +561,7 @@ const ProfileUsersAccessTableContent = ({
                       <span className="text-base text-neutral-black">
                         {displayName}
                       </span>
-                      <span className="text-sm text-neutral-gray4">
-                        {t('Invited')}
-                      </span>
+                      <InviteStatusLabel notifiedAt={invite.notifiedAt} />
                     </div>
                   </div>
                 </TableCell>

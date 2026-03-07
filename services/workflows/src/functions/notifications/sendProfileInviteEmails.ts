@@ -1,5 +1,8 @@
+import { db } from '@op/db/client';
+import { profileInvites } from '@op/db/schema';
 import { OPBatchSend, OPInvitationEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
+import { inArray } from 'drizzle-orm';
 
 const { profileInviteSent } = Events;
 
@@ -9,9 +12,8 @@ export const sendProfileInviteEmails = inngest.createFunction(
   },
   { event: profileInviteSent.name },
   async ({ event, step }) => {
-    const { invitations, senderProfileId } = profileInviteSent.schema.parse(
-      event.data,
-    );
+    const { invitations, senderProfileId, inviteIds } =
+      profileInviteSent.schema.parse(event.data);
 
     const result = await step.run('send-profile-invite-emails', async () => {
       console.log(
@@ -48,6 +50,16 @@ export const sendProfileInviteEmails = inngest.createFunction(
         errors,
       };
     });
+
+    // Mark invites as notified after successful email delivery
+    if (inviteIds && inviteIds.length > 0) {
+      await step.run('mark-invites-notified', async () => {
+        await db
+          .update(profileInvites)
+          .set({ notifiedAt: new Date().toISOString() })
+          .where(inArray(profileInvites.id, inviteIds));
+      });
+    }
 
     return {
       message: `${result.sent} profile invite email(s) sent, ${result.failed} failed`,

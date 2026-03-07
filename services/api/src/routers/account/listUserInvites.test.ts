@@ -34,6 +34,7 @@ describe.concurrent('account.listUserInvites', () => {
         profileEntityType: EntityType.DECISION,
         accessRoleId: ROLES.MEMBER.id,
         invitedBy: adminUser.userProfileId,
+        notifiedAt: new Date().toISOString(),
       })
       .returning();
 
@@ -93,6 +94,7 @@ describe.concurrent('account.listUserInvites', () => {
       profileEntityType: EntityType.DECISION,
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: decisionAdmin.userProfileId,
+      notifiedAt: new Date().toISOString(),
     });
 
     testData.trackProfileInvite(invitee.email, decisionProfile.id);
@@ -104,6 +106,7 @@ describe.concurrent('account.listUserInvites', () => {
       profileEntityType: EntityType.ORG,
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: orgAdmin.userProfileId,
+      notifiedAt: new Date().toISOString(),
     });
 
     testData.trackProfileInvite(invitee.email, orgProfile.id);
@@ -157,6 +160,7 @@ describe.concurrent('account.listUserInvites', () => {
       profileEntityType: EntityType.ORG,
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: adminUser.userProfileId,
+      notifiedAt: new Date().toISOString(),
     });
 
     testData.trackProfileInvite(invitee.email, profile.id);
@@ -169,6 +173,7 @@ describe.concurrent('account.listUserInvites', () => {
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: admin2.userProfileId,
       acceptedOn: new Date().toISOString(),
+      notifiedAt: new Date().toISOString(),
     });
 
     testData.trackProfileInvite(invitee.email, profile2.id);
@@ -214,6 +219,7 @@ describe.concurrent('account.listUserInvites', () => {
       profileEntityType: EntityType.ORG,
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: adminUser.userProfileId,
+      notifiedAt: new Date().toISOString(),
     });
 
     testData.trackProfileInvite(uppercaseEmail, profile.id);
@@ -244,6 +250,7 @@ describe.concurrent('account.listUserInvites', () => {
       profileEntityType: EntityType.DECISION,
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: adminUser.userProfileId,
+      notifiedAt: new Date().toISOString(),
     });
 
     testData.trackProfileInvite(invitee.email, profile.id);
@@ -303,6 +310,7 @@ describe.concurrent('account.listUserInvites', () => {
       profileEntityType: EntityType.ORG,
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: adminUser.userProfileId,
+      notifiedAt: new Date().toISOString(),
     });
 
     testData.trackProfileInvite(invitee.email, profile.id);

@@ -1,6 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { allowList, profileInvites } from '@op/db/schema';
+import { ProcessStatus, allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -9,6 +9,64 @@ import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
 import { decisionPermission } from '../decision/permissions';
+
+/**
+ * Determines which invites should be notified immediately and sends the
+ * Inngest event. Draft processes queue non-admin invites until publish.
+ */
+const sendInviteNotifications = async ({
+  preparedInvites,
+  insertedInviteIds,
+  isDraft,
+  adminRoleIds,
+  senderProfileId,
+  inviterName,
+  profileName,
+  inviteUrl,
+  personalMessage,
+}: {
+  preparedInvites: Array<{
+    email: string;
+    accessRoleId: string;
+    authUserId?: string;
+  }>;
+  insertedInviteIds: Array<{ id: string }>;
+  isDraft: boolean;
+  adminRoleIds: Set<string>;
+  senderProfileId: string;
+  inviterName: string;
+  profileName: string;
+  inviteUrl: string;
+  personalMessage?: string;
+}) => {
+  const notifiedInvites = preparedInvites
+    .map((inv, idx) => ({ inv, inviteId: insertedInviteIds[idx]?.id }))
+    .filter(
+      (entry): entry is typeof entry & { inviteId: string } =>
+        !!entry.inviteId &&
+        (!isDraft || adminRoleIds.has(entry.inv.accessRoleId)),
+    );
+
+  if (notifiedInvites.length === 0) {
+    return;
+  }
+
+  await event.send({
+    name: Events.profileInviteSent.name,
+    data: {
+      senderProfileId,
+      inviteIds: notifiedInvites.map((n) => n.inviteId),
+      invitations: notifiedInvites.map((n) => ({
+        email: n.inv.email,
+        authUserId: n.inv.authUserId,
+        inviterName,
+        profileName,
+        inviteUrl,
+        personalMessage,
+      })),
+    },
+  });
+};
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -64,14 +122,20 @@ export const inviteUsersToProfile = async ({
     existingPendingInvites,
     profileUser,
     proposalWithDecision,
+    processInstanceForProfile,
   ] = await Promise.all([
     // Get the target profile details
     assertProfile(profileId),
     // Get the requester's profile for the inviter name
     assertProfile(requesterProfileId),
-    // Get all target roles
+    // Get all target roles with their zone permissions (needed to detect admin roles)
     db.query.accessRoles.findMany({
       where: { id: { in: uniqueRoleIds } },
+      with: {
+        zonePermissions: {
+          with: { accessZone: true },
+        },
+      },
     }),
     // Get all users with their profile memberships for this profile
     db._query.users.findMany({
@@ -107,6 +171,10 @@ export const inviteUsersToProfile = async ({
         },
       },
     }),
+    // Check if this profile belongs directly to a process instance (decision-level invites)
+    db.query.processInstances.findFirst({
+      where: { profileId },
+    }),
   ]);
 
   if (!profileUser) {
@@ -131,6 +199,31 @@ export const inviteUsersToProfile = async ({
       `Invalid role(s) specified: ${invalidRoleIds.join(', ')}`,
     );
   }
+
+  // Determine if emails should be sent immediately or queued.
+  // Invites to draft processes are queued (notifiedAt=null) until publish,
+  // UNLESS the role being assigned includes decisions: ADMIN.
+  // Check both proposal-level (via proposal -> processInstance) and
+  // decision-level (direct processInstance profile) relationships.
+  const processInstanceStatus =
+    proposalWithDecision?.processInstance?.status ??
+    processInstanceForProfile?.status;
+  const isDraft = processInstanceStatus === ProcessStatus.DRAFT;
+
+  // Only needed when the process is in draft to determine which invites to queue
+  const adminRoleIds = isDraft
+    ? new Set(
+        targetRoles
+          .filter((role) =>
+            role.zonePermissions.some(
+              (zp) =>
+                zp.accessZone.name === 'decisions' &&
+                (zp.permission & permission.ADMIN) !== 0,
+            ),
+          )
+          .map((role) => role.id),
+      )
+    : new Set<string>();
 
   const results = {
     successful: [] as string[],
@@ -169,37 +262,29 @@ export const inviteUsersToProfile = async ({
     existingPendingInvites.map((invite) => invite.email.toLowerCase()),
   );
 
-  // Collect data for batch insert
+  // Collect data for batch operations
   const allowListEntries: Array<{
     email: string;
     organizationId: null;
     metadata: null;
   }> = [];
 
-  const profileInviteEntries: Array<{
+  const preparedInvites: Array<{
     email: string;
-    profileId: string;
-    profileEntityType: string;
     accessRoleId: string;
-    invitedBy: string;
     inviteeProfileId?: string;
-    message?: string;
-  }> = [];
-
-  const emailsToInvite: Array<{
-    email: string;
     authUserId?: string;
-    inviterName: string;
-    profileName: string;
-    inviteUrl: string;
-    personalMessage?: string;
   }> = [];
 
   // Process each invitation - validate and collect data
   for (const invitation of normalizedInvitations) {
     const { email, roleId } = invitation;
     const existingUser = usersByEmail.get(email);
-    const targetRole = rolesById.get(roleId)!;
+    const targetRole = rolesById.get(roleId);
+
+    if (!targetRole) {
+      continue;
+    }
 
     // Check for pending invite (applies to both existing and new users)
     if (pendingInviteEmailsSet.has(email)) {
@@ -233,54 +318,59 @@ export const inviteUsersToProfile = async ({
       allowListEmailsSet.add(email);
     }
 
-    // Collect profile invite entry
-    profileInviteEntries.push({
+    preparedInvites.push({
       email,
-      profileId,
-      profileEntityType: profile.type,
       accessRoleId: targetRole.id,
-      invitedBy: requesterProfileId,
       inviteeProfileId: existingUser?.profileId ?? undefined,
-      message: personalMessage,
-    });
-
-    // Collect email data for event
-    emailsToInvite.push({
-      email,
       authUserId: existingUser?.authUserId,
-      inviterName,
-      profileName,
-      inviteUrl,
-      personalMessage,
     });
   }
 
   // Batch insert and send event in a single transaction
   // If event.send fails, we rollback the DB inserts
-  if (profileInviteEntries.length > 0) {
+  if (preparedInvites.length > 0) {
     await db.transaction(async (tx) => {
       if (allowListEntries.length > 0) {
         await tx.insert(allowList).values(allowListEntries);
       }
-      await tx.insert(profileInvites).values(profileInviteEntries);
 
-      // Send event inside transaction - failure rolls back DB changes
-      await event.send({
-        name: Events.profileInviteSent.name,
-        data: {
-          senderProfileId: requesterProfileId,
-          invitations: emailsToInvite,
-        },
+      const insertedInvites = await tx
+        .insert(profileInvites)
+        .values(
+          preparedInvites.map((inv) => ({
+            email: inv.email,
+            profileId,
+            profileEntityType: profile.type,
+            accessRoleId: inv.accessRoleId,
+            invitedBy: requesterProfileId,
+            inviteeProfileId: inv.inviteeProfileId,
+            message: personalMessage,
+          })),
+        )
+        .returning({ id: profileInvites.id });
+
+      await sendInviteNotifications({
+        preparedInvites,
+        insertedInviteIds: insertedInvites,
+        isDraft,
+        adminRoleIds,
+        senderProfileId: requesterProfileId,
+        inviterName,
+        profileName,
+        inviteUrl,
+        personalMessage,
       });
     });
 
     // Mark all as successful since transaction completed
-    results.successful.push(...emailsToInvite.map((e) => e.email));
+    results.successful.push(...preparedInvites.map((inv) => inv.email));
     // Collect auth user IDs for existing users (for cache invalidation)
     results.existingUserAuthIds.push(
-      ...emailsToInvite
-        .filter((e): e is typeof e & { authUserId: string } => !!e.authUserId)
-        .map((e) => e.authUserId),
+      ...preparedInvites
+        .filter(
+          (inv): inv is typeof inv & { authUserId: string } => !!inv.authUserId,
+        )
+        .map((inv) => inv.authUserId),
     );
   }
 

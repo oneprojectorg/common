@@ -1,3 +1,4 @@
+import { OPURLConfig } from '@op/core';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -5,6 +6,7 @@ import {
   processInstances,
   profiles,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -237,6 +239,55 @@ export const updateDecisionInstance = async ({
 
   if (!profile) {
     throw new CommonError('Failed to fetch updated decision profile');
+  }
+
+  // When publishing a draft, send queued invite emails for this process instance's profile
+  const isPublishing =
+    status === ProcessStatus.PUBLISHED &&
+    existingInstance.status === ProcessStatus.DRAFT;
+
+  if (isPublishing) {
+    const queuedInvites = await db.query.profileInvites.findMany({
+      where: {
+        profileId,
+        notifiedAt: { isNull: true },
+      },
+      with: {
+        profile: true,
+        inviter: true,
+      },
+    });
+
+    if (queuedInvites.length > 0) {
+      const baseUrl = OPURLConfig('APP').ENV_URL;
+
+      const invitations = queuedInvites.map((invite) => ({
+        email: invite.email,
+        inviterName: invite.inviter?.name || 'A team member',
+        profileName: invite.profile.name,
+        inviteUrl: profile.slug
+          ? `${baseUrl}/decisions/${profile.slug}`
+          : baseUrl,
+        personalMessage: invite.message ?? undefined,
+      }));
+
+      // Use the first invite's inviter as the sender
+      const firstInvite = queuedInvites[0];
+      if (!firstInvite) {
+        return;
+      }
+      const senderProfileId = firstInvite.invitedBy;
+
+      await event.send({
+        name: Events.profileInviteSent.name,
+        data: {
+          senderProfileId,
+          inviteIds: queuedInvites.map((inv) => inv.id),
+          invitations,
+        },
+      });
+      // notifiedAt is set by the Inngest workflow after successful email delivery
+    }
   }
 
   return profile;
