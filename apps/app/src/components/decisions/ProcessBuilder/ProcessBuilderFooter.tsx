@@ -6,7 +6,7 @@ import { Button } from '@op/ui/Button';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { LuLogOut, LuPlus, LuSave } from 'react-icons/lu';
+import { LuLogOut, LuSave } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -133,9 +133,9 @@ export const ProcessBuilderFooter = ({
           />
         </div>
 
-        <div className="flex h-full items-center justify-between px-4 md:grid md:grid-cols-3 md:px-8">
-          {/* Left: Exit + Back (Back desktop only) */}
-          <div className="flex items-center gap-2">
+        <div className="flex h-full items-center justify-between px-4 md:px-0">
+          {/* Left: Exit + Back — matches sidebar width */}
+          <div className="flex items-center gap-2 md:w-60 md:shrink-0 md:px-4">
             <Link
               href={`/decisions/${slug}`}
               className="inline-flex h-10 items-center gap-1 px-2 text-sm text-charcoal transition-colors hover:bg-neutral-gray1"
@@ -154,32 +154,67 @@ export const ProcessBuilderFooter = ({
             )}
           </div>
 
-          {/* Center: Desktop progress bar + text */}
-          <div className="hidden md:flex md:items-center md:gap-4">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2">
-              <div
-                className="h-full rounded-full transition-all duration-300"
+          {/* Center + Right: content-width area after sidebar */}
+          <div className="hidden md:flex md:flex-1 md:items-center md:px-8">
+            {/* Progress bar constrained to content width, centered like page content */}
+            <div className="mx-auto flex w-full max-w-160 items-center gap-4">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${validation.completionPercentage}%`,
+                    backgroundImage:
+                      'linear-gradient(to right, #3EC300, #0396A6)',
+                  }}
+                />
+              </div>
+              <span
+                className="shrink-0 bg-clip-text text-base text-transparent"
                 style={{
-                  width: `${validation.completionPercentage}%`,
                   backgroundImage:
                     'linear-gradient(to right, #3EC300, #0396A6)',
                 }}
-              />
+              >
+                {t('{count}% complete', {
+                  count: validation.completionPercentage,
+                })}
+              </span>
             </div>
-            <span className="shrink-0 text-sm text-charcoal">
-              {t('{count}% complete', {
-                count: validation.completionPercentage,
-              })}
-            </span>
+
+            {/* Desktop action buttons */}
+            <div className="flex shrink-0 items-center gap-2">
+              {hasNext && (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
+                >
+                  {t('Next')}
+                </button>
+              )}
+              {(!isDraft ||
+                (validation.isReadyToLaunch && !isTerminalStatus)) && (
+                <Button
+                  className="h-8 rounded-md"
+                  onPress={handleLaunchOrSave}
+                  isDisabled={updateInstance.isPending}
+                >
+                  {!isDraft && <LuSave className="size-4" />}
+                  <span className="hidden md:inline">
+                    {isDraft ? t('Launch Process') : t('Update Process')}
+                  </span>
+                </Button>
+              )}
+            </div>
           </div>
 
-          {/* Right: Back (mobile only) + Next + Launch */}
-          <div className="flex items-center justify-end gap-2">
+          {/* Mobile: Back + Next + Launch */}
+          <div className="flex items-center justify-end gap-2 md:hidden">
             {hasPrev && (
               <button
                 type="button"
                 onClick={goBack}
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1 md:hidden"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
               >
                 {t('Back')}
               </button>
@@ -193,27 +228,16 @@ export const ProcessBuilderFooter = ({
                 {t('Next')}
               </button>
             )}
-            <Button
-              className="h-8 rounded-md"
-              onPress={handleLaunchOrSave}
-              isDisabled={
-                updateInstance.isPending ||
-                !validation.isReadyToLaunch ||
-                isTerminalStatus
-              }
-            >
-              {isDraft ? (
-                <LuPlus className="size-4" />
-              ) : (
-                <LuSave className="size-4" />
-              )}
-              <span className="md:hidden">
+            {(!isDraft ||
+              (validation.isReadyToLaunch && !isTerminalStatus)) && (
+              <Button
+                className="h-8 rounded-md"
+                onPress={handleLaunchOrSave}
+                isDisabled={updateInstance.isPending}
+              >
                 {isDraft ? t('Launch') : t('Update')}
-              </span>
-              <span className="hidden md:inline">
-                {isDraft ? t('Launch Process') : t('Update Process')}
-              </span>
-            </Button>
+              </Button>
+            )}
           </div>
         </div>
       </footer>
