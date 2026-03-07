@@ -1,0 +1,61 @@
+## Codebase Patterns
+- `SECTIONS_BY_STEP` in navigationConfig.ts must include ALL StepIds (satisfies Record<StepId, ...>). Adding a section requires updating SECTIONS_BY_STEP, SIDEBAR_ITEMS, DEFAULT_NAVIGATION_CONFIG.sections, and SECTION_VALIDATORS in processBuilderValidation.ts
+- `SectionId` type is derived automatically from SECTIONS_BY_STEP, so adding a section there makes it available everywhere
+- Section components live in `stepContent/{stepName}/ComponentName.tsx` and receive `SectionProps` from contentRegistry
+- Always add to both `CONTENT_REGISTRY` and `FLAT_CONTENT_REGISTRY` in contentRegistry.tsx
+
+# Ralph Progress Log
+Started: Fri Mar  6 14:38:34 CET 2026
+---
+
+## 2026-03-06 - US-001
+- Added 'summary' section ID to SECTIONS_BY_STEP (participants step), SIDEBAR_ITEMS, DEFAULT_NAVIGATION_CONFIG
+- Created SummarySectionContent.tsx placeholder component
+- Registered in CONTENT_REGISTRY and FLAT_CONTENT_REGISTRY
+- Added 'summary' to SECTION_VALIDATORS (required due to Record<SectionId, SectionValidator> type)
+- Added 'Summary' translation key to all 5 language files (en, es, fr, pt, bn)
+- Files changed: navigationConfig.ts, contentRegistry.tsx, processBuilderValidation.ts, SummarySectionContent.tsx, all 5 dict files
+- **Learnings for future iterations:**
+  - processBuilderValidation.ts uses `Record<SectionId, SectionValidator>` - must add new sections there too
+  - fr.json had "Participants" → "Participants" (same in French), needed careful grep to find right occurrence
+---
+
+## 2026-03-06 - US-002
+- Added `excludedSectionIds: string[]` parameter to `useProcessNavigation` hook
+- Excluded sections are filtered from visibleSections in the useMemo
+- When current sectionParam is in excludedSectionIds, currentSection falls back to last visible section (redirects to participants)
+- Called `useProcessBuilderValidation(decisionProfileId)` in ProcessBuilderSectionNav, MobileSidebar (ProcessBuilderHeader), ProcessBuilderContent, and ProcessBuilderFooter
+- Passes `excludedSectionIds = isReadyToLaunch ? [] : ['summary']` to useProcessNavigation in all 4 consumers
+- Files changed: useProcessNavigation.ts, ProcessBuilderSectionNav.tsx, ProcessBuilderHeader.tsx, ProcessBuilderFooter.tsx, ProcessBuilderContent.tsx
+- **Learnings for future iterations:**
+  - useProcessNavigation is called in 4 separate components (SectionNav, MobileSidebar, Footer, Content) - all must be updated consistently for conditional section visibility
+  - The redirect effect in useProcessNavigation uses `currentSection` which falls back to `visibleSections[0]` - override to use `visibleSections[visibleSections.length-1]` for excluded sections to navigate to "previous" section
+  - ProcessBuilderContent also needs the exclusion to prevent rendering excluded section content
+---
+
+## 2026-03-06 - US-003 + US-005
+- Refactored SummarySectionContent.tsx into a Suspense wrapper with store hydration (same pattern as PhasesSection)
+- Created SummarySectionInner.tsx with actual content: phases/categories/participants stats
+- Stats sources: phases from store or instance phases (same logic as PhasesSectionContent), categories from store or instance config, participants from trpc.profile.listUsers + trpc.profile.listProfileInvites counts
+- Styled with rounded-lg border table, text-neutral-gray4 labels, text-neutral-charcoal values
+- Added translation keys to all 5 language files: 'Review your process', 'is ready to go live...', 'You can always edit...', 'Participants Invited'
+- Also marked US-005 as passing since all required translation keys were added in this story
+- Files changed: SummarySectionContent.tsx, SummarySectionInner.tsx (new), en/es/fr/pt/bn.json
+- **Learnings for future iterations:**
+  - The Suspense wrapper pattern: wrapper handles hydration (useState + useEffect on persist.onFinishHydration), inner component uses useSuspenseQuery
+  - SectionProps includes: decisionProfileId, instanceId, decisionName - all three are available
+  - For participant count: listUsers returns { items, next } with cursor pagination; use items.length for count (with limit:100)
+  - listProfileInvites returns array directly (not paginated)
+  - For bold name with i18n, use separate span: <span className="font-bold">{name}</span> + t('rest of sentence')
+---
+
+## 2026-03-06 - US-004
+- No code changes needed - verified all acceptance criteria work automatically from existing implementation
+- hasNext is false when on summary (it's last in visibleSections)
+- Launch button always visible, enabled when isReadyToLaunch = true (which is required for summary to appear)
+- hasPrev = true on summary (participants is before it)
+- completionPercentage = 100 when stepsRemaining = 0 (when isReadyToLaunch = true)
+- StepsRemaining popover: `{validation.stepsRemaining > 0 && ...}` - hidden when 0
+- **Learnings for future iterations:**
+  - PRD notes were accurate: "This should mostly work automatically" - trust the notes when they say things work automatically
+---

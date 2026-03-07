@@ -23,6 +23,7 @@ export const SECTIONS_BY_STEP = {
   participants: [
     { id: 'roles', labelKey: 'Roles & permissions' },
     { id: 'participants', labelKey: 'Participants' },
+    { id: 'summary', labelKey: 'Summary' },
   ],
 } as const satisfies Record<
   StepId,
@@ -50,15 +51,16 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
     rubric: ['criteria'],
-    participants: ['roles', 'participants'],
+    participants: ['roles', 'participants', 'summary'],
   },
 };
 
 // Flat sidebar items for the unified sidebar navigation
 export interface SidebarItem {
-  id: SectionId;
-  labelKey: TranslationKey;
+  id: SectionId | string;
+  labelKey: TranslationKey | string;
   parentStepId?: StepId;
+  isDynamic?: boolean;
 }
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
@@ -84,4 +86,38 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     labelKey: 'Participants',
     parentStepId: 'participants',
   },
+  {
+    id: 'summary',
+    labelKey: 'Summary',
+    parentStepId: 'participants',
+  },
 ];
+
+// Helper to create a dynamic phase section ID
+export function phaseToSectionId(phaseId: string): string {
+  return `phase-${phaseId}`;
+}
+
+// Helper to extract phaseId from a dynamic phase section ID
+export function sectionIdToPhaseId(sectionId: string): string | null {
+  if (sectionId.startsWith('phase-')) {
+    return sectionId.slice(6);
+  }
+  return null;
+}
+
+// Check if a section ID is a dynamic phase section
+export function isPhaseSection(sectionId: string): boolean {
+  return sectionId.startsWith('phase-');
+}
+
+const SECTION_ID_SET = new Set<string>(
+  Object.values(SECTIONS_BY_STEP).flatMap((sections) =>
+    sections.map((s) => s.id),
+  ),
+);
+
+// Type guard to narrow an arbitrary string to SectionId
+export function isSectionId(id: string): id is SectionId {
+  return SECTION_ID_SET.has(id);
+}

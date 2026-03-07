@@ -131,6 +131,7 @@
   "Budget": "বাজেট",
   "Proposals": "প্রস্তাবনা",
   "Participants": "অংশগ্রহণকারী",
+  "Summary": "সারসংক্ষেপ",
   "View Details": "বিস্তারিত দেখুন",
   "Edit Process": "প্রক্রিয়া সম্পাদনা করুন",
   "Participate": "অংশগ্রহণ করুন",
@@ -523,6 +524,7 @@
   "No phases defined": "কোনো পর্যায় নির্ধারিত নেই",
   "Add phase": "পর্যায় যোগ করুন",
   "New phase": "নতুন পর্যায়",
+  "Untitled phase": "শিরোনামহীন পর্যায়",
   "Proposal Categories": "প্রস্তাব বিভাগসমূহ",
   "Voting": "ভোটদান",
   "Template Editor": "টেমপ্লেট এডিটর",
@@ -922,5 +924,16 @@
   "No score, just written feedback": "কোনো স্কোর নেই, শুধু লিখিত প্রতিক্রিয়া",
   "Score labels cannot be empty": "স্কোর লেবেল খালি রাখা যাবে না",
   "Delete criterion": "মানদণ্ড মুছুন",
-  "Are you sure you want to delete this criterion? This action cannot be undone.": "আপনি কি নিশ্চিত যে এই মানদণ্ডটি মুছতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।"
+  "Are you sure you want to delete this criterion? This action cannot be undone.": "আপনি কি নিশ্চিত যে এই মানদণ্ডটি মুছতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "Not configured yet": "এখনও কনফিগার করা হয়নি",
+  "Configured": "কনফিগার করা হয়েছে",
+  "Your process still needs more information": "আপনার প্রক্রিয়াটির জন্য এখনও আরও তথ্য প্রয়োজন",
+  "is missing information in order to go live.": "লাইভ হওয়ার জন্য তথ্য অনুপস্থিত।",
+  "Take me there": "আমাকে সেখানে নিয়ে যাও",
+  "Next": "পরবর্তী",
+  "{count}% complete": "{count}% সম্পূর্ণ",
+  "Review your process": "আপনার প্রক্রিয়া পর্যালোচনা করুন",
+  "is ready to go live. Launching your process will invite and notify participants.": "লাইভ হতে প্রস্তুত। আপনার প্রক্রিয়া চালু করলে অংশগ্রহণকারীদের আমন্ত্রণ জানানো এবং বিজ্ঞপ্তি পাঠানো হবে।",
+  "You can always edit and invite participants after launching.": "চালু করার পরেও আপনি সম্পাদনা করতে এবং অংশগ্রহণকারীদের আমন্ত্রণ জানাতে পারবেন।",
+  "Participants Invited": "আমন্ত্রিত অংশগ্রহণকারী"
 }

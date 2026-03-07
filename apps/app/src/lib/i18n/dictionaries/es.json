@@ -130,6 +130,7 @@
   "Budget": "Presupuesto",
   "Proposals": "Propuestas",
   "Participants": "Participantes",
+  "Summary": "Resumen",
   "View Details": "Ver detalles",
   "Edit Process": "Editar proceso",
   "Participate": "Participar",
@@ -515,6 +516,7 @@
   "No phases defined": "No hay fases definidas",
   "Add phase": "Agregar fase",
   "New phase": "Nueva fase",
+  "Untitled phase": "Fase sin título",
   "Proposal Categories": "Categorías de propuestas",
   "Voting": "Votación",
   "Template Editor": "Editor de plantilla",
@@ -915,5 +917,16 @@
   "No score, just written feedback": "Sin puntuación, solo retroalimentación escrita",
   "Score labels cannot be empty": "Las etiquetas de puntuación no pueden estar vacías",
   "Delete criterion": "Eliminar criterio",
-  "Are you sure you want to delete this criterion? This action cannot be undone.": "¿Está seguro de que desea eliminar este criterio? Esta acción no se puede deshacer."
+  "Are you sure you want to delete this criterion? This action cannot be undone.": "¿Está seguro de que desea eliminar este criterio? Esta acción no se puede deshacer.",
+  "Not configured yet": "Aún no configurado",
+  "Configured": "Configurado",
+  "Your process still needs more information": "Su proceso aún necesita más información",
+  "is missing information in order to go live.": "le falta información para publicarse.",
+  "Take me there": "Llevarme allí",
+  "Next": "Siguiente",
+  "{count}% complete": "{count}% completado",
+  "Review your process": "Revisa tu proceso",
+  "is ready to go live. Launching your process will invite and notify participants.": "está listo para publicarse. Lanzar tu proceso invitará y notificará a los participantes.",
+  "You can always edit and invite participants after launching.": "Siempre puedes editar e invitar participantes después de lanzar.",
+  "Participants Invited": "Participantes Invitados"
 }

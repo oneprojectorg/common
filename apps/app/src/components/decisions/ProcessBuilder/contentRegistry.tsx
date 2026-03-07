@@ -2,12 +2,18 @@
 
 import { type ComponentType } from 'react';
 
-import type { SectionId, StepId } from './navigationConfig';
+import {
+  type SectionId,
+  type StepId,
+  isPhaseSection,
+} from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
+import PhaseDetailSection from './stepContent/general/PhaseDetailSection';
 import PhasesSection from './stepContent/general/PhasesSection';
 import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
 import ParticipantsSection from './stepContent/participants/ParticipantsSection';
 import RolesSection from './stepContent/participants/RolesSection';
+import SummarySectionContent from './stepContent/participants/SummarySectionContent';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
 import TemplateEditorSection from './stepContent/template/TemplateEditorSection';
 
@@ -40,6 +46,7 @@ const CONTENT_REGISTRY: ContentRegistry = {
   participants: {
     roles: RolesSection,
     participants: ParticipantsSection,
+    summary: SummarySectionContent,
   },
 };
 
@@ -62,13 +69,17 @@ const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
   criteria: CriteriaSection,
   roles: RolesSection,
   participants: ParticipantsSection,
+  summary: SummarySectionContent,
 };
 
 export function getContentComponentFlat(
-  sectionId: SectionId | undefined,
+  sectionId: SectionId | string | undefined,
 ): SectionComponent | null {
   if (!sectionId) {
     return null;
+  }
+  if (isPhaseSection(sectionId)) {
+    return PhaseDetailSection;
   }
   return FLAT_CONTENT_REGISTRY[sectionId] ?? null;
 }

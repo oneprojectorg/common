@@ -13,6 +13,7 @@ export interface ValidationSummary {
   sections: Record<SectionId, boolean>;
   stepsRemaining: number;
   isReadyToLaunch: boolean;
+  completionPercentage: number;
   checklist: { id: string; labelKey: TranslationKey; isValid: boolean }[];
 }
 
@@ -61,6 +62,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   criteria: () => true,
   roles: () => true,
   participants: () => true,
+  summary: () => true,
 };
 
 // ============ Checklist Items ============
@@ -124,6 +126,17 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
 ];
 
+// ============ Phase Validation ============
+
+export function isPhaseValid(phase: {
+  name?: string | null;
+  headline?: string | null;
+  description?: string | null;
+  endDate?: string | null;
+}): boolean {
+  return phaseSchema.safeParse(phase).success;
+}
+
 // ============ Validation ============
 
 export function validateAll(
@@ -141,11 +154,18 @@ export function validateAll(
   }));
 
   const stepsRemaining = checklist.filter((item) => !item.isValid).length;
+  const completionPercentage =
+    checklist.length > 0
+      ? Math.round(
+          ((checklist.length - stepsRemaining) / checklist.length) * 100,
+        )
+      : 0;
 
   return {
     sections,
     stepsRemaining,
     isReadyToLaunch: stepsRemaining === 0,
+    completionPercentage,
     checklist,
   };
 }

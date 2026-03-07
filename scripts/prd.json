@@ -1,0 +1,96 @@
+{
+  "project": "OP Common",
+  "branchName": "decision-builder-sidebar-stepper",
+  "description": "Process Builder Summary Step - Add a conditional Summary section that appears when all validation passes, showing process stats before launch",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add Summary section to navigation config and content registry",
+      "description": "As a developer, I need to register a new 'summary' section ID in the navigation config, sidebar items, and content registry so the Summary page can be navigated to and rendered.",
+      "acceptanceCriteria": [
+        "Add 'summary' as a new section ID in navigationConfig.ts under the 'participants' step (or a new step)",
+        "Add a SIDEBAR_ITEMS entry for Summary with labelKey 'Summary' as the last item",
+        "Add 'summary' to SECTIONS_BY_STEP so it's included in the navigation flow",
+        "Create a placeholder SummarySectionContent component that renders 'Summary' heading",
+        "Register the Summary component in contentRegistry.tsx (both CONTENT_REGISTRY and FLAT_CONTENT_REGISTRY)",
+        "Add a Suspense-wrapped section component following the existing pattern",
+        "Add translation key 'Summary' to ALL language files in apps/app/src/lib/i18n/dictionaries/",
+        "Navigating to ?section=summary renders the placeholder component",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Follow the pattern of existing sections. The summary section should be the very last in SIDEBAR_ITEMS. Place it under the 'participants' step in SECTIONS_BY_STEP or create a dedicated step. Add it to DEFAULT_NAVIGATION_CONFIG sections."
+    },
+    {
+      "id": "US-002",
+      "title": "Conditionally show Summary in sidebar based on validation",
+      "description": "As a user, I want the Summary section to only appear in the sidebar when all validation checks pass, so I know the process is ready to launch.",
+      "acceptanceCriteria": [
+        "Summary sidebar item is hidden when isReadyToLaunch is false",
+        "Summary sidebar item appears at the bottom of the sidebar when isReadyToLaunch is true",
+        "The stepper (Next/Back) includes Summary in its sequence only when it is visible",
+        "If validation becomes invalid while on Summary, the user is redirected to the previous section (participants)",
+        "The mobile sidebar also conditionally shows/hides the Summary item",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "The conditional visibility should happen in useProcessNavigation or at the sidebar level. useProcessBuilderValidation provides isReadyToLaunch. Pass it to the navigation hook or filter visibleSections. The ProcessBuilderSectionNav and MobileSidebar in ProcessBuilderHeader both need the conditional logic."
+    },
+    {
+      "id": "US-003",
+      "title": "Build SummarySectionContent with process stats",
+      "description": "As a user, I want to see a summary of my process configuration before launching so I can confirm everything is correct.",
+      "acceptanceCriteria": [
+        "Display 'Summary 🚀' as a small text-xs label in text-neutral-gray4",
+        "Display 'Review your process' as the heading using font-serif text-title-sm",
+        "Display bold process name followed by 'is ready to go live. Launching your process will invite and notify participants.'",
+        "Display 'You can always edit and invite participants after launching.' as a second paragraph",
+        "Display a bordered summary table (rounded-lg border) with rows: Phases count, Categories count, Participants Invited count",
+        "Table rows separated by border-b, labels in text-neutral-gray4, values in text-charcoal text-right",
+        "Phases count comes from store phases or instance phases",
+        "Categories count comes from instance proposalCategories",
+        "Participants count comes from tRPC profile.listUsers or profile.listProfileInvites queries",
+        "All user-facing strings wrapped with t() and added to ALL language files",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Follow the Figma design at node 6734:1689. Use the same layout pattern as other section pages (mx-auto w-full space-y-4 p-4 md:max-w-160 md:p-8). Read phases from useProcessBuilderStore, categories from instance data, participants from existing tRPC queries used on the Participants page."
+    },
+    {
+      "id": "US-004",
+      "title": "Hide Next button on Summary page",
+      "description": "As a user, when I'm on the Summary page I should not see the Next button since it's the last step, and the Launch Process button is the primary action.",
+      "acceptanceCriteria": [
+        "The Next button is hidden when the current section is 'summary' (hasNext is false since it's the last section)",
+        "The Launch Process / Update Process button remains visible and enabled on the Summary page",
+        "The Back button still works to go back to the previous section (participants)",
+        "The progress bar shows 100% when on the Summary page",
+        "The StepsRemaining popover is hidden when on Summary (since validation is complete)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "This should mostly work automatically if Summary is correctly the last item in visibleSections - hasNext will be false. The StepsRemaining popover already hides when stepsRemaining === 0. Verify these behaviors work correctly."
+    },
+    {
+      "id": "US-005",
+      "title": "Add all translation keys for Summary step",
+      "description": "As a developer, I need all new user-facing strings properly internationalized across all language files.",
+      "acceptanceCriteria": [
+        "Translation keys added for: 'Summary', 'Review your process', '{name} is ready to go live. Launching your process will invite and notify participants.', 'You can always edit and invite participants after launching.', 'Phases', 'Categories', 'Participants Invited'",
+        "Keys added to ALL language files in apps/app/src/lib/i18n/dictionaries/",
+        "All new strings in SummarySectionContent use t() from useTranslations",
+        "No hardcoded user-facing strings in any modified files",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Check all .json files in the dictionaries folder. Some keys like 'Phases' and 'Categories' may already exist. Only add missing ones. Use t('{name} is ready to go live...', { name: processName }) for interpolation."
+    }
+  ]
+}
