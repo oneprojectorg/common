@@ -241,10 +241,10 @@ export const updateDecisionInstance = async ({
     throw new CommonError('Failed to fetch updated decision profile');
   }
 
-  // When publishing, send queued invite emails for this process instance's profile
+  // When publishing a draft, send queued invite emails for this process instance's profile
   const isPublishing =
     status === ProcessStatus.PUBLISHED &&
-    existingInstance.status !== ProcessStatus.PUBLISHED;
+    existingInstance.status === ProcessStatus.DRAFT;
 
   if (isPublishing) {
     const queuedInvites = await db.query.profileInvites.findMany({
