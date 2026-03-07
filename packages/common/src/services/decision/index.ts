@@ -18,6 +18,7 @@ export * from './getDecisionBySlug';
 // Transition management
 export { TransitionEngine } from './transitionEngine';
 export type { TransitionCheckResult } from './transitionEngine';
+export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';
 export * from './updateTransitionsForProcess';
 export * from './transitionMonitor';
@@ -78,3 +79,9 @@ export type {
   DecisionInstanceData,
   PhaseInstanceData,
 } from './schemas/instanceData';
+export type {
+  DecisionSchemaDefinition,
+  PhaseDefinition,
+  PhaseRules,
+  ProcessConfig,
+} from './schemas/types';

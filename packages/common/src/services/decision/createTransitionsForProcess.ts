@@ -1,74 +1,51 @@
-import { db } from '@op/db/client';
+import { type TransactionType, db } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
-import type { InstanceData, PhaseConfiguration } from './types';
+import { buildExpectedTransitions } from './buildExpectedTransitions';
 
-export interface CreateTransitionsInput {
+/**
+ * Creates scheduled transition records for phases with date-based advancement.
+ * Each transition fires when the current phase's end date arrives.
+ *
+ * Rules are read from the instance's phase data (instanceData.phases[].rules),
+ * which are populated from the template when the instance is created.
+ */
+export async function createTransitionsForProcess({
+  processInstance,
+  tx,
+}: {
   processInstance: ProcessInstance;
-}
-
-export interface CreateTransitionsResult {
+  tx?: TransactionType;
+}): Promise<{
   transitions: Array<{
     id: string;
     fromStateId: string | null;
     toStateId: string;
     scheduledDate: Date;
   }>;
-}
+}> {
+  const dbClient = tx ?? db;
 
-/**
- * Creates transition records for all phases in a process instance.
- * Each transition represents the end of one phase and the start of the next.
- */
-export async function createTransitionsForProcess({
-  processInstance,
-}: CreateTransitionsInput): Promise<CreateTransitionsResult> {
   try {
-    const instanceData = processInstance.instanceData as InstanceData;
-    const phases = instanceData.phases;
+    const transitionsToCreate = buildExpectedTransitions(processInstance);
 
-    if (!phases || phases.length === 0) {
-      throw new CommonError(
-        'Process instance must have at least one phase configured',
-      );
+    if (transitionsToCreate.length === 0) {
+      return { transitions: [] };
     }
 
-    const transitionsToCreate = phases.flatMap(
-      (phase: PhaseConfiguration, index: number) => {
-        const scheduledDate = phase.endDate ?? phase.startDate;
-
-        // Skip phases that have no dates yet — they don't need transitions
-        if (!scheduledDate) {
-          return [];
-        }
-
-        const fromStateId = index > 0 ? phases[index - 1]?.phaseId : null;
-        const toStateId = phase.phaseId;
-
-        return [
-          {
-            processInstanceId: processInstance.id,
-            fromStateId,
-            toStateId,
-            scheduledDate: new Date(scheduledDate).toISOString(),
-          },
-        ];
-      },
-    );
-
-    const createdTransitions = await db
+    const createdTransitions = await dbClient
       .insert(decisionProcessTransitions)
       .values(transitionsToCreate)
       .returning();
 
     return {
-      transitions: createdTransitions.map((t) => ({
-        id: t.id,
-        fromStateId: t.fromStateId,
-        toStateId: t.toStateId,
-        scheduledDate: new Date(t.scheduledDate),
+      transitions: createdTransitions.map((transition) => ({
+        id: transition.id,
+        fromStateId: transition.fromStateId,
+        toStateId: transition.toStateId,
+        scheduledDate: new Date(transition.scheduledDate),
       })),
     };
   } catch (error) {
