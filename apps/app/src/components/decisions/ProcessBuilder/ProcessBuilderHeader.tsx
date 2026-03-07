@@ -12,6 +12,7 @@ import { LuChevronRight, LuCornerDownRight, LuHouse } from 'react-icons/lu';
 
 import { Link, type TranslationKey, useTranslations } from '@/lib/i18n';
 
+import { LocaleChooser } from '@/components/LocaleChooser';
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
 import {
@@ -60,7 +61,8 @@ const CreateModeHeader = () => {
         <LuChevronRight className="hidden size-4 md:block" />
         <span>{t('New process')}</span>
       </div>
-      <div className="pr-4 md:pr-8">
+      <div className="flex items-center gap-3 pr-4 md:pr-8">
+        <LocaleChooser />
         <UserAvatarMenu className="hidden md:block" />
       </div>
     </header>
@@ -102,7 +104,8 @@ const ProcessBuilderHeaderContent = ({
         <LuChevronRight className="hidden size-4 sm:block" />
         <span className="truncate">{displayName}</span>
       </div>
-      <div className="pr-4 md:pr-8">
+      <div className="flex items-center gap-3 pr-4 md:pr-8">
+        <LocaleChooser />
         <UserAvatarMenu className="hidden sm:block" />
       </div>
     </header>
