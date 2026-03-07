@@ -1,0 +1,81 @@
+services:
+  # ── Next.js frontend ────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm w:app dev
+    env_file: .env.docker
+    ports:
+      - "${APP_PORT:-3100}:3100"
+    volumes:
+      # Bind-mount the repo root for hot-reload
+      - .:/app
+      # Named volume prevents the bind mount from overwriting installed packages
+      - app_node_modules:/app/node_modules
+      # Named volume for Next.js build cache
+      - app_next:/app/apps/app/.next
+    networks:
+      - op-dev
+    depends_on:
+      - redis
+      - supabase
+
+  # ── tRPC API server ──────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm w:api dev
+    env_file: .env.docker
+    ports:
+      - "3300:3300"
+    volumes:
+      # Bind-mount the repo root for hot-reload
+      - .:/app
+      # Named volume prevents the bind mount from overwriting installed packages
+      - api_node_modules:/app/node_modules
+      # Named volume for Next.js build cache (api server uses Next.js)
+      - api_next:/app/apps/api/.next
+    networks:
+      - op-dev
+    depends_on:
+      - redis
+      - supabase
+
+  # ── Supabase local stack ─────────────────────────────────────────────────────
+  supabase:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: supabase start --config supabase/supabase-dev.toml
+    env_file: .env.docker
+    # Docker socket passthrough is required so the Supabase CLI can manage its
+    # own Docker containers (Postgres, Auth, Storage, etc.) on the host daemon.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "54321:54321" # Supabase API / Kong gateway
+      - "54322:54322" # Postgres database
+      - "54323:54323" # Supabase Studio
+      - "54324:54324" # Inbucket (email testing)
+    networks:
+      - op-dev
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - op-dev
+
+networks:
+  op-dev:
+    driver: bridge
+
+volumes:
+  app_node_modules:
+  api_node_modules:
+  app_next:
+  api_next:
