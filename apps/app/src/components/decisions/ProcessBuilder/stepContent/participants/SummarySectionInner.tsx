@@ -132,20 +132,22 @@ export function SummarySectionInner({
       <p>{t('You can always edit and invite participants after launching.')}</p>
       <div className="flex flex-col gap-2 rounded-lg border p-4">
         <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
-          <span className="text-sm text-neutral-gray4">{t('Phases')}</span>
-          <span className="text-sm text-neutral-charcoal">{phasesCount}</span>
+          <span className="text-base text-neutral-gray4">{t('Phases')}</span>
+          <span className="text-base text-neutral-charcoal">{phasesCount}</span>
         </div>
         <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
-          <span className="text-sm text-neutral-gray4">{t('Categories')}</span>
-          <span className="text-sm text-neutral-charcoal">
+          <span className="text-base text-neutral-gray4">
+            {t('Categories')}
+          </span>
+          <span className="text-base text-neutral-charcoal">
             {categories.length}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-neutral-gray4">
+          <span className="text-base text-neutral-gray4">
             {t('Participants Invited')}
           </span>
-          <span className="text-sm text-neutral-charcoal">
+          <span className="text-base text-neutral-charcoal">
             {participantsCount}
           </span>
         </div>
