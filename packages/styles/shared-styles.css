@@ -319,20 +319,6 @@
   --color-accent-950: #0a0a0a;
 
   /* ============================================
-  * Border Radius (calc-based from --radius-lg)
-  * Set --radius-lg to your brand's default (0.375rem = rounded-md)
-  * All other radii are calculated relative to it
-  * ============================================ */
-  --radius-lg: 0.375rem;
-  --radius-xs: calc(var(--radius-lg) * 0.25);
-  --radius-sm: calc(var(--radius-lg) * 0.5);
-  --radius-md: calc(var(--radius-lg) * 1.33);
-  --radius-xl: calc(var(--radius-lg) * 1.5);
-  --radius-2xl: calc(var(--radius-lg) * 2);
-  --radius-3xl: calc(var(--radius-lg) * 3);
-  --radius-4xl: calc(var(--radius-lg) * 4);
-
-  /* ============================================
    * Box Shadows
    * ============================================ */
   --shadow: 0px 0px 48px 0px rgba(20, 35, 38, 0.08);
@@ -470,18 +456,18 @@
 
   /* Base body styles */
   body {
-    background-color: hsl(var(--op-white));
+    background-color: var(--color-white);
     font-family: var(--font-sans);
-    color: hsl(var(--op-neutral-900));
+    color: var(--color-neutral-charcoal);
   }
 
   /* Placeholder styles */
   input::placeholder {
-    color: hsl(var(--op-neutral-500));
+    color: var(--color-neutral-gray3);
   }
 
   textarea::placeholder {
-    color: hsl(var(--op-neutral-500));
+    color: var(--color-neutral-gray3);
   }
 
   /* Hide Google extension bubble */
@@ -497,7 +483,7 @@
   /* Default hr styling - Tailwind v4 reset removes borders */
   hr {
     border-top-width: 1px;
-    border-color: hsl(var(--op-neutral-200));
+    border-color: var(--color-neutral-gray1);
   }
 }
 
@@ -509,7 +495,7 @@
 @utility better-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--op-neutral-600)) transparent;
+  scrollbar-color: var(--color-neutral-gray4) transparent;
 }
 
 @utility scrollable-hidden-scrollbar {
@@ -556,7 +542,7 @@
 
 /* Border glow utility */
 @utility border-glow {
-  border: 1px solid hsl(var(--op-neutral-500) / 0.5);
+  border: 1px solid color-mix(in srgb, var(--color-neutral-gray3) 50%, transparent);
   background-clip: padding-box;
   backdrop-filter: blur(40px) contrast(1.5) saturate(3);
   box-shadow:
