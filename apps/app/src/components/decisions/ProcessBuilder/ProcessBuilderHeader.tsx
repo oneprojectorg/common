@@ -157,7 +157,7 @@ const MobileSidebar = ({
       className="md:hidden"
     >
       <SheetBody>
-        <nav className="flex flex-col gap-2 px-4 py-2">
+        <nav className="flex flex-col gap-2 p-4">
           <SidebarNavItems
             visibleSections={visibleSections}
             phases={phases}
