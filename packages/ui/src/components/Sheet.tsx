@@ -36,7 +36,7 @@ export const Sheet = ({
   return (
     <ModalOverlay
       isDismissable={isDismissable}
-      className="fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm entering:animate-in entering:duration-200 entering:fade-in exiting:animate-out exiting:duration-150 exiting:fade-out"
+      className="fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm entering:animate-in entering:duration-300 entering:fade-in exiting:animate-out exiting:duration-300 exiting:fade-out"
       {...props}
     >
       <Modal
@@ -78,7 +78,7 @@ export const SheetHeader = ({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="ml-auto flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-gray1"
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 focus:outline-none"
         >
           <LuX className="size-4" />
         </button>
