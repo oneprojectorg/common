@@ -1,5 +1,10 @@
 import { Button } from '../src/components/Button';
-import { Sheet, SheetBody, SheetHeader, SheetTrigger } from '../src/components/Sheet';
+import {
+  Sheet,
+  SheetBody,
+  SheetHeader,
+  SheetTrigger,
+} from '../src/components/Sheet';
 
 export default {
   title: 'Sheet',
