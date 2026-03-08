@@ -1,7 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Sidebar, useSidebar } from '@op/ui/Sidebar';
+import { Sheet, SheetBody } from '@op/ui/Sheet';
+import { useSidebar } from '@op/ui/Sidebar';
 import { LuChevronRight, LuHouse, LuList } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -127,9 +128,8 @@ const MobileSidebar = ({
   instanceId: string;
   decisionProfileId?: string;
 }) => {
-  const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
-  const { setOpen } = useSidebar();
+  const { open, setOpen } = useSidebar();
   const { sections: validationSections } =
     useProcessBuilderValidation(decisionProfileId);
   const phases = useProcessPhases(instanceId, decisionProfileId);
@@ -150,22 +150,24 @@ const MobileSidebar = ({
   }
 
   return (
-    <Sidebar mobileOnly>
-      <nav className="flex flex-col gap-2 px-4 py-2">
-        <Link href="/" className="flex h-8 items-center gap-2 px-4">
-          <LuHouse className="size-4" />
-          {t('Home')}
-        </Link>
-        <hr />
-        <SidebarNavItems
-          visibleSections={visibleSections}
-          phases={phases}
-          currentSectionId={currentSection?.id}
-          phaseValidation={phaseValidation}
-          validationSections={validationSections}
-          onSectionClick={handleSectionClick}
-        />
-      </nav>
-    </Sidebar>
+    <Sheet
+      isOpen={open}
+      onOpenChange={setOpen}
+      side="bottom"
+      className="md:hidden"
+    >
+      <SheetBody>
+        <nav className="flex flex-col gap-2 px-4 py-2">
+          <SidebarNavItems
+            visibleSections={visibleSections}
+            phases={phases}
+            currentSectionId={currentSection?.id}
+            phaseValidation={phaseValidation}
+            validationSections={validationSections}
+            onSectionClick={handleSectionClick}
+          />
+        </nav>
+      </SheetBody>
+    </Sheet>
   );
 };
