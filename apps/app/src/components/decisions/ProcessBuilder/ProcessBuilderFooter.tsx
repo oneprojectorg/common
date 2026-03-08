@@ -18,6 +18,9 @@ import { useProcessNavigation } from './useProcessNavigation';
 import { useProcessPhases } from './useProcessPhases';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
+const NAV_BTN_CLS =
+  'inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1';
+
 export const ProcessBuilderFooter = ({
   instanceId,
   slug,
@@ -116,7 +119,7 @@ export const ProcessBuilderFooter = ({
               <button
                 type="button"
                 onClick={goBack}
-                className="hidden h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1 md:inline-flex"
+                className={`hidden md:inline-flex ${NAV_BTN_CLS}`}
               >
                 {t('Back')}
               </button>
@@ -134,11 +137,7 @@ export const ProcessBuilderFooter = ({
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
               {hasNext && (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
-                >
+                <button type="button" onClick={goNext} className={NAV_BTN_CLS}>
                   {t('Next')}
                 </button>
               )}
@@ -161,20 +160,12 @@ export const ProcessBuilderFooter = ({
           {/* Mobile: Back + Next + Launch */}
           <div className="flex items-center justify-end gap-2 md:hidden">
             {hasPrev && (
-              <button
-                type="button"
-                onClick={goBack}
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
-              >
+              <button type="button" onClick={goBack} className={NAV_BTN_CLS}>
                 {t('Back')}
               </button>
             )}
             {hasNext && (
-              <button
-                type="button"
-                onClick={goNext}
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1"
-              >
+              <button type="button" onClick={goNext} className={NAV_BTN_CLS}>
                 {t('Next')}
               </button>
             )}
