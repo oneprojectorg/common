@@ -93,7 +93,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'participants',
-    labelKey: 'Participants',
+    labelKey: 'Manage Participants',
     parentStepId: 'participants',
   },
   {
