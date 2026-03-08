@@ -36,7 +36,7 @@ export const Sheet = ({
   return (
     <ModalOverlay
       isDismissable={isDismissable}
-      className="fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm entering:animate-in entering:fade-in entering:duration-200 exiting:animate-out exiting:fade-out exiting:duration-150"
+      className="fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm entering:animate-in entering:duration-200 entering:fade-in exiting:animate-out exiting:duration-150 exiting:fade-out"
       {...props}
     >
       <Modal
@@ -72,9 +72,7 @@ export const SheetHeader = ({
         className,
       )}
     >
-      {children && (
-        <span className="font-serif text-title-sm">{children}</span>
-      )}
+      {children && <span className="font-serif text-title-sm">{children}</span>}
       {onClose && (
         <button
           type="button"
@@ -97,7 +95,9 @@ export const SheetBody = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('min-h-0 flex-1 overflow-y-auto', className)}>{children}</div>
+    <div className={cn('min-h-0 flex-1 overflow-y-auto', className)}>
+      {children}
+    </div>
   );
 };
 
