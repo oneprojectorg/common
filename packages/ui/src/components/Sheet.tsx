@@ -46,7 +46,7 @@ export const Sheet = ({
           className,
         )}
       >
-        <Dialog className="flex h-full flex-col outline-hidden">
+        <Dialog className="flex max-h-[inherit] flex-col overflow-hidden outline-hidden">
           {children}
         </Dialog>
       </Modal>
@@ -97,7 +97,7 @@ export const SheetBody = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('flex-1 overflow-y-auto', className)}>{children}</div>
+    <div className={cn('min-h-0 flex-1 overflow-y-auto', className)}>{children}</div>
   );
 };
 
