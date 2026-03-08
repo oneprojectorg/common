@@ -77,6 +77,11 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     parentStepId: 'template',
   },
   {
+    id: 'criteria',
+    labelKey: 'Review Rubric',
+    parentStepId: 'rubric',
+  },
+  {
     id: 'roles',
     labelKey: 'Roles & permissions',
     parentStepId: 'participants',
