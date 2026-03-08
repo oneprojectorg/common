@@ -6,9 +6,15 @@ import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
 import { Suspense, useEffect } from 'react';
 
+const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+    if (!posthogKey) {
+      return;
+    }
+
+    posthog.init(posthogKey, {
       api_host: '/stats',
       ui_host: posthogUIHost,
       capture_pageview: false, // We capture pageviews manually
@@ -17,6 +23,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // debug: process.env.NODE_ENV === 'development',
     });
   }, []);
+
+  if (!posthogKey) {
+    return <>{children}</>;
+  }
 
   return (
     <PHProvider client={posthog}>

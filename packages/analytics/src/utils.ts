@@ -2,6 +2,10 @@ import PostHogClient from './client';
 
 const posthog = PostHogClient();
 
+function isPostHogEnabled(): boolean {
+  return posthog !== null;
+}
+
 /**
  * Analytics utility functions for tracking user events
  */
@@ -25,12 +29,16 @@ export async function trackEvent({
   event,
   properties,
 }: AnalyticsEvent): Promise<void> {
-  posthog.capture({
+  if (!isPostHogEnabled()) {
+    return;
+  }
+
+  posthog!.capture({
     distinctId,
     event,
     properties,
   });
-  await posthog.shutdown();
+  await posthog!.shutdown();
 }
 
 /**
@@ -56,27 +64,33 @@ export async function identifyUser({
   distinctId,
   properties,
 }: AnalyticsIdentify): Promise<void> {
-  posthog.identify({
+  if (!isPostHogEnabled()) {
+    return;
+  }
+
+  posthog!.identify({
     distinctId,
     properties,
   });
-  await posthog.shutdown();
+  await posthog!.shutdown();
 }
 
 /**
  * Track multiple events in sequence
  */
 export async function trackEvents(events: AnalyticsEvent[]): Promise<void> {
-  if (events.length === 0) return;
+  if (events.length === 0 || !isPostHogEnabled()) {
+    return;
+  }
 
   events.forEach(({ distinctId, event, properties }) => {
-    posthog.capture({
+    posthog!.capture({
       distinctId,
       event,
       properties,
     });
   });
-  await posthog.shutdown();
+  await posthog!.shutdown();
 }
 
 /**
