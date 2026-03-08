@@ -5,6 +5,7 @@ import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/Pro
 import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSectionNav';
+import { ProcessBuilderShell } from '@/components/decisions/ProcessBuilder/ProcessBuilderShell';
 import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
 import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 
@@ -41,32 +42,34 @@ const EditDecisionPage = async ({
   };
 
   return (
-    <div className="bg-background relative flex h-dvh w-full flex-1 flex-col overflow-y-hidden">
-      <ProcessBuilderStoreInitializer
-        decisionProfileId={decisionProfile.id}
-        serverData={serverData}
-        isDraft={processInstance.status === 'draft'}
-      />
-      <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
-      <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
-        <ProcessBuilderSidebar
+    <ProcessBuilderShell>
+      <div className="bg-background relative flex h-dvh w-full flex-1 flex-col overflow-y-hidden">
+        <ProcessBuilderStoreInitializer
+          decisionProfileId={decisionProfile.id}
+          serverData={serverData}
+          isDraft={processInstance.status === 'draft'}
+        />
+        <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
+        <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
+          <ProcessBuilderSidebar
+            instanceId={instanceId}
+            decisionProfileId={decisionProfile.id}
+          />
+          <main className="h-full grow overflow-y-auto">
+            <ProcessBuilderContent
+              decisionProfileId={decisionProfile.id}
+              instanceId={instanceId}
+              decisionName={decisionProfile.name}
+            />
+          </main>
+        </div>
+        <ProcessBuilderFooter
           instanceId={instanceId}
+          slug={slug}
           decisionProfileId={decisionProfile.id}
         />
-        <main className="h-full grow overflow-y-auto">
-          <ProcessBuilderContent
-            decisionProfileId={decisionProfile.id}
-            instanceId={instanceId}
-            decisionName={decisionProfile.name}
-          />
-        </main>
       </div>
-      <ProcessBuilderFooter
-        instanceId={instanceId}
-        slug={slug}
-        decisionProfileId={decisionProfile.id}
-      />
-    </div>
+    </ProcessBuilderShell>
   );
 };
 

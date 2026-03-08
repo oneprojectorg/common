@@ -1,13 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  Sidebar,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from '@op/ui/Sidebar';
-import { LuChevronRight, LuHouse } from 'react-icons/lu';
+import { Sidebar, useSidebar } from '@op/ui/Sidebar';
+import { LuChevronRight, LuHouse, LuList } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -34,10 +29,10 @@ export const ProcessBuilderHeader = ({
   }
 
   return (
-    <SidebarProvider>
+    <>
       <ProcessBuilderHeaderContent instanceId={instanceId} slug={slug} />
       <MobileSidebarWithProfile instanceId={instanceId} slug={slug} />
-    </SidebarProvider>
+    </>
   );
 };
 
@@ -47,14 +42,12 @@ const CreateModeHeader = () => {
   return (
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
       <div className="flex items-center gap-2 pl-4 md:pl-8">
-        <Link
-          href="/"
-          className="hidden items-center gap-2 text-primary md:flex"
-        >
+        <Link href="/" className="flex items-center gap-2 text-neutral-black">
           <LuHouse className="size-4" />
           {t('Home')}
         </Link>
-        <LuChevronRight className="hidden size-4 md:block" />
+        <LuChevronRight className="size-4" />
+        <LuList className="size-4 shrink-0" />
         <span>{t('New process')}</span>
       </div>
       <div className="flex items-center gap-3 pr-4 md:pr-8">
@@ -88,19 +81,19 @@ const ProcessBuilderHeaderContent = ({
 
   return (
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
-      <div className="flex items-center gap-2 pl-4 md:pl-8">
-        <SidebarTrigger className="size-4 sm:hidden" />
+      <div className="flex min-w-0 items-center gap-2 pl-4 md:pl-8">
         <Link
           href="/"
-          className="hidden items-center gap-2 text-primary sm:flex"
+          className="flex shrink-0 items-center gap-2 text-neutral-black"
         >
           <LuHouse className="size-4" />
           {t('Home')}
         </Link>
-        <LuChevronRight className="hidden size-4 sm:block" />
+        <LuChevronRight className="size-4 shrink-0" />
+        <LuList className="size-4 shrink-0" />
         <span className="truncate">{displayName}</span>
       </div>
-      <div className="flex items-center gap-3 pr-4 md:pr-8">
+      <div className="flex shrink-0 items-center gap-3 pr-4 md:pr-8">
         <LocaleChooser />
         <UserAvatarMenu className="hidden sm:block" />
       </div>

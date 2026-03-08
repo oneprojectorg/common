@@ -47,8 +47,12 @@ export function ProgressIndicator({
         />
       </div>
       <span
-        className="shrink-0 bg-clip-text text-base text-transparent"
-        style={{ backgroundImage: GRADIENT }}
+        className={
+          clamped === 100
+            ? 'shrink-0 bg-clip-text text-base text-transparent'
+            : 'shrink-0 text-base text-neutral-black'
+        }
+        style={clamped === 100 ? { backgroundImage: GRADIENT } : undefined}
       >
         {t('{count}% complete', { count: clamped })}
       </span>

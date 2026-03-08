@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
+import { SidebarTrigger } from '@op/ui/Sidebar';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -106,7 +107,7 @@ export const ProcessBuilderFooter = ({
         />
 
         <div className="flex h-full items-center justify-between md:px-0">
-          {/* Left: Exit + Back — matches sidebar width */}
+          {/* Left: Exit — matches sidebar width */}
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
             <Link
               href={`/decisions/${slug}`}
@@ -115,15 +116,6 @@ export const ProcessBuilderFooter = ({
               <LuLogOut className="size-4 rotate-180" />
               {t('Exit')}
             </Link>
-            {hasPrev && (
-              <button
-                type="button"
-                onClick={goBack}
-                className={`hidden md:inline-flex ${NAV_BTN_CLS}`}
-              >
-                {t('Back')}
-              </button>
-            )}
           </div>
 
           {/* Center + Right: content-width area after sidebar */}
@@ -136,6 +128,11 @@ export const ProcessBuilderFooter = ({
 
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
+              {hasPrev && (
+                <button type="button" onClick={goBack} className={NAV_BTN_CLS}>
+                  {t('Back')}
+                </button>
+              )}
               {hasNext && (
                 <button type="button" onClick={goNext} className={NAV_BTN_CLS}>
                   {t('Next')}
@@ -157,8 +154,9 @@ export const ProcessBuilderFooter = ({
             </div>
           </div>
 
-          {/* Mobile: Back + Next + Launch */}
+          {/* Mobile: Menu + Back + Next + Launch */}
           <div className="flex items-center justify-end gap-2 md:hidden">
+            <SidebarTrigger />
             {hasPrev && (
               <button type="button" onClick={goBack} className={NAV_BTN_CLS}>
                 {t('Back')}

@@ -4,18 +4,13 @@ import { trpc } from '@op/api/client';
 import { type PhaseDefinition, ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
+import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
-import {
-  LuCheck,
-  LuChevronRight,
-  LuGripVertical,
-  LuPlus,
-  LuTrash2,
-} from 'react-icons/lu';
+import { LuCheck, LuGripVertical, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -160,7 +155,7 @@ export function PhasesSectionContent({
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-title-sm">{t('Phases')}</h2>
+        <Header2 className="font-serif text-title-sm">{t('Phases')}</Header2>
         <SaveStatusIndicator
           status={saveState.status}
           savedAt={saveState.savedAt}
@@ -207,34 +202,38 @@ export function PhasesSectionContent({
                   )}
                 >
                   <DragHandle {...dragHandleProps} />
-                  <button
-                    type="button"
-                    className="flex flex-1 cursor-pointer items-center gap-3"
-                    onClick={() => setSection(phaseToSectionId(phase.id))}
-                  >
-                    <div className="flex-1 text-left">
+                  <div className="flex flex-1 items-center justify-between gap-3">
+                    <div className="flex-1">
                       <p className="font-serif text-title-sm">{phase.name}</p>
                       {configured ? (
-                        <span className="flex items-center gap-1 text-xs text-primary-teal">
+                        <span className="flex items-center gap-1 text-sm text-primary-teal">
                           <LuCheck className="size-3" />
                           {t('Configured')}
                         </span>
                       ) : (
-                        <span className="text-xs text-neutral-gray4">
+                        <span className="text-sm text-neutral-gray4">
                           {t('Not configured yet')}
                         </span>
                       )}
                     </div>
-                    <LuChevronRight className="size-4 text-neutral-gray4" />
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded p-1 text-neutral-gray4 hover:text-functional-red"
-                    onClick={() => setPhaseToDelete(phase.id)}
-                    aria-label={t('Delete phase')}
-                  >
-                    <LuTrash2 className="size-4" />
-                  </button>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <Button
+                        color="secondary"
+                        size="small"
+                        onPress={() => setSection(phaseToSectionId(phase.id))}
+                      >
+                        {t('Configure')}
+                      </Button>
+                      <button
+                        type="button"
+                        className="rounded p-1 text-neutral-gray4 hover:text-functional-red"
+                        onClick={() => setPhaseToDelete(phase.id)}
+                        aria-label={t('Delete phase?')}
+                      >
+                        <LuTrash2 className="size-4" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             }}
@@ -259,7 +258,7 @@ export function PhasesSectionContent({
           }
         }}
       >
-        <ModalHeader>{t('Delete phase')}</ModalHeader>
+        <ModalHeader>{t('Delete phase?')}</ModalHeader>
         <ModalBody>
           <p>
             {t(
@@ -295,7 +294,6 @@ const PhaseDragPreview = ({ name }: { name?: string }) => {
       <div className="p-1">
         <LuGripVertical size={16} />
       </div>
-      <LuChevronRight size={16} />
       <p className="px-2 py-1 font-serif text-title-sm">{name}</p>
     </div>
   );
