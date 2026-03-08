@@ -59,12 +59,14 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
 };
 
 // Flat sidebar items for the unified sidebar navigation
-export interface SidebarItem {
-  id: SectionId | string;
-  labelKey: TranslationKey | string;
-  parentStepId?: StepId;
-  isDynamic?: boolean;
-}
+export type SidebarItem =
+  | {
+      id: SectionId;
+      labelKey: TranslationKey;
+      parentStepId?: StepId;
+      isDynamic?: false;
+    }
+  | { id: string; labelKey: string; parentStepId?: StepId; isDynamic: true };
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'overview', labelKey: 'Overview', parentStepId: 'general' },

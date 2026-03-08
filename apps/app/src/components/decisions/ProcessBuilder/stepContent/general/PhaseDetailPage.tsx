@@ -6,6 +6,7 @@ import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
+import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
@@ -280,9 +281,9 @@ function PhaseDetailForm({
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-title-sm">
+        <Header2 className="font-serif text-title-sm">
           {phase.name || t('Phases')}
-        </h2>
+        </Header2>
         <SaveStatusIndicator
           status={saveState.status}
           savedAt={saveState.savedAt}
