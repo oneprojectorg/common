@@ -7,6 +7,7 @@ export const STEPS = [
   { id: 'template', labelKey: 'Proposal Template' },
   { id: 'rubric', labelKey: 'Review Rubric' },
   { id: 'participants', labelKey: 'Participants' },
+  { id: 'summary', labelKey: 'Summary' },
 ] as const;
 
 // Derive StepId first so we can use it in SECTIONS_BY_STEP
@@ -23,8 +24,8 @@ export const SECTIONS_BY_STEP = {
   participants: [
     { id: 'roles', labelKey: 'Roles & permissions' },
     { id: 'participants', labelKey: 'Participants' },
-    { id: 'summary', labelKey: 'Summary' },
   ],
+  summary: [{ id: 'summary', labelKey: 'Summary' }],
 } as const satisfies Record<
   StepId,
   readonly { id: string; labelKey: TranslationKey }[]
@@ -46,12 +47,14 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
     template: true,
     rubric: false,
     participants: true,
+    summary: true,
   },
   sections: {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
     rubric: ['criteria'],
-    participants: ['roles', 'participants', 'summary'],
+    participants: ['roles', 'participants'],
+    summary: ['summary'],
   },
 };
 
@@ -94,7 +97,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'summary',
     labelKey: 'Summary',
-    parentStepId: 'participants',
+    parentStepId: 'summary',
   },
 ];
 

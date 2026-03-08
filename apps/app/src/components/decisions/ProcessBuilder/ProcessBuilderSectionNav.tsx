@@ -15,6 +15,7 @@ import {
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
+import { useProcessPhases } from './useProcessPhases';
 import { isPhaseValid } from './validation/processBuilderValidation';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
@@ -39,27 +40,7 @@ export const ProcessBuilderSidebar = ({
     { enabled: !!instanceId },
   );
 
-  const phases = useMemo(() => {
-    // Prefer Zustand store phases (updated immediately on edit) over API data
-    if (storePhases?.length) {
-      return storePhases.map((p) => ({
-        phaseId: p.phaseId,
-        name: p.name ?? '',
-      }));
-    }
-    const instancePhases = instance?.instanceData?.phases;
-    if (instancePhases?.length) {
-      return instancePhases.map((p) => ({
-        phaseId: p.phaseId,
-        name: p.name ?? '',
-      }));
-    }
-    const templatePhases = instance?.process?.processSchema?.phases;
-    if (templatePhases?.length) {
-      return templatePhases.map((p) => ({ phaseId: p.id, name: p.name }));
-    }
-    return [];
-  }, [storePhases, instance]);
+  const phases = useProcessPhases(instanceId, decisionProfileId);
 
   const phaseValidation = useMemo(() => {
     const source = storePhases ?? instance?.instanceData?.phases ?? [];
