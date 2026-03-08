@@ -20,6 +20,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       with: {
         process: true,
         owner: true,
+        steward: true,
         proposals: {
           columns: {
             id: true,

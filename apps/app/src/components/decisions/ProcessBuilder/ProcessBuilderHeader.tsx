@@ -105,6 +105,11 @@ const ProcessBuilderHeaderContent = ({
   const decisionProfileId = decisionProfile?.id;
   const validation = useProcessBuilderValidation(decisionProfileId);
 
+  const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
+  const isProcessOwner = userProfiles?.some(
+    (p) => p.id === processInstance?.owner?.id,
+  );
+
   const storeData = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId] : undefined,
   );
@@ -150,7 +155,9 @@ const ProcessBuilderHeaderContent = ({
         instanceId,
         name: storeData?.name || undefined,
         description: storeData?.description || undefined,
-        stewardProfileId: storeData?.stewardProfileId || undefined,
+        stewardProfileId: isProcessOwner
+          ? storeData?.stewardProfileId || undefined
+          : undefined,
         phases: storeData?.phases,
         proposalTemplate: storeData?.proposalTemplate,
         config: storeData?.config,

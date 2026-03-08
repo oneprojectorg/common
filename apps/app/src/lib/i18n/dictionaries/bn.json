@@ -542,7 +542,7 @@
   "Please try again in a moment": "অনুগ্রহ করে কিছুক্ষণ পরে আবার চেষ্টা করুন",
   "Process Stewardship": "প্রক্রিয়া পরিচালনা",
   "Who is stewarding this process?": "এই প্রক্রিয়াটি কে পরিচালনা করছে?",
-  "The organization, coalition, committee or individual responsible for running this process.": "এই প্রক্রিয়া পরিচালনার জন্য দায়ী সংস্থা, জোট, কমিটি বা ব্যক্তি।",
+  "The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.": "এই প্রক্রিয়া পরিচালনার জন্য দায়ী সংস্থা, জোট, কমিটি বা ব্যক্তি। শুধুমাত্র প্রক্রিয়ার মালিক তত্ত্বাবধায়ক পরিবর্তন করতে পারেন।",
   "Primary focus areas": "প্রাথমিক ফোকাস ক্ষেত্র",
   "Search focus areas": "ফোকাস ক্ষেত্র খুঁজুন",
   "Select the strategic areas this process advances": "এই প্রক্রিয়া যে কৌশলগত ক্ষেত্রগুলি অগ্রসর করে তা নির্বাচন করুন",

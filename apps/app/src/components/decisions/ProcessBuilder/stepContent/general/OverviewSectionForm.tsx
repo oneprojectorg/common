@@ -20,9 +20,7 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 const createOverviewValidator = (t: TranslateFn) =>
   z.object({
-    stewardProfileId: z
-      .string({ message: t('Select a steward for this process') })
-      .min(1, { message: t('Select a steward for this process') }),
+    stewardProfileId: z.string(),
     name: z
       .string({ message: t('Enter a process name') })
       .min(1, { message: t('Enter a process name') }),
@@ -119,6 +117,22 @@ export function OverviewSectionForm({
     name: p.name,
   }));
 
+  // Ensure the current steward appears in the dropdown so the Select can
+  // render its name — even when the viewer isn't the owner and their own
+  // profile list doesn't include the steward.
+  if (
+    instance.steward &&
+    !profileItems.some((p) => p.id === instance.steward?.id)
+  ) {
+    profileItems.push({
+      id: instance.steward.id,
+      name: instance.steward.name ?? '',
+    });
+  }
+
+  // Only the process owner can change the steward
+  const isProcessOwner = userProfiles?.some((p) => p.id === instance.owner?.id);
+
   // Debounced save: draft persists to API; non-draft only buffers locally.
   const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
     setSaveStatus(decisionProfileId, 'saving');
@@ -141,7 +155,9 @@ export function OverviewSectionForm({
         instanceId,
         name: values.name,
         description: values.description,
-        stewardProfileId: values.stewardProfileId || undefined,
+        stewardProfileId: isProcessOwner
+          ? values.stewardProfileId || undefined
+          : undefined,
         config: {
           organizeByCategories: values.organizeByCategories,
           requireCollaborativeProposals: values.requireCollaborativeProposals,
@@ -219,13 +235,13 @@ export function OverviewSectionForm({
               children={(field) => (
                 <field.Select
                   label={t('Who is stewarding this process?')}
-                  isRequired
                   placeholder={t('Select')}
+                  isDisabled={!isProcessOwner}
                   selectedKey={field.state.value || null}
                   onSelectionChange={(key) => field.handleChange(key as string)}
                   onBlur={field.handleBlur}
                   description={t(
-                    'The organization, coalition, committee or individual responsible for running this process.',
+                    'The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.',
                   )}
                   errorMessage={getFieldErrorMessage(field)}
                 >

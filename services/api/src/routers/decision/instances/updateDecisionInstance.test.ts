@@ -673,4 +673,121 @@ describe.concurrent('updateDecisionInstance', () => {
       expect(phase.name).toBe(`Updated ${phase.phaseId}`);
     }
   });
+
+  it('should allow process owner to update steward', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Use the org profile as the new steward (it's a valid profile the owner controls)
+    const newStewardId = setup.organization.profileId;
+
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      stewardProfileId: newStewardId,
+    });
+
+    expect(result.processInstance.id).toBe(instance.instance.id);
+
+    // Verify the steward was updated in the database
+    const dbInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+
+    expect(dbInstance!.stewardProfileId).toBe(newStewardId);
+  });
+
+  it('should not allow non-owner admin to change steward', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member user and grant them admin access on the decision profile
+    // (skip instanceProfileIds to avoid duplicate profileUsers rows)
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+
+    // Grant admin access on the decision profile so they pass the general
+    // admin check but are still not the process owner
+    await testData.grantProfileAccess(
+      instance.profileId,
+      memberUser.authUserId,
+      memberUser.email,
+    );
+
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+
+    // Non-owner admin should NOT be able to change the steward
+    await expect(
+      memberCaller.decision.updateDecisionInstance({
+        instanceId: instance.instance.id,
+        stewardProfileId: memberUser.profileId,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('should allow non-owner admin to update other fields without changing steward', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member user and grant them admin access on the decision profile
+    // (skip instanceProfileIds to avoid duplicate profileUsers rows)
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+
+    await testData.grantProfileAccess(
+      instance.profileId,
+      memberUser.authUserId,
+      memberUser.email,
+    );
+
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+
+    // Non-owner admin should still be able to update other fields
+    const newName = `Updated by member ${task.id}`;
+    const result = await memberCaller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      name: newName,
+    });
+
+    expect(result.processInstance.name).toBe(newName);
+  });
 });

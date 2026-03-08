@@ -535,7 +535,7 @@
   "Please try again in a moment": "Please try again in a moment",
   "Process Stewardship": "Process Stewardship",
   "Who is stewarding this process?": "Who is stewarding this process?",
-  "The organization, coalition, committee or individual responsible for running this process.": "The organization, coalition, committee or individual responsible for running this process.",
+  "The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.": "The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.",
   "Primary focus areas": "Primary focus areas",
   "Search focus areas": "Search focus areas",
   "Select the strategic areas this process advances": "Select the strategic areas this process advances",
