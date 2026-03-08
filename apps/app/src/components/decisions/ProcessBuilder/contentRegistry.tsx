@@ -2,7 +2,7 @@
 
 import { type ComponentType } from 'react';
 
-import type { StepId } from './navigationConfig';
+import type { SectionId, StepId } from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
 import PhasesSection from './stepContent/general/PhasesSection';
 import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
@@ -51,4 +51,24 @@ export function getContentComponent(
     return null;
   }
   return CONTENT_REGISTRY[stepId]?.[sectionId] ?? null;
+}
+
+// Flat section-to-component mapping for the unified sidebar
+const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
+  overview: OverviewSection,
+  phases: PhasesSection,
+  proposalCategories: ProposalCategoriesSection,
+  templateEditor: TemplateEditorSection,
+  criteria: CriteriaSection,
+  roles: RolesSection,
+  participants: ParticipantsSection,
+};
+
+export function getContentComponentFlat(
+  sectionId: SectionId | undefined,
+): SectionComponent | null {
+  if (!sectionId) {
+    return null;
+  }
+  return FLAT_CONTENT_REGISTRY[sectionId] ?? null;
 }

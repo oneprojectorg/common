@@ -2,6 +2,7 @@ import { createClient } from '@op/api/serverClient';
 import { notFound } from 'next/navigation';
 
 import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
+import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
 import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSectionNav';
 import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
@@ -48,7 +49,10 @@ const EditDecisionPage = async ({
       />
       <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
       <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
-        <ProcessBuilderSidebar instanceId={instanceId} />
+        <ProcessBuilderSidebar
+          instanceId={instanceId}
+          decisionProfileId={decisionProfile.id}
+        />
         <main className="h-full grow overflow-y-auto">
           <ProcessBuilderContent
             decisionProfileId={decisionProfile.id}
@@ -57,6 +61,11 @@ const EditDecisionPage = async ({
           />
         </main>
       </div>
+      <ProcessBuilderFooter
+        instanceId={instanceId}
+        slug={slug}
+        decisionProfileId={decisionProfile.id}
+      />
     </div>
   );
 };
