@@ -83,17 +83,17 @@ export function SummarySectionInner({
           <span className="font-bold">{processName}</span>{' '}
           {t('is missing information in order to go live.')}
         </p>
-        <div className="flex flex-col gap-2 rounded-lg border p-4">
+        <div className="flex flex-col rounded-lg border p-4">
           {incompleteItems.map((item, index) => (
             <div
               key={item.id}
-              className={`flex items-center justify-between${
+              className={`flex items-center justify-between py-3 ${
                 index < incompleteItems.length - 1
-                  ? 'border-b border-neutral-gray1 pb-2'
+                  ? 'border-b border-neutral-gray1'
                   : ''
               }`}
             >
-              <span className="text-sm text-neutral-black">
+              <span className="text-base text-neutral-black">
                 {t(item.labelKey)}
               </span>
               <Button
