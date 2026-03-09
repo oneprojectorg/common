@@ -51,9 +51,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
                   <OrganizationAvatar
                     profile={decision}
                     href={
-                      decision.slug
-                        ? `/decisions/${decision.slug}`
-                        : undefined
+                      decision.slug ? `/decisions/${decision.slug}` : undefined
                     }
                   />
                 }

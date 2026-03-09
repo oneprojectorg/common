@@ -29,7 +29,11 @@ export const OrganizationAvatar = ({
 
   const avatar = (
     <Avatar
-      className={cn('size-12', withLink && linkHref && 'hover:opacity-80', className)}
+      className={cn(
+        'size-12',
+        withLink && linkHref && 'hover:opacity-80',
+        className,
+      )}
       placeholder={name ?? ''}
     >
       {avatarImage?.name ? (
