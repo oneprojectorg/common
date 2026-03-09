@@ -303,7 +303,7 @@ function ProposalEditorInner({
       >
         <RichTextEditorToolbar editor={focusedEditor} />
       </div>
-      <div className="flex flex-1 flex-col gap-12 pt-12">
+      <div className="flex flex-1 flex-col gap-12 py-12">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
           <ProposalFormRenderer
             fields={proposalFields}
