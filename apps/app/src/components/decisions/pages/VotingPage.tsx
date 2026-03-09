@@ -153,7 +153,7 @@ export function VotingPage({
 
         <DecisionActionBar
           instanceId={instanceId}
-          markup={aboutIsMarkup}
+          markup={currentPhase?.additionalInfo ? false : aboutIsMarkup}
           description={currentPhase?.additionalInfo ?? description}
           showSubmitButton={false}
         />
