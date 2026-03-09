@@ -21,6 +21,72 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
     - **UI Storybook (`packages/ui`)**: `pnpm w:ui dev` (Usually runs on [http://localhost:3600](http://localhost:3600))
     - **Email Previews (`services/emails`)**: `pnpm w:emails dev` (Usually runs on [http://localhost:3883](http://localhost:3883))
 
+## Docker Dev Environment
+
+A fully containerised dev environment is available via `docker-compose.dev.yml`. It runs the Next.js app, the tRPC API, Supabase (via Docker-in-Docker), and Redis — all with hot-reload.
+
+### Prerequisites
+
+- Docker Desktop (or equivalent) running
+- A `TIPTAP_PRO_TOKEN` environment variable set in your shell (or in `.env.docker`)
+
+### Starting the dev server
+
+```bash
+pnpm docker:dev
+```
+
+On first run this will build the images, install dependencies, start Supabase, run migrations, seed access-control data, and start the app and API with hot-reload. Subsequent starts are faster because Docker caches the image layers and named volumes.
+
+**Custom port prefix** — if the default ports conflict with another running stack, override `PORT_PREFIX`:
+
+```bash
+PORT_PREFIX=40 pnpm docker:dev   # app → 4000, api → 4001, supabase → 4021
+```
+
+### Default ports
+
+| Service         | Port  |
+|-----------------|-------|
+| Next.js app     | 3100  |
+| tRPC API        | 3101  |
+| Supabase API    | 3121  |
+| Supabase DB     | 3122  |
+| Mailpit (email) | 3124  |
+
+Ports are derived from `PORT_PREFIX` (default `31`): `{PREFIX}00`, `{PREFIX}01`, etc.
+
+### Rebuilding images
+
+If you change the `Dockerfile` or add/remove dependencies from `package.json`:
+
+```bash
+pnpm docker:dev:build
+```
+
+### Stopping
+
+```bash
+pnpm docker:down
+```
+
+### Environment variables
+
+The docker environment reads from `.env.docker`. A committed version with safe local-dev defaults is included — you generally don't need to change anything to get started. If you need to customise values, copy the example file:
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+Key variables:
+
+| Variable | Purpose |
+|---|---|
+| `PORT_PREFIX` | First two digits of all exposed ports (default `31`) |
+| `TIPTAP_PRO_TOKEN` | Required to install the Tiptap Pro packages |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser-facing Supabase URL (set automatically by compose) |
+| `SUPABASE_URL` | Internal Docker network URL for server-side Supabase access |
+
 ## Monorepo Structure
 
 This monorepo is organized into several distinct workspaces:

@@ -4,31 +4,29 @@
  * Used for Docker dev environment where the standard seed script's URL allowlist
  * doesn't include the dind database URL.
  */
+import { sql } from 'drizzle-orm';
+
 import { db } from '.';
+import { accessRoles } from './schema/tables/access.sql';
+import {
+  accessRolePermissionsOnAccessZones,
+  accessZones,
+} from './schema/tables/accessZones.sql';
 import {
   ACCESS_ROLES,
   ACCESS_ROLE_PERMISSIONS,
   ACCESS_ZONES,
 } from './seedData/accessControl';
-import { accessRoles } from './schema/tables/access.sql';
-import { accessZones, accessRolePermissionsOnAccessZones } from './schema/tables/accessZones.sql';
-import { sql } from 'drizzle-orm';
 
 console.log('Seeding access control data...');
 
 // Insert access zones
-await db
-  .insert(accessZones)
-  .values(ACCESS_ZONES)
-  .onConflictDoNothing();
+await db.insert(accessZones).values(ACCESS_ZONES).onConflictDoNothing();
 
 console.log(`Inserted ${ACCESS_ZONES.length} access zones`);
 
 // Insert access roles
-await db
-  .insert(accessRoles)
-  .values(ACCESS_ROLES)
-  .onConflictDoNothing();
+await db.insert(accessRoles).values(ACCESS_ROLES).onConflictDoNothing();
 
 console.log(`Inserted ${ACCESS_ROLES.length} access roles`);
 
