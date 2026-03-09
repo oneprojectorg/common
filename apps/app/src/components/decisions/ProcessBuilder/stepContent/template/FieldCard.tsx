@@ -1,19 +1,25 @@
 'use client';
 
 import type { XFormatPropertySchema } from '@op/common/client';
+import { Button } from '@op/ui/Button';
 import {
-  FieldConfigCard,
-  FieldConfigCardDragPreview,
-} from '@op/ui/FieldConfigCard';
+  CollapsibleConfigCard,
+  CollapsibleConfigCardDragPreview,
+} from '@op/ui/CollapsibleConfigCard';
+import { Select, SelectItem } from '@op/ui/Select';
 import type { SortableItemControls } from '@op/ui/Sortable';
+import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import type { Key } from 'react';
 import { useRef } from 'react';
+import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 
-import type { FieldView } from '../../../proposalTemplate';
+import type { FieldType, FieldView } from '../../../proposalTemplate';
 import {
+  FIELD_TYPE_REGISTRY,
   getFieldConfigComponent,
   getFieldIcon,
   getFieldLabelKey,
@@ -24,6 +30,8 @@ interface FieldCardProps {
   fieldSchema: XFormatPropertySchema;
   errors?: string[];
   controls?: SortableItemControls;
+  isExpanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
   onRemove?: (fieldId: string) => void;
   onBlur?: (fieldId: string) => void;
   onUpdateLabel?: (fieldId: string, label: string) => void;
@@ -33,23 +41,37 @@ interface FieldCardProps {
     fieldId: string,
     updates: Partial<XFormatPropertySchema>,
   ) => void;
+  onChangeFieldType?: (fieldId: string, newType: FieldType) => void;
 }
 
+const FIELD_TYPE_OPTIONS = (
+  Object.entries(FIELD_TYPE_REGISTRY) as [
+    FieldType,
+    (typeof FIELD_TYPE_REGISTRY)[FieldType],
+  ][]
+).map(([type, entry]) => ({
+  type,
+  labelKey: entry.labelKey,
+}));
+
 /**
- * A card representing a form field in the builder.
- * Uses FieldConfigCard with drag handle, remove button, and config section.
+ * A collapsible card representing a form field in the builder.
+ * Uses CollapsibleConfigCard with drag handle, type selector, and config section.
  */
 export function FieldCard({
   field,
   fieldSchema,
   errors = [],
   controls,
+  isExpanded,
+  onExpandedChange,
   onRemove,
   onBlur,
   onUpdateLabel,
   onUpdateDescription,
   onUpdateRequired,
   onUpdateJsonSchema,
+  onChangeFieldType,
 }: FieldCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -63,30 +85,73 @@ export function FieldCard({
     }
   };
 
+  const handleTypeChange = (key: Key) => {
+    onChangeFieldType?.(field.id, key as FieldType);
+  };
+
+  const displayLabel = field.label || t('Untitled field');
+  const badgeLabel = field.required ? t('Required') : t('Optional');
+
   return (
     <div ref={cardRef} onBlur={handleBlur}>
-      <FieldConfigCard
+      <CollapsibleConfigCard
         icon={Icon}
         iconTooltip={t(getFieldLabelKey(field.fieldType))}
-        label={field.label}
-        onLabelChange={(newLabel) => onUpdateLabel?.(field.id, newLabel)}
-        labelInputAriaLabel={t('Field label')}
-        description={field.description}
-        onDescriptionChange={(desc) => onUpdateDescription?.(field.id, desc)}
-        descriptionLabel={t('Description')}
-        descriptionPlaceholder={t(
-          'Provide additional guidance for participants...',
-        )}
-        onRemove={onRemove ? () => onRemove(field.id) : undefined}
-        removeAriaLabel={t('Remove field')}
+        label={displayLabel}
+        badgeLabel={badgeLabel}
+        isCollapsible
+        isExpanded={isExpanded}
+        onExpandedChange={onExpandedChange}
+        controls={controls}
         dragHandleAriaLabel={t('Drag to reorder {field}', {
           field: field.label,
         })}
-        controls={controls}
         className={errors.length > 0 ? 'border-functional-red' : undefined}
       >
-        {ConfigComponent && (
-          <div className="mt-4">
+        <div className="space-y-4 px-8">
+          {/* Field name + Type selector row */}
+          <div className="flex items-start gap-3">
+            <TextField
+              label={t('Field name')}
+              value={field.label}
+              onChange={(value) => onUpdateLabel?.(field.id, value)}
+              maxLength={50}
+              inputProps={{
+                className: 'bg-white',
+              }}
+              className="min-w-0 flex-1"
+              isRequired
+              description={`${field.label.length}/50`}
+            />
+            <Select
+              label={t('Type')}
+              selectedKey={field.fieldType}
+              onSelectionChange={handleTypeChange}
+              buttonClassName="bg-white"
+              className="w-40"
+            >
+              {FIELD_TYPE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.type} id={opt.type}>
+                  {t(opt.labelKey)}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
+
+          {/* Description */}
+          <TextField
+            label={t('Description')}
+            value={field.description ?? ''}
+            onChange={(desc) => onUpdateDescription?.(field.id, desc)}
+            useTextArea
+            textareaProps={{
+              placeholder: t('Provide additional guidance for participants...'),
+              className: 'min-h-24 resize-none bg-white',
+            }}
+          />
+
+          {/* Type-specific config */}
+          {ConfigComponent && (
             <ConfigComponent
               field={field}
               fieldSchema={fieldSchema}
@@ -94,29 +159,47 @@ export function FieldCard({
                 onUpdateJsonSchema?.(field.id, updates)
               }
             />
-          </div>
-        )}
+          )}
 
-        {errors.length > 0 && (
-          <div className="mt-4 space-y-1">
-            {errors.map((error) => (
-              <p key={error} className="text-functional-red">
-                {t(error as TranslationKey)}
-              </p>
-            ))}
-          </div>
-        )}
+          {/* Validation errors */}
+          {errors.length > 0 && (
+            <div className="space-y-1">
+              {errors.map((error) => (
+                <p key={error} className="text-functional-red">
+                  {t(error as TranslationKey)}
+                </p>
+              ))}
+            </div>
+          )}
 
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-neutral-charcoal">{t('Required?')}</span>
-          <ToggleButton
-            size="small"
-            isSelected={field.required}
-            onChange={(isSelected) => onUpdateRequired?.(field.id, isSelected)}
-            aria-label={t('Required')}
-          />
+          {/* Footer: Required toggle + Delete button */}
+          <div className="flex items-center justify-between border-t pt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-neutral-charcoal">{t('Required?')}</span>
+              <ToggleButton
+                size="small"
+                isSelected={field.required}
+                onChange={(isSelected) =>
+                  onUpdateRequired?.(field.id, isSelected)
+                }
+                aria-label={t('Required')}
+              />
+            </div>
+            {onRemove && (
+              <Button
+                color="ghost"
+                size="small"
+                onPress={() => onRemove(field.id)}
+                aria-label={t('Delete')}
+                className="text-neutral-gray4 hover:text-functional-red"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </Button>
+            )}
+          </div>
         </div>
-      </FieldConfigCard>
+      </CollapsibleConfigCard>
     </div>
   );
 }
@@ -126,7 +209,7 @@ export function FieldCard({
  */
 export function FieldCardDragPreview({ field }: { field: FieldView }) {
   const Icon = getFieldIcon(field.fieldType);
-  return <FieldConfigCardDragPreview icon={Icon} label={field.label} />;
+  return <CollapsibleConfigCardDragPreview icon={Icon} label={field.label} />;
 }
 
 /**

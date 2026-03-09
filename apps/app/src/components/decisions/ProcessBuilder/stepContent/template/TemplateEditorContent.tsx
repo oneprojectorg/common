@@ -9,7 +9,7 @@ import type {
 } from '@op/common/client';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { FieldConfigCard } from '@op/ui/FieldConfigCard';
+import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
@@ -25,6 +25,7 @@ import {
   type FieldType,
   type FieldView,
   addField as addFieldToTemplate,
+  changeFieldType,
   createDefaultTemplate,
   ensureLockedFields,
   getField,
@@ -100,6 +101,9 @@ export function TemplateEditorContent({
   const [template, setTemplate] =
     useState<ProposalTemplateSchema>(initialTemplate);
   const isInitialLoadRef = useRef(true);
+
+  // Track which field is expanded — auto-expand newly added fields
+  const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
 
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
@@ -234,6 +238,8 @@ export function TemplateEditorContent({
       const fieldId = crypto.randomUUID().slice(0, 8);
       const label = t(getFieldLabelKey(type));
       setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
+      // Auto-expand the newly added field
+      setExpandedFieldId(fieldId);
     },
     [t],
   );
@@ -245,6 +251,7 @@ export function TemplateEditorContent({
       next.delete(fieldId);
       return next;
     });
+    setExpandedFieldId((prev) => (prev === fieldId ? null : prev));
   }, []);
 
   const handleReorderFields = useCallback((newItems: FieldView[]) => {
@@ -307,6 +314,13 @@ export function TemplateEditorContent({
     [],
   );
 
+  const handleChangeFieldType = useCallback(
+    (fieldId: string, newType: FieldType) => {
+      setTemplate((prev) => changeFieldType(prev, fieldId, newType));
+    },
+    [],
+  );
+
   /** Render a FieldCard for a given field view. */
   const renderFieldCard = (
     field: FieldView,
@@ -325,12 +339,17 @@ export function TemplateEditorContent({
         fieldSchema={getFieldSchema(template, field.id) ?? {}}
         errors={displayedErrors}
         controls={controls}
+        isExpanded={expandedFieldId === field.id}
+        onExpandedChange={(expanded) =>
+          setExpandedFieldId(expanded ? field.id : null)
+        }
         onRemove={handleRemoveField}
         onBlur={handleFieldBlur}
         onUpdateLabel={handleUpdateLabel}
         onUpdateDescription={handleUpdateDescription}
         onUpdateRequired={handleUpdateRequired}
         onUpdateJsonSchema={handleUpdateJsonSchema}
+        onChangeFieldType={handleChangeFieldType}
       />
     );
   };
@@ -368,34 +387,40 @@ export function TemplateEditorContent({
 
             {/* Locked system fields (stored in schema) */}
             <div className="mb-3 space-y-3">
-              <FieldConfigCard
+              <CollapsibleConfigCard
                 icon={LuAlignLeft}
                 iconTooltip={t('Short text')}
                 label={t('Proposal title')}
+                badgeLabel={t('Required')}
                 locked
               />
               {hasCategories && (
-                <FieldConfigCard
+                <CollapsibleConfigCard
                   icon={LuChevronDown}
                   iconTooltip={t('Dropdown')}
                   label={t('Category')}
+                  badgeLabel={
+                    requireCategorySelection ? t('Required') : t('Optional')
+                  }
                   locked
                 >
-                  <p className="text-neutral-charcoal">
-                    {t('These are the categories you defined in')}{' '}
-                    <button
-                      type="button"
-                      className="cursor-pointer text-primary-teal hover:underline"
-                      onClick={() => {
-                        void setStep('general');
-                        void setSection('proposalCategories');
-                      }}
-                    >
-                      {t('Proposal Categories')}
-                    </button>
-                    .
-                  </p>
-                </FieldConfigCard>
+                  <div className="px-8 pt-2">
+                    <p className="text-neutral-charcoal">
+                      {t('These are the categories you defined in')}{' '}
+                      <button
+                        type="button"
+                        className="cursor-pointer text-primary-teal hover:underline"
+                        onClick={() => {
+                          void setStep('general');
+                          void setSection('proposalCategories');
+                        }}
+                      >
+                        {t('Proposal Categories')}
+                      </button>
+                      .
+                    </p>
+                  </div>
+                </CollapsibleConfigCard>
               )}
 
               <BudgetFieldConfig
