@@ -224,14 +224,13 @@ export function PhasesSectionContent({
                       >
                         {t('Configure')}
                       </Button>
-                      <button
-                        type="button"
-                        className="rounded p-1 text-neutral-gray4 hover:text-functional-red"
-                        onClick={() => setPhaseToDelete(phase.id)}
+                      <Button
+                        className="cursor-pointer p-1 text-neutral-gray4 hover:text-functional-red"
+                        onPress={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
                       >
                         <LuTrash2 className="size-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
