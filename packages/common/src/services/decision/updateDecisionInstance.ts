@@ -13,6 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
+import { assertProfileAdmin } from '../assert';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -104,18 +105,13 @@ export const updateDecisionInstance = async ({
     stewardProfileId !== undefined &&
     stewardProfileId !== existingInstance.stewardProfileId
   ) {
-    const ownerProfileUser = existingInstance.ownerProfileId
-      ? await getProfileAccessUser({
-          user,
-          profileId: existingInstance.ownerProfileId,
-        })
-      : undefined;
-
-    if (!ownerProfileUser) {
+    if (!existingInstance.ownerProfileId) {
       throw new UnauthorizedError(
         'Only the process owner can change the steward',
       );
     }
+
+    await assertProfileAdmin(user, existingInstance.ownerProfileId);
 
     updateData.stewardProfileId = stewardProfileId;
   }
