@@ -5,6 +5,7 @@ import { type PhaseDefinition, ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
+import { IconButton } from '@op/ui/IconButton';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
@@ -224,13 +225,15 @@ export function PhasesSectionContent({
                       >
                         {t('Configure')}
                       </Button>
-                      <Button
-                        className="cursor-pointer p-1 text-neutral-gray4 hover:text-functional-red"
+                      <IconButton
+                        variant="outline"
+                        size="medium"
+                        className="text-primary-teal hover:text-functional-red"
                         onPress={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
                       >
                         <LuTrash2 className="size-4" />
-                      </Button>
+                      </IconButton>
                     </div>
                   </div>
                 </div>
