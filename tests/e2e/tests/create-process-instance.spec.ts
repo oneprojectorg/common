@@ -55,9 +55,12 @@ test.describe('Create Process Instance', () => {
     // ── Step 1: General – Phases ────────────────────────────────────────
 
     // 6. Navigate to the Phases section
-    const phasesTab = authenticatedPage.getByRole('tab', { name: 'Phases' });
-    await expect(phasesTab).toBeVisible({ timeout: 18_000 });
-    await phasesTab.click();
+    const sidebarNav = authenticatedPage.getByRole('navigation', {
+      name: 'Section navigation',
+    });
+    const phasesButton = sidebarNav.getByRole('button', { name: 'Phases' });
+    await expect(phasesButton).toBeVisible({ timeout: 18_000 });
+    await phasesButton.click();
 
     await expect(
       authenticatedPage.getByText(
@@ -115,11 +118,11 @@ test.describe('Create Process Instance', () => {
     // ── Step 1: General – Proposal Categories ───────────────────────────
 
     // 8. Navigate to the Proposal Categories section
-    const categoriesTab = authenticatedPage.getByRole('tab', {
+    const categoriesButton = sidebarNav.getByRole('button', {
       name: 'Proposal Categories',
     });
-    await expect(categoriesTab).toBeVisible({ timeout: 18_000 });
-    await categoriesTab.click();
+    await expect(categoriesButton).toBeVisible({ timeout: 18_000 });
+    await categoriesButton.click();
 
     await expect(
       authenticatedPage.getByText('Proposal Categories').first(),
@@ -151,10 +154,10 @@ test.describe('Create Process Instance', () => {
     // ── Step 2: Proposal Template ───────────────────────────────────────
 
     // 10. Navigate to the Proposal Template step
-    const templateTab = authenticatedPage.getByRole('tab', {
+    const templateButton = sidebarNav.getByRole('button', {
       name: 'Proposal Template',
     });
-    await templateTab.click();
+    await templateButton.click();
 
     await expect(
       authenticatedPage.getByText('Proposal template').first(),

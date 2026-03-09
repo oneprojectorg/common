@@ -13,6 +13,7 @@ import PhasesSection from './stepContent/general/PhasesSection';
 import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
 import ParticipantsSection from './stepContent/participants/ParticipantsSection';
 import RolesSection from './stepContent/participants/RolesSection';
+import SummarySectionContent from './stepContent/participants/SummarySectionContent';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
 import TemplateEditorSection from './stepContent/template/TemplateEditorSection';
 
@@ -45,6 +46,7 @@ const CONTENT_REGISTRY: ContentRegistry = {
   participants: {
     roles: RolesSection,
     participants: ParticipantsSection,
+    summary: SummarySectionContent,
   },
 };
 
@@ -67,6 +69,7 @@ const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
   criteria: CriteriaSection,
   roles: RolesSection,
   participants: ParticipantsSection,
+  summary: SummarySectionContent,
 };
 
 export function getContentComponentFlat(
