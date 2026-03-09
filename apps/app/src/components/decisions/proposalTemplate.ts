@@ -314,6 +314,35 @@ export function updateFieldDescription(
   return updatePropertyDescription(template, fieldId, description);
 }
 
+export function changeFieldType(
+  template: ProposalTemplateSchema,
+  fieldId: string,
+  newType: FieldType,
+): ProposalTemplateSchema {
+  const existing = getFieldSchema(template, fieldId);
+  if (!existing) {
+    return template;
+  }
+
+  const freshSchema = createFieldJsonSchema(newType);
+  // Preserve title, description, and required status
+  const updated: ProposalTemplateSchema = {
+    ...freshSchema,
+    title: existing.title,
+  };
+  if (existing.description) {
+    updated.description = existing.description;
+  }
+
+  return {
+    ...template,
+    properties: {
+      ...template.properties,
+      [fieldId]: updated,
+    },
+  };
+}
+
 export function setFieldRequired(
   template: ProposalTemplateSchema,
   fieldId: string,

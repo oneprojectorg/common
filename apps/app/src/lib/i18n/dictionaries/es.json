@@ -953,5 +953,9 @@
   "Manage Participants": "Gestionar Participantes",
   "Failed to translate content": "Error al traducir el contenido",
   "Translated with DeepL": "Traducido con DeepL",
-  "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.": "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants."
+  "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.": "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.",
+  "Field name": "Nombre del campo",
+  "Optional": "Opcional",
+  "Type": "Tipo",
+  "Untitled field": "Campo sin título"
 }
