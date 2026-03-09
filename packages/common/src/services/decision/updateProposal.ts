@@ -138,8 +138,9 @@ export const updateProposal = async ({
       }
     }
 
-    // Validate proposal data against schema if updating proposalData
-    if (data.proposalData) {
+    // Validate proposal data against template schema when updating non-draft proposals.
+    // Drafts are inherently incomplete — validation is enforced on submission.
+    if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
       const instanceData =
         processInstance.instanceData as DecisionInstanceData | null;
 
@@ -151,7 +152,7 @@ export const updateProposal = async ({
       if (proposalTemplate) {
         await validateProposalAgainstTemplate(
           proposalTemplate,
-          existingProposal.proposalData,
+          data.proposalData,
         );
       }
     }

@@ -471,7 +471,60 @@ describe.concurrent('updateProposal status', () => {
 });
 
 describe.concurrent('updateProposal validation', () => {
-  it('should reject update when required fields are missing from collaboration document', async ({
+  it('should skip validation when proposal is in draft status', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'summary'],
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            minLength: 1,
+            'x-format': 'short-text',
+          },
+          summary: {
+            type: 'string',
+            title: 'Project Summary',
+            minLength: 1,
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Proposal is created in DRAFT status by default
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Draft' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Updating proposalData on a draft should succeed even with missing required fields
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { proposalData: { title: 'Updated Draft' } },
+    });
+
+    expect(result.proposalData).toMatchObject({ title: 'Updated Draft' });
+  });
+
+  it('should reject update when required fields are missing from collaboration document on non-draft proposal', async ({
     task,
     onTestFinished,
   }) => {
@@ -514,9 +567,11 @@ describe.concurrent('updateProposal validation', () => {
 
     const collaborationDocId = `proposal-${proposal.id}`;
 
+    // Move proposal out of draft and set up collaboration doc
     await db
       .update(proposals)
       .set({
+        status: ProposalStatus.SUBMITTED,
         proposalData: { title: 'Draft', collaborationDocId },
       })
       .where(eq(proposals.id, proposal.id));
