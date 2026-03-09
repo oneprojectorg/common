@@ -192,6 +192,15 @@ export async function createOrganization(
       accessRoleId,
     });
 
+    // Set currentProfileId so getCurrentProfileId() works in mutations (e.g. createProposal).
+    await db
+      .update(users)
+      .set({
+        currentProfileId: userRecord.profileId,
+        lastOrgId: organization.id,
+      })
+      .where(eq(users.authUserId, authUser.id));
+
     if (!userRecord.profileId) {
       throw new Error(`User record for ${email} is missing profileId`);
     }
