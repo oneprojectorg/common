@@ -19,6 +19,7 @@ export interface NumberFieldProps
   > {
   label?: string;
   description?: string;
+  /** External error message. Takes precedence over built-in min/max messages. */
   errorMessage?: string | ((validation: ValidationResult) => string);
   inputProps?: InputWithVariantsProps & { className?: string };
   fieldClassName?: string;
@@ -27,6 +28,10 @@ export interface NumberFieldProps
   value?: number | null;
   defaultValue?: number | null;
   prefixText?: string;
+  /** Minimum allowed value. Validated on blur with a built-in error message. */
+  minValue?: number;
+  /** Maximum allowed value. Validated on blur with a built-in error message. */
+  maxValue?: number;
   onChange?: (value: number | null) => void;
   onInput?: (value: number | null) => void;
 }
@@ -45,6 +50,27 @@ const parseNumericValue = (value: string) => {
   return isNaN(parsed) ? null : parsed;
 };
 
+/**
+ * Validates a numeric value against optional min/max bounds.
+ * Returns an error message string if invalid, or `null` if valid.
+ */
+const validateBounds = (
+  numericValue: number | null,
+  minValue?: number,
+  maxValue?: number,
+): string | null => {
+  if (numericValue === null) {
+    return null;
+  }
+  if (maxValue !== undefined && numericValue > maxValue) {
+    return `Must be at most ${maxValue.toLocaleString()}`;
+  }
+  if (minValue !== undefined && numericValue < minValue) {
+    return `Must be at least ${minValue.toLocaleString()}`;
+  }
+  return null;
+};
+
 export const NumberField = ({
   ref,
   label,
@@ -57,6 +83,8 @@ export const NumberField = ({
   value,
   defaultValue,
   prefixText,
+  minValue,
+  maxValue,
   onChange,
   onInput,
   children,
@@ -68,6 +96,7 @@ export const NumberField = ({
 }) => {
   const [displayValue, setDisplayValue] = useState('');
   const [prefixWidth, setPrefixWidth] = useState(0);
+  const [boundsError, setBoundsError] = useState<string | null>(null);
   const prefixRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -108,6 +137,11 @@ export const NumberField = ({
 
     setDisplayValue(filteredValue);
     onChange?.(numericValue);
+
+    // Clear bounds error as soon as the value becomes valid
+    if (boundsError && !validateBounds(numericValue, minValue, maxValue)) {
+      setBoundsError(null);
+    }
   };
 
   const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
@@ -120,11 +154,20 @@ export const NumberField = ({
     onInput?.(numericValue);
   };
 
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const numericValue = parseNumericValue(displayValue);
+    setBoundsError(validateBounds(numericValue, minValue, maxValue));
+    inputProps?.onBlur?.(e);
+  };
+
+  // External errorMessage takes precedence over built-in bounds validation
+  const resolvedError = errorMessage ?? boundsError ?? undefined;
+
   return (
     <AriaTextField
       {...props}
       type="text"
-      isInvalid={!!errorMessage && errorMessage.length > 0}
+      isInvalid={!!resolvedError && resolvedError.length > 0}
       className={composeTailwindRenderProps(
         props.className,
         'group flex flex-col gap-1',
@@ -156,6 +199,7 @@ export const NumberField = ({
           value={displayValue}
           onChange={handleInputChange}
           onInput={handleInput}
+          onBlur={handleBlur}
           style={{
             paddingLeft: prefixText ? `${prefixWidth}px` : undefined,
           }}
@@ -173,7 +217,7 @@ export const NumberField = ({
           {description}
         </Description>
       )}
-      <FieldError>{errorMessage}</FieldError>
+      <FieldError>{resolvedError}</FieldError>
     </AriaTextField>
   );
 };
