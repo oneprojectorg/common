@@ -13,7 +13,7 @@ import { tv } from 'tailwind-variants';
 
 export interface FileDropZoneProps {
   /**
-   * MIME types or extensions to accept (e.g., ['image/*', '.pdf']).
+   * MIME types to accept (e.g., ['application/pdf', 'image/*']).
    * When undefined, accepts all files.
    */
   acceptedFileTypes?: string[];

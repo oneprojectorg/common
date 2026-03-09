@@ -19,8 +19,6 @@ const ACCEPTED_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ];
 
-const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.xlsx'];
-
 interface Attachment {
   id: string;
   fileName: string;
@@ -174,7 +172,7 @@ export function ProposalAttachments({
       <ProposalAttachmentList files={displayFiles} onRemove={handleRemove} />
 
       <FileDropZone
-        acceptedFileTypes={ACCEPTED_EXTENSIONS}
+        acceptedFileTypes={ACCEPTED_TYPES}
         onSelectFiles={handleSelectFiles}
         description={t('Accepts PDF, DOCX, XLSX up to {size}MB', {
           size: MAX_SIZE_MB,
