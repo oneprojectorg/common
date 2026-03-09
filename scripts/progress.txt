@@ -1,3 +1,19 @@
 # Ralph Progress Log
 Started: Mon Mar  9 13:51:43 CET 2026
 ---
+
+## Codebase Patterns
+- PhaseInstanceData (packages/common/src/services/decision/schemas/instanceData.ts) has `headline`, `description`, `additionalInfo` optional string fields on each phase
+- DecisionStateRouterNew already derives `currentPhase` via phases.find — no extra query needed
+- `markup` prop on DecisionActionBar = true means description is rendered as raw HTML (only for PPDESCRIPTION key). Always set false when description comes from plain text sources like `additionalInfo`
+
+## 2026-03-09 - US-001 through US-005
+- Implemented all phase content override stories in a single session
+- **US-001/002/003**: Updated DecisionStateRouterNew to pass `phaseHeadline`, `phaseDescription`, `phaseAdditionalInfo` from currentPhase to StandardDecisionPage. StandardDecisionPage uses these as overrides for DecisionHero title/description and DecisionActionBar description (About modal).
+- **US-004**: VotingPage derives its own currentPhase from instanceData and applies the same overrides to DecisionHero and DecisionActionBar.
+- **US-005 / CodeRabbit**: First run flagged prd.json update not committed. Second run caught a real bug: `markup` prop should be `false` when `currentPhase.additionalInfo` overrides description in VotingPage (additionalInfo is plain text, not HTML). Fixed with `markup={currentPhase?.additionalInfo ? false : aboutIsMarkup}`.
+- Files changed: DecisionStateRouter.tsx, StandardDecisionPage.tsx, VotingPage.tsx, scripts/prd.json, scripts/progress.txt
+- **Learnings for future iterations:**
+  - The `markup` prop on DecisionActionBar controls HTML rendering — always check the source of description text before passing markup=true
+  - Slug-based heroContent fallback is preserved for all existing orgs; phase overrides only apply when the phase has those fields set
+---

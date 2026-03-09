@@ -75,7 +75,7 @@
         "Any blocking issues raised by CodeRabbit are addressed"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     }
   ]
