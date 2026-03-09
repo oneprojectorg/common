@@ -47,7 +47,7 @@ export const ProcessBuilderSidebar = ({
               variant="pill"
               className="cursor-pointer first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:text-charcoal md:selected:bg-neutral-offWhite"
             >
-              {t(section.labelKey)}
+              {section.isDynamic ? section.labelKey : t(section.labelKey)}
             </Tab>
           ))}
         </TabList>
