@@ -20,9 +20,7 @@ test.describe('Decisions', () => {
     });
 
     // 3. Navigate to the decision page
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'networkidle',
-    });
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`);
 
     // 4. Wait for the page to load
     // The heading shows the instance name (which takes priority over template name)

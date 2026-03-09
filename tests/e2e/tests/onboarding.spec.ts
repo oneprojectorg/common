@@ -76,6 +76,7 @@ test.describe('Onboarding', () => {
       profileEntityType: EntityType.DECISION,
       accessRoleId: ROLES.MEMBER.id,
       invitedBy: instance.profileId,
+      notifiedAt: new Date(),
     });
 
     await authenticateAsUser(page, {
