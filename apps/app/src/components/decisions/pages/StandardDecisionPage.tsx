@@ -47,7 +47,7 @@ export function StandardDecisionPage({
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={currentPhase?.headline ?? ''}
+          title={currentPhase?.headline ?? t('SHARE YOUR IDEAS.')}
           description={
             currentPhase?.description ? (
               <p>{currentPhase.description}</p>
