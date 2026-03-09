@@ -1,3 +1,5 @@
+name: op-${PORT_PREFIX:-31}
+
 services:
   # ── Docker-in-Docker daemon ───────────────────────────────────────────────────
   # Supabase CLI spawns its own containers (Postgres, Auth, Storage, etc.).
