@@ -12,8 +12,8 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
-import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { assertProfileAdmin } from '../assert';
+import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
