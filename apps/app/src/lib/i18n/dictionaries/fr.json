@@ -535,7 +535,7 @@
   "Please try again in a moment": "Veuillez réessayer dans un instant",
   "Process Stewardship": "Gestion du processus",
   "Who is stewarding this process?": "Qui gère ce processus ?",
-  "The organization, coalition, committee or individual responsible for running this process.": "L'organisation, la coalition, le comité ou l'individu responsable de l'exécution de ce processus.",
+  "The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.": "L'organisation, la coalition, le comité ou l'individu responsable de l'exécution de ce processus. Seul le propriétaire du processus peut modifier le responsable.",
   "Primary focus areas": "Domaines d'intervention principaux",
   "Search focus areas": "Rechercher des domaines d'intervention",
   "Select the strategic areas this process advances": "Sélectionnez les domaines stratégiques que ce processus fait progresser",

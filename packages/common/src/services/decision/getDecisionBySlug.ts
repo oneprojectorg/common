@@ -23,6 +23,7 @@ const decisionProfileQueryConfig = {
             organization: true,
           },
         },
+        steward: true,
       },
     },
   },

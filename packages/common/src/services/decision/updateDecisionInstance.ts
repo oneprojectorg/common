@@ -10,8 +10,9 @@ import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, NotFoundError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import { assertProfileAdmin } from '../assert';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -100,7 +101,18 @@ export const updateDecisionInstance = async ({
     updateData.status = status;
   }
 
-  if (stewardProfileId !== undefined) {
+  if (
+    stewardProfileId !== undefined &&
+    stewardProfileId !== existingInstance.stewardProfileId
+  ) {
+    if (!existingInstance.ownerProfileId) {
+      throw new UnauthorizedError(
+        'Only the process owner can change the steward',
+      );
+    }
+
+    await assertProfileAdmin(user, existingInstance.ownerProfileId);
+
     updateData.stewardProfileId = stewardProfileId;
   }
 

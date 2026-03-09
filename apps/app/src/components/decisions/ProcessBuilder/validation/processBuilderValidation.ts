@@ -22,7 +22,6 @@ const nonEmptyString = z.string().trim().min(1);
 
 const overviewSchema = z.object({
   name: nonEmptyString,
-  stewardProfileId: nonEmptyString,
   description: nonEmptyString,
 });
 
