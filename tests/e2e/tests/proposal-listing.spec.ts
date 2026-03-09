@@ -210,6 +210,8 @@ test.describe('Proposal Listing', () => {
     await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Community Garden Project',
         collaborationDocId: MOCK_DOC_ID,
@@ -221,6 +223,8 @@ test.describe('Proposal Listing', () => {
     await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Youth Mentorship Program',
         collaborationDocId: MOCK_DOC_ID,
@@ -369,6 +373,8 @@ test.describe('Proposal Listing', () => {
     await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Worker Co-op Equipment Fund',
         description:
@@ -381,6 +387,8 @@ test.describe('Proposal Listing', () => {
     await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Regional Organizer Training',
         description:

@@ -109,6 +109,8 @@ test.describe('Proposal View', () => {
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Community Solar Initiative',
         collaborationDocId: MOCK_DOC_ID,
@@ -194,6 +196,8 @@ test.describe('Proposal View', () => {
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Legacy HTML Proposal',
         description: [
@@ -282,6 +286,8 @@ test.describe('Proposal View', () => {
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Legacy Template Proposal',
         description: [
@@ -488,6 +494,8 @@ test.describe('Proposal View', () => {
     const proposal = await createProposal({
       processInstanceId: processInstance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Worker Co-op Equipment Fund',
         description:
@@ -543,6 +551,8 @@ test.describe('Proposal View', () => {
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Missing Document Proposal',
         collaborationDocId: 'nonexistent-doc-id',

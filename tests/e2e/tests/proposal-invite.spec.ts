@@ -39,6 +39,8 @@ test.describe('Proposal Invite', () => {
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Invite Test Proposal',
       },

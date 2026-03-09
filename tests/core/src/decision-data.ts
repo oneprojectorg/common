@@ -397,6 +397,15 @@ export interface CreateProposalOptions {
   };
   /** Proposal status (defaults to DRAFT to match production behavior) */
   status?: ProposalStatus;
+  /**
+   * Auth user ID of the proposal creator. When provided (along with email),
+   * a profileUsers record is created on the proposal's profile — matching
+   * production behavior where the creator gets proposal-level access.
+   * Required for draft proposals to be visible in listProposals.
+   */
+  authUserId?: string;
+  /** Email of the proposal creator (required when authUserId is provided) */
+  email?: string;
 }
 
 export interface CreateProposalResult {
@@ -424,6 +433,8 @@ export async function createProposal(
     submittedByProfileId,
     proposalData,
     status = ProposalStatus.DRAFT,
+    authUserId,
+    email,
   } = opts;
 
   const proposalId = randomUUID();
@@ -451,6 +462,28 @@ export async function createProposal(
 
   if (!proposalProfile) {
     throw new Error('Failed to create proposal profile');
+  }
+
+  // Grant the creator proposal-level access (mirrors production createProposal behavior).
+  // This is required for draft proposals to be visible in listProposals, which filters
+  // drafts by profileUsers on the proposal's profile.
+  if (authUserId && email) {
+    const [proposalProfileUser] = await db
+      .insert(profileUsers)
+      .values({
+        profileId: proposalProfile.id,
+        authUserId,
+        email,
+        isOwner: true,
+      })
+      .returning();
+
+    if (proposalProfileUser) {
+      await db.insert(profileUserToAccessRoles).values({
+        profileUserId: proposalProfileUser.id,
+        accessRoleId: ROLES.ADMIN.id,
+      });
+    }
   }
 
   const [proposal] = await db

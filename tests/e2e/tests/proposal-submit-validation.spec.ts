@@ -118,6 +118,8 @@ test.describe('Proposal Submit Validation', () => {
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: { title: '' },
       status: ProposalStatus.DRAFT,
     });
