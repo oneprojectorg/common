@@ -56,6 +56,26 @@ PORT_PREFIX=40 pnpm docker:dev   # app → 4000, api → 4001, supabase → 4021
 
 Ports are derived from `PORT_PREFIX` (default `31`): `{PREFIX}00`, `{PREFIX}01`, etc.
 
+### Running multiple instances
+
+Each `PORT_PREFIX` value produces a fully isolated stack (containers, volumes, and network are all namespaced by the project name `op-{PREFIX}`):
+
+```bash
+PORT_PREFIX=31 pnpm docker:dev   # default instance
+PORT_PREFIX=40 pnpm docker:dev   # second instance, no conflicts
+```
+
+**Image cache behaviour across instances:**
+
+- **App/API build cache** — Docker's layer cache is global, so building for a new `PORT_PREFIX` reuses all cached layers and is nearly instant.
+- **Supabase images inside DinD** — each instance has its own `dind_storage` volume (two DinD daemons cannot safely share `/var/lib/docker`). The first start of a new instance will re-pull Supabase sub-images (~5–10 min). Subsequent restarts of the same instance are fast because the cache persists in its volume.
+
+To stop a specific instance, pass the same `PORT_PREFIX`:
+
+```bash
+PORT_PREFIX=40 pnpm docker:down
+```
+
 ### Rebuilding images
 
 If you change the `Dockerfile` or add/remove dependencies from `package.json`:
