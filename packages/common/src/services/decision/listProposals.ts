@@ -190,28 +190,19 @@ export const listProposals = async ({
   // Non-draft proposals: visible to all users with instance-level access,
   // but still respect the HIDDEN visibility filter (only admins and owners see hidden proposals).
   if (!skipAccessCheck) {
-    // Get the profile IDs that this user has access to via profileUsers.
-    // These are the proposal profiles the user can see when in DRAFT status.
-    const accessibleProposalProfiles = await db
-      .select({ profileId: profileUsers.profileId })
-      .from(profileUsers)
-      .where(eq(profileUsers.authUserId, input.authUserId));
-
-    const accessibleProfileIds = accessibleProposalProfiles.map(
-      (p) => p.profileId,
-    );
-
     // A proposal is visible if:
-    // 1. It's a DRAFT and the user has proposal-level access, OR
+    // 1. It's a DRAFT and the user has proposal-level access (via profileUsers), OR
     // 2. It's not a DRAFT and passes the visibility filter
-    const draftFilter =
-      accessibleProfileIds.length > 0
-        ? and(
-            eq(proposals.status, ProposalStatus.DRAFT),
-            inArray(proposals.profileId, accessibleProfileIds),
-          )
-        : // If the user has no proposal-level access at all, no drafts are visible
-          sql`false`;
+    const draftFilter = and(
+      eq(proposals.status, ProposalStatus.DRAFT),
+      inArray(
+        proposals.profileId,
+        db
+          .select({ profileId: profileUsers.profileId })
+          .from(profileUsers)
+          .where(eq(profileUsers.authUserId, input.authUserId)),
+      ),
+    );
 
     const nonDraftFilter = ne(proposals.status, ProposalStatus.DRAFT);
 
