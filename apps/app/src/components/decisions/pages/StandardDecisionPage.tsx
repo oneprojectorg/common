@@ -129,7 +129,11 @@ export function StandardDecisionPage({
         <DecisionHero
           title={phaseHeadline ?? heroContent.title}
           description={
-            phaseDescription ? <p>{phaseDescription}</p> : heroContent.description
+            phaseDescription ? (
+              <p>{phaseDescription}</p>
+            ) : (
+              heroContent.description
+            )
           }
           variant="standard"
         />
