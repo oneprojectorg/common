@@ -1094,7 +1094,7 @@ describe.concurrent('listProposals', () => {
    * rather than only instance-level permissions.
    */
 
-  it('should show draft proposals to their creator (proposal-level access)', async ({
+  it('should show draft proposals to their creator and invited collaborators (proposal-level access)', async ({
     task,
     onTestFinished,
   }) => {
@@ -1110,28 +1110,58 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who creates a draft proposal
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
+    // Create a member who creates a draft proposal and a collaborator
+    const [creator, collaborator] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
 
-    // Member creates a proposal (starts as DRAFT)
+    // Creator makes a proposal (starts as DRAFT)
     const draftProposal = await testData.createProposal({
-      callerEmail: member.email,
+      callerEmail: creator.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Draft Proposal' },
     });
 
+    // Invite the collaborator to the proposal's profile
+    await testData.grantProfileAccess(
+      draftProposal.profileId!,
+      collaborator.authUserId,
+      collaborator.email,
+      false,
+    );
+
     // The creator should see their own draft
-    const memberCaller = await createAuthenticatedCaller(member.email);
-    const result = await memberCaller.decision.listProposals({
+    const creatorCaller = await createAuthenticatedCaller(creator.email);
+    const creatorResult = await creatorCaller.decision.listProposals({
       processInstanceId: instance.instance.id,
     });
 
-    const found = result.proposals.find((p) => p.id === draftProposal.id);
-    expect(found).toBeDefined();
-    expect(found?.status).toBe(ProposalStatus.DRAFT);
+    const foundByCreator = creatorResult.proposals.find(
+      (p) => p.id === draftProposal.id,
+    );
+    expect(foundByCreator).toBeDefined();
+    expect(foundByCreator?.status).toBe(ProposalStatus.DRAFT);
+
+    // The invited collaborator should also see the draft
+    const collaboratorCaller = await createAuthenticatedCaller(
+      collaborator.email,
+    );
+    const collaboratorResult = await collaboratorCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const foundByCollaborator = collaboratorResult.proposals.find(
+      (p) => p.id === draftProposal.id,
+    );
+    expect(foundByCollaborator).toBeDefined();
+    expect(foundByCollaborator?.status).toBe(ProposalStatus.DRAFT);
   });
 
   it('should NOT show draft proposals to admins who lack proposal-level access', async ({
