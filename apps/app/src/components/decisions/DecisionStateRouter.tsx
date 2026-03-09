@@ -65,6 +65,9 @@ function DecisionStateRouterNew({
         description={description}
         currentPhaseId={currentPhaseId}
         maxVotesPerMember={maxVotesPerMember}
+        phaseHeadline={currentPhase?.headline}
+        phaseDescription={currentPhase?.description}
+        phaseAdditionalInfo={currentPhase?.additionalInfo}
       />
     ),
   });

@@ -41,6 +41,10 @@ export function VotingPage({
   const hasVoted = voteStatus?.hasVoted || false;
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhaseId = instance.instanceData?.currentPhaseId;
+  const currentPhase = phases.find((phase) => phase.phaseId === currentPhaseId);
+
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
     : (instance.description ??
@@ -134,8 +138,14 @@ export function VotingPage({
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={heroContent.title}
-          description={heroContent.description}
+          title={currentPhase?.headline ?? heroContent.title}
+          description={
+            currentPhase?.description ? (
+              <p>{currentPhase.description}</p>
+            ) : (
+              heroContent.description
+            )
+          }
           variant="standard"
         />
 
@@ -144,7 +154,7 @@ export function VotingPage({
         <DecisionActionBar
           instanceId={instanceId}
           markup={aboutIsMarkup}
-          description={description}
+          description={currentPhase?.additionalInfo ?? description}
           showSubmitButton={false}
         />
       </div>

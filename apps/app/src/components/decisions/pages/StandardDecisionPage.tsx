@@ -23,6 +23,9 @@ export function StandardDecisionPage({
   description,
   currentPhaseId,
   maxVotesPerMember,
+  phaseHeadline,
+  phaseDescription,
+  phaseAdditionalInfo,
 }: {
   instanceId: string;
   slug: string;
@@ -36,6 +39,12 @@ export function StandardDecisionPage({
   currentPhaseId?: string;
   /** Max votes per member - used for one-project specific content */
   maxVotesPerMember?: number;
+  /** Phase headline - overrides slug-based hero title when set */
+  phaseHeadline?: string;
+  /** Phase description - overrides slug-based hero description when set */
+  phaseDescription?: string;
+  /** Phase additional info - overrides instance description in About modal when set */
+  phaseAdditionalInfo?: string;
 }) {
   const t = useTranslations();
 
@@ -118,8 +127,10 @@ export function StandardDecisionPage({
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={heroContent.title}
-          description={heroContent.description}
+          title={phaseHeadline ?? heroContent.title}
+          description={
+            phaseDescription ? <p>{phaseDescription}</p> : heroContent.description
+          }
           variant="standard"
         />
 
@@ -127,7 +138,7 @@ export function StandardDecisionPage({
 
         <DecisionActionBar
           instanceId={instanceId}
-          description={description}
+          description={phaseAdditionalInfo ?? description}
           showSubmitButton={allowProposals}
         />
       </div>
