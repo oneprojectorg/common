@@ -1,6 +1,7 @@
 import { mockCollab } from '@op/collab/testing';
 import { db } from '@op/db/client';
 import {
+  ProposalStatus,
   Visibility,
   decisionProcesses,
   processInstances,
@@ -226,6 +227,16 @@ describe.concurrent('listProposals', () => {
         }),
       ]);
 
+    // Submit both proposals first (drafts are only visible to proposal-level access holders)
+    await Promise.all([
+      adminCaller.decision.submitProposal({
+        proposalId: visibleProposal.id,
+      }),
+      adminCaller.decision.submitProposal({
+        proposalId: hiddenProposal.id,
+      }),
+    ]);
+
     // Hide one proposal
     await adminCaller.decision.updateProposal({
       proposalId: hiddenProposal.id,
@@ -266,7 +277,7 @@ describe.concurrent('listProposals', () => {
     });
 
     // Create visible and hidden proposals (by member) and admin caller in parallel
-    const [, hiddenProposal, adminCaller] = await Promise.all([
+    const [visibleProposal, hiddenProposal, adminCaller] = await Promise.all([
       testData.createProposal({
         callerEmail: memberUser.email,
         processInstanceId: instance.instance.id,
@@ -278,6 +289,17 @@ describe.concurrent('listProposals', () => {
         proposalData: { title: 'Hidden Proposal', description: 'A test' },
       }),
       createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    // Submit both proposals via member caller (drafts are only visible to proposal-level access holders)
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    await Promise.all([
+      memberCaller.decision.submitProposal({
+        proposalId: visibleProposal.id,
+      }),
+      memberCaller.decision.submitProposal({
+        proposalId: hiddenProposal.id,
+      }),
     ]);
 
     // Admin hides one of the member's proposals
@@ -1062,5 +1084,372 @@ describe.concurrent('listProposals', () => {
       type: 'html',
       content: '<p>old content field</p>',
     });
+  });
+
+  /**
+   * Proposal-level permission tests
+   *
+   * These tests verify that listProposals filters results based on
+   * proposal-level permissions (profileUsers on proposal.profileId)
+   * rather than only instance-level permissions.
+   */
+
+  it('should show draft proposals to their creator (proposal-level access)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member who creates a draft proposal
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    // Member creates a proposal (starts as DRAFT)
+    const draftProposal = await testData.createProposal({
+      callerEmail: member.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'My Draft Proposal' },
+    });
+
+    // The creator should see their own draft
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const found = result.proposals.find((p) => p.id === draftProposal.id);
+    expect(found).toBeDefined();
+    expect(found?.status).toBe(ProposalStatus.DRAFT);
+  });
+
+  it('should NOT show draft proposals to admins who lack proposal-level access', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member who creates a draft proposal
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    await testData.createProposal({
+      callerEmail: member.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Member Draft' },
+    });
+
+    // Admin does NOT have proposal-level access to this draft
+    // Admin should NOT see draft proposals they didn't create
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await adminCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    // Admin should see zero draft proposals (they have no proposal-level access)
+    const drafts = result.proposals.filter(
+      (p) => p.status === ProposalStatus.DRAFT,
+    );
+    expect(drafts).toHaveLength(0);
+  });
+
+  it('should NOT show draft proposals to other members who lack proposal-level access', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create two members
+    const [memberA, memberB] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    // Member A creates a draft proposal
+    await testData.createProposal({
+      callerEmail: memberA.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Member A Draft' },
+    });
+
+    // Member B should NOT see Member A's draft
+    const memberBCaller = await createAuthenticatedCaller(memberB.email);
+    const result = await memberBCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(0);
+  });
+
+  it('should show submitted proposals to all users with instance-level access', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member who submits a proposal
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      callerEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted Proposal' },
+    });
+
+    // Submit the proposal (changes status from DRAFT to SUBMITTED)
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    await submitterCaller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    // Another member should see the submitted proposal
+    const otherMember = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const otherMemberCaller = await createAuthenticatedCaller(
+      otherMember.email,
+    );
+    const result = await otherMemberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(proposal.id);
+    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
+  it('should show submitted proposals to admins', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member who submits a proposal
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      callerEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted Proposal' },
+    });
+
+    // Submit the proposal
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    await submitterCaller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    // Admin should see submitted proposals even without proposal-level access
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await adminCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(proposal.id);
+    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
+  it('should show draft proposals to collaborators with proposal-level access', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member who creates a draft proposal
+    const creator = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const draftProposal = await testData.createProposal({
+      callerEmail: creator.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Shared Draft' },
+    });
+
+    // Create a collaborator and grant them proposal-level access
+    const collaborator = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    // Grant collaborator access to the proposal's profile
+    await testData.grantProfileAccess(
+      draftProposal.profileId!,
+      collaborator.authUserId,
+      collaborator.email,
+      false, // member-level access
+    );
+
+    // Collaborator should see the draft proposal
+    const collaboratorCaller = await createAuthenticatedCaller(
+      collaborator.email,
+    );
+    const result = await collaboratorCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const found = result.proposals.find((p) => p.id === draftProposal.id);
+    expect(found).toBeDefined();
+    expect(found?.status).toBe(ProposalStatus.DRAFT);
+  });
+
+  it('should show mix of own drafts and submitted proposals correctly', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create two members
+    const [memberA, memberB] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    // Member A creates a draft and a submitted proposal
+    const [draftA, submittedA] = await Promise.all([
+      testData.createProposal({
+        callerEmail: memberA.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Draft A' },
+      }),
+      testData.createProposal({
+        callerEmail: memberA.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Submitted A' },
+      }),
+    ]);
+
+    // Submit one of Member A's proposals
+    const memberACaller = await createAuthenticatedCaller(memberA.email);
+    await memberACaller.decision.submitProposal({
+      proposalId: submittedA.id,
+    });
+
+    // Member B creates their own draft
+    const draftB = await testData.createProposal({
+      callerEmail: memberB.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Draft B' },
+    });
+
+    // Member A should see: their own draft + their submitted proposal
+    // Member A should NOT see: Member B's draft
+    const resultA = await memberACaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const resultAIds = resultA.proposals.map((p) => p.id);
+    expect(resultAIds).toContain(draftA.id);
+    expect(resultAIds).toContain(submittedA.id);
+    expect(resultAIds).not.toContain(draftB.id);
+    expect(resultA.proposals).toHaveLength(2);
+
+    // Member B should see: their own draft + Member A's submitted proposal
+    // Member B should NOT see: Member A's draft
+    const memberBCaller = await createAuthenticatedCaller(memberB.email);
+    const resultB = await memberBCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const resultBIds = resultB.proposals.map((p) => p.id);
+    expect(resultBIds).toContain(draftB.id);
+    expect(resultBIds).toContain(submittedA.id);
+    expect(resultBIds).not.toContain(draftA.id);
+    expect(resultB.proposals).toHaveLength(2);
   });
 });

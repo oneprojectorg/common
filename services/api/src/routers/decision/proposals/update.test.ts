@@ -166,6 +166,16 @@ describe.concurrent('updateProposal visibility', () => {
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
+    // Submit both proposals first (drafts are only visible to proposal-level access holders)
+    await Promise.all([
+      adminCaller.decision.submitProposal({
+        proposalId: visibleProposal.id,
+      }),
+      adminCaller.decision.submitProposal({
+        proposalId: hiddenProposal.id,
+      }),
+    ]);
+
     // Admin hides one proposal
     await adminCaller.decision.updateProposal({
       proposalId: hiddenProposal.id,
