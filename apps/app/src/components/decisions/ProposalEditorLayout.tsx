@@ -51,7 +51,7 @@ export function ProposalEditorLayout({
   const canShare = access?.admin || access?.inviteMembers;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex h-screen flex-col overflow-y-auto bg-white">
       {/* Header */}
       <div className="grid grid-cols-3 items-center gap-2 border-b px-4 py-4 sm:px-6">
         <button
