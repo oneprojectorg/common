@@ -4,8 +4,6 @@
  * Used for Docker dev environment where the standard seed script's URL allowlist
  * doesn't include the dind database URL.
  */
-import { sql } from 'drizzle-orm';
-
 import { db } from '.';
 import { accessRoles } from './schema/tables/access.sql';
 import {
