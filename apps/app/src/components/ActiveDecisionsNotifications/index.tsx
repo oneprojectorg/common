@@ -47,7 +47,16 @@ const ActiveDecisionsNotificationsSuspense = () => {
           return (
             <NotificationPanelItem key={decision.id}>
               <ProfileItem
-                avatar={<OrganizationAvatar profile={decision} />}
+                avatar={
+                  <OrganizationAvatar
+                    profile={decision}
+                    href={
+                      decision.slug
+                        ? `/decisions/${decision.slug}`
+                        : undefined
+                    }
+                  />
+                }
                 title={decision.name}
                 description={
                   description

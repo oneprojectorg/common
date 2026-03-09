@@ -9,10 +9,12 @@ import { Link } from '@/lib/i18n';
 export const OrganizationAvatar = ({
   profile,
   withLink = true,
+  href,
   className,
 }: {
   profile?: Profile;
   withLink?: boolean;
+  href?: string;
   className?: string;
 }) => {
   if (!profile) {
@@ -23,9 +25,11 @@ export const OrganizationAvatar = ({
   const avatarImage = profile?.avatarImage;
   const slug = profile?.slug;
 
+  const linkHref = href ?? (slug ? `/profile/${slug}` : null);
+
   const avatar = (
     <Avatar
-      className={cn('size-12', withLink && 'hover:opacity-80', className)}
+      className={cn('size-12', withLink && linkHref && 'hover:opacity-80', className)}
       placeholder={name ?? ''}
     >
       {avatarImage?.name ? (
@@ -39,8 +43,8 @@ export const OrganizationAvatar = ({
     </Avatar>
   );
 
-  return withLink ? (
-    <Link href={`/profile/${slug}`} className="hover:no-underline">
+  return withLink && linkHref ? (
+    <Link href={linkHref} className="hover:no-underline">
       {avatar}
     </Link>
   ) : (
