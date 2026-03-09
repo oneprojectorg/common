@@ -7,7 +7,7 @@ import { SidebarTrigger } from '@op/ui/Sidebar';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { LuLogOut, LuSave } from 'react-icons/lu';
+import { LuLogOut } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -18,9 +18,6 @@ import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import { useProcessPhases } from './useProcessPhases';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
-
-const NAV_BTN_CLS =
-  'inline-flex h-10 items-center justify-center rounded-lg border border-neutral-gray1 px-3 text-sm text-primary shadow-[0px_0px_16px_0px_rgba(20,35,38,0.04)] transition-colors hover:bg-neutral-gray1';
 
 export const ProcessBuilderFooter = ({
   instanceId,
@@ -107,7 +104,7 @@ export const ProcessBuilderFooter = ({
         />
 
         <div className="flex h-full items-center justify-between md:px-0">
-          {/* Left: Exit — matches sidebar width */}
+          {/* Left: Exit + Back — matches sidebar width */}
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
             <Link
               href={`/decisions/${slug}`}
@@ -116,6 +113,15 @@ export const ProcessBuilderFooter = ({
               <LuLogOut className="size-4 rotate-180" />
               {t('Exit')}
             </Link>
+            {hasPrev && (
+              <Button
+                color="secondary"
+                onPress={goBack}
+                className="hidden md:inline-flex"
+              >
+                {t('Back')}
+              </Button>
+            )}
           </div>
 
           {/* Center + Right: content-width area after sidebar */}
@@ -128,27 +134,19 @@ export const ProcessBuilderFooter = ({
 
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
-              {hasPrev && (
-                <button type="button" onClick={goBack} className={NAV_BTN_CLS}>
-                  {t('Back')}
-                </button>
-              )}
               {hasNext && (
-                <button type="button" onClick={goNext} className={NAV_BTN_CLS}>
+                <Button color="secondary" onPress={goNext}>
                   {t('Next')}
-                </button>
+                </Button>
               )}
+
               {(!isDraft ||
                 (validation.isReadyToLaunch && !isTerminalStatus)) && (
                 <Button
-                  className="h-8 rounded-md"
                   onPress={handleLaunchOrSave}
                   isDisabled={updateInstance.isPending}
                 >
-                  {!isDraft && <LuSave className="size-4" />}
-                  <span className="hidden md:inline">
-                    {isDraft ? t('Launch Process') : t('Update Process')}
-                  </span>
+                  {isDraft ? t('Launch Process') : t('Update Process')}
                 </Button>
               )}
             </div>
@@ -158,14 +156,14 @@ export const ProcessBuilderFooter = ({
           <div className="flex items-center justify-end gap-2 md:hidden">
             <SidebarTrigger />
             {hasPrev && (
-              <button type="button" onClick={goBack} className={NAV_BTN_CLS}>
+              <Button color="secondary" onPress={goBack}>
                 {t('Back')}
-              </button>
+              </Button>
             )}
             {hasNext && (
-              <button type="button" onClick={goNext} className={NAV_BTN_CLS}>
+              <Button color="secondary" onPress={goNext}>
                 {t('Next')}
-              </button>
+              </Button>
             )}
             {(!isDraft ||
               (validation.isReadyToLaunch && !isTerminalStatus)) && (
