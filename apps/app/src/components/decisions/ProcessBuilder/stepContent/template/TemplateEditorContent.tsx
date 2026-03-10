@@ -102,8 +102,10 @@ export function TemplateEditorContent({
     useState<ProposalTemplateSchema>(initialTemplate);
   const isInitialLoadRef = useRef(true);
 
-  // Track which field is expanded — auto-expand newly added fields
-  const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
+  // Track which fields are expanded — multiple can be open simultaneously
+  const [expandedFieldIds, setExpandedFieldIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
@@ -239,7 +241,7 @@ export function TemplateEditorContent({
       const label = t(getFieldLabelKey(type));
       setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
       // Auto-expand the newly added field
-      setExpandedFieldId(fieldId);
+      setExpandedFieldIds((prev) => new Set(prev).add(fieldId));
     },
     [t],
   );
@@ -251,7 +253,11 @@ export function TemplateEditorContent({
       next.delete(fieldId);
       return next;
     });
-    setExpandedFieldId((prev) => (prev === fieldId ? null : prev));
+    setExpandedFieldIds((prev) => {
+      const next = new Set(prev);
+      next.delete(fieldId);
+      return next;
+    });
   }, []);
 
   const handleReorderFields = useCallback((newItems: FieldView[]) => {
@@ -339,9 +345,17 @@ export function TemplateEditorContent({
         fieldSchema={getFieldSchema(template, field.id) ?? {}}
         errors={displayedErrors}
         controls={controls}
-        isExpanded={expandedFieldId === field.id}
+        isExpanded={expandedFieldIds.has(field.id)}
         onExpandedChange={(expanded) =>
-          setExpandedFieldId(expanded ? field.id : null)
+          setExpandedFieldIds((prev) => {
+            const next = new Set(prev);
+            if (expanded) {
+              next.add(field.id);
+            } else {
+              next.delete(field.id);
+            }
+            return next;
+          })
         }
         onRemove={handleRemoveField}
         onBlur={handleFieldBlur}
