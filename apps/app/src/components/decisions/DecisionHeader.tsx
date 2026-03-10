@@ -5,8 +5,9 @@ import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
+import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
-import { DecisionTranslationWrapper } from '@/components/decisions/DecisionTranslationContext';
+import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 
 interface DecisionHeaderProps {
   instanceId: string;
@@ -73,7 +74,7 @@ export async function DecisionHeader({
           : 'bg-neutral-offWhite text-gray-700',
       )}
     >
-      <DecisionTranslationWrapper
+      <DecisionInstanceHeader
         backTo={{
           label: instance.owner?.name,
           href: `/profile/${slug}?tab=decisions`,
@@ -86,7 +87,8 @@ export async function DecisionHeader({
         }
         decisionSlug={decisionSlug}
         decisionProfileId={decisionProfileId}
-      >
+      />
+      <DecisionTranslationProvider>
         <div className="flex flex-col overflow-x-auto sm:items-center">
           <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
             <DecisionProcessStepper
@@ -98,7 +100,7 @@ export async function DecisionHeader({
         </div>
 
         {children}
-      </DecisionTranslationWrapper>
+      </DecisionTranslationProvider>
     </div>
   );
 }

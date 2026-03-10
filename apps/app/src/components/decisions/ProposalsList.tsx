@@ -589,7 +589,9 @@ export const ProposalsList = ({
     trpc.translation.translateDecision.useMutation({
       onSuccess: (data) => {
         setDecisionTranslation({
-          name: data.translated.name,
+          headline: data.translated.headline,
+          phaseDescription: data.translated.phaseDescription,
+          additionalInfo: data.translated.additionalInfo,
           description: data.translated.description,
         });
       },

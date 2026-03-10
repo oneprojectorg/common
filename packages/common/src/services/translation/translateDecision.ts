@@ -9,12 +9,14 @@ import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
+import type { DecisionInstanceData } from '../decision/schemas/instanceData';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
 /**
- * Translates a decision profile's header fields (name, description) into the
- * target locale via DeepL with cache-through semantics.
+ * Translates a decision's current-phase content (headline, description,
+ * additionalInfo) and the process-level description into the target locale
+ * via DeepL with cache-through semantics.
  */
 export async function translateDecision({
   decisionProfileId,
@@ -33,8 +35,8 @@ export async function translateDecision({
   const rows = await db
     .select({
       profileId: profiles.id,
-      name: profiles.name,
       description: processInstances.description,
+      instanceData: processInstances.instanceData,
       authUserId: profileUsers.authUserId,
     })
     .from(profiles)
@@ -66,12 +68,32 @@ export async function translateDecision({
     );
   }
 
+  const instanceData = row.instanceData as DecisionInstanceData | null;
+  const currentPhaseId = instanceData?.currentPhaseId;
+  const currentPhase = currentPhaseId
+    ? instanceData?.phases?.find((p) => p.phaseId === currentPhaseId)
+    : undefined;
+
   const entries: TranslatableEntry[] = [];
 
-  if (row.name) {
+  if (currentPhase?.headline) {
     entries.push({
-      contentKey: `decision:${decisionProfileId}:name`,
-      text: row.name,
+      contentKey: `decision:${decisionProfileId}:headline`,
+      text: currentPhase.headline,
+    });
+  }
+
+  if (currentPhase?.description) {
+    entries.push({
+      contentKey: `decision:${decisionProfileId}:phaseDescription`,
+      text: currentPhase.description,
+    });
+  }
+
+  if (currentPhase?.additionalInfo) {
+    entries.push({
+      contentKey: `decision:${decisionProfileId}:additionalInfo`,
+      text: currentPhase.additionalInfo,
     });
   }
 

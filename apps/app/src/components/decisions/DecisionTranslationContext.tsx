@@ -2,10 +2,10 @@
 
 import { createContext, useContext, useState } from 'react';
 
-import { DecisionInstanceHeader } from './DecisionInstanceHeader';
-
 interface DecisionTranslation {
-  name?: string;
+  headline?: string;
+  phaseDescription?: string;
+  additionalInfo?: string;
   description?: string;
 }
 
@@ -51,60 +51,4 @@ export function useSetDecisionTranslation(): (
     return () => {};
   }
   return ctx.setTranslation;
-}
-
-export function DecisionTranslationWrapper({
-  backTo,
-  title,
-  decisionSlug,
-  decisionProfileId,
-  children,
-}: {
-  backTo: { label?: string; href: string };
-  title: string;
-  decisionSlug?: string;
-  decisionProfileId?: string | null;
-  children?: React.ReactNode;
-}) {
-  return (
-    <DecisionTranslationProvider>
-      <DecisionTranslationWrapperInner
-        backTo={backTo}
-        title={title}
-        decisionSlug={decisionSlug}
-        decisionProfileId={decisionProfileId}
-      >
-        {children}
-      </DecisionTranslationWrapperInner>
-    </DecisionTranslationProvider>
-  );
-}
-
-function DecisionTranslationWrapperInner({
-  backTo,
-  title,
-  decisionSlug,
-  decisionProfileId,
-  children,
-}: {
-  backTo: { label?: string; href: string };
-  title: string;
-  decisionSlug?: string;
-  decisionProfileId?: string | null;
-  children?: React.ReactNode;
-}) {
-  const translation = useDecisionTranslation();
-  const resolvedTitle = translation?.name ?? title;
-
-  return (
-    <>
-      <DecisionInstanceHeader
-        backTo={backTo}
-        title={resolvedTitle}
-        decisionSlug={decisionSlug}
-        decisionProfileId={decisionProfileId}
-      />
-      {children}
-    </>
-  );
 }

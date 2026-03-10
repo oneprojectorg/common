@@ -12,6 +12,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
@@ -28,7 +29,7 @@ export function StandardDecisionPage({
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision header */
+  /** Decision profile ID for translating the decision content */
   decisionProfileId?: string | null;
   /** Whether proposal submission is allowed in the current phase */
   allowProposals: boolean;
@@ -38,6 +39,7 @@ export function StandardDecisionPage({
   currentPhase?: InstancePhaseData;
 }) {
   const t = useTranslations();
+  const translation = useDecisionTranslation();
 
   const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
@@ -46,16 +48,22 @@ export function StandardDecisionPage({
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
+  const heroTitle =
+    translation?.headline ?? currentPhase?.headline ?? t('SHARE YOUR IDEAS.');
+  const heroDescription =
+    translation?.phaseDescription ?? currentPhase?.description;
+  const actionBarDescription =
+    translation?.additionalInfo ??
+    currentPhase?.additionalInfo ??
+    translation?.description ??
+    description;
+
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={currentPhase?.headline ?? t('SHARE YOUR IDEAS.')}
-          description={
-            currentPhase?.description ? (
-              <p>{currentPhase.description}</p>
-            ) : undefined
-          }
+          title={heroTitle}
+          description={heroDescription ? <p>{heroDescription}</p> : undefined}
           variant="standard"
         />
 
@@ -63,7 +71,7 @@ export function StandardDecisionPage({
 
         <DecisionActionBar
           instanceId={instanceId}
-          description={currentPhase?.additionalInfo ?? description}
+          description={actionBarDescription}
           showSubmitButton={allowProposals}
         />
       </div>
