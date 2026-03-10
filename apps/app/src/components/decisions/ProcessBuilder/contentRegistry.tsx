@@ -2,11 +2,7 @@
 
 import { type ComponentType } from 'react';
 
-import {
-  type SectionId,
-  type StepId,
-  isPhaseSection,
-} from './navigationConfig';
+import { type SectionId, isPhaseSection } from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
 import PhaseDetailSection from './stepContent/general/PhaseDetailSection';
 import PhasesSection from './stepContent/general/PhasesSection';
@@ -25,40 +21,6 @@ export interface SectionProps {
 }
 
 type SectionComponent = ComponentType<SectionProps>;
-
-// Registry structure - allows partial coverage
-type ContentRegistry = {
-  [S in StepId]?: Partial<Record<string, SectionComponent>>;
-};
-
-const CONTENT_REGISTRY: ContentRegistry = {
-  general: {
-    overview: OverviewSection,
-    phases: PhasesSection,
-    proposalCategories: ProposalCategoriesSection,
-  },
-  template: {
-    templateEditor: TemplateEditorSection,
-  },
-  rubric: {
-    criteria: CriteriaSection,
-  },
-  participants: {
-    roles: RolesSection,
-    participants: ParticipantsSection,
-    summary: SummarySectionContent,
-  },
-};
-
-export function getContentComponent(
-  stepId: StepId | undefined,
-  sectionId: string | undefined,
-): SectionComponent | null {
-  if (!stepId || !sectionId) {
-    return null;
-  }
-  return CONTENT_REGISTRY[stepId]?.[sectionId] ?? null;
-}
 
 // Flat section-to-component mapping for the unified sidebar
 const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
