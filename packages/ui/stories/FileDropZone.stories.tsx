@@ -38,3 +38,19 @@ export const SingleFile: Story = {
     </div>
   ),
 };
+
+export const WithAcceptedFileTypes: Story = {
+  args: {
+    acceptedFileTypes: [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ],
+    description: 'Accepts PDF, DOCX, XLSX up to 10MB',
+  },
+  render: (args) => (
+    <div className="w-[480px]">
+      <FileDropZone {...args} />
+    </div>
+  ),
+};
