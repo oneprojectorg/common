@@ -389,7 +389,6 @@ export function TemplateEditorContent({
             <div className="mb-3 space-y-3">
               <CollapsibleConfigCard
                 icon={LuAlignLeft}
-                iconTooltip={t('Short text')}
                 label={t('Proposal title')}
                 badgeLabel={t('Required')}
                 locked
@@ -397,7 +396,6 @@ export function TemplateEditorContent({
               {hasCategories && (
                 <CollapsibleConfigCard
                   icon={LuChevronDown}
-                  iconTooltip={t('Dropdown')}
                   label={t('Category')}
                   badgeLabel={
                     requireCategorySelection ? t('Required') : t('Optional')

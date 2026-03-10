@@ -2,13 +2,11 @@
 
 import type { ReactNode } from 'react';
 import { useId } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
 import { LuChevronDown, LuGripVertical, LuLock } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { DragHandle } from './Sortable';
 import type { SortableItemControls } from './Sortable';
-import { Tooltip, TooltipTrigger } from './Tooltip';
 import {
   AccordionContent,
   AccordionItem,
@@ -18,8 +16,6 @@ import {
 export interface CollapsibleConfigCardProps {
   /** Icon component to display in the header */
   icon: React.ComponentType<{ className?: string }>;
-  /** Tooltip text for the icon */
-  iconTooltip?: string;
   /** Label text shown in the header pill */
   label: string;
   /** Badge text shown as a chip (e.g. "Required" / "Optional") */
@@ -46,7 +42,6 @@ export interface CollapsibleConfigCardProps {
 
 export function CollapsibleConfigCard({
   icon: Icon,
-  iconTooltip,
   label,
   badgeLabel,
   isCollapsible = false,
@@ -83,23 +78,15 @@ export function CollapsibleConfigCard({
       {/* Icon + Label pill (or plain for locked) */}
       {locked ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <TooltipTrigger>
-            <AriaButton className="flex shrink-0 items-center text-neutral-gray4">
-              <Icon className="size-4" />
-            </AriaButton>
-            {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
-          </TooltipTrigger>
+          <Icon className="size-4 shrink-0 text-neutral-gray4" />
           <span className="truncate text-neutral-charcoal">{label}</span>
         </div>
       ) : (
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-          <TooltipTrigger>
-            <AriaButton className="flex shrink-0 items-center text-neutral-gray4">
-              <Icon className="size-4" />
-            </AriaButton>
-            {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
-          </TooltipTrigger>
-          <span className="truncate text-neutral-charcoal">{label}</span>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
+            <Icon className="size-4 shrink-0 text-neutral-gray4" />
+            <span className="truncate text-neutral-charcoal">{label}</span>
+          </div>
         </div>
       )}
 
@@ -161,7 +148,9 @@ export function CollapsibleConfigCard({
           {headerContent}
         </AccordionTrigger>
       </div>
-      <AccordionContent className="pt-4">{children}</AccordionContent>
+      <AccordionContent>
+        <div className="pt-4">{children}</div>
+      </AccordionContent>
     </AccordionItem>
   );
 }
