@@ -62,13 +62,16 @@ const accordionStyles = tv({
 
 type AccordionStyles = ReturnType<typeof accordionStyles>;
 
+const VARIANT_STYLES = {
+  default: accordionStyles({ variant: 'default' }),
+  unstyled: accordionStyles({ variant: 'unstyled' }),
+} as const;
+
 // ============================================================================
 // Context
 // ============================================================================
 
-const AccordionContext = createContext<AccordionStyles>(
-  accordionStyles({ variant: 'default' }),
-);
+const AccordionContext = createContext<AccordionStyles>(VARIANT_STYLES.default);
 
 const useAccordionStyles = () => use(AccordionContext);
 
@@ -133,7 +136,7 @@ const AccordionItem = ({
   children,
   ...props
 }: AccordionItemProps) => {
-  const styles = accordionStyles({ variant });
+  const styles = VARIANT_STYLES[variant];
 
   return (
     <AccordionContext.Provider value={styles}>
