@@ -16,8 +16,8 @@ import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { DecisionAvatar } from '../DecisionAvatar';
 import ErrorBoundary from '../ErrorBoundary';
-import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const ActiveDecisionsNotificationsSuspense = () => {
   const t = useTranslations();
@@ -47,7 +47,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
           return (
             <NotificationPanelItem key={decision.id}>
               <ProfileItem
-                avatar={<OrganizationAvatar profile={decision} />}
+                avatar={<DecisionAvatar profile={decision} />}
                 title={decision.name}
                 description={
                   description

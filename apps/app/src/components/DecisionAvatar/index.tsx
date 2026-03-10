@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
 
-export const OrganizationAvatar = ({
+export const DecisionAvatar = ({
   profile,
   withLink = true,
   className,
@@ -25,7 +25,7 @@ export const OrganizationAvatar = ({
 
   const avatar = (
     <Avatar
-      className={cn(withLink && 'hover:opacity-80', className)}
+      className={cn(withLink && slug && 'hover:opacity-80', className)}
       size="lg"
       placeholder={name ?? ''}
     >
@@ -40,8 +40,8 @@ export const OrganizationAvatar = ({
     </Avatar>
   );
 
-  return withLink ? (
-    <Link href={`/profile/${slug}`} className="hover:no-underline">
+  return withLink && slug ? (
+    <Link href={`/decisions/${slug}`} className="hover:no-underline">
       {avatar}
     </Link>
   ) : (
@@ -49,7 +49,7 @@ export const OrganizationAvatar = ({
   );
 };
 
-export const OrganizationAvatarSkeleton = ({
+export const DecisionAvatarSkeleton = ({
   className,
 }: {
   className?: string;

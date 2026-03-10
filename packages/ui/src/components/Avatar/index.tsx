@@ -4,13 +4,19 @@ import { useMemo } from 'react';
 import { cn, getGradientForString } from '../../lib/utils';
 import { Skeleton } from '../Skeleton';
 
+const sizeClasses = {
+  sm: 'size-7 text-xs',
+  md: 'size-8 text-sm',
+  lg: 'size-12 text-sm',
+};
+
 export interface AvatarProps {
   children?: ReactNode;
   /** Name or text to use for generating initial and gradient */
   placeholder?: string;
   className?: string;
   /** Size variant */
-  size?: 'sm' | 'md';
+  size?: keyof typeof sizeClasses;
   /** Show full placeholder text instead of just the first character */
   showFullText?: boolean;
 }
@@ -32,11 +38,6 @@ export const Avatar = ({
   );
 
   const showLetterAvatar = !children;
-
-  const sizeClasses = {
-    sm: 'size-7 text-xs',
-    md: 'size-8 text-sm',
-  };
 
   return (
     <div
@@ -64,11 +65,18 @@ export const Avatar = ({
   );
 };
 
-export const AvatarSkeleton = ({ className }: { className?: string }) => {
+export const AvatarSkeleton = ({
+  size = 'md',
+  className,
+}: {
+  size?: keyof typeof sizeClasses;
+  className?: string;
+}) => {
   return (
     <Skeleton
       className={cn(
         'relative flex size-8 items-center justify-center overflow-hidden rounded-full text-clip',
+        sizeClasses[size],
         className,
       )}
     />
