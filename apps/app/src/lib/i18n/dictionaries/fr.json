@@ -604,7 +604,7 @@
   "Attachments": "Pièces jointes",
   "Attachments (optional)": "Pièces jointes (facultatif)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Soutenez votre proposition avec des documents pertinents comme des budgets ou des recherches de soutien.",
-  "Accepts PDF, DOCX, XLSX up to {size}MB": "Accepte PDF, DOCX, XLSX jusqu'à {size}Mo",
+  "Accepts {types} and more up to {size}MB": "Accepte {types} et plus jusqu'à {size}Mo",
   "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées",
   "Drag to reorder": "Glisser pour réorganiser",
   "You've been invited to join the following decision-making processes": "Vous avez été invité à rejoindre les processus de prise de décision suivants",

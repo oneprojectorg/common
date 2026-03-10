@@ -604,7 +604,7 @@
   "Attachments": "Anexos",
   "Attachments (optional)": "Anexos (opcional)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Apoie sua proposta com documentos relevantes como orçamentos ou pesquisa de suporte.",
-  "Accepts PDF, DOCX, XLSX up to {size}MB": "Aceita PDF, DOCX, XLSX até {size}MB",
+  "Accepts {types} and more up to {size}MB": "Aceita {types} e mais até {size}MB",
   "{count}/{max} attachments added": "{count}/{max} anexos adicionados",
   "Join decision-making processes": "Participe de processos de tomada de decisão",
   "You've been invited to join the following decision-making processes": "Você foi convidado a participar dos seguintes processos de tomada de decisão",
