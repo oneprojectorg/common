@@ -27,7 +27,9 @@ export function DecisionTranslationProvider({
   );
 
   return (
-    <DecisionTranslationContext.Provider value={{ translation, setTranslation }}>
+    <DecisionTranslationContext.Provider
+      value={{ translation, setTranslation }}
+    >
       {children}
     </DecisionTranslationContext.Provider>
   );

@@ -27,6 +27,7 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import { useSetDecisionTranslation } from './DecisionTranslationContext';
 import {
   ProposalCard,
   ProposalCardActions,
@@ -40,7 +41,6 @@ import {
   ProposalCardPreview,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import { useSetDecisionTranslation } from './DecisionTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { TranslateBanner } from './TranslateBanner';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
@@ -613,7 +613,13 @@ export const ProposalsList = ({
         targetLocale: supportedLocale,
       });
     }
-  }, [translateBatchMutation, translateDecisionMutation, allProposals, supportedLocale, decisionProfileId]);
+  }, [
+    translateBatchMutation,
+    translateDecisionMutation,
+    allProposals,
+    supportedLocale,
+    decisionProfileId,
+  ]);
 
   const handleViewOriginal = useCallback(() => {
     setTranslationState(null);

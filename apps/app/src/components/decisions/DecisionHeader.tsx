@@ -5,8 +5,8 @@ import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-import { DecisionTranslationWrapper } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
+import { DecisionTranslationWrapper } from '@/components/decisions/DecisionTranslationContext';
 
 interface DecisionHeaderProps {
   instanceId: string;
