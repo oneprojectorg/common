@@ -47,12 +47,12 @@ export function useProposalDraft({
 
   const initialDraft = useMemo<ProposalDraftFields>(
     () => ({
-      title: proposal.profile?.name ?? '',
+      title: proposal.profile.name ?? '',
       category: parsedProposalData?.category ?? null,
       budget: parsedProposalData?.budget ?? null,
     }),
     [
-      proposal.profile?.name,
+      proposal.profile.name,
       parsedProposalData?.category,
       parsedProposalData?.budget,
     ],

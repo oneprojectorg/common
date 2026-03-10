@@ -145,7 +145,7 @@ export function ProposalView({
   const { budget, category: originalCategory } = parseProposalData(
     currentProposal.proposalData,
   );
-  const originalTitle = currentProposal.profile?.name;
+  const originalTitle = currentProposal.profile.name;
 
   // Use translated category when available, otherwise original
   const category =

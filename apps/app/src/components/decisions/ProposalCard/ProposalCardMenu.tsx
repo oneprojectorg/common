@@ -126,7 +126,7 @@ export function ProposalCardMenu({
     },
   });
 
-  const proposalTitle = proposal.profile?.name || t('Untitled Proposal');
+  const proposalTitle = proposal.profile.name || t('Untitled Proposal');
 
   const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {

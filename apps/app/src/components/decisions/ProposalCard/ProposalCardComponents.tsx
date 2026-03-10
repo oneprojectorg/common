@@ -116,7 +116,7 @@ export function ProposalCardTitle({
 }) {
   const t = useTranslations();
   const cardTranslation = useCardTranslation(proposal.profileId);
-  const title = proposal.profile?.name;
+  const title = proposal.profile.name;
 
   const titleText = cardTranslation?.title ?? (title || t('Untitled Proposal'));
   const titleClasses =
