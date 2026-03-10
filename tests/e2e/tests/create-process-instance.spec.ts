@@ -69,32 +69,35 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 12_000 });
 
     // 7. Fill each phase's required fields.
-    //    The seeded template has phases rendered as collapsed accordions.
-    //    We expand each one, fill headline/description/endDate, then move on.
+    //    Phases are shown as cards in the phases list; click "Configure" on
+    //    each to open the detail form, fill the required fields, then wait
+    //    for the auto-save before moving on to the next phase.
     const now = new Date();
-    const phaseAccordions = authenticatedPage.locator(
-      '[class*="group/accordion-item"]',
-    );
-    const phaseCount = await phaseAccordions.count();
+    const phaseConfigureButtons = authenticatedPage.getByRole('button', {
+      name: 'Configure',
+    });
+    await expect(phaseConfigureButtons.first()).toBeVisible({ timeout: 6_000 });
+    const phaseCount = await phaseConfigureButtons.count();
 
     for (let i = 0; i < phaseCount; i++) {
-      const phase = phaseAccordions.nth(i);
+      // Set up the auto-save listener before any field changes
+      const phaseSaved = waitForAutoSave(authenticatedPage);
 
-      // Click the accordion trigger to expand (the chevron button)
-      await phase.locator('button[slot="trigger"]').click();
+      // Open the phase detail form for the i-th phase
+      await phaseConfigureButtons.nth(i).click();
 
-      // Wait for the phase content to be visible
-      const headlineField = phase.getByLabel('Headline');
+      // Wait for the phase detail form to load
+      const headlineField = authenticatedPage.getByLabel('Headline');
       await expect(headlineField).toBeVisible({ timeout: 6_000 });
 
       // Fill phase name
-      await phase.getByLabel('Phase name').fill(`Phase ${i + 1}`);
+      await authenticatedPage.getByLabel('Phase name').fill(`Phase ${i + 1}`);
 
       // Fill headline
       await headlineField.fill(`Phase ${i + 1} headline`);
 
       // Fill description
-      await phase
+      await authenticatedPage
         .getByLabel('Description')
         .fill(`Description for phase ${i + 1}`);
 
@@ -106,14 +109,21 @@ test.describe('Create Process Instance', () => {
         endDate.getFullYear(),
       ].join('/');
 
-      const endDateInput = phase.getByLabel('End date');
+      const endDateInput = authenticatedPage.getByLabel('End date');
       await endDateInput.fill(formatted);
       await endDateInput.press('Enter');
-    }
 
-    // Wait for the phases auto-save to complete
-    const phasesSaved = waitForAutoSave(authenticatedPage);
-    await phasesSaved;
+      // Wait for the auto-save to complete before navigating away
+      await phaseSaved;
+
+      // Navigate back to the phases list if there are more phases to configure
+      if (i < phaseCount - 1) {
+        await phasesButton.click();
+        await expect(phaseConfigureButtons.first()).toBeVisible({
+          timeout: 6_000,
+        });
+      }
+    }
 
     // ── Step 1: General – Proposal Categories ───────────────────────────
 

@@ -2,8 +2,6 @@
 
 import { useTranslations } from '@/lib/i18n';
 
-const GRADIENT = 'linear-gradient(to right, #3EC300, #0396A6)';
-
 export function ProgressIndicator({
   percentage,
   variant,
@@ -25,8 +23,8 @@ export function ProgressIndicator({
         className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-neutral-gray2 md:hidden"
       >
         <div
-          className="h-full transition-all duration-300"
-          style={{ width: `${clamped}%`, backgroundImage: GRADIENT }}
+          className="h-full bg-linear-to-r from-green-500 to-teal-500 transition-all duration-300"
+          style={{ width: `${clamped}%` }}
         />
       </div>
     );
@@ -43,17 +41,16 @@ export function ProgressIndicator({
         className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2"
       >
         <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${clamped}%`, backgroundImage: GRADIENT }}
+          className="h-full rounded-full bg-linear-to-r from-green-500 to-teal-500 transition-all duration-300"
+          style={{ width: `${clamped}%` }}
         />
       </div>
       <span
         className={
           clamped === 100
-            ? 'shrink-0 bg-clip-text text-base text-transparent'
+            ? 'shrink-0 bg-linear-to-r from-green-500 to-teal-500 bg-clip-text text-base text-transparent'
             : 'shrink-0 text-base text-neutral-black'
         }
-        style={clamped === 100 ? { backgroundImage: GRADIENT } : undefined}
       >
         {t('{count}% complete', { count: clamped })}
       </span>

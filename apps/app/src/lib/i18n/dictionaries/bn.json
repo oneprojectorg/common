@@ -942,11 +942,13 @@
   "Configure": "কনফিগার করুন",
   "Your process still needs more information": "আপনার প্রক্রিয়াটির জন্য এখনও আরও তথ্য প্রয়োজন",
   "is missing information in order to go live.": "লাইভ হওয়ার জন্য তথ্য অনুপস্থিত।",
+  "<highlight>{processName}</highlight> is missing information in order to go live.": "<highlight>{processName}</highlight> লাইভ হওয়ার জন্য তথ্য অনুপস্থিত।",
   "Take me there": "আমাকে সেখানে নিয়ে যাও",
   "Next": "পরবর্তী",
   "{count}% complete": "{count}% সম্পূর্ণ",
   "Review your process": "আপনার প্রক্রিয়া পর্যালোচনা করুন",
   "is ready to go live. Launching your process will invite and notify participants.": "লাইভ হতে প্রস্তুত। আপনার প্রক্রিয়া চালু করলে অংশগ্রহণকারীদের আমন্ত্রণ জানানো এবং বিজ্ঞপ্তি পাঠানো হবে।",
+  "<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.": "<highlight>{processName}</highlight> লাইভ হতে প্রস্তুত। আপনার প্রক্রিয়া চালু করলে অংশগ্রহণকারীদের আমন্ত্রণ জানানো এবং বিজ্ঞপ্তি পাঠানো হবে।",
   "You can always edit and invite participants after launching.": "চালু করার পরেও আপনি সম্পাদনা করতে এবং অংশগ্রহণকারীদের আমন্ত্রণ জানাতে পারবেন।",
   "Participants Invited": "আমন্ত্রিত অংশগ্রহণকারী",
   "Manage Participants": "অংশগ্রহণকারীদের পরিচালনা করুন"

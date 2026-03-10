@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { useQueryState } from 'nuqs';
+import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -78,8 +79,15 @@ export function SummarySectionInner({
           </Header2>
         </div>
         <p className="text-base text-neutral-black">
-          <span className="font-bold">{processName}</span>{' '}
-          {t('is missing information in order to go live.')}
+          {t.rich(
+            '<highlight>{processName}</highlight> is missing information in order to go live.',
+            {
+              processName,
+              highlight: (chunks: React.ReactNode) => (
+                <span className="font-bold">{chunks}</span>
+              ),
+            },
+          )}
         </p>
         <div className="flex flex-col space-y-2 rounded-lg border p-4">
           {incompleteItems.map((item, index) => (
@@ -120,9 +128,14 @@ export function SummarySectionInner({
         </Header2>
       </div>
       <p>
-        <span className="font-bold">{processName}</span>{' '}
-        {t(
-          'is ready to go live. Launching your process will invite and notify participants.',
+        {t.rich(
+          '<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.',
+          {
+            processName,
+            highlight: (chunks: React.ReactNode) => (
+              <span className="font-bold">{chunks}</span>
+            ),
+          },
         )}
       </p>
       <p>{t('You can always edit and invite participants after launching.')}</p>

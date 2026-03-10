@@ -935,11 +935,13 @@
   "Configure": "Configurar",
   "Your process still needs more information": "Seu processo ainda precisa de mais informações",
   "is missing information in order to go live.": "está faltando informações para entrar no ar.",
+  "<highlight>{processName}</highlight> is missing information in order to go live.": "<highlight>{processName}</highlight> está faltando informações para entrar no ar.",
   "Take me there": "Me leve lá",
   "Next": "Próximo",
   "{count}% complete": "{count}% concluído",
   "Review your process": "Revise seu processo",
   "is ready to go live. Launching your process will invite and notify participants.": "está pronto para ser lançado. Lançar seu processo convidará e notificará os participantes.",
+  "<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.": "<highlight>{processName}</highlight> está pronto para ser lançado. Lançar seu processo convidará e notificará os participantes.",
   "You can always edit and invite participants after launching.": "Você sempre pode editar e convidar participantes após o lançamento.",
   "Participants Invited": "Participantes Convidados",
   "Manage Participants": "Gerenciar Participantes"
