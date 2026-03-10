@@ -488,7 +488,7 @@ export const proposalEncoder = createSelectSchema(proposals)
   .extend({
     proposalData: proposalDataSchema,
     submittedBy: baseProfileEncoder.optional(),
-    profile: baseProfileEncoder.optional(),
+    profile: baseProfileEncoder,
     decisionCount: z.number().optional(),
     likesCount: z.number().optional(),
     followersCount: z.number().optional(),

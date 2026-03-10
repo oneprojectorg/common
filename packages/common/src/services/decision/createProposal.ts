@@ -129,7 +129,7 @@ export const createProposal = async ({
       getCurrentProfileId(authUserId),
       assertGlobalRole('Admin'),
     ]);
-    const proposal = await db.transaction(async (tx) => {
+    const createdProposalId = await db.transaction(async (tx) => {
       const slug = await generateUniqueProfileSlug({
         name: proposalTitle,
         db: tx,
@@ -171,7 +171,7 @@ export const createProposal = async ({
       const proposalId = crypto.randomUUID();
       const collaborationDocId = `proposal-${proposalId}`;
 
-      const [proposal] = await tx
+      const [raw] = await tx
         .insert(proposals)
         .values({
           id: proposalId,
@@ -186,19 +186,23 @@ export const createProposal = async ({
         })
         .returning();
 
+      if (!raw) {
+        throw new CommonError('Failed to create proposal');
+      }
+
       // Link to category within transaction if we have a valid term
-      if (proposal && categoryTermId) {
+      if (categoryTermId) {
         await tx.insert(proposalCategories).values({
-          proposalId: proposal.id,
+          proposalId: raw.id,
           taxonomyTermId: categoryTermId,
         });
       }
 
       // Link attachments to proposal if provided
-      if (proposal && data.attachmentIds && data.attachmentIds.length > 0) {
+      if (data.attachmentIds && data.attachmentIds.length > 0) {
         const proposalAttachmentValues = data.attachmentIds.map(
           (attachmentId) => ({
-            proposalId: proposal.id,
+            proposalId: raw.id,
             attachmentId: attachmentId,
             uploadedBy: profileId,
           }),
@@ -208,7 +212,7 @@ export const createProposal = async ({
 
         // Process proposal content to replace temporary URLs with permanent ones
         try {
-          await processProposalContent({ conn: tx, proposalId: proposal.id });
+          await processProposalContent({ conn: tx, proposalId: raw.id });
         } catch (error) {
           console.error('Error processing proposal content:', error);
           // Let the transaction roll back on error to maintain data consistency
@@ -216,7 +220,12 @@ export const createProposal = async ({
         }
       }
 
-      return proposal;
+      return raw.id;
+    });
+
+    const proposal = await db.query.proposals.findFirst({
+      where: { id: createdProposalId },
+      with: { profile: true },
     });
 
     if (!proposal) {

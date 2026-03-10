@@ -157,7 +157,7 @@ export const updateProposal = async ({
       }
     }
 
-    const [updatedProposal] = await db
+    const [raw] = await db
       .update(proposals)
       .set({
         ...data,
@@ -167,7 +167,7 @@ export const updateProposal = async ({
       .where(eq(proposals.id, proposalId))
       .returning();
 
-    if (!updatedProposal) {
+    if (!raw) {
       throw new CommonError('Failed to update proposal');
     }
 
@@ -175,6 +175,15 @@ export const updateProposal = async ({
     if (data.proposalData) {
       const newCategoryLabel = (data.proposalData as any)?.category;
       await updateProposalCategoryLink(proposalId, newCategoryLabel);
+    }
+
+    const updatedProposal = await db.query.proposals.findFirst({
+      where: { id: raw.id },
+      with: { profile: true },
+    });
+
+    if (!updatedProposal) {
+      throw new CommonError('Failed to update proposal');
     }
 
     return updatedProposal;
