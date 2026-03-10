@@ -1,57 +1,46 @@
 'use client';
 
-import { Key } from '@op/ui/RAC';
-import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-
 import { useTranslations } from '@/lib/i18n';
 
+import { SidebarNavItems } from './components/SidebarNavItems';
 import { useNavigationConfig } from './useNavigationConfig';
+import { usePhaseValidation } from './usePhaseValidation';
 import { useProcessNavigation } from './useProcessNavigation';
+import { useProcessPhases } from './useProcessPhases';
+import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderSidebar = ({
   instanceId,
+  decisionProfileId,
 }: {
   instanceId: string;
+  decisionProfileId?: string;
 }) => {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId);
-  const { visibleSections, currentSection, currentStep, setSection } =
-    useProcessNavigation(navigationConfig);
+  const { sections: validationSections } =
+    useProcessBuilderValidation(decisionProfileId);
+  const phases = useProcessPhases(instanceId, decisionProfileId);
+  const phaseValidation = usePhaseValidation(instanceId, decisionProfileId);
 
-  const handleSelectionChange = (key: Key) => {
-    setSection(String(key));
-  };
-
-  // Don't render sidebar for single-section steps
-  // These steps manage their own layout (e.g., template step with form builder)
-  if (visibleSections.length <= 1) {
-    return null;
-  }
+  const { visibleSections, currentSection, setSection } = useProcessNavigation(
+    navigationConfig,
+    phases,
+  );
 
   return (
-    <nav className="h-auto shrink-0 overflow-x-auto overflow-y-hidden p-0 py-4 md:sticky md:top-0 md:h-full md:w-64 md:overflow-x-hidden md:overflow-y-auto md:border-r md:p-8">
-      <Tabs
-        key={currentStep?.id}
-        orientation="vertical"
-        selectedKey={currentSection?.id}
-        onSelectionChange={handleSelectionChange}
-      >
-        <TabList
-          aria-label={t('Section navigation')}
-          className="scrollbar-none flex w-full gap-4 border-none md:flex-col md:gap-1"
-        >
-          {visibleSections.map((section) => (
-            <Tab
-              key={section.id}
-              id={section.id}
-              variant="pill"
-              className="cursor-pointer first:ml-4 last:mr-4 hover:bg-neutral-gray1 hover:text-charcoal focus-visible:outline-solid md:first:ml-0 md:last:mr-0 selected:text-charcoal md:selected:bg-neutral-offWhite"
-            >
-              {t(section.labelKey)}
-            </Tab>
-          ))}
-        </TabList>
-      </Tabs>
+    <nav
+      aria-label={t('Section navigation')}
+      className="hidden shrink-0 md:sticky md:top-0 md:flex md:h-full md:w-60 md:flex-col md:overflow-y-auto md:border-r md:p-4"
+    >
+      <SidebarNavItems
+        visibleSections={visibleSections}
+        phases={phases}
+        currentSectionId={currentSection?.id}
+        phaseValidation={phaseValidation}
+        validationSections={validationSections}
+        onSectionClick={setSection}
+      />
     </nav>
   );
 };

@@ -9,16 +9,21 @@ export function PhasesSectionSkeleton() {
       </div>
       <Skeleton className="h-5 w-72" />
 
-      {/* Phase accordion skeletons */}
+      {/* Phase card skeletons */}
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2"
+            className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3"
           >
             <Skeleton className="size-6" />
-            <Skeleton className="size-4" />
-            <Skeleton className="h-7 flex-1" />
+            <div className="flex flex-1 items-center justify-between gap-3">
+              <Skeleton className="h-7 flex-1" />
+              <div className="flex shrink-0 gap-2">
+                <Skeleton className="h-7 w-20" />
+                <Skeleton className="size-8" />
+              </div>
+            </div>
           </div>
         ))}
       </div>
