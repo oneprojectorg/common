@@ -103,8 +103,8 @@ const sendProposalCommentNotification = async (
 ) => {
   try {
     // Get proposal and author information
-    const proposal = await db._query.proposals.findFirst({
-      where: (table, { eq }) => eq(table.id, proposalId),
+    const proposal = await db.query.proposals.findFirst({
+      where: { id: proposalId },
       with: {
         profile: true,
         processInstance: true,
@@ -128,13 +128,9 @@ const sendProposalCommentNotification = async (
         proposalAuthorProfile.email &&
         proposal.profile
       ) {
-        const proposalProfile = Array.isArray(proposal.profile)
-          ? proposal.profile[0]
-          : proposal.profile;
-
         // Don't send notification if user is commenting on their own proposal
         if (proposal.profileId !== commenterProfileId) {
-          const proposalAuthorName = proposalProfile?.name || 'User';
+          const proposalAuthorName = proposal.profile.name || 'User';
 
           // For proposals, we use 'proposal' as the content type
           const contentType = 'proposal';
@@ -147,7 +143,7 @@ const sendProposalCommentNotification = async (
             : 'unknown';
 
           // Get profile slug for the URL
-          const profileSlug = proposalProfile?.slug || 'unknown';
+          const profileSlug = proposal.profile.slug || 'unknown';
 
           const contentUrl = `${baseUrl}/profile/${profileSlug}/decisions/${processInstanceId}/proposal/${proposal.profileId}`;
 
@@ -156,12 +152,12 @@ const sendProposalCommentNotification = async (
             typeof proposal.proposalData === 'object' &&
             proposal.proposalData !== null
               ? (proposal.proposalData as any)?.description ||
-                proposalProfile?.name ||
+                proposal.profile.name ||
                 'Proposal content'
               : 'Proposal content';
 
           // Create context name from proposal title (preferred) or description
-          const proposalTitle = proposalProfile?.name;
+          const proposalTitle = proposal.profile.name;
 
           const contextName = proposalTitle
             ? proposalTitle.length > 50

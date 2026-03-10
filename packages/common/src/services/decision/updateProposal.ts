@@ -1,6 +1,5 @@
 import { type TransactionType, db, eq } from '@op/db/client';
 import {
-  type ProcessInstance,
   ProposalStatus,
   type Visibility,
   profiles,
@@ -94,8 +93,8 @@ export const updateProposal = async ({
     }
 
     // Check if proposal exists and user has permission to update it
-    const existingProposal = await db._query.proposals.findFirst({
-      where: eq(proposals.id, proposalId),
+    const existingProposal = await db.query.proposals.findFirst({
+      where: { id: proposalId },
       with: {
         processInstance: true,
         profile: true,
@@ -106,11 +105,7 @@ export const updateProposal = async ({
       throw new NotFoundError('Proposal not found');
     }
 
-    const existingProfile = Array.isArray(existingProposal.profile)
-      ? existingProposal.profile[0]
-      : existingProposal.profile;
-
-    const processInstance = existingProposal.processInstance as ProcessInstance;
+    const processInstance = existingProposal.processInstance;
 
     // Status and visibility changes only require instance-level decisions: ADMIN
     if (data.status || data.visibility) {
@@ -157,7 +152,7 @@ export const updateProposal = async ({
         await validateProposalAgainstTemplate(
           proposalTemplate,
           data.proposalData,
-          data.title ?? existingProfile?.name,
+          data.title ?? existingProposal.profile.name,
         );
       }
     }
