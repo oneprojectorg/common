@@ -82,8 +82,7 @@ function PhaseDetailForm({
 
   // Resolve the initial phase data (same priority as PhasesSectionContent)
   const allPhases: PhaseDefinition[] = (() => {
-    const source =
-      !isDraft && storePhases?.length ? storePhases : instancePhases;
+    const source = storePhases?.length ? storePhases : instancePhases;
     return (
       source?.map((p) => ({
         id: p.phaseId,
