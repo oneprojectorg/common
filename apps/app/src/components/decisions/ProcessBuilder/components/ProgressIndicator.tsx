@@ -39,6 +39,7 @@ export function ProgressIndicator({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={clamped}
+        aria-label={t('{count}% complete', { count: clamped })}
         className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2"
       >
         <div

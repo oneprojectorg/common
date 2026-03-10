@@ -102,6 +102,9 @@ function PhaseDetailForm({
   const initialPhase = allPhases.find((p) => p.id === phaseId);
   const [phase, setPhase] = useState<PhaseDefinition | undefined>(initialPhase);
 
+  const allPhasesRef = useRef(allPhases);
+  allPhasesRef.current = allPhases;
+
   const utils = trpc.useUtils();
   const debouncedSaveRef = useRef<() => boolean>(null);
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
@@ -120,7 +123,7 @@ function PhaseDetailForm({
       setSaveStatus(decisionProfileId, 'saving');
 
       // Build the full phases array with this phase updated
-      const phasesPayload = allPhases.map((p) => {
+      const phasesPayload = allPhasesRef.current.map((p) => {
         const source = p.id === phaseId ? updatedPhase : p;
         return {
           phaseId: source.id,
@@ -270,7 +273,9 @@ function PhaseDetailForm({
     month: number;
     day: number;
   }) => {
-    return new Date(date.year, date.month - 1, date.day).toISOString();
+    return new Date(
+      Date.UTC(date.year, date.month - 1, date.day),
+    ).toISOString();
   };
 
   if (!phase) {

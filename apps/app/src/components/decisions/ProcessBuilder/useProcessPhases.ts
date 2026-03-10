@@ -39,7 +39,7 @@ export function useProcessPhases(
     }
     const templatePhases = instance?.process?.processSchema?.phases;
     if (templatePhases?.length) {
-      return templatePhases.map((p) => ({ phaseId: p.id, name: p.name }));
+      return templatePhases.map((p) => ({ phaseId: p.id, name: p.name ?? '' }));
     }
     return [];
   }, [storePhases, instance]);
