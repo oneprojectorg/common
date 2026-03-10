@@ -29,15 +29,16 @@ export async function translateDecision({
   sourceLocale: string;
   targetLocale: SupportedLocale;
 }> {
-  // Fetch decision profile + auth check + description in a single join
+  // LEFT JOIN profileUsers so we can distinguish "not found" from "unauthorized"
   const rows = await db
     .select({
       profileId: profiles.id,
       name: profiles.name,
       description: processInstances.description,
+      authUserId: profileUsers.authUserId,
     })
     .from(profiles)
-    .innerJoin(
+    .leftJoin(
       profileUsers,
       and(
         eq(profileUsers.profileId, profiles.id),
@@ -54,15 +55,15 @@ export async function translateDecision({
     .limit(1);
 
   if (rows.length === 0) {
+    throw new NotFoundError('Decision profile not found');
+  }
+
+  const row = rows[0]!;
+
+  if (!row.authUserId) {
     throw new UnauthorizedError(
       'User does not have access to this decision profile',
     );
-  }
-
-  const row = rows[0];
-
-  if (!row) {
-    throw new NotFoundError('Decision profile not found');
   }
 
   const entries: TranslatableEntry[] = [];
