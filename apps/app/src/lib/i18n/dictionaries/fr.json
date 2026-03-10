@@ -690,7 +690,7 @@
   "No one has been invited yet": "Personne n'a encore été invité",
   "Invited": "Invité",
   "Pending launch": "En attente de lancement",
-  "This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.": "Ce processus est encore en brouillon. Les participants ayant un accès en édition seront invités immédiatement, les invitations des participants sans accès en édition seront envoyées lors du lancement du processus.",
+  "This process is still in draft. Participants with \"Manage Process\" access will be invited immediately. Invites without edit access will be sent when the process launches.": "Ce processus est encore en brouillon. Les participants ayant accès à \"Gérer le processus\" seront invités immédiatement. Les invitations sans accès en édition seront envoyées lors du lancement du processus.",
   "Failed to cancel invite": "Échec de l'annulation de l'invitation",
   "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "Définissez les catégories que les propositions de ce processus doivent faire avancer. Les proposants sélectionneront les catégories que leur proposition soutient.",
   "No categories defined yet": "Aucune catégorie définie pour le moment",

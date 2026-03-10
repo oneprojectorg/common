@@ -686,7 +686,7 @@
   "No one has been invited yet": "Ninguém foi convidado ainda",
   "Invited": "Convidado",
   "Pending launch": "Pendente de lançamento",
-  "This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.": "Este processo ainda está em rascunho. Os participantes com acesso de edição serão convidados imediatamente, os convites de participantes sem acesso de edição serão enviados quando o processo for lançado.",
+  "This process is still in draft. Participants with \"Manage Process\" access will be invited immediately. Invites without edit access will be sent when the process launches.": "Este processo ainda está em rascunho. Os participantes com acesso \"Gerenciar Processo\" serão convidados imediatamente. Os convites sem acesso de edição serão enviados quando o processo for lançado.",
   "Failed to cancel invite": "Falha ao cancelar convite",
   "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "Defina as categorias que as propostas neste processo devem avançar. Os proponentes selecionarão quais categorias sua proposta apoia.",
   "No categories defined yet": "Nenhuma categoria definida ainda",
