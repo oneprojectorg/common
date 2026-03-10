@@ -129,7 +129,7 @@ export const createProposal = async ({
       getCurrentProfileId(authUserId),
       assertGlobalRole('Admin'),
     ]);
-    const createdProposalId = await db.transaction(async (tx) => {
+    const createdProposal = await db.transaction(async (tx) => {
       const slug = await generateUniqueProfileSlug({
         name: proposalTitle,
         db: tx,
@@ -220,19 +220,19 @@ export const createProposal = async ({
         }
       }
 
-      return raw.id;
+      const proposal = await tx.query.proposals.findFirst({
+        where: { id: raw.id },
+        with: { profile: true },
+      });
+
+      if (!proposal) {
+        throw new CommonError('Failed to create proposal');
+      }
+
+      return proposal;
     });
 
-    const proposal = await db.query.proposals.findFirst({
-      where: { id: createdProposalId },
-      with: { profile: true },
-    });
-
-    if (!proposal) {
-      throw new CommonError('Failed to create proposal');
-    }
-
-    return proposal;
+    return createdProposal;
   } catch (error) {
     if (
       error instanceof UnauthorizedError ||

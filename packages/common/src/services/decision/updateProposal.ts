@@ -157,34 +157,38 @@ export const updateProposal = async ({
       }
     }
 
-    const [raw] = await db
-      .update(proposals)
-      .set({
-        ...data,
-        lastEditedByProfileId: dbUser.currentProfileId,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(proposals.id, proposalId))
-      .returning();
+    const updatedProposal = await db.transaction(async (tx) => {
+      const [raw] = await tx
+        .update(proposals)
+        .set({
+          ...data,
+          lastEditedByProfileId: dbUser.currentProfileId,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(proposals.id, proposalId))
+        .returning();
 
-    if (!raw) {
-      throw new CommonError('Failed to update proposal');
-    }
+      if (!raw) {
+        throw new CommonError('Failed to update proposal');
+      }
 
-    // Update category link if proposal data was updated
-    if (data.proposalData) {
-      const newCategoryLabel = (data.proposalData as any)?.category;
-      await updateProposalCategoryLink(proposalId, newCategoryLabel);
-    }
+      // Update category link if proposal data was updated
+      if (data.proposalData) {
+        const newCategoryLabel = (data.proposalData as any)?.category;
+        await updateProposalCategoryLink(proposalId, newCategoryLabel);
+      }
 
-    const updatedProposal = await db.query.proposals.findFirst({
-      where: { id: raw.id },
-      with: { profile: true },
+      const proposal = await tx.query.proposals.findFirst({
+        where: { id: raw.id },
+        with: { profile: true },
+      });
+
+      if (!proposal) {
+        throw new CommonError('Failed to update proposal');
+      }
+
+      return proposal;
     });
-
-    if (!updatedProposal) {
-      throw new CommonError('Failed to update proposal');
-    }
 
     return updatedProposal;
   } catch (error) {

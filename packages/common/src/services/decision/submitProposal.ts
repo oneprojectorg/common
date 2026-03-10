@@ -95,27 +95,31 @@ export const submitProposal = async ({
     );
   }
 
-  // Update proposal status to submitted
-  const [raw] = await db
-    .update(proposals)
-    .set({
-      status: ProposalStatus.SUBMITTED,
-    })
-    .where(eq(proposals.id, data.proposalId))
-    .returning();
+  // Update proposal status to submitted and re-query with profile
+  const updatedProposal = await db.transaction(async (tx) => {
+    const [raw] = await tx
+      .update(proposals)
+      .set({
+        status: ProposalStatus.SUBMITTED,
+      })
+      .where(eq(proposals.id, data.proposalId))
+      .returning();
 
-  if (!raw) {
-    throw new CommonError('Failed to submit proposal');
-  }
+    if (!raw) {
+      throw new CommonError('Failed to submit proposal');
+    }
 
-  const updatedProposal = await db.query.proposals.findFirst({
-    where: { id: raw.id },
-    with: { profile: true },
+    const proposal = await tx.query.proposals.findFirst({
+      where: { id: raw.id },
+      with: { profile: true },
+    });
+
+    if (!proposal) {
+      throw new CommonError('Failed to submit proposal');
+    }
+
+    return proposal;
   });
-
-  if (!updatedProposal) {
-    throw new CommonError('Failed to submit proposal');
-  }
 
   return updatedProposal;
 };
