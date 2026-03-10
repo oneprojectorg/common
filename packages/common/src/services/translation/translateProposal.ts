@@ -33,10 +33,10 @@ export async function translateProposal({
   const { proposalData } = proposal;
 
   // TODO: eventually use `htmlContent` for all fields
-  if (proposalData.title) {
+  if (proposal.profile?.name) {
     entries.push({
       contentKey: `proposal:${proposalId}:title`,
-      text: proposalData.title,
+      text: proposal.profile.name,
     });
   }
 

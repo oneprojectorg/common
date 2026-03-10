@@ -20,6 +20,7 @@ import type { ProposalTemplateSchema } from './types';
 export async function validateProposalAgainstTemplate(
   proposalTemplate: ProposalTemplateSchema,
   proposalData: unknown,
+  title?: string,
 ): Promise<void> {
   const parsed = parseProposalData(proposalData);
 
@@ -47,6 +48,9 @@ export async function validateProposalAgainstTemplate(
 
     schemaValidator.validateProposalData(proposalTemplate, validationData);
   } else {
-    schemaValidator.validateProposalData(proposalTemplate, proposalData);
+    schemaValidator.validateProposalData(proposalTemplate, {
+      ...parsed,
+      ...(title === undefined ? {} : { title }),
+    });
   }
 }

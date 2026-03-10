@@ -29,12 +29,17 @@ export const submitProposal = async ({
     where: eq(proposals.id, data.proposalId),
     with: {
       processInstance: true,
+      profile: true,
     },
   });
 
   if (!existingProposal) {
     throw new NotFoundError('Proposal not found');
   }
+
+  const proposalProfile = Array.isArray(existingProposal.profile)
+    ? existingProposal.profile[0]
+    : existingProposal.profile;
 
   // Only allow submitting drafts
   if (existingProposal.status !== ProposalStatus.DRAFT) {
@@ -92,6 +97,7 @@ export const submitProposal = async ({
     await validateProposalAgainstTemplate(
       proposalTemplate,
       existingProposal.proposalData,
+      proposalProfile?.name,
     );
   }
 

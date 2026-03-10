@@ -142,11 +142,10 @@ export function ProposalView({
   const targetLanguageName = getLanguageName(locale);
 
   // Parse proposal data using shared utility
-  const {
-    title: originalTitle,
-    budget,
-    category: originalCategory,
-  } = parseProposalData(currentProposal.proposalData);
+  const { budget, category: originalCategory } = parseProposalData(
+    currentProposal.proposalData,
+  );
+  const originalTitle = currentProposal.profile?.name;
 
   // Use translated category when available, otherwise original
   const category =
