@@ -25,11 +25,8 @@ export const DecisionAvatar = ({
 
   const avatar = (
     <Avatar
-      className={cn(
-        'size-12',
-        withLink && slug && 'hover:opacity-80',
-        className,
-      )}
+      className={cn(withLink && slug && 'hover:opacity-80', className)}
+      size="lg"
       placeholder={name ?? ''}
     >
       {avatarImage?.name ? (
@@ -59,7 +56,7 @@ export const DecisionAvatarSkeleton = ({
 }) => {
   return (
     <div>
-      <AvatarSkeleton className={cn('size-12', className)} />
+      <AvatarSkeleton size="lg" className={className} />
     </div>
   );
 };
