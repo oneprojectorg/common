@@ -1,12 +1,24 @@
-import { and, asc, db, desc, eq, ilike, inArray, or, sql } from '@op/db/client';
-import type { ProposalStatus } from '@op/db/schema';
+import {
+  and,
+  asc,
+  db,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  ne,
+  or,
+  sql,
+} from '@op/db/client';
 import {
   ProfileRelationshipType,
+  ProposalStatus,
   Visibility,
   posts,
   postsToProfiles,
   processInstances,
   profileRelationships,
+  profileUsers,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
@@ -173,15 +185,43 @@ export const listProposals = async ({
       : categoryFilter;
   }
 
-  // Filter out hidden proposals unless user can manage proposals (admin) or is the owner
-  if (!canManageProposals) {
-    const visibilityFilter = or(
-      eq(proposals.visibility, Visibility.VISIBLE),
-      eq(proposals.submittedByProfileId, currentProfileId),
+  // Draft proposals: only visible to users with proposal-level access
+  // (the creator and invited collaborators who have a profileUsers record on the proposal's profile).
+  // Non-draft proposals: visible to all users with instance-level access,
+  // but still respect the HIDDEN visibility filter (only admins and owners see hidden proposals).
+  if (!skipAccessCheck) {
+    // A proposal is visible if:
+    // 1. It's a DRAFT and the user has proposal-level access (via profileUsers), OR
+    // 2. It's not a DRAFT and passes the visibility filter
+    const draftFilter = and(
+      eq(proposals.status, ProposalStatus.DRAFT),
+      inArray(
+        proposals.profileId,
+        db
+          .select({ profileId: profileUsers.profileId })
+          .from(profileUsers)
+          .where(eq(profileUsers.authUserId, input.authUserId)),
+      ),
     );
+
+    const nonDraftFilter = ne(proposals.status, ProposalStatus.DRAFT);
+
+    // For non-draft proposals, apply the existing HIDDEN visibility filter
+    // unless the user is an admin (canManageProposals)
+    const nonDraftVisibilityFilter = canManageProposals
+      ? nonDraftFilter
+      : and(
+          nonDraftFilter,
+          or(
+            eq(proposals.visibility, Visibility.VISIBLE),
+            eq(proposals.submittedByProfileId, currentProfileId),
+          ),
+        );
+
+    const permissionFilter = or(draftFilter, nonDraftVisibilityFilter);
     whereClause = whereClause
-      ? and(whereClause, visibilityFilter)
-      : visibilityFilter;
+      ? and(whereClause, permissionFilter)
+      : permissionFilter;
   }
 
   // Get proposals with optimized ordering

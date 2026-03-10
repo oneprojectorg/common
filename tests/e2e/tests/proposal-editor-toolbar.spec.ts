@@ -67,6 +67,8 @@ test.describe('Proposal Editor Toolbar', () => {
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
       proposalData: {
         title: 'Toolbar Test Proposal',
         budget: { amount: 5000, currency: 'USD' },
