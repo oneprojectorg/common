@@ -102,8 +102,15 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   {
     id: 'proposalTemplate',
     labelKey: 'Create a proposal template',
-    validate: (data) =>
-      !!data?.proposalTemplate && getFields(data.proposalTemplate).length > 0,
+    validate: (data) => {
+      if (!data?.proposalTemplate) {
+        return false;
+      }
+      const nonSystemFields = getFields(data.proposalTemplate).filter(
+        (f) => !SYSTEM_FIELD_KEYS.has(f.id),
+      );
+      return nonSystemFields.length > 0;
+    },
   },
   {
     id: 'proposalTemplateErrors',
