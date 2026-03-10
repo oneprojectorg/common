@@ -164,7 +164,6 @@ export function BudgetFieldConfig({
   return (
     <CollapsibleConfigCard
       icon={LuHash}
-      iconTooltip={t('Number')}
       label={t('Budget')}
       badgeLabel={badgeLabel}
       isCollapsible

@@ -22,7 +22,6 @@ import {
   FIELD_TYPE_REGISTRY,
   getFieldConfigComponent,
   getFieldIcon,
-  getFieldLabelKey,
 } from './fieldRegistry';
 
 interface FieldCardProps {
@@ -96,7 +95,6 @@ export function FieldCard({
     <div ref={cardRef} onBlur={handleBlur}>
       <CollapsibleConfigCard
         icon={Icon}
-        iconTooltip={t(getFieldLabelKey(field.fieldType))}
         label={displayLabel}
         badgeLabel={badgeLabel}
         isCollapsible

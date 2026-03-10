@@ -44,7 +44,6 @@ export const Collapsed = () => {
     <div className="w-[500px]">
       <CollapsibleConfigCard
         icon={LuAlignLeft}
-        iconTooltip="Short text"
         label="Project name"
         badgeLabel="Required"
         isCollapsible
@@ -68,7 +67,6 @@ export const Expanded = () => {
     <div className="w-[500px]">
       <CollapsibleConfigCard
         icon={LuLetterText}
-        iconTooltip="Long text"
         label="Project description"
         badgeLabel="Optional"
         isCollapsible
@@ -99,14 +97,12 @@ export const Locked = () => {
     <div className="w-[500px] space-y-3">
       <CollapsibleConfigCard
         icon={LuAlignLeft}
-        iconTooltip="Short text"
         label="Proposal title"
         badgeLabel="Required"
         locked
       />
       <CollapsibleConfigCard
         icon={LuChevronDown}
-        iconTooltip="Dropdown"
         label="Category"
         badgeLabel="Optional"
         locked
@@ -129,7 +125,6 @@ export const LockedCollapsible = () => {
     <div className="w-[500px]">
       <CollapsibleConfigCard
         icon={LuHash}
-        iconTooltip="Number"
         label="Budget"
         badgeLabel="Optional"
         isCollapsible
@@ -170,7 +165,6 @@ export const MultipleCards = () => {
         <CollapsibleConfigCard
           key={card.id}
           icon={card.icon}
-          iconTooltip={card.label}
           label={card.label}
           badgeLabel={card.badge}
           isCollapsible
