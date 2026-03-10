@@ -23,6 +23,12 @@ export async function validateProposalAgainstTemplate(
   title?: string,
 ): Promise<void> {
   const parsed = parseProposalData(proposalData);
+  const storedProposalData =
+    proposalData && typeof proposalData === 'object'
+      ? (proposalData as Record<string, unknown>)
+      : {};
+  const shouldInjectTitle =
+    storedProposalData.title === undefined && title !== undefined;
 
   if (parsed.collaborationDocId) {
     const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
@@ -49,8 +55,8 @@ export async function validateProposalAgainstTemplate(
     schemaValidator.validateProposalData(proposalTemplate, validationData);
   } else {
     schemaValidator.validateProposalData(proposalTemplate, {
-      ...parsed,
-      ...(title === undefined ? {} : { title }),
+      ...storedProposalData,
+      ...(shouldInjectTitle ? { title } : {}),
     });
   }
 }
