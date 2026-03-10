@@ -110,7 +110,7 @@ export const ProfileUsersAccess = ({
         {isDraft && (
           <AlertBanner variant="banner" intent="warning">
             {t(
-              'This process is still in draft. Participants with edit access will be invited immediately, Participant invites without edit access will be sent when the process launches.',
+              'This process is still in draft. Participants with "Manage Process" access will be invited immediately. Invites without edit access will be sent when the process launches.',
             )}
           </AlertBanner>
         )}

@@ -5,14 +5,15 @@ import { type PhaseDefinition, ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
+import { IconButton } from '@op/ui/IconButton';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
-import { LuCheck, LuGripVertical, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuCheck, LuPlus, LuTrash2 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
@@ -187,9 +188,19 @@ export function PhasesSectionContent({
             dragTrigger="handle"
             getItemLabel={(phase) => phase.name}
             className="gap-2"
-            renderDragPreview={(items) => (
-              <PhaseDragPreview name={items[0]?.name} />
-            )}
+            renderDragPreview={(items) => {
+              const phase = items[0];
+              if (!phase) {
+                return null;
+              }
+              return (
+                <PhaseDragPreview
+                  phase={phase}
+                  configured={isPhaseConfigured(phase)}
+                  t={t}
+                />
+              );
+            }}
             renderDropIndicator={PhaseDropIndicator}
           >
             {(phase, { dragHandleProps, isDragging }) => {
@@ -224,13 +235,15 @@ export function PhasesSectionContent({
                       >
                         {t('Configure')}
                       </Button>
-                      <Button
-                        className="cursor-pointer p-1 text-neutral-gray4 hover:text-functional-red"
+                      <IconButton
+                        variant="outline"
+                        size="medium"
+                        className="text-primary-teal hover:text-functional-red"
                         onPress={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
                       >
                         <LuTrash2 className="size-4" />
-                      </Button>
+                      </IconButton>
                     </div>
                   </div>
                 </div>
@@ -287,20 +300,55 @@ export function PhasesSectionContent({
 }
 
 /** Element to show when a phase is being dragged */
-const PhaseDragPreview = ({ name }: { name?: string }) => {
+const PhaseDragPreview = ({
+  phase,
+  configured,
+  t,
+}: {
+  phase: PhaseDefinition;
+  configured: boolean;
+  t: TranslateFn;
+}) => {
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
-      <div className="p-1">
-        <LuGripVertical size={16} />
+    <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-md">
+      <DragHandle tabIndex={-1} aria-hidden />
+      <div className="flex flex-1 items-center justify-between gap-3">
+        <div className="flex-1">
+          <p className="font-serif text-title-sm">{phase.name}</p>
+          {configured ? (
+            <span className="flex items-center gap-1 text-sm text-primary-teal">
+              <LuCheck className="size-3" />
+              {t('Configured')}
+            </span>
+          ) : (
+            <span className="text-sm text-neutral-gray4">
+              {t('Not configured yet')}
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <Button color="secondary" size="small">
+            {t('Configure')}
+          </Button>
+          <IconButton
+            variant="outline"
+            size="medium"
+            className="text-primary-teal"
+          >
+            <LuTrash2 className="size-4" />
+          </IconButton>
+        </div>
       </div>
-      <p className="px-2 py-1 font-serif text-title-sm">{name}</p>
     </div>
   );
 };
 
 /** DropIndicator to show when a phase is being dragged */
-const PhaseDropIndicator = () => {
-  return (
-    <div className="flex h-12 items-center gap-2 rounded-lg border bg-neutral-offWhite"></div>
-  );
+const PhaseDropIndicator = ({
+  children,
+}: {
+  item: PhaseDefinition;
+  children: React.ReactNode;
+}) => {
+  return <div className="opacity-40">{children}</div>;
 };
