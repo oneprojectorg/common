@@ -138,6 +138,7 @@ function renderField(
     }
     return (
       <CollaborativeBudgetField
+        minAmount={schema.minimum}
         maxAmount={schema.maximum}
         initialValue={draft.budget}
         onChange={(value) => onFieldChange('budget', value)}
@@ -191,6 +192,7 @@ function renderField(
       }
       return (
         <CollaborativeBudgetField
+          minAmount={schema.minimum}
           maxAmount={schema.maximum}
           initialValue={null}
           onChange={(value) => onFieldChange(key, value)}

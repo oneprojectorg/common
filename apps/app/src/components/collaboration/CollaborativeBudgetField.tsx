@@ -25,6 +25,7 @@ const getCurrencySymbol = (currency: string) =>
     .trim();
 
 interface CollaborativeBudgetFieldProps {
+  minAmount?: number;
   maxAmount?: number;
   initialValue?: BudgetData | null;
   onChange?: (budget: BudgetData | null) => void;
@@ -40,6 +41,7 @@ interface CollaborativeBudgetFieldProps {
  * to prevent layout shifts.
  */
 export function CollaborativeBudgetField({
+  minAmount,
   maxAmount,
   initialValue = null,
   onChange,
@@ -153,6 +155,8 @@ export function CollaborativeBudgetField({
           ref={budgetInputRef}
           value={budgetAmount}
           onChange={handleChange}
+          minValue={minAmount ?? 0}
+          maxValue={maxAmount}
           prefixText={currencySymbol}
           inputProps={{
             placeholder: placeholderText,

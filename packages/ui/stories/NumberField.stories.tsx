@@ -67,6 +67,28 @@ export const WithPrefix = () => (
   />
 );
 
+export const WithMinMax = () => (
+  <div className="flex w-96 flex-col gap-8">
+    <NumberField
+      label="Budget (max 10,000)"
+      prefixText="$"
+      maxValue={10000}
+      inputProps={{ placeholder: 'Max 10,000' }}
+    />
+    <NumberField
+      label="Score (1–100)"
+      minValue={1}
+      maxValue={100}
+      inputProps={{ placeholder: '1–100' }}
+    />
+    <NumberField
+      label="Quantity (min 0)"
+      minValue={0}
+      inputProps={{ placeholder: 'Min 0' }}
+    />
+  </div>
+);
+
 export const DynamicPrefix = () => {
   const [value, setValue] = useState(0);
   const [prefix, setPrefix] = useState('$');
