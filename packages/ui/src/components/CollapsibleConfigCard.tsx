@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useId } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { LuChevronDown, LuGripVertical, LuLock } from 'react-icons/lu';
 
@@ -58,6 +59,7 @@ export function CollapsibleConfigCard({
   className,
   locked = false,
 }: CollapsibleConfigCardProps) {
+  const autoId = useId();
   const isDragging = controls?.isDragging ?? false;
 
   // The leading element: drag handle for editable cards, lock icon for locked cards.
@@ -90,18 +92,14 @@ export function CollapsibleConfigCard({
           <span className="truncate text-neutral-charcoal">{label}</span>
         </div>
       ) : (
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-            <TooltipTrigger>
-              <AriaButton className="flex shrink-0 items-center text-neutral-gray4">
-                <Icon className="size-4" />
-              </AriaButton>
-              {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
-            </TooltipTrigger>
-            <span className="truncate text-neutral-charcoal">
-              {label || 'Untitled field'}
-            </span>
-          </div>
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
+          <TooltipTrigger>
+            <AriaButton className="flex shrink-0 items-center text-neutral-gray4">
+              <Icon className="size-4" />
+            </AriaButton>
+            {iconTooltip && <Tooltip>{iconTooltip}</Tooltip>}
+          </TooltipTrigger>
+          <span className="truncate text-neutral-charcoal">{label}</span>
         </div>
       )}
 
@@ -142,7 +140,7 @@ export function CollapsibleConfigCard({
   // Collapsible: standalone AccordionItem with unstyled variant so we control all styling.
   return (
     <AccordionItem
-      id="collapsible-config-card"
+      id={autoId}
       variant="unstyled"
       isExpanded={isExpanded}
       defaultExpanded={defaultExpanded}
