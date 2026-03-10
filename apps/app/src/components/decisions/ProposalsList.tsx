@@ -40,6 +40,7 @@ import {
   ProposalCardPreview,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
+import { useSetDecisionTranslation } from './DecisionTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { TranslateBanner } from './TranslateBanner';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
@@ -461,11 +462,14 @@ export const ProposalsList = ({
   slug,
   instanceId,
   decisionSlug,
+  decisionProfileId,
 }: {
   slug: string;
   instanceId: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
+  /** Decision profile ID for translating the decision header */
+  decisionProfileId?: string | null;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -569,12 +573,24 @@ export const ProposalsList = ({
     sourceLocale: string;
   } | null>(null);
 
+  const setDecisionTranslation = useSetDecisionTranslation();
+
   const translateBatchMutation =
     trpc.translation.translateProposals.useMutation({
       onSuccess: (data) => {
         setTranslationState({
           translations: data.translations,
           sourceLocale: data.sourceLocale,
+        });
+      },
+    });
+
+  const translateDecisionMutation =
+    trpc.translation.translateDecision.useMutation({
+      onSuccess: (data) => {
+        setDecisionTranslation({
+          name: data.translated.name,
+          description: data.translated.description,
         });
       },
     });
@@ -591,9 +607,18 @@ export const ProposalsList = ({
       profileIds,
       targetLocale: supportedLocale,
     });
-  }, [translateBatchMutation, allProposals, supportedLocale]);
+    if (decisionProfileId) {
+      translateDecisionMutation.mutate({
+        decisionProfileId,
+        targetLocale: supportedLocale,
+      });
+    }
+  }, [translateBatchMutation, translateDecisionMutation, allProposals, supportedLocale, decisionProfileId]);
 
-  const handleViewOriginal = useCallback(() => setTranslationState(null), []);
+  const handleViewOriginal = useCallback(() => {
+    setTranslationState(null);
+    setDecisionTranslation(null);
+  }, [setDecisionTranslation]);
 
   const languageNames = useMemo(
     () => new Intl.DisplayNames([locale], { type: 'language' }),

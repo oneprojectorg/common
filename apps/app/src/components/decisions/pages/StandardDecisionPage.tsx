@@ -19,6 +19,7 @@ export function StandardDecisionPage({
   instanceId,
   slug,
   decisionSlug,
+  decisionProfileId,
   allowProposals,
   description,
   currentPhase,
@@ -27,6 +28,8 @@ export function StandardDecisionPage({
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
+  /** Decision profile ID for translating the decision header */
+  decisionProfileId?: string | null;
   /** Whether proposal submission is allowed in the current phase */
   allowProposals: boolean;
   /** Instance-level description — fallback for the About the process modal */
@@ -83,6 +86,7 @@ export function StandardDecisionPage({
                   slug={slug}
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
+                  decisionProfileId={decisionProfileId}
                 />
               </Suspense>
             )}

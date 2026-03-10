@@ -1,4 +1,5 @@
 export { parseTranslatedMeta } from './parseTranslatedMeta';
+export { translateDecision } from './translateDecision';
 export { translateProposal } from './translateProposal';
 export { translateProposals } from './translateProposals';
 export { SUPPORTED_LOCALES, LOCALE_TO_DEEPL } from './locales';

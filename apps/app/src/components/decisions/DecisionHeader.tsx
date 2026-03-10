@@ -5,7 +5,7 @@ import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
+import { DecisionTranslationWrapper } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 
 interface DecisionHeaderProps {
@@ -73,7 +73,7 @@ export async function DecisionHeader({
           : 'bg-neutral-offWhite text-gray-700',
       )}
     >
-      <DecisionInstanceHeader
+      <DecisionTranslationWrapper
         backTo={{
           label: instance.owner?.name,
           href: `/profile/${slug}?tab=decisions`,
@@ -86,19 +86,19 @@ export async function DecisionHeader({
         }
         decisionSlug={decisionSlug}
         decisionProfileId={decisionProfileId}
-      />
-
-      <div className="flex flex-col overflow-x-auto sm:items-center">
-        <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
-          <DecisionProcessStepper
-            phases={phases}
-            currentStateId={instance.currentStateId || ''}
-            className="mx-auto"
-          />
+      >
+        <div className="flex flex-col overflow-x-auto sm:items-center">
+          <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
+            <DecisionProcessStepper
+              phases={phases}
+              currentStateId={instance.currentStateId || ''}
+              className="mx-auto"
+            />
+          </div>
         </div>
-      </div>
 
-      {children}
+        {children}
+      </DecisionTranslationWrapper>
     </div>
   );
 }
