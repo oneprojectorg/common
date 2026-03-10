@@ -9,10 +9,10 @@ import { DragHandle } from './Sortable';
 import type { SortableItemControls } from './Sortable';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from './ui/collapsible';
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from './ui/accordion';
 
 export interface CollapsibleConfigCardProps {
   /** Icon component to display in the header */
@@ -114,7 +114,7 @@ export function CollapsibleConfigCard({
 
       {/* Chevron (only when collapsible) */}
       {isCollapsible && (
-        <LuChevronDown className="size-4 shrink-0 text-neutral-gray4 transition-transform duration-200 group-data-[expanded]:rotate-180" />
+        <LuChevronDown className="size-4 shrink-0 text-neutral-gray4 transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-180" />
       )}
     </>
   );
@@ -139,15 +139,17 @@ export function CollapsibleConfigCard({
     );
   }
 
-  // Collapsible: drag handle sits outside the trigger so it remains interactive.
+  // Collapsible: standalone AccordionItem with unstyled variant so we control all styling.
   return (
-    <Collapsible
+    <AccordionItem
+      id="collapsible-config-card"
+      variant="unstyled"
       isExpanded={isExpanded}
       defaultExpanded={defaultExpanded}
       onExpandedChange={onExpandedChange}
       className={({ isExpanded: expanded }) =>
         cn(
-          'group rounded-lg border bg-white px-3 py-4',
+          'rounded-lg border bg-white px-3 py-4',
           locked && 'bg-neutral-offWhite',
           isDragging && 'opacity-50',
           expanded && 'border-primary-teal',
@@ -157,14 +159,12 @@ export function CollapsibleConfigCard({
     >
       <div className="flex w-full items-center gap-2">
         {leadingElement}
-        <CollapsibleTrigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+        <AccordionTrigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
           {headerContent}
-        </CollapsibleTrigger>
+        </AccordionTrigger>
       </div>
-      <CollapsibleContent>
-        <div className="pt-4">{children}</div>
-      </CollapsibleContent>
-    </Collapsible>
+      <AccordionContent className="pt-4">{children}</AccordionContent>
+    </AccordionItem>
   );
 }
 

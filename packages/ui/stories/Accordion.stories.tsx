@@ -227,11 +227,7 @@ export const CustomHeader: Story = {
 
     return (
       <div className="w-[500px]">
-        <Accordion
-          defaultExpandedKeys={['proposal']}
-          allowsMultipleExpanded
-          variant="unstyled"
-        >
+        <Accordion defaultExpandedKeys={['proposal']} allowsMultipleExpanded>
           <Sortable
             items={sections}
             onChange={setSections}
@@ -243,6 +239,7 @@ export const CustomHeader: Story = {
             {(section, { dragHandleProps, isDragging }) => (
               <AccordionItem
                 id={section.id}
+                variant="unstyled"
                 className={cn(
                   'rounded-lg border bg-white',
                   isDragging && 'opacity-50',
@@ -383,9 +380,10 @@ export const Controlled: Story = {
 export const Unstyled: Story = {
   render: () => (
     <div className="w-[400px]">
-      <Accordion variant="unstyled" defaultExpandedKeys={['1']}>
+      <Accordion defaultExpandedKeys={['1']}>
         <AccordionItem
           id="1"
+          variant="unstyled"
           className="mb-2 rounded-lg border-2 border-dashed border-purple-300 bg-purple-50"
         >
           <AccordionHeader className="p-4">
@@ -403,6 +401,7 @@ export const Unstyled: Story = {
 
         <AccordionItem
           id="2"
+          variant="unstyled"
           className="mb-2 rounded-lg border-2 border-dashed border-teal-300 bg-teal-50"
         >
           <AccordionHeader className="p-4">
