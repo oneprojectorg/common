@@ -69,8 +69,8 @@ export const ProcessBuilderFooter = ({
     },
     onError: (error) => {
       toast.error({
-        message: t('Failed to save changes'),
-        title: error.message,
+        title: t('Failed to save changes'),
+        message: error.message,
       });
     },
     onSettled: () => {

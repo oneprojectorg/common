@@ -74,11 +74,6 @@ const ProcessBuilderHeaderContent = ({
 
   const decisionProfileId = decisionProfile?.id;
 
-  const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
-  const isProcessOwner = userProfiles?.some(
-    (p) => p.id === processInstance?.owner?.id,
-  );
-
   const storeData = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId] : undefined,
   );
