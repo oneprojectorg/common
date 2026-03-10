@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { type InstancePhaseData } from '@op/api/encoders';
 import { match } from '@op/core';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -37,15 +38,15 @@ function DecisionStateRouterNew({
   // Derive values for StandardDecisionPage (format-agnostic)
   const phases = instance.instanceData.phases ?? [];
   const currentPhaseId = instance.instanceData.currentPhaseId;
-  const currentPhase = phases.find((phase) => phase.phaseId === currentPhaseId);
+  const currentPhase = phases.find(
+    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  );
   const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
     : (instance.description ??
       instance.instanceData.templateDescription ??
       undefined);
-  const maxVotesPerMember = instance?.instanceData?.fieldValues
-    ?.maxVotesPerMember as number | undefined;
 
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,
@@ -63,8 +64,7 @@ function DecisionStateRouterNew({
         decisionSlug={decisionSlug}
         allowProposals={allowProposals}
         description={description}
-        currentPhaseId={currentPhaseId}
-        maxVotesPerMember={maxVotesPerMember}
+        currentPhase={currentPhase}
       />
     ),
   });

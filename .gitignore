@@ -42,6 +42,10 @@ yarn-error.log*
 *.pem
 .trees
 
+# Ralph
+scripts/prd.json
+scripts/progress.txt
+
 # Python
 __pycache__
 
