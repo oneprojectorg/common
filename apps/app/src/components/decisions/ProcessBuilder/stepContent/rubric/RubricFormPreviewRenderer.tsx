@@ -75,13 +75,13 @@ function RubricField({ field }: { field: FieldDescriptor }) {
               badge={t('Yes/No')}
               className="gap-1"
             />
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               {schema.description && (
                 <p className="text-sm text-neutral-charcoal">
                   {schema.description}
                 </p>
               )}
-              <ToggleButton size="small" className="shrink-0" />
+              <ToggleButton size="small" className="ml-auto shrink-0" />
             </div>
           </div>
         );
