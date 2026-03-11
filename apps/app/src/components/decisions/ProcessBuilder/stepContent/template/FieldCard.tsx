@@ -85,7 +85,8 @@ export function FieldCard({
   useEffect(() => {
     if (isNew) {
       cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      fieldNameRef.current?.focus();
+      fieldNameRef.current?.focus({ preventScroll: true });
+      fieldNameRef.current?.select();
     }
   }, [isNew]);
 
