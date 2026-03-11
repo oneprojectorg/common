@@ -384,24 +384,11 @@ function ProfileInviteModalContent({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== ',') {
-      return;
-    }
-    const email = searchQuery.trim().replace(/,$/, '').trim();
-    if (!isValidEmail(email)) {
-      return;
-    }
-    const lowerEmail = email.toLowerCase();
-    const takenEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    if (takenEmails.has(lowerEmail)) {
+    if (e.key !== ',' || !selectedRoleId || !canAddEmail) {
       return;
     }
     e.preventDefault();
-    handleAddEmail(email);
+    handleAddEmail(debouncedQuery);
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
