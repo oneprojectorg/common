@@ -37,6 +37,21 @@ const phasesSchema = z.object({
   phases: z.array(phaseSchema).min(1),
 });
 
+// ============ Helpers ============
+
+/** Returns true when at least one phase has review enabled. */
+function hasReviewPhase(data: ProcessBuilderInstanceData | undefined): boolean {
+  return (data?.phases ?? []).some((p) => p.rules?.proposals?.review === true);
+}
+
+/** Returns true when the rubric template contains at least one criterion. */
+function hasRubricCriteria(
+  data: ProcessBuilderInstanceData | undefined,
+): boolean {
+  const order = data?.rubricTemplate?.['x-field-order'];
+  return Array.isArray(order) && order.length > 0;
+}
+
 // ============ Section Validators ============
 
 type SectionValidator = (
@@ -58,7 +73,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   phases: (data) => phasesSchema.safeParse(data).success,
   proposalCategories: () => true,
   templateEditor: validateTemplateEditor,
-  criteria: () => true,
+  criteria: (data) => !hasReviewPhase(data) || hasRubricCriteria(data),
   roles: () => true,
   participants: () => true,
   summary: (data) => LAUNCH_CHECKLIST.every((item) => item.validate(data)),
@@ -124,6 +139,11 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
       );
       return fields.every((field) => getFieldErrors(field).length === 0);
     },
+  },
+  {
+    id: 'rubricCriteria',
+    labelKey: 'Add at least one rubric criterion',
+    validate: (data) => !hasReviewPhase(data) || hasRubricCriteria(data),
   },
   {
     id: 'inviteMembers',
