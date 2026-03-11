@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { TranslationKey } from '@/lib/i18n';
 
 import { getFieldErrors, getFields } from '../../proposalTemplate';
+import { getCriteria, getCriterionErrors } from '../../rubricTemplate';
 import type { SectionId } from '../navigationConfig';
 import type { ProcessBuilderInstanceData } from '../stores/useProcessBuilderStore';
 
@@ -52,6 +53,17 @@ function hasRubricCriteria(
   return Array.isArray(order) && order.length > 0;
 }
 
+/** Returns true when every rubric criterion has all required fields filled in. */
+function allRubricCriteriaValid(
+  data: ProcessBuilderInstanceData | undefined,
+): boolean {
+  if (!data?.rubricTemplate) {
+    return true;
+  }
+  const criteria = getCriteria(data.rubricTemplate);
+  return criteria.every((c) => getCriterionErrors(c).length === 0);
+}
+
 // ============ Section Validators ============
 
 type SectionValidator = (
@@ -73,7 +85,9 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   phases: (data) => phasesSchema.safeParse(data).success,
   proposalCategories: () => true,
   templateEditor: validateTemplateEditor,
-  criteria: (data) => !hasReviewPhase(data) || hasRubricCriteria(data),
+  criteria: (data) =>
+    !hasReviewPhase(data) ||
+    (hasRubricCriteria(data) && allRubricCriteriaValid(data)),
   roles: () => true,
   participants: () => true,
   summary: (data) => LAUNCH_CHECKLIST.every((item) => item.validate(data)),
@@ -144,6 +158,11 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
     id: 'rubricCriteria',
     labelKey: 'Add at least one rubric criterion',
     validate: (data) => !hasReviewPhase(data) || hasRubricCriteria(data),
+  },
+  {
+    id: 'rubricCriteriaErrors',
+    labelKey: 'Fix errors in rubric criteria',
+    validate: (data) => !hasReviewPhase(data) || allRubricCriteriaValid(data),
   },
   {
     id: 'inviteMembers',
