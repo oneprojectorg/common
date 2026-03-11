@@ -185,7 +185,7 @@ export function OverviewSectionForm({
       description: initialDescription,
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
       requireCollaborativeProposals:
-        instanceData?.config?.requireCollaborativeProposals ?? true,
+        instanceData?.config?.requireCollaborativeProposals ?? false,
       isPrivate: instanceData?.config?.isPrivate ?? false,
     },
     validators: {
