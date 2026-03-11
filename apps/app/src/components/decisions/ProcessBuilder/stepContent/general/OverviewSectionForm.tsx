@@ -267,6 +267,7 @@ export function OverviewSectionForm({
                     placeholder: t('My new process'),
                   }}
                   errorMessage={getFieldErrorMessage(field)}
+                  maxLength={50}
                 />
               )}
             />
@@ -286,12 +287,11 @@ export function OverviewSectionForm({
                       placeholder: t('A description about my process'),
                     }}
                     errorMessage={getFieldErrorMessage(field)}
-                  />
-                  <p className="text-sm text-neutral-gray4">
-                    {t(
+                    maxLength={250}
+                    description={t(
                       'This information appears when participants want to learn more about the process',
                     )}
-                  </p>
+                  />
                 </div>
               )}
             />
