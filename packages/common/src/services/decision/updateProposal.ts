@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { type TransactionType, db, eq } from '@op/db/client';
 import {
   type ProcessInstance,
   ProposalStatus,
@@ -30,48 +30,41 @@ import { validateProposalAgainstTemplate } from './validateProposalAgainstTempla
  * and the transaction for writes to keep them atomic.
  */
 async function updateProposalCategoryLink(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tx: TransactionType,
   proposalId: string,
   newCategoryLabel?: string,
 ): Promise<void> {
-  try {
-    // Remove existing category links
-    await tx
-      .delete(proposalCategories)
-      .where(eq(proposalCategories.proposalId, proposalId));
+  // Remove existing category links
+  await tx
+    .delete(proposalCategories)
+    .where(eq(proposalCategories.proposalId, proposalId));
 
-    // Add new category link if provided
-    if (newCategoryLabel?.trim()) {
-      // Find the "proposal" taxonomy
-      const proposalTaxonomy = await db._query.taxonomies.findFirst({
-        where: eq(taxonomies.name, 'proposal'),
-      });
+  // Add new category link if provided
+  if (newCategoryLabel?.trim()) {
+    // Find the "proposal" taxonomy
+    const proposalTaxonomy = await db._query.taxonomies.findFirst({
+      where: eq(taxonomies.name, 'proposal'),
+    });
 
-      if (!proposalTaxonomy) {
-        console.warn('No "proposal" taxonomy found, skipping category linking');
-        return;
-      }
-
-      // Find the taxonomy term that matches the category label
-      const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-        where: eq(taxonomyTerms.label, newCategoryLabel.trim()),
-      });
-
-      if (taxonomyTerm) {
-        // Create the new link
-        await tx.insert(proposalCategories).values({
-          proposalId,
-          taxonomyTermId: taxonomyTerm.id,
-        });
-      } else {
-        console.warn(
-          `No taxonomy term found for category: ${newCategoryLabel}`,
-        );
-      }
+    if (!proposalTaxonomy) {
+      console.warn('No "proposal" taxonomy found, skipping category linking');
+      return;
     }
-  } catch (error) {
-    console.error('Error updating proposal category link:', error);
-    // Don't throw error as this is not critical for proposal update
+
+    // Find the taxonomy term that matches the category label
+    const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
+      where: eq(taxonomyTerms.label, newCategoryLabel.trim()),
+    });
+
+    if (taxonomyTerm) {
+      // Create the new link
+      await tx.insert(proposalCategories).values({
+        proposalId,
+        taxonomyTermId: taxonomyTerm.id,
+      });
+    } else {
+      console.warn(`No taxonomy term found for category: ${newCategoryLabel}`);
+    }
   }
 }
 
@@ -161,7 +154,7 @@ export const updateProposal = async ({
     }
 
     const updatedProposal = await db.transaction(async (tx) => {
-      const [raw] = await tx
+      const [updatedProposalRow] = await tx
         .update(proposals)
         .set({
           ...data,
@@ -171,7 +164,7 @@ export const updateProposal = async ({
         .where(eq(proposals.id, proposalId))
         .returning();
 
-      if (!raw) {
+      if (!updatedProposalRow) {
         throw new CommonError('Failed to update proposal');
       }
 
@@ -182,7 +175,7 @@ export const updateProposal = async ({
       }
 
       const proposal = await tx.query.proposals.findFirst({
-        where: { id: raw.id },
+        where: { id: updatedProposalRow.id },
         with: { profile: true },
       });
 

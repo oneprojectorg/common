@@ -97,7 +97,7 @@ export const submitProposal = async ({
 
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
-    const [raw] = await tx
+    const [submittedProposal] = await tx
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
@@ -105,12 +105,12 @@ export const submitProposal = async ({
       .where(eq(proposals.id, data.proposalId))
       .returning();
 
-    if (!raw) {
+    if (!submittedProposal) {
       throw new CommonError('Failed to submit proposal');
     }
 
     const proposal = await tx.query.proposals.findFirst({
-      where: { id: raw.id },
+      where: { id: submittedProposal.id },
       with: { profile: true },
     });
 

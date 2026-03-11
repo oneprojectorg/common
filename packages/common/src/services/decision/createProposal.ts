@@ -171,7 +171,7 @@ export const createProposal = async ({
       const proposalId = crypto.randomUUID();
       const collaborationDocId = `proposal-${proposalId}`;
 
-      const [raw] = await tx
+      const [insertedProposal] = await tx
         .insert(proposals)
         .values({
           id: proposalId,
@@ -186,14 +186,14 @@ export const createProposal = async ({
         })
         .returning();
 
-      if (!raw) {
+      if (!insertedProposal) {
         throw new CommonError('Failed to create proposal');
       }
 
       // Link to category within transaction if we have a valid term
       if (categoryTermId) {
         await tx.insert(proposalCategories).values({
-          proposalId: raw.id,
+          proposalId: insertedProposal.id,
           taxonomyTermId: categoryTermId,
         });
       }
@@ -202,7 +202,7 @@ export const createProposal = async ({
       if (data.attachmentIds && data.attachmentIds.length > 0) {
         const proposalAttachmentValues = data.attachmentIds.map(
           (attachmentId) => ({
-            proposalId: raw.id,
+            proposalId: insertedProposal.id,
             attachmentId: attachmentId,
             uploadedBy: profileId,
           }),
@@ -212,7 +212,10 @@ export const createProposal = async ({
 
         // Process proposal content to replace temporary URLs with permanent ones
         try {
-          await processProposalContent({ conn: tx, proposalId: raw.id });
+          await processProposalContent({
+            conn: tx,
+            proposalId: insertedProposal.id,
+          });
         } catch (error) {
           console.error('Error processing proposal content:', error);
           // Let the transaction roll back on error to maintain data consistency
@@ -221,7 +224,7 @@ export const createProposal = async ({
       }
 
       const proposal = await tx.query.proposals.findFirst({
-        where: { id: raw.id },
+        where: { id: insertedProposal.id },
         with: { profile: true },
       });
 
