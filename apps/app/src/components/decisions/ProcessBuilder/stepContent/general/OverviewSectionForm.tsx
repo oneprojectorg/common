@@ -275,24 +275,22 @@ export function OverviewSectionForm({
             <form.AppField
               name="description"
               children={(field) => (
-                <div className="space-y-2">
-                  <field.TextField
-                    useTextArea
-                    label={t('Description')}
-                    isRequired
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={field.handleChange}
-                    textareaProps={{
-                      placeholder: t('A description about my process'),
-                    }}
-                    errorMessage={getFieldErrorMessage(field)}
-                    maxLength={250}
-                    description={t(
-                      'This information appears when participants want to learn more about the process',
-                    )}
-                  />
-                </div>
+                <field.TextField
+                  useTextArea
+                  label={t('Description')}
+                  isRequired
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={field.handleChange}
+                  textareaProps={{
+                    placeholder: t('A description about my process'),
+                  }}
+                  errorMessage={getFieldErrorMessage(field)}
+                  maxLength={250}
+                  description={t(
+                    'This information appears when participants want to learn more about the process',
+                  )}
+                />
               )}
             />
 
