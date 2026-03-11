@@ -1,5 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { notFound } from 'next/navigation';
+import { forbidden, notFound } from 'next/navigation';
 
 import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
 import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
@@ -24,6 +24,10 @@ const EditDecisionPage = async ({
 
   if (!decisionProfile?.processInstance) {
     notFound();
+  }
+
+  if (!decisionProfile.processInstance.access?.admin) {
+    forbidden();
   }
 
   const { processInstance } = decisionProfile;

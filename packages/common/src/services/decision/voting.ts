@@ -378,7 +378,7 @@ export const getVotingStatus = async ({
     await assertInstanceProfileAccess({
       user: { id: authUserId },
       instance: processInstance,
-      profilePermissions: { profile: permission.READ },
+      profilePermissions: { decisions: permission.READ },
       orgFallbackPermissions: [{ decisions: permission.READ }],
     });
 

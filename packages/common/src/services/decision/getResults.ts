@@ -58,7 +58,7 @@ export const getLatestResultWithProposals = async ({
   await assertInstanceProfileAccess({
     user,
     instance: instance[0],
-    profilePermissions: { profile: permission.READ },
+    profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: { decisions: permission.READ },
   });
 

@@ -54,6 +54,7 @@ const config = {
     // reactCompiler: true,
     serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
     instrumentationHook: true,
+    authInterrupts: true,
   },
 
   webpack: (cfg, { isServer }) => {
