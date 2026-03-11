@@ -14,6 +14,9 @@ const MAX_SIZE_MB = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 const ACCEPTED_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -174,7 +177,8 @@ export function ProposalAttachments({
       <FileDropZone
         acceptedFileTypes={ACCEPTED_TYPES}
         onSelectFiles={handleSelectFiles}
-        description={t('Accepts PDF, DOCX, XLSX up to {size}MB', {
+        description={t('Accepts {types} and more up to {size}MB', {
+          types: 'PDF, DOCX, XLSX',
           size: MAX_SIZE_MB,
         })}
         allowsMultiple

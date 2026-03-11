@@ -699,7 +699,7 @@
   "Pending launch": "লঞ্চ মুলতুবি",
   "This process is still in draft. Participants with \"Manage Process\" access will be invited immediately. Invites without edit access will be sent when the process launches.": "এই প্রক্রিয়াটি এখনও খসড়া অবস্থায় আছে। \"প্রক্রিয়া পরিচালনা\" অ্যাক্সেস সহ অংশগ্রহণকারীদের অবিলম্বে আমন্ত্রণ জানানো হবে। সম্পাদনা অ্যাক্সেস ছাড়া আমন্ত্রণগুলি প্রক্রিয়া চালু হলে পাঠানো হবে।",
   "Failed to cancel invite": "আমন্ত্রণ বাতিল করতে ব্যর্থ",
-  "Accepts PDF, DOCX, XLSX up to {size}MB": "PDF, DOCX, XLSX {size}MB পর্যন্ত গ্রহণ করে",
+  "Accepts {types} and more up to {size}MB": "{types} এবং আরও {size}MB পর্যন্ত গ্রহণ করে",
   "Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.": "এই প্রক্রিয়ায় প্রস্তাবগুলি যে বিভাগগুলি এগিয়ে নেওয়া উচিত তা সংজ্ঞায়িত করুন। প্রস্তাবকারীরা তাদের প্রস্তাব কোন বিভাগগুলি সমর্থন করে তা নির্বাচন করবেন।",
   "No categories defined yet": "এখনও কোনো বিভাগ সংজ্ঞায়িত হয়নি",
   "Categories help proposers understand what outcomes this process is trying to achieve.": "বিভাগগুলি প্রস্তাবকারীদের বুঝতে সাহায্য করে এই প্রক্রিয়া কী ফলাফল অর্জন করতে চাইছে।",
