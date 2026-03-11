@@ -43,11 +43,13 @@ export interface StepProps {
   resolver?: any;
 }
 
-const formatErrors = (
-  errors: unknown[] | undefined,
-): string | undefined => {
+const formatErrors = (errors: unknown[] | undefined): string | undefined => {
   const messages = errors
-    ?.map((err) => (typeof err === 'string' ? err : (err as any)?.message ?? ''))
+    ?.map((err) =>
+      typeof err === 'string'
+        ? err
+        : (err as { message?: string } | null)?.message,
+    )
     .filter(Boolean);
   if (!messages || messages.length === 0) {
     return undefined;
