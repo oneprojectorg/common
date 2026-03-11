@@ -23,10 +23,9 @@ export function ProcessBuilderContent({
   const { currentSection } = useProcessNavigation(navigationConfig, phases);
 
   const access = useUser();
-  const canManageProcess =
-    access.getPermissionsForProfile(decisionProfileId).decisions.admin;
+  const isAdmin = access.getPermissionsForProfile(decisionProfileId).admin;
 
-  if (!canManageProcess) {
+  if (!isAdmin) {
     throw new Error('UNAUTHORIZED');
   }
 

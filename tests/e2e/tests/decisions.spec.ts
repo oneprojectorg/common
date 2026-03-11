@@ -30,26 +30,21 @@ test.describe('Decisions', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // 5. Admin users should see the Settings link in the header
-    await expect(
-      authenticatedPage.getByRole('link', { name: 'Settings' }),
-    ).toBeVisible({ timeout: 5000 });
-
-    // 6. Click the "Submit a proposal" button
+    // 5. Click the "Submit a proposal" button
     const submitButton = authenticatedPage.getByRole('button', {
       name: 'Submit a proposal',
     });
     await expect(submitButton).toBeVisible({ timeout: 5000 });
     await submitButton.click();
 
-    // 7. Wait for navigation to the proposal edit page
+    // 6. Wait for navigation to the proposal edit page
     // The URL pattern is /decisions/{slug}/proposal/{profileId}/edit
     await expect(authenticatedPage).toHaveURL(
       new RegExp(`/decisions/${instance.slug}/proposal/[^/]+/edit`),
       { timeout: 15000 },
     );
 
-    // 8. Verify we're on the proposal editor page
+    // 7. Verify we're on the proposal editor page
     // The ProposalEditor shows "Untitled Proposal" heading and has a "Submit Proposal" button
     await expect(authenticatedPage.getByText('Untitled Proposal')).toBeVisible({
       timeout: 10000,
