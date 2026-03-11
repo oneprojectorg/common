@@ -19,6 +19,7 @@ import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import {
@@ -106,6 +107,12 @@ export function TemplateEditorContent({
   const [expandedFieldIds, setExpandedFieldIds] = useState<Set<string>>(
     new Set(),
   );
+
+  // Track newly added fields for the teal border highlight animation
+  const [newFieldIds, setNewFieldIds] = useState<Set<string>>(new Set());
+
+  // Delete confirmation modal
+  const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
@@ -240,25 +247,39 @@ export function TemplateEditorContent({
       const fieldId = crypto.randomUUID().slice(0, 8);
       const label = t(getFieldLabelKey(type));
       setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
-      // Auto-expand the newly added field
+      // Auto-expand the newly added field and mark it as new
       setExpandedFieldIds((prev) => new Set(prev).add(fieldId));
+      setNewFieldIds((prev) => new Set(prev).add(fieldId));
     },
     [t],
   );
 
   const handleRemoveField = useCallback((fieldId: string) => {
-    setTemplate((prev) => removeFieldFromTemplate(prev, fieldId));
+    setFieldToDelete(fieldId);
+  }, []);
+
+  const confirmRemoveField = useCallback(() => {
+    if (!fieldToDelete) {
+      return;
+    }
+    setTemplate((prev) => removeFieldFromTemplate(prev, fieldToDelete));
     setFieldErrors((prev) => {
       const next = new Map(prev);
-      next.delete(fieldId);
+      next.delete(fieldToDelete);
       return next;
     });
     setExpandedFieldIds((prev) => {
       const next = new Set(prev);
-      next.delete(fieldId);
+      next.delete(fieldToDelete);
       return next;
     });
-  }, []);
+    setNewFieldIds((prev) => {
+      const next = new Set(prev);
+      next.delete(fieldToDelete);
+      return next;
+    });
+    setFieldToDelete(null);
+  }, [fieldToDelete]);
 
   const handleReorderFields = useCallback((newItems: FieldView[]) => {
     setTemplate((prev) =>
@@ -357,6 +378,7 @@ export function TemplateEditorContent({
             return next;
           })
         }
+        isNew={newFieldIds.has(field.id)}
         onRemove={handleRemoveField}
         onBlur={handleFieldBlur}
         onUpdateLabel={handleUpdateLabel}
@@ -384,7 +406,7 @@ export function TemplateEditorContent({
           side={isMobile ? 'right' : 'left'}
         />
 
-        <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
+        <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
             <Header2 className="hidden font-serif text-title-sm md:block">
               {t('Proposal template')}
@@ -469,6 +491,16 @@ export function TemplateEditorContent({
           <AddFieldMenu onAddField={handleAddField} />
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={fieldToDelete !== null}
+        title={t('Delete field')}
+        message={t(
+          'Are you sure you want to delete this field? This action cannot be undone.',
+        )}
+        onConfirm={confirmRemoveField}
+        onCancel={() => setFieldToDelete(null)}
+      />
     </SidebarProvider>
   );
 }

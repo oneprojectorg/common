@@ -948,5 +948,7 @@
   "Field name": "Field name",
   "Optional": "Optional",
   "Type": "Type",
-  "Untitled field": "Untitled field"
+  "Untitled field": "Untitled field",
+  "Delete field": "Delete field",
+  "Are you sure you want to delete this field? This action cannot be undone.": "Are you sure you want to delete this field? This action cannot be undone."
 }

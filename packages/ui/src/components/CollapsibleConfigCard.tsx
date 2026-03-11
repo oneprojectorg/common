@@ -132,15 +132,12 @@ export function CollapsibleConfigCard({
       isExpanded={isExpanded}
       defaultExpanded={defaultExpanded}
       onExpandedChange={onExpandedChange}
-      className={({ isExpanded: expanded }) =>
-        cn(
-          'rounded-lg border bg-white px-3 py-4',
-          locked && 'bg-neutral-offWhite',
-          isDragging && 'opacity-50',
-          expanded && 'border-primary-teal',
-          className,
-        )
-      }
+      className={cn(
+        'rounded-lg border bg-white px-3 py-4',
+        locked && 'bg-neutral-offWhite',
+        isDragging && 'opacity-50',
+        className,
+      )}
     >
       <div className="flex w-full items-center gap-2">
         {leadingElement}

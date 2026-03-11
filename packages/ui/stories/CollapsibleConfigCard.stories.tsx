@@ -60,7 +60,7 @@ export const Collapsed = () => {
 };
 
 /**
- * Expanded state — teal border, body visible.
+ * Expanded state — body visible, chevron rotated.
  */
 export const Expanded = () => {
   return (
@@ -75,14 +75,38 @@ export const Expanded = () => {
       >
         <div className="space-y-4 px-8">
           <p className="text-neutral-charcoal">
-            This card starts expanded. The border is teal and the chevron is
-            rotated.
+            This card starts expanded. The chevron is rotated.
           </p>
           <div className="rounded border bg-neutral-gray1 p-3">
             <span className="text-sm text-neutral-gray4">
               Configuration options would go here
             </span>
           </div>
+        </div>
+      </CollapsibleConfigCard>
+    </div>
+  );
+};
+
+/**
+ * Newly added — teal border fades out after a few seconds.
+ */
+export const NewlyAdded = () => {
+  return (
+    <div className="w-[500px]">
+      <CollapsibleConfigCard
+        icon={LuAlignLeft}
+        label="Project name"
+        badgeLabel="Required"
+        isCollapsible
+        defaultExpanded
+        className="animate-border-highlight"
+        controls={mockControls}
+      >
+        <div className="px-8">
+          <p className="text-neutral-charcoal">
+            This card has a teal border that fades out after 3 seconds.
+          </p>
         </div>
       </CollapsibleConfigCard>
     </div>
