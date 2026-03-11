@@ -15,8 +15,8 @@ interface DecisionHeaderProps {
   children?: ReactNode;
   /** Decision profile slug for building the edit link */
   decisionSlug?: string;
-  /** Decision profile ID for permission checking */
-  decisionProfileId?: string;
+  /** Whether the current user has admin access to this decision */
+  isAdmin?: boolean;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
   /** Title from the decision profile */
@@ -28,7 +28,7 @@ export async function DecisionHeader({
   slug,
   children,
   decisionSlug,
-  decisionProfileId,
+  isAdmin,
   useLegacy = false,
   profileName,
 }: DecisionHeaderProps) {
@@ -86,7 +86,7 @@ export async function DecisionHeader({
           (instance as any).process?.name
         }
         decisionSlug={decisionSlug}
-        decisionProfileId={decisionProfileId}
+        isAdmin={isAdmin}
       />
       <DecisionTranslationProvider>
         <div className="flex flex-col overflow-x-auto sm:items-center">

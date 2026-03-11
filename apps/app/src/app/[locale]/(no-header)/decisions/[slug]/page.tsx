@@ -31,7 +31,7 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
         instanceId={instanceId}
         slug={ownerSlug}
         decisionSlug={slug}
-        decisionProfileId={decisionProfile.id}
+        isAdmin={decisionProfile.processInstance.access?.admin}
         profileName={decisionProfile.name}
       >
         <Suspense fallback={<Skeleton className="h-96" />}>
