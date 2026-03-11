@@ -29,6 +29,7 @@ import {
   removeProperty,
   reorderProperties,
   setPropertyRequired,
+  updateProperty,
   updatePropertyDescription,
   updatePropertyLabel,
 } from './templateUtils';
@@ -319,28 +320,14 @@ export function changeFieldType(
   fieldId: string,
   newType: FieldType,
 ): ProposalTemplateSchema {
-  const existing = getFieldSchema(template, fieldId);
-  if (!existing) {
-    return template;
-  }
-
-  const freshSchema = createFieldJsonSchema(newType);
-  // Preserve title, description, and required status
-  const updated: ProposalTemplateSchema = {
-    ...freshSchema,
-    title: existing.title,
-  };
-  if (existing.description) {
-    updated.description = existing.description;
-  }
-
-  return {
-    ...template,
-    properties: {
-      ...template.properties,
-      [fieldId]: updated,
-    },
-  };
+  return updateProperty(template, fieldId, (existing) => {
+    const fresh = createFieldJsonSchema(newType);
+    return {
+      ...fresh,
+      title: existing.title,
+      ...(existing.description ? { description: existing.description } : {}),
+    };
+  });
 }
 
 export function setFieldRequired(
