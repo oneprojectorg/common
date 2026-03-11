@@ -81,6 +81,7 @@ export function FieldCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const fieldNameRef = useRef<HTMLInputElement>(null);
 
+  // Scroll newly added fields into view and auto-focus the name input
   useEffect(() => {
     if (isNew) {
       cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -91,6 +92,8 @@ export function FieldCard({
   const Icon = getFieldIcon(field.fieldType);
   const ConfigComponent = getFieldConfigComponent(field.fieldType);
 
+  // Only trigger validation when focus leaves the card entirely,
+  // not when moving between inputs within the card.
   const handleBlur = (e: React.FocusEvent) => {
     if (cardRef.current && !cardRef.current.contains(e.relatedTarget as Node)) {
       onBlur?.(field.id);
@@ -108,6 +111,7 @@ export function FieldCard({
     <div
       ref={cardRef}
       onBlur={handleBlur}
+      // Clear "new" state after the teal border highlight animation finishes
       onAnimationEnd={() => onNewComplete?.(field.id)}
       className="scroll-m-6"
     >
