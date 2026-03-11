@@ -76,12 +76,12 @@ function RubricField({ field }: { field: FieldDescriptor }) {
               className="gap-1"
             />
             <div className="flex items-start gap-3">
-              <ToggleButton size="small" className="shrink-0" />
               {schema.description && (
                 <p className="text-sm text-neutral-charcoal">
                   {schema.description}
                 </p>
               )}
+              <ToggleButton size="small" className="shrink-0" />
             </div>
           </div>
         );
