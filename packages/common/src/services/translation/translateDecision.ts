@@ -1,7 +1,7 @@
 import { and, db, eq } from '@op/db/client';
 import { EntityType, processInstances, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import type { TranslatableEntry } from '@op/translation';
+import type { TranslatableEntry, TranslationResult } from '@op/translation';
 import type { JSONContent } from '@tiptap/core';
 import { generateHTML } from '@tiptap/html';
 import { permission } from 'access-zones';
@@ -13,20 +13,15 @@ import { serverExtensions } from '../decision/tiptapExtensions';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
-/**
- * Render a TipTap JSON string to HTML for translation.
- * Falls back to the raw string if content is not valid JSON (plain text).
- * Throws if JSON parses but HTML rendering fails, to avoid caching corrupt data.
- */
-function renderTipTapToHtml(content: string): string {
-  let parsed: JSONContent;
-  try {
-    parsed = JSON.parse(content) as JSONContent;
-  } catch {
-    return content;
-  }
-  return generateHTML(parsed, serverExtensions);
-}
+type DecisionTranslationResult = {
+  headline?: string;
+  phaseDescription?: string;
+  additionalInfo?: string;
+  description?: string;
+  phases: Array<{ id: string; name: string }>;
+  sourceLocale: string;
+  targetLocale: SupportedLocale;
+};
 
 /**
  * Translates a decision's current-phase content (headline, description,
@@ -41,15 +36,7 @@ export async function translateDecision({
   decisionProfileId: string;
   targetLocale: SupportedLocale;
   user: User;
-}): Promise<{
-  headline?: string;
-  phaseDescription?: string;
-  additionalInfo?: string;
-  description?: string;
-  phases: Array<{ id: string; name: string }>;
-  sourceLocale: string;
-  targetLocale: SupportedLocale;
-}> {
+}): Promise<DecisionTranslationResult> {
   const instances = await db
     .select({
       description: processInstances.description,
@@ -86,49 +73,11 @@ export async function translateDecision({
 
   const instanceData =
     processInstance.instanceData as DecisionInstanceData | null;
-  const currentPhaseId = instanceData?.currentPhaseId;
-  const currentPhase = currentPhaseId
-    ? instanceData?.phases?.find((p) => p.phaseId === currentPhaseId)
-    : undefined;
-
-  const entries: TranslatableEntry[] = [];
-
-  if (currentPhase?.headline) {
-    entries.push({
-      contentKey: `decision:${decisionProfileId}:headline`,
-      text: currentPhase.headline,
-    });
-  }
-
-  if (currentPhase?.description) {
-    entries.push({
-      contentKey: `decision:${decisionProfileId}:phaseDescription`,
-      text: currentPhase.description,
-    });
-  }
-
-  if (currentPhase?.additionalInfo) {
-    entries.push({
-      contentKey: `decision:${decisionProfileId}:additionalInfo`,
-      text: renderTipTapToHtml(currentPhase.additionalInfo),
-    });
-  }
-
-  for (const phase of instanceData?.phases ?? []) {
-    if (phase.name) {
-      entries.push({
-        contentKey: `decision:${decisionProfileId}:phase:${phase.phaseId}:name`,
-        text: phase.name,
-      });
-    }
-  }
-
-  if (processInstance.description) {
-    entries.push({
-      contentKey: `decision:${decisionProfileId}:description`,
-      text: processInstance.description,
-    });
-  }
+  const entries = buildEntries(
+    decisionProfileId,
+    instanceData,
+    processInstance.description,
+  );
 
   if (entries.length === 0) {
     await authPromise;
@@ -140,6 +89,80 @@ export async function translateDecision({
     runTranslateBatch(entries, targetLocale),
   ]);
 
+  return parseResults(results, decisionProfileId, targetLocale);
+}
+
+/**
+ * Render a TipTap JSON string to HTML for translation.
+ * Falls back to the raw string if content is not valid JSON (plain text).
+ * Throws if JSON parses but HTML rendering fails, to avoid caching corrupt data.
+ */
+function renderTipTapToHtml(content: string): string {
+  let parsed: JSONContent;
+  try {
+    parsed = JSON.parse(content) as JSONContent;
+  } catch {
+    return content;
+  }
+  return generateHTML(parsed, serverExtensions);
+}
+
+function buildEntries(
+  decisionProfileId: string,
+  instanceData: DecisionInstanceData | null,
+  processDescription: string | null,
+): TranslatableEntry[] {
+  const prefix = `decision:${decisionProfileId}`;
+  const entries: TranslatableEntry[] = [];
+
+  const currentPhaseId = instanceData?.currentPhaseId;
+  const currentPhase = currentPhaseId
+    ? instanceData?.phases?.find((p) => p.phaseId === currentPhaseId)
+    : undefined;
+
+  if (currentPhase?.headline) {
+    entries.push({
+      contentKey: `${prefix}:headline`,
+      text: currentPhase.headline,
+    });
+  }
+  if (currentPhase?.description) {
+    entries.push({
+      contentKey: `${prefix}:phaseDescription`,
+      text: currentPhase.description,
+    });
+  }
+  if (currentPhase?.additionalInfo) {
+    entries.push({
+      contentKey: `${prefix}:additionalInfo`,
+      text: renderTipTapToHtml(currentPhase.additionalInfo),
+    });
+  }
+
+  for (const phase of instanceData?.phases ?? []) {
+    if (phase.name) {
+      entries.push({
+        contentKey: `${prefix}:phase:${phase.phaseId}:name`,
+        text: phase.name,
+      });
+    }
+  }
+
+  if (processDescription) {
+    entries.push({
+      contentKey: `${prefix}:description`,
+      text: processDescription,
+    });
+  }
+
+  return entries;
+}
+
+function parseResults(
+  results: TranslationResult[],
+  decisionProfileId: string,
+  targetLocale: SupportedLocale,
+): DecisionTranslationResult {
   const prefix = `decision:${decisionProfileId}:`;
   const phasePrefix = `${prefix}phase:`;
   let headline: string | undefined;
