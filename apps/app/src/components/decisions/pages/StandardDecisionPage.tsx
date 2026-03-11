@@ -72,6 +72,7 @@ export function StandardDecisionPage({
         <DecisionActionBar
           instanceId={instanceId}
           description={actionBarDescription}
+          markup={!!translation?.additionalInfo}
           showSubmitButton={allowProposals}
         />
       </div>

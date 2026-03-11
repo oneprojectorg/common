@@ -7,7 +7,8 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
-import { type JSONContent, generateText } from '@tiptap/core';
+import type { JSONContent } from '@tiptap/core';
+import { generateHTML } from '@tiptap/html';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import type { DecisionInstanceData } from '../decision/schemas/instanceData';
@@ -15,13 +16,10 @@ import { serverExtensions } from '../decision/tiptapExtensions';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
-/** Extract plain text from a TipTap JSON string. Falls back to the raw string for plain text content. */
-function extractTextFromTipTap(content: string): string {
+/** Render a TipTap JSON string to HTML for translation. Falls back to the raw string for plain text content. */
+function renderTipTapToHtml(content: string): string {
   try {
-    return generateText(
-      JSON.parse(content) as JSONContent,
-      serverExtensions,
-    ).trim();
+    return generateHTML(JSON.parse(content) as JSONContent, serverExtensions);
   } catch {
     return content;
   }
@@ -107,7 +105,7 @@ export async function translateDecision({
   if (currentPhase?.additionalInfo) {
     entries.push({
       contentKey: `decision:${decisionProfileId}:additionalInfo`,
-      text: extractTextFromTipTap(currentPhase.additionalInfo),
+      text: renderTipTapToHtml(currentPhase.additionalInfo),
     });
   }
 
