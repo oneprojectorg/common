@@ -226,7 +226,7 @@ export const legacyProposalEncoder = createSelectSchema(proposals)
     proposalData: proposalDataSchema,
     processInstance: legacyProcessInstanceEncoder.optional(),
     submittedBy: baseProfileEncoder.optional(),
-    profile: baseProfileEncoder.optional(),
+    profile: baseProfileEncoder,
     decisionCount: z.number().optional(),
     likesCount: z.number().optional(),
     followersCount: z.number().optional(),
