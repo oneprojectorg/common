@@ -37,7 +37,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     await assertInstanceProfileAccess({
       user,
       instance,
-      profilePermissions: { profile: permission.READ },
+      profilePermissions: { decisions: permission.READ },
       orgFallbackPermissions: { decisions: permission.READ },
     });
 

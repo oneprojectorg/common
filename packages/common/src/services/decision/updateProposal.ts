@@ -132,7 +132,7 @@ export const updateProposal = async ({
         await assertInstanceProfileAccess({
           user: { id: user.id },
           instance: processInstance,
-          profilePermissions: { profile: permission.UPDATE },
+          profilePermissions: { decisions: permission.UPDATE },
           orgFallbackPermissions: [{ decisions: permission.ADMIN }],
         });
       }
