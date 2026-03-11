@@ -254,6 +254,14 @@ export function TemplateEditorContent({
     [t],
   );
 
+  const handleNewComplete = useCallback((fieldId: string) => {
+    setNewFieldIds((prev) => {
+      const next = new Set(prev);
+      next.delete(fieldId);
+      return next;
+    });
+  }, []);
+
   const handleRemoveField = useCallback((fieldId: string) => {
     setFieldToDelete(fieldId);
   }, []);
@@ -379,6 +387,7 @@ export function TemplateEditorContent({
           })
         }
         isNew={newFieldIds.has(field.id)}
+        onNewComplete={handleNewComplete}
         onRemove={handleRemoveField}
         onBlur={handleFieldBlur}
         onUpdateLabel={handleUpdateLabel}
