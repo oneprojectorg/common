@@ -73,12 +73,10 @@ const ValidatedTextField = () => {
       description="Enter a title"
       maxLength={50}
       errorMessage={error}
-      inputProps={{
-        placeholder: 'Placeholder',
-        onChange: (e) => {
-          setError(e.target.value ? undefined : 'This field is required');
-        },
+      onChange={(value) => {
+        setError(value ? undefined : 'This field is required');
       }}
+      inputProps={{ placeholder: 'Placeholder' }}
     />
   );
 };
