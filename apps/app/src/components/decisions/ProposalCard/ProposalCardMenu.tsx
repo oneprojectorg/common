@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
-import { parseProposalData } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
@@ -127,8 +126,7 @@ export function ProposalCardMenu({
     },
   });
 
-  const { title } = parseProposalData(proposal.proposalData);
-  const proposalTitle = title || t('Untitled Proposal');
+  const proposalTitle = proposal.profile.name || t('Untitled Proposal');
 
   const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {

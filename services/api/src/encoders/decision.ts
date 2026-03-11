@@ -669,6 +669,7 @@ export const updateProposalInputSchema = createProposalInputSchema
   .omit({ processInstanceId: true })
   .partial()
   .extend({
+    title: z.string().optional(),
     visibility: z.enum(Visibility).optional(),
     /**
      * Evaluation status for the proposal. This update endpoint handles evaluation

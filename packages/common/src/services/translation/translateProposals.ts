@@ -40,6 +40,11 @@ export async function translateProposals({
       proposalData: true,
     },
     with: {
+      profile: {
+        columns: {
+          name: true,
+        },
+      },
       processInstance: {
         columns: {
           profileId: true,
@@ -125,10 +130,10 @@ export async function translateProposals({
       continue;
     }
 
-    if (proposalData.title && typeof proposalData.title === 'string') {
+    if (proposal.profile?.name) {
       entries.push({
         contentKey: `batch:${pid}:title`,
-        text: proposalData.title,
+        text: proposal.profile.name,
       });
     }
 

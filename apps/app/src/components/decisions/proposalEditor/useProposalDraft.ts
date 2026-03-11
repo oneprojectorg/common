@@ -13,9 +13,9 @@ import type { z } from 'zod';
 type Proposal = z.infer<typeof proposalEncoder>;
 
 /**
- * Draft state for the three system fields duplicated to proposalData
- * for search, preview, and sorting. Yjs is the source of truth — the
- * DB copy is a derived snapshot.
+ * Draft state for the proposal system fields. The proposal title is sourced
+ * from the linked profile name, while category/budget are persisted in
+ * proposalData. Yjs remains the source of truth for collaborative fields.
  * Dynamic template fields live exclusively in Yjs and are NOT part of this.
  */
 export interface ProposalDraftFields extends Record<string, unknown> {
@@ -47,12 +47,12 @@ export function useProposalDraft({
 
   const initialDraft = useMemo<ProposalDraftFields>(
     () => ({
-      title: parsedProposalData?.title ?? '',
+      title: proposal.profile.name ?? '',
       category: parsedProposalData?.category ?? null,
       budget: parsedProposalData?.budget ?? null,
     }),
     [
-      parsedProposalData?.title,
+      proposal.profile.name,
       parsedProposalData?.category,
       parsedProposalData?.budget,
     ],
@@ -85,7 +85,6 @@ export function useProposalDraft({
       return {
         ...serverData,
         collaborationDocId,
-        title: nextDraft.title,
         category: nextDraft.category ?? undefined,
         budget: nextDraft.budget ?? undefined,
       };
@@ -103,6 +102,7 @@ export function useProposalDraft({
       autoSaveMutation.mutate({
         proposalId: proposal.id,
         data: {
+          title: draftToPersist.title,
           proposalData: buildProposalData(draftToPersist),
         },
       });

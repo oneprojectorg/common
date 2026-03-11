@@ -418,7 +418,15 @@ export const getVotingStatus = async ({
       with: {
         voteProposals: {
           with: {
-            proposal: true,
+            proposal: {
+              with: {
+                profile: {
+                  columns: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -434,7 +442,7 @@ export const getVotingStatus = async ({
       );
       selectedProposals = voteSubmission.voteProposals.map((vp) => ({
         id: vp.proposal.id,
-        title: (vp.proposal.proposalData as any)?.title || 'Untitled',
+        title: vp.proposal.profile?.name || 'Untitled',
         amount: (vp.proposal.proposalData as any)?.amount,
         schemaSpecificDisplay: (vp.proposal.proposalData as any)
           ?.schemaSpecificDisplay,

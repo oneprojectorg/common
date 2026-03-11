@@ -232,7 +232,6 @@ function ProposalEditorInner({
       const proposalData: ProposalDataInput = {
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
-        title: currentDraft.title,
         category: hasCategories
           ? (currentDraft.category ?? undefined)
           : undefined,
@@ -242,6 +241,7 @@ function ProposalEditorInner({
       await updateProposalMutation.mutateAsync({
         proposalId: proposal.id,
         data: {
+          title: currentDraft.title,
           proposalData,
         },
       });

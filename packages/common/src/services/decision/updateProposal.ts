@@ -1,8 +1,8 @@
 import { type TransactionType, db, eq } from '@op/db/client';
 import {
-  type ProcessInstance,
   ProposalStatus,
   type Visibility,
+  profiles,
   proposalCategories,
   proposals,
   taxonomies,
@@ -20,6 +20,7 @@ import {
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
+import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
@@ -69,6 +70,7 @@ async function updateProposalCategoryLink(
 }
 
 export interface UpdateProposalInput {
+  title?: string;
   proposalData?: ProposalDataInput;
   status?: ProposalStatus;
   visibility?: Visibility;
@@ -91,10 +93,11 @@ export const updateProposal = async ({
     }
 
     // Check if proposal exists and user has permission to update it
-    const existingProposal = await db._query.proposals.findFirst({
-      where: eq(proposals.id, proposalId),
+    const existingProposal = await db.query.proposals.findFirst({
+      where: { id: proposalId },
       with: {
         processInstance: true,
+        profile: true,
       },
     });
 
@@ -102,7 +105,7 @@ export const updateProposal = async ({
       throw new NotFoundError('Proposal not found');
     }
 
-    const processInstance = existingProposal.processInstance as ProcessInstance;
+    const processInstance = existingProposal.processInstance;
 
     // Status and visibility changes only require instance-level decisions: ADMIN
     if (data.status || data.visibility) {
@@ -149,15 +152,18 @@ export const updateProposal = async ({
         await validateProposalAgainstTemplate(
           proposalTemplate,
           data.proposalData,
+          data.title ?? existingProposal.profile.name,
         );
       }
     }
+
+    const { title: nextTitle, ...proposalFields } = data;
 
     const updatedProposal = await db.transaction(async (tx) => {
       const [updatedProposalRow] = await tx
         .update(proposals)
         .set({
-          ...data,
+          ...proposalFields,
           lastEditedByProfileId: dbUser.currentProfileId,
           updatedAt: new Date().toISOString(),
         })
@@ -168,10 +174,24 @@ export const updateProposal = async ({
         throw new CommonError('Failed to update proposal');
       }
 
+      if (nextTitle !== undefined) {
+        await tx
+          .update(profiles)
+          .set({
+            name: nextTitle,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(profiles.id, existingProposal.profileId));
+      }
+
       // Update category link if proposal data was updated
       if (data.proposalData) {
-        const newCategoryLabel = (data.proposalData as any)?.category;
-        await updateProposalCategoryLink(tx, proposalId, newCategoryLabel);
+        const newCategoryLabel = parseProposalData(data.proposalData).category;
+        await updateProposalCategoryLink(
+          tx,
+          proposalId,
+          newCategoryLabel ?? undefined,
+        );
       }
 
       const proposal = await tx.query.proposals.findFirst({

@@ -25,10 +25,11 @@ export const submitProposal = async ({
   authUserId: string;
 }) => {
   // Fetch the proposal with its process instance
-  const existingProposal = await db._query.proposals.findFirst({
-    where: eq(proposals.id, data.proposalId),
+  const existingProposal = await db.query.proposals.findFirst({
+    where: { id: data.proposalId },
     with: {
       processInstance: true,
+      profile: true,
     },
   });
 
@@ -92,6 +93,7 @@ export const submitProposal = async ({
     await validateProposalAgainstTemplate(
       proposalTemplate,
       existingProposal.proposalData,
+      existingProposal.profile.name,
     );
   }
 
