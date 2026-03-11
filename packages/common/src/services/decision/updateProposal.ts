@@ -25,15 +25,18 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 /**
- * Updates the category link for a proposal
+ * Updates the category link for a proposal.
+ * Uses top-level db for taxonomy lookups (read-only, no lock contention)
+ * and the transaction for writes to keep them atomic.
  */
 async function updateProposalCategoryLink(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   proposalId: string,
   newCategoryLabel?: string,
 ): Promise<void> {
   try {
     // Remove existing category links
-    await db
+    await tx
       .delete(proposalCategories)
       .where(eq(proposalCategories.proposalId, proposalId));
 
@@ -56,7 +59,7 @@ async function updateProposalCategoryLink(
 
       if (taxonomyTerm) {
         // Create the new link
-        await db.insert(proposalCategories).values({
+        await tx.insert(proposalCategories).values({
           proposalId,
           taxonomyTermId: taxonomyTerm.id,
         });
@@ -175,7 +178,7 @@ export const updateProposal = async ({
       // Update category link if proposal data was updated
       if (data.proposalData) {
         const newCategoryLabel = (data.proposalData as any)?.category;
-        await updateProposalCategoryLink(proposalId, newCategoryLabel);
+        await updateProposalCategoryLink(tx, proposalId, newCategoryLabel);
       }
 
       const proposal = await tx.query.proposals.findFirst({
