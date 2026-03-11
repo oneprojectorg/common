@@ -944,5 +944,11 @@
   "<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.": "<highlight>{processName}</highlight> est prêt à être lancé. Le lancement de votre processus invitera et notifiera les participants.",
   "You can always edit and invite participants after launching.": "Vous pouvez toujours modifier et inviter des participants après le lancement.",
   "Participants Invited": "Participants Invités",
-  "Manage Participants": "Gérer les Participants"
+  "Manage Participants": "Gérer les Participants",
+  "Field name": "Nom du champ",
+  "Optional": "Facultatif",
+  "Type": "Type",
+  "Untitled field": "Champ sans titre",
+  "Delete field": "Supprimer le champ",
+  "Are you sure you want to delete this field? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer ce champ ? Cette action ne peut pas être annulée."
 }

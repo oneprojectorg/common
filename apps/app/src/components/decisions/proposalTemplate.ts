@@ -29,6 +29,7 @@ import {
   removeProperty,
   reorderProperties,
   setPropertyRequired,
+  updateProperty,
   updatePropertyDescription,
   updatePropertyLabel,
 } from './templateUtils';
@@ -312,6 +313,24 @@ export function updateFieldDescription(
   description: string | undefined,
 ): ProposalTemplateSchema {
   return updatePropertyDescription(template, fieldId, description);
+}
+
+export function changeFieldType(
+  template: ProposalTemplateSchema,
+  fieldId: string,
+  newType: FieldType,
+): ProposalTemplateSchema {
+  return updateProperty(template, fieldId, (existing) => {
+    const fresh = createFieldJsonSchema(newType);
+    return {
+      ...fresh,
+      title: existing.title,
+      ...(existing.description ? { description: existing.description } : {}),
+      // Carry forward dropdown options so switching away and back doesn't lose them.
+      // Non-dropdown types ignore `oneOf`; dropdown restores it.
+      ...(existing.oneOf ? { oneOf: existing.oneOf } : {}),
+    };
+  });
 }
 
 export function setFieldRequired(

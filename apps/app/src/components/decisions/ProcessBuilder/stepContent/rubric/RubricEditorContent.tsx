@@ -306,7 +306,6 @@ export function RubricEditorContent({
             <>
               <Accordion
                 allowsMultipleExpanded
-                variant="unstyled"
                 expandedKeys={expandedKeys}
                 onExpandedChange={setExpandedKeys}
               >
@@ -344,6 +343,7 @@ export function RubricEditorContent({
                     return (
                       <AccordionItem
                         id={criterion.id}
+                        variant="unstyled"
                         className={cn(
                           'rounded-lg border bg-white',
                           controls.isDragging && 'opacity-50',
