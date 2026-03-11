@@ -30,9 +30,14 @@ export const getDecisionBySlugRouter = router({
 
       const parsed = decisionProfileWithSchemaEncoder.parse(result);
 
+      const { profileId } = parsed.processInstance;
+      if (!profileId) {
+        throw new Error('Decision profile ID is missing');
+      }
+
       const profileUser = await getProfileAccessUser({
         user,
-        profileId: parsed.processInstance.profileId ?? '',
+        profileId,
       });
 
       const decisionsBitField =
