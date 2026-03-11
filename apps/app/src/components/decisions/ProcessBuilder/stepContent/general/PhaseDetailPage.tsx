@@ -302,6 +302,9 @@ function PhaseDetailForm({
           onChange={(value) => updatePhase({ name: value })}
           onBlur={() => markTouched('name')}
           errorMessage={getErrorMessage('name')}
+          description={t(
+            'A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.',
+          )}
           maxLength={50}
         />
         <TextField
