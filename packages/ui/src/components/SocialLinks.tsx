@@ -1,6 +1,8 @@
-import GithubIcon from '~icons/carbon/logo-github';
-import LinkedinIcon from '~icons/carbon/logo-linkedin';
-import TwitterIcon from '~icons/carbon/logo-x';
+import {
+  SiGithub as GithubIcon,
+  SiLinkedin as LinkedinIcon,
+  SiX as TwitterIcon,
+} from 'react-icons/si';
 
 import { cn } from '../lib/utils';
 

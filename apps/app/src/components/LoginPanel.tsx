@@ -15,9 +15,9 @@ import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
+import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { z } from 'zod';
 import { create } from 'zustand';
-import GoogleIcon from '~icons/logos/google-icon';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -245,7 +245,7 @@ export const LoginPanel = () => {
                           void handleLogin();
                         }}
                       >
-                        <GoogleIcon className="size-4" />
+                        <GoogleIcon className="size-4 stroke-none" />
                         {t('Continue with Google')}
                       </Button>
 
@@ -397,7 +397,7 @@ export const LoginPanel = () => {
                     {t('Back to home')}
                   </ButtonLink>
 
-                  <SocialLinks iconClassName="size-5 text-neutral-500" />
+                  <SocialLinks iconClassName="size-5 text-neutral-500 stroke-none" />
                 </div>
               )}
 
