@@ -302,6 +302,10 @@ function PhaseDetailForm({
           onChange={(value) => updatePhase({ name: value })}
           onBlur={() => markTouched('name')}
           errorMessage={getErrorMessage('name')}
+          description={t(
+            'A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.',
+          )}
+          maxLength={50}
         />
         <TextField
           label={t('Headline')}
@@ -311,6 +315,7 @@ function PhaseDetailForm({
           onBlur={() => markTouched('headline')}
           errorMessage={getErrorMessage('headline')}
           description={t('This text appears as the header of the page.')}
+          maxLength={50}
         />
         <TextField
           label={t('Description')}
@@ -324,6 +329,7 @@ function PhaseDetailForm({
           description={t(
             'This text appears below the headline on the phase page.',
           )}
+          maxLength={250}
         />
         <div className="space-y-2">
           <label className="block text-sm">{t('Additional information')}</label>

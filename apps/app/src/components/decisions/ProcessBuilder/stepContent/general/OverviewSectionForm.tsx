@@ -267,6 +267,7 @@ export function OverviewSectionForm({
                     placeholder: t('My new process'),
                   }}
                   errorMessage={getFieldErrorMessage(field)}
+                  maxLength={50}
                 />
               )}
             />
@@ -274,25 +275,22 @@ export function OverviewSectionForm({
             <form.AppField
               name="description"
               children={(field) => (
-                <div className="space-y-2">
-                  <field.TextField
-                    useTextArea
-                    label={t('Description')}
-                    isRequired
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={field.handleChange}
-                    textareaProps={{
-                      placeholder: t('A description about my process'),
-                    }}
-                    errorMessage={getFieldErrorMessage(field)}
-                  />
-                  <p className="text-sm text-neutral-gray4">
-                    {t(
-                      'This information appears when participants want to learn more about the process',
-                    )}
-                  </p>
-                </div>
+                <field.TextField
+                  useTextArea
+                  label={t('Description')}
+                  isRequired
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={field.handleChange}
+                  textareaProps={{
+                    placeholder: t('A description about my process'),
+                  }}
+                  errorMessage={getFieldErrorMessage(field)}
+                  maxLength={250}
+                  description={t(
+                    'This information appears when participants want to learn more about the process',
+                  )}
+                />
               )}
             />
 
