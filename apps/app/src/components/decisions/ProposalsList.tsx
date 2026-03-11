@@ -121,15 +121,19 @@ export const ProposalListSkeleton = () => {
   );
 };
 
-const NoProposalsFound = () => {
+const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   const t = useTranslations();
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {t('No proposals found matching the current filters.')}
+        {hasFilter
+          ? t('No proposals found matching the current filters.')
+          : t('No proposals yet')}
       </Header3>
       <p className="text-base text-neutral-charcoal">
-        {t('Try adjusting your filter selection above.')}
+        {hasFilter
+          ? t('Try adjusting your filter selection above.')
+          : t('You could be the first one to submit a proposal')}
       </p>
     </EmptyState>
   );
@@ -144,6 +148,7 @@ interface ProposalsProps {
   isLoading: boolean;
   canManageProposals?: boolean;
   votedProposalIds?: string[];
+  hasFilter: boolean;
 }
 
 const VotingProposalsList = ({
@@ -152,6 +157,7 @@ const VotingProposalsList = ({
   slug,
   canManageProposals = false,
   votedProposalIds = [],
+  hasFilter,
 }: ProposalsProps) => {
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -207,7 +213,7 @@ const VotingProposalsList = ({
   };
 
   if (!proposals || proposals.length === 0) {
-    return <NoProposalsFound />;
+    return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
   return (
@@ -364,9 +370,10 @@ const ViewProposalsList = ({
   slug,
   decisionSlug,
   canManageProposals = false,
+  hasFilter,
 }: ProposalsProps) => {
   if (!proposals || proposals.length === 0) {
-    return <NoProposalsFound />;
+    return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
   return (
@@ -827,6 +834,7 @@ export const ProposalsList = ({
           decisionSlug={decisionSlug}
           canManageProposals={canManageProposals}
           votedProposalIds={selectedProposalIds}
+          hasFilter={selectedCategory !== 'all-categories'}
         />
       </ProposalTranslationProvider>
 
