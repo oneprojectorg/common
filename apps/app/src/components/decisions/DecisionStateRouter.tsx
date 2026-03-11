@@ -25,10 +25,12 @@ function DecisionStateRouterNew({
   instanceId,
   slug,
   decisionSlug,
+  decisionProfileId,
 }: {
   instanceId: string;
   slug: string;
   decisionSlug?: string;
+  decisionProfileId?: string | null;
 }) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
@@ -62,6 +64,7 @@ function DecisionStateRouterNew({
         instanceId={instanceId}
         slug={slug}
         decisionSlug={decisionSlug}
+        decisionProfileId={decisionProfileId}
         allowProposals={allowProposals}
         description={description}
         currentPhase={currentPhase}
@@ -74,12 +77,15 @@ export function DecisionStateRouter({
   instanceId,
   slug,
   decisionSlug,
+  decisionProfileId,
   useLegacy = false,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
+  /** Decision profile ID for translating the decision content */
+  decisionProfileId?: string | null;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
@@ -91,6 +97,7 @@ export function DecisionStateRouter({
       instanceId={instanceId}
       slug={slug}
       decisionSlug={decisionSlug}
+      decisionProfileId={decisionProfileId}
     />
   );
 }

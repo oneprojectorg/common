@@ -951,5 +951,7 @@
   "<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.": "<highlight>{processName}</highlight> লাইভ হতে প্রস্তুত। আপনার প্রক্রিয়া চালু করলে অংশগ্রহণকারীদের আমন্ত্রণ জানানো এবং বিজ্ঞপ্তি পাঠানো হবে।",
   "You can always edit and invite participants after launching.": "চালু করার পরেও আপনি সম্পাদনা করতে এবং অংশগ্রহণকারীদের আমন্ত্রণ জানাতে পারবেন।",
   "Participants Invited": "আমন্ত্রিত অংশগ্রহণকারী",
-  "Manage Participants": "অংশগ্রহণকারীদের পরিচালনা করুন"
+  "Manage Participants": "অংশগ্রহণকারীদের পরিচালনা করুন",
+  "Failed to translate content": "বিষয়বস্তু অনুবাদ করতে ব্যর্থ হয়েছে",
+  "Translated with DeepL": "DeepL দিয়ে অনুবাদ করা হয়েছে"
 }

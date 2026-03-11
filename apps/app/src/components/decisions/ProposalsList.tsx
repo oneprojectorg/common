@@ -18,6 +18,7 @@ import { Link } from '@op/ui/Link';
 import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -27,6 +28,7 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import { useSetDecisionTranslation } from './DecisionTranslationContext';
 import {
   ProposalCard,
   ProposalCardActions,
@@ -119,15 +121,19 @@ export const ProposalListSkeleton = () => {
   );
 };
 
-const NoProposalsFound = () => {
+const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   const t = useTranslations();
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {t('No proposals found matching the current filters.')}
+        {hasFilter
+          ? t('No proposals found matching the current filters.')
+          : t('No proposals yet')}
       </Header3>
       <p className="text-base text-neutral-charcoal">
-        {t('Try adjusting your filter selection above.')}
+        {hasFilter
+          ? t('Try adjusting your filter selection above.')
+          : t('You could be the first one to submit a proposal')}
       </p>
     </EmptyState>
   );
@@ -142,6 +148,7 @@ interface ProposalsProps {
   isLoading: boolean;
   canManageProposals?: boolean;
   votedProposalIds?: string[];
+  hasFilter: boolean;
 }
 
 const VotingProposalsList = ({
@@ -150,6 +157,7 @@ const VotingProposalsList = ({
   slug,
   canManageProposals = false,
   votedProposalIds = [],
+  hasFilter,
 }: ProposalsProps) => {
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -205,7 +213,7 @@ const VotingProposalsList = ({
   };
 
   if (!proposals || proposals.length === 0) {
-    return <NoProposalsFound />;
+    return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
   return (
@@ -362,9 +370,10 @@ const ViewProposalsList = ({
   slug,
   decisionSlug,
   canManageProposals = false,
+  hasFilter,
 }: ProposalsProps) => {
   if (!proposals || proposals.length === 0) {
-    return <NoProposalsFound />;
+    return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
   return (
@@ -461,11 +470,14 @@ export const ProposalsList = ({
   slug,
   instanceId,
   decisionSlug,
+  decisionProfileId,
 }: {
   slug: string;
   instanceId: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
+  /** Decision profile ID for translating the decision content */
+  decisionProfileId?: string | null;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -569,6 +581,8 @@ export const ProposalsList = ({
     sourceLocale: string;
   } | null>(null);
 
+  const setDecisionTranslation = useSetDecisionTranslation();
+
   const translateBatchMutation =
     trpc.translation.translateProposals.useMutation({
       onSuccess: (data) => {
@@ -579,21 +593,66 @@ export const ProposalsList = ({
       },
     });
 
+  const translateDecisionMutation =
+    trpc.translation.translateDecision.useMutation({
+      onSuccess: (data) => {
+        if (data.sourceLocale) {
+          // Set translationState from decision result when no proposals were translated
+          setTranslationState((prev) =>
+            prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
+          );
+        }
+        if (
+          !data.headline &&
+          !data.phaseDescription &&
+          !data.additionalInfo &&
+          !data.description &&
+          data.phases.length === 0
+        ) {
+          return;
+        }
+        setDecisionTranslation({
+          headline: data.headline,
+          phaseDescription: data.phaseDescription,
+          additionalInfo: data.additionalInfo,
+          description: data.description,
+          phases: data.phases,
+        });
+      },
+      onError: () => {
+        toast.error({ message: t('Failed to translate content') });
+      },
+    });
+
   const handleTranslate = useCallback(() => {
     if (!supportedLocale) {
       return;
     }
     const profileIds = allProposals?.map((p) => p.profileId);
-    if (!profileIds?.length) {
-      return;
+    if (profileIds?.length) {
+      translateBatchMutation.mutate({
+        profileIds,
+        targetLocale: supportedLocale,
+      });
     }
-    translateBatchMutation.mutate({
-      profileIds,
-      targetLocale: supportedLocale,
-    });
-  }, [translateBatchMutation, allProposals, supportedLocale]);
+    if (decisionProfileId) {
+      translateDecisionMutation.mutate({
+        decisionProfileId,
+        targetLocale: supportedLocale,
+      });
+    }
+  }, [
+    translateBatchMutation,
+    translateDecisionMutation,
+    allProposals,
+    supportedLocale,
+    decisionProfileId,
+  ]);
 
-  const handleViewOriginal = useCallback(() => setTranslationState(null), []);
+  const handleViewOriginal = useCallback(() => {
+    setTranslationState(null);
+    setDecisionTranslation(null);
+  }, [setDecisionTranslation]);
 
   const languageNames = useMemo(
     () => new Intl.DisplayNames([locale], { type: 'language' }),
@@ -756,9 +815,7 @@ export const ProposalsList = ({
       {/* Translation attribution */}
       {translationState && (
         <p className="text-sm text-neutral-gray3">
-          {t('Translated from {language}', {
-            language: sourceLanguageName,
-          })}{' '}
+          {t('Translated from {language}', { language: sourceLanguageName })}{' '}
           &middot;{' '}
           <Link onPress={handleViewOriginal} className="text-sm font-semibold">
             {t('View original')}
@@ -777,6 +834,7 @@ export const ProposalsList = ({
           decisionSlug={decisionSlug}
           canManageProposals={canManageProposals}
           votedProposalIds={selectedProposalIds}
+          hasFilter={selectedCategory !== 'all-categories'}
         />
       </ProposalTranslationProvider>
 

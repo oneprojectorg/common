@@ -7,6 +7,7 @@ import { ReactNode } from 'react';
 
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
+import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 
 interface DecisionHeaderProps {
   instanceId: string;
@@ -87,18 +88,19 @@ export async function DecisionHeader({
         decisionSlug={decisionSlug}
         decisionProfileId={decisionProfileId}
       />
-
-      <div className="flex flex-col overflow-x-auto sm:items-center">
-        <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
-          <DecisionProcessStepper
-            phases={phases}
-            currentStateId={instance.currentStateId || ''}
-            className="mx-auto"
-          />
+      <DecisionTranslationProvider>
+        <div className="flex flex-col overflow-x-auto sm:items-center">
+          <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
+            <DecisionProcessStepper
+              phases={phases}
+              currentStateId={instance.currentStateId || ''}
+              className="mx-auto"
+            />
+          </div>
         </div>
-      </div>
 
-      {children}
+        {children}
+      </DecisionTranslationProvider>
     </div>
   );
 }

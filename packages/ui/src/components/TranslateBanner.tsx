@@ -2,6 +2,7 @@ import { LuLanguages, LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { Button } from './Button';
+import { Tooltip, TooltipTrigger } from './Tooltip';
 
 export interface TranslateBannerProps
   extends Omit<React.ComponentProps<'div'>, 'children'> {
@@ -11,6 +12,7 @@ export interface TranslateBannerProps
   translateAriaLabel?: string;
   dismissAriaLabel?: string;
   isTranslating?: boolean;
+  tooltip?: string;
 }
 
 /**
@@ -26,9 +28,25 @@ export const TranslateBanner = ({
   translateAriaLabel,
   dismissAriaLabel = 'Dismiss',
   isTranslating = false,
+  tooltip,
   className,
   ...props
 }: TranslateBannerProps) => {
+  const translateButton = (
+    <Button
+      onPress={onTranslate}
+      isDisabled={isTranslating}
+      aria-label={translateAriaLabel ?? label}
+      unstyled
+      className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full text-left text-primary-teal outline-hidden transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite">
+        <LuLanguages className="size-4" />
+      </span>
+      <span className="text-sm leading-5 whitespace-nowrap">{label}</span>
+    </Button>
+  );
+
   return (
     <div
       className={cn(
@@ -37,18 +55,14 @@ export const TranslateBanner = ({
       )}
       {...props}
     >
-      <Button
-        onPress={onTranslate}
-        isDisabled={isTranslating}
-        aria-label={translateAriaLabel ?? label}
-        unstyled
-        className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full text-left text-primary-teal outline-hidden transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite">
-          <LuLanguages className="size-4" />
-        </span>
-        <span className="text-sm leading-5 whitespace-nowrap">{label}</span>
-      </Button>
+      {tooltip ? (
+        <TooltipTrigger>
+          {translateButton}
+          <Tooltip>{tooltip}</Tooltip>
+        </TooltipTrigger>
+      ) : (
+        translateButton
+      )}
 
       <Button
         onPress={onDismiss}

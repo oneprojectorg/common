@@ -39,6 +39,7 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
             instanceId={instanceId}
             slug={ownerSlug}
             decisionSlug={slug}
+            decisionProfileId={decisionProfile.id}
           />
         </Suspense>
       </DecisionHeader>
