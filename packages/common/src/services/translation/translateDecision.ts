@@ -46,7 +46,7 @@ export async function translateDecision({
   sourceLocale: string;
   targetLocale: SupportedLocale;
 }> {
-  const rows = await db
+  const instances = await db
     .select({
       description: processInstances.description,
       instanceData: processInstances.instanceData,
@@ -63,20 +63,25 @@ export async function translateDecision({
     )
     .limit(1);
 
-  if (rows.length === 0) {
+  if (instances.length === 0) {
     throw new NotFoundError('Decision profile not found');
   }
 
-  const row = rows[0]!;
+  const processInstance = instances[0]!;
 
-  await assertInstanceProfileAccess({
+  // Start the permission check immediately so it runs in parallel with translation
+  const authPromise = assertInstanceProfileAccess({
     user,
-    instance: { profileId: row.profileId, ownerProfileId: row.ownerProfileId },
+    instance: {
+      profileId: processInstance.profileId,
+      ownerProfileId: processInstance.ownerProfileId,
+    },
     profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  const instanceData = row.instanceData as DecisionInstanceData | null;
+  const instanceData =
+    processInstance.instanceData as DecisionInstanceData | null;
   const currentPhaseId = instanceData?.currentPhaseId;
   const currentPhase = currentPhaseId
     ? instanceData?.phases?.find((p) => p.phaseId === currentPhaseId)
@@ -114,18 +119,22 @@ export async function translateDecision({
     }
   }
 
-  if (row.description) {
+  if (processInstance.description) {
     entries.push({
       contentKey: `decision:${decisionProfileId}:description`,
-      text: row.description,
+      text: processInstance.description,
     });
   }
 
   if (entries.length === 0) {
+    await authPromise;
     return { translated: {}, sourceLocale: '', targetLocale };
   }
 
-  const results = await runTranslateBatch(entries, targetLocale);
+  const [, results] = await Promise.all([
+    authPromise,
+    runTranslateBatch(entries, targetLocale),
+  ]);
 
   const prefix = `decision:${decisionProfileId}:`;
   const translated: Record<string, string> = {};

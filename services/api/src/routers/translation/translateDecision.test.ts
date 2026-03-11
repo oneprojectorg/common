@@ -334,6 +334,19 @@ describe.concurrent('translation.translateDecision', () => {
       throw new Error('No instance created');
     }
 
+    // Clean up any cache entries written before auth fails (runTranslateBatch runs
+    // in parallel with the auth check and may write rows before rejection)
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(
+            contentTranslations.contentKey,
+            `decision:${instance.profileId}:%`,
+          ),
+        );
+    });
+
     // Create a separate user from a completely different org — no access to this decision
     const otherData = new TestDecisionsDataManager(task.id, onTestFinished);
     const otherSetup = await otherData.createDecisionSetup({
