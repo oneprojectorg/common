@@ -326,6 +326,9 @@ export function changeFieldType(
       ...fresh,
       title: existing.title,
       ...(existing.description ? { description: existing.description } : {}),
+      // Carry forward dropdown options so switching away and back doesn't lose them.
+      // Non-dropdown types ignore `oneOf`; dropdown restores it.
+      ...(existing.oneOf ? { oneOf: existing.oneOf } : {}),
     };
   });
 }
