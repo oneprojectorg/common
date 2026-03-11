@@ -97,54 +97,43 @@ export const getProfileAccessUser = async ({
   user: { id: string };
   profileId: string;
 }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
-  const getProfileUser = async () => {
-    const profileUser = await db._query.profileUsers.findFirst({
-      where: (table, { eq }) =>
-        and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
-      with: {
-        profile: true,
-        roles: {
-          with: {
-            accessRole: {
-              with: {
-                zonePermissions: {
-                  with: {
-                    accessZone: true,
-                  },
+  const profileUser = await db._query.profileUsers.findFirst({
+    where: (table, { eq }) =>
+      and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
+    with: {
+      profile: true,
+      roles: {
+        with: {
+          accessRole: {
+            with: {
+              zonePermissions: {
+                with: {
+                  accessZone: true,
                 },
               },
             },
           },
         },
       },
-    });
-
-    if (!profileUser) {
-      return undefined;
-    }
-
-    // Transform the relational data into normalized format for access-zones library
-    // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
-    const normalizedRoles = getNormalizedRoles(
-      profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
-    );
-
-    const { roles: _, ...profileUserWithoutRoles } = profileUser;
-    return {
-      ...profileUserWithoutRoles,
-      profile: profileUser.profile as Profile,
-      roles: normalizedRoles,
-    };
-  };
-
-  return cache({
-    type: 'profileUser',
-    params: [profileId, user.id],
-    fetch: getProfileUser,
-    options: {
-      skipMemCache: true,
     },
   });
+
+  if (!profileUser) {
+    return undefined;
+  }
+
+  // Transform the relational data into normalized format for access-zones library
+  // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
+  const normalizedRoles = getNormalizedRoles(
+    profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+  );
+
+  const { roles: _, ...profileUserWithoutRoles } = profileUser;
+  return {
+    ...profileUserWithoutRoles,
+    profile: profileUser.profile as Profile,
+    roles: normalizedRoles,
+  };
 };
 
 /**
