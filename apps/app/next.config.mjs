@@ -3,7 +3,6 @@ import { getPreviewApiUrl } from '@op/core/previews';
 import { withPostHogConfig } from '@posthog/nextjs-config';
 import dotenv from 'dotenv';
 import createNextIntlPlugin from 'next-intl/plugin';
-import Icons from 'unplugin-icons/webpack';
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
 
@@ -85,13 +84,6 @@ const config = {
         resourceQuery: { not: [...fileLoaderRule.resourceQuery.not, /url/] }, // exclude if *.svg?url
         use: ['@svgr/webpack'],
       },
-    );
-
-    cfg.plugins.push(
-      Icons({
-        compiler: 'jsx',
-        jsx: 'react',
-      }),
     );
 
     // Modify the file loader rule to ignore *.svg, since we have it handled now.

@@ -101,7 +101,6 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@iconify/json": "2.2.311",
     "@op/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "4.1.18",
     "@tanstack/react-query-devtools": "5.66.11",
@@ -114,7 +113,6 @@
     "postcss": "^8.5.3",
     "tailwindcss": "4.1.18",
     "typescript": "5.7.3",
-    "unplugin-icons": "22.1.0",
     "vitest": "catalog:"
   }
 }
