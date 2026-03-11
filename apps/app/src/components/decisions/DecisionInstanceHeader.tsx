@@ -1,6 +1,5 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
 import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
@@ -15,7 +14,7 @@ export const DecisionInstanceHeader = ({
   backTo,
   title,
   decisionSlug,
-  decisionProfileId,
+  isAdmin,
 }: {
   backTo: {
     label?: string;
@@ -23,13 +22,9 @@ export const DecisionInstanceHeader = ({
   };
   title: string;
   decisionSlug?: string;
-  decisionProfileId?: string | null;
+  isAdmin?: boolean;
 }) => {
   const t = useTranslations();
-  const access = useUser();
-  const isAdmin =
-    decisionProfileId &&
-    access.getPermissionsForProfile(decisionProfileId).decisions.admin;
 
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">

@@ -103,10 +103,16 @@ export const updateProfileUserRoles = async ({
     });
   }
 
-  await invalidate({
-    type: 'profileUser',
-    params: [targetProfileId, targetProfileUser.authUserId],
-  });
+  await Promise.all([
+    invalidate({
+      type: 'profileUser',
+      params: [targetProfileId, targetProfileUser.authUserId],
+    }),
+    invalidate({
+      type: 'user',
+      params: [targetProfileUser.authUserId],
+    }),
+  ]);
 
   // Fetch and return the updated profile user with full relations
   const updatedProfileUser = await getProfileUserWithRelations(profileUserId);

@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -48,6 +49,17 @@ export const removeProfileUser = async ({
   if (!deletedUser) {
     throw new NotFoundError('Failed to delete profile user');
   }
+
+  await Promise.all([
+    invalidate({
+      type: 'profileUser',
+      params: [deletedUser.profileId, deletedUser.authUserId],
+    }),
+    invalidate({
+      type: 'user',
+      params: [deletedUser.authUserId],
+    }),
+  ]);
 
   return deletedUser;
 };
