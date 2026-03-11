@@ -243,7 +243,7 @@ export function OverviewSectionForm({
                   description={t(
                     'The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.',
                   )}
-                  errorMessage={getFieldErrorMessage(field)}
+                  errorMessage={getFieldErrorMessage(field, { requireBlur: true })}
                 >
                   {profileItems.map((item) => (
                     <SelectItem key={item.id} id={item.id}>
@@ -266,7 +266,7 @@ export function OverviewSectionForm({
                   inputProps={{
                     placeholder: t('My new process'),
                   }}
-                  errorMessage={getFieldErrorMessage(field)}
+                  errorMessage={getFieldErrorMessage(field, { requireBlur: true })}
                   maxLength={50}
                 />
               )}
@@ -285,7 +285,7 @@ export function OverviewSectionForm({
                   textareaProps={{
                     placeholder: t('A description about my process'),
                   }}
-                  errorMessage={getFieldErrorMessage(field)}
+                  errorMessage={getFieldErrorMessage(field, { requireBlur: true })}
                   maxLength={250}
                   description={t(
                     'This information appears when participants want to learn more about the process',
