@@ -287,6 +287,7 @@ function renderField(
           <ReadonlyTextField
             title={schema.title}
             description={schema.description}
+            required={field.required}
             content={
               mode === 'preview-version' ? (previewContent ?? null) : null
             }
@@ -355,6 +356,7 @@ function renderField(
             value={selectedOption?.label ?? null}
             title={schema.title}
             description={schema.description}
+            required={field.required}
             placeholder={t('Select option')}
           />
         );
