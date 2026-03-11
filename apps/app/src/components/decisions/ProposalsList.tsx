@@ -588,11 +588,19 @@ export const ProposalsList = ({
   const translateDecisionMutation =
     trpc.translation.translateDecision.useMutation({
       onSuccess: (data) => {
+        // Extract translated phase names from keys of the form "phase:{id}:name"
+        const phases = Object.entries(data.translated)
+          .filter(([key]) => key.startsWith('phase:') && key.endsWith(':name'))
+          .map(([key, name]) => ({
+            id: key.slice('phase:'.length, -':name'.length),
+            name,
+          }));
         setDecisionTranslation({
           headline: data.translated.headline,
           phaseDescription: data.translated.phaseDescription,
           additionalInfo: data.translated.additionalInfo,
           description: data.translated.description,
+          phases: phases.length > 0 ? phases : undefined,
         });
       },
     });

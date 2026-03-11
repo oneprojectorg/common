@@ -7,11 +7,25 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
+import { type JSONContent, generateText } from '@tiptap/core';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import type { DecisionInstanceData } from '../decision/schemas/instanceData';
+import { serverExtensions } from '../decision/tiptapExtensions';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
+
+/** Extract plain text from a TipTap JSON string. Falls back to the raw string for plain text content. */
+function extractTextFromTipTap(content: string): string {
+  try {
+    return generateText(
+      JSON.parse(content) as JSONContent,
+      serverExtensions,
+    ).trim();
+  } catch {
+    return content;
+  }
+}
 
 /**
  * Translates a decision's current-phase content (headline, description,
@@ -93,8 +107,17 @@ export async function translateDecision({
   if (currentPhase?.additionalInfo) {
     entries.push({
       contentKey: `decision:${decisionProfileId}:additionalInfo`,
-      text: currentPhase.additionalInfo,
+      text: extractTextFromTipTap(currentPhase.additionalInfo),
     });
+  }
+
+  for (const phase of instanceData?.phases ?? []) {
+    if (phase.name) {
+      entries.push({
+        contentKey: `decision:${decisionProfileId}:phase:${phase.phaseId}:name`,
+        text: phase.name,
+      });
+    }
   }
 
   if (row.description) {
