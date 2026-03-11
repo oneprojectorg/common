@@ -1,34 +1,37 @@
 import { and, db, eq } from '@op/db/client';
-import {
-  EntityType,
-  processInstances,
-  profileUsers,
-  profiles,
-} from '@op/db/schema';
+import { EntityType, processInstances, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 import type { JSONContent } from '@tiptap/core';
 import { generateHTML } from '@tiptap/html';
+import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
+import { assertInstanceProfileAccess } from '../access';
 import type { DecisionInstanceData } from '../decision/schemas/instanceData';
 import { serverExtensions } from '../decision/tiptapExtensions';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
-/** Render a TipTap JSON string to HTML for translation. Falls back to the raw string for plain text content. */
+/**
+ * Render a TipTap JSON string to HTML for translation.
+ * Falls back to the raw string if content is not valid JSON (plain text).
+ * Throws if JSON parses but HTML rendering fails, to avoid caching corrupt data.
+ */
 function renderTipTapToHtml(content: string): string {
+  let parsed: JSONContent;
   try {
-    return generateHTML(JSON.parse(content) as JSONContent, serverExtensions);
+    parsed = JSON.parse(content) as JSONContent;
   } catch {
     return content;
   }
+  return generateHTML(parsed, serverExtensions);
 }
 
 /**
  * Translates a decision's current-phase content (headline, description,
- * additionalInfo) and the process-level description into the target locale
- * via DeepL with cache-through semantics.
+ * additionalInfo, phase names) and the process-level description into the
+ * target locale via DeepL with cache-through semantics.
  */
 export async function translateDecision({
   decisionProfileId,
@@ -43,23 +46,15 @@ export async function translateDecision({
   sourceLocale: string;
   targetLocale: SupportedLocale;
 }> {
-  // LEFT JOIN profileUsers so we can distinguish "not found" from "unauthorized"
   const rows = await db
     .select({
-      profileId: profiles.id,
       description: processInstances.description,
       instanceData: processInstances.instanceData,
-      authUserId: profileUsers.authUserId,
+      profileId: processInstances.profileId,
+      ownerProfileId: processInstances.ownerProfileId,
     })
-    .from(profiles)
-    .leftJoin(
-      profileUsers,
-      and(
-        eq(profileUsers.profileId, profiles.id),
-        eq(profileUsers.authUserId, user.id),
-      ),
-    )
-    .innerJoin(processInstances, eq(processInstances.profileId, profiles.id))
+    .from(processInstances)
+    .innerJoin(profiles, eq(processInstances.profileId, profiles.id))
     .where(
       and(
         eq(profiles.id, decisionProfileId),
@@ -74,11 +69,12 @@ export async function translateDecision({
 
   const row = rows[0]!;
 
-  if (!row.authUserId) {
-    throw new UnauthorizedError(
-      'User does not have access to this decision profile',
-    );
-  }
+  await assertInstanceProfileAccess({
+    user,
+    instance: { profileId: row.profileId, ownerProfileId: row.ownerProfileId },
+    profilePermissions: { decisions: permission.READ },
+    orgFallbackPermissions: { decisions: permission.READ },
+  });
 
   const instanceData = row.instanceData as DecisionInstanceData | null;
   const currentPhaseId = instanceData?.currentPhaseId;

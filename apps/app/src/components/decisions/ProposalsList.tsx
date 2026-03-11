@@ -18,6 +18,7 @@ import { Link } from '@op/ui/Link';
 import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -468,7 +469,7 @@ export const ProposalsList = ({
   instanceId: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision header */
+  /** Decision profile ID for translating the decision content */
   decisionProfileId?: string | null;
 }) => {
   const t = useTranslations();
@@ -588,6 +589,9 @@ export const ProposalsList = ({
   const translateDecisionMutation =
     trpc.translation.translateDecision.useMutation({
       onSuccess: (data) => {
+        if (Object.keys(data.translated).length === 0) {
+          return;
+        }
         // Extract translated phase names from keys of the form "phase:{id}:name"
         const phases = Object.entries(data.translated)
           .filter(([key]) => key.startsWith('phase:') && key.endsWith(':name'))
@@ -602,6 +606,9 @@ export const ProposalsList = ({
           description: data.translated.description,
           phases: phases.length > 0 ? phases : undefined,
         });
+      },
+      onError: () => {
+        toast.error({ message: t('Failed to translate content') });
       },
     });
 

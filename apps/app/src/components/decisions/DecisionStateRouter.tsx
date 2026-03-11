@@ -84,7 +84,7 @@ export function DecisionStateRouter({
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision header */
+  /** Decision profile ID for translating the decision content */
   decisionProfileId?: string | null;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;

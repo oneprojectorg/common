@@ -944,5 +944,6 @@
   "<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.": "<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.",
   "You can always edit and invite participants after launching.": "You can always edit and invite participants after launching.",
   "Participants Invited": "Participants Invited",
-  "Manage Participants": "Manage Participants"
+  "Manage Participants": "Manage Participants",
+  "Failed to translate content": "Failed to translate content"
 }

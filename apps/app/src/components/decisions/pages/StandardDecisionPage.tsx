@@ -29,7 +29,7 @@ export function StandardDecisionPage({
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision content */
+  /** Decision profile ID for translating the decision content (phase titles, headline, descriptions) */
   decisionProfileId?: string | null;
   /** Whether proposal submission is allowed in the current phase */
   allowProposals: boolean;

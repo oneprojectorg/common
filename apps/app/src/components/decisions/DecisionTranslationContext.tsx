@@ -39,7 +39,9 @@ export function DecisionTranslationProvider({
 export function useDecisionTranslation(): DecisionTranslation | null {
   const ctx = useContext(DecisionTranslationContext);
   if (!ctx) {
-    return null;
+    throw new Error(
+      'useDecisionTranslation must be used within a DecisionTranslationProvider',
+    );
   }
   return ctx.translation;
 }
@@ -49,7 +51,9 @@ export function useSetDecisionTranslation(): (
 ) => void {
   const ctx = useContext(DecisionTranslationContext);
   if (!ctx) {
-    return () => {};
+    throw new Error(
+      'useSetDecisionTranslation must be used within a DecisionTranslationProvider',
+    );
   }
   return ctx.setTranslation;
 }
