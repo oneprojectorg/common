@@ -9,7 +9,6 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import { cn } from '@op/ui/utils';
 import { useRef, useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -20,7 +19,7 @@ import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/st
 import { ensureLockedFields } from '@/components/decisions/proposalTemplate';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
-const CATEGORY_TITLE_MAX_LENGTH = 40;
+const CATEGORY_TITLE_MAX_LENGTH = 50;
 
 interface CategoryConfig {
   categories: ProposalCategory[];
@@ -288,28 +287,17 @@ export function ProposalCategoriesSectionContent({
             {editingId ? t('Edit category') : t('Add category')}
           </Header3>
           <div className="space-y-4">
-            <div className="-space-y-4">
-              <TextField
-                label={t('Shorthand')}
-                isRequired
-                value={formLabel}
-                onChange={setFormLabel}
-                inputProps={{
-                  placeholder: t('e.g., Education'),
-                  maxLength: CATEGORY_TITLE_MAX_LENGTH,
-                }}
-                description={t('1-3 words. Appears in dropdowns and cards.')}
-              />
-              <span
-                className={cn(
-                  'block text-right text-xs text-neutral-gray4',
-                  formLabel.length === CATEGORY_TITLE_MAX_LENGTH &&
-                    'text-functional-red',
-                )}
-              >
-                {formLabel.length}/{CATEGORY_TITLE_MAX_LENGTH}
-              </span>
-            </div>
+            <TextField
+              label={t('Shorthand')}
+              isRequired
+              value={formLabel}
+              onChange={setFormLabel}
+              inputProps={{
+                placeholder: t('e.g., Education'),
+              }}
+              description={t('1-3 words. Appears in dropdowns and cards.')}
+              maxLength={CATEGORY_TITLE_MAX_LENGTH}
+            />
             <TextField
               useTextArea
               label={t('Full description')}
