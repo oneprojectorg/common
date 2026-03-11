@@ -2,6 +2,7 @@
 
 import { type ProcessPhase } from '@op/api/encoders';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
+import { useMemo } from 'react';
 
 import { useDecisionTranslation } from './DecisionTranslationContext';
 
@@ -15,14 +16,18 @@ export function DecisionProcessStepper({
   className?: string;
 }) {
   const translation = useDecisionTranslation();
-  const translatedPhaseNames = translation?.phases
-    ? new Map(translation.phases.map((p) => [p.id, p.name]))
-    : new Map<string, string>();
+  const translatedPhaseNames = useMemo(
+    () =>
+      translation?.phases
+        ? new Map(translation.phases.map((p) => [p.id, p.name]))
+        : null,
+    [translation?.phases],
+  );
 
   // Transform ProcessPhase to Phase format for PhaseStepper
   const transformedPhases: Phase[] = phases.map((phase) => ({
     id: phase.id,
-    name: translatedPhaseNames.get(phase.id) ?? phase.name,
+    name: translatedPhaseNames?.get(phase.id) ?? phase.name,
     description: phase.description,
     startDate: phase.phase?.startDate,
     endDate: phase.phase?.endDate,
