@@ -7,7 +7,7 @@ interface DecisionTranslation {
   phaseDescription?: string;
   additionalInfo?: string;
   description?: string;
-  phases?: Array<{ id: string; name: string }>;
+  phases: Array<{ id: string; name: string }>;
 }
 
 interface DecisionTranslationContextValue {

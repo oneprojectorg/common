@@ -18,10 +18,10 @@ export function DecisionProcessStepper({
   const translation = useDecisionTranslation();
   const translatedPhaseNames = useMemo(
     () =>
-      translation?.phases
+      translation
         ? new Map(translation.phases.map((p) => [p.id, p.name]))
         : null,
-    [translation?.phases],
+    [translation],
   );
 
   // Transform ProcessPhase to Phase format for PhaseStepper

@@ -19,6 +19,7 @@ import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -589,22 +590,21 @@ export const ProposalsList = ({
   const translateDecisionMutation =
     trpc.translation.translateDecision.useMutation({
       onSuccess: (data) => {
-        if (Object.keys(data.translated).length === 0) {
+        if (
+          !data.headline &&
+          !data.phaseDescription &&
+          !data.additionalInfo &&
+          !data.description &&
+          data.phases.length === 0
+        ) {
           return;
         }
-        // Extract translated phase names from keys of the form "phase:{id}:name"
-        const phases = Object.entries(data.translated)
-          .filter(([key]) => key.startsWith('phase:') && key.endsWith(':name'))
-          .map(([key, name]) => ({
-            id: key.slice('phase:'.length, -':name'.length),
-            name,
-          }));
         setDecisionTranslation({
-          headline: data.translated.headline,
-          phaseDescription: data.translated.phaseDescription,
-          additionalInfo: data.translated.additionalInfo,
-          description: data.translated.description,
-          phases: phases.length > 0 ? phases : undefined,
+          headline: data.headline,
+          phaseDescription: data.phaseDescription,
+          additionalInfo: data.additionalInfo,
+          description: data.description,
+          phases: data.phases,
         });
       },
       onError: () => {
@@ -804,9 +804,14 @@ export const ProposalsList = ({
       {/* Translation attribution */}
       {translationState && (
         <p className="text-sm text-neutral-gray3">
-          {t('Translated from {language}', {
-            language: sourceLanguageName,
-          })}{' '}
+          <TooltipTrigger>
+            <span className="cursor-default" tabIndex={0}>
+              {t('Translated from {language}', {
+                language: sourceLanguageName,
+              })}
+            </span>
+            <Tooltip>{t('Translated with DeepL')}</Tooltip>
+          </TooltipTrigger>{' '}
           &middot;{' '}
           <Link onPress={handleViewOriginal} className="text-sm font-semibold">
             {t('View original')}

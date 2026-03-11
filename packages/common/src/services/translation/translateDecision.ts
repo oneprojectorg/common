@@ -42,7 +42,11 @@ export async function translateDecision({
   targetLocale: SupportedLocale;
   user: User;
 }): Promise<{
-  translated: Record<string, string>;
+  headline?: string;
+  phaseDescription?: string;
+  additionalInfo?: string;
+  description?: string;
+  phases: Array<{ id: string; name: string }>;
   sourceLocale: string;
   targetLocale: SupportedLocale;
 }> {
@@ -128,7 +132,7 @@ export async function translateDecision({
 
   if (entries.length === 0) {
     await authPromise;
-    return { translated: {}, sourceLocale: '', targetLocale };
+    return { phases: [], sourceLocale: '', targetLocale };
   }
 
   const [, results] = await Promise.all([
@@ -137,19 +141,47 @@ export async function translateDecision({
   ]);
 
   const prefix = `decision:${decisionProfileId}:`;
-  const translated: Record<string, string> = {};
+  const phasePrefix = `${prefix}phase:`;
+  let headline: string | undefined;
+  let phaseDescription: string | undefined;
+  let additionalInfo: string | undefined;
+  let description: string | undefined;
+  const phases: Array<{ id: string; name: string }> = [];
   let sourceLocale = '';
 
   for (const result of results) {
-    const fieldName = result.contentKey.startsWith(prefix)
+    const key = result.contentKey.startsWith(prefix)
       ? result.contentKey.slice(prefix.length)
       : result.contentKey;
-    translated[fieldName] = result.translatedText;
+
+    if (key === 'headline') {
+      headline = result.translatedText;
+    } else if (key === 'phaseDescription') {
+      phaseDescription = result.translatedText;
+    } else if (key === 'additionalInfo') {
+      additionalInfo = result.translatedText;
+    } else if (key === 'description') {
+      description = result.translatedText;
+    } else if (
+      result.contentKey.startsWith(phasePrefix) &&
+      result.contentKey.endsWith(':name')
+    ) {
+      const id = result.contentKey.slice(phasePrefix.length, -':name'.length);
+      phases.push({ id, name: result.translatedText });
+    }
 
     if (!sourceLocale && result.sourceLocale) {
       sourceLocale = result.sourceLocale;
     }
   }
 
-  return { translated, sourceLocale, targetLocale };
+  return {
+    headline,
+    phaseDescription,
+    additionalInfo,
+    description,
+    phases,
+    sourceLocale,
+    targetLocale,
+  };
 }

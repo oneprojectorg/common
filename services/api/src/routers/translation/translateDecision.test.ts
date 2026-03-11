@@ -99,14 +99,14 @@ describe.concurrent('translation.translateDecision', () => {
 
     expect(result.targetLocale).toBe('es');
     expect(result.sourceLocale).toBe('EN');
-    expect(result.translated.headline).toBe('[ES] Submit Your Ideas');
-    expect(result.translated.phaseDescription).toBe(
-      '[ES] Tell us about your proposal',
-    );
-    expect(result.translated['phase:initial:name']).toBe(
+    expect(result.headline).toBe('[ES] Submit Your Ideas');
+    expect(result.phaseDescription).toBe('[ES] Tell us about your proposal');
+    expect(result.phases.find((p) => p.id === 'initial')?.name).toBe(
       '[ES] Idea Collection',
     );
-    expect(result.translated['phase:final:name']).toBe('[ES] Final Review');
+    expect(result.phases.find((p) => p.id === 'final')?.name).toBe(
+      '[ES] Final Review',
+    );
   });
 
   it('should render additionalInfo TipTap JSON to HTML before translating', async ({
@@ -175,8 +175,8 @@ describe.concurrent('translation.translateDecision', () => {
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
     );
-    expect(result.translated.additionalInfo).toContain('[ES]');
-    expect(result.translated.additionalInfo).toContain('<p');
+    expect(result.additionalInfo).toContain('[ES]');
+    expect(result.additionalInfo).toContain('<p');
   });
 
   it('should return empty translated when instance has no translatable content', async ({
@@ -227,7 +227,11 @@ describe.concurrent('translation.translateDecision', () => {
       targetLocale: 'es',
     });
 
-    expect(result.translated).toEqual({});
+    expect(result.headline).toBeUndefined();
+    expect(result.phaseDescription).toBeUndefined();
+    expect(result.additionalInfo).toBeUndefined();
+    expect(result.description).toBeUndefined();
+    expect(result.phases).toEqual([]);
     expect(result.sourceLocale).toBe('');
   });
 
@@ -295,8 +299,10 @@ describe.concurrent('translation.translateDecision', () => {
     });
 
     // Headline comes from cache ([ES-CACHED]), phase name goes through DeepL ([ES])
-    expect(result.translated.headline).toBe('[ES-CACHED] Share Your Vision');
-    expect(result.translated['phase:initial:name']).toBe('[ES] Ideation');
+    expect(result.headline).toBe('[ES-CACHED] Share Your Vision');
+    expect(result.phases.find((p) => p.id === 'initial')?.name).toBe(
+      '[ES] Ideation',
+    );
   });
 
   it('should throw NotFoundError for non-existent decisionProfileId', async ({
@@ -420,6 +426,6 @@ describe.concurrent('translation.translateDecision', () => {
       targetLocale: 'es',
     });
 
-    expect(result.translated.headline).toBe('[ES] Org Member Test');
+    expect(result.headline).toBe('[ES] Org Member Test');
   });
 });
