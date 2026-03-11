@@ -27,9 +27,9 @@ export const DecisionInstanceHeader = ({
 }) => {
   const t = useTranslations();
   const access = useUser();
-  const canManageProcess =
+  const isAdmin =
     decisionProfileId &&
-    access.getPermissionsForProfile(decisionProfileId).decisions.admin;
+    access.getPermissionsForProfile(decisionProfileId).admin;
 
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
@@ -52,7 +52,7 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
-        {canManageProcess && decisionSlug && (
+        {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
             color="secondary"
