@@ -10,8 +10,9 @@ import { Select, SelectItem } from '@op/ui/Select';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { cn } from '@op/ui/utils';
 import type { Key } from 'react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,6 +42,7 @@ interface FieldCardProps {
     updates: Partial<XFormatPropertySchema>,
   ) => void;
   onChangeFieldType?: (fieldId: string, newType: FieldType) => void;
+  isNew?: boolean;
 }
 
 const FIELD_TYPE_OPTIONS = (
@@ -71,9 +73,16 @@ export function FieldCard({
   onUpdateRequired,
   onUpdateJsonSchema,
   onChangeFieldType,
+  isNew,
 }: FieldCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isNew) {
+      cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [isNew]);
 
   const Icon = getFieldIcon(field.fieldType);
   const ConfigComponent = getFieldConfigComponent(field.fieldType);
@@ -92,7 +101,7 @@ export function FieldCard({
   const badgeLabel = field.required ? t('Required') : t('Optional');
 
   return (
-    <div ref={cardRef} onBlur={handleBlur}>
+    <div ref={cardRef} onBlur={handleBlur} className="scroll-m-6">
       <CollapsibleConfigCard
         icon={Icon}
         label={displayLabel}
@@ -102,14 +111,18 @@ export function FieldCard({
         onExpandedChange={onExpandedChange}
         controls={controls}
         dragHandleAriaLabel={t('Drag to reorder {field}', {
-          field: field.label,
+          field: displayLabel,
         })}
-        className={errors.length > 0 ? 'border-functional-red' : undefined}
+        className={cn(
+          isNew && 'animate-border-highlight',
+          errors.length > 0 && 'border-functional-red',
+        )}
       >
         <div className="space-y-4 px-8">
           {/* Field name + Type selector row */}
           <div className="flex items-start gap-3">
             <TextField
+              autoFocus={isNew}
               label={t('Field name')}
               value={field.label}
               onChange={(value) => onUpdateLabel?.(field.id, value)}
@@ -119,7 +132,6 @@ export function FieldCard({
               }}
               className="min-w-0 flex-1"
               isRequired
-              description={`${field.label.length}/50`}
             />
             <Select
               label={t('Type')}
