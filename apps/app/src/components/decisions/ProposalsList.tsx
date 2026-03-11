@@ -19,7 +19,6 @@ import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -590,6 +589,12 @@ export const ProposalsList = ({
   const translateDecisionMutation =
     trpc.translation.translateDecision.useMutation({
       onSuccess: (data) => {
+        if (data.sourceLocale) {
+          // Set translationState from decision result when no proposals were translated
+          setTranslationState((prev) =>
+            prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
+          );
+        }
         if (
           !data.headline &&
           !data.phaseDescription &&
@@ -617,13 +622,12 @@ export const ProposalsList = ({
       return;
     }
     const profileIds = allProposals?.map((p) => p.profileId);
-    if (!profileIds?.length) {
-      return;
+    if (profileIds?.length) {
+      translateBatchMutation.mutate({
+        profileIds,
+        targetLocale: supportedLocale,
+      });
     }
-    translateBatchMutation.mutate({
-      profileIds,
-      targetLocale: supportedLocale,
-    });
     if (decisionProfileId) {
       translateDecisionMutation.mutate({
         decisionProfileId,
@@ -804,14 +808,7 @@ export const ProposalsList = ({
       {/* Translation attribution */}
       {translationState && (
         <p className="text-sm text-neutral-gray3">
-          <TooltipTrigger>
-            <span className="cursor-default" tabIndex={0}>
-              {t('Translated from {language}', {
-                language: sourceLanguageName,
-              })}
-            </span>
-            <Tooltip>{t('Translated with DeepL')}</Tooltip>
-          </TooltipTrigger>{' '}
+          {t('Translated from {language}', { language: sourceLanguageName })}{' '}
           &middot;{' '}
           <Link onPress={handleViewOriginal} className="text-sm font-semibold">
             {t('View original')}
