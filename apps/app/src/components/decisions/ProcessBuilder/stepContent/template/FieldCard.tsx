@@ -227,15 +227,20 @@ export function FieldCard({
  * Drag preview shown while dragging a field card.
  */
 export function FieldCardDragPreview({ field }: { field: FieldView }) {
+  const t = useTranslations();
   const Icon = getFieldIcon(field.fieldType);
-  return <CollapsibleConfigCardDragPreview icon={Icon} label={field.label} />;
+  return (
+    <CollapsibleConfigCardDragPreview
+      icon={Icon}
+      label={field.label}
+      badgeLabel={field.required ? t('Required') : t('Optional')}
+    />
+  );
 }
 
 /**
  * Drop indicator shown where a field will be placed.
  */
 export function FieldCardDropIndicator() {
-  return (
-    <div className="flex h-12 items-center gap-2 rounded-lg border bg-neutral-offWhite" />
-  );
+  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
 }

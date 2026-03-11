@@ -157,6 +157,8 @@ export interface CollapsibleConfigCardDragPreviewProps {
   icon: React.ComponentType<{ className?: string }>;
   /** The label text */
   label: string;
+  /** Badge text shown as a chip (e.g. "Required" / "Optional") */
+  badgeLabel?: string;
   /** Optional custom content to override the default preview */
   children?: ReactNode;
   /** Additional class name for the preview container */
@@ -166,6 +168,7 @@ export interface CollapsibleConfigCardDragPreviewProps {
 export function CollapsibleConfigCardDragPreview({
   icon: Icon,
   label,
+  badgeLabel,
   children,
   className,
 }: CollapsibleConfigCardDragPreviewProps) {
@@ -185,10 +188,18 @@ export function CollapsibleConfigCardDragPreview({
         <div className="flex items-center justify-center text-neutral-gray4">
           <LuGripVertical className="size-4" />
         </div>
-        <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-          <Icon className="size-4 text-neutral-gray4" />
-          <span className="text-neutral-charcoal">{label}</span>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
+            <Icon className="size-4 text-neutral-gray4" />
+            <span className="truncate text-neutral-charcoal">{label}</span>
+          </div>
         </div>
+        {badgeLabel && (
+          <span className="shrink-0 rounded-sm bg-neutral-gray1 px-2 py-0.5 text-xs text-neutral-gray4">
+            {badgeLabel}
+          </span>
+        )}
+        <LuChevronDown className="size-4 shrink-0 text-neutral-gray4" />
       </div>
     </div>
   );
