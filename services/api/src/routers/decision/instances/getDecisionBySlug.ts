@@ -1,4 +1,9 @@
-import { getDecisionBySlug } from '@op/common';
+import {
+  fromDecisionBitField,
+  getDecisionBySlug,
+  getProfileAccessUser,
+} from '@op/common';
+import { collapseRoles } from 'access-zones';
 import { z } from 'zod';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
@@ -23,6 +28,22 @@ export const getDecisionBySlugRouter = router({
         user,
       });
 
-      return decisionProfileWithSchemaEncoder.parse(result);
+      const parsed = decisionProfileWithSchemaEncoder.parse(result);
+
+      const profileUser = await getProfileAccessUser({
+        user,
+        profileId: parsed.processInstance.profileId ?? '',
+      });
+
+      const decisionsBitField =
+        collapseRoles(profileUser?.roles ?? [])['decisions'] ?? 0;
+
+      return decisionProfileWithSchemaEncoder.parse({
+        ...parsed,
+        processInstance: {
+          ...parsed.processInstance,
+          access: fromDecisionBitField(decisionsBitField),
+        },
+      });
     }),
 });
