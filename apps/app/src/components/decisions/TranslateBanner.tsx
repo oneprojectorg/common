@@ -32,6 +32,7 @@ export function TranslateBanner({
             ? t('Translating...')
             : t('Translate to {language}', { language: languageName })
         }
+        tooltip={t('Translated with DeepL')}
       />
     </div>
   );
