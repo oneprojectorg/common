@@ -1,4 +1,8 @@
-import { SiGithub as GithubIcon, SiLinkedin as LinkedinIcon, SiX as TwitterIcon } from 'react-icons/si';
+import {
+  SiGithub as GithubIcon,
+  SiLinkedin as LinkedinIcon,
+  SiX as TwitterIcon,
+} from 'react-icons/si';
 
 import { cn } from '../lib/utils';
 
