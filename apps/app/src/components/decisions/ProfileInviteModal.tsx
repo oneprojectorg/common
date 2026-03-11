@@ -471,15 +471,12 @@ function ProfileInviteModalContent({
         )}
 
         {/* Search Input */}
-        <div
-          ref={searchContainerRef}
-          onPaste={handlePaste}
-          onKeyDown={handleKeyDown}
-        >
+        <div ref={searchContainerRef} onPaste={handlePaste}>
           <SearchField
             placeholder={t('Search by name or email...')}
             value={searchQuery}
             onChange={setSearchQuery}
+            onKeyDown={handleKeyDown}
             className="w-full"
           />
         </div>
