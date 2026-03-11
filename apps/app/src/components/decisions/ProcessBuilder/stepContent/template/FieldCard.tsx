@@ -43,6 +43,7 @@ interface FieldCardProps {
   ) => void;
   onChangeFieldType?: (fieldId: string, newType: FieldType) => void;
   isNew?: boolean;
+  onNewComplete?: (fieldId: string) => void;
 }
 
 const FIELD_TYPE_OPTIONS = (
@@ -74,13 +75,16 @@ export function FieldCard({
   onUpdateJsonSchema,
   onChangeFieldType,
   isNew,
+  onNewComplete,
 }: FieldCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
+  const fieldNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isNew) {
       cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      fieldNameRef.current?.focus();
     }
   }, [isNew]);
 
@@ -101,7 +105,12 @@ export function FieldCard({
   const badgeLabel = field.required ? t('Required') : t('Optional');
 
   return (
-    <div ref={cardRef} onBlur={handleBlur} className="scroll-m-6">
+    <div
+      ref={cardRef}
+      onBlur={handleBlur}
+      onAnimationEnd={() => onNewComplete?.(field.id)}
+      className="scroll-m-6"
+    >
       <CollapsibleConfigCard
         icon={Icon}
         label={displayLabel}
@@ -122,7 +131,7 @@ export function FieldCard({
           {/* Field name + Type selector row */}
           <div className="flex items-start gap-3">
             <TextField
-              autoFocus={isNew}
+              ref={fieldNameRef}
               label={t('Field name')}
               value={field.label}
               onChange={(value) => onUpdateLabel?.(field.id, value)}
