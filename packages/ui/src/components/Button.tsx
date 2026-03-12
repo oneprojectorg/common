@@ -138,15 +138,14 @@ export const Button = (props: ButtonProps) => {
   );
 };
 
-type PressHandlers =
-  | 'onPress'
+type LowLevelPressHandlers =
   | 'onPressStart'
   | 'onPressEnd'
   | 'onPressChange'
   | 'onPressUp';
 
 export interface ButtonLinkProps
-  extends Omit<React.ComponentProps<typeof RACLink>, PressHandlers>,
+  extends Omit<React.ComponentProps<typeof RACLink>, LowLevelPressHandlers>,
     ButtonVariants {
   className?: string;
   isLoading?: boolean;
@@ -165,7 +164,7 @@ export const ButtonLink = (props: ButtonLinkProps) => {
     return <RACLink {...rest} className={className} />;
   }
 
-  const { children, ...linkRest } = rest;
+  const { children, onPress: _onPress, ...linkRest } = rest;
 
   return (
     <RACLink
