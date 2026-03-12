@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Sidebar, useSidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
@@ -12,8 +11,6 @@ import { Link, usePathname, useTranslations } from '@/lib/i18n';
 export const SidebarNav = () => {
   const t = useTranslations();
   const pathname = usePathname();
-  const decisionsTabEnabled = useFeatureFlag('decisions_tab_enabled');
-
   return (
     <Sidebar className="border-r" label={t('Navigation')}>
       <nav className="flex flex-col gap-1 p-4">
@@ -23,11 +20,9 @@ export const SidebarNav = () => {
         <NavLink href="/org" active={pathname.startsWith('/org')}>
           <LuUsers className="size-4" /> {t('Organizations')}
         </NavLink>
-        {decisionsTabEnabled && (
-          <NavLink href="/decisions" active={pathname.startsWith('/decisions')}>
-            <LuMessageCircle className="size-4" /> {t('Decisions')}
-          </NavLink>
-        )}
+        <NavLink href="/decisions" active={pathname.startsWith('/decisions')}>
+          <LuMessageCircle className="size-4" /> {t('Decisions')}
+        </NavLink>
       </nav>
     </Sidebar>
   );

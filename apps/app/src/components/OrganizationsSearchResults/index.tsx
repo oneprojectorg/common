@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
 import { match } from '@op/core';
@@ -22,14 +21,11 @@ export const ProfileSearchResultsSuspense = ({
   limit?: number;
 }) => {
   const t = useTranslations();
-  const individualSearchEnabled = useFeatureFlag('individual_search');
 
   const [profileSearchResults] = trpc.profile.search.useSuspenseQuery({
     limit,
     q: query,
-    types: individualSearchEnabled
-      ? [EntityType.ORG, EntityType.INDIVIDUAL]
-      : [EntityType.ORG],
+    types: [EntityType.ORG, EntityType.INDIVIDUAL],
   });
 
   const totalResults = profileSearchResults.reduce(
@@ -49,17 +45,7 @@ export const ProfileSearchResultsSuspense = ({
           })}
         </span>
       </ListPageLayoutHeader>
-      {individualSearchEnabled ? (
-        <TabbedProfileSearchResults profiles={profileSearchResults} />
-      ) : (
-        <ProfileSummaryList
-          profiles={
-            profileSearchResults.find(
-              (results) => results.type === EntityType.ORG,
-            )?.results || []
-          }
-        />
-      )}
+      <TabbedProfileSearchResults profiles={profileSearchResults} />
     </>
   ) : (
     <>
