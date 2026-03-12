@@ -11,7 +11,6 @@ import { accessRoleMinimalEncoder } from './access';
 import { individualsEncoder } from './individuals';
 import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
-import { type organizationsEncoder } from './organizations';
 import { projectEncoder } from './projects';
 import { storageItemMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
@@ -60,15 +59,6 @@ const organizationMinimalEncoder = createSelectSchema(organizations)
 // Profile encoder with minimal organization reference for list operations
 export const profileEncoder = baseProfileEncoder.extend({
   organization: organizationMinimalEncoder.nullish(),
-});
-
-// Profile encoder with full organization reference for detail operations
-export const profileWithFullOrgEncoder = baseProfileEncoder.extend({
-  organization: z
-    .lazy<
-      typeof organizationsEncoder
-    >(() => require('./organizations').organizationsEncoder)
-    .nullish(),
 });
 
 export const profileWithAvatarEncoder = baseProfileEncoder;
