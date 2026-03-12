@@ -1,4 +1,8 @@
-import { type DecisionInstanceData, simpleVoting } from '@op/common';
+import {
+  type DecisionInstanceData,
+  type DecisionSchemaDefinition,
+  simpleVoting,
+} from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   decisionProcessTransitions,
@@ -293,5 +297,63 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(result.type).toBe('decision');
     expect(result.processInstance).toBeDefined();
     expect(result.processInstance.id).toBeDefined();
+  });
+
+  it('should copy proposalTemplate from template into instance data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const proposalTemplate = {
+      type: 'object' as const,
+      properties: {
+        title: { type: 'string' as const, title: 'Title' },
+        description: { type: 'string' as const, title: 'Description' },
+      },
+      required: ['title'],
+    };
+
+    // Create a template with a proposalTemplate in its schema
+    const templateWithProposal: DecisionSchemaDefinition = {
+      ...simpleVoting,
+      proposalTemplate,
+    };
+
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, setup.userEmail));
+
+    if (!userRecord?.profileId) {
+      throw new Error('Test user must have a profileId');
+    }
+
+    const [template] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Proposal Template Test ${task.id}`,
+        description: templateWithProposal.description,
+        processSchema: templateWithProposal,
+        createdByProfileId: userRecord.profileId,
+      })
+      .returning();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId: template!.id,
+      name: `Proposal Template Decision ${task.id}`,
+    });
+
+    testData.trackProfileForCleanup(result.id);
+
+    const instance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, result.processInstance.id),
+    });
+
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+    expect(instanceData.proposalTemplate).toEqual(proposalTemplate);
   });
 });
