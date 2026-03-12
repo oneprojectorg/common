@@ -85,7 +85,7 @@ export const InContext = () => (
     <div className="rounded-lg border border-neutral-gray3 p-6">
       <div className="flex flex-col items-center gap-3">
         <LoadingSpinner className="size-8" />
-        <span className="text-sm text-neutral-600">
+        <span className="text-sm text-neutral-gray3">
           Please wait while we process your request
         </span>
       </div>
@@ -96,7 +96,7 @@ export const InContext = () => (
         <div className="text-center">
           <LoadingSpinner className="mx-auto mb-4 size-12" />
           <h3 className="font-medium">Loading content</h3>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-neutral-gray3">
             This may take a few moments
           </p>
         </div>

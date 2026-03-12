@@ -106,7 +106,7 @@ export const TagGroup = <T extends object>({
       </ColorContext>
       {description && <Description>{description}</Description>}
       {errorMessage && (
-        <Text slot="errorMessage" className="text-sm text-red-600">
+        <Text slot="errorMessage" className="text-sm text-functional-redBlack">
           {errorMessage}
         </Text>
       )}

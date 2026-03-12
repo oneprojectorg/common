@@ -32,9 +32,9 @@ const initialTasks: Task[] = [
 ];
 
 const priorityColors = {
-  low: 'bg-green-50 text-green-800',
-  medium: 'bg-yellow-50 text-yellow-800',
-  high: 'bg-red-50 text-red-800',
+  low: 'bg-functional-greenWhite text-functional-green',
+  medium: 'bg-primary-yellow/10 text-primary-yellow',
+  high: 'bg-functional-redWhite text-functional-redBlack',
 };
 
 /**
@@ -80,7 +80,7 @@ export const WithDragHandle = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-500">
+      <div className="mt-4 text-sm text-neutral-gray3">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -125,7 +125,7 @@ export const WithoutDragHandle = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-500">
+      <div className="mt-4 text-sm text-neutral-gray3">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -175,7 +175,7 @@ export const CustomDragPreview = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-500">
+      <div className="mt-4 text-sm text-neutral-gray3">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -223,7 +223,7 @@ export const WithDropPlaceholder = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-500">
+      <div className="mt-4 text-sm text-neutral-gray3">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -271,7 +271,7 @@ export const WithLineIndicator = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-500">
+      <div className="mt-4 text-sm text-neutral-gray3">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -323,7 +323,7 @@ export const CustomDropIndicator = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-500">
+      <div className="mt-4 text-sm text-neutral-gray3">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -402,14 +402,14 @@ export const VariableHeightItems = () => {
             />
             <div className="flex-1">
               <h3 className="font-medium">{item.title}</h3>
-              <p className="mt-1 text-sm whitespace-pre-wrap text-neutral-600">
+              <p className="mt-1 text-sm whitespace-pre-wrap text-neutral-gray3">
                 {item.description}
               </p>
             </div>
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-500">
+      <div className="mt-4 text-sm text-neutral-gray3">
         Current order: {items.map((i) => i.id).join(', ')}
       </div>
     </div>

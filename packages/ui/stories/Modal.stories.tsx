@@ -66,14 +66,14 @@ export const Example = () => (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <h4 className="font-medium">Section 1</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-sm text-neutral-gray3">
                   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
                   do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-medium">Section 2</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-sm text-neutral-gray3">
                   Ut enim ad minim veniam, quis nostrud exercitation ullamco
                   laboris nisi ut aliquip ex ea commodo consequat.
                 </p>
@@ -81,7 +81,7 @@ export const Example = () => (
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Additional Content</h4>
-              <p className="text-sm text-neutral-600">
+              <p className="text-sm text-neutral-gray3">
                 Duis aute irure dolor in reprehenderit in voluptate velit esse
                 cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
                 cupidatat non proident, sunt in culpa qui officia deserunt
@@ -209,7 +209,7 @@ export const LargeModal = () => (
             {Array.from({ length: 6 }, (_, i) => (
               <div key={i} className="rounded border border-neutral-gray3 p-4">
                 <h4 className="font-medium">Item {i + 1}</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-sm text-neutral-gray3">
                   This is item {i + 1} with some sample content.
                 </p>
               </div>
@@ -217,7 +217,7 @@ export const LargeModal = () => (
           </div>
           <div>
             <h3 className="mb-2 font-medium">Additional Information</h3>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-gray3">
               This modal demonstrates how content can be organized in a larger
               modal with multiple sections and complex layouts.
             </p>

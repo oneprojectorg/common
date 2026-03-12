@@ -148,7 +148,7 @@ export const LoginPanel = () => {
   // TODO: using a tailwind v4 class here "min-w-xs"
   return (
     <div className="flex items-center justify-center sm:block">
-      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-md border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-700 xs:w-96 sm:border-0">
+      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-md border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-gray4 xs:w-96 sm:border-0">
         <div className="flex flex-col gap-12 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
             <Header1 className="text-center">
@@ -205,7 +205,9 @@ export const LoginPanel = () => {
                 : (() => {
                     if (combinedError || tokenError) {
                       return (
-                        <span className={cn(tokenError && 'text-red-500')}>
+                        <span
+                          className={cn(tokenError && 'text-functional-red')}
+                        >
                           {combinedError ||
                             tokenError ||
                             t('There was an error signing you in.')}
@@ -347,7 +349,7 @@ export const LoginPanel = () => {
                       }}
                     >
                       {isRefetchingUser ? (
-                        <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-500" />
+                        <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-gray3" />
                       ) : (
                         t('Try again')
                       )}
@@ -397,7 +399,7 @@ export const LoginPanel = () => {
                     {t('Back to home')}
                   </ButtonLink>
 
-                  <SocialLinks iconClassName="size-5 text-neutral-500 stroke-none" />
+                  <SocialLinks iconClassName="size-5 text-neutral-gray3 stroke-none" />
                 </div>
               )}
 

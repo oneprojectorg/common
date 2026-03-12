@@ -128,7 +128,7 @@ export const UsersRow = ({ user }: { user: User }) => {
                 }}
                 className="px-3 py-1"
               >
-                <span className="text-red-500">
+                <span className="text-functional-red">
                   {t('platformAdmin_actionRemoveUser')}
                 </span>
               </MenuItem>

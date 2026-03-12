@@ -96,7 +96,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
       )}
 
       {allPosts.length > 0 && !shouldShowTrigger && (
-        <p className="w-full p-4 text-center text-sm text-neutral-500">
+        <p className="w-full p-4 text-center text-sm text-neutral-gray3">
           {t('No more updates.')}
         </p>
       )}

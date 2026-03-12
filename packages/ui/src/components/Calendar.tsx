@@ -119,7 +119,7 @@ export const Calendar = <T extends DateValue>({
         </CalendarGridBody>
       </CalendarGrid>
       {errorMessage && (
-        <Text slot="errorMessage" className="text-sm text-red-600">
+        <Text slot="errorMessage" className="text-sm text-functional-redBlack">
           {errorMessage}
         </Text>
       )}

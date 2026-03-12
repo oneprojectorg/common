@@ -55,13 +55,13 @@ export const Example = () => (
             <div className="mt-4 space-y-4">
               <div>
                 <h4 className="font-medium">Section 1</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-sm text-neutral-gray3">
                   Some detailed information about the first section.
                 </p>
               </div>
               <div>
                 <h4 className="font-medium">Section 2</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-sm text-neutral-gray3">
                   More information about the second section with additional
                   details.
                 </p>
