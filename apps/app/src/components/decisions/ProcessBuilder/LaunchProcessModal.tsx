@@ -2,12 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { LuInfo } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -110,14 +110,11 @@ export const LaunchProcessModal = ({
         </p>
 
         {showNoCategoriesWarning && (
-          <div className="flex items-start gap-1 rounded-lg border border-primary-orange1 bg-primary-orange1/[0.08] p-4">
-            <LuInfo className="mt-0.5 size-4 shrink-0 text-yellow-700" />
-            <p className="text-yellow-700">
-              {t(
-                "No proposal categories defined. Proposers won't be able to categorize their submissions.",
-              )}
-            </p>
-          </div>
+          <AlertBanner intent="warning">
+            {t(
+              "No proposal categories defined. Proposers won't be able to categorize their submissions.",
+            )}
+          </AlertBanner>
         )}
       </ModalBody>
       <ModalFooter>

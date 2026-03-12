@@ -386,16 +386,16 @@ export const Unstyled: Story = {
       <Accordion variant="unstyled" defaultExpandedKeys={['1']}>
         <AccordionItem
           id="1"
-          className="mb-2 rounded-lg border-2 border-dashed border-purple-300 bg-purple-50"
+          className="mb-2 rounded-lg border-2 border-dashed border-data-purple/40 bg-data-purple/10"
         >
           <AccordionHeader className="p-4">
-            <AccordionTrigger className="flex w-full items-center justify-between text-purple-700">
+            <AccordionTrigger className="flex w-full items-center justify-between text-data-purple">
               <span>Custom Styled Section 1</span>
               <AccordionIndicator className="text-data-purple" />
             </AccordionTrigger>
           </AccordionHeader>
           <AccordionContent className="p-4 pt-0">
-            <p className="text-purple-600">
+            <p className="text-data-purple">
               This accordion uses unstyled mode with custom classes.
             </p>
           </AccordionContent>
@@ -403,10 +403,10 @@ export const Unstyled: Story = {
 
         <AccordionItem
           id="2"
-          className="mb-2 rounded-lg border-2 border-dashed border-teal-300 bg-teal-50"
+          className="mb-2 rounded-lg border-2 border-dashed border-primary-teal/40 bg-primary-tealWhite"
         >
           <AccordionHeader className="p-4">
-            <AccordionTrigger className="flex w-full items-center justify-between text-teal-700">
+            <AccordionTrigger className="flex w-full items-center justify-between text-primary-tealBlack">
               <span>Custom Styled Section 2</span>
               <AccordionIndicator className="text-primary-teal" />
             </AccordionTrigger>

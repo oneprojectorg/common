@@ -38,8 +38,7 @@ export interface DropdownButtonItem {
 }
 
 export interface DropdownButtonProps
-  extends
-    Omit<React.ComponentProps<typeof Button>, 'onPress'>,
+  extends Omit<React.ComponentProps<typeof Button>, 'onPress'>,
     DropdownButtonVariants {
   label: string | ReactNode;
   items: DropdownButtonItem[];

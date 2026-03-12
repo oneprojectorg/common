@@ -32,9 +32,9 @@ const initialTasks: Task[] = [
 ];
 
 const priorityColors = {
-  low: 'bg-functional-greenWhite text-green-800',
-  medium: 'bg-yellow-50 text-yellow-800',
-  high: 'bg-functional-redWhite text-red-800',
+  low: 'bg-functional-greenWhite text-functional-green',
+  medium: 'bg-primary-yellow/10 text-primary-yellow',
+  high: 'bg-functional-redWhite text-functional-redBlack',
 };
 
 /**
@@ -402,7 +402,7 @@ export const VariableHeightItems = () => {
             />
             <div className="flex-1">
               <h3 className="font-medium">{item.title}</h3>
-              <p className="mt-1 text-sm whitespace-pre-wrap text-neutral-600">
+              <p className="mt-1 text-sm whitespace-pre-wrap text-neutral-gray3">
                 {item.description}
               </p>
             </div>

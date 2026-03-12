@@ -160,92 +160,22 @@
   --color-teal-100: hsl(var(--op-teal-100));
   --color-teal-200: hsl(var(--op-teal-200));
   --color-teal-300: hsl(var(--op-teal-300));
-  --color-teal-400: hsl(var(--op-teal-400));
-  --color-teal-500: hsl(var(--op-teal-500));
-  --color-teal-600: hsl(var(--op-teal-600));
-  --color-teal-700: hsl(var(--op-teal-700));
-  --color-teal-800: hsl(var(--op-teal-800));
-  --color-teal-900: hsl(var(--op-teal-900));
-  --color-teal-950: hsl(var(--op-teal-950));
   --color-teal: hsl(var(--op-teal-500));
-
-  /* ============================================
-   * Colors - Yellow
-   * ============================================ */
-  --color-yellow-50: hsl(var(--op-yellow-50));
-  --color-yellow-100: hsl(var(--op-yellow-100));
-  --color-yellow-200: hsl(var(--op-yellow-200));
-  --color-yellow-300: hsl(var(--op-yellow-300));
-  --color-yellow-400: hsl(var(--op-yellow-400));
-  --color-yellow-500: hsl(var(--op-yellow-500));
-  --color-yellow-600: hsl(var(--op-yellow-600));
-  --color-yellow-700: hsl(var(--op-yellow-700));
-  --color-yellow-800: hsl(var(--op-yellow-800));
-  --color-yellow-900: hsl(var(--op-yellow-900));
-  --color-yellow-950: hsl(var(--op-yellow-950));
-  --color-yellow: hsl(var(--op-yellow-500));
-
-  /* ============================================
-   * Colors - Orange1
-   * ============================================ */
-  --color-orange1-50: hsl(var(--op-orange1-50));
-  --color-orange1-100: hsl(var(--op-orange1-100));
-  --color-orange1-200: hsl(var(--op-orange1-200));
-  --color-orange1-300: hsl(var(--op-orange1-300));
-  --color-orange1-400: hsl(var(--op-orange1-400));
-  --color-orange1-500: hsl(var(--op-orange1-500));
-  --color-orange1-600: hsl(var(--op-orange1-600));
-  --color-orange1-700: hsl(var(--op-orange1-700));
-  --color-orange1-800: hsl(var(--op-orange1-800));
-  --color-orange1-900: hsl(var(--op-orange1-900));
-  --color-orange1-950: hsl(var(--op-orange1-950));
-  --color-orange: hsl(var(--op-orange1-500));
-
-  /* ============================================
-   * Colors - Orange2
-   * ============================================ */
-  --color-orange2-50: hsl(var(--op-orange2-50));
-  --color-orange2-100: hsl(var(--op-orange2-100));
-  --color-orange2-200: hsl(var(--op-orange2-200));
-  --color-orange2-300: hsl(var(--op-orange2-300));
-  --color-orange2-400: hsl(var(--op-orange2-400));
-  --color-orange2-500: hsl(var(--op-orange2-500));
-  --color-orange2-600: hsl(var(--op-orange2-600));
-  --color-orange2-700: hsl(var(--op-orange2-700));
-  --color-orange2-800: hsl(var(--op-orange2-800));
-  --color-orange2-900: hsl(var(--op-orange2-900));
-  --color-orange2-950: hsl(var(--op-orange2-950));
 
   /* ============================================
    * Colors - Red
    * ============================================ */
-  --color-red-50: hsl(var(--op-red-50));
   --color-red-100: hsl(var(--op-red-100));
-  --color-red-200: hsl(var(--op-red-200));
   --color-red-300: hsl(var(--op-red-300));
-  --color-red-400: hsl(var(--op-red-400));
-  --color-red-500: hsl(var(--op-red-500));
   --color-red-600: hsl(var(--op-red-600));
   --color-red-700: hsl(var(--op-red-700));
-  --color-red-800: hsl(var(--op-red-800));
-  --color-red-900: hsl(var(--op-red-900));
-  --color-red-950: hsl(var(--op-red-950));
   --color-red: hsl(var(--op-red-500));
 
   /* ============================================
    * Colors - Green
    * ============================================ */
-  --color-green-50: hsl(var(--op-green-50));
-  --color-green-100: hsl(var(--op-green-100));
-  --color-green-200: hsl(var(--op-green-200));
-  --color-green-300: hsl(var(--op-green-300));
-  --color-green-400: hsl(var(--op-green-400));
   --color-green-500: hsl(var(--op-green-500));
-  --color-green-600: hsl(var(--op-green-600));
   --color-green-700: hsl(var(--op-green-700));
-  --color-green-800: hsl(var(--op-green-800));
-  --color-green-900: hsl(var(--op-green-900));
-  --color-green-950: hsl(var(--op-green-950));
   --color-green: hsl(var(--op-green-500));
 
   /* ============================================

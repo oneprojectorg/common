@@ -32,8 +32,7 @@ const iconButtonStyle = tv({
 type IconButtonVariants = VariantProps<typeof iconButtonStyle>;
 
 export interface IconButtonProps
-  extends
-    Omit<React.ComponentProps<typeof RACButton>, 'children'>,
+  extends Omit<React.ComponentProps<typeof RACButton>, 'children'>,
     IconButtonVariants {
   children: React.ReactNode;
   className?: string;

@@ -21,7 +21,7 @@ export const Example = () => (
       <Surface>
         <div className="p-6">
           <h4 className="mb-2 font-medium">Card Title</h4>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-neutral-gray3">
             This is a basic surface component with some content inside.
           </p>
         </div>
@@ -34,7 +34,7 @@ export const Example = () => (
         <Surface>
           <div className="p-4">
             <h4 className="mb-2 font-medium">Small Card</h4>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-gray3">
               Compact surface with minimal padding.
             </p>
           </div>
@@ -43,7 +43,7 @@ export const Example = () => (
         <Surface>
           <div className="p-8">
             <h4 className="mb-2 font-medium">Large Card</h4>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-gray3">
               Spacious surface with generous padding.
             </p>
           </div>
@@ -56,7 +56,7 @@ export const Example = () => (
       <Surface className="shadow-lg">
         <div className="p-6">
           <h4 className="mb-2 font-medium">Enhanced Surface</h4>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-neutral-gray3">
             This surface has additional shadow styling applied.
           </p>
         </div>
@@ -73,21 +73,21 @@ export const Example = () => (
             </div>
             <div>
               <h4 className="font-medium">User Profile</h4>
-              <p className="text-sm text-neutral-600">john.doe@example.com</p>
+              <p className="text-sm text-neutral-gray3">john.doe@example.com</p>
             </div>
           </div>
           <div className="mb-4 grid grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-lg font-bold">127</div>
-              <div className="text-xs text-neutral-600">Posts</div>
+              <div className="text-xs text-neutral-gray3">Posts</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold">1.2K</div>
-              <div className="text-xs text-neutral-600">Followers</div>
+              <div className="text-xs text-neutral-gray3">Followers</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold">342</div>
-              <div className="text-xs text-neutral-600">Following</div>
+              <div className="text-xs text-neutral-gray3">Following</div>
             </div>
           </div>
           <button className="w-full rounded-md bg-teal px-4 py-2 text-sm font-medium text-white">
@@ -104,7 +104,9 @@ export const Basic = {
     children: (
       <div className="p-6">
         <h4 className="mb-2 font-medium">Basic Surface</h4>
-        <p className="text-sm text-neutral-600">Simple surface with content.</p>
+        <p className="text-sm text-neutral-gray3">
+          Simple surface with content.
+        </p>
       </div>
     ),
   },
@@ -121,7 +123,7 @@ export const WithImage = {
         />
         <div className="p-6">
           <h4 className="mb-2 font-medium">Office Space</h4>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-neutral-gray3">
             A modern office environment with clean design.
           </p>
         </div>
@@ -136,7 +138,7 @@ export const CustomStyling = {
     children: (
       <div className="p-6">
         <h4 className="mb-2 font-medium">Custom Styled Surface</h4>
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-neutral-gray3">
           This surface has custom border and shadow styling.
         </p>
       </div>
@@ -154,7 +156,7 @@ export const List = () => (
           </div>
           <div className="flex-1">
             <h4 className="font-medium">Item {i + 1}</h4>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-gray3">
               Description for item {i + 1}
             </p>
           </div>
@@ -174,7 +176,7 @@ export const Grid = () => (
             <div className="text-2xl">📊</div>
           </div>
           <h4 className="mb-2 font-medium">Chart {i + 1}</h4>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-neutral-gray3">
             Data visualization component {i + 1}
           </p>
         </div>
