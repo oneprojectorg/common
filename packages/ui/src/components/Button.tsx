@@ -169,13 +169,18 @@ export const ButtonLink = (props: ButtonLinkProps) => {
   } = rest;
 
   return (
-    <RACLink {...linkRest} aria-busy="true" aria-disabled="true" className={className}>
+    <RACLink
+      {...linkRest}
+      aria-busy="true"
+      aria-disabled="true"
+      className={className}
+    >
       {(renderProps) => (
         <>
           <span className="invisible flex items-center gap-1">
             {typeof children === 'function' ? children(renderProps) : children}
           </span>
-          <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <LoadingSpinner
               className={cn(
                 'fill-transparent text-current',
