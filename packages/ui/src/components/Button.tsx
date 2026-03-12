@@ -138,8 +138,15 @@ export const Button = (props: ButtonProps) => {
   );
 };
 
+type PressHandlers =
+  | 'onPress'
+  | 'onPressStart'
+  | 'onPressEnd'
+  | 'onPressChange'
+  | 'onPressUp';
+
 export interface ButtonLinkProps
-  extends React.ComponentProps<typeof RACLink>,
+  extends Omit<React.ComponentProps<typeof RACLink>, PressHandlers>,
     ButtonVariants {
   className?: string;
   isLoading?: boolean;
@@ -158,17 +165,7 @@ export const ButtonLink = (props: ButtonLinkProps) => {
     return <RACLink {...rest} className={className} />;
   }
 
-  // Strip press handlers while loading — they should not fire during the loading state.
-  // onPress is intentionally kept from href-driven navigation (handled by the anchor click).
-  const {
-    children,
-    onPress: _onPress,
-    onPressStart: _onPressStart,
-    onPressEnd: _onPressEnd,
-    onPressChange: _onPressChange,
-    onPressUp: _onPressUp,
-    ...linkRest
-  } = rest;
+  const { children, ...linkRest } = rest;
 
   return (
     <RACLink
