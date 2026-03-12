@@ -1,4 +1,3 @@
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -19,8 +18,6 @@ import { SearchResultItem } from './SearchResultItem';
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
   const t = useTranslations();
-  const individualSearchEnabled = useFeatureFlag('individual_search');
-
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,9 +40,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     trpc.profile.search.useQuery(
       {
         q: debouncedQuery,
-        types: individualSearchEnabled
-          ? [EntityType.INDIVIDUAL, EntityType.ORG]
-          : [EntityType.ORG],
+        types: [EntityType.INDIVIDUAL, EntityType.ORG],
       },
       {
         staleTime: 30_000,
