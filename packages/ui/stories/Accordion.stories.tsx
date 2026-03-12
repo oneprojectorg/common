@@ -391,7 +391,7 @@ export const Unstyled: Story = {
           <AccordionHeader className="p-4">
             <AccordionTrigger className="flex w-full items-center justify-between text-purple-700">
               <span>Custom Styled Section 1</span>
-              <AccordionIndicator className="text-purple-500" />
+              <AccordionIndicator className="text-data-purple" />
             </AccordionTrigger>
           </AccordionHeader>
           <AccordionContent className="p-4 pt-0">
@@ -408,11 +408,11 @@ export const Unstyled: Story = {
           <AccordionHeader className="p-4">
             <AccordionTrigger className="flex w-full items-center justify-between text-teal-700">
               <span>Custom Styled Section 2</span>
-              <AccordionIndicator className="text-teal-500" />
+              <AccordionIndicator className="text-primary-teal" />
             </AccordionTrigger>
           </AccordionHeader>
           <AccordionContent className="p-4 pt-0">
-            <p className="text-teal-600">
+            <p className="text-primary-tealBlack">
               You have full control over the styling!
             </p>
           </AccordionContent>

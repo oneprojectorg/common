@@ -57,11 +57,11 @@ export const itemStyles = tv({
   base: 'group relative flex cursor-default items-center gap-8 rounded px-2.5 py-1.5 text-sm will-change-transform forced-color-adjust-none select-none',
   variants: {
     isSelected: {
-      false: 'text-neutral-700 -outline-offset-2 hover:bg-neutral-300',
+      false: 'text-neutral-gray4 -outline-offset-2 hover:bg-neutral-300',
       true: 'bg-neutral-gray1 text-neutral-black -outline-offset-4 [&+[data-selected]]:rounded-t-none [&:has(+[data-selected])]:rounded-b-none',
     },
     isDisabled: {
-      true: 'text-neutral-400',
+      true: 'text-neutral-gray2',
     },
   },
 });
@@ -69,8 +69,7 @@ export const itemStyles = tv({
 type ListBoxItemVariants = VariantProps<typeof itemStyles>;
 
 export interface ListBoxItemProps
-  extends React.ComponentProps<typeof AriaListBoxItem>,
-    ListBoxItemVariants {
+  extends React.ComponentProps<typeof AriaListBoxItem>, ListBoxItemVariants {
   className?: string;
 }
 
@@ -100,7 +99,7 @@ export const dropdownItemStyles = tv({
   variants: {
     isDisabled: {
       false: 'text-neutral-black',
-      true: 'text-neutral-400',
+      true: 'text-neutral-gray2',
     },
     isFocused: {
       true: 'bg-neutral-gray1',
@@ -157,7 +156,7 @@ export const DropdownSection = <T extends object>(
 ) => {
   return (
     <ListBoxSection className="after:block after:h-[5px] after:content-[''] first:mt-[-5px]">
-      <Header className="sticky top-[-5px] z-10 -mx-1 -mt-px truncate border-y border-neutral-300 bg-neutral-300/60 px-4 py-1 text-sm font-semibold text-neutral-700 backdrop-blur-md [&+*]:mt-1">
+      <Header className="sticky top-[-5px] z-10 -mx-1 -mt-px truncate border-y border-neutral-300 bg-neutral-300/60 px-4 py-1 text-sm font-semibold text-neutral-gray4 backdrop-blur-md [&+*]:mt-1">
         {props.title}
       </Header>
       <Collection items={props.items}>{props.children}</Collection>

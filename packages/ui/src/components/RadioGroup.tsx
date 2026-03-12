@@ -56,7 +56,7 @@ const styles = tv({
       true: 'border-[0.31rem] border-primary-tealBlack outline outline-1 -outline-offset-1 outline-primary-teal group-pressed:border group-pressed:border-primary-tealBlack',
     },
     isInvalid: {
-      true: 'border-red-600 group-pressed:border-red-700',
+      true: 'border-functional-redBlack group-pressed:border-red-700',
     },
     isDisabled: {
       true: 'border border-neutral-gray3',

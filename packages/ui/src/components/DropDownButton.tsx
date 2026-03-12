@@ -15,7 +15,7 @@ const dropdownButtonStyle = tv({
       primary:
         'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
       secondary:
-        'border-primary-teal bg-white text-primary-teal hover:bg-neutral-50 pressed:bg-white',
+        'border-primary-teal bg-white text-primary-teal hover:bg-neutral-offWhite pressed:bg-white',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',
@@ -38,7 +38,8 @@ export interface DropdownButtonItem {
 }
 
 export interface DropdownButtonProps
-  extends Omit<React.ComponentProps<typeof Button>, 'onPress'>,
+  extends
+    Omit<React.ComponentProps<typeof Button>, 'onPress'>,
     DropdownButtonVariants {
   label: string | ReactNode;
   items: DropdownButtonItem[];

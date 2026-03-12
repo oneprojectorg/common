@@ -61,7 +61,8 @@ const tagStyles = tv({
 });
 
 export interface TagGroupProps<T>
-  extends Omit<AriaTagGroupProps, 'children'>,
+  extends
+    Omit<AriaTagGroupProps, 'children'>,
     Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
   color?: Color;
   label?: string;
@@ -106,7 +107,7 @@ export const TagGroup = <T extends object>({
       </ColorContext>
       {description && <Description>{description}</Description>}
       {errorMessage && (
-        <Text slot="errorMessage" className="text-sm text-red-600">
+        <Text slot="errorMessage" className="text-sm text-functional-redBlack">
           {errorMessage}
         </Text>
       )}

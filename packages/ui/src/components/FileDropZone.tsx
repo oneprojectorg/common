@@ -48,8 +48,8 @@ const dropZoneStyles = tv({
       'rounded-lg border border-dashed border-neutral-gray2 bg-neutral-offWhite',
       'px-12 py-6',
       'outline-hidden transition-colors duration-200',
-      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500',
-      'group-data-[drop-target]/dropzone:border-teal-500 group-data-[drop-target]/dropzone:bg-teal-50/30',
+      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-teal',
+      'group-data-[drop-target]/dropzone:border-primary-teal group-data-[drop-target]/dropzone:bg-teal-50/30',
     ],
     iconWrapper: [
       'flex size-20 items-center justify-center rounded-full bg-neutral-gray1',
@@ -57,11 +57,11 @@ const dropZoneStyles = tv({
     ],
     icon: [
       'size-10 text-neutral-gray4',
-      'group-data-[drop-target]/dropzone:text-teal-600',
+      'group-data-[drop-target]/dropzone:text-primary-tealBlack',
     ],
     labelWrapper: 'flex flex-col items-center gap-1',
     label: 'text-base text-neutral-charcoal',
-    browse: 'text-teal-500 hover:text-teal-600 hover:underline',
+    browse: 'text-primary-teal hover:text-primary-tealBlack hover:underline',
     description: 'text-base text-neutral-gray4',
   },
   variants: {

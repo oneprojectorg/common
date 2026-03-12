@@ -338,21 +338,21 @@ export const UnstyledTabs = () => (
       <Tab
         id="custom1"
         unstyled
-        className="rounded-t-lg border-b-2 border-transparent bg-blue-100 px-4 py-2 text-blue-800 data-[selected]:border-blue-500 data-[selected]:bg-blue-200"
+        className="rounded-t-lg border-b-2 border-transparent bg-blue-100 px-4 py-2 text-blue-800 data-[selected]:border-data-blue data-[selected]:bg-blue-200"
       >
         Custom 1
       </Tab>
       <Tab
         id="custom2"
         unstyled
-        className="rounded-t-lg border-b-2 border-transparent bg-green-100 px-4 py-2 text-green-800 data-[selected]:border-green-500 data-[selected]:bg-green-200"
+        className="rounded-t-lg border-b-2 border-transparent bg-green-100 px-4 py-2 text-green-800 data-[selected]:border-functional-green data-[selected]:bg-green-200"
       >
         Custom 2
       </Tab>
       <Tab
         id="custom3"
         unstyled
-        className="rounded-t-lg border-b-2 border-transparent bg-purple-100 px-4 py-2 text-purple-800 data-[selected]:border-purple-500 data-[selected]:bg-purple-200"
+        className="rounded-t-lg border-b-2 border-transparent bg-purple-100 px-4 py-2 text-purple-800 data-[selected]:border-data-purple data-[selected]:bg-purple-200"
       >
         Custom 3
       </Tab>
@@ -361,7 +361,7 @@ export const UnstyledTabs = () => (
       <div className="rounded-b-lg bg-blue-50 p-4">Custom styled content 1</div>
     </TabPanel>
     <TabPanel id="custom2">
-      <div className="rounded-b-lg bg-green-50 p-4">
+      <div className="rounded-b-lg bg-functional-greenWhite p-4">
         Custom styled content 2
       </div>
     </TabPanel>

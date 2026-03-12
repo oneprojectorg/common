@@ -39,8 +39,10 @@ const cellStyles = tv({
   },
 });
 
-export interface CalendarProps<T extends DateValue>
-  extends Omit<AriaCalendarProps<T>, 'visibleDuration'> {
+export interface CalendarProps<T extends DateValue> extends Omit<
+  AriaCalendarProps<T>,
+  'visibleDuration'
+> {
   errorMessage?: string;
 }
 
@@ -119,7 +121,7 @@ export const Calendar = <T extends DateValue>({
         </CalendarGridBody>
       </CalendarGrid>
       {errorMessage && (
-        <Text slot="errorMessage" className="text-sm text-red-600">
+        <Text slot="errorMessage" className="text-sm text-functional-redBlack">
           {errorMessage}
         </Text>
       )}

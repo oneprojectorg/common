@@ -4,21 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 
 ## Development Commands
 
-### Core Development Workflow
-
 ### Build and Quality Checks
 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
 - **Type checking**: `pnpm typecheck` (runs type checking across all workspaces via Turbo) or `pnpm w:app typecheck` (for main app only)
 - **Format checking**: `pnpm format:check` (verifies code formatting - required by CI)
-- Never run database migrations
-- NEVER run `pnpm format` (auto-fix) - only use `pnpm format:check` to verify
-- Almost always prefer suspense queries over a query with useEffect
-- When using Suspense Queries, be careful to have proper error boundaries as well
+- **Format changed files only**: `pnpm format:changes` (formats only files changed in git)
+- NEVER run `pnpm format` (auto-fix on all files) - use `pnpm format:check` to verify or `pnpm format:changes` for targeted fixes
 
 ## Architecture Overview
-
-This is a **Turborepo monorepo** using **pnpm workspaces** with a clear separation of concerns:
 
 ### Applications (`apps/`)
 
@@ -47,6 +41,10 @@ This is a **Turborepo monorepo** using **pnpm workspaces** with a clear separati
 - UI components are in `@op/ui` and exported via `package.json` exports field
 - Components use React Aria Components with Tailwind variants
 - Import components like: `import { Button } from "@op/ui/Button"`
+- **Always use design tokens** — never use arbitrary Tailwind values (e.g. `text-[14px]`, `bg-[#333]`)
+- Colors: use the token-mapped Tailwind classes (e.g. `text-primary-teal`, `bg-neutral-gray1`) — source tokens are in `packages/styles/tokens.css` (`--op-*`) mapped via `shared-styles.css`
+- Text sizes: use the custom type scale (e.g. `text-title-lg`, `text-body-sm`) defined in `packages/styles/shared-styles.css` — do not use raw Tailwind size utilities like `text-sm` or `text-xl`
+- Tailwind configuration is centralized in `@op/styles` package (`packages/styles/shared-styles.css`)
 
 ### Intent UI Components
 
@@ -72,7 +70,7 @@ Intent UI is a shadcn-compatible component library built on React Aria. To add a
 
 - Database schema managed with Drizzle ORM in `services/db/schema/`
 - tRPC API provides type-safe client-server communication
-- After schema changes: run `pnpm w:db generate` then `pnpm w:db migrate`
+- After schema changes: run `pnpm w:db generate` to generate migrations — **never run `pnpm w:db migrate`** (migrations are applied by CI/CD, not locally)
 
 ### Workspace Commands
 
@@ -84,6 +82,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - `pnpm w:ui` - packages/ui
 - `pnpm w:emails` - services/emails
 - `pnpm w:supabase` - services/supabase
+- `pnpm w:cache` - services/cache
 
 ### Dependency Management
 
@@ -91,16 +90,12 @@ Use `pnpm w:<workspace>` shortcuts:
 - **Clean unused deps**: `pnpm deps:clean`
 - **Enforce version consistency**: `pnpm deps:override`
 
-### TypeScript Configuration
-
-- Shared configs in `configs/typescript-config/`
-- Each workspace extends appropriate base config (nextjs.json, react-library.json, etc.)
 
 ## AI Assistant Guidelines
 
 ### Branch Management
 
-- **ALWAYS** checkout a new branch when making changes if currently on the `dev` branch
+- **ALWAYS** checkout a new branch when making changes if currently on the `main` branch
 - **Branch naming convention**:
   - Bug fixes: `fix-login-validation`
   - Features: `user-dashboard`
@@ -116,13 +111,15 @@ Use `pnpm w:<workspace>` shortcuts:
 
 - Run type checking with `pnpm typecheck` or `pnpm w:app typecheck` after making changes
 - Follow existing code conventions and patterns in the file being edited
-- Test changes thoroughly before completion
-- Using `any` to fix type errors shuold be avoided
+- Using `any` to fix type errors should be avoided
 - Code quality is enforced via **Prettier** (formatting) and **TypeScript** (type checking) only
 
 ### Coding Conventions
 
-- If statements should never be all on one line, rather you should always use K&R style for if statements
+- If statements should never be all on one line; always use K&R style for if statements
+- Always prefer defining parameter types directly inline within the function signature over separate interface definitions, unless the interface is used across multiple functions
+- Almost always prefer suspense queries over a query with useEffect
+- When using Suspense Queries, always add proper error boundaries
 
 ### Internationalization (i18n)
 
@@ -139,17 +136,7 @@ Use `pnpm w:<workspace>` shortcuts:
 4. **For dynamic values**, use interpolation: `t('Hello {name}', { name: userName })`
 5. **When modifying existing translation keys**, update ALL language files
 
-## Important Notes
-
-- Node.js 18+ required, use `corepack enable` for pnpm version management
-- UI components use React Aria for accessibility
-- tRPC provides end-to-end type safety between frontend and backend
-- Tailwind configuration is centralized in `@op/styles` package (`packages/styles/shared-styles.css`)
-- Only use colors defined in `packages/styles/tokens.css` (prefixed with `--op-*`)
-
-## Workflow Warnings
+## Workflow Notes
 
 - If you need to check interactions in the browser, you can use the Playwright MCP server and open http://localhost:3100 to open the dev server
 - Authorization checks are achieved by our access-zones library. We usually get the orgUser and pass the user's roles to `assertAccess`
-
-- Always prefer defining the parameter types directly inline within the function signature over separate definitions of an interface unless the interface is used across multiple functions

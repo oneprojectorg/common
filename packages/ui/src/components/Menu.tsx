@@ -50,7 +50,7 @@ export const menuItemStyles = tv({
     },
     isDisabled: {
       false: 'text-neutral-black',
-      true: 'text-neutral-400',
+      true: 'text-neutral-gray2',
     },
     isFocused: {
       true: 'bg-neutral-offWhite outline-1 outline-neutral-gray1',

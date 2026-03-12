@@ -51,7 +51,7 @@ export const SocialLinks = ({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={link.alt}
-              className={cn('hover:text-neutral-900', linkClassName)}
+              className={cn('hover:text-neutral-charcoal', linkClassName)}
             >
               <IconComponent className={iconClassName} />
             </a>
@@ -75,7 +75,7 @@ export const SocialLinksFooter = ({ className }: { className?: string }) => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={link.alt}
-              className="duration-300 hover:text-neutral-900"
+              className="duration-300 hover:text-neutral-charcoal"
             >
               <IconComponent />
             </a>

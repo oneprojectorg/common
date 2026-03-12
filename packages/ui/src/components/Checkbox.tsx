@@ -17,8 +17,10 @@ import { VariantProps, tv } from 'tailwind-variants';
 import { composeTailwindRenderProps, focusRing } from '../utils';
 import { Description, FieldError, Label } from './Field';
 
-export interface CheckboxGroupProps
-  extends Omit<AriaCheckboxGroupProps, 'children'> {
+export interface CheckboxGroupProps extends Omit<
+  AriaCheckboxGroupProps,
+  'children'
+> {
   label?: string;
   children?: ReactNode;
   description?: string;
@@ -52,7 +54,7 @@ const checkboxStyles = tv({
   variants: {
     isDisabled: {
       false: 'text-neutral-800',
-      true: 'text-neutral-400',
+      true: 'text-neutral-gray2',
     },
   },
 });
@@ -90,7 +92,7 @@ const boxStyles = tv({
 });
 
 const iconStyles = tv({
-  base: 'text-neutral-100 group-disabled:text-neutral-400',
+  base: 'text-neutral-100 group-disabled:text-neutral-gray2',
   variants: {
     size: {
       small: 'h-3 w-3',

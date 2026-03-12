@@ -22,7 +22,7 @@ const styles = tv({
       true: 'bg-green',
     },
     isDisabled: {
-      true: 'border-white/5 bg-neutral-200 text-neutral-400',
+      true: 'border-white/5 bg-neutral-gray1 text-neutral-gray2',
     },
   },
   defaultVariants: {

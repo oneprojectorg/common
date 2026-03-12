@@ -21,14 +21,14 @@ const buttonStyle = tv({
       primary:
         'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
       secondary:
-        'border border-offWhite bg-white text-teal hover:bg-neutral-50 pressed:bg-white',
+        'border border-offWhite bg-white text-teal hover:bg-neutral-offWhite pressed:bg-white',
       gradient: '',
       unverified:
-        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-offWhite pressed:bg-white',
       verified:
-        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-offWhite pressed:bg-white',
       neutral:
-        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
+        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-offWhite pressed:bg-white',
       warn: 'bg-yellow-50 text-yellow-700 shadow-light hover:bg-yellow-100/75 hover:text-yellow-800 pressed:bg-yellow-100/80',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
@@ -64,7 +64,7 @@ const buttonStyle = tv({
       false: '',
     },
     backglow: {
-      true: 'relative *:z-0 before:absolute before:inset-0 before:z-[-1] before:bg-gradient-to-r before:from-neutral-200 before:to-neutral-500 before:opacity-60 before:blur-md before:transition-all before:duration-300 before:content-[""] hover:text-neutral-950 hover:before:opacity-100 hover:before:blur-lg',
+      true: 'relative *:z-0 before:absolute before:inset-0 before:z-[-1] before:bg-gradient-to-r before:from-neutral-gray1 before:to-neutral-gray3 before:opacity-60 before:blur-md before:transition-all before:duration-300 before:content-[""] hover:text-neutral-black hover:before:opacity-100 hover:before:blur-lg',
       false: '',
     },
   },
@@ -92,8 +92,7 @@ type ButtonVariants = VariantProps<typeof buttonStyle>;
 // type ButtonProps = React.ComponentProps<typeof RACButton>;
 
 export interface ButtonProps
-  extends React.ComponentProps<typeof RACButton>,
-    ButtonVariants {
+  extends React.ComponentProps<typeof RACButton>, ButtonVariants {
   className?: string;
   isLoading?: boolean;
 }
@@ -139,8 +138,7 @@ export const Button = (props: ButtonProps) => {
 };
 
 export interface ButtonLinkProps
-  extends React.ComponentProps<typeof RACLink>,
-    ButtonVariants {
+  extends React.ComponentProps<typeof RACLink>, ButtonVariants {
   className?: string;
   isLoading?: boolean;
 }
