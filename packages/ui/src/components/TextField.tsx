@@ -128,23 +128,20 @@ export const TextField = ({
         {children}
       </FieldGroup>
 
-      {description ? (
+      {(description || errorMessage || counterElement) && (
         <div className="flex justify-between">
-          <Description className={descriptionClassName}>
-            {description}
-          </Description>
+          <div>
+            {description && !errorMessage && (
+              <Description className={descriptionClassName}>
+                {description}
+              </Description>
+            )}
+            {errorMessage && (
+              <FieldError className={errorClassName}>{errorMessage}</FieldError>
+            )}
+          </div>
           {counterElement}
         </div>
-      ) : (
-        counterElement && (
-          <div className="flex justify-between">
-            <FieldError className={errorClassName}>{errorMessage}</FieldError>
-            {counterElement}
-          </div>
-        )
-      )}
-      {(description || !counterElement) && (
-        <FieldError className={errorClassName}>{errorMessage}</FieldError>
       )}
     </AriaTextField>
   );
