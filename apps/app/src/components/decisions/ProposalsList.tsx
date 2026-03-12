@@ -484,8 +484,18 @@ export const ProposalsList = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const [selectedCategory, setSelectedCategory] = useState('all-categories');
-  const [sortOrder, setSortOrder] = useState('newest');
+  const [selectedCategory, setSelectedCategory] = useState(
+    () =>
+      (typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('category')) ||
+      'all-categories',
+  );
+  const [sortOrder, setSortOrder] = useState(
+    () =>
+      (typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('sort')) ||
+      'newest',
+  );
 
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user.currentProfile?.id;
