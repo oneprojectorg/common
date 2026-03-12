@@ -137,8 +137,14 @@ export const Button = (props: ButtonProps) => {
   );
 };
 
+type LowLevelPressHandlers =
+  | 'onPressStart'
+  | 'onPressEnd'
+  | 'onPressChange'
+  | 'onPressUp';
+
 export interface ButtonLinkProps
-  extends React.ComponentProps<typeof RACLink>,
+  extends Omit<React.ComponentProps<typeof RACLink>, LowLevelPressHandlers>,
     ButtonVariants {
   className?: string;
   isLoading?: boolean;
@@ -157,20 +163,21 @@ export const ButtonLink = (props: ButtonLinkProps) => {
     return <RACLink {...rest} className={className} />;
   }
 
-  const { children, ...linkRest } = rest;
+  const { children, onPress: _onPress, ...linkRest } = rest;
 
   return (
     <RACLink
       {...linkRest}
+      aria-busy="true"
       aria-disabled="true"
-      className={cn(className, 'pointer-events-none')}
+      className={className}
     >
       {(renderProps) => (
         <>
           <span className="invisible flex items-center gap-1">
             {typeof children === 'function' ? children(renderProps) : children}
           </span>
-          <span className="absolute inset-0 flex items-center justify-center">
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <LoadingSpinner
               className={cn(
                 'fill-transparent text-current',
