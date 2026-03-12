@@ -54,49 +54,25 @@ const config = {
     authInterrupts: true,
   },
 
-  webpack: (cfg, { isServer }) => {
-    // In e2e mode, swap external services for in-process mocks so the app
-    // never makes network calls to TipTap Cloud or PostHog.
-    if (process.env.E2E === 'true') {
-      cfg.resolve.alias = {
-        ...cfg.resolve.alias,
-        '@op/collab': '@op/collab/testing',
-        '@op/analytics$': '@op/analytics/testing',
-      };
-    }
-
-    // Grab the existing rule that handles SVG imports
-    const fileLoaderRule = cfg.module.rules.find((rule) =>
-      rule.test?.test?.('.svg'),
-    );
-
-    cfg.module.rules.push(
-      // Reapply the existing rule, but only for svg imports ending in ?url
-      {
-        ...fileLoaderRule,
-        test: /\.svg$/i,
-        resourceQuery: /url/, // *.svg?url
+  turbopack: {
+    resolveAlias: {
+      // In e2e mode, swap external services for in-process mocks so the app
+      // never makes network calls to TipTap Cloud or PostHog.
+      ...(process.env.E2E === 'true'
+        ? {
+            '@op/collab': '@op/collab/testing',
+            '@op/analytics': '@op/analytics/testing',
+          }
+        : {}),
+      // Disable the 'tls' module on the client side
+      tls: { browser: './empty.ts' },
+    },
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
-      // Convert all other *.svg imports to React components
-      {
-        test: /\.svg$/i,
-        issuer: fileLoaderRule.issuer,
-        resourceQuery: { not: [...fileLoaderRule.resourceQuery.not, /url/] }, // exclude if *.svg?url
-        use: ['@svgr/webpack'],
-      },
-    );
-
-    // Modify the file loader rule to ignore *.svg, since we have it handled now.
-    fileLoaderRule.exclude = /\.svg$/i;
-
-    if (!isServer) {
-      cfg.resolve.fallback = {
-        // Disable the 'tls' module on the client side
-        tls: false,
-      };
-    }
-
-    return cfg;
+    },
   },
   async headers() {
     return [
@@ -170,12 +146,40 @@ const currentBranch = getCurrentBranch();
 const allowedBranches = ['dev', 'main'];
 const shouldUploadSourcemaps = allowedBranches.includes(currentBranch);
 
-export default withPostHogConfig(withBundleAnalyzer(withNextIntl(config)), {
-  personalApiKey: process.env.POSTHOG_API_KEY,
-  envId: process.env.POSTHOG_ENV_ID,
-  project: 'common',
-  host: 'https://eu.i.posthog.com',
-  sourcemaps: {
-    enabled: shouldUploadSourcemaps,
-  },
-});
+const baseConfig = withBundleAnalyzer(withNextIntl(config));
+
+// Only wrap with PostHog when sourcemap upload is enabled (dev/main branches
+// on CI). The plugin eagerly validates projectId even when sourcemaps are
+// disabled, so we skip it entirely for local builds.
+// NOTE: withPostHogConfig unconditionally injects a `webpack` key which breaks
+// Turbopack (Next.js 16 default). We strip it in the exported config below.
+// TODO: Remove the webpack-stripping wrapper once @posthog/nextjs-config
+// ships a Turbopack-compatible version.
+const hasPostHogCredentials = !!(
+  process.env.POSTHOG_API_KEY && process.env.POSTHOG_PROJECT_ID
+);
+const wrappedConfig =
+  shouldUploadSourcemaps && hasPostHogCredentials
+    ? withPostHogConfig(baseConfig, {
+        personalApiKey: process.env.POSTHOG_API_KEY,
+        projectId: process.env.POSTHOG_PROJECT_ID,
+        host: 'https://eu.i.posthog.com',
+        sourcemaps: {
+          enabled: true,
+        },
+      })
+    : baseConfig;
+
+/**
+ * Removes webpack-only plugin output so Turbopack stays enabled.
+ */
+export default async (...args) => {
+  const resolved =
+    typeof wrappedConfig === 'function'
+      ? await wrappedConfig(...args)
+      : wrappedConfig;
+  // Strip the webpack key injected by @posthog/nextjs-config so Turbopack
+  // doesn't bail out with "a webpack configuration was found".
+  const { webpack: _webpack, ...rest } = resolved;
+  return rest;
+};
