@@ -20,8 +20,8 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 import type { z } from 'zod';
 
@@ -483,15 +483,9 @@ export const ProposalsList = ({
   const { user } = useUser();
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
-  // Initialize state from URL search params
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    searchParams.get('category') || 'all-categories',
-  );
-  const [sortOrder, setSortOrder] = useState<string>(
-    searchParams.get('sort') || 'newest',
-  );
+  const [selectedCategory, setSelectedCategory] = useState('all-categories');
+  const [sortOrder, setSortOrder] = useState('newest');
 
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user.currentProfile?.id;
@@ -522,7 +516,7 @@ export const ProposalsList = ({
 
   // Helper function to update URL params
   const updateURLParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
 
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null || value === 'all-categories' || value === 'all') {
@@ -684,15 +678,17 @@ export const ProposalsList = ({
     currentProfileId,
     votedProposalIds: selectedProposalIds,
     hasVoted,
-    initialFilter: (searchParams.get('filter') as ProposalFilter) || undefined,
+    initialFilter: undefined,
   });
 
-  // Sync URL with filter changes (both manual and automatic)
+  // Sync URL with filter changes (both manual and automatic), skipping initial render
+  const isFirstFilterSync = useRef(true);
   useEffect(() => {
-    const currentFilter = searchParams.get('filter');
-    if (proposalFilter !== currentFilter) {
-      updateURLParams({ filter: proposalFilter });
+    if (isFirstFilterSync.current) {
+      isFirstFilterSync.current = false;
+      return;
     }
+    updateURLParams({ filter: proposalFilter });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalFilter]);
 
