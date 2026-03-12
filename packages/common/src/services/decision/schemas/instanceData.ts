@@ -86,12 +86,8 @@ export function createInstanceDataFromTemplate(input: {
     templateVersion: template.version,
     templateName: template.name,
     templateDescription: template.description,
-    ...(template.proposalTemplate && {
-      proposalTemplate: template.proposalTemplate,
-    }),
-    ...(template.rubricTemplate && {
-      rubricTemplate: template.rubricTemplate,
-    }),
+    proposalTemplate: template.proposalTemplate,
+    rubricTemplate: template.rubricTemplate,
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 
