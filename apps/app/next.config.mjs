@@ -49,10 +49,8 @@ const config = {
   images: {
     minimumCacheTTL: 31536000, // 1 year — assets are content-addressed
   },
+  serverExternalPackages: ['sharp', 'onnxruntime-node'],
   experimental: {
-    // reactCompiler: true,
-    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
-    instrumentationHook: true,
     authInterrupts: true,
   },
 
