@@ -88,7 +88,7 @@ export const ComingSoonScreen = () => {
                     ),
                   },
                 )}
-              </span>
+              </span>{' '}
               <span>{t('No setup headaches. No learning curve.')} </span>
               <span>
                 {t.rich(
