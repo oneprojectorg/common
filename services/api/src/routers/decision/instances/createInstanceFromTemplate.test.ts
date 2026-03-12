@@ -37,7 +37,13 @@ async function createAuthenticatedCaller(email: string) {
 async function createSimpleTemplate(
   testData: TestDecisionsDataManager,
   taskId: string,
+  schemaOverrides?: Partial<DecisionSchemaDefinition>,
 ) {
+  const schema: DecisionSchemaDefinition = {
+    ...simpleVoting,
+    ...schemaOverrides,
+  };
+
   // Get a user to set as createdByProfileId
   const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
@@ -56,8 +62,8 @@ async function createSimpleTemplate(
     .insert(decisionProcesses)
     .values({
       name: `Simple Template ${taskId}`,
-      description: simpleVoting.description,
-      processSchema: simpleVoting, // Store as DecisionSchemaDefinition
+      description: schema.description,
+      processSchema: schema,
       createdByProfileId: userRecord.profileId,
     })
     .returning();
@@ -314,36 +320,15 @@ describe.concurrent('createInstanceFromTemplate', () => {
       required: ['title'],
     };
 
-    // Create a template with a proposalTemplate in its schema
-    const templateWithProposal: DecisionSchemaDefinition = {
-      ...simpleVoting,
-      proposalTemplate,
-    };
-
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-    const [userRecord] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, setup.userEmail));
-
-    if (!userRecord?.profileId) {
-      throw new Error('Test user must have a profileId');
-    }
-
-    const [template] = await db
-      .insert(decisionProcesses)
-      .values({
-        name: `Proposal Template Test ${task.id}`,
-        description: templateWithProposal.description,
-        processSchema: templateWithProposal,
-        createdByProfileId: userRecord.profileId,
-      })
-      .returning();
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { proposalTemplate },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
 
     const result = await caller.decision.createInstanceFromTemplate({
-      templateId: template!.id,
+      templateId,
       name: `Proposal Template Decision ${task.id}`,
     });
 
