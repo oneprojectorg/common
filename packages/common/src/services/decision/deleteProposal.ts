@@ -25,7 +25,6 @@ export const deleteProposal = async ({
         where: eq(proposals.id, proposalId),
         with: {
           processInstance: true,
-          decisions: true,
         },
       }),
     ]);
@@ -75,13 +74,6 @@ export const deleteProposal = async ({
 
     if (!isSubmitter && !hasProposalAdmin && !hasInstanceAdmin) {
       throw new UnauthorizedError('Not authorized to delete this proposal');
-    }
-
-    // Check if there are any decisions on this proposal
-    if (existingProposal.decisions && existingProposal.decisions.length > 0) {
-      throw new ValidationError(
-        'Cannot delete proposal that has received decisions',
-      );
     }
 
     const [deletedProposal] = await db

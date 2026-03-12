@@ -1,6 +1,5 @@
 import { db, eq } from '@op/db/client';
 import {
-  decisions,
   processInstances,
   proposals,
   stateTransitionHistory,
@@ -422,69 +421,21 @@ export class TransitionEngine {
   }
 
   private static async evaluateParticipationCountCondition(
-    condition: TransitionCondition,
-    instanceId: string,
+    _condition: TransitionCondition,
+    _instanceId: string,
   ): Promise<boolean> {
-    // Count unique participants who have submitted decisions
-    const participantCount = await db
-      .selectDistinctOn([decisions.decidedByProfileId])
-      .from(decisions)
-      .innerJoin(proposals, eq(proposals.id, decisions.proposalId))
-      .where(eq(proposals.processInstanceId, instanceId))
-      .then((results) => results.length);
-
-    const value = Number(condition.value);
-
-    switch (condition.operator) {
-      case 'equals':
-        return participantCount === value;
-      case 'greaterThan':
-        return participantCount > value;
-      case 'lessThan':
-        return participantCount < value;
-      default:
-        return false;
-    }
+    // TODO: decision_instances table was dropped (it was always empty).
+    // This entire TransitionEngine class is dead code — never called from production.
+    return false;
   }
 
   private static async evaluateApprovalRateCondition(
-    condition: TransitionCondition,
-    instanceId: string,
+    _condition: TransitionCondition,
+    _instanceId: string,
   ): Promise<boolean> {
-    // This is a simplified approval rate calculation
-    // In practice, you'd need to define what constitutes "approval" in your decision schema
-    const allDecisions = await db
-      .select()
-      .from(decisions)
-      .innerJoin(proposals, eq(proposals.id, decisions.proposalId))
-      .where(eq(proposals.processInstanceId, instanceId));
-
-    if (allDecisions.length === 0) {
-      return false;
-    }
-
-    // Simplified: assume decisions with decisionData.approved = true are approvals
-    const approvalCount = allDecisions.filter((d) => {
-      const decisionData = d.decision_instances.decisionData as Record<
-        string,
-        unknown
-      >;
-      return decisionData.approved === true;
-    }).length;
-
-    const approvalRate = approvalCount / allDecisions.length;
-    const value = Number(condition.value);
-
-    switch (condition.operator) {
-      case 'equals':
-        return Math.abs(approvalRate - value) < 0.01; // Within 1%
-      case 'greaterThan':
-        return approvalRate > value;
-      case 'lessThan':
-        return approvalRate < value;
-      default:
-        return false;
-    }
+    // TODO: decision_instances table was dropped (it was always empty).
+    // This entire TransitionEngine class is dead code — never called from production.
+    return false;
   }
 
   private static evaluateCustomFieldCondition(
