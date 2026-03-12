@@ -39,7 +39,7 @@ export const CreateMenu = () => {
           color={isMobile ? 'secondary' : 'primary'}
         >
           <LuPlus className="size-4" />
-          <span className="hidden sm:block">{t('Create')}</span>
+          <span className="hidden sm:block">{t('Start a process')}</span>
         </Button>
         <Popover>
           <Menu>
