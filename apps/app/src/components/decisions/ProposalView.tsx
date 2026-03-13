@@ -192,12 +192,10 @@ export function ProposalView({
         <div className="mx-auto flex max-w-xl flex-col gap-8">
           {/* Draft mode banner */}
           {isDraft && (
-            <AlertBanner intent="default" variant="default">
-              <p className="text-sm">
-                {t(
-                  'This proposal is currently in draft mode, only you and collaborators can access it.',
-                )}
-              </p>
+            <AlertBanner intent="default" variant="banner">
+              {t(
+                'This proposal is currently in draft mode, only you and collaborators can access it.',
+              )}
             </AlertBanner>
           )}
 
