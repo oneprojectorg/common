@@ -197,14 +197,6 @@ export function ProposalView({
                 {t(
                   'This proposal is currently in draft mode, only you and collaborators can access it.',
                 )}
-                {editHref && (
-                  <>
-                    {' '}
-                    <Link href={editHref} className="text-sm font-semibold">
-                      {t('Edit proposal')}
-                    </Link>
-                  </>
-                )}
               </p>
             </AlertBanner>
           )}
