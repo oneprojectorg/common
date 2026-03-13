@@ -130,7 +130,7 @@ test.describe('Proposal Submit Validation', () => {
 
     await authenticatedPage.goto(
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
-      { waitUntil: 'networkidle' },
+      { waitUntil: 'domcontentloaded' },
     );
 
     const submitButton = authenticatedPage.getByRole('button', {
