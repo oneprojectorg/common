@@ -15,6 +15,33 @@ export const simpleVoting: DecisionSchemaDefinition = {
   description:
     'Basic approval voting where members vote for multiple proposals.',
 
+  proposalTemplate: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        title: 'Proposal title',
+        'x-format': 'short-text',
+      },
+      summary: {
+        type: 'string',
+        title: 'Proposal summary',
+        'x-format': 'long-text',
+      },
+      budget: {
+        type: 'object',
+        title: 'Budget',
+        'x-format': 'money',
+        properties: {
+          amount: { type: 'number' },
+          currency: { type: 'string', default: 'USD' },
+        },
+      },
+    },
+    'x-field-order': ['title', 'budget', 'summary'],
+    required: ['title', 'summary'],
+  },
+
   phases: [
     {
       id: 'submission',
