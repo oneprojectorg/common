@@ -2,10 +2,14 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { EmptyState } from '@op/ui/EmptyState';
+import { Header3 } from '@op/ui/Header';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
-import { ErrorMessage } from '@/components/ErrorMessage';
+import { useTranslations } from '@/lib/i18n';
+
 import { ProposalView } from '@/components/decisions/ProposalView';
 import PageNotFound from '@/components/screens/PageNotFound';
 
@@ -40,7 +44,7 @@ function ProposalViewPageContent({
 
 function ProposalViewPageSkeleton() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <>
       {/* Header loading */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
@@ -80,6 +84,22 @@ function ProposalViewPageSkeleton() {
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+function ProposalErrorFallback() {
+  const t = useTranslations();
+  return (
+    <div className="flex flex-1 items-center justify-center">
+      <EmptyState icon={<LuCircleAlert className="size-6" />}>
+        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+          {t('Something went wrong')}
+        </Header3>
+        <p className="text-base text-neutral-charcoal">
+          {t('Please try again later.')}
+        </p>
+      </EmptyState>
     </div>
   );
 }
@@ -91,16 +111,18 @@ const ProposalViewPage = () => {
   }>();
 
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        404: () => <PageNotFound />,
-        default: () => <ErrorMessage />,
-      }}
-    >
-      <Suspense fallback={<ProposalViewPageSkeleton />}>
-        <ProposalViewPageContent profileId={profileId} slug={slug} />
-      </Suspense>
-    </APIErrorBoundary>
+    <div className="flex min-h-screen flex-col">
+      <APIErrorBoundary
+        fallbacks={{
+          404: () => <PageNotFound />,
+          default: () => <ProposalErrorFallback />,
+        }}
+      >
+        <Suspense fallback={<ProposalViewPageSkeleton />}>
+          <ProposalViewPageContent profileId={profileId} slug={slug} />
+        </Suspense>
+      </APIErrorBoundary>
+    </div>
   );
 };
 
