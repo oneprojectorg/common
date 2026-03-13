@@ -1,11 +1,13 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorMessage } from '@/components/ErrorMessage';
 import { ProposalView } from '@/components/decisions/ProposalView';
+import PageNotFound from '@/components/screens/PageNotFound';
 
 function ProposalViewPageContent({
   profileId,
@@ -83,7 +85,12 @@ const ProposalViewPage = () => {
   }>();
 
   return (
-    <ErrorBoundary>
+    <APIErrorBoundary
+      fallbacks={{
+        404: () => <PageNotFound />,
+        default: () => <ErrorMessage />,
+      }}
+    >
       <Suspense fallback={<ProposalViewPageSkeleton />}>
         <ProposalViewPageContent
           profileId={profileId}
@@ -91,7 +98,7 @@ const ProposalViewPage = () => {
           instanceId={id}
         />
       </Suspense>
-    </ErrorBoundary>
+    </APIErrorBoundary>
   );
 };
 

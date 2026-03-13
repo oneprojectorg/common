@@ -6,9 +6,11 @@ import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
+import { ProposalStatus } from '@op/api/encoders';
 import { parseProposalData, parseTranslatedMeta } from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
+import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
@@ -168,6 +170,8 @@ export function ProposalView({
   // Render them directly instead of going through the template-driven renderer.
   const legacyHtml = resolvedHtmlContent?.default as string | undefined;
 
+  const isDraft = currentProposal.status === ProposalStatus.DRAFT;
+
   // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
   const showBanner =
     locale !== 'en' && !bannerDismissed && !translatedHtmlContent;
@@ -186,6 +190,25 @@ export function ProposalView({
       {/* Content */}
       <div className="flex-1 px-6 py-8">
         <div className="mx-auto flex max-w-xl flex-col gap-8">
+          {/* Draft mode banner */}
+          {isDraft && (
+            <AlertBanner intent="default" variant="default">
+              <p className="text-sm">
+                {t(
+                  'This proposal is currently in draft mode, only you and collaborators can access it.',
+                )}
+                {editHref && (
+                  <>
+                    {' '}
+                    <Link href={editHref} className="text-sm font-semibold">
+                      {t('Edit proposal')}
+                    </Link>
+                  </>
+                )}
+              </p>
+            </AlertBanner>
+          )}
+
           <div className="space-y-4">
             <Header1 className="font-serif text-title-lg">
               {translatedHtmlContent?.translated.title ? (
@@ -269,10 +292,12 @@ export function ProposalView({
                         {currentProposal.submittedBy.name ||
                           currentProposal.submittedBy.slug}
                       </span>
-                      <span className="text-sm text-neutral-charcoal">
-                        {t('Submitted on')}{' '}
-                        {formatDate(currentProposal.createdAt)}
-                      </span>
+                      {!isDraft && (
+                        <span className="text-sm text-neutral-charcoal">
+                          {t('Submitted on')}{' '}
+                          {formatDate(currentProposal.createdAt)}
+                        </span>
+                      )}
                     </div>
                   </>
                 )}
