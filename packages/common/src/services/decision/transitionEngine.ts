@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import {
+  decisionTransitionProposals,
   decisions,
   processInstances,
   proposals,
@@ -14,6 +15,14 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import {
+  aggregateVoteData,
+  executePipeline,
+} from './selectionPipeline';
+import type {
+  ExecutionContext,
+  SelectionPipeline,
+} from './selectionPipeline/types';
 import type {
   InstanceData,
   ProcessSchema,
@@ -220,6 +229,40 @@ export class TransitionEngine {
         });
       }
 
+      // Resolve selection pipeline for the departing phase
+      const selectionPipeline = this.resolveSelectionPipeline(
+        processSchema,
+        currentStateId,
+      );
+
+      // Run the pipeline to determine surviving proposals
+      const allProposals = await db
+        .select()
+        .from(proposals)
+        .where(eq(proposals.processInstanceId, data.instanceId));
+
+      let survivingProposalIds: string[] = allProposals.map((p) => p.id);
+
+      if (selectionPipeline) {
+        const voteData = await aggregateVoteData(data.instanceId);
+        const context: ExecutionContext = {
+          proposals: allProposals,
+          voteData,
+          process: {
+            instanceId: data.instanceId,
+            processId: instance.processId,
+            currentStateId: instance.currentStateId,
+            instanceData,
+            processSchema,
+            processInstance: instance,
+          },
+          variables: {},
+          outputs: {},
+        };
+        const surviving = await executePipeline(selectionPipeline, context);
+        survivingProposalIds = surviving.map((p) => p.id);
+      }
+
       // Update the instance in a transaction
       await db.transaction(async (trx) => {
         // Update process instance
@@ -232,14 +275,27 @@ export class TransitionEngine {
           })
           .where(eq(processInstances.id, data.instanceId));
 
-        // Record transition history
-        await trx.insert(stateTransitionHistory).values({
-          processInstanceId: data.instanceId,
-          fromStateId: currentStateId,
-          toStateId: data.toStateId,
-          transitionData: data.transitionData || {},
-          triggeredByProfileId: dbUser.currentProfileId,
-        });
+        // Record transition history and get the inserted ID
+        const [insertedTransition] = await trx
+          .insert(stateTransitionHistory)
+          .values({
+            processInstanceId: data.instanceId,
+            fromStateId: currentStateId,
+            toStateId: data.toStateId,
+            transitionData: data.transitionData || {},
+            triggeredByProfileId: dbUser.currentProfileId,
+          })
+          .returning({ id: stateTransitionHistory.id });
+
+        // Persist surviving proposals into the join table
+        if (survivingProposalIds.length > 0 && insertedTransition) {
+          await trx.insert(decisionTransitionProposals).values(
+            survivingProposalIds.map((proposalId) => ({
+              transitionHistoryId: insertedTransition.id,
+              proposalId,
+            })),
+          );
+        }
       });
 
       // Return updated instance
@@ -263,6 +319,29 @@ export class TransitionEngine {
       console.error('Error executing transition:', error);
       throw new CommonError('Failed to execute transition');
     }
+  }
+
+  /**
+   * Resolve the selection pipeline for the departing phase.
+   * Checks new format (processSchema.phases) first, then legacy format
+   * (processSchema.phaseTransitionPipelines), falling back to undefined.
+   */
+  private static resolveSelectionPipeline(
+    processSchema: ProcessSchema,
+    fromStateId: string,
+  ): SelectionPipeline | undefined {
+    if (processSchema.phases) {
+      const phase = processSchema.phases.find((p) => p.id === fromStateId);
+      if (phase?.selectionPipeline) {
+        return phase.selectionPipeline;
+      }
+    }
+
+    if (processSchema.phaseTransitionPipelines?.[fromStateId]) {
+      return processSchema.phaseTransitionPipelines[fromStateId];
+    }
+
+    return undefined;
   }
 
   /**
