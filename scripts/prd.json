@@ -1,0 +1,95 @@
+{
+  "project": "op-common",
+  "branchName": "ralph/docker-dev-environment",
+  "description": "Docker Dev Environment - Fully containerized dev stack with Next.js, tRPC API, Supabase, and Redis via a single docker compose up command",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create base Dockerfile for the monorepo",
+      "description": "As a developer, I need a Dockerfile that installs Node.js 22, pnpm, and the Supabase CLI so the monorepo can build and run inside a container.",
+      "acceptanceCriteria": [
+        "Dockerfile at repo root uses node:22 base image",
+        "pnpm is installed via `corepack enable && corepack prepare pnpm@latest --activate`",
+        "Supabase CLI is installed (via the official npm package `supabase` or direct binary download)",
+        "`pnpm install --frozen-lockfile` runs successfully during image build using the workspace lockfile",
+        "Docker socket passthrough is documented in a comment (host /var/run/docker.sock needed for supabase service)",
+        "Image builds without errors: `docker build -t op-dev .`",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Create .env.docker with dev-safe defaults",
+      "description": "As a developer, I want a checked-in environment file with all required env vars pre-filled with safe local dev defaults so I can start the stack with zero manual configuration.",
+      "acceptanceCriteria": [
+        "`.env.docker` exists at the repo root and is committed to git (not in .gitignore)",
+        "File contains NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET using well-known Supabase local dev defaults",
+        "File contains REDIS_URL=redis://redis:6379",
+        "File contains APP_PORT=3100 as default",
+        "A `.env.docker.example` with inline comments explaining each variable is also created",
+        "No real production secrets appear in either file",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Create docker-compose.yml with all services, hot-reload, and configurable port",
+      "description": "As a developer, I want a single `docker compose up` to start app, api, supabase, and redis with hot-reload via volume mounts and the app port configurable via APP_PORT.",
+      "acceptanceCriteria": [
+        "`docker-compose.yml` exists at repo root and defines four services: `app`, `api`, `supabase`, `redis`",
+        "`app` service uses the repo Dockerfile, runs `pnpm w:app dev`, and exposes host port `${APP_PORT:-3100}` mapped to container port 3100",
+        "`api` service uses the repo Dockerfile, runs `pnpm w:api dev`, and exposes host port 3300 mapped to container port 3300",
+        "`supabase` service uses the repo Dockerfile, mounts `/var/run/docker.sock:/var/run/docker.sock`, runs `supabase start --config supabase/supabase-dev.toml`, and exposes ports 54321 (API), 54322 (DB), 54323 (Studio), 54324 (Inbucket)",
+        "`redis` service uses `redis:7-alpine` image and exposes port 6379",
+        "All services share a custom Docker network named `op-dev`",
+        "`app` and `api` services bind-mount the repo root (`.:/app`) for hot-reload",
+        "Named volumes `app_node_modules` and `api_node_modules` are mounted at `/app/node_modules` in their respective services to prevent the bind mount from overwriting installed packages",
+        "Named volumes `app_next` and `api_next` are mounted at `/app/apps/app/.next` and `/app/apps/api/.next` for Next.js build cache",
+        "`docker-compose.yml` references `env_file: .env.docker`",
+        "Running `APP_PORT=4000 docker compose up` exposes the app on localhost:4000",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Verify Supabase startup and database seeding inside Docker",
+      "description": "As a developer, I want the containerized Supabase instance to start with the correct config and apply seed data so the app is immediately usable after `docker compose up`.",
+      "acceptanceCriteria": [
+        "`supabase start` inside the `supabase` container runs against `supabase/supabase-dev.toml` without errors",
+        "Supabase Studio is accessible at http://localhost:54323 after `docker compose up`",
+        "Seed SQL from `supabase/seed.sql` is applied on first start (verify a seeded table exists via Studio or psql)",
+        "The `app` container can reach Supabase using NEXT_PUBLIC_SUPABASE_URL from `.env.docker` (no connection refused errors in app logs)",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "supabase-dev.toml already configures seed.sql (gitignored, created locally). Connectivity ensured via SUPABASE_URL=http://supabase:54321 for server-side and NEXT_PUBLIC_SUPABASE_URL for browser. Ports 54321-54324 mapped in docker-compose.yml."
+    },
+    {
+      "id": "US-005",
+      "title": "Write Docker setup documentation",
+      "description": "As a new developer, I want clear step-by-step instructions for the Docker dev environment so I can get started with only Docker Desktop installed.",
+      "acceptanceCriteria": [
+        "A `docker/README.md` file is created with a Docker Dev Environment section",
+        "Documents prerequisites: Docker Desktop (macOS/Linux), no other local tools needed",
+        "Shows the single startup command: `docker compose up`",
+        "Documents how to change the port: `APP_PORT=4000 docker compose up`",
+        "Documents how to access the app (http://localhost:3100 by default), API (http://localhost:3300), and Supabase Studio (http://localhost:54323)",
+        "Documents teardown: `docker compose down` (keeps data) and `docker compose down -v` (wipes volumes/database)",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    }
+  ]
+}
