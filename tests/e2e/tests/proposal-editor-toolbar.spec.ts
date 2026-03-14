@@ -83,7 +83,7 @@ test.describe('Proposal Editor Toolbar', () => {
 
     await authenticatedPage.goto(
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
-      { waitUntil: 'networkidle' },
+      { waitUntil: 'domcontentloaded' },
     );
 
     // Wait for editor to fully load

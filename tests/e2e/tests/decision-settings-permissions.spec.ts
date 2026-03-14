@@ -54,7 +54,7 @@ test.describe('Decision Settings Permissions', () => {
     });
 
     await memberPage.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     await expect(
@@ -74,7 +74,7 @@ test.describe('Decision Settings Permissions', () => {
     });
 
     await adminPage.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     await expect(

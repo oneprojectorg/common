@@ -13,13 +13,11 @@ const submitVoteInput = z.object({
   customData: customDataSchema,
 });
 
-const votingProcedure = commonAuthedProcedure({
-  rateLimit: { windowSize: 10, maxRequests: 5 },
-});
-
 export const votingRouter = router({
   // Submit user's vote (validates against current schema)
-  submitVote: votingProcedure
+  submitVote: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 5 },
+  })
     .input(submitVoteInput)
     .mutation(async ({ input, ctx }) => {
       return await submitVote({
@@ -35,7 +33,7 @@ export const votingRouter = router({
     }),
 
   // Get user's vote status with schema context
-  getVotingStatus: votingProcedure
+  getVotingStatus: commonAuthedProcedure()
     .input(
       z.object({
         processInstanceId: z.uuid(),
