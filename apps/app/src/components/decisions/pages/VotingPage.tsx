@@ -17,6 +17,7 @@ export function VotingPage({
   slug,
   decisionSlug,
   canVote = false,
+  canManageProposals,
 }: {
   instanceId: string;
   slug: string;
@@ -24,6 +25,8 @@ export function VotingPage({
   decisionSlug?: string;
   /** Whether the current user has permission to vote */
   canVote?: boolean;
+  /** Whether the current user can manage/export proposals (admin or review role) */
+  canManageProposals?: boolean;
 }) {
   const t = useTranslations();
 
@@ -80,6 +83,7 @@ export function VotingPage({
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
                 canVote={canVote}
+                canManageProposals={canManageProposals}
               />
             </Suspense>
           </div>

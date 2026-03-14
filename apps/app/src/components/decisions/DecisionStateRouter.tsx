@@ -52,6 +52,8 @@ function DecisionStateRouterNew({
 
   const canSubmitProposal = instance.access?.submitProposals ?? false;
   const canVote = instance.access?.vote ?? false;
+  const canManage =
+    (instance.access?.admin ?? false) || (instance.access?.review ?? false);
 
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,
@@ -61,6 +63,7 @@ function DecisionStateRouterNew({
         slug={slug}
         decisionSlug={decisionSlug}
         canVote={canVote}
+        canManageProposals={canManage}
       />
     ),
     _: () => (
@@ -73,6 +76,7 @@ function DecisionStateRouterNew({
         description={description}
         currentPhase={currentPhase}
         canSubmitProposal={canSubmitProposal}
+        canManageProposals={canManage}
       />
     ),
   });

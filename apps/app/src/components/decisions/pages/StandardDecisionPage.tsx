@@ -22,6 +22,7 @@ export function StandardDecisionPage({
   description,
   currentPhase,
   canSubmitProposal = false,
+  canManageProposals,
 }: {
   instanceId: string;
   slug: string;
@@ -37,6 +38,8 @@ export function StandardDecisionPage({
   currentPhase?: InstancePhaseData;
   /** Whether the current user has permission to submit proposals */
   canSubmitProposal?: boolean;
+  /** Whether the current user can manage/export proposals (admin or review role) */
+  canManageProposals?: boolean;
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
@@ -86,6 +89,7 @@ export function StandardDecisionPage({
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
                 decisionProfileId={decisionProfileId}
+                canManageProposals={canManageProposals}
               />
             </Suspense>
           </div>
