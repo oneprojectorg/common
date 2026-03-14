@@ -235,7 +235,7 @@ test.describe('Proposal Listing', () => {
 
     // 3. Navigate with ?filter=all (default is "Shortlisted" which hides drafts)
     await authenticatedPage.goto(`/en/decisions/${slug}?filter=all`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // Decision heading renders
@@ -400,7 +400,7 @@ test.describe('Proposal Listing', () => {
 
     // 3. Navigate with ?filter=all (default is "Shortlisted" which hides drafts)
     await authenticatedPage.goto(`/en/decisions/${slug}?filter=all`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // Decision heading renders

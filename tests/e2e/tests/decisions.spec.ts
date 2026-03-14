@@ -21,7 +21,7 @@ test.describe('Decisions', () => {
 
     // 3. Navigate to the decision page
     await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     // 4. Wait for the page to load

@@ -29,7 +29,7 @@ test.describe('Onboarding', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await page.goto('/en/start', { waitUntil: 'networkidle' });
+    await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
 
     // Should skip directly to personal details form
     await expect(
@@ -84,7 +84,7 @@ test.describe('Onboarding', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await page.goto('/en/start', { waitUntil: 'networkidle' });
+    await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
 
     // Should show the decision invites screen
     await expect(
