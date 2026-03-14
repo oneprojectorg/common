@@ -7,6 +7,7 @@ import type {
 } from '@op/db/schema';
 import {
   ProfileRelationshipType,
+  ProposalStatus,
   posts,
   postsToProfiles,
   profileRelationships,
@@ -102,6 +103,22 @@ export const getProposal = async ({
 
   if (!proposal) {
     throw new NotFoundError('Proposal not found');
+  }
+
+  // Draft proposals are only visible to users with proposal-level access
+  // (the creator and invited collaborators who have a profileUsers record).
+  if (proposal.status === ProposalStatus.DRAFT) {
+    const hasProposalAccess = await db.query.profileUsers.findFirst({
+      where: {
+        profileId: proposal.profileId,
+        authUserId: user.id,
+      },
+      columns: { id: true },
+    });
+
+    if (!hasProposalAccess) {
+      throw new NotFoundError('Proposal not found');
+    }
   }
 
   // Read proposalTemplate from instanceData (new path) or processSchema (legacy path)
