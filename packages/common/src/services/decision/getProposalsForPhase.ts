@@ -36,7 +36,10 @@ export async function getProposalsForPhase({
         eq(decisionTransitionProposals.proposalId, proposals.id),
       )
       .where(
-        eq(decisionTransitionProposals.transitionHistoryId, transitionId),
+        and(
+          eq(decisionTransitionProposals.transitionHistoryId, transitionId),
+          isNull(proposals.deletedAt),
+        ),
       );
 
     return rows.map((r) => r.proposal);
