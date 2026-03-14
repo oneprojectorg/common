@@ -4,11 +4,9 @@ import {
   ProposalStatus,
   Visibility,
   decisionProcesses,
-  decisions,
   processInstances,
   proposalAttachments,
   proposals,
-  stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -227,7 +225,6 @@ export const legacyProposalEncoder = createSelectSchema(proposals)
     processInstance: legacyProcessInstanceEncoder.optional(),
     submittedBy: baseProfileEncoder.optional(),
     profile: baseProfileEncoder,
-    decisionCount: z.number().optional(),
     likesCount: z.number().optional(),
     followersCount: z.number().optional(),
     commentsCount: z.number().optional(),
@@ -246,34 +243,6 @@ export const legacyProposalEncoder = createSelectSchema(proposals)
     allocated: z.string().nullable().optional(),
     // Document content (TipTap JSON or legacy HTML)
     documentContent: documentContentEncoder.optional(),
-  });
-
-// Decision Encoder
-export const legacyDecisionEncoder = createSelectSchema(decisions)
-  .pick({
-    id: true,
-    decisionData: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    proposal: legacyProposalEncoder.optional(),
-    decidedBy: baseProfileEncoder.optional(),
-  });
-
-// State Transition History Encoder
-export const legacyStateTransitionHistoryEncoder = createSelectSchema(
-  stateTransitionHistory,
-)
-  .pick({
-    id: true,
-    fromStateId: true,
-    toStateId: true,
-    transitionData: true,
-    transitionedAt: true,
-  })
-  .extend({
-    triggeredBy: baseProfileEncoder.optional(),
   });
 
 // List Encoders (for paginated responses)
@@ -299,12 +268,6 @@ export const legacyProposalListEncoder = z.object({
 export const legacyInstanceResultsEncoder = z.object({
   items: z.array(legacyProposalEncoder),
   next: z.string().nullish(),
-});
-
-export const legacyDecisionListEncoder = z.object({
-  decisions: z.array(legacyDecisionEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
 });
 
 // Input Schemas
