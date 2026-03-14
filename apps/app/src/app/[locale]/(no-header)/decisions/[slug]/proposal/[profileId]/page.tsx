@@ -38,7 +38,7 @@ function ProposalViewPageContent({
 
 function ProposalViewPageSkeleton() {
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       {/* Header loading */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
@@ -78,7 +78,7 @@ function ProposalViewPageSkeleton() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -89,17 +89,15 @@ const ProposalViewPage = () => {
   }>();
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <APIErrorBoundary
-        fallbacks={{
-          404: () => notFound(),
-        }}
-      >
-        <Suspense fallback={<ProposalViewPageSkeleton />}>
-          <ProposalViewPageContent profileId={profileId} slug={slug} />
-        </Suspense>
-      </APIErrorBoundary>
-    </div>
+    <APIErrorBoundary
+      fallbacks={{
+        404: () => notFound(),
+      }}
+    >
+      <Suspense fallback={<ProposalViewPageSkeleton />}>
+        <ProposalViewPageContent profileId={profileId} slug={slug} />
+      </Suspense>
+    </APIErrorBoundary>
   );
 };
 
