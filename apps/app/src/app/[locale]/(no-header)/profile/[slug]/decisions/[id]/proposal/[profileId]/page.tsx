@@ -1,10 +1,10 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProposalView } from '@/components/decisions/ProposalView';
 
 function ProposalViewPageContent({
@@ -83,7 +83,11 @@ const ProposalViewPage = () => {
   }>();
 
   return (
-    <ErrorBoundary>
+    <APIErrorBoundary
+      fallbacks={{
+        404: () => notFound(),
+      }}
+    >
       <Suspense fallback={<ProposalViewPageSkeleton />}>
         <ProposalViewPageContent
           profileId={profileId}
@@ -91,7 +95,7 @@ const ProposalViewPage = () => {
           instanceId={id}
         />
       </Suspense>
-    </ErrorBoundary>
+    </APIErrorBoundary>
   );
 };
 
