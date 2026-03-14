@@ -108,12 +108,11 @@ export const getProposal = async ({
   // Draft proposals are only visible to users with proposal-level access
   // (the creator and invited collaborators who have a profileUsers record).
   if (proposal.status === ProposalStatus.DRAFT) {
-    const hasProposalAccess = await db._query.profileUsers.findFirst({
-      where: (table, { eq: whereEq }) =>
-        and(
-          whereEq(table.profileId, proposal.profileId),
-          whereEq(table.authUserId, user.id),
-        ),
+    const hasProposalAccess = await db.query.profileUsers.findFirst({
+      where: {
+        profileId: proposal.profileId,
+        authUserId: user.id,
+      },
       columns: { id: true },
     });
 
