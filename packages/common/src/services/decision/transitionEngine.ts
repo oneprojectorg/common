@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   decisionTransitionProposals,
   decisions,
@@ -235,11 +235,16 @@ export class TransitionEngine {
         currentStateId,
       );
 
-      // Run the pipeline to determine surviving proposals
+      // Run the pipeline to determine surviving proposals (exclude soft-deleted)
       const allProposals = await db
         .select()
         .from(proposals)
-        .where(eq(proposals.processInstanceId, data.instanceId));
+        .where(
+          and(
+            eq(proposals.processInstanceId, data.instanceId),
+            isNull(proposals.deletedAt),
+          ),
+        );
 
       let survivingProposalIds: string[] = allProposals.map((p) => p.id);
 
