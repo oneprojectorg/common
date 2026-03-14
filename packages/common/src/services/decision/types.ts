@@ -2,6 +2,7 @@ import type { DecisionProcessTransition } from '@op/db/schema';
 import type { JSONSchema7 } from 'json-schema';
 
 import type { SelectionPipeline } from './selectionPipeline/types';
+import type { PhaseDefinition } from './schemas/types';
 
 // Base JSON Schema type (more specific than any)
 export type JsonSchema = JSONSchema7;
@@ -66,6 +67,9 @@ export interface ProcessSchema {
 
   // Phase transition pipelines (keyed by state ID)
   phaseTransitionPipelines?: Record<string, SelectionPipeline>;
+
+  // New format: phases with inline selectionPipeline
+  phases?: PhaseDefinition[];
 }
 
 // State Definition (stored in processSchema.states)
