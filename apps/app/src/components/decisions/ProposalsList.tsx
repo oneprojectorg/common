@@ -147,6 +147,7 @@ interface ProposalsProps {
   decisionSlug?: string;
   isLoading: boolean;
   canManageProposals?: boolean;
+  canVote?: boolean;
   votedProposalIds?: string[];
   hasFilter: boolean;
 }
@@ -156,6 +157,7 @@ const VotingProposalsList = ({
   instanceId,
   slug,
   canManageProposals = false,
+  canVote = true,
   votedProposalIds = [],
   hasFilter,
 }: ProposalsProps) => {
@@ -328,7 +330,7 @@ const VotingProposalsList = ({
         })}
       </div>
 
-      <VotingSubmitFooter isVisible={!isReadOnly}>
+      <VotingSubmitFooter isVisible={canVote && !isReadOnly}>
         <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
           <span className="text-neutral-black">
             <span className="text-primary-teal">{numSelected}</span> of{' '}
@@ -471,6 +473,7 @@ export const ProposalsList = ({
   instanceId,
   decisionSlug,
   decisionProfileId,
+  canVote = true,
 }: {
   slug: string;
   instanceId: string;
@@ -478,6 +481,8 @@ export const ProposalsList = ({
   decisionSlug?: string;
   /** Decision profile ID for translating the decision content */
   decisionProfileId?: string | null;
+  /** Whether the current user has permission to vote */
+  canVote?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -839,6 +844,7 @@ export const ProposalsList = ({
           slug={slug}
           decisionSlug={decisionSlug}
           canManageProposals={canManageProposals}
+          canVote={canVote}
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
         />

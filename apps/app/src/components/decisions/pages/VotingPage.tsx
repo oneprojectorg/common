@@ -9,17 +9,21 @@ import { useTranslations } from '@/lib/i18n/routing';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
+import { MyBallot } from '../MyBallot';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
 export function VotingPage({
   instanceId,
   slug,
   decisionSlug,
+  canVote = false,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
+  /** Whether the current user has permission to vote */
+  canVote?: boolean;
 }) {
   const t = useTranslations();
 
@@ -75,11 +79,18 @@ export function VotingPage({
                 slug={slug}
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
+                canVote={canVote}
               />
             </Suspense>
           </div>
         </div>
       </div>
+
+      {canVote && (
+        <Suspense fallback={null}>
+          <MyBallot slug={slug} instanceId={instanceId} />
+        </Suspense>
+      )}
     </div>
   );
 }

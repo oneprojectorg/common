@@ -21,6 +21,7 @@ export function StandardDecisionPage({
   allowProposals,
   description,
   currentPhase,
+  canSubmitProposal = false,
 }: {
   instanceId: string;
   slug: string;
@@ -34,6 +35,8 @@ export function StandardDecisionPage({
   description?: string;
   /** Current phase data from the process builder */
   currentPhase?: InstancePhaseData;
+  /** Whether the current user has permission to submit proposals */
+  canSubmitProposal?: boolean;
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
@@ -70,7 +73,7 @@ export function StandardDecisionPage({
           instanceId={instanceId}
           description={actionBarDescription}
           markup={!!translation?.additionalInfo}
-          showSubmitButton={allowProposals}
+          showSubmitButton={allowProposals && canSubmitProposal}
         />
       </div>
 
