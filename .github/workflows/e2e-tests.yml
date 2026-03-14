@@ -12,10 +12,89 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Build step: runs once, uploads .next artifacts for shards ──
+  build:
+    name: Build E2E
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    timeout-minutes: 15
+
+    env:
+      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:56321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SUPABASE_URL: http://127.0.0.1:56321
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:56322/postgres
+      S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
+      NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
+      SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
+      RESEND_PASSWORD: re_test_key_for_ci
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
+      NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
+      CENTRIFUGO_API_URL: http://localhost:8000/api
+      CENTRIFUGO_API_KEY: test_api_key
+      CENTRIFUGO_TOKEN_SECRET: test_token_secret
+      NEXT_PUBLIC_CENTRIFUGO_WS_URL: ws://localhost:8000/connection/websocket
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install pnpm
+        run: corepack prepare pnpm@latest --activate
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build E2E
+        run: pnpm build:e2e
+
+      - name: Upload app build
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: apps/app/.next/
+          retention-days: 1
+
+      - name: Upload api build
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-build
+          path: apps/api/.next/
+          retention-days: 1
+
+  # ── Test shards: download builds, start production servers, run tests ──
   e2e:
     name: E2E Tests (shard ${{ matrix.shard }}/2)
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 30
+    needs: build
 
     strategy:
       fail-fast: false
@@ -83,6 +162,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Download app build
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+          path: apps/app/.next/
+
+      - name: Download api build
+        uses: actions/download-artifact@v4
+        with:
+          name: api-build
+          path: apps/api/.next/
+
       - name: Get Playwright version
         id: playwright-version
         run: |
@@ -126,6 +217,13 @@ jobs:
 
       - name: Seed test database
         run: pnpm w:db seed:e2e
+
+      - name: Start E2E servers
+        run: pnpm start:e2e &
+
+      - name: Wait for servers
+        run: |
+          timeout 60 bash -c 'until curl -s http://localhost:4100 > /dev/null 2>&1 && curl -s http://localhost:4300 > /dev/null 2>&1; do sleep 1; done'
 
       - name: Run E2E tests
         run: pnpm -C ./tests/e2e exec playwright test --shard=${{ matrix.shard }}/2 --reporter=blob

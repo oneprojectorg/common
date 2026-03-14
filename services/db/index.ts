@@ -18,6 +18,5 @@ export const db = drizzle({
   casing: config.casing,
   schema,
   relations,
-  logger:
-    process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development',
+  logger: false,
 });

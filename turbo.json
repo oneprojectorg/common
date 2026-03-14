@@ -12,6 +12,14 @@
         "dist/**"
       ]
     },
+    "build:e2e": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "start:e2e": {
+      "cache": false,
+      "persistent": true
+    },
     "migrate": {
       "dependsOn": []
     },
