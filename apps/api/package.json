@@ -6,11 +6,13 @@
   "type": "module",
   "scripts": {
     "build": "next build --webpack",
+    "build:e2e": "next build --webpack",
     "build:prod": "cd ../../services/db &&  pnpm run migrate && cd ../../apps/api && next build --webpack",
     "dev": "next dev -p 3300 --webpack",
     "dev:e2e": "next dev -p 4300 --webpack",
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\" \"!.next\"",
     "start": "next start",
+    "start:e2e": "next start -p 4300",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

@@ -29,6 +29,6 @@ export default defineConfig({
     schema: 'drizzle',
   },
   casing: 'snake_case',
-  verbose: true,
+  verbose: false,
   strict: true,
 });

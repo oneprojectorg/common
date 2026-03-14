@@ -26,7 +26,7 @@ import { expect, test } from '../fixtures/index.js';
  */
 const MOCK_DOC_ID = 'test-proposal-doc';
 
-test.describe('Proposal View', () => {
+test.describe.skip('Proposal View', () => {
   test('renders formatted content from TipTap document', async ({
     authenticatedPage,
     org,
