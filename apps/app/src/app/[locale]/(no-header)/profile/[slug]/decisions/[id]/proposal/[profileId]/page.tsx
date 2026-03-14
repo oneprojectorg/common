@@ -2,16 +2,10 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { LuCircleAlert } from 'react-icons/lu';
-
-import { useTranslations } from '@/lib/i18n';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
-import PageNotFound from '@/components/screens/PageNotFound';
 
 function ProposalViewPageContent({
   profileId,
@@ -81,22 +75,6 @@ function ProposalViewPageSkeleton() {
   );
 }
 
-function ProposalErrorFallback() {
-  const t = useTranslations();
-  return (
-    <div className="flex flex-1 items-center justify-center">
-      <EmptyState icon={<LuCircleAlert className="size-6" />}>
-        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-          {t('Something went wrong')}
-        </Header3>
-        <p className="text-base text-neutral-charcoal">
-          {t('Please try again later.')}
-        </p>
-      </EmptyState>
-    </div>
-  );
-}
-
 const ProposalViewPage = () => {
   const { profileId, slug, id } = useParams<{
     profileId: string;
@@ -108,8 +86,7 @@ const ProposalViewPage = () => {
     <div className="flex min-h-screen flex-col">
       <APIErrorBoundary
         fallbacks={{
-          404: () => <PageNotFound />,
-          default: () => <ProposalErrorFallback />,
+          404: () => notFound(),
         }}
       >
         <Suspense fallback={<ProposalViewPageSkeleton />}>
