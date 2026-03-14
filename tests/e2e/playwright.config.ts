@@ -23,6 +23,11 @@ Object.assign(process.env, {
   // getProposalDocumentsContent guards on their presence before calling the client.
   TIPTAP_SECRET: 'e2e',
   NEXT_PUBLIC_TIPTAP_APP_ID: 'e2e',
+  // Centrifugo (realtime messaging) — must match the running Centrifugo instance
+  CENTRIFUGO_API_URL: 'http://localhost:8000/api',
+  CENTRIFUGO_API_KEY: 'test_api_key',
+  CENTRIFUGO_TOKEN_SECRET: 'test_token_secret',
+  NEXT_PUBLIC_CENTRIFUGO_WS_URL: 'ws://localhost:8000/connection/websocket',
 });
 
 /**
