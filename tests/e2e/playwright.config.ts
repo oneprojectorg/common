@@ -14,6 +14,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 Object.assign(process.env, {
   NODE_ENV: 'test',
   E2E: 'true',
+  NEXT_PUBLIC_E2E: 'true',
   NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:56321',
   NEXT_PUBLIC_SUPABASE_ANON_KEY:
     'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',

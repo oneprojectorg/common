@@ -1,6 +1,7 @@
 import PostHogClient from './client';
 
 const posthog = PostHogClient();
+const IS_E2E = process.env.E2E === 'true';
 
 /**
  * Analytics utility functions for tracking user events
@@ -25,6 +26,10 @@ export async function trackEvent({
   event,
   properties,
 }: AnalyticsEvent): Promise<void> {
+  if (IS_E2E) {
+    return;
+  }
+
   posthog.capture({
     distinctId,
     event,
@@ -56,6 +61,10 @@ export async function identifyUser({
   distinctId,
   properties,
 }: AnalyticsIdentify): Promise<void> {
+  if (IS_E2E) {
+    return;
+  }
+
   posthog.identify({
     distinctId,
     properties,
@@ -67,7 +76,7 @@ export async function identifyUser({
  * Track multiple events in sequence
  */
 export async function trackEvents(events: AnalyticsEvent[]): Promise<void> {
-  if (events.length === 0) return;
+  if (IS_E2E || events.length === 0) return;
 
   events.forEach(({ distinctId, event, properties }) => {
     posthog.capture({
