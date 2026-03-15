@@ -21,10 +21,9 @@ jobs:
     env:
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:56321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
       SUPABASE_URL: http://127.0.0.1:56321
-      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:56322/postgres
       S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
       NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
@@ -80,6 +79,8 @@ jobs:
         with:
           name: app-build
           path: apps/app/.next/
+          if-no-files-found: error
+          include-hidden-files: true
           retention-days: 1
 
       - name: Upload api build
@@ -87,6 +88,8 @@ jobs:
         with:
           name: api-build
           path: apps/api/.next/
+          if-no-files-found: error
+          include-hidden-files: true
           retention-days: 1
 
   # ── Test shards: download builds, start production servers, run tests ──
@@ -106,10 +109,9 @@ jobs:
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
       # E2E Supabase instance environment variables (port 56xxx)
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:56321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
       SUPABASE_URL: http://127.0.0.1:56321
-      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:56322/postgres
       S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
       NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
@@ -212,6 +214,15 @@ jobs:
       - name: Check Supabase status
         run: supabase status
 
+      - name: Export Supabase auth keys
+        run: |
+          eval "$(supabase status -o env | grep -E '^(PUBLISHABLE_KEY|SECRET_KEY)=')"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
+            echo "SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
+            echo "SUPABASE_SERVICE_ROLE=${SECRET_KEY}"
+          } >> "$GITHUB_ENV"
+
       - name: Run database migrations
         run: pnpm w:db migrate:e2e
 
@@ -266,11 +277,22 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
 
+      - name: Check for blob reports
+        id: blob-reports
+        run: |
+          if [ -d all-blob-reports ] && [ "$(ls -A all-blob-reports)" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Merge into HTML report
+        if: steps.blob-reports.outputs.found == 'true'
         working-directory: tests/e2e
         run: pnpm dlx playwright@1.58.0 merge-reports --reporter html ../../all-blob-reports
 
       - name: Upload Playwright report
+        if: steps.blob-reports.outputs.found == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
