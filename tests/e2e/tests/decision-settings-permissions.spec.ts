@@ -14,6 +14,7 @@ import {
 
 test.describe('Decision Settings Permissions', () => {
   test('settings button is only visible to admin users', async ({
+    authenticatedPage,
     browser,
     org,
     supabaseAdmin,
@@ -59,29 +60,22 @@ test.describe('Decision Settings Permissions', () => {
 
     await expect(
       memberPage.getByRole('heading', { name: instance.name }),
-    ).toBeVisible({ timeout: 15000 });
+    ).toBeVisible({ timeout: 15_000 });
 
     // 5. Assert the Settings button is NOT visible to the member
     const settingsLink = memberPage.getByRole('link', { name: /Settings/ });
     await expect(settingsLink).not.toBeVisible();
 
     // 6. Authenticate as the admin user and verify Settings IS visible
-    const adminContext = await browser.newContext();
-    const adminPage = await adminContext.newPage();
-    await authenticateAsUser(adminPage, {
-      email: org.adminUser.email,
-      password: TEST_USER_DEFAULT_PASSWORD,
-    });
-
-    await adminPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'domcontentloaded',
     });
 
     await expect(
-      adminPage.getByRole('heading', { name: instance.name }),
-    ).toBeVisible({ timeout: 15000 });
+      authenticatedPage.getByRole('heading', { name: instance.name }),
+    ).toBeVisible({ timeout: 15_000 });
 
-    const adminSettingsLink = adminPage.getByRole('link', {
+    const adminSettingsLink = authenticatedPage.getByRole('link', {
       name: /Settings/,
     });
     await expect(adminSettingsLink).toBeVisible({ timeout: 5000 });
