@@ -14,6 +14,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 Object.assign(process.env, {
   NODE_ENV: 'test',
   E2E: 'true',
+  NEXT_PUBLIC_E2E: 'true',
   NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:56321',
   NEXT_PUBLIC_SUPABASE_ANON_KEY:
     'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
@@ -31,10 +32,11 @@ Object.assign(process.env, {
  */
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 4,
+  workers: process.env.CI ? 3 : 4,
+  // workers: 12,
   reporter: 'html',
   timeout: 60_000, // 60 seconds per test
 
@@ -51,13 +53,7 @@ export default defineConfig({
     },
   ],
 
-  /* Run dev servers with e2e environment before starting the tests */
-  webServer: {
-    command: 'pnpm dev:e2e',
-    url: 'http://localhost:4100',
-    wait: { stdout: /app:dev:e2e:.*Local:\s+http:\/\/localhost:4100/ },
-    reuseExistingServer: !process.env.CI,
-    cwd: path.resolve(__dirname, '../..'),
-    timeout: 120 * 1000,
-  },
+  /* Servers must be running before tests start.
+   * Local:  pnpm build:e2e && pnpm start:e2e
+   * CI:     servers are started in the workflow before playwright runs. */
 });
