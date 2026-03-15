@@ -26,7 +26,7 @@ import { expect, test } from '../fixtures/index.js';
  */
 const MOCK_DOC_ID = 'test-proposal-doc';
 
-test.describe.skip('Proposal View', () => {
+test.describe('Proposal View', () => {
   test('renders formatted content from TipTap document', async ({
     authenticatedPage,
     org,
@@ -162,18 +162,20 @@ test.describe.skip('Proposal View', () => {
     ).toBeVisible();
 
     // New-format budget { value: 10000, currency: 'EUR' } rendered as "€10,000"
-    await expect(authenticatedPage.getByText('€10,000')).toBeVisible();
+    await expect(authenticatedPage.getByText('€10,000').first()).toBeVisible();
 
     // Category value rendered in a Tag component on the proposal view
-    await expect(authenticatedPage.getByText('Renewable Energy')).toBeVisible();
+    await expect(
+      authenticatedPage.getByText('Renewable Energy').first(),
+    ).toBeVisible();
 
     // Dynamic dropdown fields render with their label via ProposalContentRenderer.
     // The field labels should be visible as section headings.
     await expect(
-      authenticatedPage.getByText('Priority Level', { exact: true }),
+      authenticatedPage.getByText('Priority Level', { exact: true }).first(),
     ).toBeVisible();
     await expect(
-      authenticatedPage.getByText('Region', { exact: true }),
+      authenticatedPage.getByText('Region', { exact: true }).first(),
     ).toBeVisible();
   });
 
@@ -228,28 +230,32 @@ test.describe.skip('Proposal View', () => {
 
     // Formatted text rendered with correct tags
     await expect(
-      authenticatedPage.locator('strong', { hasText: 'bold text' }),
+      authenticatedPage.locator('strong', { hasText: 'bold text' }).first(),
     ).toBeVisible();
     await expect(
-      authenticatedPage.locator('em', { hasText: 'italic text' }),
+      authenticatedPage.locator('em', { hasText: 'italic text' }).first(),
     ).toBeVisible();
 
     // List items
     await expect(
-      authenticatedPage.locator('li', { hasText: 'First legacy item' }),
+      authenticatedPage.locator('li', { hasText: 'First legacy item' }).first(),
     ).toBeVisible();
     await expect(
-      authenticatedPage.locator('li', { hasText: 'Second legacy item' }),
+      authenticatedPage
+        .locator('li', { hasText: 'Second legacy item' })
+        .first(),
     ).toBeVisible();
 
     // Link with correct href
-    const link = authenticatedPage.locator('a', { hasText: 'our website' });
+    const link = authenticatedPage
+      .locator('a', { hasText: 'our website' })
+      .first();
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', 'https://example.org');
 
     // Legacy plain-number budget (5000) is normalised to { value: 5000, currency: 'USD' }
     // and rendered as "$5,000" via formatCurrency
-    await expect(authenticatedPage.getByText('$5,000')).toBeVisible();
+    await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
   });
 
   test('renders legacy proposal with old template format and description field', async ({
@@ -317,22 +323,28 @@ test.describe.skip('Proposal View', () => {
 
     // Formatted text rendered correctly
     await expect(
-      authenticatedPage.locator('strong', {
-        hasText: 'old template format',
-      }),
+      authenticatedPage
+        .locator('strong', {
+          hasText: 'old template format',
+        })
+        .first(),
     ).toBeVisible();
 
     // List items
     await expect(
-      authenticatedPage.locator('li', { hasText: 'Support co-ops' }),
+      authenticatedPage.locator('li', { hasText: 'Support co-ops' }).first(),
     ).toBeVisible();
     await expect(
-      authenticatedPage.locator('li', { hasText: 'Build sustainability' }),
+      authenticatedPage
+        .locator('li', { hasText: 'Build sustainability' })
+        .first(),
     ).toBeVisible();
 
     // Category value rendered in a Tag component on the proposal view
     await expect(
-      authenticatedPage.getByText('Ai. Direct funding to worker-owned co-ops.'),
+      authenticatedPage
+        .getByText('Ai. Direct funding to worker-owned co-ops.')
+        .first(),
     ).toBeVisible();
   });
 
@@ -518,18 +530,22 @@ test.describe.skip('Proposal View', () => {
 
     // Legacy plain-number budget (15000) normalised to { amount: 15000, currency: 'USD' }
     // and rendered as "$15,000"
-    await expect(authenticatedPage.getByText('$15,000')).toBeVisible();
+    await expect(authenticatedPage.getByText('$15,000').first()).toBeVisible();
 
     // Category value rendered in a Tag component on the proposal view
     await expect(
-      authenticatedPage.getByText('Ai. Direct funding to worker-owned co-ops.'),
+      authenticatedPage
+        .getByText('Ai. Direct funding to worker-owned co-ops.')
+        .first(),
     ).toBeVisible();
 
     // Description content renders
     await expect(
-      authenticatedPage.locator('strong', {
-        hasText: 'equipment upgrades',
-      }),
+      authenticatedPage
+        .locator('strong', {
+          hasText: 'equipment upgrades',
+        })
+        .first(),
     ).toBeVisible();
   });
 
@@ -572,7 +588,7 @@ test.describe.skip('Proposal View', () => {
 
     // Fallback message shown instead of document content
     await expect(
-      authenticatedPage.getByText('Content could not be loaded'),
+      authenticatedPage.getByText('Content could not be loaded').first(),
     ).toBeVisible();
   });
 });
