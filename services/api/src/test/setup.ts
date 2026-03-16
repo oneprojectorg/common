@@ -1,9 +1,43 @@
-import { analyticsMock } from '@op/analytics/testing';
 import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import { beforeAll, beforeEach, vi } from 'vitest';
 
+const analyticsMock = {
+  PostHogClient: vi.fn(() => ({
+    capture: vi.fn(),
+    identify: vi.fn(),
+    shutdown: vi.fn().mockResolvedValue(undefined),
+  })),
+  identifyUser: vi.fn().mockResolvedValue(undefined),
+  trackEvent: vi.fn().mockResolvedValue(undefined),
+  trackEventWithContext: vi.fn().mockResolvedValue(undefined),
+  trackEvents: vi.fn().mockResolvedValue(undefined),
+  trackImageUpload: vi.fn().mockResolvedValue(undefined),
+  trackUserPost: vi.fn().mockResolvedValue(undefined),
+  trackFundingToggle: vi.fn().mockResolvedValue(undefined),
+  trackRelationshipAdded: vi.fn().mockResolvedValue(undefined),
+  trackRelationshipAccepted: vi.fn().mockResolvedValue(undefined),
+  trackProcessViewed: vi.fn().mockResolvedValue(undefined),
+  trackProposalSubmitted: vi.fn().mockResolvedValue(undefined),
+  trackProposalViewed: vi.fn().mockResolvedValue(undefined),
+  trackProposalCommented: vi.fn().mockResolvedValue(undefined),
+  trackProposalLiked: vi.fn().mockResolvedValue(undefined),
+  trackProposalFollowed: vi.fn().mockResolvedValue(undefined),
+  trackUserVoted: vi.fn().mockResolvedValue(undefined),
+  getDecisionCommonProperties: vi.fn(
+    (
+      processId: string,
+      proposalId?: string,
+      additionalProps?: Record<string, any>,
+    ) => ({
+      process_id: processId,
+      ...(proposalId ? { proposal_id: proposalId } : {}),
+      ...additionalProps,
+    }),
+  ),
+};
+
 vi.mock('@op/common/src/services/profile/utils');
-vi.mock('@op/analytics', async () => import('@op/analytics/testing'));
+vi.mock('@op/analytics', () => analyticsMock);
 vi.mock('@op/collab', async () => import('@op/collab/testing'));
 
 // Mock server-only modules before any other imports
@@ -138,5 +172,4 @@ beforeAll(async () => {
 // Setup test environment for each test
 beforeEach(async () => {
   vi.clearAllMocks();
-  analyticsMock.reset();
 });
