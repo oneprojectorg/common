@@ -87,16 +87,17 @@ describe.concurrent('listDecisionProfiles', () => {
   it('should filter by owner', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // Create Org A
+    // Create User A (no org — instances owned by individual profileId)
     const setup = await testData.createDecisionSetup({
       instanceCount: 2,
       grantAccess: true,
     });
 
-    // Create Org B
+    // Create Org B — instances created after org are owned by orgProfileId
     const otherSetup = await testData.createDecisionSetup({
       instanceCount: 0,
     });
+    const otherOrganization = await testData.createOrganization(otherSetup.userEmail);
 
     // Create 3 instances owned by Org B
     for (let i = 0; i < 3; i++) {
@@ -118,24 +119,24 @@ describe.concurrent('listDecisionProfiles', () => {
 
     const result = await caller.decision.listDecisionProfiles({
       limit: 10,
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: setup.userProfileId,
     });
 
     expect(result.items).toHaveLength(2);
     result.items.forEach((item) => {
-      expect(item.processInstance.owner?.id).toBe(setup.organization.profileId);
+      expect(item.processInstance.owner?.id).toBe(setup.userProfileId);
     });
 
     // Also verify filtering by Org B works
     const otherResult = await caller.decision.listDecisionProfiles({
       limit: 10,
-      ownerProfileId: otherSetup.organization.profileId,
+      ownerProfileId: otherOrganization.profileId,
     });
 
     expect(otherResult.items).toHaveLength(3);
     otherResult.items.forEach((item) => {
       expect(item.processInstance.owner?.id).toBe(
-        otherSetup.organization.profileId,
+        otherOrganization.profileId,
       );
     });
   });
@@ -146,13 +147,13 @@ describe.concurrent('listDecisionProfiles', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // Set up Org A
+    // Set up User A (no org — instances owned by individual profileId)
     const setup = await testData.createDecisionSetup({
       instanceCount: 2,
       grantAccess: true,
     });
 
-    // Publish one of the decisions in Org A
+    // Publish one of the decisions for User A
     const publishedInstance = await testData.createInstanceForProcess({
       process: setup.process,
       user: setup.user,
@@ -167,13 +168,13 @@ describe.concurrent('listDecisionProfiles', () => {
       setup.userEmail,
     );
 
-    // Set up Org B
+    // Set up User B
     const otherSetup = await testData.createDecisionSetup({
       instanceCount: 2,
       grantAccess: true,
     });
 
-    // Publish one of the decisions in Org B
+    // Publish one of the decisions for User B
     const otherPublishedInstance = await testData.createInstanceForProcess({
       process: otherSetup.process,
       user: otherSetup.user,
@@ -193,15 +194,13 @@ describe.concurrent('listDecisionProfiles', () => {
 
     const result = await caller.decision.listDecisionProfiles({
       limit: 10,
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: setup.userProfileId,
       status: [ProcessStatus.PUBLISHED],
     });
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.processInstance.status).toBe('published');
-    expect(result.items[0]?.processInstance.owner?.id).toBe(
-      setup.organization.profileId,
-    );
+    expect(result.items[0]?.processInstance.owner?.id).toBe(setup.userProfileId);
   });
 
   it('should respect limit parameter and pagination', async ({
@@ -257,9 +256,7 @@ describe.concurrent('listDecisionProfiles', () => {
     const profile = result.items[0];
     expect(profile?.processInstance.instanceData.templateId).toBeDefined();
     expect(profile?.processInstance.owner).toBeDefined();
-    expect(profile?.processInstance.owner?.id).toBe(
-      setup.organization.profileId,
-    );
+    expect(profile?.processInstance.owner?.id).toBe(setup.userProfileId);
   });
 
   it('should return empty list when no decision profiles exist', async ({
@@ -293,10 +290,11 @@ describe.concurrent('listDecisionProfiles', () => {
       instanceCount: 1,
       grantAccess: true,
     });
+    const organization = await testData.createOrganization(setup.userEmail);
 
     // Create a different user who will own another instance
     const otherUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
     });
 
     // Create an instance owned by the other user (so main user doesn't have access)

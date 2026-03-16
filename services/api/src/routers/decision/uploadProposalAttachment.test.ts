@@ -93,8 +93,9 @@ describe.concurrent('uploadProposalAttachment', () => {
     });
 
     // Create a user and grant them access to the proposal profile (simulating an invite)
+    const organization = await testData.createOrganization(setupA.userEmail);
     const member = await testData.createMemberUser({
-      organization: setupA.organization,
+      organization,
     });
 
     await testData.grantProfileAccess(

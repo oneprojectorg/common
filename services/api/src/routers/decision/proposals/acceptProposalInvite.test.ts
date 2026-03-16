@@ -43,6 +43,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
       proposalData: { title: 'Test Proposal' },
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
     const invitee = await profileData.createStandaloneUser();
 
     const [invite] = await db
@@ -52,7 +53,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: organization.profileId,
       })
       .returning();
 
@@ -128,6 +129,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     });
 
     // Create invitee and grant them access to the decision process first
+    const organization = await testData.createOrganization(setup.userEmail);
     const invitee = await profileData.createStandaloneUser();
     await testData.grantProfileAccess(
       instance.profileId,
@@ -143,7 +145,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: organization.profileId,
       })
       .returning();
 
@@ -208,6 +210,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
       proposalData: { title: 'Test Proposal' },
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
     const invitee = await profileData.createStandaloneUser();
 
     // Insert a pending invite for the decision process profile
@@ -218,7 +221,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: instance.profileId,
         profileEntityType: EntityType.DECISION,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: organization.profileId,
       })
       .returning();
 
@@ -236,7 +239,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: organization.profileId,
       })
       .returning();
 
@@ -307,6 +310,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     });
 
     // Create invitee and grant them access to the proposal profile first
+    const organization = await testData.createOrganization(setup.userEmail);
     const invitee = await profileData.createStandaloneUser();
     await testData.grantProfileAccess(
       proposal.profileId,
@@ -322,7 +326,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: organization.profileId,
       })
       .returning();
 
@@ -384,6 +388,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
       proposalData: { title: 'Test Proposal' },
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
     const invitee = await profileData.createStandaloneUser();
 
     const [invite] = await db
@@ -393,7 +398,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: organization.profileId,
         acceptedOn: new Date().toISOString(),
       })
       .returning();

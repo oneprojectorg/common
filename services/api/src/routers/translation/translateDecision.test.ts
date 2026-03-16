@@ -320,7 +320,7 @@ describe.concurrent('translation.translateDecision', () => {
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'es',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('should throw UnauthorizedError for user without decision access', async ({
@@ -365,7 +365,7 @@ describe.concurrent('translation.translateDecision', () => {
         decisionProfileId: instance.profileId,
         targetLocale: 'es',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should allow org member without direct profile access via org fallback', async ({
@@ -374,15 +374,16 @@ describe.concurrent('translation.translateDecision', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
+    // Create org first, then instance — so instance.ownerProfileId = orgProfileId
     const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: false, // owner gets profile access, not the member
+      instanceCount: 0,
     });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const organization = await testData.createOrganization(setup.userEmail);
+    const instance = await testData.createInstanceForProcess({
+      user: setup.user,
+      process: setup.process,
+      name: 'Instance 1',
+    });
 
     // Patch instance with some content so we get a non-empty result
     const instanceRecord = await db._query.processInstances.findFirst({
@@ -414,7 +415,7 @@ describe.concurrent('translation.translateDecision', () => {
 
     // Create a member of the same org (no direct profile access)
     const member = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [], // no profile access granted
     });
 

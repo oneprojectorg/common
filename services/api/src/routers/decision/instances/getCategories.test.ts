@@ -158,8 +158,9 @@ describe.concurrent('getCategories permissions', () => {
       throw new Error('No instance created');
     }
 
+    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -216,8 +217,9 @@ describe.concurrent('getCategories permissions', () => {
     }
 
     // Create a member user with no instance profile access
+    const organization = await testData.createOrganization(setup.userEmail);
     const outsiderUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [],
     });
 
@@ -243,19 +245,20 @@ describe.concurrent('getCategories permissions', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
+    // Create org first, then instance — so instance.ownerProfileId = orgProfileId
     const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+      instanceCount: 0,
     });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const organization = await testData.createOrganization(setup.userEmail);
+    const instance = await testData.createInstanceForProcess({
+      user: setup.user,
+      process: setup.process,
+      name: 'Instance 1',
+    });
 
     // Create a member with org access but no instance profile access
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [],
     });
 

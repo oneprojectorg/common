@@ -35,7 +35,6 @@ type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 const createCaller = createCallerFactory(appRouter);
 
 interface CreateDecisionSetupOptions {
-  organizationName?: string;
   processName?: string;
   processDescription?: string;
   instanceCount?: number;
@@ -57,10 +56,12 @@ type EncodedDecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;
 interface DecisionSetupOutput {
   user: User;
   userEmail: string;
-  organization: Record<string, unknown> & { id: string; profileId: string };
+  userProfileId: string;
   process: EncodedDecisionProcess;
   instances: CreatedInstance[];
 }
+
+type OrganizationOutput = Record<string, unknown> & { id: string; profileId: string };
 
 interface MemberUserOutput {
   user: User;
@@ -119,16 +120,8 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Creates a complete decision process setup including:
-   * - A test user
-   * - An organization
-   * - A decision process
-   * - Optional process instances with profile access
-   *
-   * All operations go through the tRPC router boundary.
-   *
-   * @param opts - Options for setup creation
-   * @returns Complete decision setup with user, organization, process, and instances
+   * Creates a decision process setup: a user, a decision process, and optional instances.
+   * Does NOT create an organization — call createOrganization() separately if needed.
    */
   async createDecisionSetup(
     opts?: CreateDecisionSetupOptions,
@@ -136,7 +129,6 @@ export class TestDecisionsDataManager {
     this.ensureCleanupRegistered();
 
     const {
-      organizationName = 'Test Organization',
       processName = 'Test Process',
       processDescription = 'A test decision process',
       instanceCount = 0,
@@ -184,28 +176,7 @@ export class TestDecisionsDataManager {
     // Create authenticated caller for this user
     const caller = await this.createAuthenticatedCaller(userEmail);
 
-    // 2. Create organization via router
-    const organization = await caller.organization.create({
-      name: this.generateUniqueName(organizationName),
-      website: 'https://test.com',
-      email: 'contact@test.com',
-      orgType: 'nonprofit',
-      bio: 'Organization for testing',
-      mission: 'To test decision profiles',
-      networkOrganization: false,
-      isReceivingFunds: false,
-      isOfferingFunds: false,
-      acceptingApplications: false,
-    });
-
-    // Get profileId from the profile relation (available in the encoder response)
-    const orgProfileId = organization.profile?.id;
-    if (!orgProfileId) {
-      throw new Error('Organization profile ID not found in response');
-    }
-    this.createdProfileIds.push(orgProfileId);
-
-    // 3. Create decision process via direct DB insert with new schema format
+    // 2. Create decision process via direct DB insert with new schema format
     // We insert directly because the createProcess router uses the legacy format,
     // but listDecisionProfiles and other new endpoints expect the new format.
     const newProcessSchema = {
@@ -238,7 +209,7 @@ export class TestDecisionsDataManager {
       processSchema: processRecord.processSchema as DecisionSchemaDefinition,
     };
 
-    // 4. Create instances if requested
+    // 3. Create instances if requested
     const instances: CreatedInstance[] = [];
     for (let i = 0; i < instanceCount; i++) {
       const instance = await this.createInstanceForProcess({
@@ -259,14 +230,39 @@ export class TestDecisionsDataManager {
       }
     }
 
-    return {
-      user,
-      userEmail,
-      // Add profileId as a convenience property for tests
-      organization: { ...organization, profileId: orgProfileId },
-      process,
-      instances,
-    };
+    return { user, userEmail, userProfileId, process, instances };
+  }
+
+  /**
+   * Creates an organization for the given user and tracks it for cleanup.
+   */
+  async createOrganization(
+    userEmail: string,
+    name = 'Test Organization',
+  ): Promise<OrganizationOutput> {
+    this.ensureCleanupRegistered();
+
+    const caller = await this.createAuthenticatedCaller(userEmail);
+    const org = await caller.organization.create({
+      name: this.generateUniqueName(name),
+      website: 'https://test.com',
+      email: 'contact@test.com',
+      orgType: 'nonprofit',
+      bio: 'Organization for testing',
+      mission: 'To test decision profiles',
+      networkOrganization: false,
+      isReceivingFunds: false,
+      isOfferingFunds: false,
+      acceptingApplications: false,
+    });
+
+    const orgProfileId = org.profile?.id;
+    if (!orgProfileId) {
+      throw new Error('Organization profile ID not found in response');
+    }
+    this.createdProfileIds.push(orgProfileId);
+
+    return { ...org, profileId: orgProfileId };
   }
 
   /**

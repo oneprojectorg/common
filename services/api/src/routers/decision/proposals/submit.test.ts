@@ -176,8 +176,9 @@ describe.concurrent('submitProposal', () => {
     });
 
     // Create a member user WITHOUT access to this decision's profile
+    const organization = await testData.createOrganization(setup.userEmail);
     const outsider = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [], // no access to the instance profile
     });
 
@@ -187,7 +188,7 @@ describe.concurrent('submitProposal', () => {
       outsiderCaller.decision.submitProposal({
         proposalId: proposal.id,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('should submit successfully when proposal template contains vendor extension keywords', async ({

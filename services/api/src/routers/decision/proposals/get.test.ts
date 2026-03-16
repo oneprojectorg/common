@@ -122,13 +122,14 @@ describe.concurrent('getProposal', () => {
     }
 
     // Create two non-admin members in parallel
+    const organization = await testData.createOrganization(setup.userEmail);
     const [memberA, memberB] = await Promise.all([
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
     ]);
@@ -170,8 +171,9 @@ describe.concurrent('getProposal', () => {
     }
 
     // Create a member who will submit a proposal
+    const organization = await testData.createOrganization(setup.userEmail);
     const submitter = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -266,9 +268,10 @@ describe.concurrent('getProposal', () => {
     }
 
     // Create a member who will submit a proposal and admin caller in parallel
+    const organization = await testData.createOrganization(setup.userEmail);
     const [submitter, adminCaller] = await Promise.all([
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
       createAuthenticatedCaller(setup.userEmail),
@@ -847,12 +850,16 @@ describe.concurrent('getProposal', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
+    // Create org first, then instance — so instance.ownerProfileId = orgProfileId
     const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: false,
+      instanceCount: 0,
     });
-
-    const { instance } = setup.instances[0]!;
+    const organization = await testData.createOrganization(setup.userEmail);
+    const { instance } = await testData.createInstanceForProcess({
+      user: setup.user,
+      process: setup.process,
+      name: 'Instance 1',
+    });
 
     const proposal = await testData.createProposal({
       callerEmail: setup.userEmail,
@@ -863,7 +870,7 @@ describe.concurrent('getProposal', () => {
     // Member has no profile-level access (instanceProfileIds: []),
     // but the org Member role has decisions: READ so the fallback should pass
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [],
     });
 
