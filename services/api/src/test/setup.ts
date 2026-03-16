@@ -1,7 +1,9 @@
+import { analyticsMock } from '@op/analytics/testing';
 import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import { beforeAll, beforeEach, vi } from 'vitest';
 
 vi.mock('@op/common/src/services/profile/utils');
+vi.mock('@op/analytics', async () => import('@op/analytics/testing'));
 vi.mock('@op/collab', async () => import('@op/collab/testing'));
 
 // Mock server-only modules before any other imports
@@ -136,4 +138,5 @@ beforeAll(async () => {
 // Setup test environment for each test
 beforeEach(async () => {
   vi.clearAllMocks();
+  analyticsMock.reset();
 });

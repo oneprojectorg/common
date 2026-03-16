@@ -1,42 +1,42 @@
-import PostHogClient from './client';
+import type {
+  AnalyticsEvent,
+  AnalyticsIdentify,
+  DecisionCommonProperties,
+} from './utils';
 
-const posthog = PostHogClient();
+/** Default analytics test shim. All operations are no-ops. */
+export const analyticsMock = {
+  /** Reset the noop mock. */
+  reset(): void {
+    return;
+  },
+};
 
-/**
- * Analytics utility functions for tracking user events
- */
-
-export interface AnalyticsEvent {
-  distinctId: string;
-  event: string;
-  properties?: Record<string, any>;
+/** Minimal PostHog-compatible client used in tests. */
+export function PostHogClient() {
+  return {
+    capture(_event: AnalyticsEvent) {
+      return;
+    },
+    identify(_identity: AnalyticsIdentify) {
+      return;
+    },
+    async shutdown() {
+      return;
+    },
+  };
 }
 
-export interface AnalyticsIdentify {
-  distinctId: string;
-  properties?: Record<string, any>;
-}
-
-/**
- * Track a single analytics event
- */
+/** Record a single analytics event without any network traffic. */
 export async function trackEvent({
-  distinctId,
-  event,
-  properties,
+  distinctId: _distinctId,
+  event: _event,
+  properties: _properties,
 }: AnalyticsEvent): Promise<void> {
-  posthog.capture({
-    distinctId,
-    event,
-    properties,
-  });
-  await posthog.shutdown();
+  return;
 }
 
-/**
- * Track event with context-aware distinct_id
- * Use this when you have access to the tRPC context with analyticsDistinctId
- */
+/** Record a context-aware analytics event for the current user. */
 export async function trackEventWithContext(
   userId: string,
   event: string,
@@ -49,39 +49,22 @@ export async function trackEventWithContext(
   });
 }
 
-/**
- * Set person properties
- */
+/** Record identify calls without touching PostHog. */
 export async function identifyUser({
-  distinctId,
-  properties,
+  distinctId: _distinctId,
+  properties: _properties,
 }: AnalyticsIdentify): Promise<void> {
-  posthog.identify({
-    distinctId,
-    properties,
-  });
-  await posthog.shutdown();
+  return;
 }
 
-/**
- * Track multiple events in sequence
- */
+/** Record multiple analytics events in sequence. */
 export async function trackEvents(events: AnalyticsEvent[]): Promise<void> {
-  if (events.length === 0) return;
-
-  events.forEach(({ distinctId, event, properties }) => {
-    posthog.capture({
-      distinctId,
-      event,
-      properties,
-    });
-  });
-  await posthog.shutdown();
+  for (const event of events) {
+    await trackEvent(event);
+  }
 }
 
-/**
- * Track image upload analytics
- */
+/** Record image upload analytics for tests. */
 export async function trackImageUpload(
   userId: string,
   imageType: 'profile' | 'banner',
@@ -99,9 +82,7 @@ export async function trackImageUpload(
   await trackEventWithContext(userId, eventName, undefined);
 }
 
-/**
- * Track user post creation with media analysis
- */
+/** Record user post analytics for tests. */
 export async function trackUserPost(
   userId: string,
   content: string,
@@ -126,11 +107,14 @@ export async function trackUserPost(
     } else {
       mediaType = 'file';
     }
-    if (mimeType) properties.file_type = mimeType;
+
+    if (mimeType) {
+      properties.file_type = mimeType;
+    }
   } else {
-    // Check for links in content
     const linkRegex = /https?:\/\/[^\s]+/g;
     const links = content.match(linkRegex);
+
     if (links && links.length > 0) {
       mediaType = 'link';
       properties.links_count = links.length;
@@ -146,9 +130,7 @@ export async function trackUserPost(
   });
 }
 
-/**
- * Track funding toggle changes
- */
+/** Record funding toggle analytics for tests. */
 export async function trackFundingToggle(
   options: {
     organizationId: string;
@@ -160,7 +142,6 @@ export async function trackFundingToggle(
 ): Promise<void> {
   const events: AnalyticsEvent[] = [];
 
-  // Track individual toggle events
   if (changes.isOfferingFunds !== undefined) {
     events.push({
       distinctId: options.organizationId,
@@ -183,52 +164,41 @@ export async function trackFundingToggle(
     });
   }
 
-  // Track events if any
-  if (events.length > 0) {
-    await trackEvents(events);
-  }
-
-  // Note: User identification with funding properties is now handled
-  // automatically by the withAnalytics middleware
+  await trackEvents(events);
 }
 
-/**
- * Track relationship events
- */
+/** Record relationship creation analytics for tests. */
 export async function trackRelationshipAdded(
   userId: string,
   relationships: string[],
 ): Promise<void> {
-  const events: AnalyticsEvent[] = [];
-  const distinctId = userId;
-
-  // Track general relationship add event
-  events.push({
-    distinctId,
-    event: 'user_added_relationship',
-    properties: {
-      relationship_types: relationships,
-      relationship_count: relationships.length,
+  const events: AnalyticsEvent[] = [
+    {
+      distinctId: userId,
+      event: 'user_added_relationship',
+      properties: {
+        relationship_types: relationships,
+        relationship_count: relationships.length,
+      },
     },
-  });
+  ];
 
-  // Track specific funding relationships
   relationships.forEach((relationship) => {
     if (relationship === 'funding' || relationship === 'funds') {
       events.push({
-        distinctId,
+        distinctId: userId,
         event: 'user_added_relationship',
         properties: { type: 'funds' },
       });
     } else if (relationship === 'fundedBy' || relationship === 'fundedby') {
       events.push({
-        distinctId,
+        distinctId: userId,
         event: 'user_added_relationship',
         properties: { type: 'fundedby' },
       });
     } else if (relationship === 'mutualfunding') {
       events.push({
-        distinctId,
+        distinctId: userId,
         event: 'user_added_relationship',
         properties: { type: 'mutualfunding' },
       });
@@ -238,34 +208,17 @@ export async function trackRelationshipAdded(
   await trackEvents(events);
 }
 
-/**
- * Track relationship acceptance
- */
+/** Record relationship acceptance analytics for tests. */
 export async function trackRelationshipAccepted(userId: string): Promise<void> {
   await trackEventWithContext(userId, 'user_accepted_relationship', undefined);
 }
 
-/**
- * Decision-making process analytics
- */
-
-export interface DecisionCommonProperties {
-  process_id: string;
-  proposal_id?: string;
-  location?: string;
-  timezone?: string;
-  language?: string;
-}
-
-/**
- * Helper function to get common properties for decision events
- */
+/** Build shared decision analytics properties without browser side effects. */
 export function getDecisionCommonProperties(
   processId: string,
   proposalId?: string,
   additionalProps?: Record<string, any>,
 ): DecisionCommonProperties & Record<string, any> {
-  // Server-side safe implementation - only add client-side properties if available
   const baseProps: DecisionCommonProperties & Record<string, any> = {
     process_id: processId,
     timestamp: new Date().toISOString(),
@@ -276,7 +229,6 @@ export function getDecisionCommonProperties(
     baseProps.proposal_id = proposalId;
   }
 
-  // Only add browser-specific properties if we're on the client side
   if (typeof window !== 'undefined') {
     baseProps.location = window.location.href;
     baseProps.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -286,9 +238,7 @@ export function getDecisionCommonProperties(
   return baseProps;
 }
 
-/**
- * Track when a user views a decision-making process
- */
+/** Record process view analytics for tests. */
 export async function trackProcessViewed(
   userId: string,
   processId: string,
@@ -301,9 +251,7 @@ export async function trackProcessViewed(
   );
 }
 
-/**
- * Track when a user submits a proposal
- */
+/** Record proposal submission analytics for tests. */
 export async function trackProposalSubmitted(
   userId: string,
   processId: string,
@@ -317,9 +265,7 @@ export async function trackProposalSubmitted(
   );
 }
 
-/**
- * Track when a user views a proposal
- */
+/** Record proposal view analytics for tests. */
 export async function trackProposalViewed(
   userId: string,
   processId: string,
@@ -333,9 +279,7 @@ export async function trackProposalViewed(
   );
 }
 
-/**
- * Track when a user comments on a proposal
- */
+/** Record proposal comment analytics for tests. */
 export async function trackProposalCommented(
   userId: string,
   processId: string,
@@ -349,9 +293,7 @@ export async function trackProposalCommented(
   );
 }
 
-/**
- * Track when a user likes a proposal
- */
+/** Record proposal like analytics for tests. */
 export async function trackProposalLiked(
   userId: string,
   processId: string,
@@ -365,9 +307,7 @@ export async function trackProposalLiked(
   );
 }
 
-/**
- * Track when a user follows a proposal
- */
+/** Record proposal follow analytics for tests. */
 export async function trackProposalFollowed(
   userId: string,
   processId: string,
@@ -381,9 +321,7 @@ export async function trackProposalFollowed(
   );
 }
 
-/**
- * Track when a user votes on a proposal
- */
+/** Record voting analytics for tests. */
 export async function trackUserVoted(
   userId: string,
   processId: string,
@@ -400,3 +338,9 @@ export async function trackUserVoted(
     }),
   });
 }
+
+export type {
+  AnalyticsEvent,
+  AnalyticsIdentify,
+  DecisionCommonProperties,
+} from './utils';

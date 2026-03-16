@@ -55,12 +55,13 @@ const config = {
   },
 
   webpack: (cfg, { isServer }) => {
-    // In e2e mode, swap the real TipTap client for an in-process mock
-    // so the server never makes HTTP calls to TipTap Cloud.
+    // In e2e mode, swap external services for in-process mocks so the app
+    // never makes network calls to TipTap Cloud or PostHog.
     if (process.env.E2E === 'true') {
       cfg.resolve.alias = {
         ...cfg.resolve.alias,
         '@op/collab': '@op/collab/testing',
+        '@op/analytics$': '@op/analytics/testing',
       };
     }
 
