@@ -16,17 +16,11 @@ export function VotingPage({
   instanceId,
   slug,
   decisionSlug,
-  canVote = false,
-  canManageProposals,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Whether the current user has permission to vote */
-  canVote?: boolean;
-  /** Whether the current user can manage/export proposals (requires admin decision role) */
-  canManageProposals?: boolean;
 }) {
   const t = useTranslations();
 
@@ -37,6 +31,9 @@ export function VotingPage({
     }),
     t.decision.getInstance({ instanceId }),
   ]);
+
+  const canVote = instance.access?.vote ?? false;
+  const canManageProposals = instance.access?.admin ?? false;
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 

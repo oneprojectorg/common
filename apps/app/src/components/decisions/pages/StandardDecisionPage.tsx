@@ -18,11 +18,6 @@ export function StandardDecisionPage({
   slug,
   decisionSlug,
   decisionProfileId,
-  allowProposals,
-  description,
-  currentPhase,
-  canSubmitProposal = false,
-  canManageProposals,
 }: {
   instanceId: string;
   slug: string;
@@ -30,24 +25,31 @@ export function StandardDecisionPage({
   decisionSlug?: string;
   /** Decision profile ID for translating the decision content (phase titles, headline, descriptions) */
   decisionProfileId?: string | null;
-  /** Whether proposal submission is allowed in the current phase */
-  allowProposals: boolean;
-  /** Instance-level description — fallback for the About the process modal */
-  description?: string;
-  /** Current phase data from the process builder */
-  currentPhase?: InstancePhaseData;
-  /** Whether the current user has permission to submit proposals */
-  canSubmitProposal?: boolean;
-  /** Whether the current user can manage/export proposals (requires admin decision role) */
-  canManageProposals?: boolean;
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
-    processInstanceId: instanceId,
-    limit: 20,
-  });
+  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.listProposals({
+      processInstanceId: instanceId,
+      limit: 20,
+    }),
+    t.decision.getInstance({ instanceId }),
+  ]);
+
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhaseId = instance.instanceData?.currentPhaseId;
+  const currentPhase = phases.find(
+    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  );
+  const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
+  const description = instance?.description?.match('PPDESCRIPTION')
+    ? t('PPDESCRIPTION')
+    : (instance.description ??
+      instance.instanceData?.templateDescription ??
+      undefined);
+  const canSubmitProposal = instance.access?.submitProposals ?? false;
+  const canManageProposals = instance.access?.admin ?? false;
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
