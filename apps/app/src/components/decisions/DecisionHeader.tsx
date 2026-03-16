@@ -77,7 +77,8 @@ export async function DecisionHeader({
     >
       <DecisionInstanceHeader
         backTo={{
-          href: useLegacy && slug ? `/profile/${slug}?tab=decisions` : '/decisions',
+          href:
+            useLegacy && slug ? `/profile/${slug}?tab=decisions` : '/decisions',
         }}
         title={
           profileName ||
