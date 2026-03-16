@@ -473,7 +473,7 @@ export const ProposalsList = ({
   instanceId,
   decisionSlug,
   decisionProfileId,
-  canVote = true,
+  canVote = false,
   canManageProposals: canManageProposalsOverride,
 }: {
   slug: string;
@@ -484,7 +484,7 @@ export const ProposalsList = ({
   decisionProfileId?: string | null;
   /** Whether the current user has permission to vote */
   canVote?: boolean;
-  /** Override for canManageProposals (from access capabilities). When provided, takes precedence over the server value. */
+  /** Additional grant for manage/export actions (from access capabilities). Combined with the server-derived value via OR. */
   canManageProposals?: boolean;
 }) => {
   const t = useTranslations();
@@ -574,12 +574,12 @@ export const ProposalsList = ({
   const { data: proposalsData, isLoading } =
     trpc.decision.listProposals.useQuery(queryParams);
 
-  const { proposals: allProposals, canManageProposals: serverCanManage = false } =
-    proposalsData ?? {};
+  const {
+    proposals: allProposals,
+    canManageProposals: serverCanManage = false,
+  } = proposalsData ?? {};
   const canManageProposals =
-    canManageProposalsOverride !== undefined
-      ? canManageProposalsOverride
-      : serverCanManage;
+    (canManageProposalsOverride ?? false) || serverCanManage;
 
   // --- Translation state ---
   const locale = useLocale();

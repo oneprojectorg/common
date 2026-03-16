@@ -1,7 +1,7 @@
 import { db, eq } from '@op/db/client';
 import { organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, collapseRoles, permission } from 'access-zones';
 import type { NormalizedRole } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -33,22 +33,18 @@ const ALL_TRUE_ACCESS: DecisionRolePermissions = {
 };
 
 const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
-  roles.reduce((acc, role) => acc | (role.access['decisions'] ?? 0), 0);
+  collapseRoles(roles)['decisions'] ?? 0;
 
 const resolveInstanceAccess = async (
   user: { id: string },
-  instance: { profileId: string | null; ownerProfileId: string | null },
+  instance: { profileId: string; ownerProfileId: string | null },
+  profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>,
 ): Promise<DecisionRolePermissions> => {
-  if (!instance.profileId) {
-    return ALL_TRUE_ACCESS;
-  }
-
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: instance.profileId,
-  });
-
   if (profileUser) {
+    // Profile admins bypass decision-zone role checks — they have full access
+    if (checkPermission({ profile: permission.ADMIN }, profileUser.roles)) {
+      return ALL_TRUE_ACCESS;
+    }
     return fromDecisionBitField(getRolesDecisionBits(profileUser.roles));
   }
 
@@ -92,6 +88,11 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance not found');
     }
 
+    // Fetch profileUser once — reused by both the access gate and capability resolution.
+    const profileUser = instance.profileId
+      ? await getProfileAccessUser({ user, profileId: instance.profileId })
+      : undefined;
+
     await assertInstanceProfileAccess({
       user,
       instance,
@@ -99,8 +100,19 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       orgFallbackPermissions: { decisions: permission.READ },
     });
 
-    // Resolve access capabilities for the current user
-    const access = await resolveInstanceAccess(user, instance);
+    // Resolve access capabilities for the current user.
+    // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
+    if (!instance.profileId) {
+      throw new NotFoundError('Process instance not found');
+    }
+    const access = await resolveInstanceAccess(
+      user,
+      {
+        profileId: instance.profileId,
+        ownerProfileId: instance.ownerProfileId,
+      },
+      profileUser,
+    );
 
     // Calculate proposal and participant counts
     const proposalCount = instance.proposals?.length || 0;
