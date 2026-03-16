@@ -28,12 +28,13 @@ dotenv.config({
 const config = {
   serverExternalPackages: ['sharp', 'onnxruntime-node'],
   webpack: (cfg) => {
-    // In e2e mode, swap the real TipTap client for an in-process mock
-    // so the API server never makes HTTP calls to TipTap Cloud.
+    // In e2e mode, swap external services for in-process mocks so the API
+    // server never makes network calls to TipTap Cloud or PostHog.
     if (process.env.E2E === 'true') {
       cfg.resolve.alias = {
         ...cfg.resolve.alias,
         '@op/collab': '@op/collab/testing',
+        '@op/analytics$': '@op/analytics/testing',
       };
     }
 

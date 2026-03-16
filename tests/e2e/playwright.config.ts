@@ -34,7 +34,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 4,
+  workers: process.env.CI ? 2 : 4,
   reporter: 'html',
   timeout: 60_000, // 60 seconds per test
 
@@ -50,14 +50,4 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-
-  /* Run dev servers with e2e environment before starting the tests */
-  webServer: {
-    command: 'pnpm dev:e2e',
-    url: 'http://localhost:4100',
-    wait: { stdout: /app:dev:e2e:.*Local:\s+http:\/\/localhost:4100/ },
-    reuseExistingServer: !process.env.CI,
-    cwd: path.resolve(__dirname, '../..'),
-    timeout: 120 * 1000,
-  },
 });

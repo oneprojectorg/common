@@ -10,12 +10,6 @@ import {
   type SupabaseClient,
   createClient,
 } from '@supabase/supabase-js';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export { TEST_USER_DEFAULT_PASSWORD };
 
@@ -25,8 +19,25 @@ interface AuthenticatedUser {
   authUserId: string;
 }
 
+interface StorageState {
+  cookies: Array<{
+    name: string;
+    value: string;
+    domain: string;
+    path: string;
+    expires: number;
+    httpOnly: boolean;
+    secure: boolean;
+    sameSite: 'Lax' | 'Strict' | 'None';
+  }>;
+  origins: Array<{
+    origin: string;
+    localStorage: Array<{ name: string; value: string }>;
+  }>;
+}
+
 interface WorkerFixtures {
-  workerStorageState: string;
+  workerStorageState: StorageState;
   workerAuthUser: AuthenticatedUser;
   workerOrg: CreateOrganizationResult;
   supabaseAdmin: SupabaseClient;
@@ -222,19 +233,11 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   ],
 
   workerStorageState: [
-    async ({ workerAuthUser }, use, workerInfo) => {
-      const id = workerInfo.workerIndex;
-      const authDir = path.join(__dirname, '../playwright/.auth');
-      const fileName = path.join(authDir, `${id}.json`);
-
-      if (!fs.existsSync(authDir)) {
-        fs.mkdirSync(authDir, { recursive: true });
-      }
-
+    async ({ workerAuthUser }, use) => {
       const session = await signInViaApi(workerAuthUser);
       const { cookies, storageKey, sessionJson } = buildSessionCookies(session);
 
-      const storageState = {
+      const storageState: StorageState = {
         cookies,
         origins: [
           {
@@ -249,13 +252,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         ],
       };
 
-      fs.writeFileSync(fileName, JSON.stringify(storageState, null, 2));
-
-      await use(fileName);
-
-      if (fs.existsSync(fileName)) {
-        fs.unlinkSync(fileName);
-      }
+      await use(storageState);
     },
     { scope: 'worker' },
   ],

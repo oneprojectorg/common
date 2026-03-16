@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./testing": "./src/testing.ts",
     "./utils": "./src/utils.ts",
     "./client-utils": "./src/client-utils.ts"
   },

@@ -11,13 +11,15 @@ if (!process.env.DATABASE_URL) {
 export const db = drizzle({
   connection: {
     url: process.env.DATABASE_URL,
-    max: process.env.DB_MIGRATING || process.env.DB_SEEDING ? 1 : undefined,
+    max:
+      process.env.DB_MIGRATING || process.env.DB_SEEDING || process.env.E2E
+        ? 1
+        : undefined,
     onnotice: () => {},
     prepare: false,
   },
   casing: config.casing,
   schema,
   relations,
-  logger:
-    process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development',
+  logger: false,
 });

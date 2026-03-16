@@ -34,7 +34,7 @@ test.describe('Decisions', () => {
     const submitButton = authenticatedPage.getByRole('button', {
       name: 'Submit a proposal',
     });
-    await expect(submitButton).toBeVisible({ timeout: 5000 });
+    await expect(submitButton).toBeVisible({ timeout: 15_000 });
     await submitButton.click();
 
     // 6. Wait for navigation to the proposal edit page

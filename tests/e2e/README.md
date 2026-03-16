@@ -28,28 +28,42 @@ This runs: `supabase:start` + `supabase:migrate` + `supabase:seed`
 
 ## Running Tests
 
-### Option 1: Auto-starts dev server (recommended)
+Tests run against a **pre-built production build**, not the dev server. This makes dynamic page generation much faster and more reliable.
+
+### Step 1: Build
 
 ```bash
-# From repo root
+# From repo root — builds both app and api with E2E env vars/mocks
+pnpm build:e2e
+```
+
+This sets `E2E=true` and the required env vars, then runs `next build` for both `apps/app` (port 4100) and `apps/api` (port 4300).
+
+### Step 2: Start servers
+
+```bash
+# From repo root — starts production servers on e2e ports
+pnpm start:e2e
+```
+
+Wait for both `http://localhost:4100` and `http://localhost:4300` to be reachable.
+
+### Step 3: Run tests
+
+```bash
 pnpm e2e        # headless
 pnpm e2e:ui     # Playwright UI mode
 ```
 
-Playwright will automatically start `pnpm dev:e2e` (dev server on port 4100 with e2e env vars) and wait for it.
+### All-in-one (CI does this)
 
-### Option 2: Manual dev server (for debugging)
-
-Terminal 1:
+In CI, the build step runs once and uploads `.next` artifacts. Test shards download them, start servers, then run:
 
 ```bash
-pnpm dev:e2e    # Starts app at localhost:4100 with e2e Supabase
-```
-
-Terminal 2:
-
-```bash
-pnpm e2e        # Reuses existing server (reuseExistingServer: true in config)
+pnpm build:e2e
+pnpm start:e2e &
+# wait for servers...
+pnpm e2e
 ```
 
 ## Supabase Management
@@ -64,6 +78,13 @@ pnpm w:e2e supabase:migrate  # Run DB migrations
 pnpm w:e2e supabase:seed     # Seed test data
 pnpm w:e2e supabase:reset    # Reset DB (destructive)
 ```
+
+## E2E Mocks
+
+When `E2E=true`, webpack aliases swap external services for in-process mocks:
+
+- **`@op/collab`** → `@op/collab/testing` (TipTap Cloud — no HTTP calls)
+- **`@op/analytics`** → `@op/analytics/testing` (PostHog — no network calls, reduces idle time)
 
 ## Writing Tests
 
@@ -84,7 +105,7 @@ test('example', async ({ page }) => {
 import { expect, test } from '../fixtures';
 
 test('authenticated test', async ({ authenticatedPage }) => {
-  // Already logged in
+  // Already logged in — session stored in memory (no temp files)
 });
 ```
 
@@ -93,6 +114,6 @@ test('authenticated test', async ({ authenticatedPage }) => {
 `playwright.config.ts` sets:
 
 - `baseURL`: `http://localhost:4100`
-- `webServer.command`: `pnpm dev:e2e` (auto-starts dev server)
 - `timeout`: 60s per test
 - `retries`: 2 in CI, 0 locally
+- `workers`: 2 in CI, 4 locally
