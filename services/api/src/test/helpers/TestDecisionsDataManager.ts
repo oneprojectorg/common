@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
+  accessRoles,
   decisionProcesses,
   organizationUserToAccessRoles,
   organizationUsers,
@@ -11,7 +12,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { grantDecisionProfileAccess, testMinimalSchema } from '@op/test';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { z } from 'zod';
 
@@ -466,10 +467,11 @@ export class TestDecisionsDataManager {
     }
 
     // Look up the global Member role from the DB (null profileId = global role)
-    const memberRole = await db.query.accessRoles.findFirst({
-      where: (r, { eq: eqFn, isNull, and }) =>
-        and(eqFn(r.name, 'Member'), isNull(r.profileId)),
-    });
+    const [memberRole] = await db
+      .select()
+      .from(accessRoles)
+      .where(and(eq(accessRoles.name, 'Member'), isNull(accessRoles.profileId)))
+      .limit(1);
 
     if (!memberRole) {
       throw new Error('Member access role not found in database');
