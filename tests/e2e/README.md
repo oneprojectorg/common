@@ -118,8 +118,3 @@ test('authenticated test', async ({ authenticatedPage }) => {
 - `retries`: 2 in CI, 0 locally
 - `workers`: 2 in CI, 4 locally
 
-## Flake Fixes
-
-- **In-memory auth**: Session storage state is held in memory instead of written to disk files, eliminating file-system race conditions between workers.
-- **Analytics mock**: PostHog is replaced with a no-op mock at build time, preventing network calls that kept the page from reaching network idle and caused flaky `waitForLoadState` timeouts.
-- **Reduced DB connections**: `E2E=true` limits the connection pool to 1, preventing connection exhaustion under parallel workers.
