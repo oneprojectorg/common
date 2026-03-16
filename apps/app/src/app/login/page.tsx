@@ -2,8 +2,7 @@
 
 import { isSafeRedirectPath } from '@op/common/client';
 import { useAuthUser } from '@op/hooks';
-import { useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { redirect, useSearchParams } from 'next/navigation';
 
 import { LoginPanel } from '@/components/LoginPanel';
 
@@ -16,18 +15,6 @@ const LoginPage = () => {
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
 
-  const isAuthenticated =
-    user?.isFetchedAfterMount && !user.isFetching && !!user.data?.user;
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return;
-    }
-
-    const target = isSafeRedirectPath(redirectParam) ? redirectParam : '/';
-    window.location.assign(target);
-  }, [isAuthenticated, redirectParam]);
-
   if (!user || user.isFetching || user.isPending) {
     return null;
   }
@@ -36,8 +23,11 @@ const LoginPage = () => {
     return <LoginPageWithLayout />;
   }
 
-  // Authenticated — redirecting via window.location.assign in effect above
-  return null;
+  if (isSafeRedirectPath(redirectParam)) {
+    redirect(redirectParam);
+  }
+
+  redirect('/');
 };
 
 export default LoginPage;
