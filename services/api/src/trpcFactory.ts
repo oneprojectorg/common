@@ -45,7 +45,6 @@ export const createContext = async ({
     ip: req.headers.get('X-Forwarded-For') || null,
     reqUrl: req.url,
     req,
-    isServerSideCall: process.env.E2E === 'true',
   };
 };
 
