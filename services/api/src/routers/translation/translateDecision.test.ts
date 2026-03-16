@@ -38,7 +38,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe.concurrent('translation.translateDecision', () => {
+describe('translation.translateDecision', () => {
   it('should translate headline, phase description, and phase names', async ({
     task,
     onTestFinished,
@@ -168,9 +168,13 @@ describe.concurrent('translation.translateDecision', () => {
       targetLocale: 'es',
     });
 
-    // The mock prefixes whatever it receives with "[ES]", so:
-    // - "[ES]" confirms DeepL was called
-    // - "<p" confirms it received rendered HTML, not raw TipTap JSON
+    // DeepL should have received HTML, not raw TipTap JSON
+    expect(mockTranslateText).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.stringContaining('<p')]),
+      null,
+      'ES',
+      expect.objectContaining({ tagHandling: 'html' }),
+    );
     expect(result.additionalInfo).toContain('[ES]');
     expect(result.additionalInfo).toContain('<p');
   });
@@ -370,13 +374,10 @@ describe.concurrent('translation.translateDecision', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // instanceCount: 0 so the instance is created AFTER the org,
-    // meaning ownerProfileId = orgProfileId (org fallback applies)
+    // Create org BEFORE instance so ownerProfileId = orgProfileId (org fallback applies)
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-
     const organization = await testData.createOrganization(setup.userEmail);
-
-    const created = await testData.createInstanceForProcess({
+    const instance = await testData.createInstanceForProcess({
       user: setup.user,
       process: setup.process,
       name: 'Instance 1',
@@ -384,7 +385,7 @@ describe.concurrent('translation.translateDecision', () => {
 
     // Patch instance with some content so we get a non-empty result
     const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, created.instance.id),
+      where: eq(processInstances.id, instance.instance.id),
     });
     if (!instanceRecord) {
       throw new Error('Instance record not found');
@@ -397,7 +398,7 @@ describe.concurrent('translation.translateDecision', () => {
     await db
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases } })
-      .where(eq(processInstances.id, created.instance.id));
+      .where(eq(processInstances.id, instance.instance.id));
 
     onTestFinished(async () => {
       await db
@@ -405,7 +406,7 @@ describe.concurrent('translation.translateDecision', () => {
         .where(
           like(
             contentTranslations.contentKey,
-            `decision:${created.profileId}:%`,
+            `decision:${instance.profileId}:%`,
           ),
         );
     });
@@ -420,7 +421,7 @@ describe.concurrent('translation.translateDecision', () => {
 
     // Should succeed via org-level fallback
     const result = await memberCaller.translation.translateDecision({
-      decisionProfileId: created.profileId,
+      decisionProfileId: instance.profileId,
       targetLocale: 'es',
     });
 
