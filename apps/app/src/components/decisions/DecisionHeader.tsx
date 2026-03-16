@@ -11,7 +11,6 @@ import { DecisionTranslationProvider } from '@/components/decisions/DecisionTran
 
 interface DecisionHeaderProps {
   instanceId: string;
-  slug: string;
   children?: ReactNode;
   /** Decision profile slug for building the edit link */
   decisionSlug?: string;
@@ -19,17 +18,19 @@ interface DecisionHeaderProps {
   isAdmin?: boolean;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
+  /** Profile slug for back button — required when useLegacy is true */
+  slug?: string;
   /** Title from the decision profile */
   profileName?: string;
 }
 
 export async function DecisionHeader({
   instanceId,
-  slug,
   children,
   decisionSlug,
   isAdmin,
   useLegacy = false,
+  slug,
   profileName,
 }: DecisionHeaderProps) {
   const client = await createClient();
@@ -76,8 +77,8 @@ export async function DecisionHeader({
     >
       <DecisionInstanceHeader
         backTo={{
-          label: instance.owner?.name,
-          href: `/profile/${slug}?tab=decisions`,
+          href:
+            useLegacy && slug ? `/profile/${slug}?tab=decisions` : '/decisions',
         }}
         title={
           profileName ||
