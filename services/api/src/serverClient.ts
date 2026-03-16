@@ -14,7 +14,6 @@ import { createCallerFactory } from './trpcFactory';
 import type { TContext } from './types';
 
 const envURL = OPURLConfig('API');
-const IS_E2E = process.env.E2E === 'true';
 
 /**
  * Create a TRPC Vanilla Client.
@@ -54,7 +53,7 @@ export const createTRPCVanillaClient = (headers?: Record<string, string>) => {
  * This is used with createCallerFactory for direct procedure calls
  * without HTTP overhead. Note: Cannot set cookies in this context.
  */
-const createServerContextInner = async (): Promise<TContext> => {
+export const createServerContext = cache(async (): Promise<TContext> => {
   const headersList = await headers();
   const cookieStore = await cookies();
   const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
@@ -107,11 +106,7 @@ const createServerContextInner = async (): Promise<TContext> => {
     req: mockReq,
     isServerSideCall: true,
   };
-};
-
-export const createServerContext = IS_E2E
-  ? createServerContextInner
-  : cache(createServerContextInner);
+});
 
 /**
  * Create a server-side tRPC client
@@ -121,15 +116,11 @@ export const createServerContext = IS_E2E
  *
  * Note: Cannot set cookies. For mutations that need to set cookies, use a route handler.
  */
-const createClientInner = async () => {
+export const createClient = cache(async () => {
   const context = await createServerContext();
   const callerFactory = createCallerFactory(appRouter);
   return callerFactory(context);
-};
-
-export const createClient = IS_E2E
-  ? createClientInner
-  : cache(createClientInner);
+});
 
 /**
  * @deprecated Use `createClient()` from '@op/api/serverClient' instead for better performance
