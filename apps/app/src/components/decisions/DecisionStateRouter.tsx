@@ -52,8 +52,7 @@ function DecisionStateRouterNew({
 
   const canSubmitProposal = instance.access?.submitProposals ?? false;
   const canVote = instance.access?.vote ?? false;
-  const canManage =
-    (instance.access?.admin ?? false) || (instance.access?.review ?? false);
+  const canManage = instance.access?.admin ?? false;
 
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,

@@ -25,7 +25,7 @@ export function VotingPage({
   decisionSlug?: string;
   /** Whether the current user has permission to vote */
   canVote?: boolean;
-  /** Whether the current user can manage/export proposals (admin or review role) */
+  /** Whether the current user can manage/export proposals (requires admin decision role) */
   canManageProposals?: boolean;
 }) {
   const t = useTranslations();

@@ -38,7 +38,7 @@ export function StandardDecisionPage({
   currentPhase?: InstancePhaseData;
   /** Whether the current user has permission to submit proposals */
   canSubmitProposal?: boolean;
-  /** Whether the current user can manage/export proposals (admin or review role) */
+  /** Whether the current user can manage/export proposals (requires admin decision role) */
   canManageProposals?: boolean;
 }) {
   const t = useTranslations();

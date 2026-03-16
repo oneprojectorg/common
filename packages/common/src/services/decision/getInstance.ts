@@ -88,7 +88,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance not found');
     }
 
-    // Fetch profileUser once — reused by both the access gate and capability resolution.
+    // Fetch profileUser for capability resolution (resolveInstanceAccess).
     const profileUser = instance.profileId
       ? await getProfileAccessUser({ user, profileId: instance.profileId })
       : undefined;
