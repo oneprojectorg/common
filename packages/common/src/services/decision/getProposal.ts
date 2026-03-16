@@ -102,7 +102,7 @@ export const getProposal = async ({
   });
 
   if (!proposal) {
-    throw new NotFoundError('Proposal not found');
+    throw new NotFoundError('Proposal');
   }
 
   // Draft proposals are only visible to users with proposal-level access
@@ -117,7 +117,7 @@ export const getProposal = async ({
     });
 
     if (!hasProposalAccess) {
-      throw new NotFoundError('Proposal not found');
+      throw new NotFoundError('Proposal');
     }
   }
 

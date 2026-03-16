@@ -102,7 +102,7 @@ export const updateProposal = async ({
     });
 
     if (!existingProposal) {
-      throw new NotFoundError('Proposal not found');
+      throw new NotFoundError('Proposal');
     }
 
     const processInstance = existingProposal.processInstance;

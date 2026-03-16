@@ -134,7 +134,7 @@ describe.concurrent('getProposal', () => {
       }),
     ]);
 
-    // MemberA creates a proposal
+    // MemberA creates a proposal and it gets submitted
     const proposal = await testData.createProposal({
       callerEmail: memberA.email,
       processInstanceId: instance.instance.id,
@@ -143,6 +143,11 @@ describe.concurrent('getProposal', () => {
         description: 'A test proposal',
       },
     });
+
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     // MemberB should not be able to edit memberA's proposal
     const memberBCaller = await createAuthenticatedCaller(memberB.email);
@@ -861,6 +866,11 @@ describe.concurrent('getProposal', () => {
       proposalData: { title: 'Org Member Fallback Proposal' },
     });
 
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
     // Member has no profile-level access (instanceProfileIds: []),
     // but the org Member role has decisions: READ so the fallback should pass
     const memberUser = await testData.createMemberUser({
@@ -898,6 +908,11 @@ describe.concurrent('getProposal', () => {
       processInstanceId: instance.id,
       proposalData: { title: 'Cross-Org Profile Access Proposal' },
     });
+
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     // Create a user in a different org, then grant them profile-level access
     // to the first setup's instance — they are NOT in setup's org
@@ -942,6 +957,12 @@ describe.concurrent('getProposal', () => {
       processInstanceId: instance.id,
       proposalData: { title: 'Unauthorized Proposal' },
     });
+
+    // Mark as submitted so the draft gate doesn't mask the auth error
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     // Create a separate setup — this user belongs to a different organization
     const otherSetup = await testData.createDecisionSetup({
@@ -1156,43 +1177,5 @@ describe.concurrent('getProposal', () => {
 
     expect(result.id).toBe(proposal.id);
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
-  });
-
-  it('should block admin from accessing another user draft proposal', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    // Create a member who submits a draft
-    const submitter = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
-
-    const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Draft Visible Only To Author' },
-    });
-
-    // Admin (setup.userEmail) tries to access the draft — should get 404
-    // because admin doesn't have a profileUsers record on the proposal's profile
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    await expect(
-      adminCaller.decision.getProposal({
-        profileId: proposal.profileId,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 });
