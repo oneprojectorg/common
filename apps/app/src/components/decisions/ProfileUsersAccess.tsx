@@ -107,7 +107,7 @@ export const ProfileUsersAccess = ({
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-4">
         <Header2 className="font-serif text-title-sm">
-          {t('Participants')}
+          {t('Manage Participants')}
         </Header2>
 
         {isDraft && (
