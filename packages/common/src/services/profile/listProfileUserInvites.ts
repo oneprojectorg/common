@@ -1,5 +1,5 @@
 import { db, sql } from '@op/db/client';
-import { profileInvites, profiles } from '@op/db/schema';
+import { profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -32,23 +32,25 @@ export const listProfileUserInvites = async ({
   assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
   const trimmedQuery = query?.trim();
-  const searchFilter =
-    trimmedQuery && trimmedQuery.length >= 2
-      ? sql`(
-          ${profileInvites.email} ILIKE ${`%${trimmedQuery}%`}
-          OR ${trimmedQuery} <% ${profileInvites.email}
-          OR ${profileInvites.inviteeProfileId} IN (
-            SELECT id FROM ${profiles}
-            WHERE name ILIKE ${`%${trimmedQuery}%`} OR ${trimmedQuery} <% name
-          )
-        )`
-      : undefined;
 
   return db.query.profileInvites.findMany({
     where: {
       profileId,
       acceptedOn: { isNull: true },
-      ...(searchFilter && { RAW: () => searchFilter }),
+      ...(trimmedQuery &&
+        trimmedQuery.length >= 2 && {
+          RAW: (table) => {
+            const ilikePattern = `%${trimmedQuery}%`;
+            return sql`(
+              ${table.email} ILIKE ${ilikePattern}
+              OR ${trimmedQuery} <% ${table.email}
+              OR ${table.inviteeProfileId} IN (
+                SELECT id FROM ${profiles}
+                WHERE name ILIKE ${ilikePattern} OR ${trimmedQuery} <% name
+              )
+            )`;
+          },
+        }),
     },
     with: {
       accessRole: true,
