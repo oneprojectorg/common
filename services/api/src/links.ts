@@ -3,7 +3,6 @@ import { OPURLConfig, isOnPreviewAppDomain } from '@op/core';
 import { logger } from '@op/logging';
 import type { TRPCLink } from '@trpc/client';
 import {
-  httpBatchLink,
   httpBatchStreamLink,
   httpLink,
   loggerLink,
@@ -23,7 +22,6 @@ type TRPCQueryKey = [
 ];
 
 const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
-const isE2E = process.env.NEXT_PUBLIC_E2E === 'true';
 const isServer = typeof window === 'undefined';
 
 // Function to get PostHog distinct_id if available
@@ -204,19 +202,12 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
         transformer: superjson,
         fetch: fetchFn,
       }),
-      false: isE2E
-        ? httpBatchLink({
-            url: trpcUrl,
-            transformer: superjson,
-            maxItems: 4,
-            fetch: fetchFn,
-          })
-        : httpBatchStreamLink({
-            url: trpcUrl,
-            transformer: superjson,
-            maxItems: 4,
-            fetch: fetchFn,
-          }),
+      false: httpBatchStreamLink({
+        url: trpcUrl,
+        transformer: superjson,
+        maxItems: 4,
+        fetch: fetchFn,
+      }),
     }),
   ];
 }
