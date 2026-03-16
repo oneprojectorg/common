@@ -116,9 +116,11 @@ describe.concurrent('updateProposal visibility', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a non-admin member user with proper setup
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -182,9 +184,11 @@ describe.concurrent('updateProposal visibility', () => {
       data: { visibility: Visibility.HIDDEN },
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a non-admin member user with proper setup
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -215,9 +219,11 @@ describe.concurrent('updateProposal visibility', () => {
       throw new Error('No instance created');
     }
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a non-admin member user who will submit a proposal
     const submitter = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -380,8 +386,10 @@ describe.concurrent('updateProposal status', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 

@@ -118,25 +118,23 @@ describe.concurrent('listDecisionProfiles', () => {
 
     const result = await caller.decision.listDecisionProfiles({
       limit: 10,
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: setup.userProfileId,
     });
 
     expect(result.items).toHaveLength(2);
     result.items.forEach((item) => {
-      expect(item.processInstance.owner?.id).toBe(setup.organization.profileId);
+      expect(item.processInstance.owner?.id).toBe(setup.userProfileId);
     });
 
     // Also verify filtering by Org B works
     const otherResult = await caller.decision.listDecisionProfiles({
       limit: 10,
-      ownerProfileId: otherSetup.organization.profileId,
+      ownerProfileId: otherSetup.userProfileId,
     });
 
     expect(otherResult.items).toHaveLength(3);
     otherResult.items.forEach((item) => {
-      expect(item.processInstance.owner?.id).toBe(
-        otherSetup.organization.profileId,
-      );
+      expect(item.processInstance.owner?.id).toBe(otherSetup.userProfileId);
     });
   });
 
@@ -193,14 +191,14 @@ describe.concurrent('listDecisionProfiles', () => {
 
     const result = await caller.decision.listDecisionProfiles({
       limit: 10,
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: setup.userProfileId,
       status: [ProcessStatus.PUBLISHED],
     });
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.processInstance.status).toBe('published');
     expect(result.items[0]?.processInstance.owner?.id).toBe(
-      setup.organization.profileId,
+      setup.userProfileId,
     );
   });
 
@@ -257,9 +255,7 @@ describe.concurrent('listDecisionProfiles', () => {
     const profile = result.items[0];
     expect(profile?.processInstance.instanceData.templateId).toBeDefined();
     expect(profile?.processInstance.owner).toBeDefined();
-    expect(profile?.processInstance.owner?.id).toBe(
-      setup.organization.profileId,
-    );
+    expect(profile?.processInstance.owner?.id).toBe(setup.userProfileId);
   });
 
   it('should return empty list when no decision profiles exist', async ({
@@ -295,8 +291,9 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     // Create a different user who will own another instance
+    const organization = await testData.createOrganization(setup.userEmail);
     const otherUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
     });
 
     // Create an instance owned by the other user (so main user doesn't have access)

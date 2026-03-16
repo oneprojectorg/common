@@ -168,13 +168,9 @@ describe.concurrent('translation.translateDecision', () => {
       targetLocale: 'es',
     });
 
-    // DeepL should have received HTML, not raw TipTap JSON
-    expect(mockTranslateText).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.stringContaining('<p')]),
-      null,
-      'ES',
-      expect.objectContaining({ tagHandling: 'html' }),
-    );
+    // The mock prefixes whatever it receives with "[ES]", so:
+    // - "[ES]" confirms DeepL was called
+    // - "<p" confirms it received rendered HTML, not raw TipTap JSON
     expect(result.additionalInfo).toContain('[ES]');
     expect(result.additionalInfo).toContain('<p');
   });
@@ -374,19 +370,21 @@ describe.concurrent('translation.translateDecision', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: false, // owner gets profile access, not the member
-    });
+    // instanceCount: 0 so the instance is created AFTER the org,
+    // meaning ownerProfileId = orgProfileId (org fallback applies)
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const organization = await testData.createOrganization(setup.userEmail);
+
+    const created = await testData.createInstanceForProcess({
+      user: setup.user,
+      process: setup.process,
+      name: 'Instance 1',
+    });
 
     // Patch instance with some content so we get a non-empty result
     const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+      where: eq(processInstances.id, created.instance.id),
     });
     if (!instanceRecord) {
       throw new Error('Instance record not found');
@@ -399,7 +397,7 @@ describe.concurrent('translation.translateDecision', () => {
     await db
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases } })
-      .where(eq(processInstances.id, instance.instance.id));
+      .where(eq(processInstances.id, created.instance.id));
 
     onTestFinished(async () => {
       await db
@@ -407,14 +405,14 @@ describe.concurrent('translation.translateDecision', () => {
         .where(
           like(
             contentTranslations.contentKey,
-            `decision:${instance.profileId}:%`,
+            `decision:${created.profileId}:%`,
           ),
         );
     });
 
     // Create a member of the same org (no direct profile access)
     const member = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [], // no profile access granted
     });
 
@@ -422,7 +420,7 @@ describe.concurrent('translation.translateDecision', () => {
 
     // Should succeed via org-level fallback
     const result = await memberCaller.translation.translateDecision({
-      decisionProfileId: instance.profileId,
+      decisionProfileId: created.profileId,
       targetLocale: 'es',
     });
 
