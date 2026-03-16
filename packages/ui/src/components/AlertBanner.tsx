@@ -44,7 +44,7 @@ const alertBannerStyles = tv({
         content: 'group-has-data-[slot=icon]:col-start-2',
       },
       banner: {
-        root: 'flex items-center gap-1 shadow-light',
+        root: 'flex items-start gap-1',
         content: 'flex min-w-0 items-center gap-1',
       },
     },
@@ -117,7 +117,7 @@ export function AlertBanner({
           <span className="shrink-0 [&>svg]:size-4">
             {icon ?? <LuInfo className="size-4" />}
           </span>
-          <span className="truncate text-sm leading-[1.5] font-normal">
+          <span className="text-sm leading-[1.5] font-normal">
             {props.children}
           </span>
         </>
