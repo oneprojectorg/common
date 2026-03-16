@@ -32,11 +32,10 @@ Object.assign(process.env, {
  */
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 3 : 4,
-  // workers: 12,
+  workers: process.env.CI ? 2 : 4,
   reporter: 'html',
   timeout: 60_000, // 60 seconds per test
 
