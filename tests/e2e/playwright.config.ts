@@ -51,8 +51,4 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-
-  /* Servers must be running before tests start.
-   * Local:  pnpm build:e2e && pnpm start:e2e
-   * CI:     servers are started in the workflow before playwright runs. */
 });
