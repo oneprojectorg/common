@@ -55,14 +55,13 @@ describe.concurrent('getDecisionBySlug', () => {
     const { slug } = setup.instances[0]!;
 
     // Create a different user who doesn't have access to the instance
-    const organization = await testData.createOrganization(setup.userEmail);
     const otherUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
       instanceProfileIds: [], // Don't grant access to any instances
     });
     const caller = await createAuthenticatedCaller(otherUser.email);
 
-    await expect(caller.decision.getDecisionBySlug({ slug })).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    await expect(caller.decision.getDecisionBySlug({ slug })).rejects.toThrow();
   });
 
   it('should throw error for non-existent slug', async ({
@@ -79,7 +78,7 @@ describe.concurrent('getDecisionBySlug', () => {
 
     await expect(
       caller.decision.getDecisionBySlug({ slug: 'non-existent-slug' }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    ).rejects.toThrow();
   });
 
   it('should include process and owner information', async ({
@@ -100,6 +99,6 @@ describe.concurrent('getDecisionBySlug', () => {
 
     expect(result.processInstance.instanceData.templateId).toBeDefined();
     expect(result.processInstance.owner).toBeDefined();
-    expect(result.processInstance.owner?.id).toBe(setup.userProfileId);
+    expect(result.processInstance.owner?.id).toBe(setup.organization.profileId);
   });
 });

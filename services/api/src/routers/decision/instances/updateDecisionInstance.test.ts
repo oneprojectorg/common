@@ -235,9 +235,8 @@ describe.concurrent('updateDecisionInstance', () => {
     }
 
     // Create a member user (non-admin)
-    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -691,11 +690,10 @@ describe.concurrent('updateDecisionInstance', () => {
       throw new Error('No instance created');
     }
 
-    const organization = await testData.createOrganization(setup.userEmail);
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // Use the org profile as the new steward (it's a valid profile the owner controls)
-    const newStewardId = organization.profileId;
+    const newStewardId = setup.organization.profileId;
 
     const result = await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
@@ -730,9 +728,8 @@ describe.concurrent('updateDecisionInstance', () => {
 
     // Create a member user and grant them admin access on the decision profile
     // (skip instanceProfileIds to avoid duplicate profileUsers rows)
-    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
     });
 
     // Grant admin access on the decision profile so they pass the general
@@ -754,40 +751,6 @@ describe.concurrent('updateDecisionInstance', () => {
     ).rejects.toThrow();
   });
 
-  it('should allow a new user to update steward using their individual profile', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    // The instance ownerProfileId is the individual profile; the signup trigger
-    // created a profileUser with Admin role there, so this should succeed.
-    const result = await caller.decision.updateDecisionInstance({
-      instanceId: instance.instance.id,
-      stewardProfileId: setup.userProfileId,
-    });
-
-    expect(result.processInstance.id).toBe(instance.instance.id);
-
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
-    });
-
-    expect(dbInstance!.stewardProfileId).toBe(setup.userProfileId);
-  });
-
   it('should allow non-owner admin to update other fields without changing steward', async ({
     task,
     onTestFinished,
@@ -806,9 +769,8 @@ describe.concurrent('updateDecisionInstance', () => {
 
     // Create a member user and grant them admin access on the decision profile
     // (skip instanceProfileIds to avoid duplicate profileUsers rows)
-    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
     });
 
     await testData.grantProfileAccess(

@@ -117,9 +117,8 @@ describe.concurrent('updateProposal visibility', () => {
     });
 
     // Create a non-admin member user with proper setup
-    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -184,9 +183,8 @@ describe.concurrent('updateProposal visibility', () => {
     });
 
     // Create a non-admin member user with proper setup
-    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -218,9 +216,8 @@ describe.concurrent('updateProposal visibility', () => {
     }
 
     // Create a non-admin member user who will submit a proposal
-    const organization = await testData.createOrganization(setup.userEmail);
     const submitter = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -297,6 +294,39 @@ describe.concurrent('updateProposal visibility', () => {
 });
 
 describe.concurrent('updateProposal status', () => {
+  it('should allow admin to update proposal status to evaluation statuses', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Admin should be able to update status to SHORTLISTED
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { status: ProposalStatus.SHORTLISTED },
+    });
+
+    expect(result.status).toBe(ProposalStatus.SHORTLISTED);
+  });
+
   it('should allow admin to update proposal status', async ({
     task,
     onTestFinished,
@@ -321,13 +351,11 @@ describe.concurrent('updateProposal status', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    for (const status of [ProposalStatus.SHORTLISTED, ProposalStatus.APPROVED]) {
-      const result = await caller.decision.updateProposal({
-        proposalId: proposal.id,
-        data: { status },
-      });
-      expect(result.status).toBe(status);
-    }
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { status: ProposalStatus.APPROVED },
+    });
+    expect(result.status).toBe(ProposalStatus.APPROVED);
   });
 
   it('should not allow non-admin to change proposal status', async ({
@@ -352,9 +380,8 @@ describe.concurrent('updateProposal status', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
 

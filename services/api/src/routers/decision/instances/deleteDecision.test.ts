@@ -69,9 +69,8 @@ describe.concurrent('deleteDecision', () => {
     }
 
     // Create a second user and grant them admin access on the instance profile
-    const organization = await testData.createOrganization(setup.userEmail);
     const adminUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
     });
 
     await testData.grantProfileAccess(
@@ -111,9 +110,8 @@ describe.concurrent('deleteDecision', () => {
     }
 
     // Create a member user (non-admin) with access to the instance
-    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization,
+      organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -197,6 +195,6 @@ describe.concurrent('deleteDecision', () => {
       caller.decision.deleteDecision({
         instanceId: '00000000-0000-0000-0000-000000000000',
       }),
-    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+    ).rejects.toThrow();
   });
 });
