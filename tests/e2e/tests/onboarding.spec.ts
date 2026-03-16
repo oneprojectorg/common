@@ -29,7 +29,7 @@ test.describe('Onboarding', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await page.goto('/en/start', { waitUntil: 'commit' });
+    await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
 
     // Should skip directly to personal details form
     await expect(
