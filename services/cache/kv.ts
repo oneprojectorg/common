@@ -5,8 +5,7 @@ import { createClient } from 'redis';
 
 import { cacheMetrics } from './metrics';
 
-const IS_E2E = process.env.E2E === 'true';
-const REDIS_URL = IS_E2E ? undefined : process.env.REDIS_URL;
+const REDIS_URL = process.env.REDIS_URL;
 
 // Create Redis client only if REDIS_URL is provided
 let redis: ReturnType<typeof createClient> | null = null;
@@ -115,13 +114,6 @@ export const cache = async <T>({
     skipCacheWrite?: (result: Awaited<T>) => boolean;
   };
 }): Promise<Awaited<T>> => {
-  // In E2E mode, skip all caching to avoid stale data between test runs.
-  // The server process keeps an in-memory Map that outlives individual tests,
-  // so cached user/org data from one test pollutes the next.
-  if (IS_E2E) {
-    return fetch();
-  }
-
   const cacheKey = getCacheKey(type, appKey, params);
   const { ttl, skipMemCache = false, storeNulls = false } = options;
 
