@@ -52,7 +52,6 @@ export async function generateProposalsCsv(
       'Submitted By': p.submittedBy?.name || '',
       'Submitter Email': p.submittedBy?.email || '',
       'Profile ID': p.profileId,
-      Votes: p.decisionCount || 0,
       Likes: p.likesCount || 0,
       Comments: p.commentsCount || 0,
       Followers: p.followersCount || 0,

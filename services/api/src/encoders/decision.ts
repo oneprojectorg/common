@@ -4,11 +4,9 @@ import {
   ProposalStatus,
   Visibility,
   decisionProcesses,
-  decisions,
   processInstances,
   proposalAttachments,
   proposals,
-  stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -489,7 +487,6 @@ export const proposalEncoder = createSelectSchema(proposals)
     proposalData: proposalDataSchema,
     submittedBy: baseProfileEncoder.optional(),
     profile: baseProfileEncoder,
-    decisionCount: z.number().optional(),
     likesCount: z.number().optional(),
     followersCount: z.number().optional(),
     commentsCount: z.number().optional(),
@@ -526,34 +523,6 @@ export const proposalListEncoder = z.object({
   canManageProposals: z.boolean().prefault(false),
 });
 
-// Decision Encoder
-export const decisionEncoder = createSelectSchema(decisions)
-  .pick({
-    id: true,
-    decisionData: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    proposal: proposalEncoder.optional(),
-    decidedBy: baseProfileEncoder.optional(),
-  });
-
-// State Transition History Encoder
-export const stateTransitionHistoryEncoder = createSelectSchema(
-  stateTransitionHistory,
-)
-  .pick({
-    id: true,
-    fromStateId: true,
-    toStateId: true,
-    transitionData: true,
-    transitionedAt: true,
-  })
-  .extend({
-    triggeredBy: baseProfileEncoder.optional(),
-  });
-
 // List Encoders (for paginated responses)
 export const decisionProcessListEncoder = z.object({
   processes: z.array(decisionProcessEncoder),
@@ -570,12 +539,6 @@ export const processInstanceListEncoder = z.object({
 export const instanceResultsEncoder = z.object({
   items: z.array(proposalEncoder),
   next: z.string().nullish(),
-});
-
-export const decisionListEncoder = z.object({
-  decisions: z.array(decisionEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
 });
 
 // Input Schemas

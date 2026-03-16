@@ -12,7 +12,6 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
-import { decisions } from './decisions.sql';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
@@ -167,7 +166,6 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
     fields: [proposals.profileId],
     references: [profiles.id],
   }),
-  decisions: many(decisions),
   categories: many(proposalCategories),
   attachments: many(proposalAttachments),
   voteProposals: many(decisionsVoteProposals),

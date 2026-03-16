@@ -143,9 +143,6 @@ export {
   proposalAttachmentsRelations,
 } from './tables/proposalAttachments.sql';
 
-export { decisions, decisionsRelations } from './tables/decisions.sql';
-export type { Decision } from './tables/decisions.sql';
-
 export {
   decisionsVoteSubmissions,
   decisionsVoteSubmissionsRelations,
