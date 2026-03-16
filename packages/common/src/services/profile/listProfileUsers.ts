@@ -78,14 +78,17 @@ export const listProfileUsers = async ({
             OR ${query} <% ${profileUsers.email}
           )`;
 
-          // Name: single subquery combining ILIKE and trigram conditions
-          const nameMatch = sql`${profileUsers.authUserId} IN (
-            SELECT u.auth_user_id FROM ${users} u
-            INNER JOIN ${profiles} p ON p.id = u.profile_id
-            WHERE p.name ILIKE ${ilikePattern} OR ${query} <% p.name
-          )`;
-
-          return or(emailMatch, nameMatch);
+          return or(
+            emailMatch,
+            // Check profileUsers.name directly (for users without a linked profile)
+            sql`${profileUsers.name} ILIKE ${ilikePattern}`,
+            // Check via users → profiles join for users with a full profile
+            sql`${profileUsers.authUserId} IN (
+              SELECT u.auth_user_id FROM ${users} u
+              INNER JOIN ${profiles} p ON p.id = u.profile_id
+              WHERE p.name ILIKE ${ilikePattern} OR ${query} <% p.name
+            )`,
+          );
         })()
       : undefined;
 

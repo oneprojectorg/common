@@ -85,9 +85,12 @@ export const ProfileUsersAccess = ({
   });
   const isDraft = instance?.status === ProcessStatus.DRAFT;
 
-  // Fetch pending invites to show alongside accepted members
+  // Fetch pending invites to show alongside accepted members, filtered by search
   const { data: invites } = trpc.profile.listProfileInvites.useQuery(
-    { profileId },
+    {
+      profileId,
+      query: debouncedQuery.length >= 2 ? debouncedQuery : undefined,
+    },
     { retry: false },
   );
 
@@ -104,7 +107,7 @@ export const ProfileUsersAccess = ({
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-4">
         <Header2 className="font-serif text-title-sm">
-          {t('Participants')}
+          {t('Manage Participants')}
         </Header2>
 
         {isDraft && (
