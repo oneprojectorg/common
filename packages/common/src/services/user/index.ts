@@ -1,9 +1,11 @@
-import { and, db, eq, sql } from '@op/db/client';
+import { and, db, eq, isNull, sql } from '@op/db/client';
 import {
   EntityType,
   allowList,
   organizationUsers,
   organizations,
+  profileUserToAccessRoles,
+  profileUsers,
   profiles,
   users,
   usersUsedStorage,
@@ -90,6 +92,39 @@ export const createUserByEmail = async ({
           currentProfileId: newProfile.id,
         })
         .where(eq(users.authUserId, authUserId));
+
+      // Look up the global Admin role
+      const adminRole = await tx.query.accessRoles.findFirst({
+        where: {
+          name: 'Admin',
+          RAW: (table) => isNull(table.profileId),
+        },
+      });
+
+      if (!adminRole) {
+        throw new Error('Admin role not found');
+      }
+
+      // Create a profileUser as owner of the individual profile
+      const [newProfileUser] = await tx
+        .insert(profileUsers)
+        .values({
+          authUserId,
+          email,
+          isOwner: true,
+          profileId: newProfile.id,
+        })
+        .returning();
+
+      if (!newProfileUser) {
+        throw new Error('Failed to create profile user');
+      }
+
+      // Assign Admin role to the profileUser
+      await tx.insert(profileUserToAccessRoles).values({
+        profileUserId: newProfileUser.id,
+        accessRoleId: adminRole.id,
+      });
     });
   } catch (e) {
     console.error(e);
