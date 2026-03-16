@@ -117,4 +117,3 @@ test('authenticated test', async ({ authenticatedPage }) => {
 - `timeout`: 60s per test
 - `retries`: 2 in CI, 0 locally
 - `workers`: 2 in CI, 4 locally
-
