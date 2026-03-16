@@ -320,7 +320,7 @@ describe('translation.translateDecision', () => {
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'es',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('should throw UnauthorizedError for user without decision access', async ({
@@ -365,7 +365,7 @@ describe('translation.translateDecision', () => {
         decisionProfileId: instance.profileId,
         targetLocale: 'es',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should allow org member without direct profile access via org fallback', async ({
