@@ -76,8 +76,11 @@ export async function DecisionHeader({
     >
       <DecisionInstanceHeader
         backTo={{
-          label: instance.owner?.name,
-          href: `/profile/${slug}?tab=decisions`,
+          label: ('steward' in instance && instance.steward
+            ? instance.steward
+            : instance.owner
+          )?.name,
+          href: `/profile/${'steward' in instance && instance.steward?.slug ? instance.steward.slug : slug}?tab=decisions`,
         }}
         title={
           profileName ||
