@@ -85,9 +85,12 @@ export const ProfileUsersAccess = ({
   });
   const isDraft = instance?.status === ProcessStatus.DRAFT;
 
-  // Fetch pending invites to show alongside accepted members
+  // Fetch pending invites to show alongside accepted members, filtered by search
   const { data: invites } = trpc.profile.listProfileInvites.useQuery(
-    { profileId },
+    {
+      profileId,
+      query: debouncedQuery.length >= 2 ? debouncedQuery : undefined,
+    },
     { retry: false },
   );
 

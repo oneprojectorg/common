@@ -1,5 +1,5 @@
 import { db, sql } from '@op/db/client';
-import { profileInvites } from '@op/db/schema';
+import { profileInvites, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -37,6 +37,10 @@ export const listProfileUserInvites = async ({
       ? sql`(
           ${profileInvites.email} ILIKE ${`%${trimmedQuery}%`}
           OR ${trimmedQuery} <% ${profileInvites.email}
+          OR ${profileInvites.inviteeProfileId} IN (
+            SELECT id FROM ${profiles}
+            WHERE name ILIKE ${`%${trimmedQuery}%`} OR ${trimmedQuery} <% name
+          )
         )`
       : undefined;
 
