@@ -88,6 +88,9 @@ redirect_uri = ""
 url = ""
 skip_nonce_check = false
 
+[analytics]
+enabled = false
+
 [experimental]
 orioledb_version = ""
 s3_host = "env(S3_HOST)"

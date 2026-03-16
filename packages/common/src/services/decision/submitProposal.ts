@@ -34,7 +34,7 @@ export const submitProposal = async ({
   });
 
   if (!existingProposal) {
-    throw new NotFoundError('Proposal not found');
+    throw new NotFoundError('Proposal');
   }
 
   // Only allow submitting drafts

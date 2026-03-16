@@ -1,6 +1,7 @@
 import { mockCollab } from '@op/collab/testing';
 import { db } from '@op/db/client';
 import {
+  ProposalStatus,
   Visibility,
   decisionProcesses,
   processInstances,
@@ -133,7 +134,7 @@ describe.concurrent('getProposal', () => {
       }),
     ]);
 
-    // MemberA creates a proposal
+    // MemberA creates a proposal and it gets submitted
     const proposal = await testData.createProposal({
       callerEmail: memberA.email,
       processInstanceId: instance.instance.id,
@@ -142,6 +143,11 @@ describe.concurrent('getProposal', () => {
         description: 'A test proposal',
       },
     });
+
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     // MemberB should not be able to edit memberA's proposal
     const memberBCaller = await createAuthenticatedCaller(memberB.email);
@@ -860,6 +866,11 @@ describe.concurrent('getProposal', () => {
       proposalData: { title: 'Org Member Fallback Proposal' },
     });
 
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
     // Member has no profile-level access (instanceProfileIds: []),
     // but the org Member role has decisions: READ so the fallback should pass
     const memberUser = await testData.createMemberUser({
@@ -897,6 +908,11 @@ describe.concurrent('getProposal', () => {
       processInstanceId: instance.id,
       proposalData: { title: 'Cross-Org Profile Access Proposal' },
     });
+
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     // Create a user in a different org, then grant them profile-level access
     // to the first setup's instance — they are NOT in setup's org
@@ -941,6 +957,12 @@ describe.concurrent('getProposal', () => {
       processInstanceId: instance.id,
       proposalData: { title: 'Unauthorized Proposal' },
     });
+
+    // Mark as submitted so the draft gate doesn't mask the auth error
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     // Create a separate setup — this user belongs to a different organization
     const otherSetup = await testData.createDecisionSetup({
@@ -1015,5 +1037,145 @@ describe.concurrent('getProposal', () => {
         url: expect.stringContaining('http'),
       },
     });
+  });
+
+  it('should allow draft author to access their own draft proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member who submits a draft proposal
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    // createProposal creates in DRAFT status by default
+    const proposal = await testData.createProposal({
+      callerEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'My Draft Proposal' },
+    });
+
+    // Verify it's actually a draft
+    const [dbProposal] = await db
+      .select({ status: proposals.status })
+      .from(proposals)
+      .where(eq(proposals.id, proposal.id));
+    expect(dbProposal?.status).toBe(ProposalStatus.DRAFT);
+
+    // Draft author should be able to access their own draft
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    const result = await submitterCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.status).toBe(ProposalStatus.DRAFT);
+  });
+
+  it('should throw NotFoundError when non-author tries to access a draft proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create two members: one submits a draft, the other tries to view it
+    const [submitter, viewer] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    // Submitter creates a draft proposal
+    const proposal = await testData.createProposal({
+      callerEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Secret Draft' },
+    });
+
+    // Non-author should get a NotFoundError when trying to view the draft
+    const viewerCaller = await createAuthenticatedCaller(viewer.email);
+    await expect(
+      viewerCaller.decision.getProposal({
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('should allow non-author to access a submitted (non-draft) proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create two members
+    const [submitter, viewer] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    // Submitter creates and submits a proposal
+    const proposal = await testData.createProposal({
+      callerEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Public Submitted Proposal' },
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    await submitterCaller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    // Non-author should be able to view submitted proposals
+    const viewerCaller = await createAuthenticatedCaller(viewer.email);
+    const result = await viewerCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
   });
 });
