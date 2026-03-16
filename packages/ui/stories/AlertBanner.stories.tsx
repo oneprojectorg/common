@@ -62,7 +62,7 @@ export const LongText: Story = {
   args: {
     intent: 'warning',
     children:
-      'This is a very long message that should be truncated with an ellipsis when it overflows the container width. It keeps going and going to demonstrate the text-overflow behavior of the AlertBanner component.',
+      'This is a very long message that should wrap to the next line when it overflows the container width. It keeps going and going to demonstrate the text wrapping behavior of the AlertBanner component.',
   },
 };
 
