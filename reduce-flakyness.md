@@ -70,13 +70,9 @@ Decision page loads were still running analytics like `trackProcessViewed`. That
 ### E2E runtime and transport
 
 - `package.json`
-  - added `NEXT_PUBLIC_E2E=true` to `build:e2e`, `dev:e2e`, and `start:e2e`
   - added `e2e:repeat` script
-- `tests/e2e/playwright.config.ts`
-  - added `NEXT_PUBLIC_E2E=true` to the test env
 - `services/api/src/links.ts`
-  - use `NEXT_PUBLIC_E2E` for client-side detection
-  - switch E2E browser traffic to `httpBatchLink` instead of `httpBatchStreamLink`
+  - ~~`NEXT_PUBLIC_E2E` was added for client-side detection but later removed since the transport switching code was reverted~~
 
 ### Cache and auth isolation
 
