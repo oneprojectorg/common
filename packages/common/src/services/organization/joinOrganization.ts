@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { TransactionType, db } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   type AccessRole,
   type CommonUser,
@@ -73,21 +73,24 @@ export const joinOrganization = async ({
     }
   }
 
+  // Resolve the target role before opening the transaction — assertGlobalRole
+  // uses the global db pool and must not be called inside a transaction callback,
+  // as that would require a second connection while one is already held by the
+  // transaction, which can exhaust the connection pool in serverless environments.
+  const targetRole = await determineTargetRole(
+    roleId ?? allowListUser?.metadata?.roleId,
+  );
+
   return await db.transaction<OrganizationUser>(async (tx) => {
-    // Create organizationUser record
-    const [[newOrgUser], targetRole] = await Promise.all([
-      tx
-        .insert(organizationUsers)
-        .values({
-          organizationId: organization.id,
-          authUserId: user.authUserId,
-          email: user.email,
-          name: user.name ?? userEmailDomain,
-        })
-        .returning(),
-      // Determine the role to assign
-      determineTargetRole(tx, roleId ?? allowListUser?.metadata?.roleId),
-    ]);
+    const [newOrgUser] = await tx
+      .insert(organizationUsers)
+      .values({
+        organizationId: organization.id,
+        authUserId: user.authUserId,
+        email: user.email,
+        name: user.name ?? userEmailDomain,
+      })
+      .returning();
 
     if (!newOrgUser) {
       throw new CommonError('Failed to add user to organization');
@@ -104,11 +107,13 @@ export const joinOrganization = async ({
 
 /**
  * Determines which role to assign to a user joining an organization.
- * If a roleId is provided and exists, that role is used.
- * Otherwise, falls back to the "Member" role.
+ * If a roleId is provided and exists in the DB, that role is used.
+ * Otherwise, falls back to the global "Member" role.
+ *
+ * Must be called OUTSIDE a transaction to avoid acquiring a second DB
+ * connection while one is already held by the transaction.
  */
 const determineTargetRole = async (
-  db: TransactionType,
   roleId?: AccessRole['id'],
 ): Promise<AccessRole> => {
   if (roleId) {
