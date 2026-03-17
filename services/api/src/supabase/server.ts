@@ -17,7 +17,28 @@ export function getCachedAuthUser(ctx: TContext): Promise<UserResponse> {
   let promise = authUserCache.get(ctx);
   if (!promise) {
     const supabase = createSBAdminClient(ctx);
-    promise = supabase.auth.getUser();
+    promise = supabase.auth.getUser().then((result) => {
+      if (result.error) {
+        const cookies = ctx.getCookies();
+        const cookieNames = Object.keys(cookies || {});
+        const hasSbCookies = cookieNames.some((k) => k.startsWith('sb-'));
+        const sbCookieNames = cookieNames.filter((k) => k.startsWith('sb-'));
+        const authErrorDetails = {
+          errorMessage: result.error.message,
+          errorStatus: (result.error as any).status,
+          errorCode: (result.error as any).code,
+          hasSbCookies,
+          sbCookieNames,
+          totalCookieCount: cookieNames.length,
+          isServerSideCall: ctx.isServerSideCall,
+          supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 30),
+          requestUrl: ctx.reqUrl,
+        };
+        console.error('supabase.auth.getUser() failed', authErrorDetails);
+        logger.error('supabase.auth.getUser() failed', authErrorDetails);
+      }
+      return result;
+    });
     authUserCache.set(ctx, promise);
   }
   return promise;
