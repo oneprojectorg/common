@@ -187,7 +187,7 @@ describe.concurrent('submitProposal', () => {
       outsiderCaller.decision.submitProposal({
         proposalId: proposal.id,
       }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('should submit successfully when proposal template contains vendor extension keywords', async ({
