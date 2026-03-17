@@ -2,6 +2,7 @@
 
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
+import { type InstancePhaseData } from '@op/api/encoders';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -39,7 +40,9 @@ export function VotingPage({
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.instanceData?.currentPhaseId;
-  const currentPhase = phases.find((phase) => phase.phaseId === currentPhaseId);
+  const currentPhase = phases.find(
+    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  );
 
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')

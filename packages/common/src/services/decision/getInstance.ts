@@ -63,8 +63,9 @@ const resolveInstanceAccess = async (
     }
   }
 
-  // No role found (e.g. platform admin) — default to all capabilities
-  return ALL_TRUE_ACCESS;
+  // This should be unreachable: assertInstanceProfileAccess guarantees the user
+  // has either a profile or org role before resolveInstanceAccess is called.
+  throw new UnauthorizedError("You don't have access to do this");
 };
 
 export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
