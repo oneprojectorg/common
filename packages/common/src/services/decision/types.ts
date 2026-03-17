@@ -65,14 +65,6 @@ export interface ProcessSchema {
   // Selection pipeline for results phase
   selectionPipeline?: SelectionPipeline;
 
-  /**
-   * @deprecated Use `phases[].selectionPipeline` instead. When both formats
-   * are present for the same state, `phases` takes precedence and
-   * `phaseTransitionPipelines` is not consulted.
-   */
-  phaseTransitionPipelines?: Record<string, SelectionPipeline>;
-
-  // New format: phases with inline selectionPipeline
   phases?: PhaseDefinition[];
 }
 

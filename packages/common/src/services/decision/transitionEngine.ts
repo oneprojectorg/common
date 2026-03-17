@@ -344,27 +344,13 @@ export class TransitionEngine {
 
   /**
    * Resolve the selection pipeline for the departing phase.
-   * Checks new format (processSchema.phases) first, then legacy format
-   * (processSchema.phaseTransitionPipelines), falling back to undefined.
-   * When both formats are present for the same state, `phases` takes precedence
-   * and `phaseTransitionPipelines` is not consulted.
    */
   private static resolveSelectionPipeline(
     processSchema: ProcessSchema,
     fromStateId: string,
   ): SelectionPipeline | undefined {
-    if (processSchema.phases) {
-      const phase = processSchema.phases.find((p) => p.id === fromStateId);
-      if (phase?.selectionPipeline) {
-        return phase.selectionPipeline;
-      }
-    }
-
-    if (processSchema.phaseTransitionPipelines?.[fromStateId]) {
-      return processSchema.phaseTransitionPipelines[fromStateId];
-    }
-
-    return undefined;
+    return processSchema.phases?.find((p) => p.id === fromStateId)
+      ?.selectionPipeline;
   }
 
   /**
