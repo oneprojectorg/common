@@ -43,11 +43,8 @@ export function StandardDecisionPage({
     (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
   );
   const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
-  const description = instance?.description?.match('PPDESCRIPTION')
-    ? t('PPDESCRIPTION')
-    : (instance.description ??
-      instance.instanceData?.templateDescription ??
-      undefined);
+  const description =
+    instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
   const canManageProposals = instance.access?.admin ?? false;
 
