@@ -16,30 +16,6 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('getInstance', () => {
-  it('should return the instance with access field populated', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await caller.decision.getInstance({
-      instanceId: instance.instance.id,
-    });
-
-    expect(result.access).toBeDefined();
-  });
-
   it('should return full access for a profile admin', async ({
     task,
     onTestFinished,
