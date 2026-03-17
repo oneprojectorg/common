@@ -78,8 +78,13 @@ const buildWhereConditions = (input: ListProposalsInput) => {
     conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
   }
 
-  if (proposalIds && proposalIds.length > 0) {
-    conditions.push(inArray(proposals.id, proposalIds));
+  if (proposalIds !== undefined) {
+    if (proposalIds.length > 0) {
+      conditions.push(inArray(proposals.id, proposalIds));
+    } else {
+      // Empty array means filter to no proposals (return empty result set)
+      conditions.push(sql`false`);
+    }
   }
 
   return conditions.length > 0 ? and(...conditions) : undefined;

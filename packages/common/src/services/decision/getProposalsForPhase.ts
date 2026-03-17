@@ -11,6 +11,9 @@ import {
  *
  * - If a phase transition has occurred: returns only proposals that survived
  *   the most-recent transition (linked via decision_transition_proposals).
+ *   Note: even a transition without a selection pipeline writes all proposals
+ *   to the join table, so the full non-deleted set is returned in that case —
+ *   not an indication that filtering occurred.
  * - If no transition exists yet: returns all non-deleted proposals for the instance.
  */
 export async function getProposalsForPhase({
@@ -18,40 +21,45 @@ export async function getProposalsForPhase({
 }: {
   instanceId: string;
 }): Promise<Proposal[]> {
-  const latestTransition = await db
-    .select({ id: stateTransitionHistory.id })
-    .from(stateTransitionHistory)
-    .where(eq(stateTransitionHistory.processInstanceId, instanceId))
-    .orderBy(desc(stateTransitionHistory.transitionedAt))
-    .limit(1);
+  try {
+    const latestTransition = await db
+      .select({ id: stateTransitionHistory.id })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId))
+      .orderBy(desc(stateTransitionHistory.transitionedAt))
+      .limit(1);
 
-  if (latestTransition.length > 0) {
-    const transitionId = latestTransition[0]!.id;
+    if (latestTransition.length > 0) {
+      const transitionId = latestTransition[0]!.id;
 
-    const rows = await db
-      .select({ proposal: proposals })
-      .from(decisionTransitionProposals)
-      .innerJoin(
-        proposals,
-        eq(decisionTransitionProposals.proposalId, proposals.id),
-      )
+      const rows = await db
+        .select({ proposal: proposals })
+        .from(decisionTransitionProposals)
+        .innerJoin(
+          proposals,
+          eq(decisionTransitionProposals.proposalId, proposals.id),
+        )
+        .where(
+          and(
+            eq(decisionTransitionProposals.transitionHistoryId, transitionId),
+            isNull(proposals.deletedAt),
+          ),
+        );
+
+      return rows.map((r) => r.proposal);
+    }
+
+    return db
+      .select()
+      .from(proposals)
       .where(
         and(
-          eq(decisionTransitionProposals.transitionHistoryId, transitionId),
+          eq(proposals.processInstanceId, instanceId),
           isNull(proposals.deletedAt),
         ),
       );
-
-    return rows.map((r) => r.proposal);
+  } catch (error) {
+    console.error('Error fetching proposals for phase:', { instanceId, error });
+    throw error;
   }
-
-  return db
-    .select()
-    .from(proposals)
-    .where(
-      and(
-        eq(proposals.processInstanceId, instanceId),
-        isNull(proposals.deletedAt),
-      ),
-    );
 }
