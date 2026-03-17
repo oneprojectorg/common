@@ -4,6 +4,8 @@ import {
   allowList,
   organizationUsers,
   organizations,
+  profileUserToAccessRoles,
+  profileUsers,
   profiles,
   users,
   usersUsedStorage,
@@ -11,6 +13,7 @@ import {
 import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
 import { getNormalizedRoles } from '../access';
+import { assertGlobalRole } from '../assert/assertGlobalRole';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
@@ -50,6 +53,10 @@ export const createUserByEmail = async ({
       return;
     }
 
+    // Look up the global Admin role before the transaction — it's a static
+    // system role, no need to hold a transaction open while reading it
+    const adminRole = await assertGlobalRole('Admin');
+
     // Create profile and link it to user atomically
     // Use a transaction to ensure profile creation and user update succeed together
     await db.transaction(async (tx) => {
@@ -82,14 +89,36 @@ export const createUserByEmail = async ({
         throw new Error('Failed to create user profile');
       }
 
-      // Link the profile to the user
-      await tx
-        .update(users)
-        .set({
-          profileId: newProfile.id,
-          currentProfileId: newProfile.id,
-        })
-        .where(eq(users.authUserId, authUserId));
+      // Link the profile to the user and create the profileUser in parallel —
+      // both depend only on newProfile.id
+      const [, [newProfileUser]] = await Promise.all([
+        tx
+          .update(users)
+          .set({
+            profileId: newProfile.id,
+            currentProfileId: newProfile.id,
+          })
+          .where(eq(users.authUserId, authUserId)),
+        tx
+          .insert(profileUsers)
+          .values({
+            authUserId,
+            email,
+            isOwner: true,
+            profileId: newProfile.id,
+          })
+          .returning(),
+      ]);
+
+      if (!newProfileUser) {
+        throw new Error('Failed to create profile user');
+      }
+
+      // Assign Admin role to the profileUser
+      await tx.insert(profileUserToAccessRoles).values({
+        profileUserId: newProfileUser.id,
+        accessRoleId: adminRole.id,
+      });
     });
   } catch (e) {
     console.error(e);
