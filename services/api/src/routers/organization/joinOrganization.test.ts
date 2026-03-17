@@ -36,9 +36,7 @@ describe.concurrent('organization.join', () => {
       .where(eq(users.authUserId, authUserId));
 
     if (userRecord?.profileId) {
-      await db
-        .delete(profiles)
-        .where(eq(profiles.id, userRecord.profileId));
+      await db.delete(profiles).where(eq(profiles.id, userRecord.profileId));
     }
 
     await supabaseTestAdminClient?.auth.admin.deleteUser(authUserId);
