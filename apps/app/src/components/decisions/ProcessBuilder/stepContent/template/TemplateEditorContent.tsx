@@ -9,6 +9,7 @@ import type {
 } from '@op/common/client';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { Button } from '@op/ui/Button';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';
@@ -450,16 +451,16 @@ export function TemplateEditorContent({
                   <div className="px-8 pt-2">
                     <p className="text-neutral-charcoal">
                       {t('These are the categories you defined in')}{' '}
-                      <button
-                        type="button"
-                        className="cursor-pointer text-primary-teal hover:underline"
-                        onClick={() => {
+                      <Button
+                        variant="link"
+                        size="inline"
+                        onPress={() => {
                           void setStep('general');
                           void setSection('proposalCategories');
                         }}
                       >
                         {t('Proposal Categories')}
-                      </button>
+                      </Button>
                       .
                     </p>
                   </div>
