@@ -1,3 +1,4 @@
+import { IntlErrorCode } from 'next-intl';
 import { getRequestConfig } from 'next-intl/server';
 
 import { routing } from './routing';
@@ -37,5 +38,15 @@ export default getRequestConfig(async ({ requestLocale }) => {
     locale,
     // messages: await getConfig(locale),
     messages: await getConfig(rawMessages),
+    timeZone: 'UTC',
+    onError(error: { code: string }) {
+      if (error.code === IntlErrorCode.ENVIRONMENT_FALLBACK) {
+        // Silently ignore — timeZone is set globally, but now/relativeTime
+        // fallbacks are non-fatal and shouldn't crash SSR.
+        return;
+      }
+      // Default next-intl behavior: log other errors
+      console.error(error);
+    },
   };
 });
