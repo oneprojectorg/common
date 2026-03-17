@@ -15,10 +15,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
-import {
-  aggregateVoteData,
-  executePipeline,
-} from './selectionPipeline';
+import { aggregateVoteData, executePipeline } from './selectionPipeline';
 import type {
   ExecutionContext,
   SelectionPipeline,

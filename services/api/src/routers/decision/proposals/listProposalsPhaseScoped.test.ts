@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createInstanceWithSchema,
-  schemaWithoutPipeline,
   schemaWithPipeline,
+  schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
 
 describe.concurrent('listProposals: phase-scoped proposal visibility', () => {

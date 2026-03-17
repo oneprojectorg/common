@@ -104,10 +104,7 @@ export async function aggregateVoteData(
 
       if (voteData?.approved === true || voteData?.vote === 'approve') {
         approvalCount++;
-      } else if (
-        voteData?.approved === false ||
-        voteData?.vote === 'reject'
-      ) {
+      } else if (voteData?.approved === false || voteData?.vote === 'reject') {
         rejectionCount++;
       } else if (voteData?.vote === 'abstain') {
         abstainCount++;

@@ -9,8 +9,8 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createInstanceWithSchema,
-  schemaWithoutPipeline,
   schemaWithPipeline,
+  schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
 
 describe.concurrent('Transition pipeline: join table population', () => {
@@ -53,10 +53,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       .select()
       .from(decisionTransitionProposals)
       .where(
-        eq(
-          decisionTransitionProposals.transitionHistoryId,
-          transition!.id,
-        ),
+        eq(decisionTransitionProposals.transitionHistoryId, transition!.id),
       );
 
     expect(joinRows).toHaveLength(2);
@@ -100,10 +97,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       .select()
       .from(decisionTransitionProposals)
       .where(
-        eq(
-          decisionTransitionProposals.transitionHistoryId,
-          transition!.id,
-        ),
+        eq(decisionTransitionProposals.transitionHistoryId, transition!.id),
       );
 
     expect(joinRows).toHaveLength(3);
