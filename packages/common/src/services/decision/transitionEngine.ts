@@ -235,7 +235,7 @@ export class TransitionEngine {
         currentStateId,
       );
 
-      // Run the pipeline to determine surviving proposals (exclude soft-deleted)
+      // Fetch all non-deleted proposals as the default surviving set
       const allProposals = await db
         .select()
         .from(proposals)
@@ -248,6 +248,7 @@ export class TransitionEngine {
 
       let survivingProposalIds: string[] = allProposals.map((p) => p.id);
 
+      // If the departing phase has a selection pipeline, run it to narrow the surviving set
       if (selectionPipeline) {
         const voteData = await aggregateVoteData(data.instanceId);
         const context: ExecutionContext = {
@@ -266,6 +267,14 @@ export class TransitionEngine {
         };
         const surviving = await executePipeline(selectionPipeline, context);
         survivingProposalIds = surviving.map((p) => p.id);
+      }
+
+      if (survivingProposalIds.length === 0) {
+        console.warn('Phase transition produced zero surviving proposals', {
+          instanceId: data.instanceId,
+          fromStateId: currentStateId,
+          toStateId: data.toStateId,
+        });
       }
 
       // Update the instance in a transaction
@@ -293,7 +302,13 @@ export class TransitionEngine {
           .returning({ id: stateTransitionHistory.id });
 
         // Persist surviving proposals into the join table
-        if (survivingProposalIds.length > 0 && insertedTransition) {
+        if (!insertedTransition) {
+          throw new Error(
+            `stateTransitionHistory insert returned no ID for instance ${data.instanceId}`,
+          );
+        }
+
+        if (survivingProposalIds.length > 0) {
           await trx.insert(decisionTransitionProposals).values(
             survivingProposalIds.map((proposalId) => ({
               transitionHistoryId: insertedTransition.id,
@@ -321,7 +336,11 @@ export class TransitionEngine {
       ) {
         throw error;
       }
-      console.error('Error executing transition:', error);
+      console.error('Error executing transition:', {
+        instanceId: data.instanceId,
+        toStateId: data.toStateId,
+        error,
+      });
       throw new CommonError('Failed to execute transition');
     }
   }
@@ -330,6 +349,8 @@ export class TransitionEngine {
    * Resolve the selection pipeline for the departing phase.
    * Checks new format (processSchema.phases) first, then legacy format
    * (processSchema.phaseTransitionPipelines), falling back to undefined.
+   * When both formats are present for the same state, `phases` takes precedence
+   * and `phaseTransitionPipelines` is not consulted.
    */
   private static resolveSelectionPipeline(
     processSchema: ProcessSchema,

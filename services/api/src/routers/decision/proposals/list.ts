@@ -17,15 +17,6 @@ export const listProposalsRouter = router({
         instanceId: input.processInstanceId,
       });
 
-      if (phaseProposals.length === 0) {
-        return proposalListEncoder.parse({
-          proposals: [],
-          total: 0,
-          hasMore: false,
-          canManageProposals: false,
-        });
-      }
-
       const phaseProposalIds = phaseProposals.map((p) => p.id);
 
       const result = await listProposals({
