@@ -10,7 +10,10 @@ import { eq } from 'drizzle-orm';
 
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
-import { createIsolatedSession, createTestContextWithSession } from '../supabase-utils';
+import {
+  createIsolatedSession,
+  createTestContextWithSession,
+} from '../supabase-utils';
 import type { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
 const createCaller = createCallerFactory(appRouter);
