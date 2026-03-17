@@ -1,10 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { type InstancePhaseData } from '@op/api/encoders';
 import { match } from '@op/core';
-
-import { useTranslations } from '@/lib/i18n/routing';
 
 import { ResultsPage } from './pages/ResultsPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
@@ -32,27 +29,9 @@ function DecisionStateRouterNew({
   decisionSlug?: string;
   decisionProfileId?: string | null;
 }) {
-  const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const { currentStateId } = instance;
-
-  // Derive values for StandardDecisionPage (format-agnostic)
-  const phases = instance.instanceData.phases ?? [];
-  const currentPhaseId = instance.instanceData.currentPhaseId;
-  const currentPhase = phases.find(
-    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
-  );
-  const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
-  const description = instance?.description?.match('PPDESCRIPTION')
-    ? t('PPDESCRIPTION')
-    : (instance.description ??
-      instance.instanceData.templateDescription ??
-      undefined);
-
-  const canSubmitProposal = instance.access?.submitProposals ?? false;
-  const canVote = instance.access?.vote ?? false;
-  const canManage = instance.access?.admin ?? false;
 
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,
@@ -61,8 +40,6 @@ function DecisionStateRouterNew({
         instanceId={instanceId}
         slug={slug}
         decisionSlug={decisionSlug}
-        canVote={canVote}
-        canManageProposals={canManage}
       />
     ),
     _: () => (
@@ -71,11 +48,6 @@ function DecisionStateRouterNew({
         slug={slug}
         decisionSlug={decisionSlug}
         decisionProfileId={decisionProfileId}
-        allowProposals={allowProposals}
-        description={description}
-        currentPhase={currentPhase}
-        canSubmitProposal={canSubmitProposal}
-        canManageProposals={canManage}
       />
     ),
   });
