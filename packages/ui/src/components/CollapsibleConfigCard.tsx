@@ -5,6 +5,7 @@ import { useId } from 'react';
 import { LuChevronDown, LuGripVertical, LuLock } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
+import { Chip } from './Chip';
 import { DragHandle } from './Sortable';
 import type { SortableItemControls } from './Sortable';
 import {
@@ -92,9 +93,7 @@ export function CollapsibleConfigCard({
 
       {/* Badge chip */}
       {badgeLabel && (
-        <span className="shrink-0 rounded-sm bg-neutral-gray1 px-2 py-0.5 text-xs text-neutral-gray4">
-          {badgeLabel}
-        </span>
+        <Chip className="shrink-0 text-neutral-gray4">{badgeLabel}</Chip>
       )}
 
       {/* Chevron (only when collapsible) */}
@@ -195,9 +194,7 @@ export function CollapsibleConfigCardDragPreview({
           </div>
         </div>
         {badgeLabel && (
-          <span className="shrink-0 rounded-sm bg-neutral-gray1 px-2 py-0.5 text-xs text-neutral-gray4">
-            {badgeLabel}
-          </span>
+          <Chip className="shrink-0 text-neutral-gray4">{badgeLabel}</Chip>
         )}
         <LuChevronDown className="size-4 shrink-0 text-neutral-gray4" />
       </div>
