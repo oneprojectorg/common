@@ -32,8 +32,12 @@ export const I18nProvider = ({ children, messages, locale }: Props) => {
       locale={locale}
       messages={messages}
       onError={(error: { code: string; message?: string }): void => {
-        if (error.code === IntlErrorCode.MISSING_MESSAGE) {
-          // Silently ignore missing messages
+        if (
+          error.code === IntlErrorCode.MISSING_MESSAGE ||
+          error.code === IntlErrorCode.ENVIRONMENT_FALLBACK
+        ) {
+          // MISSING_MESSAGE: natural keys strategy — sweep back later for translations
+          // ENVIRONMENT_FALLBACK: timeZone/now fallbacks are non-fatal client-side
           return;
         }
         console.error(error);
