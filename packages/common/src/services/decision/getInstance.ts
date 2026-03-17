@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { organizations, processInstances } from '@op/db/schema';
+import { organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { checkPermission, collapseRoles, permission } from 'access-zones';
 import type { NormalizedRole } from 'access-zones';
@@ -16,7 +16,6 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
-  authUserId: string;
   user: User;
 }
 
@@ -70,8 +69,8 @@ const resolveInstanceAccess = async (
 
 export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
       with: {
         process: true,
         owner: true,
@@ -89,17 +88,19 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance not found');
     }
 
-    // Fetch profileUser for capability resolution (resolveInstanceAccess).
-    const profileUser = instance.profileId
-      ? await getProfileAccessUser({ user, profileId: instance.profileId })
-      : undefined;
-
-    await assertInstanceProfileAccess({
-      user,
-      instance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
-    });
+    // Fetch profileUser and assert access in parallel — both need the instance
+    // but are independent of each other.
+    const [profileUser] = await Promise.all([
+      instance.profileId
+        ? getProfileAccessUser({ user, profileId: instance.profileId })
+        : Promise.resolve(undefined),
+      assertInstanceProfileAccess({
+        user,
+        instance,
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: { decisions: permission.READ },
+      }),
+    ]);
 
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
