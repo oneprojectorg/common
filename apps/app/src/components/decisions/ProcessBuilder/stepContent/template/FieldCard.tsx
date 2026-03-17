@@ -20,6 +20,7 @@ import type { TranslationKey } from '@/lib/i18n';
 
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import {
+  FIELD_CATEGORIES,
   FIELD_TYPE_REGISTRY,
   getFieldConfigComponent,
   getFieldIcon,
@@ -46,15 +47,12 @@ interface FieldCardProps {
   onNewComplete?: (fieldId: string) => void;
 }
 
-const FIELD_TYPE_OPTIONS = (
-  Object.entries(FIELD_TYPE_REGISTRY) as [
-    FieldType,
-    (typeof FIELD_TYPE_REGISTRY)[FieldType],
-  ][]
-).map(([type, entry]) => ({
-  type,
-  labelKey: entry.labelKey,
-}));
+const FIELD_TYPE_OPTIONS = FIELD_CATEGORIES.flatMap((category) =>
+  category.types.map((type) => ({
+    type,
+    labelKey: FIELD_TYPE_REGISTRY[type].labelKey,
+  })),
+);
 
 /**
  * A collapsible card representing a form field in the builder.
