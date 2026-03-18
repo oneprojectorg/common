@@ -45,7 +45,7 @@ export default function PageError({ error }: ErrorProps) {
     }),
   });
 
-  console.log('App Error:', error.message);
+  console.error('App Error:', error.message);
 
   return (
     <ClientOnly>
