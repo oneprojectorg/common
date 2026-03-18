@@ -171,14 +171,13 @@ export const DatePicker = <T extends DateValue>({
         });
         setInputValue(formattedValue);
       }
-      skipNextFocusRef.current = true;
       setIsCalendarOpen(false);
     },
     [props.onChange],
   );
 
   return (
-    <div className="relative">
+    <>
       <TextField
         ref={inputRef}
         label={label}
@@ -241,6 +240,6 @@ export const DatePicker = <T extends DateValue>({
           errorMessage={errorMessage}
         />
       </Popover>
-    </div>
+    </>
   );
 };
