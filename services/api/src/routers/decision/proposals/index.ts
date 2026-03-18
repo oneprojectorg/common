@@ -6,6 +6,7 @@ import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
 import { getExportStatusRouter } from './getExportStatus';
 import { listProposalsRouter } from './list';
+import { listProposalVersionsRouter } from './listVersions';
 import { submitProposalRouter } from './submit';
 import { updateProposalRouter } from './update';
 
@@ -14,6 +15,7 @@ export const proposalsRouter = mergeRouters(
   createProposalRouter,
   getProposalRouter,
   listProposalsRouter,
+  listProposalVersionsRouter,
   submitProposalRouter,
   updateProposalRouter,
   deleteProposalRouter,

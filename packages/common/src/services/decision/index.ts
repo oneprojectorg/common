@@ -40,6 +40,7 @@ export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';
 export * from './getProposal';
+export * from './listProposalVersions';
 export * from './listProposals';
 export * from './deleteProposal';
 export * from './deleteDecision';

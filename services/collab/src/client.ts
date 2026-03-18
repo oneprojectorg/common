@@ -14,6 +14,13 @@ export type TipTapDocument = {
  */
 export type TipTapFragmentResponse = Record<string, TipTapDocument>;
 
+export interface TipTapVersion {
+  version: number;
+  createdAt: string;
+  name?: string;
+  meta?: Record<string, unknown>;
+}
+
 type TipTapClientConfig = {
   appId: string;
   secret: string;
@@ -114,6 +121,17 @@ export function createTipTapClient(config: TipTapClientConfig) {
       }
 
       return response as R;
+    },
+
+    /**
+     * Fetch the saved versions for a document.
+     */
+    listVersions: async (docName: string): Promise<TipTapVersion[]> => {
+      return api
+        .get<
+          TipTapVersion[]
+        >(`documents/${encodeURIComponent(docName)}/versions`)
+        .json();
     },
   };
 }
