@@ -1,8 +1,4 @@
-import {
-  type TipTapClient,
-  type TipTapVersion,
-  createTipTapClient,
-} from '@op/collab';
+import { type TipTapVersion, createTipTapClient } from '@op/collab';
 import { db } from '@op/db/client';
 import type { ProcessInstance, Profile, Proposal } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -18,15 +14,14 @@ import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { parseProposalData } from './proposalDataSchema';
 
-type ProposalWithVersionAccess = Proposal & {
+type ProposalRecordWithVersionAccess = Proposal & {
   processInstance: ProcessInstance;
   profile: Profile;
 };
 
-export interface ProposalVersionContext {
-  proposal: ProposalWithVersionAccess;
+export interface AssertedProposalWithVersionPermissions {
+  proposal: ProposalRecordWithVersionAccess;
   collaborationDocId: string;
-  client: TipTapClient;
 }
 
 export function sortVersionsDesc(versions: TipTapVersion[]): TipTapVersion[] {
@@ -35,7 +30,7 @@ export function sortVersionsDesc(versions: TipTapVersion[]): TipTapVersion[] {
   });
 }
 
-function createConfiguredTipTapClient(): TipTapClient {
+export function getProposalVersionClient() {
   const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
   const secret = process.env.TIPTAP_SECRET;
 
@@ -50,13 +45,13 @@ function createConfiguredTipTapClient(): TipTapClient {
  * Loads a proposal, confirms the caller can edit it, and resolves the
  * collaboration document metadata needed for version history operations.
  */
-export async function getProposalVersionContext({
+export async function assertProposalVersionPermissions({
   proposalId,
   user,
 }: {
   proposalId: string;
   user: User;
-}): Promise<ProposalVersionContext> {
+}): Promise<AssertedProposalWithVersionPermissions> {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
@@ -105,6 +100,5 @@ export async function getProposalVersionContext({
   return {
     proposal,
     collaborationDocId: parsedProposalData.collaborationDocId,
-    client: createConfiguredTipTapClient(),
   };
 }

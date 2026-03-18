@@ -2,7 +2,8 @@ import type { User } from '@op/supabase/lib';
 
 import { CommonError } from '../../utils';
 import {
-  getProposalVersionContext,
+  assertProposalVersionPermissions,
+  getProposalVersionClient,
   sortVersionsDesc,
 } from './proposalVersionUtils';
 
@@ -16,10 +17,11 @@ export async function listProposalVersions({
   proposalId: string;
   user: User;
 }) {
-  const { client, collaborationDocId } = await getProposalVersionContext({
+  const { collaborationDocId } = await assertProposalVersionPermissions({
     proposalId,
     user,
   });
+  const client = getProposalVersionClient();
 
   try {
     const versions = await client.listVersions(collaborationDocId);
