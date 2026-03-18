@@ -531,6 +531,17 @@
  * (tw-animate.css provides standard animation utilities)
  * ============================================ */
 
+@keyframes border-highlight {
+  0%,
+  40% {
+    border-color: var(--color-primary-teal);
+  }
+
+  100% {
+    border-color: var(--color-neutral-gray1);
+  }
+}
+
 @keyframes wiggle {
   0%,
   100% {
@@ -554,6 +565,10 @@
 }
 
 /* Custom animation utilities */
+@utility animate-border-highlight {
+  animation: border-highlight 5s ease-out forwards;
+}
+
 @utility animate-wiggle {
   animation: wiggle 1s ease-in-out infinite;
 }

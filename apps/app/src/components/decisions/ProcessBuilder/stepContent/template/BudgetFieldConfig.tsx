@@ -1,7 +1,7 @@
 'use client';
 
 import { ProposalTemplateSchema } from '@op/common';
-import { FieldConfigCard } from '@op/ui/FieldConfigCard';
+import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
@@ -58,6 +58,12 @@ export function BudgetFieldConfig({
   const budgetCurrencySymbol = CURRENCY_SYMBOL_MAP.get(budgetCurrency) ?? '$';
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
+
+  const badgeLabel = showBudget
+    ? budgetRequired
+      ? t('Required')
+      : t('Optional')
+    : undefined;
 
   const handleShowBudgetChange = useCallback(
     (show: boolean) => {
@@ -156,24 +162,14 @@ export function BudgetFieldConfig({
   );
 
   return (
-    <FieldConfigCard
+    <CollapsibleConfigCard
       icon={LuHash}
-      iconTooltip={t('Number')}
       label={t('Budget')}
+      badgeLabel={badgeLabel}
+      isCollapsible
       locked
     >
       <div className="space-y-4 px-8">
-        <div className="flex items-center justify-between">
-          <span className="text-neutral-charcoal">
-            {t('Show in template?')}
-          </span>
-          <ToggleButton
-            size="small"
-            isSelected={showBudget}
-            onChange={handleShowBudgetChange}
-            aria-label={t('Show in template?')}
-          />
-        </div>
         {showBudget && (
           <>
             <Select
@@ -197,18 +193,32 @@ export function BudgetFieldConfig({
                 placeholder: t('Set maximum budget'),
               }}
             />
-            <div className="flex items-center justify-between">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
-                isSelected={budgetRequired}
-                onChange={handleBudgetRequiredChange}
-                aria-label={t('Required?')}
-              />
-            </div>
           </>
         )}
+        <div className="flex items-center justify-between">
+          <span className="text-neutral-charcoal">
+            {t('Show in template?')}
+          </span>
+          <ToggleButton
+            size="small"
+            isSelected={showBudget}
+            onChange={handleShowBudgetChange}
+            aria-label={t('Show in template?')}
+            data-testid="budget-show-in-template-toggle"
+          />
+        </div>
+        {showBudget && (
+          <div className="flex items-center justify-between">
+            <span className="text-neutral-charcoal">{t('Required?')}</span>
+            <ToggleButton
+              size="small"
+              isSelected={budgetRequired}
+              onChange={handleBudgetRequiredChange}
+              aria-label={t('Required?')}
+            />
+          </div>
+        )}
       </div>
-    </FieldConfigCard>
+    </CollapsibleConfigCard>
   );
 }

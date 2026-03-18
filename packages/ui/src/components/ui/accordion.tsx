@@ -27,7 +27,6 @@ import { cn } from '../../lib/utils';
 
 const accordionStyles = tv({
   slots: {
-    root: '',
     item: 'group/accordion-item',
     header: '',
     trigger: '',
@@ -40,7 +39,6 @@ const accordionStyles = tv({
   variants: {
     variant: {
       default: {
-        root: 'flex flex-col gap-3',
         item: 'rounded-lg border bg-white',
         header: 'flex items-center px-4 py-2',
         trigger: [
@@ -64,13 +62,16 @@ const accordionStyles = tv({
 
 type AccordionStyles = ReturnType<typeof accordionStyles>;
 
+const VARIANT_STYLES = {
+  default: accordionStyles({ variant: 'default' }),
+  unstyled: accordionStyles({ variant: 'unstyled' }),
+} as const;
+
 // ============================================================================
 // Context
 // ============================================================================
 
-const AccordionContext = createContext<AccordionStyles>(
-  accordionStyles({ variant: 'default' }),
-);
+const AccordionContext = createContext<AccordionStyles>(VARIANT_STYLES.default);
 
 const useAccordionStyles = () => use(AccordionContext);
 
@@ -89,30 +90,19 @@ interface AccordionProps extends Omit<DisclosureGroupProps, 'className'> {
   onExpandedChange?: (keys: Set<Key>) => void;
   /** Disable all child disclosures */
   isDisabled?: boolean;
-  /** Visual style variant */
-  variant?: 'default' | 'unstyled';
   /** Custom className */
   className?: string;
   children: React.ReactNode;
 }
 
-const Accordion = ({
-  variant = 'default',
-  className,
-  children,
-  ...props
-}: AccordionProps) => {
-  const styles = accordionStyles({ variant });
-
+const Accordion = ({ className, children, ...props }: AccordionProps) => {
   return (
-    <AccordionContext.Provider value={styles}>
-      <DisclosureGroupPrimitive
-        {...props}
-        className={cx(styles.root(), className)}
-      >
-        {children}
-      </DisclosureGroupPrimitive>
-    </AccordionContext.Provider>
+    <DisclosureGroupPrimitive
+      {...props}
+      className={cx('flex flex-col gap-3', className)}
+    >
+      {children}
+    </DisclosureGroupPrimitive>
   );
 };
 
@@ -131,6 +121,8 @@ interface AccordionItemProps extends Omit<DisclosureProps, 'className'> {
   onExpandedChange?: (isExpanded: boolean) => void;
   /** Disable this item */
   isDisabled?: boolean;
+  /** Visual style variant. Default: 'default' */
+  variant?: 'default' | 'unstyled';
   /** Custom className (supports render props) */
   className?:
     | string
@@ -139,16 +131,19 @@ interface AccordionItemProps extends Omit<DisclosureProps, 'className'> {
 }
 
 const AccordionItem = ({
+  variant = 'default',
   className,
   children,
   ...props
 }: AccordionItemProps) => {
-  const styles = useAccordionStyles();
+  const styles = VARIANT_STYLES[variant];
 
   return (
-    <DisclosurePrimitive {...props} className={cx(styles.item(), className)}>
-      {children}
-    </DisclosurePrimitive>
+    <AccordionContext.Provider value={styles}>
+      <DisclosurePrimitive {...props} className={cx(styles.item(), className)}>
+        {children}
+      </DisclosurePrimitive>
+    </AccordionContext.Provider>
   );
 };
 

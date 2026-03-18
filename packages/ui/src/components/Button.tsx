@@ -16,6 +16,7 @@ const buttonStyle = tv({
       primary: '',
       icon: 'flex gap-2 text-sm sm:text-base',
       pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal shadow-none hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
+      link: 'border-0 bg-transparent text-primary-teal shadow-none hover:underline pressed:underline',
     },
     color: {
       primary:
@@ -38,6 +39,7 @@ const buttonStyle = tv({
     size: {
       small: 'h-8 rounded-sm p-3',
       medium: 'h-10 p-4',
+      inline: 'inline-block h-auto p-0',
     },
     surface: {
       solid: '',
@@ -73,6 +75,12 @@ const buttonStyle = tv({
       color: 'ghost',
       unstyled: false,
       className: 'pressed:!shadow-none',
+    },
+    {
+      variant: 'link',
+      unstyled: false,
+      className:
+        'bg-transparent text-primary-teal shadow-none hover:bg-transparent pressed:bg-transparent pressed:text-primary-teal pressed:!shadow-none',
     },
   ],
 
