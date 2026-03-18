@@ -1,6 +1,7 @@
 import { createClient } from '@op/api/serverClient';
+import { CommonError } from '@op/common';
 import { Skeleton } from '@op/ui/Skeleton';
-import { notFound } from 'next/navigation';
+import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -10,9 +11,21 @@ import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton'
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
   const client = await createClient();
 
-  const decisionProfile = await client.decision.getDecisionBySlug({
-    slug,
-  });
+  let decisionProfile;
+  try {
+    decisionProfile = await client.decision.getDecisionBySlug({
+      slug,
+    });
+  } catch (error) {
+    const cause = error instanceof Error ? error.cause : null;
+    if (
+      cause instanceof CommonError &&
+      (cause.statusCode === 403 || cause.statusCode === 404)
+    ) {
+      forbidden();
+    }
+    throw error;
+  }
 
   if (!decisionProfile || !decisionProfile.processInstance) {
     notFound();

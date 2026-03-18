@@ -959,5 +959,6 @@
   "Type": "Tipo",
   "Untitled field": "Campo sin título",
   "Delete field": "Eliminar campo",
-  "Are you sure you want to delete this field? This action cannot be undone.": "¿Estás seguro de que deseas eliminar este campo? Esta acción no se puede deshacer."
+  "Are you sure you want to delete this field? This action cannot be undone.": "¿Estás seguro de que deseas eliminar este campo? Esta acción no se puede deshacer.",
+  "You have been invited to this decision": "You have been invited to this decision"
 }

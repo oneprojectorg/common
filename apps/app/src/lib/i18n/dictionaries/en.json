@@ -959,5 +959,6 @@
   "Type": "Type",
   "Untitled field": "Untitled field",
   "Delete field": "Delete field",
-  "Are you sure you want to delete this field? This action cannot be undone.": "Are you sure you want to delete this field? This action cannot be undone."
+  "Are you sure you want to delete this field? This action cannot be undone.": "Are you sure you want to delete this field? This action cannot be undone.",
+  "You have been invited to this decision": "You have been invited to this decision"
 }
