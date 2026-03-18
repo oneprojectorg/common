@@ -188,7 +188,9 @@ test.describe('Create Process Instance', () => {
       authenticatedPage.getByText('Proposal template').first(),
     ).toBeVisible({ timeout: 12_000 });
 
-    // 11. Enable the Budget field in the template
+    // 11. Expand the Budget card and enable the Budget field in the template
+    await authenticatedPage.getByRole('button', { name: 'Budget' }).click();
+
     const showInTemplateToggle = authenticatedPage.getByTestId(
       'budget-show-in-template-toggle',
     );
