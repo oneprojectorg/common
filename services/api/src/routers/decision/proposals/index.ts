@@ -5,7 +5,10 @@ import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
 import { getExportStatusRouter } from './getExportStatus';
+import { getProposalVersionRouter } from './getVersion';
 import { listProposalsRouter } from './list';
+import { listProposalVersionsRouter } from './listVersions';
+import { restoreProposalVersionRouter } from './restoreVersion';
 import { submitProposalRouter } from './submit';
 import { updateProposalRouter } from './update';
 
@@ -13,7 +16,10 @@ export const proposalsRouter = mergeRouters(
   acceptProposalInviteRouter,
   createProposalRouter,
   getProposalRouter,
+  getProposalVersionRouter,
   listProposalsRouter,
+  listProposalVersionsRouter,
+  restoreProposalVersionRouter,
   submitProposalRouter,
   updateProposalRouter,
   deleteProposalRouter,

@@ -14,6 +14,24 @@ export type TipTapDocument = {
  */
 export type TipTapFragmentResponse = Record<string, TipTapDocument>;
 
+export interface TipTapVersion {
+  version: number;
+  date: number;
+  name?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface TipTapVersionCreateOptions {
+  name?: string;
+  meta?: Record<string, unknown>;
+  user?: string;
+}
+
+export interface TipTapVersionRevertOptions {
+  fields?: string[];
+  user?: string;
+}
+
 type TipTapClientConfig = {
   appId: string;
   secret: string;
@@ -114,6 +132,74 @@ export function createTipTapClient(config: TipTapClientConfig) {
       }
 
       return response as R;
+    },
+
+    /**
+     * Fetch the saved versions for a document.
+     */
+    listVersions: async (docName: string): Promise<TipTapVersion[]> => {
+      return api
+        .get<
+          TipTapVersion[]
+        >(`documents/${encodeURIComponent(docName)}/versions`)
+        .json();
+    },
+
+    /**
+     * Create an explicit saved version from the current document state.
+     */
+    createVersion: async (
+      docName: string,
+      options?: TipTapVersionCreateOptions,
+    ): Promise<TipTapVersion> => {
+      return api
+        .post<TipTapVersion>(
+          `documents/${encodeURIComponent(docName)}/versions`,
+          {
+            json: options,
+          },
+        )
+        .json();
+    },
+
+    /**
+     * Fetch a specific saved version payload for a document.
+     */
+    getVersion: async (
+      docName: string,
+      versionId: number,
+    ): Promise<unknown> => {
+      return api
+        .get(
+          `documents/${encodeURIComponent(docName)}/versions/${encodeURIComponent(String(versionId))}`,
+        )
+        .json();
+    },
+
+    /**
+     * Revert a document to a previous saved version.
+     */
+    revertToVersion: async (
+      docName: string,
+      versionId: number,
+      options?: TipTapVersionRevertOptions,
+    ): Promise<void> => {
+      const params = new URLSearchParams();
+
+      if (options?.user) {
+        params.set('user', options.user);
+      }
+
+      for (const field of options?.fields ?? []) {
+        params.append('fields', field);
+      }
+
+      await api.post(
+        `documents/${encodeURIComponent(docName)}/versions/${encodeURIComponent(String(versionId))}/revertTo`,
+        {
+          searchParams: params,
+        },
+      );
     },
   };
 }
