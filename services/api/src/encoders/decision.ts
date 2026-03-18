@@ -526,6 +526,24 @@ export const proposalListEncoder = z.object({
   canManageProposals: z.boolean().prefault(false),
 });
 
+export const proposalVersionEncoder = z.object({
+  version: z.number(),
+  date: z.number(),
+  name: z.string().optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const proposalVersionListEncoder = z.object({
+  versions: z.array(proposalVersionEncoder),
+  latestVersion: z.number().nullable(),
+});
+
+export const proposalVersionPreviewEncoder = z.object({
+  version: proposalVersionEncoder,
+  proposalData: proposalDataSchema,
+  documentContent: documentContentEncoder,
+});
+
 // Decision Encoder
 export const decisionEncoder = createSelectSchema(decisions)
   .pick({

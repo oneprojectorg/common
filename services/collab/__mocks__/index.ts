@@ -18,13 +18,22 @@
  * // Or seed a single doc that gets returned for every requested fragment:
  * mockCollab.setDocResponse('doc-id', { type: 'doc', content: [...] });
  */
-import type { TipTapDocument, TipTapFragmentResponse } from '../src/client';
+import type {
+  TipTapDocument,
+  TipTapFragmentResponse,
+  TipTapVersion,
+  TipTapVersionCreateOptions,
+  TipTapVersionRevertOptions,
+} from '../src/client';
 
 // Re-export types so `import { type X } from '@op/collab'` resolves when aliased here.
 export type {
   TipTapDocument,
   TipTapFragmentResponse,
   TipTapClient,
+  TipTapVersion,
+  TipTapVersionCreateOptions,
+  TipTapVersionRevertOptions,
 } from '../src/client';
 
 // ---------------------------------------------------------------------------
@@ -54,6 +63,66 @@ export function textFragment(text: string): TipTapDocument {
       },
     ],
   };
+}
+
+function isTipTapDocument(value: unknown): value is TipTapDocument {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    typeof candidate.type === 'string' &&
+    (candidate.content === undefined || Array.isArray(candidate.content))
+  );
+}
+
+function isTipTapFragmentResponse(
+  value: unknown,
+): value is TipTapFragmentResponse {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.values(value).every((entry) => isTipTapDocument(entry));
+}
+
+function extractTextFromNode(node: unknown): string {
+  if (!node || typeof node !== 'object') {
+    return '';
+  }
+
+  const candidate = node as Record<string, unknown>;
+  const ownText = typeof candidate.text === 'string' ? candidate.text : '';
+  const childText = Array.isArray(candidate.content)
+    ? candidate.content.map((child) => extractTextFromNode(child)).join('')
+    : '';
+
+  return `${ownText}${childText}`;
+}
+
+function extractTextFromDocument(document: TipTapDocument): string {
+  return Array.isArray(document.content)
+    ? document.content
+        .map((node: unknown) => extractTextFromNode(node))
+        .join('')
+    : '';
+}
+
+function cloneValue<T>(value: T): T {
+  return structuredClone(value);
+}
+
+function buildJsonFragmentsFromTextFragments(
+  fragments: Record<string, string>,
+): TipTapFragmentResponse {
+  return Object.fromEntries(
+    Object.entries(fragments).map(([fragmentName, text]) => [
+      fragmentName,
+      textFragment(text),
+    ]),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -137,6 +206,12 @@ const docFragmentJsonResponses = new Map<string, TipTapFragmentResponse>();
 // Per-doc, per-fragment text responses for format='text' support.
 const docFragmentTextResponses = new Map<string, Record<string, string>>();
 
+// Per-doc saved versions returned by the version history API.
+const docVersions = new Map<string, TipTapVersion[]>();
+
+// Per-doc payloads for GET /versions/:versionId.
+const docVersionResponses = new Map<string, Map<number, unknown>>();
+
 // Pre-seed the well-known e2e doc ID so the Next.js server (separate process)
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
@@ -180,6 +255,32 @@ export const mockCollab = {
     docFragmentTextResponses.set(docId, fragments);
   },
 
+  setVersions: (docId: string, versions: TipTapVersion[]) => {
+    docVersions.set(docId, versions);
+  },
+
+  setVersionResponse: (docId: string, versionId: number, data: unknown) => {
+    let versionStore = docVersionResponses.get(docId);
+
+    if (!versionStore) {
+      versionStore = new Map<number, unknown>();
+      docVersionResponses.set(docId, versionStore);
+    }
+
+    versionStore.set(versionId, data);
+  },
+
+  reset: () => {
+    docResponses.clear();
+    docFragmentJsonResponses.clear();
+    docFragmentTextResponses.clear();
+    docVersions.clear();
+    docVersionResponses.clear();
+    docResponses.set('test-proposal-doc', () =>
+      Promise.resolve(E2E_FIXTURE_CONTENT),
+    );
+  },
+
   /** Set a mock error response for a specific document ID. */
   setDocError: (docId: string, error: Error) => {
     docResponses.set(docId, () => Promise.reject(error));
@@ -197,6 +298,93 @@ function resolveDoc(docName: string): Promise<unknown> {
     return handler();
   }
   return Promise.reject(new Error('404 Not Found'));
+}
+
+function resolveVersion(docName: string, versionId: number): Promise<unknown> {
+  const versionStore = docVersionResponses.get(docName);
+  const version = versionStore?.get(versionId);
+
+  if (version === undefined) {
+    return Promise.reject(new Error('404 Not Found'));
+  }
+
+  return Promise.resolve(version);
+}
+
+function applyVersionResponse(
+  docName: string,
+  response: unknown,
+  options?: TipTapVersionRevertOptions,
+): void {
+  if (isTipTapDocument(response)) {
+    docResponses.set(docName, () => Promise.resolve(response));
+    return;
+  }
+
+  if (!isTipTapFragmentResponse(response)) {
+    return;
+  }
+
+  const nextJson = {
+    ...(docFragmentJsonResponses.get(docName) ?? {}),
+  };
+  const nextText = {
+    ...(docFragmentTextResponses.get(docName) ?? {}),
+  };
+  const fields = options?.fields?.length
+    ? options.fields
+    : Object.keys(response);
+
+  for (const field of fields) {
+    const fragment = response[field];
+
+    if (!fragment) {
+      continue;
+    }
+
+    nextJson[field] = fragment;
+    nextText[field] = extractTextFromDocument(fragment);
+  }
+
+  docFragmentJsonResponses.set(docName, nextJson);
+  docFragmentTextResponses.set(docName, nextText);
+
+  const defaultFragment = nextJson.default ?? Object.values(nextJson)[0];
+  if (defaultFragment) {
+    docResponses.set(docName, () => Promise.resolve(defaultFragment));
+  }
+}
+
+function getNextVersionNumber(versions: TipTapVersion[]): number {
+  if (versions.length === 0) {
+    return 1;
+  }
+
+  return (
+    versions.reduce(
+      (latest, version) => Math.max(latest, version.version),
+      versions[0]?.version ?? 1,
+    ) + 1
+  );
+}
+
+async function snapshotCurrentDoc(docName: string): Promise<unknown> {
+  const fragmentJson = docFragmentJsonResponses.get(docName);
+  if (fragmentJson) {
+    return cloneValue(fragmentJson);
+  }
+
+  const fragmentText = docFragmentTextResponses.get(docName);
+  if (fragmentText) {
+    return buildJsonFragmentsFromTextFragments(fragmentText);
+  }
+
+  const docHandler = docResponses.get(docName);
+  if (!docHandler) {
+    throw new Error('404 Not Found');
+  }
+
+  return cloneValue(await docHandler());
 }
 
 // ---------------------------------------------------------------------------
@@ -243,6 +431,68 @@ export function createTipTapClient(_config?: unknown) {
       return Object.fromEntries(
         fragments.map((fragment) => [fragment, doc]),
       ) as R;
+    },
+
+    listVersions: async (docName: string): Promise<TipTapVersion[]> => {
+      return [...(docVersions.get(docName) ?? [])];
+    },
+
+    createVersion: async (
+      docName: string,
+      options?: TipTapVersionCreateOptions,
+    ): Promise<TipTapVersion> => {
+      const currentSnapshot = await snapshotCurrentDoc(docName);
+      const currentVersions = docVersions.get(docName) ?? [];
+      const nextVersion = getNextVersionNumber(currentVersions);
+      const createdVersion: TipTapVersion = {
+        version: nextVersion,
+        date: Date.now(),
+        name: options?.name,
+        meta: options?.meta,
+      };
+
+      let versionStore = docVersionResponses.get(docName);
+      if (!versionStore) {
+        versionStore = new Map<number, unknown>();
+        docVersionResponses.set(docName, versionStore);
+      }
+
+      versionStore.set(nextVersion, currentSnapshot);
+      docVersions.set(docName, [...currentVersions, createdVersion]);
+
+      return createdVersion;
+    },
+
+    getVersion: (docName: string, versionId: number): Promise<unknown> => {
+      return resolveVersion(docName, versionId);
+    },
+
+    revertToVersion: async (
+      docName: string,
+      versionId: number,
+      options?: TipTapVersionRevertOptions,
+    ): Promise<void> => {
+      const versionResponse = await resolveVersion(docName, versionId);
+
+      applyVersionResponse(docName, versionResponse, options);
+
+      const currentVersions = docVersions.get(docName) ?? [];
+      const nextVersion = getNextVersionNumber(currentVersions);
+
+      docVersions.set(docName, [
+        ...currentVersions,
+        {
+          version: nextVersion,
+          date: Date.now(),
+          meta: {
+            __tiptap: {
+              trigger: 'revert',
+              changesBy: options?.user ? [options.user] : [],
+              triggeredBy: options?.user,
+            },
+          },
+        },
+      ]);
     },
   };
 }

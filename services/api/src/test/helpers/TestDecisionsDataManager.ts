@@ -598,10 +598,21 @@ export class TestDecisionsDataManager {
 
     // 3. Delete auth users by exact IDs
     if (this.createdAuthUserIds.length > 0) {
-      const deleteResults = await Promise.allSettled(
-        this.createdAuthUserIds.map((userId) =>
+      const deleteWithTimeout = async (userId: string) => {
+        const timeout = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Timed out deleting auth user ${userId}`));
+          }, 1500);
+        });
+
+        return Promise.race([
           supabaseTestAdminClient.auth.admin.deleteUser(userId),
-        ),
+          timeout,
+        ]);
+      };
+
+      const deleteResults = await Promise.allSettled(
+        this.createdAuthUserIds.map((userId) => deleteWithTimeout(userId)),
       );
 
       const failures = deleteResults.filter((r) => r.status === 'rejected');

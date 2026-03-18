@@ -40,7 +40,9 @@ export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';
 export * from './getProposal';
+export * from './getProposalVersion';
 export * from './listProposals';
+export * from './listProposalVersions';
 export * from './deleteProposal';
 export * from './deleteDecision';
 export * from './getProcessCategories';
@@ -54,6 +56,7 @@ export * from './assembleProposalData';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
 export * from './getRubricScoringInfo';
+export * from './restoreProposalVersion';
 export * from './tiptapExtensions';
 
 // Proposal attachments
