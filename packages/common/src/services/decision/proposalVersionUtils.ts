@@ -2,9 +2,8 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import { NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
-import { assertUserByAuthId } from '../assert';
 import { parseProposalData } from './proposalDataSchema';
 
 /**
@@ -18,12 +17,6 @@ export async function assertProposalVersionPermissions({
   proposalId: string;
   user: User;
 }): Promise<{ collaborationDocId: string }> {
-  const dbUser = await assertUserByAuthId(user.id);
-
-  if (!dbUser.currentProfileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
   const proposal = await db.query.proposals.findFirst({
     where: { id: proposalId },
   });

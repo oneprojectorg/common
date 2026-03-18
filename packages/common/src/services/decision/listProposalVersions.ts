@@ -4,12 +4,6 @@ import type { User } from '@op/supabase/lib';
 import { CommonError } from '../../utils';
 import { assertProposalVersionPermissions } from './proposalVersionUtils';
 
-function sortVersionsDesc(versions: TipTapVersion[]): TipTapVersion[] {
-  return [...versions].sort((left, right) => {
-    return right.version - left.version;
-  });
-}
-
 /**
  * Lists the saved TipTap versions for a proposal collaboration document.
  */
@@ -41,4 +35,10 @@ export async function listProposalVersions({
 
     throw new CommonError('Failed to load proposal version history');
   }
+}
+
+function sortVersionsDesc(versions: TipTapVersion[]): TipTapVersion[] {
+  return [...versions].sort((left, right) => {
+    return right.version - left.version;
+  });
 }

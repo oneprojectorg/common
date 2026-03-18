@@ -1,6 +1,5 @@
 import { getTipTapClient } from '@op/collab';
 
-import { CommonError } from '../../utils';
 import { assembleProposalData } from './assembleProposalData';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
@@ -31,15 +30,7 @@ export async function validateProposalAgainstTemplate(
     storedProposalData.title === undefined && title !== undefined;
 
   if (parsed.collaborationDocId) {
-    let client;
-
-    try {
-      client = getTipTapClient();
-    } catch {
-      throw new CommonError(
-        'TipTap credentials not configured, cannot validate proposal',
-      );
-    }
+    const client = getTipTapClient();
 
     const fragmentNames = getProposalFragmentNames(proposalTemplate);
     const fragmentTexts = await client.getDocumentFragments(
