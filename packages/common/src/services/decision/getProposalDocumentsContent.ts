@@ -1,4 +1,4 @@
-import { type TipTapFragmentResponse, createTipTapClient } from '@op/collab';
+import { type TipTapFragmentResponse, getTipTapClient } from '@op/collab';
 import pMap from 'p-map';
 
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -56,17 +56,16 @@ export async function getProposalDocumentsContent(
 
   // Fetch TipTap documents with controlled concurrency
   if (proposalsWithCollabDoc.length > 0) {
-    const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
-    const secret = process.env.TIPTAP_SECRET;
+    let client;
 
-    if (!appId || !secret) {
+    try {
+      client = getTipTapClient();
+    } catch {
       console.error(
         'TipTap credentials not configured, skipping document fetch',
       );
       return documentContentMap;
     }
-
-    const client = createTipTapClient({ appId, secret });
 
     const results = await pMap(
       proposalsWithCollabDoc,

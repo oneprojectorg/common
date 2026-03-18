@@ -263,3 +263,7 @@ export function createTipTapClient(_config?: unknown) {
     },
   };
 }
+
+export function getTipTapClient() {
+  return createTipTapClient();
+}

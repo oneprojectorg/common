@@ -28,6 +28,17 @@ type TipTapClientConfig = {
 
 export type TipTapClient = ReturnType<typeof createTipTapClient>;
 
+export function getTipTapClient(): TipTapClient {
+  const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
+  const secret = process.env.TIPTAP_SECRET;
+
+  if (!appId || !secret) {
+    throw new Error('TipTap credentials not configured');
+  }
+
+  return createTipTapClient({ appId, secret });
+}
+
 /**
  * Checks whether a payload looks like a single TipTap document.
  */

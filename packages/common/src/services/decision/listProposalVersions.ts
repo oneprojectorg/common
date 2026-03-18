@@ -1,9 +1,9 @@
+import { getTipTapClient } from '@op/collab';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError } from '../../utils';
 import {
   assertProposalVersionPermissions,
-  getProposalVersionClient,
   sortVersionsDesc,
 } from './proposalVersionUtils';
 
@@ -21,7 +21,7 @@ export async function listProposalVersions({
     proposalId,
     user,
   });
-  const client = getProposalVersionClient();
+  const client = getTipTapClient();
 
   try {
     const versions = await client.listVersions(collaborationDocId);
