@@ -1,5 +1,4 @@
 import { createClient } from '@op/api/serverClient';
-import { logger } from '@op/logging';
 import { Skeleton } from '@op/ui/Skeleton';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -9,35 +8,11 @@ import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter'
 import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
-  let client;
-  try {
-    client = await createClient();
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    console.error('[DecisionPage] Failed to create tRPC client', { slug, error: errMsg });
-    logger.error('[DecisionPage] Failed to create tRPC client', { slug, error: errMsg });
-    throw err;
-  }
+  const client = await createClient();
 
-  let decisionProfile;
-  try {
-    decisionProfile = await client.decision.getDecisionBySlug({
-      slug,
-    });
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    const errDetails = {
-      slug,
-      error: errMsg,
-      errorName: err instanceof Error ? err.name : undefined,
-    };
-    console.error('[DecisionPage] getDecisionBySlug failed', errDetails);
-    logger.error('[DecisionPage] getDecisionBySlug failed', {
-      ...errDetails,
-      stack: err instanceof Error ? err.stack : undefined,
-    });
-    throw err;
-  }
+  const decisionProfile = await client.decision.getDecisionBySlug({
+    slug,
+  });
 
   if (!decisionProfile || !decisionProfile.processInstance) {
     notFound();
