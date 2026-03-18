@@ -204,6 +204,7 @@ export function BudgetFieldConfig({
             isSelected={showBudget}
             onChange={handleShowBudgetChange}
             aria-label={t('Show in template?')}
+            data-testid="budget-show-in-template-toggle"
           />
         </div>
         {showBudget && (

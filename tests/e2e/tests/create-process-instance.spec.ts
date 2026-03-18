@@ -3,11 +3,26 @@ import { expect, test } from '../fixtures/index.js';
 // Use a wider viewport so the participant preview panel (xl:block >= 1280px) is visible.
 test.use({ viewport: { width: 1440, height: 900 } });
 
-/** Resolves when the next updateDecisionInstance mutation succeeds. */
-function waitForAutoSave(page: import('@playwright/test').Page) {
+/** Resolves when the next matching updateDecisionInstance mutation succeeds. */
+function waitForAutoSave(
+  page: import('@playwright/test').Page,
+  requestBodyIncludes?: string,
+) {
   return page.waitForResponse(
-    (resp) =>
-      resp.url().includes('decision.updateDecisionInstance') && resp.ok(),
+    (resp) => {
+      if (
+        !resp.url().includes('decision.updateDecisionInstance') ||
+        !resp.ok()
+      ) {
+        return false;
+      }
+
+      if (!requestBodyIncludes) {
+        return true;
+      }
+
+      return resp.request().postData()?.includes(requestBodyIncludes) ?? false;
+    },
     { timeout: 12_000 },
   );
 }
@@ -174,10 +189,15 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 12_000 });
 
     // 11. Enable the Budget field in the template
-    const templateSaved = waitForAutoSave(authenticatedPage);
-    await authenticatedPage
-      .getByRole('button', { name: 'Show in template?' })
-      .click();
+    const showInTemplateToggle = authenticatedPage.getByTestId(
+      'budget-show-in-template-toggle',
+    );
+    await expect(showInTemplateToggle).toBeVisible({ timeout: 6_000 });
+
+    const templateSaved = waitForAutoSave(authenticatedPage, 'money');
+    await showInTemplateToggle.focus();
+    await showInTemplateToggle.press('Space');
+    await expect(showInTemplateToggle).toHaveAttribute('aria-pressed', 'true');
 
     // Verify the budget config expanded (Currency select should appear)
     await expect(authenticatedPage.getByLabel('Currency')).toBeVisible({
