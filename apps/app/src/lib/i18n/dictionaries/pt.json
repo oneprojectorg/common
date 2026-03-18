@@ -953,5 +953,11 @@
   "Manage Participants": "Gerenciar Participantes",
   "Failed to translate content": "Falha ao traduzir o conteúdo",
   "Translated with DeepL": "Traduzido com DeepL",
-  "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.": "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants."
+  "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.": "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.",
+  "Field name": "Nome do campo",
+  "Optional": "Opcional",
+  "Type": "Tipo",
+  "Untitled field": "Campo sem título",
+  "Delete field": "Excluir campo",
+  "Are you sure you want to delete this field? This action cannot be undone.": "Tem certeza de que deseja excluir este campo? Esta ação não pode ser desfeita."
 }

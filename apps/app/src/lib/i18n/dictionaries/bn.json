@@ -960,5 +960,11 @@
   "Manage Participants": "অংশগ্রহণকারীদের পরিচালনা করুন",
   "Failed to translate content": "বিষয়বস্তু অনুবাদ করতে ব্যর্থ হয়েছে",
   "Translated with DeepL": "DeepL দিয়ে অনুবাদ করা হয়েছে",
-  "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.": "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants."
+  "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.": "A short name for you to easily recognize the purpose of the phase. This is not viewable to participants.",
+  "Field name": "ক্ষেত্রের নাম",
+  "Optional": "ঐচ্ছিক",
+  "Type": "ধরন",
+  "Untitled field": "শিরোনামহীন ক্ষেত্র",
+  "Delete field": "ক্ষেত্র মুছুন",
+  "Are you sure you want to delete this field? This action cannot be undone.": "আপনি কি নিশ্চিত যে আপনি এই ক্ষেত্রটি মুছতে চান? এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না।"
 }
