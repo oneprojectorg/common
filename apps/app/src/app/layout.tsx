@@ -14,7 +14,6 @@ import { IconProvider } from '../components/IconProvider';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
-import { ReactAriaRouterProvider } from '../components/ReactAriaRouterProvider';
 import { I18nProvider } from '../lib/i18n';
 
 const roboto = Roboto({
@@ -91,11 +90,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           <I18nProvider locale={locale} messages={messages}>
             <OTelBrowserProvider>
               <PostHogProvider>
-                <ReactAriaRouterProvider>
-                  <NuqsAdapter>
-                    <IconProvider>{children}</IconProvider>
-                  </NuqsAdapter>
-                </ReactAriaRouterProvider>
+                <NuqsAdapter>
+                  <IconProvider>{children}</IconProvider>
+                </NuqsAdapter>
               </PostHogProvider>
             </OTelBrowserProvider>
           </I18nProvider>
