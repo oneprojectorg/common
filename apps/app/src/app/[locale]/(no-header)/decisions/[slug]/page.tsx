@@ -1,3 +1,4 @@
+import { ClientOnly } from '@/utils/ClientOnly';
 import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
 import { notFound } from 'next/navigation';
@@ -34,12 +35,14 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
         profileName={decisionProfile.name}
       >
         <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionStateRouter
-            instanceId={instanceId}
-            slug={ownerSlug}
-            decisionSlug={slug}
-            decisionProfileId={decisionProfile.id}
-          />
+          <ClientOnly fallback={<Skeleton className="h-96" />}>
+            <DecisionStateRouter
+              instanceId={instanceId}
+              slug={ownerSlug}
+              decisionSlug={slug}
+              decisionProfileId={decisionProfile.id}
+            />
+          </ClientOnly>
         </Suspense>
       </DecisionHeader>
     </Suspense>

@@ -44,9 +44,14 @@ export const UserProviderSuspense = ({
   initialUser: OrganizationUser;
 }) => {
   const router = useRouter();
-  // Use initialUser as initialData to avoid SSR fetch, then revalidate on client
+  // Use initialUser as initialData to avoid redundant client-side fetch.
+  // staleTime prevents immediate background revalidation — the server already
+  // fetched fresh data for this layout render, so there's no need to re-fetch
+  // on mount. This also avoids a race condition where the client-side refetch
+  // fires before middleware cookie refresh is complete during navigation.
   const [user] = trpc.account.getMyAccount.useSuspenseQuery(undefined, {
     initialData: initialUser,
+    staleTime: 30 * 1000,
   });
 
   if (user.organizationUsers?.length === 0) {
