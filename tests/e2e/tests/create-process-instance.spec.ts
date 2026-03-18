@@ -189,18 +189,6 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 12_000 });
 
     // 11. Enable the Budget field in the template
-    const showInTemplateLabel = authenticatedPage.getByText(
-      'Show in template?',
-      {
-        exact: true,
-      },
-    );
-
-    if (!(await showInTemplateLabel.isVisible())) {
-      await authenticatedPage.getByRole('button', { name: 'Budget' }).click();
-    }
-
-    await expect(showInTemplateLabel).toBeVisible({ timeout: 6_000 });
     const showInTemplateToggle = authenticatedPage.getByTestId(
       'budget-show-in-template-toggle',
     );
@@ -209,6 +197,7 @@ test.describe('Create Process Instance', () => {
     const templateSaved = waitForAutoSave(authenticatedPage, 'money');
     await showInTemplateToggle.focus();
     await showInTemplateToggle.press('Space');
+    await expect(showInTemplateToggle).toHaveAttribute('aria-pressed', 'true');
 
     // Verify the budget config expanded (Currency select should appear)
     await expect(authenticatedPage.getByLabel('Currency')).toBeVisible({
