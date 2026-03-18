@@ -56,16 +56,7 @@ export async function getProposalDocumentsContent(
 
   // Fetch TipTap documents with controlled concurrency
   if (proposalsWithCollabDoc.length > 0) {
-    let client;
-
-    try {
-      client = getTipTapClient();
-    } catch {
-      console.error(
-        'TipTap credentials not configured, skipping document fetch',
-      );
-      return documentContentMap;
-    }
+    const client = getTipTapClient();
 
     const results = await pMap(
       proposalsWithCollabDoc,
