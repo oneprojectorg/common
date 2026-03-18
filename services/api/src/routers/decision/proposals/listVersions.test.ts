@@ -120,7 +120,7 @@ describe.concurrent('listProposalVersions', () => {
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
+      cause: { name: 'AccessControlException' },
     });
   });
 });

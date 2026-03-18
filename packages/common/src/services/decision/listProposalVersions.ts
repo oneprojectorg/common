@@ -1,4 +1,4 @@
-import { getTipTapClient } from '@op/collab';
+import { type TipTapVersion, getTipTapClient } from '@op/collab';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError } from '../../utils';
@@ -6,6 +6,10 @@ import {
   assertProposalVersionPermissions,
   sortVersionsDesc,
 } from './proposalVersionUtils';
+
+export interface ProposalVersionListResult {
+  versions: TipTapVersion[];
+}
 
 /**
  * Lists the saved TipTap versions for a proposal collaboration document.
@@ -16,7 +20,7 @@ export async function listProposalVersions({
 }: {
   proposalId: string;
   user: User;
-}) {
+}): Promise<ProposalVersionListResult> {
   const { collaborationDocId } = await assertProposalVersionPermissions({
     proposalId,
     user,

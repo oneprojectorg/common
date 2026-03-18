@@ -1,23 +1,12 @@
 import { type TipTapVersion } from '@op/collab';
 import { db } from '@op/db/client';
-import type { ProcessInstance, Profile, Proposal } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { parseProposalData } from './proposalDataSchema';
-
-type ProposalRecordWithVersionAccess = Proposal & {
-  processInstance: ProcessInstance;
-  profile: Profile;
-};
-
-export interface AssertedProposalWithVersionPermissions {
-  proposal: ProposalRecordWithVersionAccess;
-  collaborationDocId: string;
-}
 
 export function sortVersionsDesc(versions: TipTapVersion[]): TipTapVersion[] {
   return [...versions].sort((left, right) => {
@@ -35,7 +24,7 @@ export async function assertProposalVersionPermissions({
 }: {
   proposalId: string;
   user: User;
-}): Promise<AssertedProposalWithVersionPermissions> {
+}): Promise<{ collaborationDocId: string }> {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
@@ -44,10 +33,6 @@ export async function assertProposalVersionPermissions({
 
   const proposal = await db.query.proposals.findFirst({
     where: { id: proposalId },
-    with: {
-      processInstance: true,
-      profile: true,
-    },
   });
 
   if (!proposal) {
@@ -59,14 +44,10 @@ export async function assertProposalVersionPermissions({
     profileId: proposal.profileId,
   });
 
-  const hasProposalUpdate = checkPermission(
-    { profile: permission.UPDATE },
+  assertAccess(
+    [{ profile: permission.UPDATE }, { profile: permission.ADMIN }],
     proposalProfileUser?.roles ?? [],
   );
-
-  if (!hasProposalUpdate) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
 
   const parsedProposalData = parseProposalData(proposal.proposalData);
 
@@ -77,7 +58,6 @@ export async function assertProposalVersionPermissions({
   }
 
   return {
-    proposal,
     collaborationDocId: parsedProposalData.collaborationDocId,
   };
 }
