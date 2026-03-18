@@ -45,6 +45,8 @@ export default function PageError({ error }: ErrorProps) {
     }),
   });
 
+  console.error('App Error:', error.message);
+
   return (
     <ClientOnly>
       <div className="flex size-full flex-col items-center justify-center gap-8">
