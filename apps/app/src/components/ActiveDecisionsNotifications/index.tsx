@@ -12,7 +12,6 @@ import {
   NotificationPanelList,
 } from '@op/ui/NotificationPanel';
 import { ProfileItem } from '@op/ui/ProfileItem';
-import { useLocale } from 'next-intl';
 import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -22,7 +21,6 @@ import ErrorBoundary from '../ErrorBoundary';
 
 const ActiveDecisionsNotificationsSuspense = () => {
   const t = useTranslations();
-  const locale = useLocale();
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   const [{ items: decisions }] =
@@ -61,7 +59,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
                 <ButtonLink
                   size="small"
                   className="w-full sm:w-auto"
-                  href={`/${locale}/decisions/${decision.slug}`}
+                  href={`/decisions/${decision.slug}`}
                   onPress={() => setNavigatingId(decision.id)}
                   isLoading={isNavigating}
                 >
