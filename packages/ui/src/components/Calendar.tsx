@@ -103,18 +103,19 @@ export const Calendar = <T extends DateValue>({
         <CalendarGridBody>
           {(date) => {
             const isTodayCell = isToday(date, getLocalTimeZone());
-            const cell = <CalendarCell date={date} className={cellStyles} />;
 
-            if (isTodayCell) {
-              return (
-                <span className="relative flex flex-col">
-                  {cell}
-                  <span className="absolute right-0 bottom-1 left-0 m-auto size-1 rounded-full bg-primary-teal"></span>
-                </span>
-              );
-            }
-
-            return cell;
+            return (
+              <CalendarCell date={date} className={cellStyles}>
+                {({ formattedDate }) => (
+                  <span className="relative flex size-full items-center justify-center">
+                    {formattedDate}
+                    {isTodayCell && (
+                      <span className="absolute right-0 bottom-0 left-0 m-auto size-1 rounded-full bg-primary-teal" />
+                    )}
+                  </span>
+                )}
+              </CalendarCell>
+            );
           }}
         </CalendarGridBody>
       </CalendarGrid>

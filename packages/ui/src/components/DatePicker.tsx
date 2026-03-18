@@ -1,9 +1,9 @@
 'use client';
 
 import { parseDate } from '@internationalized/date';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateValue } from 'react-aria-components';
-import { Button as AriaButton, DialogTrigger } from 'react-aria-components';
+import { Button as AriaButton } from 'react-aria-components';
 import { LuCalendar } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
@@ -83,6 +83,8 @@ export const DatePicker = <T extends DateValue>({
 
   const [inputValue, setInputValue] = useState<string>(initialInputValue);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const skipNextFocusRef = useRef(false);
 
   // Sync internal state when props.value changes
   useEffect(() => {
@@ -152,8 +154,6 @@ export const DatePicker = <T extends DateValue>({
     [parseInputDate, props.onChange],
   );
 
-  // Remove focus and blur handlers as DialogTrigger handles open/close state
-
   const handleCalendarChange = useCallback(
     (newValue: DateValue) => {
       if (props.onChange) {
@@ -171,60 +171,76 @@ export const DatePicker = <T extends DateValue>({
         });
         setInputValue(formattedValue);
       }
-      // Close the calendar after selecting a date
+      skipNextFocusRef.current = true;
       setIsCalendarOpen(false);
     },
     [props.onChange],
   );
 
-  // Remove icon click handler as DialogTrigger handles this
-
   return (
     <div className="relative">
-      <DialogTrigger isOpen={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-        <TextField
-          label={label}
-          description={description}
-          errorMessage={errorMessage}
-          fieldClassName="relative"
-          descriptionClassName={descriptionClassName}
-          labelClassName={labelClassName}
-          isRequired={isRequired}
-          value={inputValue}
-          onChange={handleInputChange}
+      <TextField
+        ref={inputRef}
+        label={label}
+        description={description}
+        errorMessage={errorMessage}
+        fieldClassName="relative"
+        descriptionClassName={descriptionClassName}
+        labelClassName={labelClassName}
+        isRequired={isRequired}
+        value={inputValue}
+        onChange={handleInputChange}
+        isDisabled={props.isDisabled}
+        onFocus={() => {
+          if (skipNextFocusRef.current) {
+            skipNextFocusRef.current = false;
+            return;
+          }
+          setIsCalendarOpen(true);
+        }}
+        inputProps={{
+          ...inputProps,
+          className: cn('pr-10', inputProps?.className),
+          placeholder: placeholder,
+        }}
+      >
+        <AriaButton
           isDisabled={props.isDisabled}
-          inputProps={{
-            ...inputProps,
-            className: cn('pr-10', inputProps?.className),
-            placeholder: placeholder,
-          }}
+          onPress={() => setIsCalendarOpen((open) => !open)}
+          className={cn(
+            'absolute top-1/2 right-1 -translate-y-1/2',
+            'h-8 w-8',
+            'flex cursor-pointer items-center justify-center',
+            'text-neutral-black outline-hidden',
+            'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
+            props.isDisabled && 'cursor-not-allowed text-lightGray',
+          )}
         >
-          <AriaButton
-            isDisabled={props.isDisabled}
-            className={cn(
-              'absolute top-1/2 right-1 -translate-y-1/2',
-              'h-8 w-8',
-              'flex cursor-pointer items-center justify-center',
-              'text-neutral-black outline-hidden',
-              'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
-              props.isDisabled && 'cursor-not-allowed text-lightGray',
-            )}
-          >
-            <LuCalendar className="size-4" />
-          </AriaButton>
-        </TextField>
-        <Popover className="w-62 p-0" placement="bottom start">
-          <Calendar
-            value={props.value}
-            onChange={handleCalendarChange}
-            minValue={props.minValue}
-            maxValue={props.maxValue}
-            isDisabled={props.isDisabled}
-            isReadOnly={props.isReadOnly}
-            errorMessage={errorMessage}
-          />
-        </Popover>
-      </DialogTrigger>
+          <LuCalendar className="size-4" />
+        </AriaButton>
+      </TextField>
+      <Popover
+        isOpen={isCalendarOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            skipNextFocusRef.current = true;
+          }
+          setIsCalendarOpen(open);
+        }}
+        className="w-62 p-0"
+        placement="bottom start"
+        triggerRef={inputRef}
+      >
+        <Calendar
+          value={props.value}
+          onChange={handleCalendarChange}
+          minValue={props.minValue}
+          maxValue={props.maxValue}
+          isDisabled={props.isDisabled}
+          isReadOnly={props.isReadOnly}
+          errorMessage={errorMessage}
+        />
+      </Popover>
     </div>
   );
 };
