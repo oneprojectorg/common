@@ -5,7 +5,7 @@ import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
+import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { parseProposalData } from './proposalDataSchema';
 
@@ -65,12 +65,7 @@ export async function assertProposalVersionPermissions({
   );
 
   if (!hasProposalUpdate) {
-    await assertInstanceProfileAccess({
-      user: { id: user.id },
-      instance: proposal.processInstance,
-      profilePermissions: { decisions: permission.UPDATE },
-      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-    });
+    throw new UnauthorizedError("You don't have access to do this");
   }
 
   const parsedProposalData = parseProposalData(proposal.proposalData);
