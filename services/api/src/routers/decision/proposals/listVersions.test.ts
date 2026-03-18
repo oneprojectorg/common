@@ -87,6 +87,25 @@ describe.concurrent('listProposalVersions', () => {
     ]);
   });
 
+  it('should throw NotFoundError for non-existent proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.listProposalVersions({
+        proposalId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
   it('should reject version history access for non-editors', async ({
     task,
     onTestFinished,
