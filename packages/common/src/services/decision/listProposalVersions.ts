@@ -2,13 +2,12 @@ import { type TipTapVersion, getTipTapClient } from '@op/collab';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError } from '../../utils';
-import {
-  assertProposalVersionPermissions,
-  sortVersionsDesc,
-} from './proposalVersionUtils';
+import { assertProposalVersionPermissions } from './proposalVersionUtils';
 
-export interface ProposalVersionListResult {
-  versions: TipTapVersion[];
+function sortVersionsDesc(versions: TipTapVersion[]): TipTapVersion[] {
+  return [...versions].sort((left, right) => {
+    return right.version - left.version;
+  });
 }
 
 /**
@@ -20,7 +19,7 @@ export async function listProposalVersions({
 }: {
   proposalId: string;
   user: User;
-}): Promise<ProposalVersionListResult> {
+}): Promise<{ versions: TipTapVersion[] }> {
   const { collaborationDocId } = await assertProposalVersionPermissions({
     proposalId,
     user,

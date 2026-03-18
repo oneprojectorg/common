@@ -1,4 +1,3 @@
-import { type TipTapVersion } from '@op/collab';
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -7,12 +6,6 @@ import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { parseProposalData } from './proposalDataSchema';
-
-export function sortVersionsDesc(versions: TipTapVersion[]): TipTapVersion[] {
-  return [...versions].sort((left, right) => {
-    return right.version - left.version;
-  });
-}
 
 /**
  * Loads a proposal, confirms the caller can edit it, and resolves the
