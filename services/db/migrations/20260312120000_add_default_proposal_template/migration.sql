@@ -1,3 +1,6 @@
+-- Backfill existing decision processes with the default proposalTemplate.
+-- Guards: only rows with a valid schema object (has 'id' key) that lack a template.
+-- Idempotent: skips rows that already have a proposalTemplate.
 UPDATE decision_processes
 SET process_schema = jsonb_set(
   process_schema,

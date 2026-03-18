@@ -5,6 +5,7 @@
 import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
 
+import type { ProposalTemplateSchema } from '../types';
 import type { SelectionPipeline } from '../selectionPipeline/types';
 import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
 
