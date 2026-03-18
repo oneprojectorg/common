@@ -35,11 +35,18 @@ export async function DecisionHeader({
 }: DecisionHeaderProps) {
   const client = await createClient();
 
-  const instance = useLegacy
-    ? await client.decision.getLegacyInstance({ instanceId })
-    : await client.decision.getInstance({ instanceId });
+  let instance;
 
-  if (!instance) {
+  try {
+    instance = useLegacy
+      ? await client.decision.getLegacyInstance({ instanceId })
+      : await client.decision.getInstance({ instanceId });
+
+    if (!instance) {
+      notFound();
+    }
+  } catch (e) {
+    console.error('Error loading instance', e);
     notFound();
   }
 
