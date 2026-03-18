@@ -1,4 +1,4 @@
-import { type TransactionType, db, eq } from '@op/db/client';
+import { type TransactionType, and, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   type Visibility,
@@ -25,11 +25,6 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
-/**
- * Updates the category link for a proposal.
- * Uses top-level db for taxonomy lookups (read-only, no lock contention)
- * and the transaction for writes to keep them atomic.
- */
 async function updateProposalCategoryLink(
   tx: TransactionType,
   proposalId: string,
@@ -42,8 +37,7 @@ async function updateProposalCategoryLink(
 
   // Add new category link if provided
   if (newCategoryLabel?.trim()) {
-    // Find the "proposal" taxonomy
-    const proposalTaxonomy = await db._query.taxonomies.findFirst({
+    const proposalTaxonomy = await tx._query.taxonomies.findFirst({
       where: eq(taxonomies.name, 'proposal'),
     });
 
@@ -52,9 +46,11 @@ async function updateProposalCategoryLink(
       return;
     }
 
-    // Find the taxonomy term that matches the category label
-    const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-      where: eq(taxonomyTerms.label, newCategoryLabel.trim()),
+    const taxonomyTerm = await tx._query.taxonomyTerms.findFirst({
+      where: and(
+        eq(taxonomyTerms.label, newCategoryLabel.trim()),
+        eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
+      ),
     });
 
     if (taxonomyTerm) {
