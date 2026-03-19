@@ -819,7 +819,7 @@
   "Email address": "Adresse e-mail",
   "Organization name": "Nom de l'organisation",
   "Join the waitlist": "Rejoindre la liste d'attente",
-  "Join {processInstanceName}": "Join {processInstanceName}",
+  "Join {processInstanceName}": "Rejoindre {processInstanceName}",
   "You're on the list!": "Vous êtes sur la liste !",
   "We can't wait to see you on Common, as an early collaborator in creating an economy that works for everyone.": "Nous avons hâte de vous voir sur Common, en tant que collaborateur précoce dans la création d'une économie qui fonctionne pour tous.",
   "We'll be in touch soon!": "Nous vous contacterons bientôt !",
@@ -961,5 +961,5 @@
   "Untitled field": "Champ sans titre",
   "Delete field": "Supprimer le champ",
   "Are you sure you want to delete this field? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer ce champ ? Cette action ne peut pas être annulée.",
-  "A decision-making process stewarded by {stewardName}.": "A decision-making process stewarded by {stewardName}."
+  "A decision-making process stewarded by {stewardName}.": "Un processus de décision facilité par {stewardName}."
 }
