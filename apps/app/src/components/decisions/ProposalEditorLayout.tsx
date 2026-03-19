@@ -23,8 +23,8 @@ interface ProposalEditorLayoutProps {
   isDraft?: boolean;
   /** Optional slot for presence indicators (avatar stack) */
   presenceSlot?: ReactNode;
-  /** Optional slot for header actions such as aside triggers */
-  headerActions?: ReactNode;
+  /** Optional slot for aside trigger icons in the header */
+  asideHeaderIcons?: ReactNode;
   /** Whether action controls should be rendered in the header */
   showHeaderActions?: boolean;
   /** The proposal's profile ID, used for the share modal */
@@ -45,7 +45,7 @@ export function ProposalEditorLayout({
   isEditMode = false,
   isDraft = false,
   presenceSlot,
-  headerActions,
+  asideHeaderIcons,
   showHeaderActions = true,
   proposalProfileId,
   access,
@@ -77,7 +77,7 @@ export function ProposalEditorLayout({
           {showHeaderActions && (
             <>
               {presenceSlot}
-              {headerActions}
+              {asideHeaderIcons}
               {canShare && (
                 <Button
                   color="secondary"

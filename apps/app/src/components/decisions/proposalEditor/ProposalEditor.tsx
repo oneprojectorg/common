@@ -85,14 +85,14 @@ export function ProposalEditor({
   backHref,
   proposal,
   isEditMode = false,
-  headerActions,
+  asideHeaderIcons,
   showHeaderActions = true,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
-  headerActions?: ReactNode;
+  asideHeaderIcons?: ReactNode;
   showHeaderActions?: boolean;
 }) {
   const { user } = useUser();
@@ -132,7 +132,7 @@ export function ProposalEditor({
         backHref={backHref}
         proposal={proposal}
         isEditMode={isEditMode}
-        headerActions={headerActions}
+        asideHeaderIcons={asideHeaderIcons}
         showHeaderActions={showHeaderActions}
         collaborationDocId={collaborationDocId}
         proposalTemplate={proposalTemplate}
@@ -150,7 +150,7 @@ function ProposalEditorInner({
   backHref,
   proposal,
   isEditMode,
-  headerActions,
+  asideHeaderIcons,
   showHeaderActions,
   collaborationDocId,
   proposalTemplate,
@@ -159,7 +159,7 @@ function ProposalEditorInner({
   backHref: string;
   proposal: Proposal;
   isEditMode: boolean;
-  headerActions?: ReactNode;
+  asideHeaderIcons?: ReactNode;
   showHeaderActions: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
@@ -311,7 +311,7 @@ function ProposalEditorInner({
       isEditMode={isEditMode}
       isDraft={isDraft}
       presenceSlot={<CollaborativePresence />}
-      headerActions={headerActions}
+      asideHeaderIcons={asideHeaderIcons}
       showHeaderActions={showHeaderActions}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
