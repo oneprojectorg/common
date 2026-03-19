@@ -2,11 +2,13 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { useEffect } from 'react';
+import { LuHistory } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { DocumentNotAvailable } from '@/components/decisions/DocumentNotAvailable';
@@ -38,8 +40,8 @@ function ProposalEditorLayoutContent() {
     profileId: string;
     slug: string;
   }>();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
   const [aside, setAside] = useQueryState('aside', proposalEditorAsideParser);
+  const t = useTranslations();
 
   const isVersionHistoryEnabled = useFeatureFlag('proposal_version_history');
   const isVersionHistoryOpen = aside === 'versions';
@@ -90,6 +92,21 @@ function ProposalEditorLayoutContent() {
       <ProposalVersionsAside onClose={handleCloseAside} />
     ) : undefined;
 
+  const headerActions = isVersionHistoryEnabled ? (
+    <TooltipTrigger>
+      <button
+        type="button"
+        onClick={handleToggleVersionHistory}
+        aria-label={t('Version history')}
+        aria-pressed={isVersionHistoryOpen}
+        className="flex size-8 items-center justify-center rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite hover:no-underline"
+      >
+        <LuHistory className="size-4" />
+      </button>
+      <Tooltip>{t('Version history')}</Tooltip>
+    </TooltipTrigger>
+  ) : null;
+
   // -- Render ----------------------------------------------------------------
 
   return (
@@ -97,16 +114,9 @@ function ProposalEditorLayoutContent() {
       instance={instance}
       backHref={`/decisions/${slug}`}
       proposal={proposal}
-      headerMode={
-        isVersionHistoryEnabled && isVersionHistoryOpen && !isMobile
-          ? 'version'
-          : 'edit'
-      }
       isEditMode
+      headerActions={headerActions}
       sidebarSlot={sidebarSlot}
-      isVersionHistoryEnabled={isVersionHistoryEnabled}
-      isVersionHistoryOpen={isVersionHistoryOpen}
-      onToggleVersionHistory={handleToggleVersionHistory}
     />
   );
 }

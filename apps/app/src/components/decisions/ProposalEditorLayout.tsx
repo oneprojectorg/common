@@ -1,12 +1,13 @@
 'use client';
 
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Header4 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
-import { LuArrowLeft, LuCheck, LuHistory, LuShare2 } from 'react-icons/lu';
+import { LuArrowLeft, LuCheck, LuShare2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -20,19 +21,14 @@ interface ProposalEditorLayoutProps {
   title: string;
   onSubmitProposal: () => void;
   isSubmitting: boolean;
-  headerMode?: 'edit' | 'version';
   isEditMode?: boolean;
   isDraft?: boolean;
   /** Optional slot for presence indicators (avatar stack) */
   presenceSlot?: ReactNode;
+  /** Optional slot for header actions such as aside triggers */
+  headerActions?: ReactNode;
   /** Optional slot for a sidebar panel (e.g. version history) */
   sidebarSlot?: ReactNode;
-  /** Whether version history is available for this proposal */
-  isVersionHistoryEnabled?: boolean;
-  /** Whether the version history aside is currently open */
-  isVersionHistoryOpen?: boolean;
-  /** Toggles the version history aside */
-  onToggleVersionHistory?: () => void;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
   /** The current user's decision permissions on this proposal */
@@ -48,25 +44,21 @@ export function ProposalEditorLayout({
   title,
   onSubmitProposal,
   isSubmitting,
-  headerMode = 'edit',
   isEditMode = false,
   isDraft = false,
   presenceSlot,
+  headerActions,
   sidebarSlot,
-  isVersionHistoryEnabled = false,
-  isVersionHistoryOpen = false,
-  onToggleVersionHistory,
   proposalProfileId,
   access,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   const canShare = access?.admin || access?.inviteMembers;
-  const showHeaderActions = headerMode === 'edit';
-  const showVersionHistoryTrigger =
-    isVersionHistoryEnabled && typeof onToggleVersionHistory === 'function';
+  const showHeaderActions = isMobile || !sidebarSlot;
 
   return (
     <div className="flex h-screen bg-white">
@@ -92,20 +84,7 @@ export function ProposalEditorLayout({
             {showHeaderActions && (
               <>
                 {presenceSlot}
-                {showVersionHistoryTrigger && (
-                  <TooltipTrigger>
-                    <button
-                      type="button"
-                      onClick={onToggleVersionHistory}
-                      aria-label={t('Version history')}
-                      aria-pressed={isVersionHistoryOpen}
-                      className="flex size-8 items-center justify-center rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite hover:no-underline"
-                    >
-                      <LuHistory className="size-4" />
-                    </button>
-                    <Tooltip>{t('Version history')}</Tooltip>
-                  </TooltipTrigger>
-                )}
+                {headerActions}
                 {canShare && (
                   <Button
                     color="secondary"

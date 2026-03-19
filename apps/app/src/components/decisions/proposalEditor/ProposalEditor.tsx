@@ -84,23 +84,17 @@ export function ProposalEditor({
   instance,
   backHref,
   proposal,
-  headerMode = 'edit',
   isEditMode = false,
+  headerActions,
   sidebarSlot,
-  isVersionHistoryEnabled = false,
-  isVersionHistoryOpen = false,
-  onToggleVersionHistory,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
-  headerMode?: 'edit' | 'version';
   isEditMode?: boolean;
+  headerActions?: ReactNode;
   /** Optional sidebar rendered alongside the editor (e.g. version history panel) */
   sidebarSlot?: ReactNode;
-  isVersionHistoryEnabled?: boolean;
-  isVersionHistoryOpen?: boolean;
-  onToggleVersionHistory?: () => void;
 }) {
   const { user } = useUser();
   const t = useTranslations();
@@ -138,12 +132,9 @@ export function ProposalEditor({
         instance={instance}
         backHref={backHref}
         proposal={proposal}
-        headerMode={headerMode}
         isEditMode={isEditMode}
+        headerActions={headerActions}
         sidebarSlot={sidebarSlot}
-        isVersionHistoryEnabled={isVersionHistoryEnabled}
-        isVersionHistoryOpen={isVersionHistoryOpen}
-        onToggleVersionHistory={onToggleVersionHistory}
         collaborationDocId={collaborationDocId}
         proposalTemplate={proposalTemplate}
       />
@@ -159,24 +150,18 @@ function ProposalEditorInner({
   instance,
   backHref,
   proposal,
-  headerMode,
   isEditMode,
+  headerActions,
   sidebarSlot,
-  isVersionHistoryEnabled,
-  isVersionHistoryOpen,
-  onToggleVersionHistory,
   collaborationDocId,
   proposalTemplate,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
-  headerMode: 'edit' | 'version';
   isEditMode: boolean;
+  headerActions?: ReactNode;
   sidebarSlot?: ReactNode;
-  isVersionHistoryEnabled: boolean;
-  isVersionHistoryOpen: boolean;
-  onToggleVersionHistory?: () => void;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
@@ -324,14 +309,11 @@ function ProposalEditorInner({
       title={draft.title}
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
-      headerMode={headerMode}
       isEditMode={isEditMode}
       isDraft={isDraft}
       presenceSlot={<CollaborativePresence />}
+      headerActions={headerActions}
       sidebarSlot={sidebarSlot}
-      isVersionHistoryEnabled={isVersionHistoryEnabled}
-      isVersionHistoryOpen={isVersionHistoryOpen}
-      onToggleVersionHistory={onToggleVersionHistory}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
     >
