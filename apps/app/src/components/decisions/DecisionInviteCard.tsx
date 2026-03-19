@@ -59,11 +59,11 @@ export const DecisionInviteCard = ({
           </Header2>
           <ProfileItem
             size="small"
-            className="items-center gap-2"
+            className="items-center gap-1"
             avatar={
               <Avatar
                 placeholder={steward?.name ?? ''}
-                className="size-6 shrink-0"
+                className="size-4 shrink-0"
               >
                 {steward?.avatarImage?.name ? (
                   <Image
