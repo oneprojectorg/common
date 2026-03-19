@@ -52,28 +52,32 @@ export const DecisionInviteCard = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
-        <Header2 className="font-serif">{profile.name}</Header2>
-        <ProfileItem
-          size="small"
-          className="items-center gap-2"
-          avatar={
-            <Avatar
-              placeholder={steward?.name ?? ''}
-              className="size-6 shrink-0"
-            >
-              {steward?.avatarImage?.name ? (
-                <Image
-                  src={getPublicUrl(steward.avatarImage.name) ?? ''}
-                  alt={steward.name ?? 'Steward avatar'}
-                  fill
-                  className="object-cover"
-                />
-              ) : null}
-            </Avatar>
-          }
-          title={steward?.name ?? ''}
-        ></ProfileItem>
+      <div className="flex flex-col gap-4 rounded-lg border p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <Header2 className="font-serif text-title-base">
+            {profile.name}
+          </Header2>
+          <ProfileItem
+            size="small"
+            className="items-center gap-2"
+            avatar={
+              <Avatar
+                placeholder={steward?.name ?? ''}
+                className="size-6 shrink-0"
+              >
+                {steward?.avatarImage?.name ? (
+                  <Image
+                    src={getPublicUrl(steward.avatarImage.name) ?? ''}
+                    alt={steward.name ?? 'Steward avatar'}
+                    fill
+                    className="object-cover"
+                  />
+                ) : null}
+              </Avatar>
+            }
+            title={steward?.name ?? ''}
+          />
+        </div>
         <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
           <DecisionStat
             number={invite.participantCount}
