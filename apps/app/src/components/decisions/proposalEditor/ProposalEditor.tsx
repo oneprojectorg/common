@@ -12,7 +12,14 @@ import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -77,12 +84,19 @@ export function ProposalEditor({
   instance,
   backHref,
   proposal,
+  headerMode = 'edit',
   isEditMode = false,
+  sidebarSlot,
+  versionHistoryHref,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
+  headerMode?: 'edit' | 'version';
   isEditMode?: boolean;
+  /** Optional sidebar rendered alongside the editor (e.g. version history panel) */
+  sidebarSlot?: ReactNode;
+  versionHistoryHref?: string;
 }) {
   const { user } = useUser();
   const t = useTranslations();
@@ -120,7 +134,10 @@ export function ProposalEditor({
         instance={instance}
         backHref={backHref}
         proposal={proposal}
+        headerMode={headerMode}
         isEditMode={isEditMode}
+        sidebarSlot={sidebarSlot}
+        versionHistoryHref={versionHistoryHref}
         collaborationDocId={collaborationDocId}
         proposalTemplate={proposalTemplate}
       />
@@ -136,14 +153,20 @@ function ProposalEditorInner({
   instance,
   backHref,
   proposal,
+  headerMode,
   isEditMode,
+  sidebarSlot,
+  versionHistoryHref,
   collaborationDocId,
   proposalTemplate,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
+  headerMode: 'edit' | 'version';
   isEditMode: boolean;
+  sidebarSlot?: ReactNode;
+  versionHistoryHref?: string;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
@@ -291,9 +314,12 @@ function ProposalEditorInner({
       title={draft.title}
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
+      headerMode={headerMode}
       isEditMode={isEditMode}
       isDraft={isDraft}
       presenceSlot={<CollaborativePresence />}
+      sidebarSlot={sidebarSlot}
+      versionHistoryHref={versionHistoryHref}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
     >
