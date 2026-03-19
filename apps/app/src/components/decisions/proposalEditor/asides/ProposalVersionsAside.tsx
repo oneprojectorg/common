@@ -13,6 +13,7 @@ import {
   ProposalEditorAsideSkeleton,
 } from '../../ProposalEditorAside';
 
+/** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
@@ -63,7 +64,7 @@ function ProposalVersionsAsideContent({
             Date.now() - createdAt.getTime() < RELATIVE_TIME_THRESHOLD_MS;
 
           return (
-            <VersionItemWithTime
+            <VersionItem
               key={version.version}
               createdAt={version.createdAt}
               isRecent={isRecent}
@@ -76,16 +77,7 @@ function ProposalVersionsAsideContent({
   );
 }
 
-function VersionItem({ label, subtitle }: { label: string; subtitle: string }) {
-  return (
-    <div className="mx-4 p-2">
-      <p className="text-base text-neutral-black">{label}</p>
-      <p className="text-sm text-neutral-charcoal">{subtitle}</p>
-    </div>
-  );
-}
-
-function VersionItemWithTime({
+function VersionItem({
   createdAt,
   isRecent,
   locale,
@@ -101,7 +93,12 @@ function VersionItemWithTime({
     ? relativeTime
     : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
 
-  return <VersionItem label={label} subtitle={t('Auto-saved')} />;
+  return (
+    <div className="mx-4 p-2">
+      <p className="text-base text-neutral-black">{label}</p>
+      <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
+    </div>
+  );
 }
 
 function ProposalVersionsAsideSkeleton() {

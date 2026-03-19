@@ -41,6 +41,8 @@ export default function ProposalEditorLayout({
 
   const isVersionHistoryEnabled = useFeatureFlag('proposal_version_history');
 
+  // -- Data fetching ---------------------------------------------------------
+
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
     slug,
   });
@@ -51,9 +53,9 @@ export default function ProposalEditorLayout({
 
   const instanceId = decisionProfile.processInstance.id;
 
-  const [[proposal, instance]] = trpc.useSuspenseQueries((query) => [
-    query.decision.getProposal({ profileId }),
-    query.decision.getInstance({ instanceId }),
+  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getProposal({ profileId }),
+    t.decision.getInstance({ instanceId }),
   ]);
 
   if (!proposal || !instance) {
