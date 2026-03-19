@@ -10,7 +10,10 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'flex w-fit cursor-pointer items-center justify-center gap-1 rounded-md text-center text-base leading-3 font-normal text-nowrap shadow-md sm:text-base',
+  base: [
+    'flex w-fit cursor-pointer items-center justify-center gap-1 rounded-md text-center text-base leading-3 font-normal text-nowrap shadow-md sm:text-base',
+    // 'focus:outline-0 focus-visible:ring-2 focus-visible:ring-offset-3 focus-visible:ring-offset-bg focus-visible:outline focus-visible:outline-offset-2',
+  ],
   variants: {
     variant: {
       primary: '',
@@ -53,7 +56,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-noned outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+        'appearance-noned outline-primary/60 duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
 
     isDisabled: {
