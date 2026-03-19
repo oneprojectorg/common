@@ -4,49 +4,45 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { notFound, useParams, usePathname, useRouter } from 'next/navigation';
-import { type ReactNode, useEffect } from 'react';
+import { notFound, useParams } from 'next/navigation';
+import { useQueryState } from 'nuqs';
+import { useEffect } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { DocumentNotAvailable } from '@/components/decisions/DocumentNotAvailable';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
+import { proposalEditorAsideParser } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 
 /**
- * Shared layout for /edit and /version routes.
+ * Shared layout for the proposal editor route.
  *
- * Persists across navigations between child routes so the collaborative
- * editor, Yjs connection, and draft state are never remounted.
- * Reads `usePathname()` to decide whether the version history sidebar
- * should be shown.
- *
- * The `children` prop (child page content) is intentionally unused —
- * the child pages are empty stubs that exist only to define the URL.
+ * Persists across query string updates so the collaborative editor,
+ * Yjs connection, and draft state are never remounted while the aside
+ * panel is opened or closed.
  */
 export default function ProposalEditorLayout({
   children: _children,
-  aside,
 }: {
-  children: ReactNode;
-  aside: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <ErrorBoundary fallback={<DocumentNotAvailable />}>
-      <ProposalEditorLayoutContent aside={aside} />
+      <ProposalEditorLayoutContent />
     </ErrorBoundary>
   );
 }
 
-function ProposalEditorLayoutContent({ aside }: { aside: ReactNode }) {
+function ProposalEditorLayoutContent() {
   const { profileId, slug } = useParams<{
     profileId: string;
     slug: string;
   }>();
-  const pathname = usePathname();
-  const router = useRouter();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
+  const [aside, setAside] = useQueryState('aside', proposalEditorAsideParser);
 
-  const isVersionRoute = pathname.endsWith('/version');
   const isVersionHistoryEnabled = useFeatureFlag('proposal_version_history');
+  const isVersionHistoryOpen = aside === 'versions';
 
   // -- Data fetching ---------------------------------------------------------
 
@@ -69,15 +65,30 @@ function ProposalEditorLayoutContent({ aside }: { aside: ReactNode }) {
     notFound();
   }
 
-  // -- Version history navigation --------------------------------------------
-
-  const baseHref = `/decisions/${slug}/proposal/${profileId}`;
-
   useEffect(() => {
-    if (isVersionRoute && !isVersionHistoryEnabled) {
-      router.replace(`${baseHref}/edit`, { scroll: false });
+    if (isVersionHistoryOpen && !isVersionHistoryEnabled) {
+      void setAside(null);
     }
-  }, [router, baseHref, isVersionRoute, isVersionHistoryEnabled]);
+  }, [isVersionHistoryEnabled, isVersionHistoryOpen, setAside]);
+
+  const handleToggleVersionHistory = () => {
+    void setAside(isVersionHistoryOpen ? null : 'versions', {
+      history: 'push',
+      scroll: false,
+    });
+  };
+
+  const handleCloseAside = () => {
+    void setAside(null, {
+      history: 'push',
+      scroll: false,
+    });
+  };
+
+  const sidebarSlot =
+    isVersionHistoryEnabled && isVersionHistoryOpen ? (
+      <ProposalVersionsAside onClose={handleCloseAside} />
+    ) : undefined;
 
   // -- Render ----------------------------------------------------------------
 
@@ -87,17 +98,15 @@ function ProposalEditorLayoutContent({ aside }: { aside: ReactNode }) {
       backHref={`/decisions/${slug}`}
       proposal={proposal}
       headerMode={
-        isVersionHistoryEnabled && isVersionRoute && !isMobile
+        isVersionHistoryEnabled && isVersionHistoryOpen && !isMobile
           ? 'version'
           : 'edit'
       }
       isEditMode
-      sidebarSlot={aside}
-      versionHistoryHref={
-        isVersionHistoryEnabled
-          ? `${baseHref}${isVersionRoute ? '/edit' : '/version'}`
-          : undefined
-      }
+      sidebarSlot={sidebarSlot}
+      isVersionHistoryEnabled={isVersionHistoryEnabled}
+      isVersionHistoryOpen={isVersionHistoryOpen}
+      onToggleVersionHistory={handleToggleVersionHistory}
     />
   );
 }

@@ -87,7 +87,9 @@ export function ProposalEditor({
   headerMode = 'edit',
   isEditMode = false,
   sidebarSlot,
-  versionHistoryHref,
+  isVersionHistoryEnabled = false,
+  isVersionHistoryOpen = false,
+  onToggleVersionHistory,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -96,7 +98,9 @@ export function ProposalEditor({
   isEditMode?: boolean;
   /** Optional sidebar rendered alongside the editor (e.g. version history panel) */
   sidebarSlot?: ReactNode;
-  versionHistoryHref?: string;
+  isVersionHistoryEnabled?: boolean;
+  isVersionHistoryOpen?: boolean;
+  onToggleVersionHistory?: () => void;
 }) {
   const { user } = useUser();
   const t = useTranslations();
@@ -137,7 +141,9 @@ export function ProposalEditor({
         headerMode={headerMode}
         isEditMode={isEditMode}
         sidebarSlot={sidebarSlot}
-        versionHistoryHref={versionHistoryHref}
+        isVersionHistoryEnabled={isVersionHistoryEnabled}
+        isVersionHistoryOpen={isVersionHistoryOpen}
+        onToggleVersionHistory={onToggleVersionHistory}
         collaborationDocId={collaborationDocId}
         proposalTemplate={proposalTemplate}
       />
@@ -156,7 +162,9 @@ function ProposalEditorInner({
   headerMode,
   isEditMode,
   sidebarSlot,
-  versionHistoryHref,
+  isVersionHistoryEnabled,
+  isVersionHistoryOpen,
+  onToggleVersionHistory,
   collaborationDocId,
   proposalTemplate,
 }: {
@@ -166,7 +174,9 @@ function ProposalEditorInner({
   headerMode: 'edit' | 'version';
   isEditMode: boolean;
   sidebarSlot?: ReactNode;
-  versionHistoryHref?: string;
+  isVersionHistoryEnabled: boolean;
+  isVersionHistoryOpen: boolean;
+  onToggleVersionHistory?: () => void;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
@@ -319,7 +329,9 @@ function ProposalEditorInner({
       isDraft={isDraft}
       presenceSlot={<CollaborativePresence />}
       sidebarSlot={sidebarSlot}
-      versionHistoryHref={versionHistoryHref}
+      isVersionHistoryEnabled={isVersionHistoryEnabled}
+      isVersionHistoryOpen={isVersionHistoryOpen}
+      onToggleVersionHistory={onToggleVersionHistory}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
     >

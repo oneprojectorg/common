@@ -5,7 +5,7 @@ import { Header4 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { useRouter } from 'next/navigation';
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { LuArrowLeft, LuCheck, LuHistory, LuShare2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -27,8 +27,12 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** Optional slot for a sidebar panel (e.g. version history) */
   sidebarSlot?: ReactNode;
-  /** Href used to open the version history route with prefetching */
-  versionHistoryHref?: string;
+  /** Whether version history is available for this proposal */
+  isVersionHistoryEnabled?: boolean;
+  /** Whether the version history aside is currently open */
+  isVersionHistoryOpen?: boolean;
+  /** Toggles the version history aside */
+  onToggleVersionHistory?: () => void;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
   /** The current user's decision permissions on this proposal */
@@ -49,7 +53,9 @@ export function ProposalEditorLayout({
   isDraft = false,
   presenceSlot,
   sidebarSlot,
-  versionHistoryHref,
+  isVersionHistoryEnabled = false,
+  isVersionHistoryOpen = false,
+  onToggleVersionHistory,
   proposalProfileId,
   access,
 }: ProposalEditorLayoutProps) {
@@ -59,7 +65,8 @@ export function ProposalEditorLayout({
 
   const canShare = access?.admin || access?.inviteMembers;
   const showHeaderActions = headerMode === 'edit';
-  const showVersionHistoryTrigger = Boolean(versionHistoryHref);
+  const showVersionHistoryTrigger =
+    isVersionHistoryEnabled && typeof onToggleVersionHistory === 'function';
 
   return (
     <div className="flex h-screen bg-white">
@@ -89,15 +96,14 @@ export function ProposalEditorLayout({
                   <TooltipTrigger>
                     <button
                       type="button"
-                      onClick={() =>
-                        router.replace(versionHistoryHref!, { scroll: false })
-                      }
-                      aria-label="Version history"
+                      onClick={onToggleVersionHistory}
+                      aria-label={t('Version history')}
+                      aria-pressed={isVersionHistoryOpen}
                       className="flex size-8 items-center justify-center rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite hover:no-underline"
                     >
                       <LuHistory className="size-4" />
                     </button>
-                    <Tooltip>Version history</Tooltip>
+                    <Tooltip>{t('Version history')}</Tooltip>
                   </TooltipTrigger>
                 )}
                 {canShare && (
