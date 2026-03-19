@@ -32,16 +32,6 @@ const ForbiddenWithInviteCheck = () => {
     },
   );
 
-  const matchingInvite = invites.find(
-    (invite) => invite.profile?.slug === slug,
-  );
-
-  if (!matchingInvite) {
-    return <PageError error={new Error('UNAUTHORIZED')} />;
-  }
-
-  const steward = matchingInvite.profile?.processInstance?.steward;
-
   const acceptInvite = trpc.profile.acceptInvite.useMutation({
     onSuccess: () => {
       window.location.reload();
@@ -63,6 +53,16 @@ const ForbiddenWithInviteCheck = () => {
       });
     },
   });
+
+  const matchingInvite = invites.find(
+    (invite) => invite.profile?.slug === slug,
+  );
+
+  if (!matchingInvite) {
+    return <PageError error={new Error('UNAUTHORIZED')} />;
+  }
+
+  const steward = matchingInvite.profile?.processInstance?.steward;
 
   return (
     <div className="flex size-full flex-col items-center justify-center">

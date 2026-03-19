@@ -65,7 +65,7 @@ export const DecisionInviteCard = ({
               {steward?.avatarImage?.name ? (
                 <Image
                   src={getPublicUrl(steward.avatarImage.name) ?? ''}
-                  alt={steward.name ?? ''}
+                  alt={steward.name ?? 'Steward avatar'}
                   fill
                   className="object-cover"
                 />
