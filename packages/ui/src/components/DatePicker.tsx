@@ -171,6 +171,7 @@ export const DatePicker = <T extends DateValue>({
         });
         setInputValue(formattedValue);
       }
+      skipNextFocusRef.current = true;
       setIsCalendarOpen(false);
     },
     [props.onChange],
