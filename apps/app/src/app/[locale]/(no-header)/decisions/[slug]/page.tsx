@@ -18,11 +18,11 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
     });
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
-    if (
-      cause instanceof CommonError &&
-      (cause.statusCode === 403 || cause.statusCode === 404)
-    ) {
+    if (cause instanceof CommonError && cause.statusCode === 403) {
       forbidden();
+    }
+    if (cause instanceof CommonError && cause.statusCode === 404) {
+      notFound();
     }
     throw error;
   }
