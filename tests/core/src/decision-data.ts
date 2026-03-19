@@ -292,6 +292,7 @@ export async function createDecisionInstance(
       currentStateId: firstPhaseId,
       status,
       ownerProfileId,
+      stewardProfileId: ownerProfileId,
     })
     .returning();
 
