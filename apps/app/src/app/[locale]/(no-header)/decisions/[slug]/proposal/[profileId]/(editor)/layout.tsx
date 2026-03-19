@@ -10,8 +10,6 @@ import { LuHistory } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
-import { DocumentNotAvailable } from '@/components/decisions/DocumentNotAvailable';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import { proposalEditorAsideParser } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
@@ -28,14 +26,6 @@ export default function ProposalEditorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <ErrorBoundary fallback={<DocumentNotAvailable />}>
-      <ProposalEditorLayoutContent />
-    </ErrorBoundary>
-  );
-}
-
-function ProposalEditorLayoutContent() {
   const { profileId, slug } = useParams<{
     profileId: string;
     slug: string;
