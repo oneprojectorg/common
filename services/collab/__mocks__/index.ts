@@ -18,14 +18,19 @@
  * // Or seed a single doc that gets returned for every requested fragment:
  * mockCollab.setDocResponse('doc-id', { type: 'doc', content: [...] });
  */
-import type { TipTapDocument, TipTapFragmentResponse } from '../src/client';
+import type {
+  TipTapDocument,
+  TipTapFragmentResponse,
+  TipTapVersion,
+} from '../src/client.js';
 
 // Re-export types so `import { type X } from '@op/collab'` resolves when aliased here.
 export type {
   TipTapDocument,
   TipTapFragmentResponse,
   TipTapClient,
-} from '../src/client';
+  TipTapVersion,
+} from '../src/client.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -137,6 +142,9 @@ const docFragmentJsonResponses = new Map<string, TipTapFragmentResponse>();
 // Per-doc, per-fragment text responses for format='text' support.
 const docFragmentTextResponses = new Map<string, Record<string, string>>();
 
+// Per-doc saved versions returned by the version history API.
+const docVersions = new Map<string, TipTapVersion[]>();
+
 // Pre-seed the well-known e2e doc ID so the Next.js server (separate process)
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
@@ -178,6 +186,11 @@ export const mockCollab = {
    */
   setDocFragments: (docId: string, fragments: Record<string, string>) => {
     docFragmentTextResponses.set(docId, fragments);
+  },
+
+  /** Set saved versions for a document. */
+  setVersions: (docId: string, versions: TipTapVersion[]) => {
+    docVersions.set(docId, versions);
   },
 
   /** Set a mock error response for a specific document ID. */
@@ -244,5 +257,13 @@ export function createTipTapClient(_config?: unknown) {
         fragments.map((fragment) => [fragment, doc]),
       ) as R;
     },
+
+    listVersions: async (docName: string): Promise<TipTapVersion[]> => {
+      return [...(docVersions.get(docName) ?? [])];
+    },
   };
+}
+
+export function getTipTapClient() {
+  return createTipTapClient();
 }
