@@ -123,7 +123,12 @@ export const Select = <T extends object>({
                 'flex h-full min-w-0 flex-1 items-center text-ellipsis data-[placeholder]:text-neutral-gray4',
                 props.selectValueClassName,
               )}
-            />
+            >
+              {variant === 'pill'
+                ? ({ selectedText, isPlaceholder }) =>
+                    isPlaceholder ? null : selectedText
+                : undefined}
+            </SelectValue>
             {icon ?? (
               <LuChevronDown
                 aria-hidden
