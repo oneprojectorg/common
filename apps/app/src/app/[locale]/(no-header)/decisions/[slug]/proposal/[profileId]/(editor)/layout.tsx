@@ -41,8 +41,6 @@ export default function ProposalEditorLayout({
 
   const isVersionHistoryEnabled = useFeatureFlag('proposal_version_history');
 
-  // -- Data fetching ---------------------------------------------------------
-
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
     slug,
   });
@@ -53,9 +51,9 @@ export default function ProposalEditorLayout({
 
   const instanceId = decisionProfile.processInstance.id;
 
-  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getInstance({ instanceId }),
+  const [[proposal, instance]] = trpc.useSuspenseQueries((query) => [
+    query.decision.getProposal({ profileId }),
+    query.decision.getInstance({ instanceId }),
   ]);
 
   if (!proposal || !instance) {
@@ -65,11 +63,10 @@ export default function ProposalEditorLayout({
   const { asideHeaderIcons, asideSlot } = useProposalEditorAside({
     aside,
     setAside,
+    proposalId: proposal.id,
     isVersionHistoryEnabled: Boolean(isVersionHistoryEnabled),
     versionHistoryLabel: t('Version history'),
   });
-
-  // -- Render ----------------------------------------------------------------
 
   return (
     <div className="flex h-screen bg-white">
@@ -91,6 +88,7 @@ export default function ProposalEditorLayout({
 function useProposalEditorAside({
   aside,
   setAside,
+  proposalId,
   isVersionHistoryEnabled,
   versionHistoryLabel,
 }: {
@@ -99,6 +97,7 @@ function useProposalEditorAside({
     value: ProposalEditorAside | null,
     options?: { history?: 'push' | 'replace'; scroll?: boolean },
   ) => Promise<URLSearchParams>;
+  proposalId: string;
   isVersionHistoryEnabled: boolean;
   versionHistoryLabel: string;
 }) {
@@ -115,7 +114,10 @@ function useProposalEditorAside({
       label: versionHistoryLabel,
       isEnabled: isVersionHistoryEnabled,
       renderPanel: () => (
-        <ProposalVersionsAside onClose={() => setActiveAside(null)} />
+        <ProposalVersionsAside
+          proposalId={proposalId}
+          onClose={() => setActiveAside(null)}
+        />
       ),
     },
   } satisfies Record<
