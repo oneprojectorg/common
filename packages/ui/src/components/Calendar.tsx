@@ -24,7 +24,7 @@ import { Button } from './Button';
 
 const cellStyles = tv({
   extend: focusRing,
-  base: 'focus-within:outline-blueGreen flex size-8 cursor-default items-center justify-center text-base outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-neutral-offWhite',
+  base: 'flex size-8 cursor-default items-center justify-center rounded-sm text-base outline-2 outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-neutral-offWhite focus-visible:outline-primary-teal',
   variants: {
     isSelected: {
       false: 'text-neutral-charcoal',
@@ -89,12 +89,16 @@ export const CalendarGridHeader = () => {
 };
 
 export const Calendar = <T extends DateValue>({
+  ref,
   errorMessage,
   ...props
-}: CalendarProps<T>) => {
+}: CalendarProps<T> & {
+  ref?: React.RefObject<HTMLDivElement | null>;
+}) => {
   return (
     <AriaCalendar
       {...props}
+      ref={ref}
       className="rounded-md border border-solid bg-white p-1"
     >
       <CalendarHeader />
