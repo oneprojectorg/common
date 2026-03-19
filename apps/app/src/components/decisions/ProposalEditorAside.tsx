@@ -20,7 +20,7 @@ interface ProposalEditorAsideSkeletonProps {
 }
 
 /**
- * Responsive editor aside shell that renders as a desktop sidebar and a mobile
+ * Responsive editor aside shell that renders as a desktop aside and a mobile
  * bottom sheet.
  */
 export function ProposalEditorAside({

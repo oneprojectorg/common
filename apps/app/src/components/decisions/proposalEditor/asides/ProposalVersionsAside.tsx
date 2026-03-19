@@ -9,7 +9,7 @@ interface ProposalVersionsAsideProps {
 }
 
 /**
- * Sidebar panel for proposal version history.
+ * Aside panel for proposal version history.
  */
 export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
   const t = useTranslations();

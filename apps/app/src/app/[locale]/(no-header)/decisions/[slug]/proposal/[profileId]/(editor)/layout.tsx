@@ -62,6 +62,46 @@ export default function ProposalEditorLayout({
     notFound();
   }
 
+  const { asideHeaderIcons, asideSlot } = useProposalEditorAside({
+    aside,
+    setAside,
+    isVersionHistoryEnabled: Boolean(isVersionHistoryEnabled),
+    versionHistoryLabel: t('Version history'),
+  });
+
+  // -- Render ----------------------------------------------------------------
+
+  return (
+    <div className="flex h-screen bg-white">
+      <ProposalEditor
+        instance={instance}
+        backHref={`/decisions/${slug}`}
+        proposal={proposal}
+        isEditMode
+        asideHeaderIcons={
+          asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
+        }
+        showHeaderActions={isMobile || !asideSlot}
+      />
+      {asideSlot}
+    </div>
+  );
+}
+
+function useProposalEditorAside({
+  aside,
+  setAside,
+  isVersionHistoryEnabled,
+  versionHistoryLabel,
+}: {
+  aside: ProposalEditorAside | null;
+  setAside: (
+    value: ProposalEditorAside | null,
+    options?: { history?: 'push' | 'replace'; scroll?: boolean },
+  ) => Promise<URLSearchParams>;
+  isVersionHistoryEnabled: boolean;
+  versionHistoryLabel: string;
+}) {
   const setActiveAside = (nextAside: ProposalEditorAside | null) => {
     void setAside(nextAside, {
       history: 'push',
@@ -72,8 +112,8 @@ export default function ProposalEditorLayout({
   const asideDefinitions = {
     versions: {
       icon: LuHistory,
-      label: t('Version history'),
-      isEnabled: Boolean(isVersionHistoryEnabled),
+      label: versionHistoryLabel,
+      isEnabled: isVersionHistoryEnabled,
       renderPanel: () => (
         <ProposalVersionsAside onClose={() => setActiveAside(null)} />
       ),
@@ -95,12 +135,12 @@ export default function ProposalEditorLayout({
     setActiveAside(activeAside === nextAside ? null : nextAside);
   };
 
-  const sidebarSlot =
+  const asideSlot =
     activeAside && activeAsideDefinition
       ? activeAsideDefinition.renderPanel()
       : undefined;
 
-  const headerActions = proposalEditorAsideValues
+  const asideHeaderIcons = proposalEditorAsideValues
     .filter((asideKey) => asideDefinitions[asideKey].isEnabled)
     .map((asideKey) => {
       const definition = asideDefinitions[asideKey];
@@ -122,19 +162,8 @@ export default function ProposalEditorLayout({
       );
     });
 
-  // -- Render ----------------------------------------------------------------
-
-  return (
-    <div className="flex h-screen bg-white">
-      <ProposalEditor
-        instance={instance}
-        backHref={`/decisions/${slug}`}
-        proposal={proposal}
-        isEditMode
-        headerActions={headerActions.length > 0 ? headerActions : undefined}
-        showHeaderActions={isMobile || !sidebarSlot}
-      />
-      {sidebarSlot}
-    </div>
-  );
+  return {
+    asideHeaderIcons,
+    asideSlot,
+  };
 }
