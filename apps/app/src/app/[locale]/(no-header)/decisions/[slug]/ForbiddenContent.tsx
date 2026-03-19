@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1, Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
@@ -15,7 +15,24 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { DecisionInvitesSkeleton } from '@/components/Onboarding/DecisionInvitesSkeleton';
 import { DecisionInviteCard } from '@/components/decisions/DecisionInviteCard';
 import { FormContainer } from '@/components/form/FormContainer';
-import PageError from '@/components/screens/PageError';
+
+const NoAccessMessage = () => {
+  const t = useTranslations();
+
+  return (
+    <div className="flex size-full flex-col items-center justify-center gap-4 text-center">
+      <Header1>{t("You don't have access to this page")}</Header1>
+      <p className="text-neutral-gray4">
+        {t(
+          'Contact the person who shared this link if you think this is a mistake.',
+        )}
+      </p>
+      <ButtonLink href="/" color="primary">
+        {t('Go to Common')}
+      </ButtonLink>
+    </div>
+  );
+};
 
 const ForbiddenWithInviteCheck = () => {
   const t = useTranslations();
@@ -59,7 +76,7 @@ const ForbiddenWithInviteCheck = () => {
   );
 
   if (!matchingInvite) {
-    return <PageError error={new Error('UNAUTHORIZED')} />;
+    return <NoAccessMessage />;
   }
 
   const steward = matchingInvite.profile?.processInstance?.steward;
@@ -124,7 +141,7 @@ const ForbiddenWithInviteCheck = () => {
 
 export const ForbiddenContent = () => {
   return (
-    <ErrorBoundary fallback={<PageError error={new Error('UNAUTHORIZED')} />}>
+    <ErrorBoundary fallback={<NoAccessMessage />}>
       <Suspense
         fallback={
           <div className="flex size-full flex-col items-center justify-center">
