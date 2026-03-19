@@ -2,6 +2,7 @@
 
 import { parseDate } from '@internationalized/date';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FocusScope } from 'react-aria';
 import type { DateValue } from 'react-aria-components';
 import { Button as AriaButton } from 'react-aria-components';
 import { LuCalendar } from 'react-icons/lu';
@@ -84,12 +85,25 @@ export const DatePicker = <T extends DateValue>({
   const [inputValue, setInputValue] = useState<string>(initialInputValue);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const skipNextFocusRef = useRef(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const focusCalendarOnOpenRef = useRef(false);
 
   // Sync internal state when props.value changes
   useEffect(() => {
     setInputValue(initialInputValue);
   }, [initialInputValue]);
+
+  // Focus the calendar grid when opened via the icon button
+  useEffect(() => {
+    if (isCalendarOpen && focusCalendarOnOpenRef.current) {
+      focusCalendarOnOpenRef.current = false;
+      requestAnimationFrame(() => {
+        const focusable =
+          calendarRef.current?.querySelector<HTMLElement>('[tabindex="0"]');
+        focusable?.focus();
+      });
+    }
+  }, [isCalendarOpen]);
 
   const parseInputDate = useCallback((input: string): DateValue | null => {
     try {
@@ -171,7 +185,6 @@ export const DatePicker = <T extends DateValue>({
         });
         setInputValue(formattedValue);
       }
-      skipNextFocusRef.current = true;
       setIsCalendarOpen(false);
     },
     [props.onChange],
@@ -191,22 +204,30 @@ export const DatePicker = <T extends DateValue>({
         value={inputValue}
         onChange={handleInputChange}
         isDisabled={props.isDisabled}
-        onFocus={() => {
-          if (skipNextFocusRef.current) {
-            skipNextFocusRef.current = false;
-            return;
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown' && isCalendarOpen && !e.shiftKey) {
+            e.preventDefault();
+            const focusable =
+              calendarRef.current?.querySelector<HTMLElement>('[tabindex="0"]');
+            focusable?.focus();
           }
-          setIsCalendarOpen(true);
         }}
         inputProps={{
           ...inputProps,
           className: cn('pr-10', inputProps?.className),
           placeholder: placeholder,
+          onClick: () => setIsCalendarOpen(true),
         }}
       >
         <AriaButton
+          aria-label="Open calendar"
           isDisabled={props.isDisabled}
-          onPress={() => setIsCalendarOpen((open) => !open)}
+          onPress={() => {
+            if (!isCalendarOpen) {
+              focusCalendarOnOpenRef.current = true;
+            }
+            setIsCalendarOpen((open) => !open);
+          }}
           className={cn(
             'absolute top-1/2 right-1 -translate-y-1/2',
             'h-8 w-8',
@@ -221,25 +242,23 @@ export const DatePicker = <T extends DateValue>({
       </TextField>
       <Popover
         isOpen={isCalendarOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            skipNextFocusRef.current = true;
-          }
-          setIsCalendarOpen(open);
-        }}
+        onOpenChange={setIsCalendarOpen}
         className="w-62 p-0"
         placement="bottom start"
         triggerRef={inputRef}
       >
-        <Calendar
-          value={props.value}
-          onChange={handleCalendarChange}
-          minValue={props.minValue}
-          maxValue={props.maxValue}
-          isDisabled={props.isDisabled}
-          isReadOnly={props.isReadOnly}
-          errorMessage={errorMessage}
-        />
+        <FocusScope contain restoreFocus>
+          <Calendar
+            ref={calendarRef}
+            value={props.value}
+            onChange={handleCalendarChange}
+            minValue={props.minValue}
+            maxValue={props.maxValue}
+            isDisabled={props.isDisabled}
+            isReadOnly={props.isReadOnly}
+            errorMessage={errorMessage}
+          />
+        </FocusScope>
       </Popover>
     </>
   );
