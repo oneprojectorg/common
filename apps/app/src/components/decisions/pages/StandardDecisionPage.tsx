@@ -42,7 +42,7 @@ export function StandardDecisionPage({
   const currentPhase = phases.find(
     (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
   );
-  const allowProposals = currentPhase?.rules?.proposals?.submit !== false;
+  const allowProposals = currentPhase?.rules?.proposals?.submit === true;
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
