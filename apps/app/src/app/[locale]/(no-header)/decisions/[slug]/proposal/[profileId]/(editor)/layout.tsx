@@ -2,6 +2,8 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryState } from 'nuqs';
@@ -35,6 +37,7 @@ export default function ProposalEditorLayout({
   }>();
   const [aside, setAside] = useQueryState('aside', proposalEditorAsideParser);
   const t = useTranslations();
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   const isVersionHistoryEnabled = useFeatureFlag('proposal_version_history');
 
@@ -122,13 +125,16 @@ export default function ProposalEditorLayout({
   // -- Render ----------------------------------------------------------------
 
   return (
-    <ProposalEditor
-      instance={instance}
-      backHref={`/decisions/${slug}`}
-      proposal={proposal}
-      isEditMode
-      headerActions={headerActions.length > 0 ? headerActions : undefined}
-      sidebarSlot={sidebarSlot}
-    />
+    <div className="flex h-screen bg-white">
+      <ProposalEditor
+        instance={instance}
+        backHref={`/decisions/${slug}`}
+        proposal={proposal}
+        isEditMode
+        headerActions={headerActions.length > 0 ? headerActions : undefined}
+        showHeaderActions={isMobile || !sidebarSlot}
+      />
+      {sidebarSlot}
+    </div>
   );
 }
