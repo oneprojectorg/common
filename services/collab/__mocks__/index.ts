@@ -30,6 +30,7 @@ export type {
   TipTapFragmentResponse,
   TipTapClient,
   TipTapVersion,
+  TipTapVersionRevertOptions,
 } from '../src/client.js';
 
 // ---------------------------------------------------------------------------
@@ -145,6 +146,13 @@ const docFragmentTextResponses = new Map<string, Record<string, string>>();
 // Per-doc saved versions returned by the version history API.
 const docVersions = new Map<string, TipTapVersion[]>();
 
+// Track revertToVersion calls for test assertions.
+const revertCalls: Array<{
+  docName: string;
+  versionId: number;
+  options?: { fields?: string[]; user?: string };
+}> = [];
+
 // Pre-seed the well-known e2e doc ID so the Next.js server (separate process)
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
@@ -196,6 +204,14 @@ export const mockCollab = {
   /** Set a mock error response for a specific document ID. */
   setDocError: (docId: string, error: Error) => {
     docResponses.set(docId, () => Promise.reject(error));
+  },
+
+  /** Get recorded revertToVersion calls for assertion. */
+  getRevertCalls: () => [...revertCalls],
+
+  /** Clear recorded revert calls (called automatically by clearAllMocks). */
+  clearRevertCalls: () => {
+    revertCalls.length = 0;
   },
 };
 
@@ -260,6 +276,18 @@ export function createTipTapClient(_config?: unknown) {
 
     listVersions: async (docName: string): Promise<TipTapVersion[]> => {
       return [...(docVersions.get(docName) ?? [])];
+    },
+
+    revertToVersion: async (
+      docName: string,
+      versionId: number,
+      options?: { fields?: string[]; user?: string },
+    ): Promise<void> => {
+      const versions = docVersions.get(docName);
+      if (!versions?.some((v) => v.version === versionId)) {
+        throw new Error('404 Not Found');
+      }
+      revertCalls.push({ docName, versionId, options });
     },
   };
 }

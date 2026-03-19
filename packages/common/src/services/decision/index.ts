@@ -55,6 +55,7 @@ export * from './assembleProposalData';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
 export * from './getRubricScoringInfo';
+export * from './restoreProposalVersion';
 export * from './tiptapExtensions';
 
 // Proposal attachments

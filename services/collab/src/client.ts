@@ -21,6 +21,11 @@ export interface TipTapVersion {
   meta?: Record<string, unknown>;
 }
 
+export interface TipTapVersionRevertOptions {
+  fields?: string[];
+  user?: string;
+}
+
 type TipTapClientConfig = {
   appId: string;
   secret: string;
@@ -143,6 +148,34 @@ export function createTipTapClient(config: TipTapClientConfig) {
           TipTapVersion[]
         >(`documents/${encodeURIComponent(docName)}/versions`)
         .json();
+    },
+
+    /**
+     * Revert a document to a previous saved version.
+     *
+     * @see https://tiptap.dev/docs/collaboration/documents/rest-api
+     */
+    revertToVersion: async (
+      docName: string,
+      versionId: number,
+      options?: TipTapVersionRevertOptions,
+    ): Promise<void> => {
+      const params = new URLSearchParams();
+
+      if (options?.user) {
+        params.set('user', options.user);
+      }
+
+      for (const field of options?.fields ?? []) {
+        params.append('fields', field);
+      }
+
+      await api.post(
+        `documents/${encodeURIComponent(docName)}/versions/${encodeURIComponent(String(versionId))}/revertTo`,
+        {
+          searchParams: params,
+        },
+      );
     },
   };
 }
