@@ -613,6 +613,8 @@
   "Failed to create role": "Falha ao criar a função",
   "Failed to delete role": "Falha ao excluir a função",
   "Role name": "Nome da função",
+  "Role name…": "Role name…",
+  "Save role": "Save role",
   "Delete role": "Excluir função",
   "No roles configured": "Nenhuma função configurada",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "Tem certeza de que deseja remover {roleName} de \"{processName}\"?",

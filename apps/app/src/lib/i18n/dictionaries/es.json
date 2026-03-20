@@ -612,6 +612,8 @@
   "Failed to create role": "Error al crear el rol",
   "Failed to delete role": "Error al eliminar el rol",
   "Role name": "Nombre del rol",
+  "Role name…": "Role name…",
+  "Save role": "Save role",
   "Delete role": "Eliminar rol",
   "No roles configured": "No hay roles configurados",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "¿Está seguro de que desea eliminar {roleName} de \"{processName}\"?",
