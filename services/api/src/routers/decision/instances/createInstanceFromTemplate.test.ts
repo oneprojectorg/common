@@ -1,4 +1,8 @@
-import { type DecisionInstanceData, simpleVoting } from '@op/common';
+import {
+  type DecisionInstanceData,
+  type DecisionSchemaDefinition,
+  simpleVoting,
+} from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   decisionProcessTransitions,
@@ -33,7 +37,13 @@ async function createAuthenticatedCaller(email: string) {
 async function createSimpleTemplate(
   testData: TestDecisionsDataManager,
   taskId: string,
+  schemaOverrides?: Partial<DecisionSchemaDefinition>,
 ) {
+  const schema: DecisionSchemaDefinition = {
+    ...simpleVoting,
+    ...schemaOverrides,
+  };
+
   // Get a user to set as createdByProfileId
   const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
@@ -52,8 +62,8 @@ async function createSimpleTemplate(
     .insert(decisionProcesses)
     .values({
       name: `Simple Template ${taskId}`,
-      description: simpleVoting.description,
-      processSchema: simpleVoting, // Store as DecisionSchemaDefinition
+      description: schema.description,
+      processSchema: schema,
       createdByProfileId: userRecord.profileId,
     })
     .returning();
@@ -293,5 +303,42 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(result.type).toBe('decision');
     expect(result.processInstance).toBeDefined();
     expect(result.processInstance.id).toBeDefined();
+  });
+
+  it('should copy proposalTemplate from template into instance data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const proposalTemplate = {
+      type: 'object' as const,
+      properties: {
+        title: { type: 'string' as const, title: 'Title' },
+        description: { type: 'string' as const, title: 'Description' },
+      },
+      required: ['title'],
+    };
+
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { proposalTemplate },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Proposal Template Decision ${task.id}`,
+    });
+
+    testData.trackProfileForCleanup(result.id);
+
+    const instance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, result.processInstance.id),
+    });
+
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+    expect(instanceData.proposalTemplate).toEqual(proposalTemplate);
   });
 });

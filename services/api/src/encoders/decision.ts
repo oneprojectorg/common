@@ -180,6 +180,7 @@ export const decisionSchemaDefinitionEncoder = z.object({
   phases: z.array(phaseDefinitionEncoder).min(1),
   // Optional proposal template for budget/field configuration (legacy compatibility)
   proposalTemplate: jsonSchemaEncoder.optional(),
+  rubricTemplate: rubricTemplateEncoder.optional(),
 });
 
 /** Decision process encoder */
