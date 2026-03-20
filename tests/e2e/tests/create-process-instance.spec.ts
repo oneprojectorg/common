@@ -84,9 +84,8 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 12_000 });
 
     // 7. Fill each phase's required fields.
-    //    Phases are shown as cards in the phases list; click "Configure" on
-    //    each to open the detail form, fill the required fields, then wait
-    //    for the auto-save before moving on to the next phase.
+    //    Click Configure on the first phase to enter the detail view, then
+    //    use the footer Next button to advance through the remaining phases.
     const now = new Date();
     const phaseConfigureButtons = authenticatedPage.getByRole('button', {
       name: 'Configure',
@@ -94,16 +93,18 @@ test.describe('Create Process Instance', () => {
     await expect(phaseConfigureButtons.first()).toBeVisible({ timeout: 6_000 });
     const phaseCount = await phaseConfigureButtons.count();
 
+    // Open the first phase detail form
+    await phaseConfigureButtons.first().click();
+
+    const nextButton = authenticatedPage.getByRole('button', { name: 'Next' });
+
     for (let i = 0; i < phaseCount; i++) {
-      // Set up the auto-save listener before any field changes
-      const phaseSaved = waitForAutoSave(authenticatedPage);
-
-      // Open the phase detail form for the i-th phase
-      await phaseConfigureButtons.nth(i).click();
-
       // Wait for the phase detail form to load
       const headlineField = authenticatedPage.getByLabel('Headline');
       await expect(headlineField).toBeVisible({ timeout: 6_000 });
+
+      // Set up the auto-save listener before any field changes
+      const phaseSaved = waitForAutoSave(authenticatedPage);
 
       // Fill phase name
       await authenticatedPage.getByLabel('Phase name').fill(`Phase ${i + 1}`);
@@ -128,26 +129,16 @@ test.describe('Create Process Instance', () => {
       await endDateInput.fill(formatted);
       await endDateInput.press('Enter');
 
-      // Wait for the auto-save to complete before navigating away
+      // Wait for the auto-save to complete before advancing
       await phaseSaved;
 
-      // Navigate back to the phases list if there are more phases to configure
-      if (i < phaseCount - 1) {
-        await phasesButton.click();
-        await expect(phaseConfigureButtons.first()).toBeVisible({
-          timeout: 6_000,
-        });
-      }
+      // Press Next to advance to the next phase (or to Proposal Categories
+      // after the last phase)
+      await nextButton.click();
     }
 
     // ── Step 1: General – Proposal Categories ───────────────────────────
-
-    // 8. Navigate to the Proposal Categories section
-    const categoriesButton = sidebarNav.getByRole('button', {
-      name: 'Proposal Categories',
-    });
-    await expect(categoriesButton).toBeVisible({ timeout: 18_000 });
-    await categoriesButton.click();
+    // (arrived here via Next from the last phase)
 
     await expect(
       authenticatedPage.getByText('Proposal Categories').first(),
@@ -188,20 +179,21 @@ test.describe('Create Process Instance', () => {
       authenticatedPage.getByText('Proposal template').first(),
     ).toBeVisible({ timeout: 12_000 });
 
-    // 11. Expand the Budget card and enable the Budget field in the template
-    await authenticatedPage.getByRole('button', { name: 'Budget' }).click();
+    // 11. Expand the Budget card — budget is enabled by default in the template
+    //     Use a regex to match "Budget Optional" or "Budget Required" while
+    //     excluding the "Add budget" button in the preview panel.
+    await authenticatedPage
+      .getByRole('button', { name: /^Budget (Optional|Required)$/ })
+      .click();
 
+    // Verify the toggle is already ON
     const showInTemplateToggle = authenticatedPage.getByTestId(
       'budget-show-in-template-toggle',
     );
     await expect(showInTemplateToggle).toBeVisible({ timeout: 6_000 });
-
-    const templateSaved = waitForAutoSave(authenticatedPage, 'money');
-    await showInTemplateToggle.focus();
-    await showInTemplateToggle.press('Space');
     await expect(showInTemplateToggle).toHaveAttribute('aria-pressed', 'true');
 
-    // Verify the budget config expanded (Currency select should appear)
+    // Verify the budget config is visible (Currency select should appear)
     await expect(authenticatedPage.getByLabel('Currency')).toBeVisible({
       timeout: 6_000,
     });
@@ -215,8 +207,6 @@ test.describe('Create Process Instance', () => {
     await expect(
       authenticatedPage.getByRole('button', { name: 'Add budget' }),
     ).toBeVisible({ timeout: 6_000 });
-
-    await templateSaved;
 
     // ── Final: Verify Launch Process button is enabled ──────────────────
 

@@ -21,18 +21,9 @@ export const decisionProcesses = pgTable(
     name: varchar({ length: 256 }).notNull(),
     description: text(),
 
-    // Complete process definition as JSON Schema
+    // Complete process definition — shape defined by DecisionSchemaDefinition
+    // { id, version, name, description?, config?, proposalTemplate?, phases[] }
     processSchema: jsonb('process_schema').notNull(),
-    /* processSchema contains:
-      {
-        "budget": number,
-        "fields": { ...JSONSchema },
-        "states": [ ...state definitions ],
-        "transitions": [ ...transition rules ],
-        "votingDefinition": { ...JSONSchema },
-        "proposalTemplate": { ...JSONSchema }
-      }
-    */
 
     createdByProfileId: uuid('created_by_profile_id')
       .notNull()
