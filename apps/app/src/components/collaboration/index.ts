@@ -1,6 +1,7 @@
 export {
   CollaborativeDocProvider,
   useCollaborativeDoc,
+  useOptionalCollaborativeDoc,
 } from './CollaborativeDocContext';
 export {
   CollaborativeEditor,

@@ -29,6 +29,7 @@ import {
   CollaborativeDocProvider,
   CollaborativePresence,
   useCollaborativeDoc,
+  useOptionalCollaborativeDoc,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
@@ -121,22 +122,32 @@ export function ProposalEditor({
     throw new Error('Proposal template not found on instance');
   }
 
+  const existingCollab = useOptionalCollaborativeDoc();
+
+  const inner = (
+    <ProposalEditorInner
+      instance={instance}
+      backHref={backHref}
+      proposal={proposal}
+      isEditMode={isEditMode}
+      asideHeaderIcons={asideHeaderIcons}
+      showHeaderActions={showHeaderActions}
+      collaborationDocId={collaborationDocId}
+      proposalTemplate={proposalTemplate}
+    />
+  );
+
+  if (existingCollab) {
+    return inner;
+  }
+
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
-      <ProposalEditorInner
-        instance={instance}
-        backHref={backHref}
-        proposal={proposal}
-        isEditMode={isEditMode}
-        asideHeaderIcons={asideHeaderIcons}
-        showHeaderActions={showHeaderActions}
-        collaborationDocId={collaborationDocId}
-        proposalTemplate={proposalTemplate}
-      />
+      {inner}
     </CollaborativeDocProvider>
   );
 }

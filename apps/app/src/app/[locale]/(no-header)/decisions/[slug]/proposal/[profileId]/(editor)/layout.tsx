@@ -1,16 +1,21 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { parseProposalData } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryState } from 'nuqs';
+import { useMemo } from 'react';
 import { LuHistory } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { CollaborativeDocProvider } from '@/components/collaboration';
+import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import {
@@ -62,35 +67,54 @@ export default function ProposalEditorLayout({
     notFound();
   }
 
+  const { user } = useUser();
+
   const { asideHeaderIcons, asideSlot } = useProposalEditorAside({
     aside,
     setAside,
-    proposalId: proposal.id,
     isVersionHistoryEnabled: Boolean(isVersionHistoryEnabled),
     versionHistoryLabel: t('Version history'),
   });
 
+  const collaborationDocId = useMemo(() => {
+    const { collaborationDocId: existingId } = parseProposalData(
+      proposal.proposalData,
+    );
+
+    return (
+      existingId ??
+      `proposal-${instance.id}-${proposal.id ?? crypto.randomUUID()}`
+    );
+  }, [proposal.proposalData, proposal.id, instance.id]);
+
+  const userName = user.profile?.name ?? t('Anonymous');
+
   return (
-    <div className="flex h-screen bg-white">
-      <ProposalEditor
-        instance={instance}
-        backHref={`/decisions/${slug}`}
-        proposal={proposal}
-        isEditMode
-        asideHeaderIcons={
-          asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
-        }
-        showHeaderActions={isMobile || !asideSlot}
-      />
-      {asideSlot}
-    </div>
+    <CollaborativeDocProvider
+      docId={collaborationDocId}
+      userName={userName}
+      fallback={<ProposalEditorSkeleton />}
+    >
+      <div className="flex h-screen bg-white">
+        <ProposalEditor
+          instance={instance}
+          backHref={`/decisions/${slug}`}
+          proposal={proposal}
+          isEditMode
+          asideHeaderIcons={
+            asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
+          }
+          showHeaderActions={isMobile || !asideSlot}
+        />
+        {asideSlot}
+      </div>
+    </CollaborativeDocProvider>
   );
 }
 
 function useProposalEditorAside({
   aside,
   setAside,
-  proposalId,
   isVersionHistoryEnabled,
   versionHistoryLabel,
 }: {
@@ -99,7 +123,6 @@ function useProposalEditorAside({
     value: ProposalEditorAside | null,
     options?: { history?: 'push' | 'replace'; scroll?: boolean },
   ) => Promise<URLSearchParams>;
-  proposalId: string;
   isVersionHistoryEnabled: boolean;
   versionHistoryLabel: string;
 }) {
@@ -116,10 +139,7 @@ function useProposalEditorAside({
       label: versionHistoryLabel,
       isEnabled: isVersionHistoryEnabled,
       renderPanel: () => (
-        <ProposalVersionsAside
-          proposalId={proposalId}
-          onClose={() => setActiveAside(null)}
-        />
+        <ProposalVersionsAside onClose={() => setActiveAside(null)} />
       ),
     },
   } satisfies Record<
