@@ -1,6 +1,7 @@
 'use client';
 
 import { getPreviewContentFromVersionPayload } from '@tiptap-pro/extension-snapshot';
+import type { THistoryVersion } from '@tiptap-pro/provider';
 import type { JSONContent } from '@tiptap/react';
 import {
   type ReactNode,
@@ -15,6 +16,7 @@ import { useCollaborativeDoc } from '../../collaboration';
 
 interface VersionPreviewState {
   versionId: number | null;
+  version: THistoryVersion | null;
   fragmentContents: Record<string, JSONContent | null>;
 }
 
@@ -38,6 +40,15 @@ export function VersionPreviewProvider({
   const [fragmentContents, setFragmentContents] = useState<
     Record<string, JSONContent | null>
   >({});
+
+  const version = useMemo(
+    () =>
+      versionId === null
+        ? null
+        : (provider.getVersions().find((item) => item.version === versionId) ??
+          null),
+    [provider, versionId],
+  );
 
   useEffect(() => {
     if (versionId === null) {
@@ -89,8 +100,8 @@ export function VersionPreviewProvider({
   }, [fragmentNames, provider, versionId]);
 
   const value = useMemo(
-    () => ({ versionId, fragmentContents }),
-    [fragmentContents, versionId],
+    () => ({ versionId, version, fragmentContents }),
+    [fragmentContents, version, versionId],
   );
 
   return (

@@ -25,6 +25,8 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
+  /** Optional right-aligned status pill shown while viewing history */
+  statusSlot?: ReactNode;
   /** Whether action controls should be rendered in the header */
   showHeaderActions?: boolean;
   /** When true, hide editing actions while showing a historical version. */
@@ -48,6 +50,7 @@ export function ProposalEditorLayout({
   isDraft = false,
   presenceSlot,
   asideHeaderIcons,
+  statusSlot,
   showHeaderActions = true,
   readOnlyMode = false,
   proposalProfileId,
@@ -77,6 +80,7 @@ export function ProposalEditorLayout({
         </div>
 
         <div className="flex items-center justify-end gap-4">
+          {statusSlot}
           {showHeaderActions && (
             <>
               {!readOnlyMode && presenceSlot}
