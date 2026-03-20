@@ -2,6 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
+import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -12,12 +13,6 @@ import { ProposalEditorAside } from '../../ProposalEditorAside';
 
 /** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-
-interface ProviderVersion {
-  version: number;
-  date: number;
-  name?: string;
-}
 
 interface ProposalVersionsAsideProps {
   onClose: () => void;
@@ -37,7 +32,7 @@ export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
     [provider],
   );
 
-  const [versions, setVersions] = useState<ProviderVersion[]>(readVersions);
+  const [versions, setVersions] = useState<THistoryVersion[]>(readVersions);
 
   useEffect(() => {
     const onUpdate = () => setVersions(readVersions());
