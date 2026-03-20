@@ -140,8 +140,6 @@ const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   );
 };
 
-type ProposalPermissions = DecisionAccess;
-
 interface ProposalsProps {
   proposals?: Proposal[];
   instanceId: string;
@@ -149,7 +147,7 @@ interface ProposalsProps {
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
   isLoading: boolean;
-  permissions?: ProposalPermissions | null;
+  permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
 }
@@ -486,7 +484,7 @@ export const ProposalsList = ({
   /** Decision profile ID for translating the decision content */
   decisionProfileId?: string | null;
   /** Role-based capabilities for the current user. */
-  permissions?: ProposalPermissions | null;
+  permissions?: DecisionAccess | null;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
