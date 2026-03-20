@@ -3,7 +3,8 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import { getProposalFragmentNames, parseProposalData } from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
@@ -17,6 +18,7 @@ import { useTranslations } from '@/lib/i18n';
 import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import {
   type ProposalEditorAside,
@@ -69,23 +71,32 @@ export default function ProposalEditorLayout({
 
   const { user } = useUser();
 
+  const proposalTemplate = instance.instanceData
+    ?.proposalTemplate as ProposalTemplateSchema | null;
+
+  const fragmentNames = useMemo(
+    () => (proposalTemplate ? getProposalFragmentNames(proposalTemplate) : []),
+    [proposalTemplate],
+  );
+
   const { asideHeaderIcons, asideSlot } = useProposalEditorAside({
     aside,
     setAside,
     isVersionHistoryEnabled: Boolean(isVersionHistoryEnabled),
     versionHistoryLabel: t('Version history'),
+    fragmentNames,
   });
 
+  // Derive the collaboration doc ID so we can share the provider with the aside
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
-      proposal.proposalData,
+      proposal?.proposalData,
     );
-
     return (
       existingId ??
-      `proposal-${instance.id}-${proposal.id ?? crypto.randomUUID()}`
+      `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`
     );
-  }, [proposal.proposalData, proposal.id, instance.id]);
+  }, [proposal?.proposalData, proposal?.id, instance.id]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 
@@ -95,19 +106,21 @@ export default function ProposalEditorLayout({
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
-      <div className="flex h-screen bg-white">
-        <ProposalEditor
-          instance={instance}
-          backHref={`/decisions/${slug}`}
-          proposal={proposal}
-          isEditMode
-          asideHeaderIcons={
-            asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
-          }
-          showHeaderActions={isMobile || !asideSlot}
-        />
-        {asideSlot}
-      </div>
+      <VersionPreviewProvider fragmentNames={fragmentNames}>
+        <div className="flex h-screen bg-white">
+          <ProposalEditor
+            instance={instance}
+            backHref={`/decisions/${slug}`}
+            proposal={proposal}
+            isEditMode
+            asideHeaderIcons={
+              asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
+            }
+            showHeaderActions={isMobile || !asideSlot}
+          />
+          {asideSlot}
+        </div>
+      </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
 }
@@ -117,6 +130,7 @@ function useProposalEditorAside({
   setAside,
   isVersionHistoryEnabled,
   versionHistoryLabel,
+  fragmentNames,
 }: {
   aside: ProposalEditorAside | null;
   setAside: (
@@ -125,6 +139,7 @@ function useProposalEditorAside({
   ) => Promise<URLSearchParams>;
   isVersionHistoryEnabled: boolean;
   versionHistoryLabel: string;
+  fragmentNames: string[];
 }) {
   const setActiveAside = (nextAside: ProposalEditorAside | null) => {
     void setAside(nextAside, {
@@ -139,7 +154,10 @@ function useProposalEditorAside({
       label: versionHistoryLabel,
       isEnabled: isVersionHistoryEnabled,
       renderPanel: () => (
-        <ProposalVersionsAside onClose={() => setActiveAside(null)} />
+        <ProposalVersionsAside
+          onClose={() => setActiveAside(null)}
+          fragmentNames={fragmentNames}
+        />
       ),
     },
   } satisfies Record<

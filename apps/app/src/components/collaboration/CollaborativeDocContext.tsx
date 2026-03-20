@@ -87,6 +87,10 @@ export function useCollaborativeDoc(): CollaborativeDocContextValue {
   return ctx;
 }
 
+/**
+ * Returns the collaborative doc context if available, or `null` if outside a provider.
+ * Use this when a component can optionally participate in collaboration.
+ */
 export function useOptionalCollaborativeDoc(): CollaborativeDocContextValue | null {
   return useContext(CollaborativeDocContext);
 }
