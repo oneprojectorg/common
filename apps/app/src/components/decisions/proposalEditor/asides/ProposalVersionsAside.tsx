@@ -2,6 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
+import { Button } from '@op/ui/Button';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -16,7 +17,7 @@ const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
   versionId: number | null;
-  onSelectVersion: (versionId: number) => void;
+  onSelectVersion: (versionId: number | null) => void;
   onClose: () => void;
 }
 
@@ -52,10 +53,18 @@ export function ProposalVersionsAside({
       onClose={onClose}
       bodyClassName="pt-4"
     >
-      <div className="mx-4 rounded bg-primary-tealWhite p-2">
+      <Button
+        unstyled
+        onPress={() => onSelectVersion(null)}
+        className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none ${
+          versionId === null
+            ? 'bg-primary-tealWhite'
+            : 'hover:bg-neutral-offWhite'
+        }`}
+      >
         <p className="text-base text-neutral-black">{t('Current version')}</p>
         <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
-      </div>
+      </Button>
 
       <div>
         {versions.map((version) => {
@@ -100,15 +109,15 @@ function VersionItem({
     : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`mx-4 w-[calc(100%-2rem)] rounded p-2 text-left ${
+    <Button
+      unstyled
+      onPress={onSelect}
+      className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none ${
         isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite'
       }`}
     >
       <p className="text-base text-neutral-black">{label}</p>
       <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
-    </button>
+    </Button>
   );
 }

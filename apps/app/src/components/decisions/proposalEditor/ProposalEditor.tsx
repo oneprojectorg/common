@@ -361,7 +361,7 @@ function ProposalEditorInner({
         className="sticky top-0 z-10 bg-white"
         onMouseDown={(e) => e.preventDefault()}
       >
-        {!isPreviewMode && <RichTextEditorToolbar editor={focusedEditor} />}
+        <RichTextEditorToolbar editor={focusedEditor} />
       </div>
       <div className="flex flex-1 flex-col gap-12 py-12">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
