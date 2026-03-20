@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
+  type DecisionAccess,
   ProposalFilter,
   ProposalStatus,
   type proposalEncoder,
@@ -139,6 +140,8 @@ const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   );
 };
 
+type ProposalPermissions = DecisionAccess;
+
 interface ProposalsProps {
   proposals?: Proposal[];
   instanceId: string;
@@ -146,8 +149,7 @@ interface ProposalsProps {
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
   isLoading: boolean;
-  canManageProposals?: boolean;
-  canVote?: boolean;
+  permissions?: ProposalPermissions | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
 }
@@ -156,11 +158,12 @@ const VotingProposalsList = ({
   proposals,
   instanceId,
   slug,
-  canManageProposals = false,
-  canVote = false,
+  permissions,
   votedProposalIds = [],
   hasFilter,
 }: ProposalsProps) => {
+  const canVote = permissions?.vote ?? false;
+  const canManageProposals = permissions?.admin ?? false;
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const t = useTranslations();
@@ -371,9 +374,10 @@ const ViewProposalsList = ({
   instanceId,
   slug,
   decisionSlug,
-  canManageProposals = false,
+  permissions,
   hasFilter,
 }: ProposalsProps) => {
+  const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
     return <NoProposalsFound hasFilter={hasFilter} />;
   }
@@ -473,8 +477,7 @@ export const ProposalsList = ({
   instanceId,
   decisionSlug,
   decisionProfileId,
-  canVote = false,
-  canManageProposals: canManageProposalsOverride,
+  permissions,
 }: {
   slug: string;
   instanceId: string;
@@ -482,10 +485,8 @@ export const ProposalsList = ({
   decisionSlug?: string;
   /** Decision profile ID for translating the decision content */
   decisionProfileId?: string | null;
-  /** Whether the current user has permission to vote */
-  canVote?: boolean;
-  /** Whether the current user can manage/export proposals (requires admin decision role). */
-  canManageProposals?: boolean;
+  /** Role-based capabilities for the current user. */
+  permissions?: ProposalPermissions | null;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -575,7 +576,7 @@ export const ProposalsList = ({
     trpc.decision.listProposals.useQuery(queryParams);
 
   const { proposals: allProposals } = proposalsData ?? {};
-  const canManageProposals = canManageProposalsOverride ?? false;
+  const canManageProposals = permissions?.admin ?? false;
 
   // --- Translation state ---
   const locale = useLocale();
@@ -846,8 +847,7 @@ export const ProposalsList = ({
           instanceId={instanceId}
           slug={slug}
           decisionSlug={decisionSlug}
-          canManageProposals={canManageProposals}
-          canVote={canVote}
+          permissions={permissions}
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
         />

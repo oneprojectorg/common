@@ -46,7 +46,6 @@ export function StandardDecisionPage({
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
-  const canManageProposals = instance.access?.admin ?? false;
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
@@ -88,7 +87,7 @@ export function StandardDecisionPage({
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
                 decisionProfileId={decisionProfileId}
-                canManageProposals={canManageProposals}
+                permissions={instance.access}
               />
             </Suspense>
           </div>

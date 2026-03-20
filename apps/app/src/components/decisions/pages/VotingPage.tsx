@@ -33,9 +33,6 @@ export function VotingPage({
     t.decision.getInstance({ instanceId }),
   ]);
 
-  const canVote = instance.access?.vote ?? false;
-  const canManageProposals = instance.access?.admin ?? false;
-
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   const phases = instance.instanceData?.phases ?? [];
@@ -82,15 +79,14 @@ export function VotingPage({
                 slug={slug}
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
-                canVote={canVote}
-                canManageProposals={canManageProposals}
+                permissions={instance.access}
               />
             </Suspense>
           </div>
         </div>
       </div>
 
-      {canVote && (
+      {instance.access?.vote && (
         <Suspense fallback={null}>
           <MyBallot slug={slug} instanceId={instanceId} />
         </Suspense>
