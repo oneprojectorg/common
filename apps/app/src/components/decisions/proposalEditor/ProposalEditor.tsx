@@ -12,7 +12,14 @@ import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -78,11 +85,15 @@ export function ProposalEditor({
   backHref,
   proposal,
   isEditMode = false,
+  asideHeaderIcons,
+  showHeaderActions = true,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
+  asideHeaderIcons?: ReactNode;
+  showHeaderActions?: boolean;
 }) {
   const { user } = useUser();
   const t = useTranslations();
@@ -121,6 +132,8 @@ export function ProposalEditor({
         backHref={backHref}
         proposal={proposal}
         isEditMode={isEditMode}
+        asideHeaderIcons={asideHeaderIcons}
+        showHeaderActions={showHeaderActions}
         collaborationDocId={collaborationDocId}
         proposalTemplate={proposalTemplate}
       />
@@ -137,6 +150,8 @@ function ProposalEditorInner({
   backHref,
   proposal,
   isEditMode,
+  asideHeaderIcons,
+  showHeaderActions,
   collaborationDocId,
   proposalTemplate,
 }: {
@@ -144,6 +159,8 @@ function ProposalEditorInner({
   backHref: string;
   proposal: Proposal;
   isEditMode: boolean;
+  asideHeaderIcons?: ReactNode;
+  showHeaderActions: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
@@ -294,6 +311,8 @@ function ProposalEditorInner({
       isEditMode={isEditMode}
       isDraft={isDraft}
       presenceSlot={<CollaborativePresence />}
+      asideHeaderIcons={asideHeaderIcons}
+      showHeaderActions={showHeaderActions}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
     >
