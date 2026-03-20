@@ -69,7 +69,7 @@ export const createProposal = async ({
 
     assertAccess(
       [
-        { decisions: permission.ADMIN },
+        { profile: permission.ADMIN },
         { decisions: decisionPermission.SUBMIT_PROPOSALS },
       ],
       profileAccessUser.roles,

@@ -256,6 +256,7 @@ const decisionAccessEncoder = z.object({
   submitProposals: z.boolean(),
   vote: z.boolean(),
 });
+export type DecisionAccess = z.infer<typeof decisionAccessEncoder>;
 
 /** Process instance encoder  */
 export const processInstanceWithSchemaEncoder = createSelectSchema(

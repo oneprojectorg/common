@@ -2,6 +2,7 @@
 
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
+import { type InstancePhaseData } from '@op/api/encoders';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -9,6 +10,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
+import { MyBallot } from '../MyBallot';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
 export function VotingPage({
@@ -35,7 +37,9 @@ export function VotingPage({
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.instanceData?.currentPhaseId;
-  const currentPhase = phases.find((phase) => phase.phaseId === currentPhaseId);
+  const currentPhase = phases.find(
+    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  );
 
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
@@ -75,11 +79,20 @@ export function VotingPage({
                 slug={slug}
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
+                permissions={instance.access}
               />
             </Suspense>
           </div>
         </div>
       </div>
+
+      {instance.access?.vote && (
+        <div data-testid="my-ballot">
+          <Suspense fallback={null}>
+            <MyBallot slug={slug} instanceId={instanceId} />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 }

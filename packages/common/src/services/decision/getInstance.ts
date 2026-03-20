@@ -1,22 +1,76 @@
 import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, collapseRoles, permission } from 'access-zones';
+import type { NormalizedRole } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getOrgAccessUser,
+  getProfileAccessUser,
+} from '../access';
+import type { DecisionRolePermissions } from './permissions';
+import { fromDecisionBitField } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
-  authUserId: string;
   user: User;
 }
 
+const ALL_TRUE_ACCESS: DecisionRolePermissions = {
+  delete: true,
+  update: true,
+  read: true,
+  create: true,
+  admin: true,
+  inviteMembers: true,
+  review: true,
+  submitProposals: true,
+  vote: true,
+};
+
+const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
+  collapseRoles(roles)['decisions'] ?? 0;
+
+const resolveInstanceAccess = async (
+  user: { id: string },
+  instance: { profileId: string; ownerProfileId: string | null },
+  profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>,
+): Promise<DecisionRolePermissions> => {
+  if (profileUser) {
+    // Profile admins bypass decision-zone role checks — they have full access
+    if (checkPermission({ profile: permission.ADMIN }, profileUser.roles)) {
+      return ALL_TRUE_ACCESS;
+    }
+    return fromDecisionBitField(getRolesDecisionBits(profileUser.roles));
+  }
+
+  // Fall back to org-level roles
+  if (instance.ownerProfileId) {
+    const [org] = await db
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(eq(organizations.profileId, instance.ownerProfileId));
+
+    if (org?.id) {
+      const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
+      if (orgUser) {
+        return fromDecisionBitField(getRolesDecisionBits(orgUser.roles));
+      }
+    }
+  }
+
+  // This should be unreachable: assertInstanceProfileAccess guarantees the user
+  // has either a profile or org role before resolveInstanceAccess is called.
+  throw new UnauthorizedError("You don't have access to do this");
+};
+
 export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
       with: {
         process: true,
         owner: true,
@@ -34,12 +88,33 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance not found');
     }
 
-    await assertInstanceProfileAccess({
+    // Fetch profileUser and assert access in parallel — both need the instance
+    // but are independent of each other.
+    const [profileUser] = await Promise.all([
+      instance.profileId
+        ? getProfileAccessUser({ user, profileId: instance.profileId })
+        : Promise.resolve(undefined),
+      assertInstanceProfileAccess({
+        user,
+        instance,
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: { decisions: permission.READ },
+      }),
+    ]);
+
+    // Resolve access capabilities for the current user.
+    // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
+    if (!instance.profileId) {
+      throw new NotFoundError('Process instance not found');
+    }
+    const access = await resolveInstanceAccess(
       user,
-      instance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
-    });
+      {
+        profileId: instance.profileId,
+        ownerProfileId: instance.ownerProfileId,
+      },
+      profileUser,
+    );
 
     // Calculate proposal and participant counts
     const proposalCount = instance.proposals?.length || 0;
@@ -67,6 +142,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       instanceData: filteredInstanceData,
       proposalCount,
       participantCount,
+      access,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
