@@ -112,6 +112,7 @@ export function createInstanceDataFromTemplate(input: {
       return {
         phaseId: phase.id,
         name: phase.name,
+        headline: phase.name,
         ...(phase.description && { description: phase.description }),
         rules: phase.rules,
         ...(phase.selectionPipeline && {
@@ -127,6 +128,7 @@ export function createInstanceDataFromTemplate(input: {
         ...(override?.settings && {
           settings: override.settings,
         }),
+        ...(override?.headline && { headline: override.headline }),
       };
     }),
   };
