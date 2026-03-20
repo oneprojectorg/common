@@ -191,7 +191,7 @@ function ProposalEditorInner({
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isPreviewMode = versionPreview?.versionId !== null;
+  const isPreviewMode = versionPreview?.versionId != null;
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 

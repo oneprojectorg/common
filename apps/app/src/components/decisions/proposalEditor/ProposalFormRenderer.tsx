@@ -2,7 +2,7 @@
 
 import { normalizeBudget, parseSchemaOptions } from '@op/common/client';
 import { Button } from '@op/ui/Button';
-import { generateHTML } from '@tiptap/core';
+import { RichTextViewer } from '@op/ui/RichTextEditor';
 import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -70,20 +70,6 @@ function extractPlainText(content: JSONContent | null | undefined): string {
   return (content.content ?? []).map(extractPlainText).join('');
 }
 
-function renderPreviewHtml(
-  content: JSONContent | null | undefined,
-): string | null {
-  if (!content) {
-    return null;
-  }
-
-  try {
-    return generateHTML(content, getViewerExtensions());
-  } catch {
-    return null;
-  }
-}
-
 function formatPreviewBudget(
   content: JSONContent | null | undefined,
 ): string | null {
@@ -132,7 +118,7 @@ function renderField(
 ): React.ReactNode {
   const { key, format, schema } = field;
   const previewText = extractPlainText(previewFragmentContents[key]);
-  const previewHtml = renderPreviewHtml(previewFragmentContents[key]);
+  const previewContent = previewFragmentContents[key];
 
   // -- Title ------------------------------------------------------------------
 
@@ -211,10 +197,13 @@ function renderField(
               title={schema.title}
               description={schema.description}
             />
-            {previewHtml ? (
-              <div
-                className={`ProseMirror ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
+            {previewContent ? (
+              <RichTextViewer
+                extensions={getViewerExtensions()}
+                content={previewContent}
+                editorClassName={
+                  format === 'long-text' ? 'min-h-32' : 'min-h-8'
+                }
               />
             ) : (
               <div
@@ -305,9 +294,8 @@ function renderField(
  * Schema-driven form renderer for proposal editing.
  *
  * Takes compiled field descriptors and renders the correct component for
- * each field. In preview mode the same structure is rendered using static
- * `@op/ui` components instead of collaborative editors — no Yjs, TipTap,
- * or collaboration providers are needed.
+ * each field. In preview mode, rich text fields are rendered through a
+ * read-only TipTap viewer instead of collaborative editors.
  *
  * Layout:
  * - Title at full width
@@ -343,9 +331,7 @@ export function ProposalFormRenderer({
     );
 
   return (
-    <div
-      className={`flex flex-col ${previewMode ? 'pointer-events-none gap-4' : 'gap-8'}`}
-    >
+    <div className={`flex flex-col ${previewMode ? 'gap-4' : 'gap-8'}`}>
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
