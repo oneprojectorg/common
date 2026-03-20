@@ -13,4 +13,6 @@ export interface FieldDescriptor {
   schema: XFormatPropertySchema;
   /** Whether this is a system field (title, category, budget). Only relevant for proposals. */
   isSystem?: boolean;
+  /** Whether this field is listed in the schema's `required` array. */
+  required?: boolean;
 }

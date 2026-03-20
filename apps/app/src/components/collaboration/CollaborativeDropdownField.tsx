@@ -16,6 +16,8 @@ interface CollaborativeDropdownFieldProps {
   fragmentName: string;
   /** Placeholder text shown when no value is selected. */
   placeholder?: string;
+  /** When true, prepends a "None" option that clears the selection back to null. */
+  allowEmpty?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ export function CollaborativeDropdownField({
   onChange,
   fragmentName,
   placeholder,
+  allowEmpty = false,
 }: CollaborativeDropdownFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -60,9 +63,15 @@ export function CollaborativeDropdownField({
     return null;
   }
 
+  const EMPTY_KEY = '';
+
   const handleSelectionChange = (key: string | number) => {
     const value = String(key);
-    setSelectedValue(value);
+    if (value === EMPTY_KEY) {
+      setSelectedValue(null);
+    } else {
+      setSelectedValue(value);
+    }
   };
 
   return (
@@ -76,6 +85,11 @@ export function CollaborativeDropdownField({
       className="w-auto max-w-36 overflow-hidden sm:max-w-96"
       popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
     >
+      {allowEmpty && (
+        <SelectItem className="min-w-fit" key={EMPTY_KEY} id={EMPTY_KEY}>
+          {t('None')}
+        </SelectItem>
+      )}
       {options.map((opt) => (
         <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
           {opt.label}

@@ -122,6 +122,7 @@ function renderField(
         onChange={(value) => onFieldChange('category', value)}
         fragmentName="category"
         placeholder={t('Select category')}
+        allowEmpty={!field.required}
       />
     );
   }
