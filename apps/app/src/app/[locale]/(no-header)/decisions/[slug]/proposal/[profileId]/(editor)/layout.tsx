@@ -3,12 +3,13 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import { getProposalFragmentNames, parseProposalData } from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
-import { useQueryState } from 'nuqs';
+import { useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
 import { LuHistory } from 'react-icons/lu';
 
@@ -17,11 +18,13 @@ import { useTranslations } from '@/lib/i18n';
 import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import {
   type ProposalEditorAside,
   proposalEditorAsideParser,
   proposalEditorAsideValues,
+  proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 
 /**
@@ -40,7 +43,10 @@ export default function ProposalEditorLayout({
     profileId: string;
     slug: string;
   }>();
-  const [aside, setAside] = useQueryState('aside', proposalEditorAsideParser);
+  const [{ aside, versionId }, setQueryState] = useQueryStates({
+    aside: proposalEditorAsideParser,
+    versionId: proposalEditorVersionIdParser,
+  });
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
@@ -69,9 +75,18 @@ export default function ProposalEditorLayout({
 
   const { user } = useUser();
 
+  const proposalTemplate = instance.instanceData
+    ?.proposalTemplate as ProposalTemplateSchema | null;
+
+  const fragmentNames = useMemo(
+    () => (proposalTemplate ? getProposalFragmentNames(proposalTemplate) : []),
+    [proposalTemplate],
+  );
+
   const { asideHeaderIcons, asideSlot } = useProposalEditorAside({
     aside,
-    setAside,
+    setQueryState,
+    versionId,
     isVersionHistoryEnabled: Boolean(isVersionHistoryEnabled),
     versionHistoryLabel: t('Version history'),
   });
@@ -98,42 +113,58 @@ export default function ProposalEditorLayout({
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
-      <div className="flex h-screen bg-white">
-        <ProposalEditor
-          instance={instance}
-          backHref={`/decisions/${slug}`}
-          proposal={proposal}
-          isEditMode
-          asideHeaderIcons={
-            asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
-          }
-          showHeaderActions={isMobile || !asideSlot}
-        />
-        {asideSlot}
-      </div>
+      <VersionPreviewProvider
+        versionId={aside === 'versions' ? versionId : null}
+        fragmentNames={fragmentNames}
+      >
+        <div className="flex h-screen bg-white">
+          <ProposalEditor
+            instance={instance}
+            backHref={`/decisions/${slug}`}
+            proposal={proposal}
+            isEditMode
+            asideHeaderIcons={
+              asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
+            }
+            showHeaderActions={isMobile || !asideSlot}
+          />
+          {asideSlot}
+        </div>
+      </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
 }
 
 function useProposalEditorAside({
   aside,
-  setAside,
+  setQueryState,
+  versionId,
   isVersionHistoryEnabled,
   versionHistoryLabel,
 }: {
   aside: ProposalEditorAside | null;
-  setAside: (
-    value: ProposalEditorAside | null,
+  setQueryState: (
+    value: { aside?: ProposalEditorAside | null; versionId?: number | null },
     options?: { history?: 'push' | 'replace'; scroll?: boolean },
   ) => Promise<URLSearchParams>;
+  versionId: number | null;
   isVersionHistoryEnabled: boolean;
   versionHistoryLabel: string;
 }) {
-  const setActiveAside = (nextAside: ProposalEditorAside | null) => {
-    void setAside(nextAside, {
-      history: 'push',
-      scroll: false,
-    });
+  const setActiveAside = (
+    nextAside: ProposalEditorAside | null,
+    nextVersionId: number | null = null,
+  ) => {
+    void setQueryState(
+      {
+        aside: nextAside,
+        versionId: nextAside === 'versions' ? nextVersionId : null,
+      },
+      {
+        history: 'push',
+        scroll: false,
+      },
+    );
   };
 
   const asideDefinitions = {
@@ -142,7 +173,13 @@ function useProposalEditorAside({
       label: versionHistoryLabel,
       isEnabled: isVersionHistoryEnabled,
       renderPanel: () => (
-        <ProposalVersionsAside onClose={() => setActiveAside(null)} />
+        <ProposalVersionsAside
+          versionId={aside === 'versions' ? versionId : null}
+          onSelectVersion={(nextVersionId) =>
+            setActiveAside('versions', nextVersionId)
+          }
+          onClose={() => setActiveAside(null)}
+        />
       ),
     },
   } satisfies Record<

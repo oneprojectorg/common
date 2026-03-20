@@ -10,7 +10,7 @@ import {
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
-import type { Editor } from '@tiptap/react';
+import type { Editor, JSONContent } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
 import {
   type ReactNode,
@@ -38,6 +38,7 @@ import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
+import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
@@ -183,9 +184,11 @@ function ProposalEditorInner({
   const t = useTranslations();
   const utils = trpc.useUtils();
   const { ydoc } = useCollaborativeDoc();
+  const versionPreview = useOptionalVersionPreview();
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isPreviewMode = versionPreview?.versionId !== null;
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
@@ -210,6 +213,9 @@ function ProposalEditorInner({
   templateRef.current = proposalTemplate;
 
   const proposalFields = compileProposalSchema(proposalTemplate);
+  const previewTitle = extractPreviewTitle(
+    versionPreview?.fragmentContents.title,
+  );
 
   // -- Validation ------------------------------------------------------------
 
@@ -320,11 +326,12 @@ function ProposalEditorInner({
   return (
     <ProposalEditorLayout
       backHref={backHref}
-      title={draft.title}
+      title={isPreviewMode ? previewTitle || draft.title : draft.title}
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
       isDraft={isDraft}
+      readOnlyMode={isPreviewMode}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
       showHeaderActions={showHeaderActions}
@@ -335,7 +342,7 @@ function ProposalEditorInner({
         className="sticky top-0 z-10 bg-white"
         onMouseDown={(e) => e.preventDefault()}
       >
-        <RichTextEditorToolbar editor={focusedEditor} />
+        {!isPreviewMode && <RichTextEditorToolbar editor={focusedEditor} />}
       </div>
       <div className="flex flex-1 flex-col gap-12 py-12">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
@@ -345,6 +352,8 @@ function ProposalEditorInner({
             onFieldChange={handleFieldChange}
             onEditorFocus={onEditorFocus}
             onEditorBlur={onEditorBlur}
+            previewMode={isPreviewMode}
+            previewFragmentContents={versionPreview?.fragmentContents}
           />
 
           <div className="border-t border-neutral-gray1 pt-8">
@@ -378,4 +387,20 @@ function ProposalEditorInner({
       )}
     </ProposalEditorLayout>
   );
+}
+
+function extractPreviewTitle(content: JSONContent | null | undefined): string {
+  if (!content) {
+    return '';
+  }
+
+  if (typeof content.text === 'string') {
+    return content.text;
+  }
+
+  if (!Array.isArray(content.content)) {
+    return '';
+  }
+
+  return content.content.map((child) => extractPreviewTitle(child)).join('');
 }

@@ -1,13 +1,14 @@
 'use client';
 
-import { parseSchemaOptions } from '@op/common/client';
+import { normalizeBudget, parseSchemaOptions } from '@op/common/client';
 import { Button } from '@op/ui/Button';
-import { Select, SelectItem } from '@op/ui/Select';
-import type { Editor } from '@tiptap/react';
+import { generateHTML } from '@tiptap/core';
+import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
 
+import { getViewerExtensions } from '../../RichTextEditor';
 import {
   CollaborativeBudgetField,
   CollaborativeDropdownField,
@@ -35,6 +36,8 @@ interface ProposalFormRendererProps {
   onEditorBlur?: (editor: Editor) => void;
   /** When true, renders the form as a non-interactive static preview. */
   previewMode?: boolean;
+  /** Snapshot preview content keyed by fragment name. */
+  previewFragmentContents?: Record<string, JSONContent | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,6 +58,59 @@ function extractOptions(
   }));
 }
 
+function extractPlainText(content: JSONContent | null | undefined): string {
+  if (!content) {
+    return '';
+  }
+
+  if (content.text) {
+    return content.text;
+  }
+
+  return (content.content ?? []).map(extractPlainText).join('');
+}
+
+function renderPreviewHtml(
+  content: JSONContent | null | undefined,
+): string | null {
+  if (!content) {
+    return null;
+  }
+
+  try {
+    return generateHTML(content, getViewerExtensions());
+  } catch {
+    return null;
+  }
+}
+
+function formatPreviewBudget(
+  content: JSONContent | null | undefined,
+): string | null {
+  const text = extractPlainText(content);
+
+  if (!text) {
+    return null;
+  }
+
+  try {
+    const budget = normalizeBudget(JSON.parse(text));
+
+    if (!budget) {
+      return text;
+    }
+
+    return budget.amount.toLocaleString(undefined, {
+      style: 'currency',
+      currency: budget.currency,
+      currencyDisplay: 'narrowSymbol',
+      maximumFractionDigits: 0,
+    });
+  } catch {
+    return text;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Field renderer
 // ---------------------------------------------------------------------------
@@ -70,18 +126,21 @@ function renderField(
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
   preview: boolean,
+  previewFragmentContents: Record<string, JSONContent | null>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
   const { key, format, schema } = field;
+  const previewText = extractPlainText(previewFragmentContents[key]);
+  const previewHtml = renderPreviewHtml(previewFragmentContents[key]);
 
   // -- Title ------------------------------------------------------------------
 
   if (key === 'title') {
     if (preview) {
       return (
-        <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-gray3">
-          {t('Proposal Title')}
+        <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal">
+          {previewText || t('Untitled Proposal')}
         </div>
       );
     }
@@ -99,20 +158,12 @@ function renderField(
     const options = extractOptions(schema);
 
     if (preview) {
+      const selectedOption = options.find((opt) => opt.value === previewText);
+
       return (
-        <Select
-          variant="pill"
-          size="medium"
-          placeholder={t('Select category')}
-          selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-          className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-        >
-          {options.map((opt) => (
-            <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </Select>
+        <Button variant="pill" color="pill">
+          {selectedOption?.label ?? t('Select category')}
+        </Button>
       );
     }
     return (
@@ -132,7 +183,7 @@ function renderField(
     if (preview) {
       return (
         <Button variant="pill" color="pill">
-          {t('Add budget')}
+          {formatPreviewBudget(previewFragmentContents[key]) ?? t('Add budget')}
         </Button>
       );
     }
@@ -160,11 +211,18 @@ function renderField(
               title={schema.title}
               description={schema.description}
             />
-            <div
-              className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
-            >
-              {placeholder}
-            </div>
+            {previewHtml ? (
+              <div
+                className={`ProseMirror ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
+              />
+            ) : (
+              <div
+                className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
+              >
+                {placeholder}
+              </div>
+            )}
           </div>
         );
       }
@@ -186,7 +244,8 @@ function renderField(
       if (preview) {
         return (
           <Button variant="pill" color="pill">
-            {t('Add budget')}
+            {formatPreviewBudget(previewFragmentContents[key]) ??
+              t('Add budget')}
           </Button>
         );
       }
@@ -204,29 +263,17 @@ function renderField(
       const options = extractOptions(schema);
 
       if (preview) {
+        const selectedOption = options.find((opt) => opt.value === previewText);
+
         return (
           <div className="flex flex-col gap-2">
             <FieldHeader
               title={schema.title}
               description={schema.description}
             />
-            <Select
-              variant="pill"
-              size="medium"
-              placeholder={t('Select option')}
-              selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-              className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-            >
-              {options.map((opt) => (
-                <SelectItem
-                  className="min-w-fit"
-                  key={opt.value}
-                  id={opt.value}
-                >
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </Select>
+            <Button variant="pill" color="pill">
+              {selectedOption?.label ?? t('Select option')}
+            </Button>
           </div>
         );
       }
@@ -274,6 +321,7 @@ export function ProposalFormRenderer({
   onEditorFocus,
   onEditorBlur,
   previewMode = false,
+  previewFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
 
@@ -289,6 +337,7 @@ export function ProposalFormRenderer({
       onFieldChange,
       t,
       previewMode,
+      previewFragmentContents,
       onEditorFocus,
       onEditorBlur,
     );
