@@ -110,7 +110,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
         {canDelete && (
           <div className="flex items-center pt-4 pr-2 sm:pt-0 sm:pl-12">
-            <OptionMenu variant="outline" className="rounded-md">
+            <OptionMenu
+              variant="outline"
+              className="rounded bg-white shadow-light"
+              size="medium"
+            >
               <Menu className="min-w-28 p-2">
                 <MenuItem key="settings" href={`/decisions/${item.slug}/edit`}>
                   {t('Settings')}
