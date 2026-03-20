@@ -381,6 +381,8 @@ const EditableCell = ({
   };
 
   const close = () => setIsEditing(false);
+  const cellHeight = cellRef.current?.offsetHeight ?? 0;
+  const cellWidth = cellRef.current?.offsetWidth ?? 0;
 
   return (
     <TableCell ref={cellRef} className={className} {...cellProps}>
@@ -392,10 +394,10 @@ const EditableCell = ({
           isNonModal
           shouldCloseOnInteractOutside={() => false}
           placement={placement}
-          offset={-(cellRef.current?.offsetHeight ?? 0)}
+          offset={-cellHeight}
           containerPadding={0}
           className={twMerge('!z-0 border-b bg-white', popoverClassName)}
-          style={{ height: cellRef.current?.offsetHeight }}
+          style={{ height: cellHeight, width: cellWidth }}
         >
           {renderEditing(close)}
         </Popover>
