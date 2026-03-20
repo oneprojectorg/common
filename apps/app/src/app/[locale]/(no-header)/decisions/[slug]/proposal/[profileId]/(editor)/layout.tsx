@@ -81,11 +81,14 @@ export default function ProposalEditorLayout({
       proposal.proposalData,
     );
 
-    return (
-      existingId ??
-      `proposal-${instance.id}-${proposal.id ?? crypto.randomUUID()}`
+    if (existingId) {
+      return existingId;
+    }
+
+    throw new Error(
+      'Legacy proposals without collaboration documents cannot be edited',
     );
-  }, [proposal.proposalData, proposal.id, instance.id]);
+  }, [proposal.proposalData]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 

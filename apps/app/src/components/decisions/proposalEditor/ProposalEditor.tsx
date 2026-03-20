@@ -105,11 +105,15 @@ export function ProposalEditor({
     const { collaborationDocId: existingId } = parseProposalData(
       proposal?.proposalData,
     );
+
     if (existingId) {
       return existingId;
     }
-    return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
-  }, [proposal?.proposalData, proposal?.id, instance.id]);
+
+    throw new Error(
+      'Legacy proposals without collaboration documents cannot be edited',
+    );
+  }, [proposal?.proposalData]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 
