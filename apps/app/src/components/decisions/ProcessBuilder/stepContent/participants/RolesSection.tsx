@@ -254,6 +254,69 @@ function RoleRow({
   );
 }
 
+function AddRoleDialog({
+  isOpen,
+  onClose,
+  profileId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  profileId: string;
+}) {
+  const t = useTranslations();
+  const [roleName, setRoleName] = useState('');
+  const { save, isPending } = useRoleMutation({
+    profileId,
+    onComplete: () => {
+      setRoleName('');
+      onClose();
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!roleName.trim() || isPending) {
+      return;
+    }
+    save(roleName.trim());
+  };
+
+  return (
+    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Modal
+        isDismissable
+        isOpen={isOpen}
+        onOpenChange={(open) => !open && onClose()}
+      >
+        <ModalHeader>{t('Add role')}</ModalHeader>
+        <ModalBody>
+          <TextField
+            label={t('Role name')}
+            value={roleName}
+            onChange={setRoleName}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSubmit();
+              }
+            }}
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onPress={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            onPress={handleSubmit}
+            isDisabled={!roleName.trim() || isPending}
+          >
+            {t('Save')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </DialogTrigger>
+  );
+}
+
 function RolesSectionContent({
   decisionProfileId,
   decisionName,
@@ -683,6 +746,11 @@ function RolesTable({
               />
             ),
           )}
+          <AddRoleDialog
+            isOpen={isAdding}
+            onClose={onAddComplete}
+            profileId={decisionProfileId}
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-4">
