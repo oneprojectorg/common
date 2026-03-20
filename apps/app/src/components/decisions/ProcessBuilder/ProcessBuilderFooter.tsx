@@ -98,11 +98,12 @@ export const ProcessBuilderFooter = ({
     <>
       <footer className="sticky bottom-0 z-20 shrink-0 border-t bg-white/80 px-8 py-2 backdrop-blur">
         {/* Mobile: full-width progress bar overlaying top edge */}
-        <ProgressIndicator
-          percentage={validation.completionPercentage}
-          variant="strip"
-        />
-
+        {isDraft && (
+          <ProgressIndicator
+            percentage={validation.completionPercentage}
+            variant="strip"
+          />
+        )}
         <div className="flex h-full items-center justify-between md:px-0">
           {/* Left: Exit + Back — matches sidebar width */}
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
@@ -125,13 +126,14 @@ export const ProcessBuilderFooter = ({
           </div>
 
           {/* Center + Right: content-width area after sidebar */}
-          <div className="hidden md:flex md:flex-1 md:items-center">
+          <div className="hidden justify-end md:flex md:flex-1 md:items-center">
             {/* Progress bar constrained to content width, centered like page content */}
-            <ProgressIndicator
-              percentage={validation.completionPercentage}
-              variant="bar"
-            />
-
+            {isDraft && (
+              <ProgressIndicator
+                percentage={validation.completionPercentage}
+                variant="bar"
+              />
+            )}
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
               {hasNext && (
