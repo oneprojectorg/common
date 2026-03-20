@@ -9,14 +9,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
 // E2E environment — all values are deterministic local-only keys from `supabase start`.
-// SUPABASE_SERVICE_ROLE comes from the `dev:e2e` script (cross-env) to avoid
-// GitHub push protection flagging the Supabase CLI key in tracked files.
+// These override anything loaded from .env.local so that E2E always targets the
+// isolated local Supabase instance (ports 56xxx).
 Object.assign(process.env, {
   NODE_ENV: 'test',
   E2E: 'true',
   NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:56321',
   NEXT_PUBLIC_SUPABASE_ANON_KEY:
     'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
+  SUPABASE_SERVICE_ROLE: 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz',
   DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:56322/postgres',
   S3_ASSET_ROOT: 'http://127.0.0.1:56321/storage/v1/object/public/assets',
   // Dummy values — the e2e mock (@op/collab/e2e) ignores these, but
