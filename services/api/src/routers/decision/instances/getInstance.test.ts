@@ -75,7 +75,7 @@ describe.concurrent('getInstance', () => {
     expect(result.access?.vote).toBe(true);
   });
 
-  it('should throw NotFoundError for a non-existent instance', async ({
+  it('should return NOT_FOUND for a non-existent instance', async ({
     task,
     onTestFinished,
   }) => {
@@ -91,7 +91,7 @@ describe.concurrent('getInstance', () => {
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 
-  it('should throw UnauthorizedError for a user with no access to the instance', async ({
+  it('should return UNAUTHORIZED for a user with no access to the instance', async ({
     task,
     onTestFinished,
   }) => {

@@ -87,9 +87,11 @@ export function VotingPage({
       </div>
 
       {instance.access?.vote && (
-        <Suspense fallback={null}>
-          <MyBallot slug={slug} instanceId={instanceId} />
-        </Suspense>
+        <div data-testid="my-ballot">
+          <Suspense fallback={null}>
+            <MyBallot slug={slug} instanceId={instanceId} />
+          </Suspense>
+        </div>
       )}
     </div>
   );
