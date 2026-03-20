@@ -92,7 +92,12 @@ function useRoleMutation({
     },
   });
 
+  const isPending = role ? updateRole.isPending : createRole.isPending;
+
   const save = (name: string) => {
+    if (isPending) {
+      return;
+    }
     if (role) {
       updateRole.mutate({ roleId: role.id, name });
     } else {
@@ -111,10 +116,7 @@ function useRoleMutation({
     }
   };
 
-  return {
-    save,
-    isPending: role ? updateRole.isPending : createRole.isPending,
-  };
+  return { save, isPending };
 }
 
 function RoleNameForm({
@@ -131,7 +133,7 @@ function RoleNameForm({
   const t = useTranslations();
 
   return (
-    <div className="flex h-full items-center py-1.5">
+    <div className="flex h-full w-full items-center py-1.5">
       <TextField
         inputProps={{ placeholder: t('Role name…') }}
         value={roleName}
@@ -146,7 +148,7 @@ function RoleNameForm({
           }
         }}
         fieldClassName="h-7"
-        className="w-32"
+        className="w-full"
       />
     </div>
   );
@@ -172,10 +174,10 @@ function RoleRow({
   });
 
   const handleSave = () => {
-    if (!roleName.trim() || isPending) {
-      return;
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
     }
-    save(roleName.trim());
   };
 
   const handleCancel = () => {
@@ -274,10 +276,10 @@ function AddRoleDialog({
   });
 
   const handleSubmit = () => {
-    if (!roleName.trim() || isPending) {
-      return;
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
     }
-    save(roleName.trim());
   };
 
   return (
@@ -357,13 +359,7 @@ function RolesSectionContent({
   );
 }
 
-function DecisionRoleCheckboxes({
-  roleId,
-  profileId,
-}: {
-  roleId: string;
-  profileId: string;
-}) {
+function usePermissionToggle(roleId: string, profileId: string) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [, startTransition] = useTransition();
@@ -398,6 +394,21 @@ function DecisionRoleCheckboxes({
       }
     });
   };
+
+  return { optimisticPermissions, togglePermission };
+}
+
+function DecisionRoleCheckboxes({
+  roleId,
+  profileId,
+}: {
+  roleId: string;
+  profileId: string;
+}) {
+  const { optimisticPermissions, togglePermission } = usePermissionToggle(
+    roleId,
+    profileId,
+  );
 
   return PERMISSION_COLUMNS.map(({ key, label }) => (
     <TableCell key={key} className="text-center">
@@ -421,39 +432,10 @@ function MobileDecisionRoles({
   profileId: string;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
-  const [, startTransition] = useTransition();
-
-  const { data: permissions } = trpc.profile.getDecisionRole.useQuery({
+  const { optimisticPermissions, togglePermission } = usePermissionToggle(
     roleId,
     profileId,
-  });
-
-  const [optimisticPermissions, setOptimisticPermissions] =
-    useOptimistic(permissions);
-
-  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
-
-  const togglePermission = (key: DecisionRoleKey) => {
-    if (!permissions) {
-      return;
-    }
-    const newPermissions = { ...permissions, [key]: !permissions[key] };
-    startTransition(async () => {
-      setOptimisticPermissions(newPermissions);
-      try {
-        await updatePermissions.mutateAsync({
-          roleId,
-          decisionPermissions: newPermissions,
-        });
-        toast.success({ message: t('Role updated successfully') });
-      } catch {
-        toast.error({ message: t('Failed to update role') });
-      } finally {
-        await utils.profile.getDecisionRole.invalidate({ roleId, profileId });
-      }
-    });
-  };
+  );
 
   return (
     <div className="flex flex-col gap-2">
@@ -526,13 +508,13 @@ function MobileRoleFormCard({
   onComplete,
   onDelete,
 }: {
-  role?: Role;
+  role: Role;
   profileId: string;
   onComplete: () => void;
   onDelete?: (role: Role) => void;
 }) {
   const t = useTranslations();
-  const [roleName, setRoleName] = useState(role?.name ?? '');
+  const [roleName, setRoleName] = useState(role.name);
   const { save, isPending } = useRoleMutation({
     role,
     profileId,
@@ -540,10 +522,10 @@ function MobileRoleFormCard({
   });
 
   const handleSave = () => {
-    if (!roleName.trim() || isPending) {
-      return;
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
     }
-    save(roleName.trim());
   };
 
   return (
@@ -574,7 +556,7 @@ function MobileRoleFormCard({
         >
           <LuCheck className="size-4" />
         </IconButton>
-        {role && onDelete && (
+        {onDelete && (
           <IconButton
             variant="ghost"
             size="medium"
@@ -587,23 +569,7 @@ function MobileRoleFormCard({
         )}
       </div>
 
-      {role ? (
-        <MobileDecisionRoles roleId={role.id} profileId={profileId} />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {PERMISSION_COLUMNS.map(({ key, label }) => (
-            <Checkbox
-              key={key}
-              size="small"
-              isSelected={false}
-              isDisabled
-              aria-label={`${label} permission`}
-            >
-              {t(label)}
-            </Checkbox>
-          ))}
-        </div>
-      )}
+      <MobileDecisionRoles roleId={role.id} profileId={profileId} />
     </div>
   );
 }
@@ -624,10 +590,10 @@ function AddRoleRow({
   });
 
   const handleSave = () => {
-    if (!roleName.trim() || isPending) {
-      return;
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
     }
-    save(roleName.trim());
   };
 
   return (
