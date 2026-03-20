@@ -8,6 +8,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
+const EMPTY_KEY = '__none__';
+
 interface CollaborativeDropdownFieldProps {
   options: Array<{ value: string; label: string }>;
   initialValue?: string | null;
@@ -62,8 +64,6 @@ export function CollaborativeDropdownField({
   if (options.length === 0) {
     return null;
   }
-
-  const EMPTY_KEY = '';
 
   const handleSelectionChange = (key: string | number) => {
     const value = String(key);

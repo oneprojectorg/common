@@ -239,6 +239,7 @@ function renderField(
             initialValue={(draft[key] as string | null) ?? null}
             onChange={(value) => onFieldChange(key, value)}
             fragmentName={key}
+            allowEmpty={!field.required}
           />
         </div>
       );
