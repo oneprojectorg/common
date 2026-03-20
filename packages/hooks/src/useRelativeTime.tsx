@@ -15,9 +15,10 @@ export function useRelativeTime(
   dateTime: Date | string,
   options?: {
     updateInterval?: number;
+    style?: 'long' | 'short' | 'narrow';
   },
 ) {
-  const { updateInterval } = options || {};
+  const { updateInterval, style = 'narrow' } = options || {};
 
   const format = useFormatter();
   const [updateTrigger, setUpdateTrigger] = useState(0);
@@ -49,8 +50,8 @@ export function useRelativeTime(
       now = date;
     }
 
-    return format.relativeTime(date, { now, style: 'narrow' });
-  }, [dateTime, updateTrigger, format]);
+    return format.relativeTime(date, { now, style });
+  }, [dateTime, updateTrigger, format, style]);
 }
 
 /**

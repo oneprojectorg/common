@@ -29,6 +29,7 @@ import {
   CollaborativeDocProvider,
   CollaborativePresence,
   useCollaborativeDoc,
+  useOptionalCollaborativeDoc,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
@@ -104,11 +105,15 @@ export function ProposalEditor({
     const { collaborationDocId: existingId } = parseProposalData(
       proposal?.proposalData,
     );
+
     if (existingId) {
       return existingId;
     }
-    return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
-  }, [proposal?.proposalData, proposal?.id, instance.id]);
+
+    throw new Error(
+      'Legacy proposals without collaboration documents cannot be edited',
+    );
+  }, [proposal?.proposalData]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 
@@ -121,22 +126,32 @@ export function ProposalEditor({
     throw new Error('Proposal template not found on instance');
   }
 
+  const existingCollab = useOptionalCollaborativeDoc();
+
+  const inner = (
+    <ProposalEditorInner
+      instance={instance}
+      backHref={backHref}
+      proposal={proposal}
+      isEditMode={isEditMode}
+      asideHeaderIcons={asideHeaderIcons}
+      showHeaderActions={showHeaderActions}
+      collaborationDocId={collaborationDocId}
+      proposalTemplate={proposalTemplate}
+    />
+  );
+
+  if (existingCollab) {
+    return inner;
+  }
+
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
-      <ProposalEditorInner
-        instance={instance}
-        backHref={backHref}
-        proposal={proposal}
-        isEditMode={isEditMode}
-        asideHeaderIcons={asideHeaderIcons}
-        showHeaderActions={showHeaderActions}
-        collaborationDocId={collaborationDocId}
-        proposalTemplate={proposalTemplate}
-      />
+      {inner}
     </CollaborativeDocProvider>
   );
 }
