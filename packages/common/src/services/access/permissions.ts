@@ -182,6 +182,45 @@ export async function updateRolePermissions({
 }
 
 /**
+ * Update a role's name (only profile-specific roles can be updated)
+ */
+export async function updateRole({
+  roleId,
+  name,
+  user,
+}: {
+  roleId: string;
+  name: string;
+  user: { id: string };
+}) {
+  const role = await db.query.accessRoles.findFirst({
+    where: { id: roleId },
+  });
+
+  if (!role) {
+    throw new NotFoundError('Role', roleId);
+  }
+
+  if (!role.profileId) {
+    throw new CommonError('Cannot update global roles');
+  }
+
+  await assertProfileAdmin(user, role.profileId);
+
+  const [updated] = await db
+    .update(accessRoles)
+    .set({ name })
+    .where(eq(accessRoles.id, roleId))
+    .returning();
+
+  if (!updated) {
+    throw new CommonError('Could not update role');
+  }
+
+  return { id: updated.id, name: updated.name };
+}
+
+/**
  * Delete a role (only profile-specific roles can be deleted)
  */
 export async function deleteRole({
