@@ -23,14 +23,25 @@ import {
 import type { ProposalDraftFields } from './useProposalDraft';
 
 interface ProposalFormRendererProps {
+  /** Compiled field descriptors from `compileProposalSchema`. */
   fields: FieldDescriptor[];
+  /** Current draft values for system fields. */
   draft: ProposalDraftFields;
+  /** Called when any system field value changes. */
   onFieldChange: (key: string, value: unknown) => void;
+  /** Called with the editor instance when a rich-text field gains focus. */
   onEditorFocus?: (editor: Editor) => void;
+  /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
+  /** Rendering mode for collaborative editing or template preview. */
   mode?: 'edit-collaborative' | 'preview-template';
 }
 
+/**
+ * Extract `{ value, label }` options from a JSON Schema property.
+ * Delegates to the shared `parseSchemaOptions` normalizer which handles
+ * both `oneOf` and legacy `enum` formats.
+ */
 function extractOptions(
   schema: FieldDescriptor['schema'],
 ): { value: string; label: string }[] {
@@ -40,6 +51,7 @@ function extractOptions(
   }));
 }
 
+/** Formats stored budget values for readonly preview display. */
 function formatBudgetValue(
   value: ProposalDraftFields['budget'] | null | undefined,
 ): string | null {
@@ -55,6 +67,10 @@ function formatBudgetValue(
   });
 }
 
+/**
+ * Renders a single field descriptor for collaborative editing or readonly
+ * template preview.
+ */
 function renderField(
   field: FieldDescriptor,
   draft: ProposalDraftFields,
@@ -221,7 +237,16 @@ function renderField(
 }
 
 /**
- * Schema-driven form renderer for proposal editing and template preview.
+ * Schema-driven form renderer for proposal editing.
+ *
+ * Takes compiled field descriptors and renders the correct component for
+ * each field. In template preview mode, the same structure is rendered
+ * through readonly field primitives instead of collaborative editors.
+ *
+ * Layout:
+ * - Title at full width
+ * - Category + Budget side-by-side
+ * - Dynamic template fields stacked below
  */
 export function ProposalFormRenderer({
   fields,
