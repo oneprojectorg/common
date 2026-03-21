@@ -26,6 +26,7 @@ export function compileProposalSchema(
   }
 
   const { all } = getProposalTemplateFieldOrder(proposalTemplate);
+  const requiredSet = new Set(proposalTemplate.required ?? []);
 
   return all.flatMap((key): FieldDescriptor[] => {
     const propSchema = templateProperties[key];
@@ -37,6 +38,7 @@ export function compileProposalSchema(
         key,
         format: propSchema['x-format'] ?? DEFAULT_X_FORMAT,
         isSystem: SYSTEM_FIELD_KEYS.has(key),
+        required: requiredSet.has(key),
         schema: propSchema,
       },
     ];

@@ -122,6 +122,7 @@ function renderField(
         onChange={(value) => onFieldChange('category', value)}
         fragmentName="category"
         placeholder={t('Select category')}
+        allowEmpty={!field.required}
       />
     );
   }
@@ -238,6 +239,7 @@ function renderField(
             initialValue={(draft[key] as string | null) ?? null}
             onChange={(value) => onFieldChange(key, value)}
             fragmentName={key}
+            allowEmpty={!field.required}
           />
         </div>
       );
