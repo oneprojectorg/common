@@ -8,12 +8,14 @@ import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
+import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import {
+  EditableCell,
   Table,
   TableBody,
   TableCell,
@@ -22,7 +24,7 @@ import {
   TableRow,
 } from '@op/ui/ui/table';
 import { Suspense, useOptimistic, useState, useTransition } from 'react';
-import { LuLeaf, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -56,12 +58,273 @@ export default function RolesSection({
   );
 }
 
+function useRoleMutation({
+  role,
+  profileId,
+  onComplete,
+}: {
+  role?: Role;
+  profileId: string;
+  onComplete: () => void;
+}) {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  const createRole = trpc.profile.createRole.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Role created successfully') });
+      utils.profile.listRoles.invalidate();
+      onComplete();
+    },
+    onError: () => {
+      toast.error({ message: t('Failed to create role') });
+    },
+  });
+
+  const updateRole = trpc.profile.updateRole.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Role updated successfully') });
+      utils.profile.listRoles.invalidate();
+      onComplete();
+    },
+    onError: () => {
+      toast.error({ message: t('Failed to update role') });
+    },
+  });
+
+  const isPending = role ? updateRole.isPending : createRole.isPending;
+
+  const save = (name: string) => {
+    if (isPending) {
+      return;
+    }
+    if (role) {
+      updateRole.mutate({ roleId: role.id, name });
+    } else {
+      createRole.mutate({
+        profileId,
+        zoneName: 'decisions',
+        name,
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
+      });
+    }
+  };
+
+  return { save, isPending };
+}
+
+function RoleNameForm({
+  roleName,
+  onRoleNameChange,
+  onSave,
+  onCancel,
+}: {
+  roleName: string;
+  onRoleNameChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className="flex h-full w-full items-center py-1.5">
+      <TextField
+        inputProps={{ placeholder: t('Role name…') }}
+        value={roleName}
+        onChange={onRoleNameChange}
+        autoFocus
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            onSave();
+          }
+          if (e.key === 'Escape') {
+            onCancel();
+          }
+        }}
+        fieldClassName="h-7"
+        className="w-full"
+      />
+    </div>
+  );
+}
+
+function RoleRow({
+  role,
+  profileId,
+  onDelete,
+}: {
+  role: Role;
+  profileId: string;
+  onDelete: (role: Role) => void;
+}) {
+  const t = useTranslations();
+  const [isEditing, setIsEditing] = useState(false);
+  const [roleName, setRoleName] = useState(role.name);
+
+  const { save, isPending } = useRoleMutation({
+    role,
+    profileId,
+    onComplete: () => setIsEditing(false),
+  });
+
+  const handleSave = () => {
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
+    }
+  };
+
+  const handleCancel = () => {
+    setRoleName(role.name);
+    setIsEditing(false);
+  };
+
+  return (
+    <TableRow>
+      <EditableCell
+        className="w-36 text-base"
+        isEditing={isEditing}
+        onEditChange={(editing) => {
+          if (!editing) {
+            handleCancel();
+          }
+        }}
+        renderEditing={() => (
+          <RoleNameForm
+            roleName={roleName}
+            onRoleNameChange={setRoleName}
+            onSave={handleSave}
+            onCancel={handleCancel}
+          />
+        )}
+      >
+        {role.name}
+      </EditableCell>
+      <DecisionRoleCheckboxes roleId={role.id} profileId={profileId} />
+      <TableCell className="w-22">
+        {isEditing ? (
+          <div className="flex gap-1">
+            <IconButton
+              variant="outline"
+              size="medium"
+              onPress={handleSave}
+              isDisabled={!roleName.trim() || isPending}
+              aria-label={t('Save role')}
+              className="ml-auto"
+            >
+              <LuCheck className="size-4" />
+            </IconButton>
+            <IconButton
+              variant="outline"
+              size="medium"
+              onPress={() => onDelete(role)}
+              aria-label={t('Delete')}
+            >
+              <LuTrash2 className="size-4" />
+            </IconButton>
+          </div>
+        ) : (
+          <OptionMenu
+            variant="outline"
+            className="ml-auto rounded bg-white shadow-light"
+            size="medium"
+          >
+            <Menu className="min-w-28 p-2">
+              <MenuItem key="edit" onAction={() => setIsEditing(true)}>
+                <LuPencil className="size-4" />
+                {t('Edit')}
+              </MenuItem>
+              <MenuItem
+                key="delete"
+                onAction={() => onDelete(role)}
+                className="text-functional-red"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </MenuItem>
+            </Menu>
+          </OptionMenu>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function AddRoleDialog({
+  isOpen,
+  onClose,
+  profileId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  profileId: string;
+}) {
+  const t = useTranslations();
+  const [roleName, setRoleName] = useState('');
+  const { save, isPending } = useRoleMutation({
+    profileId,
+    onComplete: () => {
+      setRoleName('');
+      onClose();
+    },
+  });
+
+  const handleSubmit = () => {
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
+    }
+  };
+
+  return (
+    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Modal
+        isDismissable
+        isOpen={isOpen}
+        onOpenChange={(open) => !open && onClose()}
+      >
+        <ModalHeader>{t('Add role')}</ModalHeader>
+        <ModalBody>
+          <TextField
+            label={t('Role name')}
+            value={roleName}
+            onChange={setRoleName}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSubmit();
+              }
+            }}
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onPress={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            onPress={handleSubmit}
+            isDisabled={!roleName.trim() || isPending}
+          >
+            {t('Save')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </DialogTrigger>
+  );
+}
+
 function RolesSectionContent({
   decisionProfileId,
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -72,7 +335,8 @@ function RolesSectionContent({
         <Button
           color="ghost"
           className="text-primary-teal hover:text-primary-tealBlack"
-          onPress={() => setIsAddDialogOpen(true)}
+          onPress={() => setIsAdding(true)}
+          isDisabled={isAdding}
         >
           <LuPlus className="size-4" />
           {t('Add role')}
@@ -87,25 +351,15 @@ function RolesSectionContent({
         <RolesTable
           decisionProfileId={decisionProfileId}
           decisionName={decisionName}
+          isAdding={isAdding}
+          onAddComplete={() => setIsAdding(false)}
         />
       </Suspense>
-
-      <AddRoleDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        profileId={decisionProfileId}
-      />
     </div>
   );
 }
 
-function DecisionRoleCheckboxes({
-  roleId,
-  profileId,
-}: {
-  roleId: string;
-  profileId: string;
-}) {
+function usePermissionToggle(roleId: string, profileId: string) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [, startTransition] = useTransition();
@@ -140,6 +394,21 @@ function DecisionRoleCheckboxes({
       }
     });
   };
+
+  return { optimisticPermissions, togglePermission };
+}
+
+function DecisionRoleCheckboxes({
+  roleId,
+  profileId,
+}: {
+  roleId: string;
+  profileId: string;
+}) {
+  const { optimisticPermissions, togglePermission } = usePermissionToggle(
+    roleId,
+    profileId,
+  );
 
   return PERMISSION_COLUMNS.map(({ key, label }) => (
     <TableCell key={key} className="text-center">
@@ -163,39 +432,10 @@ function MobileDecisionRoles({
   profileId: string;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
-  const [, startTransition] = useTransition();
-
-  const { data: permissions } = trpc.profile.getDecisionRole.useQuery({
+  const { optimisticPermissions, togglePermission } = usePermissionToggle(
     roleId,
     profileId,
-  });
-
-  const [optimisticPermissions, setOptimisticPermissions] =
-    useOptimistic(permissions);
-
-  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
-
-  const togglePermission = (key: DecisionRoleKey) => {
-    if (!permissions) {
-      return;
-    }
-    const newPermissions = { ...permissions, [key]: !permissions[key] };
-    startTransition(async () => {
-      setOptimisticPermissions(newPermissions);
-      try {
-        await updatePermissions.mutateAsync({
-          roleId,
-          decisionPermissions: newPermissions,
-        });
-        toast.success({ message: t('Role updated successfully') });
-      } catch {
-        toast.error({ message: t('Failed to update role') });
-      } finally {
-        await utils.profile.getDecisionRole.invalidate({ roleId, profileId });
-      }
-    });
-  };
+  );
 
   return (
     <div className="flex flex-col gap-2">
@@ -218,10 +458,12 @@ function MobileRoleCard({
   role,
   profileId,
   onDelete,
+  onEdit,
 }: {
   role: Role;
   profileId: string;
   onDelete?: (role: Role) => void;
+  onEdit?: (role: Role) => void;
 }) {
   const t = useTranslations();
 
@@ -231,17 +473,25 @@ function MobileRoleCard({
         <h3 className="font-serif text-sm font-light text-neutral-black">
           {role.name}
         </h3>
-        {onDelete && (
+        {(onDelete || onEdit) && (
           <OptionMenu variant="outline" className="rounded-md">
             <Menu className="min-w-28 p-2">
-              <MenuItem
-                key="delete"
-                onAction={() => onDelete(role)}
-                className="text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </MenuItem>
+              {onEdit && (
+                <MenuItem key="edit" onAction={() => onEdit(role)}>
+                  <LuPencil className="size-4" />
+                  {t('Edit')}
+                </MenuItem>
+              )}
+              {onDelete && (
+                <MenuItem
+                  key="delete"
+                  onAction={() => onDelete(role)}
+                  className="text-functional-red"
+                >
+                  <LuTrash2 className="size-4" />
+                  {t('Delete')}
+                </MenuItem>
+              )}
             </Menu>
           </OptionMenu>
         )}
@@ -252,17 +502,160 @@ function MobileRoleCard({
   );
 }
 
+function MobileRoleFormCard({
+  role,
+  profileId,
+  onComplete,
+  onDelete,
+}: {
+  role: Role;
+  profileId: string;
+  onComplete: () => void;
+  onDelete?: (role: Role) => void;
+}) {
+  const t = useTranslations();
+  const [roleName, setRoleName] = useState(role.name);
+  const { save, isPending } = useRoleMutation({
+    role,
+    profileId,
+    onComplete,
+  });
+
+  const handleSave = () => {
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <TextField
+          inputProps={{ placeholder: t('Role name…') }}
+          value={roleName}
+          onChange={setRoleName}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSave();
+            }
+            if (e.key === 'Escape') {
+              onComplete();
+            }
+          }}
+          className="flex-1"
+          aria-label="Role name"
+        />
+        <IconButton
+          variant="outline"
+          size="medium"
+          onPress={handleSave}
+          isDisabled={!roleName.trim() || isPending}
+          aria-label={t('Save role')}
+        >
+          <LuCheck className="size-4" />
+        </IconButton>
+        {onDelete && (
+          <IconButton
+            variant="ghost"
+            size="medium"
+            onPress={() => onDelete(role)}
+            aria-label={t('Delete')}
+            className="text-functional-red"
+          >
+            <LuTrash2 className="size-4" />
+          </IconButton>
+        )}
+      </div>
+
+      <MobileDecisionRoles roleId={role.id} profileId={profileId} />
+    </div>
+  );
+}
+
+function AddRoleRow({
+  profileId,
+  onComplete,
+}: {
+  profileId: string;
+  onComplete: () => void;
+}) {
+  const t = useTranslations();
+  const [roleName, setRoleName] = useState('');
+
+  const { save, isPending } = useRoleMutation({
+    profileId,
+    onComplete,
+  });
+
+  const handleSave = () => {
+    const trimmed = roleName.trim();
+    if (trimmed) {
+      save(trimmed);
+    }
+  };
+
+  return (
+    <TableRow>
+      <EditableCell
+        className="w-36 text-base"
+        isEditing
+        renderEditing={() => (
+          <RoleNameForm
+            roleName={roleName}
+            onRoleNameChange={setRoleName}
+            onSave={handleSave}
+            onCancel={onComplete}
+          />
+        )}
+      >
+        {null}
+      </EditableCell>
+      {PERMISSION_COLUMNS.map(({ key, label }) => (
+        <TableCell key={key} className="text-center">
+          <div className="flex justify-center">
+            <Checkbox
+              size="small"
+              isSelected={false}
+              isDisabled
+              aria-label={`${label} permission`}
+            />
+          </div>
+        </TableCell>
+      ))}
+      <TableCell className="w-22">
+        <IconButton
+          variant="outline"
+          size="medium"
+          onPress={handleSave}
+          isDisabled={!roleName.trim() || isPending}
+          aria-label={t('Save role')}
+          className="ml-auto"
+        >
+          <LuCheck className="size-4" />
+        </IconButton>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function RolesTable({
   decisionProfileId,
   decisionName,
+  isAdding,
+  onAddComplete,
 }: {
   decisionProfileId: string;
   decisionName: string;
+  isAdding: boolean;
+  onAddComplete: () => void;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
 
   const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({
     profileId: decisionProfileId,
@@ -280,7 +673,7 @@ function RolesTable({
     },
   });
 
-  if (roles.length === 0) {
+  if (roles.length === 0 && !isAdding) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
         <span>{t('No roles configured')}</span>
@@ -300,14 +693,30 @@ function RolesTable({
     <>
       {isMobile ? (
         <div className="flex flex-col gap-4">
-          {roles.map((role) => (
-            <MobileRoleCard
-              key={role.id}
-              role={role}
-              profileId={decisionProfileId}
-              onDelete={setRoleToDelete}
-            />
-          ))}
+          {roles.map((role) =>
+            roleToEdit?.id === role.id ? (
+              <MobileRoleFormCard
+                key={role.id}
+                role={role}
+                profileId={decisionProfileId}
+                onComplete={() => setRoleToEdit(null)}
+                onDelete={setRoleToDelete}
+              />
+            ) : (
+              <MobileRoleCard
+                key={role.id}
+                role={role}
+                profileId={decisionProfileId}
+                onDelete={setRoleToDelete}
+                onEdit={setRoleToEdit}
+              />
+            ),
+          )}
+          <AddRoleDialog
+            isOpen={isAdding}
+            onClose={onAddComplete}
+            profileId={decisionProfileId}
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -323,28 +732,19 @@ function RolesTable({
             </TableHeader>
             <TableBody>
               {roles.map((role) => (
-                <TableRow key={role.id}>
-                  <TableCell className="font-medium">{role.name}</TableCell>
-                  <DecisionRoleCheckboxes
-                    roleId={role.id}
-                    profileId={decisionProfileId}
-                  />
-                  <TableCell>
-                    <OptionMenu variant="outline" className="rounded-md">
-                      <Menu className="min-w-28 p-2">
-                        <MenuItem
-                          key="delete"
-                          onAction={() => setRoleToDelete(role)}
-                          className="text-functional-red"
-                        >
-                          <LuTrash2 className="size-4" />
-                          {t('Delete')}
-                        </MenuItem>
-                      </Menu>
-                    </OptionMenu>
-                  </TableCell>
-                </TableRow>
+                <RoleRow
+                  key={role.id}
+                  role={role}
+                  profileId={decisionProfileId}
+                  onDelete={setRoleToDelete}
+                />
               ))}
+              {isAdding && (
+                <AddRoleRow
+                  profileId={decisionProfileId}
+                  onComplete={onAddComplete}
+                />
+              )}
             </TableBody>
           </Table>
         </div>
@@ -388,84 +788,5 @@ function RolesTable({
         </Modal>
       </DialogTrigger>
     </>
-  );
-}
-
-function AddRoleDialog({
-  isOpen,
-  onClose,
-  profileId,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  profileId: string;
-}) {
-  const t = useTranslations();
-  const utils = trpc.useUtils();
-  const [roleName, setRoleName] = useState('');
-
-  const createRole = trpc.profile.createRole.useMutation({
-    onSuccess: () => {
-      toast.success({ message: t('Role created successfully') });
-      utils.profile.listRoles.invalidate();
-      setRoleName('');
-      onClose();
-    },
-    onError: () => {
-      toast.error({ message: t('Failed to create role') });
-    },
-  });
-
-  const handleSubmit = () => {
-    if (roleName.trim()) {
-      createRole.mutate({
-        profileId,
-        zoneName: 'decisions',
-        name: roleName.trim(),
-        permissions: {
-          admin: false,
-          create: false,
-          read: false,
-          update: false,
-          delete: false,
-        },
-      });
-    }
-  };
-
-  return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal
-        isDismissable
-        isOpen={isOpen}
-        onOpenChange={(open) => !open && onClose()}
-      >
-        <ModalHeader>{t('Add role')}</ModalHeader>
-        <ModalBody>
-          <TextField
-            label={t('Role name')}
-            value={roleName}
-            onChange={setRoleName}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSubmit();
-              }
-            }}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onPress={onClose}>
-            {t('Cancel')}
-          </Button>
-          <Button
-            onPress={handleSubmit}
-            isDisabled={!roleName.trim() || createRole.isPending}
-          >
-            {t('Save')}
-          </Button>
-        </ModalFooter>
-      </Modal>
-    </DialogTrigger>
   );
 }
