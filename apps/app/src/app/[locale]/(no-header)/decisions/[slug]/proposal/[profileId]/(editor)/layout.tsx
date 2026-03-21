@@ -22,11 +22,23 @@ import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/Ve
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import {
   type ProposalEditorAside,
+  type ProposalEditorAsideState,
+  getProposalEditorAsideDefaultState,
+  getProposalEditorAsideQuery,
+  getProposalEditorAsideState,
+  normalizeProposalEditorAsideQueryState,
   proposalEditorAsideParser,
   proposalEditorAsideValues,
   proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 
+/**
+ * Shared layout for the proposal editor route.
+ *
+ * Persists across query string updates so the collaborative editor,
+ * Yjs connection, and draft state are never remounted while the aside
+ * panel is opened or closed.
+ */
 export default function ProposalEditorLayout({
   children: _children,
 }: {
@@ -43,7 +55,10 @@ export default function ProposalEditorLayout({
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
-  const isVersionHistoryEnabled = useFeatureFlag('proposal_version_history');
+  const isVersionHistoryEnabled =
+    useFeatureFlag('proposal_version_history') === true;
+
+  // -- Data fetching ---------------------------------------------------------
 
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
     slug,
@@ -74,23 +89,62 @@ export default function ProposalEditorLayout({
     [proposalTemplate],
   );
 
-  const { asideHeaderIcons, asideSlot } = useProposalEditorAside({
-    aside,
-    versionId,
-    setQueryState,
-    isVersionHistoryEnabled: Boolean(isVersionHistoryEnabled),
-    versionHistoryLabel: t('Version history'),
+  const versionHistoryLabel = t('Version history');
+  const asideState = isVersionHistoryEnabled
+    ? getProposalEditorAsideState(
+        normalizeProposalEditorAsideQueryState({ aside, versionId }),
+      )
+    : { aside: null };
+
+  const setAsideState = (nextState: ProposalEditorAsideState) => {
+    void setQueryState(getProposalEditorAsideQuery(nextState), {
+      history: 'push',
+      scroll: false,
+    });
+  };
+
+  const toggleAside = (nextAside: ProposalEditorAside) => {
+    setAsideState(
+      asideState.aside === nextAside
+        ? { aside: null }
+        : getProposalEditorAsideDefaultState(nextAside),
+    );
+  };
+
+  const asideHeaderIcons = useProposalEditorAsideHeaderIcons({
+    aside: asideState.aside,
+    onToggleAside: toggleAside,
+    isVersionHistoryEnabled,
+    versionHistoryLabel,
   });
+
+  const asideSlot =
+    asideState.aside === 'versions' ? (
+      <ProposalVersionsAside
+        versionId={asideState.versionId}
+        onSelectVersion={(nextVersionId) =>
+          setAsideState({
+            aside: 'versions',
+            versionId: nextVersionId,
+          })
+        }
+        onClose={() => setAsideState({ aside: null })}
+      />
+    ) : undefined;
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
-      proposal?.proposalData,
+      proposal.proposalData,
     );
-    return (
-      existingId ??
-      `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`
+
+    if (existingId) {
+      return existingId;
+    }
+
+    throw new Error(
+      'Legacy proposals without collaboration documents cannot be edited',
     );
-  }, [proposal?.proposalData, proposal?.id, instance.id]);
+  }, [proposal.proposalData]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 
@@ -101,7 +155,9 @@ export default function ProposalEditorLayout({
       fallback={<ProposalEditorSkeleton />}
     >
       <VersionPreviewProvider
-        versionId={aside === 'versions' ? versionId : null}
+        versionId={
+          asideState.aside === 'versions' ? asideState.versionId : null
+        }
         fragmentNames={fragmentNames}
       >
         <div className="flex h-screen bg-white">
@@ -122,52 +178,22 @@ export default function ProposalEditorLayout({
   );
 }
 
-function useProposalEditorAside({
+function useProposalEditorAsideHeaderIcons({
   aside,
-  versionId,
-  setQueryState,
+  onToggleAside,
   isVersionHistoryEnabled,
   versionHistoryLabel,
 }: {
   aside: ProposalEditorAside | null;
-  versionId: number | null;
-  setQueryState: (
-    value: { aside?: ProposalEditorAside | null; versionId?: number | null },
-    options?: { history?: 'push' | 'replace'; scroll?: boolean },
-  ) => Promise<URLSearchParams>;
+  onToggleAside: (aside: ProposalEditorAside) => void;
   isVersionHistoryEnabled: boolean;
   versionHistoryLabel: string;
 }) {
-  const setActiveAside = (
-    nextAside: ProposalEditorAside | null,
-    nextVersionId: number | null = null,
-  ) => {
-    void setQueryState(
-      {
-        aside: nextAside,
-        versionId: nextAside === 'versions' ? nextVersionId : null,
-      },
-      {
-        history: 'push',
-        scroll: false,
-      },
-    );
-  };
-
   const asideDefinitions = {
     versions: {
       icon: LuHistory,
       label: versionHistoryLabel,
       isEnabled: isVersionHistoryEnabled,
-      renderPanel: () => (
-        <ProposalVersionsAside
-          versionId={aside === 'versions' ? versionId : null}
-          onSelectVersion={(nextVersionId) =>
-            setActiveAside('versions', nextVersionId)
-          }
-          onClose={() => setActiveAside(null)}
-        />
-      ),
     },
   } satisfies Record<
     ProposalEditorAside,
@@ -175,23 +201,13 @@ function useProposalEditorAside({
       icon: typeof LuHistory;
       label: string;
       isEnabled: boolean;
-      renderPanel: () => React.ReactNode;
     }
   >;
 
   const activeAsideDefinition = aside ? asideDefinitions[aside] : null;
   const activeAside = activeAsideDefinition?.isEnabled ? aside : null;
 
-  const toggleAside = (nextAside: ProposalEditorAside) => {
-    setActiveAside(activeAside === nextAside ? null : nextAside);
-  };
-
-  const asideSlot =
-    activeAside && activeAsideDefinition
-      ? activeAsideDefinition.renderPanel()
-      : undefined;
-
-  const asideHeaderIcons = proposalEditorAsideValues
+  return proposalEditorAsideValues
     .filter((asideKey) => asideDefinitions[asideKey].isEnabled)
     .map((asideKey) => {
       const definition = asideDefinitions[asideKey];
@@ -201,7 +217,7 @@ function useProposalEditorAside({
         <TooltipTrigger key={asideKey}>
           <button
             type="button"
-            onClick={() => toggleAside(asideKey)}
+            onClick={() => onToggleAside(asideKey)}
             aria-label={definition.label}
             aria-pressed={activeAside === asideKey}
             className="flex size-8 items-center justify-center rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite hover:no-underline"
@@ -212,9 +228,4 @@ function useProposalEditorAside({
         </TooltipTrigger>
       );
     });
-
-  return {
-    asideHeaderIcons,
-    asideSlot,
-  };
 }
