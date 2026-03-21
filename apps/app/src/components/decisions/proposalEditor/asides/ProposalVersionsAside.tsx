@@ -11,18 +11,19 @@ import { useTranslations } from '@/lib/i18n';
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';
 
-/** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
+  versionId: number | null;
+  onSelectVersion: (versionId: number) => void;
   onClose: () => void;
 }
 
-/**
- * Aside panel for proposal version history.
- * Reads versions directly from the TipTap collaboration provider.
- */
-export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
+export function ProposalVersionsAside({
+  versionId,
+  onSelectVersion,
+  onClose,
+}: ProposalVersionsAsideProps) {
   const locale = useLocale();
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
@@ -46,11 +47,6 @@ export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
       onClose={onClose}
       bodyClassName="pt-4"
     >
-      <div className="mx-4 rounded bg-primary-tealWhite p-2">
-        <p className="text-base text-neutral-black">{t('Current version')}</p>
-        <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
-      </div>
-
       <div>
         {versions.map((version) => {
           const createdAt = new Date(version.date).toISOString();
@@ -63,6 +59,8 @@ export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
               createdAt={createdAt}
               isRecent={isRecent}
               locale={locale}
+              isSelected={versionId === version.version}
+              onSelect={() => onSelectVersion(version.version)}
             />
           );
         })}
@@ -75,10 +73,14 @@ function VersionItem({
   createdAt,
   isRecent,
   locale,
+  isSelected,
+  onSelect,
 }: {
   createdAt: string;
   isRecent: boolean;
   locale: string;
+  isSelected: boolean;
+  onSelect: () => void;
 }) {
   const t = useTranslations();
   const relativeTime = useRelativeTime(createdAt, { style: 'long' });
@@ -88,9 +90,15 @@ function VersionItem({
     : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
 
   return (
-    <div className="mx-4 p-2">
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`mx-4 w-[calc(100%-2rem)] cursor-pointer rounded p-2 text-left ${
+        isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite'
+      }`}
+    >
       <p className="text-base text-neutral-black">{label}</p>
       <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
-    </div>
+    </button>
   );
 }

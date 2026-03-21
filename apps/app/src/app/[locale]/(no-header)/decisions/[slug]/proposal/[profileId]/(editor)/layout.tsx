@@ -3,12 +3,13 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import { getProposalFragmentNames, parseProposalData } from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
-import { useQueryState } from 'nuqs';
+import { useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
 import { LuHistory } from 'react-icons/lu';
 
@@ -17,20 +18,15 @@ import { useTranslations } from '@/lib/i18n';
 import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import {
   type ProposalEditorAside,
   proposalEditorAsideParser,
   proposalEditorAsideValues,
+  proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 
-/**
- * Shared layout for the proposal editor route.
- *
- * Persists across query string updates so the collaborative editor,
- * Yjs connection, and draft state are never remounted while the aside
- * panel is opened or closed.
- */
 export default function ProposalEditorLayout({
   children: _children,
 }: {
@@ -40,13 +36,14 @@ export default function ProposalEditorLayout({
     profileId: string;
     slug: string;
   }>();
-  const [aside, setAside] = useQueryState('aside', proposalEditorAsideParser);
+  const [{ aside, versionId }, setQueryState] = useQueryStates({
+    aside: proposalEditorAsideParser,
+    versionId: proposalEditorVersionIdParser,
+  });
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   const isVersionHistoryEnabled = useFeatureFlag('proposal_version_history');
-
-  // -- Data fetching ---------------------------------------------------------
 
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
     slug,
@@ -69,26 +66,31 @@ export default function ProposalEditorLayout({
 
   const { user } = useUser();
 
+  const proposalTemplate = instance.instanceData
+    ?.proposalTemplate as ProposalTemplateSchema | null;
+
+  const fragmentNames = useMemo(
+    () => (proposalTemplate ? getProposalFragmentNames(proposalTemplate) : []),
+    [proposalTemplate],
+  );
+
   const { asideHeaderIcons, asideSlot } = useProposalEditorAside({
     aside,
-    setAside,
+    versionId,
+    setQueryState,
     isVersionHistoryEnabled: Boolean(isVersionHistoryEnabled),
     versionHistoryLabel: t('Version history'),
   });
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
-      proposal.proposalData,
+      proposal?.proposalData,
     );
-
-    if (existingId) {
-      return existingId;
-    }
-
-    throw new Error(
-      'Legacy proposals without collaboration documents cannot be edited',
+    return (
+      existingId ??
+      `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`
     );
-  }, [proposal.proposalData]);
+  }, [proposal?.proposalData, proposal?.id, instance.id]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 
@@ -98,42 +100,58 @@ export default function ProposalEditorLayout({
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
-      <div className="flex h-screen bg-white">
-        <ProposalEditor
-          instance={instance}
-          backHref={`/decisions/${slug}`}
-          proposal={proposal}
-          isEditMode
-          asideHeaderIcons={
-            asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
-          }
-          showHeaderActions={isMobile || !asideSlot}
-        />
-        {asideSlot}
-      </div>
+      <VersionPreviewProvider
+        versionId={aside === 'versions' ? versionId : null}
+        fragmentNames={fragmentNames}
+      >
+        <div className="flex h-screen bg-white">
+          <ProposalEditor
+            instance={instance}
+            backHref={`/decisions/${slug}`}
+            proposal={proposal}
+            isEditMode
+            asideHeaderIcons={
+              asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
+            }
+            showHeaderActions={isMobile || !asideSlot}
+          />
+          {asideSlot}
+        </div>
+      </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
 }
 
 function useProposalEditorAside({
   aside,
-  setAside,
+  versionId,
+  setQueryState,
   isVersionHistoryEnabled,
   versionHistoryLabel,
 }: {
   aside: ProposalEditorAside | null;
-  setAside: (
-    value: ProposalEditorAside | null,
+  versionId: number | null;
+  setQueryState: (
+    value: { aside?: ProposalEditorAside | null; versionId?: number | null },
     options?: { history?: 'push' | 'replace'; scroll?: boolean },
   ) => Promise<URLSearchParams>;
   isVersionHistoryEnabled: boolean;
   versionHistoryLabel: string;
 }) {
-  const setActiveAside = (nextAside: ProposalEditorAside | null) => {
-    void setAside(nextAside, {
-      history: 'push',
-      scroll: false,
-    });
+  const setActiveAside = (
+    nextAside: ProposalEditorAside | null,
+    nextVersionId: number | null = null,
+  ) => {
+    void setQueryState(
+      {
+        aside: nextAside,
+        versionId: nextAside === 'versions' ? nextVersionId : null,
+      },
+      {
+        history: 'push',
+        scroll: false,
+      },
+    );
   };
 
   const asideDefinitions = {
@@ -142,7 +160,13 @@ function useProposalEditorAside({
       label: versionHistoryLabel,
       isEnabled: isVersionHistoryEnabled,
       renderPanel: () => (
-        <ProposalVersionsAside onClose={() => setActiveAside(null)} />
+        <ProposalVersionsAside
+          versionId={aside === 'versions' ? versionId : null}
+          onSelectVersion={(nextVersionId) =>
+            setActiveAside('versions', nextVersionId)
+          }
+          onClose={() => setActiveAside(null)}
+        />
       ),
     },
   } satisfies Record<
