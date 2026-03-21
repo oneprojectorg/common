@@ -23,10 +23,15 @@ import {
 import type { ProposalDraftFields } from './useProposalDraft';
 
 interface ProposalFormRendererProps {
+  /** Compiled field descriptors from `compileProposalSchema`. */
   fields: FieldDescriptor[];
+  /** Current draft values for system fields. */
   draft: ProposalDraftFields;
+  /** Called when any system field value changes. */
   onFieldChange: (key: string, value: unknown) => void;
+  /** Called with the editor instance when a rich-text field gains focus. */
   onEditorFocus?: (editor: Editor) => void;
+  /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
   /** Rendering mode for collaborative editing or template preview. */
   mode?: 'edit-collaborative' | 'preview-template';
