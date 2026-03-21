@@ -7,6 +7,7 @@ import { getProposalFragmentNames, parseProposalData } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
@@ -215,15 +216,17 @@ function useProposalEditorAsideHeaderIcons({
 
       return (
         <TooltipTrigger key={asideKey}>
-          <button
-            type="button"
-            onClick={() => onToggleAside(asideKey)}
+          <Button
+            color="secondary"
+            variant="icon"
+            size="small"
+            onPress={() => onToggleAside(asideKey)}
             aria-label={definition.label}
             aria-pressed={activeAside === asideKey}
-            className="flex size-8 cursor-pointer items-center justify-center rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite hover:no-underline"
+            className="size-8 cursor-pointer rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite"
           >
             <Icon className="size-4" />
-          </button>
+          </Button>
           <Tooltip>{definition.label}</Tooltip>
         </TooltipTrigger>
       );
