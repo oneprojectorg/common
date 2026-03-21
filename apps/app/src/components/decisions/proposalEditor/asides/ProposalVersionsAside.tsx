@@ -56,7 +56,7 @@ export function ProposalVersionsAside({
       <Button
         unstyled
         onPress={() => onSelectVersion(null)}
-        className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none ${
+        className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none ${
           versionId === null
             ? 'bg-primary-tealWhite'
             : 'hover:bg-neutral-offWhite'
@@ -112,7 +112,7 @@ function VersionItem({
     <Button
       unstyled
       onPress={onSelect}
-      className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none ${
+      className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none ${
         isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite'
       }`}
     >
