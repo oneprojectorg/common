@@ -1,6 +1,7 @@
 'use client';
 
 import { getPreviewContentFromVersionPayload } from '@tiptap-pro/extension-snapshot';
+import type { THistoryVersion } from '@tiptap-pro/provider';
 import type { JSONContent } from '@tiptap/react';
 import {
   type ReactNode,
@@ -14,7 +15,7 @@ import {
 import { useCollaborativeDoc } from '../../collaboration';
 
 interface VersionPreviewState {
-  previewVersion: number | null;
+  tiptapVersion: THistoryVersion | null;
   fragmentContents: Record<string, JSONContent | null>;
 }
 
@@ -22,6 +23,8 @@ const VersionPreviewContext = createContext<VersionPreviewState | null>(null);
 
 /**
  * Resolves preview content for a selected TipTap document version.
+ * The selected version comes from the URL state, so deep links can open a
+ * specific version directly when the versions aside is visible.
  */
 export function VersionPreviewProvider({
   versionId,
@@ -33,9 +36,34 @@ export function VersionPreviewProvider({
   children: ReactNode;
 }) {
   const { provider } = useCollaborativeDoc();
+  const [versions, setVersions] = useState<THistoryVersion[]>([]);
   const [fragmentContents, setFragmentContents] = useState<
     Record<string, JSONContent | null>
   >({});
+
+  useEffect(() => {
+    const readVersions = () => [...provider.getVersions()];
+
+    setVersions(readVersions());
+
+    const handleVersionsUpdate = () => {
+      setVersions(readVersions());
+    };
+
+    provider.watchVersions(handleVersionsUpdate);
+
+    return () => {
+      provider.unwatchVersions(handleVersionsUpdate);
+    };
+  }, [provider]);
+
+  const tiptapVersion = useMemo(
+    () =>
+      versionId === null
+        ? null
+        : (versions.find((item) => item.version === versionId) ?? null),
+    [versionId, versions],
+  );
 
   useEffect(() => {
     if (versionId === null) {
@@ -86,15 +114,15 @@ export function VersionPreviewProvider({
     };
   }, [fragmentNames, provider, versionId]);
 
-  const value = useMemo<VersionPreviewState | null>(
+  const value = useMemo(
     () =>
-      versionId === null
-        ? null
-        : {
-            previewVersion: versionId,
+      tiptapVersion
+        ? {
+            tiptapVersion,
             fragmentContents,
-          },
-    [fragmentContents, versionId],
+          }
+        : null,
+    [fragmentContents, tiptapVersion],
   );
 
   return (

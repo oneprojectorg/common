@@ -25,8 +25,12 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
+  /** Optional right-aligned status pill shown while viewing history */
+  statusSlot?: ReactNode;
   /** Whether action controls should be rendered in the header */
   showHeaderActions?: boolean;
+  /** When true, hide editing actions while showing a historical version. */
+  readOnlyMode?: boolean;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
   /** The current user's decision permissions on this proposal */
@@ -46,7 +50,9 @@ export function ProposalEditorLayout({
   isDraft = false,
   presenceSlot,
   asideHeaderIcons,
+  statusSlot,
   showHeaderActions = true,
+  readOnlyMode = false,
   proposalProfileId,
   access,
 }: ProposalEditorLayoutProps) {
@@ -74,11 +80,12 @@ export function ProposalEditorLayout({
         </div>
 
         <div className="flex items-center justify-end gap-4">
+          {statusSlot}
           {showHeaderActions && (
             <>
-              {presenceSlot}
+              {!readOnlyMode && presenceSlot}
               {asideHeaderIcons}
-              {canShare && (
+              {!readOnlyMode && canShare && (
                 <Button
                   color="secondary"
                   variant="icon"
@@ -89,31 +96,33 @@ export function ProposalEditorLayout({
                   <span className="hidden sm:inline">{t('Share')}</span>
                 </Button>
               )}
-              <Button
-                color="primary"
-                variant="icon"
-                size="small"
-                onPress={onSubmitProposal}
-                isDisabled={isSubmitting}
-                className="px-4 py-2"
-              >
-                {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-                {isEditMode && !isDraft ? (
-                  <>
-                    <span className="inline lg:hidden">{t('Update')}</span>
-                    <span className="hidden lg:inline">
-                      {t('Update Proposal')}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:block">
-                      {t('Submit Proposal')}
-                    </span>
-                    <span className="sm:hidden">{t('Submit')}</span>{' '}
-                  </>
-                )}
-              </Button>
+              {!readOnlyMode && (
+                <Button
+                  color="primary"
+                  variant="icon"
+                  size="small"
+                  onPress={onSubmitProposal}
+                  isDisabled={isSubmitting}
+                  className="px-4 py-2"
+                >
+                  {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
+                  {isEditMode && !isDraft ? (
+                    <>
+                      <span className="inline lg:hidden">{t('Update')}</span>
+                      <span className="hidden lg:inline">
+                        {t('Update Proposal')}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="hidden sm:block">
+                        {t('Submit Proposal')}
+                      </span>
+                      <span className="sm:hidden">{t('Submit')}</span>{' '}
+                    </>
+                  )}
+                </Button>
+              )}
               <LocaleChooser />
               <UserAvatarMenu className="hidden sm:block" />
             </>
