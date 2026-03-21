@@ -67,12 +67,7 @@ export function ReadonlyDropdownField({
   placeholder: string;
 }) {
   const content = (
-    <Button
-      variant="pill"
-      color="pill"
-      className="justify-start text-left"
-      style={{ minWidth: 122 }}
-    >
+    <Button variant="pill" color="pill" className="justify-start text-left">
       {value ?? placeholder}
     </Button>
   );
