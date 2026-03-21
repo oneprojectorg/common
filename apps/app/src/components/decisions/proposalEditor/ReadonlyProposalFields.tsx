@@ -67,7 +67,11 @@ export function ReadonlyDropdownField({
   placeholder: string;
 }) {
   const content = (
-    <Button variant="pill" color="pill">
+    <Button
+      variant="pill"
+      color="pill"
+      className="min-w-36 justify-start text-left"
+    >
       {value ?? placeholder}
     </Button>
   );
