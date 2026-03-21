@@ -36,17 +36,33 @@ export function VersionPreviewProvider({
   children: ReactNode;
 }) {
   const { provider } = useCollaborativeDoc();
+  const [versions, setVersions] = useState<THistoryVersion[]>([]);
   const [fragmentContents, setFragmentContents] = useState<
     Record<string, JSONContent | null>
   >({});
+
+  useEffect(() => {
+    const readVersions = () => [...provider.getVersions()];
+
+    setVersions(readVersions());
+
+    const handleVersionsUpdate = () => {
+      setVersions(readVersions());
+    };
+
+    provider.watchVersions(handleVersionsUpdate);
+
+    return () => {
+      provider.unwatchVersions(handleVersionsUpdate);
+    };
+  }, [provider]);
 
   const tiptapVersion = useMemo(
     () =>
       versionId === null
         ? null
-        : (provider.getVersions().find((item) => item.version === versionId) ??
-          null),
-    [provider, versionId],
+        : (versions.find((item) => item.version === versionId) ?? null),
+    [versionId, versions],
   );
 
   useEffect(() => {
