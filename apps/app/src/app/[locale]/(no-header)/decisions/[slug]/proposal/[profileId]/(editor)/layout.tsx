@@ -220,7 +220,7 @@ function useProposalEditorAsideHeaderIcons({
             onClick={() => onToggleAside(asideKey)}
             aria-label={definition.label}
             aria-pressed={activeAside === asideKey}
-            className="flex size-8 items-center justify-center rounded-md border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite hover:no-underline"
+            className="flex size-8 cursor-pointer items-center justify-center rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite hover:no-underline"
           >
             <Icon className="size-4" />
           </button>
