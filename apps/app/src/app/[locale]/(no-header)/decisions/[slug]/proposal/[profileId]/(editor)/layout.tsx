@@ -223,7 +223,7 @@ function useProposalEditorAsideHeaderIcons({
             onPress={() => onToggleAside(asideKey)}
             aria-label={definition.label}
             aria-pressed={activeAside === asideKey}
-            className="size-8 cursor-pointer rounded-sm border border-offWhite bg-white text-primary-teal shadow-md hover:bg-neutral-offWhite"
+            className="size-8 min-w-8 cursor-pointer rounded-sm border border-offWhite bg-white p-0 text-primary-teal shadow-md hover:bg-neutral-offWhite"
           >
             <Icon className="size-4" />
           </Button>
