@@ -371,8 +371,8 @@ function ProposalEditorInner({
             onFieldChange={handleFieldChange}
             onEditorFocus={onEditorFocus}
             onEditorBlur={onEditorBlur}
-            previewMode={isPreviewMode}
-            previewFragmentContents={versionPreview?.fragmentContents}
+            mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
+            previewVersionFragmentContents={versionPreview?.fragmentContents}
           />
 
           <div className="border-t border-neutral-gray1 pt-8">

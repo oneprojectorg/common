@@ -1,14 +1,11 @@
 'use client';
 
 import { normalizeBudget, parseSchemaOptions } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
 import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
 
-import { getViewerExtensions } from '../../RichTextEditor';
 import {
   CollaborativeBudgetField,
   CollaborativeDropdownField,
@@ -17,6 +14,12 @@ import {
 } from '../../collaboration';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
+import {
+  ReadonlyBudgetField,
+  ReadonlyDropdownField,
+  ReadonlyTextField,
+  ReadonlyTitleField,
+} from './ReadonlyProposalFields';
 import type { ProposalDraftFields } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
@@ -34,10 +37,10 @@ interface ProposalFormRendererProps {
   onEditorFocus?: (editor: Editor) => void;
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
-  /** When true, renders the form as a non-interactive static preview. */
-  previewMode?: boolean;
-  /** Snapshot preview content keyed by fragment name. */
-  previewFragmentContents?: Record<string, JSONContent | null>;
+  /** Rendering mode for collaborative editing or readonly previews. */
+  mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
+  /** Version preview content keyed by fragment name. */
+  previewVersionFragmentContents?: Record<string, JSONContent | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,39 +100,85 @@ function formatPreviewBudget(
   }
 }
 
+function getPreviewText({
+  mode,
+  draftValue,
+  previewContent,
+}: {
+  mode: 'preview-version' | 'preview-template';
+  draftValue: string | null | undefined;
+  previewContent: JSONContent | null | undefined;
+}): string | null {
+  if (mode === 'preview-version') {
+    const previewText = extractPlainText(previewContent);
+    return previewText || null;
+  }
+
+  return draftValue ?? null;
+}
+
+function getPreviewBudgetValue({
+  mode,
+  draftValue,
+  previewContent,
+}: {
+  mode: 'preview-version' | 'preview-template';
+  draftValue: ProposalDraftFields['budget'] | null | undefined;
+  previewContent: JSONContent | null | undefined;
+}): string | null {
+  if (mode === 'preview-version') {
+    return formatPreviewBudget(previewContent);
+  }
+
+  if (!draftValue) {
+    return null;
+  }
+
+  return draftValue.amount.toLocaleString(undefined, {
+    style: 'currency',
+    currency: draftValue.currency,
+    currencyDisplay: 'narrowSymbol',
+    maximumFractionDigits: 0,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Field renderer
 // ---------------------------------------------------------------------------
 
 /**
- * Renders a single field descriptor. In preview mode, uses the same UI
- * components (`Button pill`, `Select pill`, identical label/description
- * markup) but without any Yjs/TipTap collaboration dependencies.
+ * Renders a single field descriptor for collaborative editing or readonly
+ * proposal preview modes.
  */
 function renderField(
   field: FieldDescriptor,
   draft: ProposalDraftFields,
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
-  preview: boolean,
-  previewFragmentContents: Record<string, JSONContent | null>,
+  mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
+  previewVersionFragmentContents: Record<string, JSONContent | null>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
   const { key, format, schema } = field;
-  const previewText = extractPlainText(previewFragmentContents[key]);
-  const previewContent = previewFragmentContents[key];
+  const isReadonlyMode = mode !== 'edit-collaborative';
+  const previewContent = previewVersionFragmentContents[key];
 
   // -- Title ------------------------------------------------------------------
 
   if (key === 'title') {
-    if (preview) {
+    if (isReadonlyMode) {
       return (
-        <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal">
-          {previewText || t('Untitled Proposal')}
-        </div>
+        <ReadonlyTitleField
+          value={getPreviewText({
+            mode,
+            draftValue: draft.title,
+            previewContent,
+          })}
+        />
       );
     }
+
     return (
       <CollaborativeTitleField
         placeholder={t('Untitled Proposal')}
@@ -143,15 +192,22 @@ function renderField(
   if (key === 'category') {
     const options = extractOptions(schema);
 
-    if (preview) {
-      const selectedOption = options.find((opt) => opt.value === previewText);
+    if (isReadonlyMode) {
+      const selectedValue = getPreviewText({
+        mode,
+        draftValue: draft.category,
+        previewContent,
+      });
+      const selectedOption = options.find((opt) => opt.value === selectedValue);
 
       return (
-        <Button variant="pill" color="pill">
-          {selectedOption?.label ?? t('Select category')}
-        </Button>
+        <ReadonlyDropdownField
+          value={selectedOption?.label ?? null}
+          placeholder={t('Select category')}
+        />
       );
     }
+
     return (
       <CollaborativeDropdownField
         options={options}
@@ -166,13 +222,19 @@ function renderField(
   // -- Budget (system) --------------------------------------------------------
 
   if (key === 'budget') {
-    if (preview) {
+    if (isReadonlyMode) {
       return (
-        <Button variant="pill" color="pill">
-          {formatPreviewBudget(previewFragmentContents[key]) ?? t('Add budget')}
-        </Button>
+        <ReadonlyBudgetField
+          value={getPreviewBudgetValue({
+            mode,
+            draftValue: draft.budget,
+            previewContent,
+          })}
+          placeholder={t('Add budget')}
+        />
       );
     }
+
     return (
       <CollaborativeBudgetField
         minAmount={schema.minimum}
@@ -190,31 +252,20 @@ function renderField(
     case 'long-text': {
       const placeholder = t('Start typing...');
 
-      if (preview) {
+      if (isReadonlyMode) {
         return (
-          <div className="flex flex-col gap-2">
-            <FieldHeader
-              title={schema.title}
-              description={schema.description}
-            />
-            {previewContent ? (
-              <RichTextViewer
-                extensions={getViewerExtensions()}
-                content={previewContent}
-                editorClassName={
-                  format === 'long-text' ? 'min-h-32' : 'min-h-8'
-                }
-              />
-            ) : (
-              <div
-                className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
-              >
-                {placeholder}
-              </div>
-            )}
-          </div>
+          <ReadonlyTextField
+            title={schema.title}
+            description={schema.description}
+            content={
+              mode === 'preview-version' ? (previewContent ?? null) : null
+            }
+            placeholder={placeholder}
+            multiline={format === 'long-text'}
+          />
         );
       }
+
       return (
         <CollaborativeTextField
           fragmentName={key}
@@ -230,14 +281,21 @@ function renderField(
     }
 
     case 'money': {
-      if (preview) {
+      if (isReadonlyMode) {
         return (
-          <Button variant="pill" color="pill">
-            {formatPreviewBudget(previewFragmentContents[key]) ??
-              t('Add budget')}
-          </Button>
+          <ReadonlyBudgetField
+            value={getPreviewBudgetValue({
+              mode,
+              draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
+              previewContent,
+            })}
+            title={schema.title}
+            description={schema.description}
+            placeholder={t('Add budget')}
+          />
         );
       }
+
       return (
         <CollaborativeBudgetField
           minAmount={schema.minimum}
@@ -251,21 +309,26 @@ function renderField(
     case 'dropdown': {
       const options = extractOptions(schema);
 
-      if (preview) {
-        const selectedOption = options.find((opt) => opt.value === previewText);
+      if (isReadonlyMode) {
+        const selectedValue = getPreviewText({
+          mode,
+          draftValue: (draft[key] as string | null) ?? null,
+          previewContent,
+        });
+        const selectedOption = options.find(
+          (opt) => opt.value === selectedValue,
+        );
 
         return (
-          <div className="flex flex-col gap-2">
-            <FieldHeader
-              title={schema.title}
-              description={schema.description}
-            />
-            <Button variant="pill" color="pill">
-              {selectedOption?.label ?? t('Select option')}
-            </Button>
-          </div>
+          <ReadonlyDropdownField
+            value={selectedOption?.label ?? null}
+            title={schema.title}
+            description={schema.description}
+            placeholder={t('Select option')}
+          />
         );
       }
+
       return (
         <div className="flex flex-col gap-2">
           <FieldHeader title={schema.title} description={schema.description} />
@@ -294,8 +357,8 @@ function renderField(
  * Schema-driven form renderer for proposal editing.
  *
  * Takes compiled field descriptors and renders the correct component for
- * each field. In preview mode, rich text fields are rendered through a
- * read-only TipTap viewer instead of collaborative editors.
+ * each field. Version and template previews reuse readonly field components,
+ * while editing keeps the collaborative Yjs-backed fields.
  *
  * Layout:
  * - Title at full width
@@ -308,10 +371,11 @@ export function ProposalFormRenderer({
   onFieldChange,
   onEditorFocus,
   onEditorBlur,
-  previewMode = false,
-  previewFragmentContents = {},
+  mode = 'edit-collaborative',
+  previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
+  const isReadonlyMode = mode !== 'edit-collaborative';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
@@ -324,14 +388,14 @@ export function ProposalFormRenderer({
       draft,
       onFieldChange,
       t,
-      previewMode,
-      previewFragmentContents,
+      mode,
+      previewVersionFragmentContents,
       onEditorFocus,
       onEditorBlur,
     );
 
   return (
-    <div className={`flex flex-col ${previewMode ? 'gap-4' : 'gap-8'}`}>
+    <div className={`flex flex-col ${isReadonlyMode ? 'gap-4' : 'gap-8'}`}>
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (

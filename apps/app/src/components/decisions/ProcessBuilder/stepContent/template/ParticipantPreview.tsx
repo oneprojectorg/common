@@ -21,8 +21,8 @@ const EMPTY_DRAFT: ProposalDraftFields = {
  * Live participant preview panel shown alongside the template builder.
  *
  * Converts the builder's `ProposalTemplateSchema` into compiled field descriptors
- * and renders them via `ProposalFormRenderer` in static preview mode — no
- * Yjs, TipTap, or collaboration providers are created.
+ * and renders them via `ProposalFormRenderer` in template preview mode — no
+ * Yjs or collaboration providers are created.
  */
 export function ParticipantPreview({
   template,
@@ -45,7 +45,7 @@ export function ParticipantPreview({
           fields={fields}
           draft={EMPTY_DRAFT}
           onFieldChange={() => {}}
-          previewMode
+          mode="preview-template"
         />
 
         <div className="pointer-events-none mt-4 border-t border-neutral-gray2 pt-4">
