@@ -59,7 +59,7 @@ export function normalizeProposalEditorAsideQueryState({
 
 export function getProposalEditorAsideQuery(state: ProposalEditorAsideState): {
   aside: ProposalEditorAside | null;
-  versionId?: number | null;
+  versionId: number | null;
 } {
   if (state.aside === 'versions') {
     return {
@@ -70,6 +70,7 @@ export function getProposalEditorAsideQuery(state: ProposalEditorAsideState): {
 
   return {
     aside: null,
+    versionId: null,
   };
 }
 
