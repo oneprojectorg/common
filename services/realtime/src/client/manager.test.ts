@@ -12,12 +12,14 @@ const TEST_SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE ?? process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 function resetRealtimeManager() {
-  const manager = RealtimeManager.getInstance() as RealtimeManager & {
-    disconnect: () => void;
-  };
+  const manager = RealtimeManager.getInstance();
+  const disconnect = Reflect.get(manager, 'disconnect');
 
-  manager.disconnect();
-  (RealtimeManager as { instance: RealtimeManager | null }).instance = null;
+  if (typeof disconnect === 'function') {
+    disconnect.call(manager);
+  }
+
+  Reflect.set(RealtimeManager, 'instance', null);
 }
 
 describe('RealtimeManager', () => {
