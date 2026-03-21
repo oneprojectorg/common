@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
@@ -11,6 +12,7 @@ import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { Editor, JSONContent } from '@tiptap/react';
+import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
   type ReactNode,
@@ -106,11 +108,15 @@ export function ProposalEditor({
     const { collaborationDocId: existingId } = parseProposalData(
       proposal?.proposalData,
     );
+
     if (existingId) {
       return existingId;
     }
-    return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
-  }, [proposal?.proposalData, proposal?.id, instance.id]);
+
+    throw new Error(
+      'Legacy proposals without collaboration documents cannot be edited',
+    );
+  }, [proposal?.proposalData]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 
@@ -138,8 +144,6 @@ export function ProposalEditor({
     />
   );
 
-  // If we're already inside a CollaborativeDocProvider (e.g. from the layout),
-  // skip creating a second provider/Yjs connection.
   if (existingCollab) {
     return inner;
   }
@@ -179,6 +183,7 @@ function ProposalEditorInner({
   proposalTemplate: ProposalTemplateSchema;
 }) {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations();
   const utils = trpc.useUtils();
   const { ydoc } = useCollaborativeDoc();
@@ -214,6 +219,15 @@ function ProposalEditorInner({
   const previewTitle = extractPreviewTitle(
     versionPreview?.fragmentContents.title,
   );
+  const viewingLabel = versionPreview?.tiptapVersion
+    ? t('Viewing {date}', {
+        date: formatDate(
+          new Date(versionPreview.tiptapVersion.date).toISOString(),
+          locale,
+          DATE_TIME_UTC_FORMAT,
+        ),
+      })
+    : null;
 
   // -- Validation ------------------------------------------------------------
 
@@ -325,6 +339,13 @@ function ProposalEditorInner({
     <ProposalEditorLayout
       backHref={backHref}
       title={isPreviewMode ? previewTitle || draft.title : draft.title}
+      statusSlot={
+        viewingLabel ? (
+          <div className="rounded-sm bg-neutral-gray1 px-4 py-2 text-sm text-neutral-charcoal">
+            {viewingLabel}
+          </div>
+        ) : undefined
+      }
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
@@ -340,7 +361,7 @@ function ProposalEditorInner({
         className="sticky top-0 z-10 bg-white"
         onMouseDown={(e) => e.preventDefault()}
       >
-        {!isPreviewMode && <RichTextEditorToolbar editor={focusedEditor} />}
+        <RichTextEditorToolbar editor={focusedEditor} />
       </div>
       <div className="flex flex-1 flex-col gap-12 py-12">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">

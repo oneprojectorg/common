@@ -2,6 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
+import { Button } from '@op/ui/Button';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -11,14 +12,19 @@ import { useTranslations } from '@/lib/i18n';
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';
 
+/** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
   versionId: number | null;
-  onSelectVersion: (versionId: number) => void;
+  onSelectVersion: (versionId: number | null) => void;
   onClose: () => void;
 }
 
+/**
+ * Aside panel for proposal version history.
+ * Reads versions directly from the TipTap collaboration provider.
+ */
 export function ProposalVersionsAside({
   versionId,
   onSelectVersion,
@@ -47,6 +53,19 @@ export function ProposalVersionsAside({
       onClose={onClose}
       bodyClassName="pt-4"
     >
+      <Button
+        unstyled
+        onPress={() => onSelectVersion(null)}
+        className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none ${
+          versionId === null
+            ? 'bg-primary-tealWhite'
+            : 'hover:bg-neutral-offWhite'
+        }`}
+      >
+        <p className="text-base text-neutral-black">{t('Current version')}</p>
+        <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
+      </Button>
+
       <div>
         {versions.map((version) => {
           const createdAt = new Date(version.date).toISOString();
@@ -90,15 +109,15 @@ function VersionItem({
     : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`mx-4 w-[calc(100%-2rem)] cursor-pointer rounded p-2 text-left ${
+    <Button
+      unstyled
+      onPress={onSelect}
+      className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none ${
         isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite'
       }`}
     >
       <p className="text-base text-neutral-black">{label}</p>
       <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
-    </button>
+    </Button>
   );
 }
