@@ -70,7 +70,7 @@ export function ReadonlyDropdownField({
     <Button
       variant="pill"
       color="pill"
-      className="min-w-36 justify-start text-left"
+      className="w-64 justify-start text-left"
     >
       {value ?? placeholder}
     </Button>
