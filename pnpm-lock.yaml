@@ -102,7 +102,7 @@ overrides:
   '@react-three/drei': ^10.0.4
   '@react-three/fiber': ^9.1.0
   '@supabase/ssr': 0.5.2
-  '@supabase/supabase-js': ^2.49.3
+  '@supabase/supabase-js': 2.49.3
   '@tanstack/query-sync-storage-persister': 5.66.11
   '@tanstack/react-query': 5.66.11
   '@tanstack/react-query-persist-client': 5.66.11
@@ -176,7 +176,7 @@ importers:
         specifier: 0.5.2
         version: 0.5.2(@supabase/supabase-js@2.49.3)
       '@supabase/supabase-js':
-        specifier: ^2.49.3
+        specifier: 2.49.3
         version: 2.49.3
       '@tailwindcss/cli':
         specifier: 4.1.18
@@ -1162,7 +1162,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/types
       '@supabase/supabase-js':
-        specifier: ^2.49.3
+        specifier: 2.49.3
         version: 2.49.3
       '@tanstack/query-sync-storage-persister':
         specifier: 5.66.11
@@ -1420,7 +1420,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/common
       '@supabase/supabase-js':
-        specifier: ^2.49.3
+        specifier: 2.49.3
         version: 2.49.3
       zod:
         specifier: 'catalog:'
@@ -1442,7 +1442,7 @@ importers:
         specifier: 0.5.2
         version: 0.5.2(@supabase/supabase-js@2.49.3)
       '@supabase/supabase-js':
-        specifier: ^2.49.3
+        specifier: 2.49.3
         version: 2.49.3
       cookie:
         specifier: ^1.0.2
@@ -1535,7 +1535,7 @@ importers:
         specifier: workspace:*
         version: link:../../services/db
       '@supabase/supabase-js':
-        specifier: ^2.49.3
+        specifier: 2.49.3
         version: 2.49.3
       drizzle-orm:
         specifier: 'catalog:'
@@ -1569,7 +1569,7 @@ importers:
         specifier: ^6.3.1
         version: 6.3.1(react@19.2.1)
       '@supabase/supabase-js':
-        specifier: ^2.49.3
+        specifier: 2.49.3
         version: 2.49.3
       dotenv:
         specifier: ^16.4.7
@@ -4594,7 +4594,7 @@ packages:
   '@supabase/ssr@0.5.2':
     resolution: {integrity: sha512-n3plRhr2Bs8Xun1o4S3k1CDv17iH5QY9YcoEvXX3bxV1/5XSasA0mNXYycFmADIdtdE6BG9MRjP5CGIs8qxC8A==}
     peerDependencies:
-      '@supabase/supabase-js': ^2.49.3
+      '@supabase/supabase-js': 2.49.3
 
   '@supabase/storage-js@2.7.1':
     resolution: {integrity: sha512-asYHcyDR1fKqrMpytAS1zjyEfvxuOIp1CIXX7ji4lHHcJKqyk+sLl/Vxgm4sN6u8zvuUtae9e4kDxQP2qrwWBA==}
@@ -13303,7 +13303,7 @@ snapshots:
       '@supabase/node-fetch': 2.6.15
       '@types/phoenix': 1.6.6
       '@types/ws': 8.18.1
-      ws: 8.18.3
+      ws: 8.19.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
