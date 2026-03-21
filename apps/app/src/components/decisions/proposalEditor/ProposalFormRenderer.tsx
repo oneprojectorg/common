@@ -375,7 +375,7 @@ export function ProposalFormRenderer({
   previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
-  const isReadonlyMode = mode !== 'edit-collaborative';
+  const formGapClass = mode === 'preview-template' ? 'gap-4' : 'gap-8';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
@@ -395,7 +395,7 @@ export function ProposalFormRenderer({
     );
 
   return (
-    <div className={`flex flex-col ${isReadonlyMode ? 'gap-4' : 'gap-8'}`}>
+    <div className={`flex flex-col ${formGapClass}`}>
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
