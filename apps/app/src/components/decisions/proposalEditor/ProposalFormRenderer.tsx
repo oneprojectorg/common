@@ -1,8 +1,6 @@
 'use client';
 
 import { parseSchemaOptions } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Select, SelectItem } from '@op/ui/Select';
 import type { Editor } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -16,36 +14,23 @@ import {
 } from '../../collaboration';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
+import {
+  ReadonlyBudgetField,
+  ReadonlyDropdownField,
+  ReadonlyTextField,
+  ReadonlyTitleField,
+} from './ReadonlyProposalFields';
 import type { ProposalDraftFields } from './useProposalDraft';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 interface ProposalFormRendererProps {
-  /** Compiled field descriptors from `compileProposalSchema`. */
   fields: FieldDescriptor[];
-  /** Current draft values for system fields. */
   draft: ProposalDraftFields;
-  /** Called when any system field value changes. */
   onFieldChange: (key: string, value: unknown) => void;
-  /** Called with the editor instance when a rich-text field gains focus. */
   onEditorFocus?: (editor: Editor) => void;
-  /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
-  /** When true, renders the form as a non-interactive static preview. */
-  previewMode?: boolean;
+  mode?: 'edit-collaborative' | 'preview-template';
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Extract `{ value, label }` options from a JSON Schema property.
- * Delegates to the shared `parseSchemaOptions` normalizer which handles
- * both `oneOf` and legacy `enum` formats.
- */
 function extractOptions(
   schema: FieldDescriptor['schema'],
 ): { value: string; label: string }[] {
@@ -55,36 +40,38 @@ function extractOptions(
   }));
 }
 
-// ---------------------------------------------------------------------------
-// Field renderer
-// ---------------------------------------------------------------------------
+function formatBudgetValue(
+  value: ProposalDraftFields['budget'] | null | undefined,
+): string | null {
+  if (!value) {
+    return null;
+  }
 
-/**
- * Renders a single field descriptor. In preview mode, uses the same UI
- * components (`Button pill`, `Select pill`, identical label/description
- * markup) but without any Yjs/TipTap collaboration dependencies.
- */
+  return value.amount.toLocaleString(undefined, {
+    style: 'currency',
+    currency: value.currency,
+    currencyDisplay: 'narrowSymbol',
+    maximumFractionDigits: 0,
+  });
+}
+
 function renderField(
   field: FieldDescriptor,
   draft: ProposalDraftFields,
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
-  preview: boolean,
+  mode: 'edit-collaborative' | 'preview-template',
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
   const { key, format, schema } = field;
-
-  // -- Title ------------------------------------------------------------------
+  const isReadonlyMode = mode === 'preview-template';
 
   if (key === 'title') {
-    if (preview) {
-      return (
-        <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-gray3">
-          {t('Proposal Title')}
-        </div>
-      );
+    if (isReadonlyMode) {
+      return <ReadonlyTitleField value={draft.title} />;
     }
+
     return (
       <CollaborativeTitleField
         placeholder={t('Untitled Proposal')}
@@ -93,28 +80,22 @@ function renderField(
     );
   }
 
-  // -- Category (system) ------------------------------------------------------
-
   if (key === 'category') {
     const options = extractOptions(schema);
 
-    if (preview) {
+    if (isReadonlyMode) {
+      const selectedOption = options.find(
+        (opt) => opt.value === draft.category,
+      );
+
       return (
-        <Select
-          variant="pill"
-          size="medium"
+        <ReadonlyDropdownField
+          value={selectedOption?.label ?? null}
           placeholder={t('Select category')}
-          selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-          className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-        >
-          {options.map((opt) => (
-            <SelectItem className="min-w-fit" key={opt.value} id={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </Select>
+        />
       );
     }
+
     return (
       <CollaborativeDropdownField
         options={options}
@@ -126,16 +107,16 @@ function renderField(
     );
   }
 
-  // -- Budget (system) --------------------------------------------------------
-
   if (key === 'budget') {
-    if (preview) {
+    if (isReadonlyMode) {
       return (
-        <Button variant="pill" color="pill">
-          {t('Add budget')}
-        </Button>
+        <ReadonlyBudgetField
+          value={formatBudgetValue(draft.budget)}
+          placeholder={t('Add budget')}
+        />
       );
     }
+
     return (
       <CollaborativeBudgetField
         minAmount={schema.minimum}
@@ -146,28 +127,23 @@ function renderField(
     );
   }
 
-  // -- Dynamic fields resolved by x-format ------------------------------------
-
   switch (format) {
     case 'short-text':
     case 'long-text': {
       const placeholder = t('Start typing...');
 
-      if (preview) {
+      if (isReadonlyMode) {
         return (
-          <div className="flex flex-col gap-2">
-            <FieldHeader
-              title={schema.title}
-              description={schema.description}
-            />
-            <div
-              className={`text-neutral-gray3 ${format === 'long-text' ? 'min-h-32' : 'min-h-8'}`}
-            >
-              {placeholder}
-            </div>
-          </div>
+          <ReadonlyTextField
+            title={schema.title}
+            description={schema.description}
+            content={null}
+            placeholder={placeholder}
+            multiline={format === 'long-text'}
+          />
         );
       }
+
       return (
         <CollaborativeTextField
           fragmentName={key}
@@ -183,13 +159,19 @@ function renderField(
     }
 
     case 'money': {
-      if (preview) {
+      if (isReadonlyMode) {
         return (
-          <Button variant="pill" color="pill">
-            {t('Add budget')}
-          </Button>
+          <ReadonlyBudgetField
+            value={formatBudgetValue(
+              (draft[key] as ProposalDraftFields['budget']) ?? null,
+            )}
+            title={schema.title}
+            description={schema.description}
+            placeholder={t('Add budget')}
+          />
         );
       }
+
       return (
         <CollaborativeBudgetField
           minAmount={schema.minimum}
@@ -203,33 +185,21 @@ function renderField(
     case 'dropdown': {
       const options = extractOptions(schema);
 
-      if (preview) {
+      if (isReadonlyMode) {
+        const selectedOption = options.find(
+          (opt) => opt.value === ((draft[key] as string | null) ?? null),
+        );
+
         return (
-          <div className="flex flex-col gap-2">
-            <FieldHeader
-              title={schema.title}
-              description={schema.description}
-            />
-            <Select
-              variant="pill"
-              size="medium"
-              placeholder={t('Select option')}
-              selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-              className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-            >
-              {options.map((opt) => (
-                <SelectItem
-                  className="min-w-fit"
-                  key={opt.value}
-                  id={opt.value}
-                >
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </Select>
-          </div>
+          <ReadonlyDropdownField
+            value={selectedOption?.label ?? null}
+            title={schema.title}
+            description={schema.description}
+            placeholder={t('Select option')}
+          />
         );
       }
+
       return (
         <div className="flex flex-col gap-2">
           <FieldHeader title={schema.title} description={schema.description} />
@@ -250,22 +220,8 @@ function renderField(
   }
 }
 
-// ---------------------------------------------------------------------------
-// ProposalFormRenderer
-// ---------------------------------------------------------------------------
-
 /**
- * Schema-driven form renderer for proposal editing.
- *
- * Takes compiled field descriptors and renders the correct component for
- * each field. In preview mode the same structure is rendered using static
- * `@op/ui` components instead of collaborative editors — no Yjs, TipTap,
- * or collaboration providers are needed.
- *
- * Layout:
- * - Title at full width
- * - Category + Budget side-by-side
- * - Dynamic template fields stacked below
+ * Schema-driven form renderer for proposal editing and template preview.
  */
 export function ProposalFormRenderer({
   fields,
@@ -273,9 +229,10 @@ export function ProposalFormRenderer({
   onFieldChange,
   onEditorFocus,
   onEditorBlur,
-  previewMode = false,
+  mode = 'edit-collaborative',
 }: ProposalFormRendererProps) {
   const t = useTranslations();
+  const isReadonlyMode = mode === 'preview-template';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
@@ -288,15 +245,13 @@ export function ProposalFormRenderer({
       draft,
       onFieldChange,
       t,
-      previewMode,
+      mode,
       onEditorFocus,
       onEditorBlur,
     );
 
   return (
-    <div
-      className={`flex flex-col ${previewMode ? 'pointer-events-none gap-4' : 'gap-8'}`}
-    >
+    <div className={`flex flex-col ${isReadonlyMode ? 'gap-4' : 'gap-8'}`}>
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
