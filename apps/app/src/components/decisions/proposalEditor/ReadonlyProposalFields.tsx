@@ -70,7 +70,8 @@ export function ReadonlyDropdownField({
     <Button
       variant="pill"
       color="pill"
-      className="w-64 justify-start text-left"
+      className="justify-start text-left"
+      style={{ minWidth: 122 }}
     >
       {value ?? placeholder}
     </Button>
