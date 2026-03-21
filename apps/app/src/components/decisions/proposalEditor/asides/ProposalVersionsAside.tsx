@@ -2,6 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
+import { Button } from '@op/ui/Button';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,6 +16,8 @@ import { ProposalEditorAside } from '../../ProposalEditorAside';
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
+  versionId: number | null;
+  onSelectVersion: (versionId: number | null) => void;
   onClose: () => void;
 }
 
@@ -22,7 +25,11 @@ interface ProposalVersionsAsideProps {
  * Aside panel for proposal version history.
  * Reads versions directly from the TipTap collaboration provider.
  */
-export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
+export function ProposalVersionsAside({
+  versionId,
+  onSelectVersion,
+  onClose,
+}: ProposalVersionsAsideProps) {
   const locale = useLocale();
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
@@ -46,10 +53,18 @@ export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
       onClose={onClose}
       bodyClassName="pt-4"
     >
-      <div className="mx-4 rounded bg-primary-tealWhite p-2">
+      <Button
+        unstyled
+        onPress={() => onSelectVersion(null)}
+        className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none ${
+          versionId === null
+            ? 'bg-primary-tealWhite'
+            : 'hover:bg-neutral-offWhite'
+        }`}
+      >
         <p className="text-base text-neutral-black">{t('Current version')}</p>
         <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
-      </div>
+      </Button>
 
       <div>
         {versions.map((version) => {
@@ -63,6 +78,8 @@ export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
               createdAt={createdAt}
               isRecent={isRecent}
               locale={locale}
+              isSelected={versionId === version.version}
+              onSelect={() => onSelectVersion(version.version)}
             />
           );
         })}
@@ -75,10 +92,14 @@ function VersionItem({
   createdAt,
   isRecent,
   locale,
+  isSelected,
+  onSelect,
 }: {
   createdAt: string;
   isRecent: boolean;
   locale: string;
+  isSelected: boolean;
+  onSelect: () => void;
 }) {
   const t = useTranslations();
   const relativeTime = useRelativeTime(createdAt, { style: 'long' });
@@ -88,9 +109,15 @@ function VersionItem({
     : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
 
   return (
-    <div className="mx-4 p-2">
+    <Button
+      unstyled
+      onPress={onSelect}
+      className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none ${
+        isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite'
+      }`}
+    >
       <p className="text-base text-neutral-black">{label}</p>
       <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
-    </div>
+    </Button>
   );
 }

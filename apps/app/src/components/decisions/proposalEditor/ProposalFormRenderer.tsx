@@ -1,7 +1,7 @@
 'use client';
 
-import { parseSchemaOptions } from '@op/common/client';
-import type { Editor } from '@tiptap/react';
+import { normalizeBudget, parseSchemaOptions } from '@op/common/client';
+import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
@@ -22,6 +22,10 @@ import {
 } from './ReadonlyProposalFields';
 import type { ProposalDraftFields } from './useProposalDraft';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 interface ProposalFormRendererProps {
   /** Compiled field descriptors from `compileProposalSchema`. */
   fields: FieldDescriptor[];
@@ -33,9 +37,15 @@ interface ProposalFormRendererProps {
   onEditorFocus?: (editor: Editor) => void;
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
-  /** Rendering mode for collaborative editing or template preview. */
-  mode?: 'edit-collaborative' | 'preview-template';
+  /** Rendering mode for collaborative editing or readonly previews. */
+  mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
+  /** Version preview content keyed by fragment name. */
+  previewVersionFragmentContents?: Record<string, JSONContent | null>;
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 /**
  * Extract `{ value, label }` options from a JSON Schema property.
@@ -51,41 +61,122 @@ function extractOptions(
   }));
 }
 
-/** Formats stored budget values for readonly preview display. */
-function formatBudgetValue(
-  value: ProposalDraftFields['budget'] | null | undefined,
+function extractPlainText(content: JSONContent | null | undefined): string {
+  if (!content) {
+    return '';
+  }
+
+  if (content.text) {
+    return content.text;
+  }
+
+  return (content.content ?? []).map(extractPlainText).join('');
+}
+
+function formatPreviewBudget(
+  content: JSONContent | null | undefined,
 ): string | null {
-  if (!value) {
+  const text = extractPlainText(content);
+
+  if (!text) {
     return null;
   }
 
-  return value.amount.toLocaleString(undefined, {
+  try {
+    const budget = normalizeBudget(JSON.parse(text));
+
+    if (!budget) {
+      return text;
+    }
+
+    return budget.amount.toLocaleString(undefined, {
+      style: 'currency',
+      currency: budget.currency,
+      currencyDisplay: 'narrowSymbol',
+      maximumFractionDigits: 0,
+    });
+  } catch {
+    return text;
+  }
+}
+
+function getPreviewText({
+  mode,
+  draftValue,
+  previewContent,
+}: {
+  mode: 'preview-version' | 'preview-template';
+  draftValue: string | null | undefined;
+  previewContent: JSONContent | null | undefined;
+}): string | null {
+  if (mode === 'preview-version') {
+    const previewText = extractPlainText(previewContent);
+    return previewText || null;
+  }
+
+  return draftValue ?? null;
+}
+
+function getPreviewBudgetValue({
+  mode,
+  draftValue,
+  previewContent,
+}: {
+  mode: 'preview-version' | 'preview-template';
+  draftValue: ProposalDraftFields['budget'] | null | undefined;
+  previewContent: JSONContent | null | undefined;
+}): string | null {
+  if (mode === 'preview-version') {
+    return formatPreviewBudget(previewContent);
+  }
+
+  if (!draftValue) {
+    return null;
+  }
+
+  return draftValue.amount.toLocaleString(undefined, {
     style: 'currency',
-    currency: value.currency,
+    currency: draftValue.currency,
     currencyDisplay: 'narrowSymbol',
     maximumFractionDigits: 0,
   });
 }
 
+// ---------------------------------------------------------------------------
+// Field renderer
+// ---------------------------------------------------------------------------
+
 /**
  * Renders a single field descriptor for collaborative editing or readonly
- * template preview.
+ * proposal preview modes.
  */
 function renderField(
   field: FieldDescriptor,
   draft: ProposalDraftFields,
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
-  mode: 'edit-collaborative' | 'preview-template',
+  mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
+  previewVersionFragmentContents: Record<string, JSONContent | null>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
   const { key, format, schema } = field;
-  const isReadonlyMode = mode === 'preview-template';
+  const isReadonlyMode = mode !== 'edit-collaborative';
+  const previewContent = previewVersionFragmentContents[key];
+
+  // -- Title ------------------------------------------------------------------
 
   if (key === 'title') {
     if (isReadonlyMode) {
-      return <ReadonlyTitleField value={draft.title} />;
+      return (
+        <ReadonlyTitleField
+          value={getPreviewText({
+            mode,
+            draftValue: draft.title,
+            previewContent,
+          })}
+        />
+      );
     }
 
     return (
@@ -96,13 +187,18 @@ function renderField(
     );
   }
 
+  // -- Category (system) ------------------------------------------------------
+
   if (key === 'category') {
     const options = extractOptions(schema);
 
     if (isReadonlyMode) {
-      const selectedOption = options.find(
-        (opt) => opt.value === draft.category,
-      );
+      const selectedValue = getPreviewText({
+        mode,
+        draftValue: draft.category,
+        previewContent,
+      });
+      const selectedOption = options.find((opt) => opt.value === selectedValue);
 
       return (
         <ReadonlyDropdownField
@@ -123,11 +219,17 @@ function renderField(
     );
   }
 
+  // -- Budget (system) --------------------------------------------------------
+
   if (key === 'budget') {
     if (isReadonlyMode) {
       return (
         <ReadonlyBudgetField
-          value={formatBudgetValue(draft.budget)}
+          value={getPreviewBudgetValue({
+            mode,
+            draftValue: draft.budget,
+            previewContent,
+          })}
           placeholder={t('Add budget')}
         />
       );
@@ -143,6 +245,8 @@ function renderField(
     );
   }
 
+  // -- Dynamic fields resolved by x-format ------------------------------------
+
   switch (format) {
     case 'short-text':
     case 'long-text': {
@@ -153,7 +257,9 @@ function renderField(
           <ReadonlyTextField
             title={schema.title}
             description={schema.description}
-            content={null}
+            content={
+              mode === 'preview-version' ? (previewContent ?? null) : null
+            }
             placeholder={placeholder}
             multiline={format === 'long-text'}
           />
@@ -178,9 +284,11 @@ function renderField(
       if (isReadonlyMode) {
         return (
           <ReadonlyBudgetField
-            value={formatBudgetValue(
-              (draft[key] as ProposalDraftFields['budget']) ?? null,
-            )}
+            value={getPreviewBudgetValue({
+              mode,
+              draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
+              previewContent,
+            })}
             title={schema.title}
             description={schema.description}
             placeholder={t('Add budget')}
@@ -202,8 +310,13 @@ function renderField(
       const options = extractOptions(schema);
 
       if (isReadonlyMode) {
+        const selectedValue = getPreviewText({
+          mode,
+          draftValue: (draft[key] as string | null) ?? null,
+          previewContent,
+        });
         const selectedOption = options.find(
-          (opt) => opt.value === ((draft[key] as string | null) ?? null),
+          (opt) => opt.value === selectedValue,
         );
 
         return (
@@ -236,12 +349,16 @@ function renderField(
   }
 }
 
+// ---------------------------------------------------------------------------
+// ProposalFormRenderer
+// ---------------------------------------------------------------------------
+
 /**
  * Schema-driven form renderer for proposal editing.
  *
  * Takes compiled field descriptors and renders the correct component for
- * each field. In template preview mode, the same structure is rendered
- * through readonly field primitives instead of collaborative editors.
+ * each field. Version and template previews reuse readonly field components,
+ * while editing keeps the collaborative Yjs-backed fields.
  *
  * Layout:
  * - Title at full width
@@ -255,9 +372,10 @@ export function ProposalFormRenderer({
   onEditorFocus,
   onEditorBlur,
   mode = 'edit-collaborative',
+  previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
-  const isReadonlyMode = mode === 'preview-template';
+  const formGapClass = mode === 'preview-template' ? 'gap-4' : 'gap-8';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
@@ -271,12 +389,13 @@ export function ProposalFormRenderer({
       onFieldChange,
       t,
       mode,
+      previewVersionFragmentContents,
       onEditorFocus,
       onEditorBlur,
     );
 
   return (
-    <div className={`flex flex-col ${isReadonlyMode ? 'gap-4' : 'gap-8'}`}>
+    <div className={`flex flex-col ${formGapClass}`}>
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
