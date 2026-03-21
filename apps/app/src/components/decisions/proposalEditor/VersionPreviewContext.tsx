@@ -99,7 +99,13 @@ export function VersionPreviewProvider({
   }, [fragmentNames, provider, versionId]);
 
   const value = useMemo(
-    () => ({ tiptapVersion, fragmentContents }),
+    () =>
+      tiptapVersion
+        ? {
+            tiptapVersion,
+            fragmentContents,
+          }
+        : null,
     [fragmentContents, tiptapVersion],
   );
 
