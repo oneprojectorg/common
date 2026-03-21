@@ -1422,9 +1422,6 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.49.3
         version: 2.49.3
-      jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.2
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1432,21 +1429,9 @@ importers:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
-      dotenv:
-        specifier: ^16.4.7
-        version: 16.4.7
       vitest:
         specifier: 'catalog:'
         version: 4.0.18(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@22.13.14)(happy-dom@20.5.3)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
-      ws:
-        specifier: ^8.18.3
-        version: 8.18.3
 
   services/supabase:
     dependencies:
