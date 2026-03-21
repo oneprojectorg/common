@@ -28,6 +28,7 @@ type Command = keyof typeof COMMANDS;
 
 function executeSupabaseCommand(cmd: string, description: string) {
   console.log(`[e2e] ${description}...`);
+  const supabaseCommand = `pnpm --dir "${PROJECT_ROOT}" exec supabase ${cmd}`;
 
   try {
     // Remove symlink/existing config and copy e2e config to config.toml
@@ -35,7 +36,7 @@ function executeSupabaseCommand(cmd: string, description: string) {
     execSync(`cp "${E2E_CONFIG}" "${CONFIG_PATH}"`, { cwd: PROJECT_ROOT });
 
     // Run the supabase command
-    execSync(`supabase ${cmd}`, {
+    execSync(supabaseCommand, {
       cwd: PROJECT_ROOT,
       stdio: 'inherit',
     });

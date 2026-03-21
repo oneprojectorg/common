@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@op/common": "workspace:*",
-    "@supabase/supabase-js": "^2.49.3",
+    "@supabase/supabase-js": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

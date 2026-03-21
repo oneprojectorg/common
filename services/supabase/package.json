@@ -13,12 +13,12 @@
   "scripts": {
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit",
-    "typegen": "pnpx supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts && pnpm eslint --fix ./src/types.ts"
+    "typegen": "pnpm --dir ../.. exec supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts && pnpm eslint --fix ./src/types.ts"
   },
   "dependencies": {
     "@op/core": "workspace:*",
-    "@supabase/ssr": "0.5.2",
-    "@supabase/supabase-js": "^2.49.3",
+    "@supabase/ssr": "catalog:",
+    "@supabase/supabase-js": "catalog:",
     "cookie": "^1.0.2",
     "next": "catalog:"
   },
