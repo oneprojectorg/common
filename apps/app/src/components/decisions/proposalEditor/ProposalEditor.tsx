@@ -191,7 +191,7 @@ function ProposalEditorInner({
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isPreviewMode = versionPreview?.versionId != null;
+  const isPreviewMode = versionPreview?.tiptapVersion != null;
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
@@ -219,10 +219,10 @@ function ProposalEditorInner({
   const previewTitle = extractPreviewTitle(
     versionPreview?.fragmentContents.title,
   );
-  const viewingLabel = versionPreview?.version
+  const viewingLabel = versionPreview?.tiptapVersion
     ? t('Viewing {date}', {
         date: formatDate(
-          new Date(versionPreview.version.date).toISOString(),
+          new Date(versionPreview.tiptapVersion.date).toISOString(),
           locale,
           DATE_TIME_UTC_FORMAT,
         ),

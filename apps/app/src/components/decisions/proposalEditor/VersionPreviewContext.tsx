@@ -15,8 +15,7 @@ import {
 import { useCollaborativeDoc } from '../../collaboration';
 
 interface VersionPreviewState {
-  versionId: number | null;
-  version: THistoryVersion | null;
+  tiptapVersion: THistoryVersion | null;
   fragmentContents: Record<string, JSONContent | null>;
 }
 
@@ -41,7 +40,7 @@ export function VersionPreviewProvider({
     Record<string, JSONContent | null>
   >({});
 
-  const version = useMemo(
+  const tiptapVersion = useMemo(
     () =>
       versionId === null
         ? null
@@ -100,8 +99,8 @@ export function VersionPreviewProvider({
   }, [fragmentNames, provider, versionId]);
 
   const value = useMemo(
-    () => ({ versionId, version, fragmentContents }),
-    [fragmentContents, version, versionId],
+    () => ({ tiptapVersion, fragmentContents }),
+    [fragmentContents, tiptapVersion],
   );
 
   return (
