@@ -67,12 +67,6 @@ const config = {
       // Disable the 'tls' module on the client side
       tls: { browser: './empty.ts' },
     },
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
   },
   async headers() {
     return [
