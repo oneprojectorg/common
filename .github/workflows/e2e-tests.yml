@@ -197,16 +197,11 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm -C ./tests/e2e exec playwright install-deps chromium
 
-      - name: Restore Supabase Docker image cache
-        id: supabase-docker-cache
-        uses: useblacksmith/cache@v5
+      - name: Persist Docker images with sticky disk
+        uses: useblacksmith/stickydisk@v1
         with:
-          path: /tmp/supabase-docker-images.tar
-          key: supabase-docker-v2.71.0
-
-      - name: Load Supabase Docker images from cache
-        if: steps.supabase-docker-cache.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/supabase-docker-images.tar
+          key: ${{ github.repository }}-supabase-docker-v2.71.0
+          path: /var/lib/docker
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -221,12 +216,6 @@ jobs:
           echo "Starting Supabase with E2E config (ports 56xxx)..."
           supabase start
           echo "Supabase E2E instance started successfully"
-
-      - name: Save Supabase Docker images to cache
-        if: steps.supabase-docker-cache.outputs.cache-hit != 'true'
-        run: |
-          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>' | tr '\n' ' ') \
-            -o /tmp/supabase-docker-images.tar
 
       - name: Check Supabase status
         run: supabase status
