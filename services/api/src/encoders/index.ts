@@ -1,4 +1,3 @@
-// Leaf modules (no local encoder dependencies)
 export * from './access';
 export * from './attachments';
 export * from './shared';
@@ -7,17 +6,12 @@ export * from './projects';
 export * from './relationships';
 export * from './searchResults';
 export * from './taxonomyTerms';
-
-// Second tier (depend only on leaves)
 export * from './roles';
 export * from './individuals';
 
-// Third tier — profiles before organizations (organizations imports from
-// profiles at runtime; profiles only has a type-only import from organizations)
+// Keep this order to avoid Turbopack tripping over the profile/org cycle.
 export * from './profiles';
 export * from './organizations';
-
-// Fourth tier (depend on profiles/organizations)
 export * from './decision';
 export * from './joinProfileRequests';
 export * from './posts';
