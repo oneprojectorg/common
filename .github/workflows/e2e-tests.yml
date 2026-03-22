@@ -61,7 +61,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -154,7 +154,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -183,7 +183,7 @@ jobs:
           echo "version=${PLAYWRIGHT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -196,6 +196,17 @@ jobs:
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm -C ./tests/e2e exec playwright install-deps chromium
+
+      - name: Restore Supabase Docker image cache
+        id: supabase-docker-cache
+        uses: useblacksmith/cache@v5
+        with:
+          path: /tmp/supabase-docker-images.tar
+          key: supabase-docker-v2.71.0
+
+      - name: Load Supabase Docker images from cache
+        if: steps.supabase-docker-cache.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/supabase-docker-images.tar
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -210,6 +221,12 @@ jobs:
           echo "Starting Supabase with E2E config (ports 56xxx)..."
           supabase start
           echo "Supabase E2E instance started successfully"
+
+      - name: Save Supabase Docker images to cache
+        if: steps.supabase-docker-cache.outputs.cache-hit != 'true'
+        run: |
+          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>' | tr '\n' ' ') \
+            -o /tmp/supabase-docker-images.tar
 
       - name: Check Supabase status
         run: supabase status
