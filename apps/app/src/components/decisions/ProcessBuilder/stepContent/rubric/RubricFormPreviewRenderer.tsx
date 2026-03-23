@@ -49,7 +49,7 @@ function RationaleField({ field }: { field: FieldDescriptor }) {
           </span>
         )}
       </span>
-      <div className="min-h-20 rounded-md border border-neutral-gray2 bg-white px-3 py-2 text-sm text-neutral-gray3">
+      <div className="min-h-20 rounded-lg border border-neutral-gray2 bg-white px-3 py-2 text-sm text-neutral-gray3">
         {t('Placeholder')}
       </div>
     </div>

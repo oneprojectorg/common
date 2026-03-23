@@ -163,7 +163,7 @@ export function CollaborativeBudgetField({
             onBlur: handleBlur,
             className: 'shadow-none',
           }}
-          fieldClassName="rounded-md"
+          fieldClassName="rounded-lg"
         />
       </div>
       {!isEditing && (

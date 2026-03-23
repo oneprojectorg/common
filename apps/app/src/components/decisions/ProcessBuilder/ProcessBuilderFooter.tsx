@@ -170,7 +170,7 @@ export const ProcessBuilderFooter = ({
             {(!isDraft ||
               (validation.isReadyToLaunch && !isTerminalStatus)) && (
               <Button
-                className="h-8 rounded-md"
+                className="h-8 rounded-lg"
                 onPress={handleLaunchOrSave}
                 isDisabled={updateInstance.isPending}
               >

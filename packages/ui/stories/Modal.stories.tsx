@@ -164,7 +164,7 @@ export const WithForm = () => (
             </label>
             <input
               type="text"
-              className="w-full rounded-md border border-neutral-gray3 px-3 py-2"
+              className="w-full rounded-lg border border-neutral-gray3 px-3 py-2"
               placeholder="Enter project name"
             />
           </div>
@@ -173,14 +173,14 @@ export const WithForm = () => (
               Description
             </label>
             <textarea
-              className="w-full rounded-md border border-neutral-gray3 px-3 py-2"
+              className="w-full rounded-lg border border-neutral-gray3 px-3 py-2"
               rows={3}
               placeholder="Enter project description"
             />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium">Category</label>
-            <select className="w-full rounded-md border border-neutral-gray3 px-3 py-2">
+            <select className="w-full rounded-lg border border-neutral-gray3 px-3 py-2">
               <option>Select category</option>
               <option>Web Development</option>
               <option>Mobile App</option>

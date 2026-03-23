@@ -9,7 +9,7 @@ const iconButtonStyle = tv({
   variants: {
     size: {
       small: 'h-6 w-6 rounded-full',
-      medium: 'h-8 w-8 rounded-lg',
+      medium: 'h-8 w-8 rounded-md',
       large: 'h-10 w-10 rounded-lg',
     },
     variant: {

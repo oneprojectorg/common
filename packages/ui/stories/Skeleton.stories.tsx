@@ -49,7 +49,7 @@ export const Example = () => (
       <h3 className="font-medium">Shapes</h3>
       <div className="flex items-center gap-4">
         <Skeleton className="size-12 rounded-full" />
-        <Skeleton className="size-12 rounded-md" />
+        <Skeleton className="size-12 rounded-lg" />
         <Skeleton className="h-12 w-24 rounded-lg" />
       </div>
     </div>
@@ -115,12 +115,12 @@ export const ContentLayout = () => (
       <Skeleton className="mb-4 h-6 w-48" />
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Skeleton className="mb-2 h-32 w-full rounded-md" />
+          <Skeleton className="mb-2 h-32 w-full rounded-lg" />
           <Skeleton className="mb-1 h-4 w-full" />
           <Skeleton className="h-3 w-3/4" />
         </div>
         <div>
-          <Skeleton className="mb-2 h-32 w-full rounded-md" />
+          <Skeleton className="mb-2 h-32 w-full rounded-lg" />
           <Skeleton className="mb-1 h-4 w-full" />
           <Skeleton className="h-3 w-3/4" />
         </div>
@@ -130,7 +130,7 @@ export const ContentLayout = () => (
     <div className="rounded-lg border border-neutral-gray3 p-6">
       <div className="mb-4 flex items-center justify-between">
         <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-8 w-20 rounded-md" />
+        <Skeleton className="h-8 w-20 rounded-lg" />
       </div>
       <div className="space-y-3">
         {Array.from({ length: 4 }, (_, i) => (
@@ -140,7 +140,7 @@ export const ContentLayout = () => (
               <Skeleton className="mb-1 h-4 w-full" />
               <Skeleton className="h-3 w-2/3" />
             </div>
-            <Skeleton className="h-6 w-16 rounded-md" />
+            <Skeleton className="h-6 w-16 rounded-lg" />
           </div>
         ))}
       </div>

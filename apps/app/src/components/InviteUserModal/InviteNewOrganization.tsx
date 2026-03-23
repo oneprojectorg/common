@@ -98,10 +98,10 @@ export const InviteNewOrganization = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
-          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-md border border-neutral-gray2 p-2">
+          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
             <TagGroup>
               {emailBadges.map((email, index) => (
-                <Tag className="sm:rounded-sm" key={index}>
+                <Tag className="sm:rounded-md" key={index}>
                   {email}
                   <button onClick={() => removeEmailBadge(email)}>
                     <LuX className="size-3" />
@@ -133,7 +133,7 @@ export const InviteNewOrganization = ({
             value={personalMessage}
             onChange={(e) => setPersonalMessage(e.target.value)}
             placeholder={t('Add a personal note to your invitation')}
-            className="min-h-[80px] rounded-md border border-neutral-gray2 p-2 outline-hidden focus:border-primary-teal focus:ring-1 focus:ring-primary-teal"
+            className="min-h-[80px] rounded-lg border border-neutral-gray2 p-2 outline-hidden focus:border-primary-teal focus:ring-1 focus:ring-primary-teal"
             rows={3}
           />
         </div>

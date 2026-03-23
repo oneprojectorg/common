@@ -26,7 +26,7 @@ export function RubricEditorSkeleton() {
             </div>
           ))}
 
-          <Skeleton className="h-10 w-full rounded-md" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </div>
 

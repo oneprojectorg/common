@@ -165,14 +165,14 @@ const initialSections: FormSection[] = [
           <input
             type="text"
             defaultValue="Share your proposals."
-            className="w-full rounded-md border border-border px-3 py-2"
+            className="w-full rounded-lg border border-border px-3 py-2"
           />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Description</label>
           <textarea
             rows={3}
-            className="w-full rounded-md border border-border px-3 py-2"
+            className="w-full rounded-lg border border-border px-3 py-2"
             defaultValue="Enter your proposal details here..."
           />
         </div>
@@ -181,14 +181,14 @@ const initialSections: FormSection[] = [
             <label className="mb-1 block text-sm font-medium">Start date</label>
             <input
               type="date"
-              className="w-full rounded-md border border-border px-3 py-2"
+              className="w-full rounded-lg border border-border px-3 py-2"
             />
           </div>
           <div className="flex-1">
             <label className="mb-1 block text-sm font-medium">End date</label>
             <input
               type="date"
-              className="w-full rounded-md border border-border px-3 py-2"
+              className="w-full rounded-lg border border-border px-3 py-2"
             />
           </div>
         </div>
@@ -283,7 +283,7 @@ export const Nested: Story = {
 
             <Accordion>
               <AccordionItem id="advanced">
-                <AccordionHeader className="rounded-md bg-muted/50 px-3 py-2">
+                <AccordionHeader className="rounded-lg bg-muted/50 px-3 py-2">
                   <AccordionTrigger>
                     <LuPlus className="size-4 text-primary" />
                     <span className="text-sm text-primary">
@@ -320,13 +320,13 @@ export const Controlled: Story = {
       <div className="w-[400px]">
         <div className="mb-4 flex gap-2">
           <button
-            className="text-primary-fg rounded-md bg-primary px-3 py-1 text-sm"
+            className="text-primary-fg rounded-lg bg-primary px-3 py-1 text-sm"
             onClick={() => setExpandedKeys(new Set(['1', '2', '3']))}
           >
             Expand All
           </button>
           <button
-            className="rounded-md bg-secondary px-3 py-1 text-sm text-secondary-fg"
+            className="rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-fg"
             onClick={() => setExpandedKeys(new Set())}
           >
             Collapse All

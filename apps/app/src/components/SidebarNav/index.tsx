@@ -45,7 +45,7 @@ const NavLink = ({
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-2 rounded-sm p-3 hover:bg-neutral-offWhite hover:no-underline',
+        'flex items-center gap-2 rounded-md p-3 hover:bg-neutral-offWhite hover:no-underline',
         active && 'bg-neutral-offWhite/50',
       )}
       {...pressProps}

@@ -48,7 +48,7 @@ export function ProposalVersionsAside({ onClose }: ProposalVersionsAsideProps) {
     >
       <div className="mx-4 rounded bg-primary-tealWhite p-2">
         <p className="text-base text-neutral-black">{t('Current version')}</p>
-        <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
+        <p className="text-sm text-neutral-charcoal">{t('Latest')}</p>
       </div>
 
       <div>

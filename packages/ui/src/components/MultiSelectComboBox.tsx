@@ -167,7 +167,7 @@ export const MultiSelectComboBox = ({
 
       <div ref={triggerRef} className="flex flex-col gap-2">
         <div
-          className={`flex min-h-10 w-full cursor-pointer items-center rounded-md border bg-white px-3 py-2 text-base ${
+          className={`flex min-h-10 w-full cursor-pointer items-center rounded-lg border bg-white px-3 py-2 text-base ${
             errorMessage
               ? 'border-functional-red'
               : 'border-offWhite hover:border-neutral-gray2'
@@ -244,7 +244,7 @@ export const MultiSelectComboBox = ({
         isOpen={isOpen && filteredItems.length > 0}
         isNonModal
         placement="bottom start"
-        className="min-w-(--trigger-width) rounded-md border bg-white shadow-lg"
+        className="min-w-(--trigger-width) rounded-lg border bg-white shadow-lg"
         style={
           {
             '--trigger-width': `${triggerRef.current?.offsetWidth}px`,

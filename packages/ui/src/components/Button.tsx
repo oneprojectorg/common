@@ -10,7 +10,7 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'flex w-fit cursor-pointer items-center justify-center gap-1 rounded-md text-center text-base leading-3 font-normal text-nowrap shadow-md sm:text-base',
+  base: 'flex w-fit cursor-pointer items-center justify-center gap-1 rounded-lg text-center text-base leading-3 font-normal text-nowrap shadow-md sm:text-base',
   variants: {
     variant: {
       primary: '',
@@ -37,7 +37,7 @@ const buttonStyle = tv({
       pill: '',
     },
     size: {
-      small: 'h-8 rounded-sm p-3',
+      small: 'h-8 rounded-md p-3',
       medium: 'h-10 p-4',
       inline: 'inline-block h-auto p-0',
     },

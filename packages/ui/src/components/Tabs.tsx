@@ -78,7 +78,7 @@ const tabProps = tv({
   variants: {
     variant: {
       default: 'border-b-none border-transparent',
-      pill: 'rounded-sm border-none border-transparent bg-neutral-offWhite p-3 focus-visible:outline-2 focus-visible:outline-solid sm:py-2',
+      pill: 'rounded-md border-none border-transparent bg-neutral-offWhite p-3 focus-visible:outline-2 focus-visible:outline-solid sm:py-2',
     },
     isSelected: {
       false: 'border-b border-transparent',

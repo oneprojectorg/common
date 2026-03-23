@@ -206,7 +206,7 @@ export const DatePicker = <T extends DateValue>({
               'h-8 w-8',
               'flex cursor-pointer items-center justify-center',
               'text-neutral-black outline-hidden',
-              'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
+              'rounded-md hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
               props.isDisabled && 'cursor-not-allowed text-lightGray',
             )}
           >
