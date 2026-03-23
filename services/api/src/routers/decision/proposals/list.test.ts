@@ -90,9 +90,10 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who will submit a proposal
+    // Create an org and member user who will submit a proposal
+    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -129,6 +130,8 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
+    // Create an org for the member user
+    const organization = await testData.createOrganization(setup.userEmail);
     // Create proposal and non-admin member in parallel
     const [, memberUser] = await Promise.all([
       testData.createProposal({
@@ -137,7 +140,7 @@ describe.concurrent('listProposals', () => {
         proposalData: { title: 'Test Proposal', description: 'A test' },
       }),
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
     ]);
@@ -167,9 +170,10 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who will submit a proposal
+    // Create an org and member who will submit a proposal
+    const organization = await testData.createOrganization(setup.userEmail);
     const submitter = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -207,6 +211,8 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
+    // Create an org for the member user
+    const organization = await testData.createOrganization(setup.userEmail);
     // Create visible and hidden proposals, admin caller, and non-admin member in parallel
     const [visibleProposal, hiddenProposal, adminCaller, memberUser] =
       await Promise.all([
@@ -222,7 +228,7 @@ describe.concurrent('listProposals', () => {
         }),
         createAuthenticatedCaller(setup.userEmail),
         testData.createMemberUser({
-          organization: setup.organization,
+          organization,
           instanceProfileIds: [instance.profileId],
         }),
       ]);
@@ -270,9 +276,10 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who will submit proposals
+    // Create an org and member who will submit proposals
+    const organization = await testData.createOrganization(setup.userEmail);
     const memberUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -332,10 +339,11 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who will submit a proposal and admin caller in parallel
+    // Create an org, then member and admin caller in parallel
+    const organization = await testData.createOrganization(setup.userEmail);
     const [submitter, adminCaller] = await Promise.all([
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
       createAuthenticatedCaller(setup.userEmail),
@@ -535,9 +543,10 @@ describe.concurrent('listProposals', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    // Create a user who is not a member of the organization at all
+    // Create an org and a user, then remove the user from the org so they have no org-level access
+    const organization = await testData.createOrganization(setup.userEmail);
     const outsiderUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [],
     });
 
@@ -549,7 +558,7 @@ describe.concurrent('listProposals', () => {
       .where(
         and(
           eq(organizationUsers.authUserId, outsiderUser.authUserId),
-          eq(organizationUsers.organizationId, setup.organization.id),
+          eq(organizationUsers.organizationId, organization.id),
         ),
       );
 
@@ -1110,14 +1119,15 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who creates a draft proposal and a collaborator
+    // Create an org, then member who creates a draft proposal and a collaborator
+    const organization = await testData.createOrganization(setup.userEmail);
     const [creator, collaborator] = await Promise.all([
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
     ]);
@@ -1180,9 +1190,10 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who creates a draft proposal
+    // Create an org and member who creates a draft proposal
+    const organization = await testData.createOrganization(setup.userEmail);
     const member = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -1222,14 +1233,15 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create two members
+    // Create an org and two members
+    const organization = await testData.createOrganization(setup.userEmail);
     const [memberA, memberB] = await Promise.all([
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
     ]);
@@ -1266,9 +1278,10 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who submits a proposal
+    // Create an org and member who submits a proposal
+    const organization = await testData.createOrganization(setup.userEmail);
     const submitter = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -1286,7 +1299,7 @@ describe.concurrent('listProposals', () => {
 
     // Another member should see the submitted proposal
     const otherMember = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -1318,9 +1331,10 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create a member who submits a proposal
+    // Create an org and member who submits a proposal
+    const organization = await testData.createOrganization(setup.userEmail);
     const submitter = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -1363,9 +1377,11 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a member who creates a draft proposal
     const creator = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -1377,7 +1393,7 @@ describe.concurrent('listProposals', () => {
 
     // Create a collaborator and grant them proposal-level access
     const collaborator = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [instance.profileId],
     });
 
@@ -1418,14 +1434,15 @@ describe.concurrent('listProposals', () => {
       throw new Error('No instance created');
     }
 
-    // Create two members
+    // Create an org and two members
+    const organization = await testData.createOrganization(setup.userEmail);
     const [memberA, memberB] = await Promise.all([
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
       testData.createMemberUser({
-        organization: setup.organization,
+        organization,
         instanceProfileIds: [instance.profileId],
       }),
     ]);

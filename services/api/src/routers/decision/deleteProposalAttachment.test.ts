@@ -120,8 +120,9 @@ describe.concurrent('deleteProposalAttachment', () => {
     expect(linkBefore).toBeDefined();
 
     // Create a user and grant them access to the proposal profile (simulating an invite)
+    const organization = await testData.createOrganization(setup.userEmail);
     const member = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
     });
 
     await testData.grantProfileAccess(

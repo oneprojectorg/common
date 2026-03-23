@@ -39,7 +39,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe.concurrent('translation.translateProposal', () => {
+describe('translation.translateProposal', () => {
   it('should translate proposal title and body content', async ({
     task,
     onTestFinished,

@@ -52,7 +52,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: setup.userProfileId,
       })
       .returning();
 
@@ -143,7 +143,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: setup.userProfileId,
       })
       .returning();
 
@@ -218,7 +218,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: instance.profileId,
         profileEntityType: EntityType.DECISION,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: setup.userProfileId,
       })
       .returning();
 
@@ -236,7 +236,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: setup.userProfileId,
       })
       .returning();
 
@@ -322,7 +322,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: setup.userProfileId,
       })
       .returning();
 
@@ -393,7 +393,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
         profileId: proposal.profileId,
         profileEntityType: EntityType.PROPOSAL,
         accessRoleId: ROLES.MEMBER.id,
-        invitedBy: setup.organization.profileId,
+        invitedBy: setup.userProfileId,
         acceptedOn: new Date().toISOString(),
       })
       .returning();

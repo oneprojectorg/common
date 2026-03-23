@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
+  accessRoles,
   decisionProcesses,
   organizationUserToAccessRoles,
   organizationUsers,
@@ -9,10 +10,9 @@ import {
   proposals,
   users,
 } from '@op/db/schema';
-import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
 import { grantDecisionProfileAccess, testMinimalSchema } from '@op/test';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { z } from 'zod';
 
@@ -35,7 +35,6 @@ type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 const createCaller = createCallerFactory(appRouter);
 
 interface CreateDecisionSetupOptions {
-  organizationName?: string;
   processName?: string;
   processDescription?: string;
   instanceCount?: number;
@@ -57,7 +56,7 @@ type EncodedDecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;
 interface DecisionSetupOutput {
   user: User;
   userEmail: string;
-  organization: Record<string, unknown> & { id: string; profileId: string };
+  userProfileId: string;
   process: EncodedDecisionProcess;
   instances: CreatedInstance[];
 }
@@ -83,7 +82,7 @@ interface MemberUserOutput {
  *   const testData = new TestDecisionsDataManager(task.id, onTestFinished);
  *
  *   // Automatically registers cleanup
- *   const { user, organization, process, instances } = await testData.createDecisionSetup({
+ *   const { user, userProfileId, process, instances } = await testData.createDecisionSetup({
  *     instanceCount: 3,
  *     grantAccess: true
  *   });
@@ -121,14 +120,13 @@ export class TestDecisionsDataManager {
   /**
    * Creates a complete decision process setup including:
    * - A test user
-   * - An organization
    * - A decision process
    * - Optional process instances with profile access
    *
    * All operations go through the tRPC router boundary.
    *
    * @param opts - Options for setup creation
-   * @returns Complete decision setup with user, organization, process, and instances
+   * @returns Complete decision setup with user, userProfileId, process, and instances
    */
   async createDecisionSetup(
     opts?: CreateDecisionSetupOptions,
@@ -136,7 +134,6 @@ export class TestDecisionsDataManager {
     this.ensureCleanupRegistered();
 
     const {
-      organizationName = 'Test Organization',
       processName = 'Test Process',
       processDescription = 'A test decision process',
       instanceCount = 0,
@@ -184,28 +181,7 @@ export class TestDecisionsDataManager {
     // Create authenticated caller for this user
     const caller = await this.createAuthenticatedCaller(userEmail);
 
-    // 2. Create organization via router
-    const organization = await caller.organization.create({
-      name: this.generateUniqueName(organizationName),
-      website: 'https://test.com',
-      email: 'contact@test.com',
-      orgType: 'nonprofit',
-      bio: 'Organization for testing',
-      mission: 'To test decision profiles',
-      networkOrganization: false,
-      isReceivingFunds: false,
-      isOfferingFunds: false,
-      acceptingApplications: false,
-    });
-
-    // Get profileId from the profile relation (available in the encoder response)
-    const orgProfileId = organization.profile?.id;
-    if (!orgProfileId) {
-      throw new Error('Organization profile ID not found in response');
-    }
-    this.createdProfileIds.push(orgProfileId);
-
-    // 3. Create decision process via direct DB insert with new schema format
+    // 2. Create decision process via direct DB insert with new schema format
     // We insert directly because the createProcess router uses the legacy format,
     // but listDecisionProfiles and other new endpoints expect the new format.
     const newProcessSchema = {
@@ -238,7 +214,7 @@ export class TestDecisionsDataManager {
       processSchema: processRecord.processSchema as DecisionSchemaDefinition,
     };
 
-    // 4. Create instances if requested
+    // 3. Create instances if requested
     const instances: CreatedInstance[] = [];
     for (let i = 0; i < instanceCount; i++) {
       const instance = await this.createInstanceForProcess({
@@ -262,11 +238,38 @@ export class TestDecisionsDataManager {
     return {
       user,
       userEmail,
-      // Add profileId as a convenience property for tests
-      organization: { ...organization, profileId: orgProfileId },
+      userProfileId,
       process,
       instances,
     };
+  }
+
+  /**
+   * Creates an organization via tRPC and tracks its profile for cleanup.
+   */
+  async createOrganization(
+    userEmail: string,
+  ): Promise<{ id: string; profileId: string }> {
+    this.ensureCleanupRegistered();
+    const caller = await this.createAuthenticatedCaller(userEmail);
+    const organization = await caller.organization.create({
+      name: this.generateUniqueName('Test Organization'),
+      website: 'https://test.com',
+      email: 'contact@test.com',
+      orgType: 'nonprofit',
+      bio: 'Organization for testing',
+      mission: 'To test decision profiles',
+      networkOrganization: false,
+      isReceivingFunds: false,
+      isOfferingFunds: false,
+      acceptingApplications: false,
+    });
+    const orgProfileId = organization.profile?.id;
+    if (!orgProfileId) {
+      throw new Error('Organization profile ID not found in response');
+    }
+    this.createdProfileIds.push(orgProfileId);
+    return { ...organization, profileId: orgProfileId };
   }
 
   /**
@@ -463,10 +466,21 @@ export class TestDecisionsDataManager {
       throw new Error(`Failed to create organization user for ${email}`);
     }
 
+    // Look up the global Member role from the DB (null profileId = global role)
+    const [memberRole] = await db
+      .select()
+      .from(accessRoles)
+      .where(and(eq(accessRoles.name, 'Member'), isNull(accessRoles.profileId)))
+      .limit(1);
+
+    if (!memberRole) {
+      throw new Error('Member access role not found in database');
+    }
+
     // Assign Member role to organization user
     await db.insert(organizationUserToAccessRoles).values({
       organizationUserId: orgUser.id,
-      accessRoleId: ROLES.MEMBER.id,
+      accessRoleId: memberRole.id,
     });
 
     // Grant access to instance profiles if provided (member role, not admin)
@@ -547,7 +561,7 @@ export class TestDecisionsDataManager {
   /**
    * Generates a unique name with UUID first to avoid truncation issues with slug generation
    */
-  private generateUniqueName(baseName: string): string {
+  generateUniqueName(baseName: string): string {
     return `${randomUUID()}-${baseName}-${this.testId}`;
   }
 
@@ -556,7 +570,7 @@ export class TestDecisionsDataManager {
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
    */
-  private ensureCleanupRegistered(): void {
+  ensureCleanupRegistered(): void {
     if (this.cleanupRegistered) {
       return;
     }
