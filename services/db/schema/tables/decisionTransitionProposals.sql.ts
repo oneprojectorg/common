@@ -27,13 +27,12 @@ export const decisionTransitionProposals = pgTable(
         onDelete: 'cascade',
       }),
 
-    proposalHistoryId: uuid('proposal_history_id').references(
-      () => proposalHistory.historyId,
-      {
+    proposalHistoryId: uuid('proposal_history_id')
+      .notNull()
+      .references(() => proposalHistory.historyId, {
         onUpdate: 'cascade',
-        onDelete: 'set null',
-      },
-    ),
+        onDelete: 'cascade',
+      }),
 
     createdAt: timestamp({
       withTimezone: true,

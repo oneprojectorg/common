@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "745baa1a-21d2-41d3-a9ac-62603150e793",
+  "id": "1c841a72-1175-4512-bf89-ee35adaa24c1",
   "prevIds": [
     "d069c130-7344-49e4-b867-04c517f1e091"
   ],
@@ -1497,7 +1497,7 @@
     {
       "type": "uuid",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -9283,7 +9283,7 @@
         "history_id"
       ],
       "onUpdate": "CASCADE",
-      "onDelete": "SET NULL",
+      "onDelete": "CASCADE",
       "name": "decision_transition_proposals_tzgkzYtWxFMm_fkey",
       "entityType": "fks",
       "schema": "public",
