@@ -122,6 +122,10 @@ export default function ProposalEditorLayout({
   const asideSlot =
     asideState.aside === 'versions' ? (
       <ProposalVersionsAside
+        proposalId={proposal.id}
+        proposalData={proposal.proposalData}
+        proposalTitle={proposal.profile.name}
+        fragmentNames={fragmentNames}
         versionId={asideState.versionId}
         onSelectVersion={(nextVersionId) =>
           setAsideState({
