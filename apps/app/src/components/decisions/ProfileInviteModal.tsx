@@ -383,6 +383,27 @@ function ProfileInviteModalContent({
     });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== ',' || !selectedRoleId) {
+      return;
+    }
+    const email = searchQuery.trim();
+    if (!isValidEmail(email)) {
+      return;
+    }
+    const lowerEmail = email.toLowerCase();
+    const takenEmails = new Set([
+      ...allSelectedItems.map((item) => item.email.toLowerCase()),
+      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticInvites.map((i) => i.email.toLowerCase()),
+    ]);
+    if (takenEmails.has(lowerEmail)) {
+      return;
+    }
+    e.preventDefault();
+    handleAddEmail(email);
+  };
+
   const handlePaste = (e: React.ClipboardEvent) => {
     const pastedText = e.clipboardData.getData('text');
     if (!pastedText || !selectedRoleId) {
@@ -455,6 +476,7 @@ function ProfileInviteModalContent({
             placeholder={t('Search by name or email...')}
             value={searchQuery}
             onChange={setSearchQuery}
+            onKeyDown={handleKeyDown}
             className="w-full"
           />
         </div>
