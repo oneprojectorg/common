@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
+import { decisionTransitionProposals } from './decisionTransitionProposals.sql';
 import { decisions } from './decisions.sql';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
@@ -171,6 +172,7 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
   categories: many(proposalCategories),
   attachments: many(proposalAttachments),
   voteProposals: many(decisionsVoteProposals),
+  transitionProposals: many(decisionTransitionProposals),
   // posts relationship will be handled from the posts side to avoid circular dependencies
 }));
 
