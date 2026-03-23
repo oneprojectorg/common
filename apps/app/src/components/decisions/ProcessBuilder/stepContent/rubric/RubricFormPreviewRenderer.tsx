@@ -72,7 +72,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
           <div className="flex flex-col gap-3">
             <FieldHeader
               title={schema.title}
-              badge={t('Yes/No')}
+              badge={t('No/Yes')}
               className="gap-1"
             />
             <div className="flex items-center gap-3">
