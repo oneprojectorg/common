@@ -18,17 +18,14 @@ major_version = 15
 enabled = true
 sql_paths = [ './seed.sql' ]
 
-[studio]
+[realtime]
 enabled = true
-# E2E Studio port (different from dev 54323 and test 55323)
-port = 56323
-api_url = "http://127.0.0.1"
-openai_api_key = "env(OPENAI_API_KEY)"
+
+[studio]
+enabled = false
 
 [inbucket]
-enabled = true
-# E2E Inbucket port (different from dev 54324 and test 55324)
-port = 56324
+enabled = false
 
 [storage]
 enabled = true

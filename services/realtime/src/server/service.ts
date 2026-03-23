@@ -11,24 +11,24 @@ class RealtimeService {
 
   private getClient(): RealtimeClient {
     if (!this.client) {
-      const apiUrl = process.env.CENTRIFUGO_API_URL;
-      const apiKey = process.env.CENTRIFUGO_API_KEY;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
 
-      if (!apiUrl) {
+      if (!supabaseUrl) {
         throw new Error(
-          '[Realtime] CENTRIFUGO_API_URL is not set. Realtime publishing will be disabled.',
+          '[Realtime] NEXT_PUBLIC_SUPABASE_URL is not set. Realtime publishing will be disabled.',
         );
       }
 
-      if (!apiKey) {
+      if (!serviceRoleKey) {
         throw new Error(
-          '[Realtime] CENTRIFUGO_API_KEY is not set. Realtime publishing will be disabled.',
+          '[Realtime] SUPABASE_SERVICE_ROLE is not set. Realtime publishing will be disabled.',
         );
       }
 
       this.client = new RealtimeClient({
-        apiUrl,
-        apiKey,
+        supabaseUrl,
+        serviceRoleKey,
       });
     }
 

@@ -16,6 +16,9 @@ major_version = 15
 enabled = true
 sql_paths = [ './seed.sql' ]
 
+[realtime]
+enabled = true
+
 [studio]
 enabled = true
 # Test Studio port (different from dev port 54323)

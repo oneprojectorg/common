@@ -32,10 +32,6 @@ jobs:
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
       NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
-      CENTRIFUGO_API_URL: http://localhost:8000/api
-      CENTRIFUGO_API_KEY: test_api_key
-      CENTRIFUGO_TOKEN_SECRET: test_token_secret
-      NEXT_PUBLIC_CENTRIFUGO_WS_URL: ws://localhost:8000/connection/websocket
 
     steps:
       - name: Checkout repository
@@ -124,11 +120,6 @@ jobs:
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
       # TipTap Cloud (collaborative editing - stub for tests)
       NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
-      # Centrifugo (realtime - stub values for tests)
-      CENTRIFUGO_API_URL: http://localhost:8000/api
-      CENTRIFUGO_API_KEY: test_api_key
-      CENTRIFUGO_TOKEN_SECRET: test_token_secret
-      NEXT_PUBLIC_CENTRIFUGO_WS_URL: ws://localhost:8000/connection/websocket
 
     steps:
       - name: Checkout repository
