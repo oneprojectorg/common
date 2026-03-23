@@ -4,6 +4,7 @@ import { relations } from 'drizzle-orm/_relations';
 import { index, pgTable, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies } from '../../helpers';
+import { proposalHistory } from './proposalHistory.sql';
 import { proposals } from './proposals.sql';
 import { stateTransitionHistory } from './stateTransitionHistory.sql';
 
@@ -26,6 +27,14 @@ export const decisionTransitionProposals = pgTable(
         onDelete: 'cascade',
       }),
 
+    proposalHistoryId: uuid('proposal_history_id').references(
+      () => proposalHistory.historyId,
+      {
+        onUpdate: 'cascade',
+        onDelete: 'set null',
+      },
+    ),
+
     createdAt: timestamp({
       withTimezone: true,
       mode: 'string',
@@ -35,6 +44,7 @@ export const decisionTransitionProposals = pgTable(
     ...serviceRolePolicies,
     index().on(table.transitionHistoryId),
     index().on(table.proposalId),
+    index().on(table.proposalHistoryId),
     unique().on(table.transitionHistoryId, table.proposalId),
   ],
 );
@@ -49,6 +59,10 @@ export const decisionTransitionProposalsRelations = relations(
     proposal: one(proposals, {
       fields: [decisionTransitionProposals.proposalId],
       references: [proposals.id],
+    }),
+    proposalHistorySnapshot: one(proposalHistory, {
+      fields: [decisionTransitionProposals.proposalHistoryId],
+      references: [proposalHistory.historyId],
     }),
   }),
 );
