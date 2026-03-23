@@ -76,8 +76,8 @@ export const RoleSelector = ({
 export const RoleSelectorSkeleton = () => {
   return (
     <div className="flex gap-4">
-      <Skeleton className="h-8 w-20 rounded-md" />
-      <Skeleton className="h-8 w-24 rounded-md" />
+      <Skeleton className="h-8 w-20 rounded-lg" />
+      <Skeleton className="h-8 w-24 rounded-lg" />
     </div>
   );
 };

@@ -12,7 +12,14 @@ import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -22,6 +29,7 @@ import {
   CollaborativeDocProvider,
   CollaborativePresence,
   useCollaborativeDoc,
+  useOptionalCollaborativeDoc,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
@@ -78,11 +86,15 @@ export function ProposalEditor({
   backHref,
   proposal,
   isEditMode = false,
+  asideHeaderIcons,
+  showHeaderActions = true,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
+  asideHeaderIcons?: ReactNode;
+  showHeaderActions?: boolean;
 }) {
   const { user } = useUser();
   const t = useTranslations();
@@ -93,11 +105,15 @@ export function ProposalEditor({
     const { collaborationDocId: existingId } = parseProposalData(
       proposal?.proposalData,
     );
+
     if (existingId) {
       return existingId;
     }
-    return `proposal-${instance.id}-${proposal?.id ?? crypto.randomUUID()}`;
-  }, [proposal?.proposalData, proposal?.id, instance.id]);
+
+    throw new Error(
+      'Legacy proposals without collaboration documents cannot be edited',
+    );
+  }, [proposal?.proposalData]);
 
   const userName = user.profile?.name ?? t('Anonymous');
 
@@ -110,20 +126,32 @@ export function ProposalEditor({
     throw new Error('Proposal template not found on instance');
   }
 
+  const existingCollab = useOptionalCollaborativeDoc();
+
+  const inner = (
+    <ProposalEditorInner
+      instance={instance}
+      backHref={backHref}
+      proposal={proposal}
+      isEditMode={isEditMode}
+      asideHeaderIcons={asideHeaderIcons}
+      showHeaderActions={showHeaderActions}
+      collaborationDocId={collaborationDocId}
+      proposalTemplate={proposalTemplate}
+    />
+  );
+
+  if (existingCollab) {
+    return inner;
+  }
+
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
-      <ProposalEditorInner
-        instance={instance}
-        backHref={backHref}
-        proposal={proposal}
-        isEditMode={isEditMode}
-        collaborationDocId={collaborationDocId}
-        proposalTemplate={proposalTemplate}
-      />
+      {inner}
     </CollaborativeDocProvider>
   );
 }
@@ -137,6 +165,8 @@ function ProposalEditorInner({
   backHref,
   proposal,
   isEditMode,
+  asideHeaderIcons,
+  showHeaderActions,
   collaborationDocId,
   proposalTemplate,
 }: {
@@ -144,6 +174,8 @@ function ProposalEditorInner({
   backHref: string;
   proposal: Proposal;
   isEditMode: boolean;
+  asideHeaderIcons?: ReactNode;
+  showHeaderActions: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
@@ -294,6 +326,8 @@ function ProposalEditorInner({
       isEditMode={isEditMode}
       isDraft={isDraft}
       presenceSlot={<CollaborativePresence />}
+      asideHeaderIcons={asideHeaderIcons}
+      showHeaderActions={showHeaderActions}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
     >

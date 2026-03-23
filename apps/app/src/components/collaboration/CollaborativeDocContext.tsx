@@ -86,3 +86,7 @@ export function useCollaborativeDoc(): CollaborativeDocContextValue {
   }
   return ctx;
 }
+
+export function useOptionalCollaborativeDoc(): CollaborativeDocContextValue | null {
+  return useContext(CollaborativeDocContext);
+}

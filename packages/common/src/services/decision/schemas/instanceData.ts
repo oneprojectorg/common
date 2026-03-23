@@ -86,6 +86,8 @@ export function createInstanceDataFromTemplate(input: {
     templateVersion: template.version,
     templateName: template.name,
     templateDescription: template.description,
+    proposalTemplate: template.proposalTemplate,
+    rubricTemplate: template.rubricTemplate,
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 
@@ -110,6 +112,7 @@ export function createInstanceDataFromTemplate(input: {
       return {
         phaseId: phase.id,
         name: phase.name,
+        headline: phase.name,
         ...(phase.description && { description: phase.description }),
         rules: phase.rules,
         ...(phase.selectionPipeline && {
@@ -125,6 +128,7 @@ export function createInstanceDataFromTemplate(input: {
         ...(override?.settings && {
           settings: override.settings,
         }),
+        ...(override?.headline && { headline: override.headline }),
       };
     }),
   };

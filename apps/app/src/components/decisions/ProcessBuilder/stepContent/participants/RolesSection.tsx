@@ -226,13 +226,13 @@ function MobileRoleCard({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
       <div className="flex items-center justify-between">
         <h3 className="font-serif text-sm font-light text-neutral-black">
           {role.name}
         </h3>
         {onDelete && (
-          <OptionMenu variant="outline" className="rounded-md">
+          <OptionMenu variant="outline" className="rounded-lg">
             <Menu className="min-w-28 p-2">
               <MenuItem
                 key="delete"
@@ -330,7 +330,7 @@ function RolesTable({
                     profileId={decisionProfileId}
                   />
                   <TableCell>
-                    <OptionMenu variant="outline" className="rounded-md">
+                    <OptionMenu variant="outline" className="rounded-lg">
                       <Menu className="min-w-28 p-2">
                         <MenuItem
                           key="delete"

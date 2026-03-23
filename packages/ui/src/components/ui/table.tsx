@@ -269,7 +269,7 @@ const TableRow = <T extends object>({
         <TableCell className="px-0">
           <Button
             slot="drag"
-            className="grid place-content-center rounded-xs px-[calc(var(--gutter)/2)] outline-hidden focus-visible:ring focus-visible:ring-ring"
+            className="grid place-content-center rounded-sm px-[calc(var(--gutter)/2)] outline-hidden focus-visible:ring focus-visible:ring-ring"
           >
             <svg
               aria-hidden

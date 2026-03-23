@@ -78,7 +78,7 @@ export const SheetHeader = ({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="ml-auto flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 focus:outline-none"
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 focus:outline-none"
         >
           <LuX className="size-4" />
         </button>

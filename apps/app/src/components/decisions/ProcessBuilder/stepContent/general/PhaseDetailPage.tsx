@@ -337,7 +337,7 @@ function PhaseDetailForm({
             content={phase.additionalInfo ?? ''}
             onChange={(content) => updatePhase({ additionalInfo: content })}
             toolbarPosition="bottom"
-            className="rounded-md border border-border"
+            className="rounded-lg border border-border"
             editorClassName="min-h-24 p-3"
           />
           <p className="text-sm text-neutral-gray4">

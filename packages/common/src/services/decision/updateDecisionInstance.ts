@@ -288,7 +288,7 @@ export const updateDecisionInstance = async ({
         inviterName: invite.inviter?.name || 'A team member',
         profileName: invite.profile.name,
         inviteUrl: profile.slug
-          ? `${baseUrl}/decisions/${profile.slug}`
+          ? `${baseUrl}/decisions/${profile.slug}/invite`
           : baseUrl,
         personalMessage: invite.message ?? undefined,
       }));

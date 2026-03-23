@@ -92,7 +92,7 @@ const RelationshipListContent = ({
                             ?.label ?? t('Relationship')}
                           {relationship.pending && (
                             <TagGroup className="ml-1 inline-flex">
-                              <Tag className="rounded-sm px-1 py-0.5 text-xs">
+                              <Tag className="rounded-md px-1 py-0.5 text-xs">
                                 {t('Pending')}
                               </Tag>
                             </TagGroup>

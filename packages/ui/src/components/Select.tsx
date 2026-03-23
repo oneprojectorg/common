@@ -23,7 +23,7 @@ import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 const selectStyles = tv({
-  base: 'flex min-w-0 flex-row justify-between rounded-md border text-base leading-3 text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
+  base: 'flex min-w-0 flex-row justify-between rounded-lg border text-base leading-3 text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
       true: 'bg-neutral-gray1 text-neutral-gray4',
@@ -34,7 +34,7 @@ const selectStyles = tv({
       pill: 'h-auto border-0 bg-primary-tealWhite text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     size: {
-      small: 'h-8 rounded-sm p-2 px-3',
+      small: 'h-8 rounded-md p-2 px-3',
       medium: 'h-10 p-3',
     },
   },
@@ -123,7 +123,12 @@ export const Select = <T extends object>({
                 'flex h-full min-w-0 flex-1 items-center text-ellipsis data-[placeholder]:text-neutral-gray4',
                 props.selectValueClassName,
               )}
-            />
+            >
+              {variant === 'pill'
+                ? ({ selectedText, isPlaceholder }) =>
+                    isPlaceholder ? null : selectedText
+                : undefined}
+            </SelectValue>
             {icon ?? (
               <LuChevronDown
                 aria-hidden

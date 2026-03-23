@@ -180,6 +180,7 @@ export const decisionSchemaDefinitionEncoder = z.object({
   phases: z.array(phaseDefinitionEncoder).min(1),
   // Optional proposal template for budget/field configuration (legacy compatibility)
   proposalTemplate: jsonSchemaEncoder.optional(),
+  rubricTemplate: rubricTemplateEncoder.optional(),
 });
 
 /** Decision process encoder */
@@ -255,6 +256,7 @@ const decisionAccessEncoder = z.object({
   submitProposals: z.boolean(),
   vote: z.boolean(),
 });
+export type DecisionAccess = z.infer<typeof decisionAccessEncoder>;
 
 /** Process instance encoder  */
 export const processInstanceWithSchemaEncoder = createSelectSchema(
@@ -524,6 +526,18 @@ export const proposalListEncoder = z.object({
   total: z.number(),
   hasMore: z.boolean(),
   canManageProposals: z.boolean().prefault(false),
+});
+
+export const proposalVersionEncoder = z.object({
+  version: z.number(),
+  createdAt: z.string(),
+  name: z.string().optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const proposalVersionListEncoder = z.object({
+  // Ordered newest-first (descending by integer version) by the service layer.
+  versions: z.array(proposalVersionEncoder),
 });
 
 // Decision Encoder

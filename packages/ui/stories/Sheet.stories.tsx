@@ -27,7 +27,7 @@ export const BottomSheet = () => (
               <button
                 key={item}
                 type="button"
-                className="flex h-10 items-center rounded-md px-4 text-sm hover:bg-neutral-gray1"
+                className="flex h-10 items-center rounded-lg px-4 text-sm hover:bg-neutral-gray1"
               >
                 {item}
               </button>
@@ -88,7 +88,7 @@ export const LeftSheet = () => (
             <button
               key={item}
               type="button"
-              className="flex h-10 items-center rounded-md px-4 text-sm hover:bg-neutral-gray1"
+              className="flex h-10 items-center rounded-lg px-4 text-sm hover:bg-neutral-gray1"
             >
               {item}
             </button>

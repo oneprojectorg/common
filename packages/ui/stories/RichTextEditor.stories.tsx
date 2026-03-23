@@ -61,7 +61,7 @@ export const WithChangeHandlers = () => {
           }}
         />
       </div>
-      <div className="rounded-md bg-neutral-gray4 p-4">
+      <div className="rounded-lg bg-neutral-gray4 p-4">
         <p className="mb-2 font-semibold">Update count: {updateCount}</p>
         <p className="mb-2 text-sm text-neutral-gray1">Current content:</p>
         <pre className="max-h-40 overflow-auto rounded bg-white p-2 text-xs">
@@ -116,7 +116,7 @@ export const WithRefAPI = () => {
         <Button onPress={handleCheckEmpty}>Check Empty</Button>
       </div>
       {status && (
-        <div className="rounded-md bg-neutral-gray4 p-3 text-sm">
+        <div className="rounded-lg bg-neutral-gray4 p-3 text-sm">
           <strong>Status:</strong> {status}
         </div>
       )}

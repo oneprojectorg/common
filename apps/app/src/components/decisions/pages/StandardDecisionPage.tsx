@@ -18,9 +18,6 @@ export function StandardDecisionPage({
   slug,
   decisionSlug,
   decisionProfileId,
-  allowProposals,
-  description,
-  currentPhase,
 }: {
   instanceId: string;
   slug: string;
@@ -28,20 +25,27 @@ export function StandardDecisionPage({
   decisionSlug?: string;
   /** Decision profile ID for translating the decision content (phase titles, headline, descriptions) */
   decisionProfileId?: string | null;
-  /** Whether proposal submission is allowed in the current phase */
-  allowProposals: boolean;
-  /** Instance-level description — fallback for the About the process modal */
-  description?: string;
-  /** Current phase data from the process builder */
-  currentPhase?: InstancePhaseData;
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
-    processInstanceId: instanceId,
-    limit: 20,
-  });
+  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.listProposals({
+      processInstanceId: instanceId,
+      limit: 20,
+    }),
+    t.decision.getInstance({ instanceId }),
+  ]);
+
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhaseId = instance.instanceData?.currentPhaseId;
+  const currentPhase = phases.find(
+    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  );
+  const allowProposals = currentPhase?.rules?.proposals?.submit === true;
+  const description =
+    instance.description ?? instance.instanceData?.templateDescription;
+  const canSubmitProposal = instance.access?.submitProposals ?? false;
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
@@ -70,7 +74,7 @@ export function StandardDecisionPage({
           instanceId={instanceId}
           description={actionBarDescription}
           markup={!!translation?.additionalInfo}
-          showSubmitButton={allowProposals}
+          showSubmitButton={allowProposals && canSubmitProposal}
         />
       </div>
 
@@ -83,6 +87,7 @@ export function StandardDecisionPage({
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
                 decisionProfileId={decisionProfileId}
+                permissions={instance.access}
               />
             </Suspense>
           </div>

@@ -233,7 +233,7 @@ export function ProposalView({
               <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
                 {category && (
                   <TagGroup className="max-w-full">
-                    <Tag className="max-w-full sm:max-w-96 sm:rounded-sm">
+                    <Tag className="max-w-full sm:max-w-96 sm:rounded-md">
                       <span
                         className="truncate"
                         dangerouslySetInnerHTML={{ __html: category }}

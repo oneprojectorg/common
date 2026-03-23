@@ -88,11 +88,11 @@ const SlashCommandsList = forwardRef<
   }));
 
   return (
-    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-md border bg-white p-1 shadow-md">
+    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-lg border bg-white p-1 shadow-md">
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
-            className={`flex w-full items-center space-x-2 rounded-sm px-2 py-1 text-left hover:bg-neutral-gray1 ${
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left hover:bg-neutral-gray1 ${
               index === selectedIndex
                 ? 'bg-neutral-gray1 text-neutral-black'
                 : 'text-neutral-charcoal'
@@ -100,7 +100,7 @@ const SlashCommandsList = forwardRef<
             key={index}
             onClick={() => selectItem(index)}
           >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-sm border bg-white">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-white">
               <item.icon className="size-4" />
             </div>
             <div>

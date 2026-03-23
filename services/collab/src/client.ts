@@ -14,12 +14,30 @@ export type TipTapDocument = {
  */
 export type TipTapFragmentResponse = Record<string, TipTapDocument>;
 
+export interface TipTapVersion {
+  version: number;
+  createdAt: string;
+  name?: string;
+  meta?: Record<string, unknown>;
+}
+
 type TipTapClientConfig = {
   appId: string;
   secret: string;
 };
 
 export type TipTapClient = ReturnType<typeof createTipTapClient>;
+
+export function getTipTapClient(): TipTapClient {
+  const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
+  const secret = process.env.TIPTAP_SECRET;
+
+  if (!appId || !secret) {
+    throw new Error('TipTap credentials not configured');
+  }
+
+  return createTipTapClient({ appId, secret });
+}
 
 /**
  * Checks whether a payload looks like a single TipTap document.
@@ -114,6 +132,17 @@ export function createTipTapClient(config: TipTapClientConfig) {
       }
 
       return response as R;
+    },
+
+    /**
+     * Fetch the saved versions for a document.
+     */
+    listVersions: async (docName: string): Promise<TipTapVersion[]> => {
+      return api
+        .get<
+          TipTapVersion[]
+        >(`documents/${encodeURIComponent(docName)}/versions`)
+        .json();
     },
   };
 }

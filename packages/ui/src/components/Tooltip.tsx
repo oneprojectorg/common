@@ -37,7 +37,7 @@ const TooltipTrigger = ({
 };
 
 const styles = tv({
-  base: 'group relative z-0 rounded-md bg-charcoal px-3 py-2 font-sans text-sm text-offWhite will-change-transform',
+  base: 'group relative z-0 rounded-lg bg-charcoal px-3 py-2 font-sans text-sm text-offWhite will-change-transform',
   variants: {
     isEntering: {
       true: 'animate-in ease-out animation-duration-200 fade-in placement-left:slide-in-from-right-1 placement-right:slide-in-from-left-1 placement-top:slide-in-from-bottom-1 placement-bottom:slide-in-from-top-1',

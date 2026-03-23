@@ -56,6 +56,15 @@
    * ============================================ */
 
   /* ============================================
+   * Border Radius
+   * ============================================ */
+  --radius-sm: 0.125rem;
+  --radius: 0.25rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* ============================================
    * Font Families
    * ============================================ */
   --font-accent:
@@ -151,6 +160,7 @@
   /* ============================================
    * Spacing
    * ============================================ */
+  --spacing-editor-topbar: 4rem;
   --spacing-18: 4.5rem;
 
   /* ============================================
@@ -472,7 +482,8 @@
 
 /* Border glow utility */
 @utility border-glow {
-  border: 1px solid color-mix(in srgb, var(--color-neutral-gray3) 50%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-neutral-gray3) 50%, transparent);
   background-clip: padding-box;
   backdrop-filter: blur(40px) contrast(1.5) saturate(3);
   box-shadow:
