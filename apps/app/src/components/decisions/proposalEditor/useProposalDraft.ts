@@ -24,6 +24,26 @@ export interface ProposalDraftFields extends Record<string, unknown> {
   budget: BudgetData | null;
 }
 
+/** Shallow-compare two budget values for equality. */
+function budgetsEqual(a: BudgetData | null, b: BudgetData | null): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  return a.amount === b.amount && a.currency === b.currency;
+}
+
+/** Returns true when the draft has not diverged from the server snapshot. */
+function draftsEqual(a: ProposalDraftFields, b: ProposalDraftFields): boolean {
+  return (
+    a.title === b.title &&
+    a.category === b.category &&
+    budgetsEqual(a.budget, b.budget)
+  );
+}
+
 /**
  * Manages the proposal draft lifecycle: parsing server data into local state,
  * syncing field changes, and debounced auto-save back to the server.
@@ -60,6 +80,7 @@ export function useProposalDraft({
 
   const [draft, setDraft] = useState<ProposalDraftFields>(initialDraft);
   const draftRef = useRef<ProposalDraftFields>(initialDraft);
+  const initialDraftRef = useRef<ProposalDraftFields>(initialDraft);
 
   useEffect(() => {
     draftRef.current = draft;
@@ -67,6 +88,7 @@ export function useProposalDraft({
 
   useEffect(() => {
     draftRef.current = initialDraft;
+    initialDraftRef.current = initialDraft;
     setDraft(initialDraft);
   }, [initialDraft]);
 
@@ -135,7 +157,15 @@ export function useProposalDraft({
         // Dynamic fields are Yjs-only — we don't store them in draft state.
 
         draftRef.current = next;
-        debouncedAutoSave(next);
+
+        // Only auto-save when the draft actually diverges from the server
+        // snapshot. Collaborative fields emit onChange during their initial
+        // Yjs sync with the same values already in initialDraft — comparing
+        // against it prevents a spurious updateProposal on page load.
+        if (!draftsEqual(next, initialDraftRef.current)) {
+          debouncedAutoSave(next);
+        }
+
         return next;
       });
     },
