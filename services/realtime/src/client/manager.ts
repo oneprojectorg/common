@@ -181,7 +181,7 @@ export class RealtimeManager {
 
     // Clean up all channels
     this.channels.forEach((realtimeChannel) => {
-      this.supabase!.removeChannel(realtimeChannel);
+      this.supabase?.removeChannel(realtimeChannel);
     });
     this.channels.clear();
     this.channelListeners.clear();
