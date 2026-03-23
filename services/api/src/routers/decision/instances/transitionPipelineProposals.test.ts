@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
+  createAndSubmitProposal,
   createInstanceWithSchema,
   schemaWithPipeline,
   schemaWithoutPipeline,
@@ -20,15 +21,12 @@ describe.concurrent('Transition pipeline: join table population', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const { instanceId, user, userEmail } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithPipeline,
-    );
+    const { instanceId, user, userEmail, caller } =
+      await createInstanceWithSchema(testData, task.id, schemaWithPipeline);
 
-    // Create 3 proposals
+    // Create and submit 3 proposals (submitted proposals are eligible for transition)
     for (let i = 1; i <= 3; i++) {
-      await testData.createProposal({
+      await createAndSubmitProposal(testData, caller, {
         callerEmail: userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
@@ -65,15 +63,12 @@ describe.concurrent('Transition pipeline: join table population', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const { instanceId, user, userEmail } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, user, userEmail, caller } =
+      await createInstanceWithSchema(testData, task.id, schemaWithoutPipeline);
 
-    // Create 3 proposals
+    // Create and submit 3 proposals (submitted proposals are eligible for transition)
     for (let i = 1; i <= 3; i++) {
-      await testData.createProposal({
+      await createAndSubmitProposal(testData, caller, {
         callerEmail: userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
