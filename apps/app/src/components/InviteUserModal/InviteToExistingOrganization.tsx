@@ -133,10 +133,10 @@ export const InviteToExistingOrganization = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
-          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-md border border-neutral-gray2 p-2">
+          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
             <TagGroup aria-label={t('Selected emails')}>
               {emailBadges.map((email, index) => (
-                <Tag className="sm:rounded-sm" key={index}>
+                <Tag className="sm:rounded-md" key={index}>
                   {email}
                   <button onClick={() => removeEmailBadge(email)}>
                     <LuX className="size-3" />

@@ -112,14 +112,14 @@ export const WithForm = () => (
               <label className="block text-sm font-medium">Name</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border border-neutral-gray3 px-3 py-2"
+                className="mt-1 block w-full rounded-lg border border-neutral-gray3 px-3 py-2"
                 placeholder="Enter name"
               />
             </div>
             <div>
               <label className="block text-sm font-medium">Description</label>
               <textarea
-                className="mt-1 block w-full rounded-md border border-neutral-gray3 px-3 py-2"
+                className="mt-1 block w-full rounded-lg border border-neutral-gray3 px-3 py-2"
                 rows={3}
                 placeholder="Enter description"
               />

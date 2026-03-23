@@ -90,7 +90,7 @@ export const Example = () => (
               <div className="text-xs text-neutral-gray3">Following</div>
             </div>
           </div>
-          <button className="w-full rounded-md bg-teal px-4 py-2 text-sm font-medium text-white">
+          <button className="w-full rounded-lg bg-teal px-4 py-2 text-sm font-medium text-white">
             Follow
           </button>
         </div>

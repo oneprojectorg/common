@@ -78,7 +78,7 @@ function SectionItem({
         type="button"
         onClick={() => onSectionClick(section.id)}
         className={cn(
-          'flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-left text-base transition-colors',
+          'flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-base transition-colors',
           isActive
             ? 'bg-primary-tealWhite text-primary'
             : 'text-neutral-black hover:bg-neutral-gray1',
@@ -133,7 +133,7 @@ function PhaseItem({
         type="button"
         onClick={() => onSectionClick(phaseSectionId)}
         className={cn(
-          'flex w-full cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-left text-sm transition-colors',
+          'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
           isActive
             ? 'bg-primary-tealWhite text-primary'
             : 'text-neutral-black hover:bg-neutral-gray1',

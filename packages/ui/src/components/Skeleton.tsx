@@ -17,7 +17,7 @@ export const Skeleton = ({
   return (
     <div
       className={cn(
-        'min-h-4 rounded-sm bg-neutral-gray1',
+        'min-h-4 rounded-md bg-neutral-gray1',
         'animate-pulse',
         className,
       )}

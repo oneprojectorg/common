@@ -351,11 +351,11 @@ function CriterionBadges({ criterion }: { criterion: CriterionView }) {
   const t = useTranslations();
   return (
     <span className="ml-auto flex shrink-0 items-center gap-1.5">
-      <span className="rounded-sm bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
+      <span className="rounded-md bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
         {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
       </span>
       {criterion.criterionType === 'scored' && criterion.maxPoints && (
-        <span className="bg-primary-mint/20 text-primary-tealDark rounded-sm px-1.5 py-0.5 text-xs">
+        <span className="bg-primary-mint/20 text-primary-tealDark rounded-md px-1.5 py-0.5 text-xs">
           {criterion.maxPoints} {t('pts')}
         </span>
       )}

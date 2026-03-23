@@ -381,7 +381,7 @@ const MobileProfileUserCard = ({
   const profileSlug = profileUser.profile?.slug;
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
       <div className="flex gap-4">
         <ProfileAvatar profile={profileUser.profile} className="size-10" />
         <div className="flex min-w-0 flex-col gap-1">
@@ -432,7 +432,7 @@ const MobileInviteCard = ({
   const displayName = invite.inviteeProfile?.name ?? invite.email;
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
       <div className="flex gap-4">
         <ProfileAvatar profile={invite.inviteeProfile} className="size-10" />
         <div className="flex min-w-0 flex-col gap-1">
