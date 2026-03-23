@@ -1,8 +1,9 @@
-import { and, db, eq, isNull } from '@op/db/client';
+import { db, desc, eq, inArray } from '@op/db/client';
 import {
   decisionTransitionProposals,
   decisions,
   processInstances,
+  proposalHistory,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -15,6 +16,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { getProposalsForPhase } from './getProposalsForPhase';
 import { aggregateVoteData, executePipeline } from './selectionPipeline';
 import type {
   ExecutionContext,
@@ -232,16 +234,12 @@ export class TransitionEngine {
         currentStateId,
       );
 
-      // Fetch all non-deleted proposals as the default surviving set
-      const allProposals = await db
-        .select()
-        .from(proposals)
-        .where(
-          and(
-            eq(proposals.processInstanceId, data.instanceId),
-            isNull(proposals.deletedAt),
-          ),
-        );
+      // Fetch proposals visible in the current phase as the default surviving set.
+      // For the first transition this is all submitted proposals; for subsequent
+      // transitions it is only those that survived into the current phase.
+      const allProposals = await getProposalsForPhase({
+        instanceId: data.instanceId,
+      });
 
       let survivingProposalIds: string[] = allProposals.map((p) => p.id);
 
@@ -306,10 +304,31 @@ export class TransitionEngine {
         }
 
         if (survivingProposalIds.length > 0) {
+          // Get the latest history record for each surviving proposal.
+          // Submitted proposals are always guaranteed to have history.
+          const latestHistoryRows = await trx
+            .selectDistinctOn([proposalHistory.id], {
+              proposalId: proposalHistory.id,
+              historyId: proposalHistory.historyId,
+            })
+            .from(proposalHistory)
+            .where(inArray(proposalHistory.id, survivingProposalIds))
+            .orderBy(
+              proposalHistory.id,
+              desc(proposalHistory.historyCreatedAt),
+            );
+
+          if (latestHistoryRows.length !== survivingProposalIds.length) {
+            throw new Error(
+              `Proposals missing history records during transition for instance ${data.instanceId}`,
+            );
+          }
+
           await trx.insert(decisionTransitionProposals).values(
-            survivingProposalIds.map((proposalId) => ({
+            latestHistoryRows.map(({ proposalId, historyId }) => ({
               transitionHistoryId: insertedTransition.id,
               proposalId,
+              proposalHistoryId: historyId,
             })),
           );
         }
