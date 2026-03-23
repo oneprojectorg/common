@@ -25,6 +25,7 @@ function executeSupabaseCommand(cmd: string, description: string) {
   console.log(`🔄 ${description}...`);
   const projectRoot = resolve(process.cwd(), '../..');
   const configPath = resolve(projectRoot, 'supabase/config.toml');
+  const supabaseCommand = `pnpm --dir "${projectRoot}" exec supabase ${cmd}`;
 
   try {
     // Remove symlink/existing config and copy test config to config.toml
@@ -32,7 +33,7 @@ function executeSupabaseCommand(cmd: string, description: string) {
     execSync(`cp "${TEST_CONFIG}" "${configPath}"`, { cwd: projectRoot });
 
     // Run the supabase command
-    execSync(`supabase ${cmd}`, {
+    execSync(supabaseCommand, {
       cwd: projectRoot,
       stdio: 'inherit',
     });

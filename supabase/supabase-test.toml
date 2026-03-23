@@ -17,6 +17,15 @@ major_version = 15
 enabled = true
 sql_paths = [ './seed.sql' ]
 
+[realtime]
+enabled = true
+
+[studio]
+enabled = false
+
+[inbucket]
+enabled = false
+
 [storage]
 enabled = true
 file_size_limit = "50MiB"
