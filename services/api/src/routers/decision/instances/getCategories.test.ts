@@ -6,7 +6,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
@@ -272,6 +272,10 @@ describe.concurrent('getCategories permissions', () => {
 });
 
 describe.concurrent('getCategories category matching', () => {
+  afterAll(async () => {
+    await db.delete(taxonomies).where(eq(taxonomies.name, 'proposal'));
+  });
+
   it('should return matched categories when config.categories and taxonomy terms exist', async ({
     task,
     onTestFinished,
