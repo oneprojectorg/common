@@ -1,15 +1,15 @@
-# A string used to distinguish different Supabase projects on the same host. Defaults to the
-# working directory name when running `supabase init`.
-project_id = "common"
+# Supabase config for the Docker dev environment.
+# Uses ports 55321-55324 to avoid conflicting with a locally running Supabase
+# instance (which typically occupies 54321-54324).
+project_id = "common-docker"
 
 [api]
-enabled = true
-port = 54321
+enabled = false
+port = 55321
 
 [db]
-# Test database port (different from dev port 54322)
-port = 54322
-shadow_port = 54320
+port = 55322
+shadow_port = 55320
 major_version = 15
 
 [db.seed]
@@ -18,15 +18,13 @@ sql_paths = [ './seed.sql' ]
 
 [studio]
 enabled = true
-# Test Studio port (different from dev port 54323)
-port = 54323
+port = 55323
 api_url = "http://127.0.0.1"
 openai_api_key = "env(OPENAI_API_KEY)"
 
 [inbucket]
 enabled = true
-# Test Inbucket port (different from dev port 54324)
-port = 54324
+port = 55324
 
 [storage]
 enabled = true
@@ -41,8 +39,6 @@ objects_path = "./storage/avatars"
 
 [auth]
 enabled = true
-# Pin JWT secret so the well-known local dev keys in .env.docker remain valid across restarts.
-jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
 site_url = "http://localhost:3100/"
 additional_redirect_urls = [ "https://127.0.0.1:3000" ]
 jwt_expiry = 3600
@@ -89,9 +85,6 @@ secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
 redirect_uri = ""
 url = ""
 skip_nonce_check = false
-
-[analytics]
-enabled = false
 
 [experimental]
 orioledb_version = ""

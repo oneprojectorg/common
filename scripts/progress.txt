@@ -1,0 +1,61 @@
+## Codebase Patterns
+- Monorepo uses pnpm@9.15.4 (set in packageManager field of root package.json)
+- Supabase CLI version: 2.71.0 (matches devDependencies in root package.json)
+- Node version: 22 (matches engines field in root package.json)
+- pnpm workspace has 24 package.json files across apps/, packages/, services/, configs/, tests/
+- supabase-dev.toml exists at supabase/supabase-dev.toml (used by supabase CLI)
+
+# Ralph Progress Log
+Started: Sat Mar  7 11:12:19 CET 2026
+---
+
+## 2026-03-07 - US-001
+- Created Dockerfile at repo root using node:22-slim base image
+- Installs pnpm@9.15.4 via `corepack enable && corepack prepare pnpm@9.15.4 --activate`
+- Installs supabase@2.71.0 via npm (matches root package.json devDependency version)
+- Copies all 24 workspace package.json files individually for better Docker layer caching
+- Runs `pnpm install --frozen-lockfile`
+- Documents Docker socket passthrough requirement in a comment
+- Files changed: Dockerfile, scripts/prd.json
+- **Learnings for future iterations:**
+  - pnpm version is 9.15.4 (from packageManager field in package.json)
+  - supabase CLI version must match devDependencies: 2.71.0
+  - Must copy each workspace package.json individually since Docker COPY doesn't support glob for nested dirs
+  - Workspace directories: apps/(api,app), configs/typescript-config, packages/(analytics,common,core,hooks,logging,styles,types,ui), services/(api,cache,collab,db,emails,events,realtime,supabase,translation,workflows), tests/(core,e2e)
+---
+
+## 2026-03-07 - US-002
+- Created .env.docker with Supabase local dev defaults (anon key, service role key, JWT secret), REDIS_URL, APP_PORT=3100
+- Created .env.docker.example with inline comments explaining each variable
+- Files changed: .env.docker, .env.docker.example, scripts/prd.json
+- **Learnings for future iterations:**
+  - .env is gitignored but .env.docker is NOT (safe to commit)
+  - supabase/.gitignore ignores seed.sql and config.toml (symlink to supabase-dev.toml)
+---
+
+## 2026-03-07 - US-003
+- Created docker-compose.yml with app, api, supabase, redis services
+- app/api use bind-mounts (./:/app) for hot-reload with named volumes for node_modules and .next
+- supabase service mounts Docker socket, runs against supabase-dev.toml
+- APP_PORT defaults to 3100, all services on op-dev bridge network
+- Files changed: docker-compose.yml, scripts/prd.json
+- **Learnings for future iterations:**
+  - supabase-dev.toml already has all ports configured: API 54321, DB 54322, Studio 54323, Inbucket 54324
+  - `[api] enabled = false` in supabase-dev.toml disables Kong/PostgREST API layer (not the whole stack)
+---
+
+## 2026-03-07 - US-004
+- Added SUPABASE_URL=http://supabase:54321 to .env.docker for server-side Docker-internal connections
+- NEXT_PUBLIC_SUPABASE_URL remains localhost:54321 for browser (host) access
+- supabase-dev.toml already has seeding enabled (seed.sql is gitignored by supabase/.gitignore)
+- Files changed: .env.docker, .env.docker.example, scripts/prd.json
+- **Learnings for future iterations:**
+  - In Docker, browser uses localhost:PORT (host) but server-side code uses service_name:PORT (Docker network)
+  - seed.sql is gitignored by supabase/.gitignore - developers create it locally
+---
+
+## 2026-03-07 - US-005
+- Created docker/README.md with full Docker Dev Environment documentation
+- Covers: prerequisites, quick start, service URLs table, port customization, env vars, hot-reload, teardown
+- Files changed: docker/README.md, scripts/prd.json
+---
