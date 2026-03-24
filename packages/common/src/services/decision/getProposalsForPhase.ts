@@ -10,7 +10,7 @@ import {
 /**
  * Resolves the transition to use for phase-scoped proposal queries.
  *
- * - If phaseId is provided: finds the transition that entered that phase (toStateId = phaseId).
+ * - If phaseId is provided: finds the most recent transition that entered that phase (toStateId = phaseId).
  * - If phaseId is omitted: uses the most recent transition (current phase).
  * - Returns undefined if no matching transition exists (e.g. still in the initial phase).
  */
@@ -29,6 +29,7 @@ async function resolveTransition(
           eq(stateTransitionHistory.toStateId, phaseId),
         ),
       )
+      .orderBy(desc(stateTransitionHistory.transitionedAt))
       .limit(1);
     return transition;
   }
@@ -47,6 +48,7 @@ async function resolveTransition(
  * callers that only need IDs (e.g. to pass as a filter to listProposals).
  *
  * - If phaseId is provided: returns proposals that survived the transition into that phase.
+ *   Returns [] if phaseId does not match any recorded transition.
  * - If phaseId is omitted: returns proposals for the current (most recent) phase.
  * - If no transition exists yet: returns all non-deleted proposals for the instance.
  */
@@ -61,6 +63,10 @@ export async function getProposalIdsForPhase({
 }): Promise<string[]> {
   try {
     const transition = await resolveTransition(instanceId, phaseId, dbClient);
+
+    if (phaseId && !transition) {
+      return [];
+    }
 
     if (transition) {
       const rows = await dbClient
@@ -103,6 +109,7 @@ export async function getProposalIdsForPhase({
  * Returns the proposals visible in the given phase.
  *
  * - If phaseId is provided: returns proposals that survived the transition into that phase.
+ *   Returns [] if phaseId does not match any recorded transition.
  * - If phaseId is omitted: returns proposals for the current (most recent) phase.
  * - If no transition exists yet: returns all non-deleted proposals for the instance.
  *   Note: even a transition without a selection pipeline writes all proposals to the join
@@ -120,6 +127,10 @@ export async function getProposalsForPhase({
 }): Promise<Proposal[]> {
   try {
     const transition = await resolveTransition(instanceId, phaseId, dbClient);
+
+    if (phaseId && !transition) {
+      return [];
+    }
 
     if (transition) {
       const rows = await dbClient

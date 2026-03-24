@@ -1,4 +1,4 @@
-import { TransitionEngine } from '@op/common';
+import { TransitionEngine, getProposalsForPhase } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   decisionTransitionProposals,
@@ -11,6 +11,7 @@ import {
   createAndSubmitProposal,
   createInstanceWithSchema,
   schemaWithPipeline,
+  schemaWithThreePhasesAndPipelines,
   schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
 
@@ -55,6 +56,65 @@ describe.concurrent('Transition pipeline: join table population', () => {
       );
 
     expect(joinRows).toHaveLength(2);
+  });
+
+  it('proposal scoping chains correctly across two transitions', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const { instanceId, user, userEmail, caller } =
+      await createInstanceWithSchema(
+        testData,
+        task.id,
+        schemaWithThreePhasesAndPipelines,
+      );
+
+    // Submit 4 proposals; first pipeline limits to 3, second limits to 2
+    for (let i = 1; i <= 4; i++) {
+      await createAndSubmitProposal(testData, caller, {
+        callerEmail: userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${i} ${task.id}` },
+      });
+    }
+
+    // First transition: submission → review (limit 3)
+    await TransitionEngine.executeTransition({
+      data: { instanceId, toStateId: 'review' },
+      user,
+    });
+
+    // Second transition: review → final (limit 2, from the 3 that survived)
+    await TransitionEngine.executeTransition({
+      data: { instanceId, toStateId: 'final' },
+      user,
+    });
+
+    // Historical access: proposals that survived into review = 3
+    const reviewPhaseProposals = await getProposalsForPhase({
+      instanceId,
+      phaseId: 'review',
+    });
+    expect(reviewPhaseProposals).toHaveLength(3);
+
+    // Historical access: proposals that survived into final = 2
+    const finalPhaseProposals = await getProposalsForPhase({
+      instanceId,
+      phaseId: 'final',
+    });
+    expect(finalPhaseProposals).toHaveLength(2);
+
+    // Current phase (no phaseId) = same as final = 2
+    const currentPhaseProposals = await getProposalsForPhase({ instanceId });
+    expect(currentPhaseProposals).toHaveLength(2);
+
+    // The 2 final proposals must be a subset of the 3 review proposals
+    const reviewIds = new Set(reviewPhaseProposals.map((p) => p.id));
+    for (const p of finalPhaseProposals) {
+      expect(reviewIds.has(p.id)).toBe(true);
+    }
   });
 
   it('creates join rows for ALL proposals when no selectionPipeline is defined', async ({

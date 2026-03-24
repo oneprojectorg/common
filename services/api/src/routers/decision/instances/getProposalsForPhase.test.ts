@@ -12,6 +12,9 @@ import {
   schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
 
+// Random UUID unlikely to match any real transition
+const NONEXISTENT_PHASE_ID = '00000000-0000-0000-0000-000000000000';
+
 describe.concurrent('getProposalsForPhase', () => {
   it('returns all non-deleted proposals when no transition has occurred', async ({
     task,
@@ -106,6 +109,56 @@ describe.concurrent('getProposalsForPhase', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe(p1.id);
+  });
+
+  it('returns proposals scoped to a specific phaseId (historical access)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, user, userEmail, caller } =
+      await createInstanceWithSchema(testData, task.id, schemaWithPipeline);
+
+    // Create and submit 3 proposals; pipeline limits to 2
+    for (let i = 1; i <= 3; i++) {
+      await createAndSubmitProposal(testData, caller, {
+        callerEmail: userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${i} ${task.id}` },
+      });
+    }
+
+    await TransitionEngine.executeTransition({
+      data: { instanceId, toStateId: 'review' },
+      user,
+    });
+
+    // phaseId = 'review' means "proposals that survived the transition into review"
+    const result = await getProposalsForPhase({
+      instanceId,
+      phaseId: 'review',
+    });
+
+    expect(result).toHaveLength(2);
+  });
+
+  it('returns empty array when phaseId does not match any transition', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithoutPipeline,
+    );
+
+    const result = await getProposalsForPhase({
+      instanceId,
+      phaseId: NONEXISTENT_PHASE_ID,
+    });
+
+    expect(result).toHaveLength(0);
   });
 
   it('excludes soft-deleted proposals in the post-transition path', async ({

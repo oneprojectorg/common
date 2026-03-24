@@ -79,6 +79,60 @@ export const schemaWithPipeline = {
 };
 
 /**
+ * Three-phase schema with a limiting selectionPipeline on each of the first two phases.
+ * submission → review (limit 3), review → final (limit 2).
+ * Used to test multi-transition chaining: proposals must survive both pipelines.
+ */
+export const schemaWithThreePhasesAndPipelines = {
+  name: 'Three Phase Pipeline Process',
+  states: [
+    { id: 'submission', name: 'Submission', type: 'initial' },
+    { id: 'review', name: 'Review', type: 'intermediate' },
+    { id: 'final', name: 'Final', type: 'final' },
+  ],
+  transitions: [
+    {
+      id: 'submission-to-review',
+      name: 'Submit to Review',
+      from: 'submission',
+      to: 'review',
+      rules: { type: 'manual' },
+    },
+    {
+      id: 'review-to-final',
+      name: 'Review to Final',
+      from: 'review',
+      to: 'final',
+      rules: { type: 'manual' },
+    },
+  ],
+  initialState: 'submission',
+  decisionDefinition: { type: 'object' },
+  proposalTemplate: { type: 'object' },
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {},
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'limit-1', type: 'limit', count: 3 }],
+      },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: {},
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'limit-2', type: 'limit', count: 2 }],
+      },
+    },
+    { id: 'final', name: 'Final', rules: {} },
+  ],
+};
+
+/**
  * Same schema without any selectionPipeline — all proposals survive the transition.
  */
 export const schemaWithoutPipeline = {

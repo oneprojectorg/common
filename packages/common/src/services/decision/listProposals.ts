@@ -46,7 +46,7 @@ export interface ListProposalsInput {
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
   /**
-   * Internal override: bypass phase scoping and filter to this exact set of IDs.
+   * Internal override: skip phase resolution and use this exact set of IDs.
    * Not exposed on the tRPC schema — use phaseId for public phase filtering.
    */
   proposalIds?: string[];
