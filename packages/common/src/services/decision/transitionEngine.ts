@@ -234,46 +234,52 @@ export class TransitionEngine {
         currentStateId,
       );
 
-      // Fetch proposals visible in the current phase as the default surviving set.
-      // For the first transition this is all submitted proposals; for subsequent
-      // transitions it is only those that survived into the current phase.
-      const allProposals = await getProposalsForPhase({
-        instanceId: data.instanceId,
-      });
-
-      let survivingProposalIds: string[] = allProposals.map((p) => p.id);
-
-      // If the departing phase has a selection pipeline, run it to narrow the surviving set
-      if (selectionPipeline) {
-        const voteData = await aggregateVoteData(data.instanceId);
-        const context: ExecutionContext = {
-          proposals: allProposals,
-          voteData,
-          process: {
-            instanceId: data.instanceId,
-            processId: instance.processId,
-            currentStateId: instance.currentStateId,
-            instanceData,
-            processSchema,
-            processInstance: instance,
-          },
-          variables: {},
-          outputs: {},
-        };
-        const surviving = await executePipeline(selectionPipeline, context);
-        survivingProposalIds = surviving.map((p) => p.id);
-      }
-
-      if (survivingProposalIds.length === 0) {
-        console.warn('Phase transition produced zero surviving proposals', {
-          instanceId: data.instanceId,
-          fromStateId: currentStateId,
-          toStateId: data.toStateId,
-        });
-      }
-
-      // Update the instance in a transaction
+      // Run everything that determines surviving proposals inside the transaction
+      // so reads and writes are from a consistent snapshot.
       await db.transaction(async (trx) => {
+        // Fetch proposals visible in the current phase as the default surviving set.
+        // For the first transition this is all submitted proposals; for subsequent
+        // transitions it is only those that survived into the current phase.
+        const allProposals = await getProposalsForPhase({
+          instanceId: data.instanceId,
+          dbClient: trx,
+        });
+
+        let survivingProposalIds: string[] = allProposals.map((p) => p.id);
+
+        // If the departing phase has a selection pipeline, run it to narrow the surviving set
+        if (selectionPipeline) {
+          const voteData = await aggregateVoteData(
+            data.instanceId,
+            allProposals,
+            trx,
+          );
+          const context: ExecutionContext = {
+            proposals: allProposals,
+            voteData,
+            process: {
+              instanceId: data.instanceId,
+              processId: instance.processId,
+              currentStateId: instance.currentStateId,
+              instanceData,
+              processSchema,
+              processInstance: instance,
+            },
+            variables: {},
+            outputs: {},
+          };
+          const surviving = await executePipeline(selectionPipeline, context);
+          survivingProposalIds = surviving.map((p) => p.id);
+        }
+
+        if (survivingProposalIds.length === 0) {
+          console.warn('Phase transition produced zero surviving proposals', {
+            instanceId: data.instanceId,
+            fromStateId: currentStateId,
+            toStateId: data.toStateId,
+          });
+        }
+
         // Update process instance
         await trx
           .update(processInstances)
@@ -320,7 +326,7 @@ export class TransitionEngine {
 
           if (latestHistoryRows.length !== survivingProposalIds.length) {
             throw new Error(
-              `Proposals missing history records during transition for instance ${data.instanceId}`,
+              `Proposals missing history records during transition for instance ${data.instanceId}: expected ${survivingProposalIds.length}, got ${latestHistoryRows.length}`,
             );
           }
 
