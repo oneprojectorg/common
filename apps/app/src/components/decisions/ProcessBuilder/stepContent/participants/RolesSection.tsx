@@ -105,7 +105,9 @@ function useRoleMutation({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const pendingDecisionRolePermissions = useRef<DecisionRolePermissions | null>(null);
+  const pendingDecisionRolePermissions = useRef<DecisionRolePermissions | null>(
+    null,
+  );
   const updateDecisionRoles = trpc.profile.updateDecisionRoles.useMutation();
 
   const createRole = trpc.profile.createRole.useMutation({
@@ -152,7 +154,10 @@ function useRoleMutation({
     (role ? updateRole.isPending : createRole.isPending) ||
     updateDecisionRoles.isPending;
 
-  const save = (name: string, decisionPermissions?: DecisionRolePermissions) => {
+  const save = (
+    name: string,
+    decisionPermissions?: DecisionRolePermissions,
+  ) => {
     if (isPending) {
       return;
     }
@@ -326,11 +331,8 @@ function AddRoleDialog({
 }) {
   const t = useTranslations();
   const [roleName, setRoleName] = useState('');
-  const {
-    permissions,
-    togglePermission,
-    resetPermissions,
-  } = useNewRolePermissions();
+  const { permissions, togglePermission, resetPermissions } =
+    useNewRolePermissions();
   const { save, isPending } = useRoleMutation({
     profileId,
     onComplete: () => {
