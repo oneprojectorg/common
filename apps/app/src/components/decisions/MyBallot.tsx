@@ -49,7 +49,6 @@ export const MyBallot = ({
 
   const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
-    proposalIds: voteStatus.selectedProposals?.map((p) => p.id) || [],
   });
 
   if (!voteStatus.hasVoted || !voteStatus.selectedProposals) {

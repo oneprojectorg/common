@@ -666,7 +666,8 @@ export const proposalFilterSchema = z
     status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
     dir: z.enum(['asc', 'desc']).optional(),
-    proposalIds: z.array(z.uuid()).optional(),
+    /** Phase ID to scope proposals to. Defaults to the current phase when omitted. */
+    phaseId: z.string().optional(),
     /** When set to 'results', all proposals are returned as non-editable */
     phase: z.enum(['results']).optional(),
   })

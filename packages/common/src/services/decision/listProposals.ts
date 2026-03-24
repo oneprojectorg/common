@@ -33,6 +33,7 @@ import {
   getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -42,6 +43,12 @@ export interface ListProposalsInput {
   status?: ProposalStatus;
   search?: string;
   categoryId?: string;
+  /** Scope results to a specific phase. Defaults to the current phase when omitted. */
+  phaseId?: string;
+  /**
+   * Internal override: skip phase resolution and use this exact set of IDs.
+   * Not exposed on the tRPC schema — use phaseId for public phase filtering.
+   */
   proposalIds?: string[];
   phase?: 'results';
   limit?: number;
@@ -53,14 +60,11 @@ export interface ListProposalsInput {
 }
 
 // Shared function to build WHERE conditions for both count and data queries
-const buildWhereConditions = (input: ListProposalsInput) => {
-  const {
-    processInstanceId,
-    submittedByProfileId,
-    status,
-    search,
-    proposalIds,
-  } = input;
+const buildWhereConditions = (
+  input: ListProposalsInput,
+  phaseProposalIds: string[],
+) => {
+  const { processInstanceId, submittedByProfileId, status, search } = input;
 
   const conditions = [];
 
@@ -79,8 +83,11 @@ const buildWhereConditions = (input: ListProposalsInput) => {
     conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
   }
 
-  if (proposalIds && proposalIds.length > 0) {
-    conditions.push(inArray(proposals.id, proposalIds));
+  if (phaseProposalIds.length > 0) {
+    conditions.push(inArray(proposals.id, phaseProposalIds));
+  } else {
+    // No proposals in this phase — return empty result set
+    conditions.push(sql`false`);
   }
 
   return conditions.length > 0 ? and(...conditions) : undefined;
@@ -94,6 +101,13 @@ export const listProposals = async ({
   user: User;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
+
+  const phaseProposalIds =
+    input.proposalIds ??
+    (await getProposalIdsForPhase({
+      instanceId: processInstanceId,
+      phaseId: input.phaseId,
+    }));
 
   // Skip authentication check if this is a trusted context (e.g., background job)
   if (!skipAccessCheck && !user) {
@@ -153,7 +167,7 @@ export const listProposals = async ({
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
   // Build shared WHERE clause using the extracted function
-  const baseWhereClause = buildWhereConditions(input);
+  const baseWhereClause = buildWhereConditions(input, phaseProposalIds);
 
   // Handle category filtering separately to avoid table reference issues
   const { categoryId } = input;
