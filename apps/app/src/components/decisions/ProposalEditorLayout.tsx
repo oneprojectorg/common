@@ -108,7 +108,7 @@ export function ProposalEditorLayout({
                 ) : (
                   <>
                     <span className="hidden sm:block">
-                      {t('Submit Proposal')}
+                      {t('Start Proposal')}
                     </span>
                     <span className="sm:hidden">{t('Submit')}</span>{' '}
                   </>
