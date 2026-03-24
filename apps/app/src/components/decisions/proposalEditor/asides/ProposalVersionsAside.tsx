@@ -55,6 +55,10 @@ export function ProposalVersionsAside({
     versionPreview.tiptapVersion !== null &&
     Object.keys(versionPreview.fragmentContents).length > 0;
 
+  const handleOpenRestoreModal = canRestore
+    ? () => setIsRestoreModalOpen(true)
+    : undefined;
+
   const readVersions = useCallback(
     () => [...provider.getVersions()].sort((a, b) => b.version - a.version),
     [provider],
@@ -123,9 +127,8 @@ export function ProposalVersionsAside({
                 isRecent={isRecent}
                 locale={locale}
                 isSelected={versionId === version.version}
-                canRestore={canRestore}
                 isPending={isPending}
-                onRestore={() => setIsRestoreModalOpen(true)}
+                onRestore={handleOpenRestoreModal}
                 onSelect={() => onSelectVersion(version.version)}
               />
             );
@@ -151,7 +154,6 @@ function VersionItem({
   isRecent,
   locale,
   isSelected,
-  canRestore,
   isPending,
   onRestore,
   onSelect,
@@ -160,9 +162,8 @@ function VersionItem({
   isRecent: boolean;
   locale: string;
   isSelected: boolean;
-  canRestore: boolean;
   isPending: boolean;
-  onRestore: () => void;
+  onRestore?: () => void;
   onSelect: () => void;
 }) {
   const t = useTranslations();
@@ -193,7 +194,7 @@ function VersionItem({
           className="mx-2 mb-2"
           size="small"
           onPress={onRestore}
-          isDisabled={isPending || !canRestore}
+          isDisabled={isPending || !onRestore}
         >
           {t('Restore this version')}
         </Button>
