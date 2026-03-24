@@ -249,11 +249,7 @@ export class TransitionEngine {
 
         // If the departing phase has a selection pipeline, run it to narrow the surviving set
         if (selectionPipeline) {
-          const voteData = await aggregateVoteData(
-            data.instanceId,
-            allProposals,
-            trx,
-          );
+          const voteData = await aggregateVoteData(allProposals, trx);
           const context: ExecutionContext = {
             proposals: allProposals,
             voteData,

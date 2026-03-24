@@ -75,10 +75,7 @@ export async function processResults({
         processSchema.selectionPipeline || defaultSelectionPipeline;
 
       // Aggregate voting data
-      const voteData = await aggregateVoteData(
-        processInstanceId,
-        processProposals,
-      );
+      const voteData = await aggregateVoteData(processProposals);
 
       // Build execution context
       const context: ExecutionContext = {

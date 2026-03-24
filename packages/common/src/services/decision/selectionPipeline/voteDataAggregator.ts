@@ -16,7 +16,6 @@ import type { VoteAggregation } from './types';
  * for a consistent snapshot.
  */
 export async function aggregateVoteData(
-  processInstanceId: string,
   phaseProposals: Proposal[],
   dbClient: DbClient = db,
 ): Promise<Record<string, VoteAggregation>> {
@@ -43,7 +42,7 @@ export async function aggregateVoteData(
           decisionsVoteSubmissions.id,
         ),
       )
-      .where(eq(decisionsVoteSubmissions.processInstanceId, processInstanceId)),
+      .where(inArray(decisionsVoteProposals.proposalId, proposalIds)),
 
     dbClient
       .select()
@@ -66,16 +65,12 @@ export async function aggregateVoteData(
     }
   }
 
-  // Group vote rows by proposal, scoped to the current-phase proposals
-  const proposalIdSet = new Set(proposalIds);
+  // Group vote rows by proposal
   const proposalVotesMap = new Map<
     string,
     Array<{ voteData: unknown; submissionId: string }>
   >();
   for (const row of voteRows) {
-    if (!proposalIdSet.has(row.proposalId)) {
-      continue;
-    }
     if (!proposalVotesMap.has(row.proposalId)) {
       proposalVotesMap.set(row.proposalId, []);
     }

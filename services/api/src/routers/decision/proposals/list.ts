@@ -1,4 +1,4 @@
-import { getProposalIdsForPhase, listProposals } from '@op/common';
+import { listProposals } from '@op/common';
 
 import {
   proposalFilterSchema,
@@ -13,13 +13,8 @@ export const listProposalsRouter = router({
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const phaseProposalIds = await getProposalIdsForPhase({
-        instanceId: input.processInstanceId,
-        phaseId: input.phaseId,
-      });
-
       const result = await listProposals({
-        input: { ...input, authUserId: user.id, proposalIds: phaseProposalIds },
+        input: { ...input, authUserId: user.id },
         user,
       });
 
