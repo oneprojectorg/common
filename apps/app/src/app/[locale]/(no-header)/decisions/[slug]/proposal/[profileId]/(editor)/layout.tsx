@@ -205,16 +205,10 @@ function ProposalEditorContent({
     fragmentNames,
   });
 
-  const canRestore =
-    versionPreview !== null &&
-    versionPreview.tiptapVersion !== null &&
-    Object.keys(versionPreview.fragmentContents).length > 0;
-
   const asideSlot =
     asideState.aside === 'versions' ? (
       <ProposalVersionsAside
         versionId={asideState.versionId}
-        canRestore={canRestore}
         onSelectVersion={(nextVersionId) =>
           setAsideState({
             aside: 'versions',

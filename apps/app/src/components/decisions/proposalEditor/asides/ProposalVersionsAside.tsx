@@ -18,6 +18,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';
+import { useOptionalVersionPreview } from '../VersionPreviewContext';
 import { RestoreProposalVersionModal } from './RestoreProposalVersionModal';
 
 /** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
@@ -25,7 +26,6 @@ const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
   versionId: number | null;
-  canRestore: boolean;
   onSelectVersion: (versionId: number | null) => void;
   onRestoreVersion: (versionId: number) => void;
   onClose: () => void;
@@ -34,12 +34,12 @@ interface ProposalVersionsAsideProps {
 /**
  * Aside panel for proposal version history.
  *
- * Pure presentation component — reads versions from the TipTap collaboration
- * provider and delegates restore actions to the parent via `onRestoreVersion`.
+ * Reads versions from the TipTap collaboration provider, derives restore
+ * eligibility from the version preview context, and delegates restore actions
+ * to the parent via `onRestoreVersion`.
  */
 export function ProposalVersionsAside({
   versionId,
-  canRestore,
   onSelectVersion,
   onRestoreVersion,
   onClose,
@@ -48,6 +48,12 @@ export function ProposalVersionsAside({
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
   const [isPending, startTransition] = useTransition();
+  const versionPreview = useOptionalVersionPreview();
+
+  const canRestore =
+    versionPreview !== null &&
+    versionPreview.tiptapVersion !== null &&
+    Object.keys(versionPreview.fragmentContents).length > 0;
 
   const readVersions = useCallback(
     () => [...provider.getVersions()].sort((a, b) => b.version - a.version),
