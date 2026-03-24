@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
+import type { DecisionRolePermissions } from '@op/common';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
@@ -23,7 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import { Suspense, useOptimistic, useState, useTransition } from 'react';
+import {
+  Suspense,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -39,6 +46,34 @@ const PERMISSION_COLUMNS = [
 ] as const;
 
 type DecisionRoleKey = (typeof PERMISSION_COLUMNS)[number]['key'];
+
+const DEFAULT_DECISION_PERMISSIONS: DecisionRolePermissions = {
+  admin: false,
+  create: false,
+  read: false,
+  update: false,
+  delete: false,
+  inviteMembers: false,
+  review: false,
+  submitProposals: false,
+  vote: false,
+};
+
+function useNewRolePermissions() {
+  const [permissions, setPermissions] = useState<DecisionRolePermissions>({
+    ...DEFAULT_DECISION_PERMISSIONS,
+  });
+
+  const togglePermission = (key: DecisionRoleKey) => {
+    setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const resetPermissions = () => {
+    setPermissions({ ...DEFAULT_DECISION_PERMISSIONS });
+  };
+
+  return { permissions, togglePermission, resetPermissions };
+}
 
 export default function RolesSection({
   decisionProfileId,
@@ -70,8 +105,29 @@ function useRoleMutation({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
+  const pendingDecisionRolePermissions = useRef<DecisionRolePermissions | null>(null);
+  const updateDecisionRoles = trpc.profile.updateDecisionRoles.useMutation();
+
   const createRole = trpc.profile.createRole.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const decisionPermissions = pendingDecisionRolePermissions.current;
+      pendingDecisionRolePermissions.current = null;
+      if (
+        decisionPermissions &&
+        Object.values(decisionPermissions).some(Boolean)
+      ) {
+        try {
+          await updateDecisionRoles.mutateAsync({
+            roleId: data.id,
+            decisionPermissions,
+          });
+        } catch {
+          toast.error({ message: t('Failed to update role') });
+          utils.profile.listRoles.invalidate();
+          onComplete();
+          return;
+        }
+      }
       toast.success({ message: t('Role created successfully') });
       utils.profile.listRoles.invalidate();
       onComplete();
@@ -92,15 +148,18 @@ function useRoleMutation({
     },
   });
 
-  const isPending = role ? updateRole.isPending : createRole.isPending;
+  const isPending =
+    (role ? updateRole.isPending : createRole.isPending) ||
+    updateDecisionRoles.isPending;
 
-  const save = (name: string) => {
+  const save = (name: string, decisionPermissions?: DecisionRolePermissions) => {
     if (isPending) {
       return;
     }
     if (role) {
       updateRole.mutate({ roleId: role.id, name });
     } else {
+      pendingDecisionRolePermissions.current = decisionPermissions ?? null;
       createRole.mutate({
         profileId,
         zoneName: 'decisions',
@@ -267,10 +326,16 @@ function AddRoleDialog({
 }) {
   const t = useTranslations();
   const [roleName, setRoleName] = useState('');
+  const {
+    permissions,
+    togglePermission,
+    resetPermissions,
+  } = useNewRolePermissions();
   const { save, isPending } = useRoleMutation({
     profileId,
     onComplete: () => {
       setRoleName('');
+      resetPermissions();
       onClose();
     },
   });
@@ -278,7 +343,7 @@ function AddRoleDialog({
   const handleSubmit = () => {
     const trimmed = roleName.trim();
     if (trimmed) {
-      save(trimmed);
+      save(trimmed, permissions);
     }
   };
 
@@ -302,6 +367,19 @@ function AddRoleDialog({
               }
             }}
           />
+          <div className="flex flex-col gap-2 pt-2">
+            {PERMISSION_COLUMNS.map(({ key, label }) => (
+              <Checkbox
+                key={key}
+                size="small"
+                isSelected={permissions[key]}
+                onChange={() => togglePermission(key)}
+                aria-label={`${label} permission`}
+              >
+                {t(label)}
+              </Checkbox>
+            ))}
+          </div>
         </ModalBody>
         <ModalFooter>
           <Button color="secondary" onPress={onClose}>
@@ -583,6 +661,7 @@ function AddRoleRow({
 }) {
   const t = useTranslations();
   const [roleName, setRoleName] = useState('');
+  const { permissions, togglePermission } = useNewRolePermissions();
 
   const { save, isPending } = useRoleMutation({
     profileId,
@@ -592,7 +671,7 @@ function AddRoleRow({
   const handleSave = () => {
     const trimmed = roleName.trim();
     if (trimmed) {
-      save(trimmed);
+      save(trimmed, permissions);
     }
   };
 
@@ -617,8 +696,8 @@ function AddRoleRow({
           <div className="flex justify-center">
             <Checkbox
               size="small"
-              isSelected={false}
-              isDisabled
+              isSelected={permissions[key]}
+              onChange={() => togglePermission(key)}
               aria-label={`${label} permission`}
             />
           </div>
