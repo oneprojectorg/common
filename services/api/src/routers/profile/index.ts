@@ -20,6 +20,7 @@ import {
 import { searchProfilesRouter } from './searchProfiles';
 import { updateDecisionRolesRouter } from './updateDecisionRoles';
 import { updateProfileInviteRouter } from './updateProfileInvite';
+import { updateRoleRouter } from './updateRole';
 import { updateRolePermissionRouter } from './updateRolePermission';
 import { usersRouter } from './users';
 
@@ -38,6 +39,7 @@ const profileRouter = mergeRouters(
   usersRouter,
   listRolesRouter,
   createRoleRouter,
+  updateRoleRouter,
   updateRolePermissionRouter,
   deleteRoleRouter,
   createJoinRequestRouter,

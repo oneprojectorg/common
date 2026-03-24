@@ -614,6 +614,8 @@
   "Failed to create role": "Failed to create role",
   "Failed to delete role": "Failed to delete role",
   "Role name": "Role name",
+  "Role name…": "Role name…",
+  "Save role": "Save role",
   "Delete role": "Delete role",
   "No roles configured": "No roles configured",
   "Are you sure you want to remove {roleName} from \"{processName}\"?": "Are you sure you want to remove {roleName} from \"{processName}\"?",
