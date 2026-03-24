@@ -3,6 +3,7 @@
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/ui/Button';
+import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -51,16 +52,17 @@ export function ProposalVersionsAside({
     <ProposalEditorAside
       title={t('Version history')}
       onClose={onClose}
-      bodyClassName="pt-4"
+      bodyClassName="px-4 pt-4"
     >
       <Button
         unstyled
         onPress={() => onSelectVersion(null)}
-        className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none ${
+        className={cn(
+          'flex w-full flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none',
           versionId === null
             ? 'bg-primary-tealWhite'
-            : 'hover:bg-neutral-offWhite'
-        }`}
+            : 'hover:bg-neutral-offWhite',
+        )}
       >
         <p className="text-base text-neutral-black">{t('Current version')}</p>
         <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
@@ -112,9 +114,10 @@ function VersionItem({
     <Button
       unstyled
       onPress={onSelect}
-      className={`mx-4 flex w-[calc(100%-2rem)] flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none ${
-        isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite'
-      }`}
+      className={cn(
+        'flex w-full flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none',
+        isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite',
+      )}
     >
       <p className="text-base text-neutral-black">{label}</p>
       <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>

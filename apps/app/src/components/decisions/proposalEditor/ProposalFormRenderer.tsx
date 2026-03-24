@@ -1,6 +1,7 @@
 'use client';
 
 import { normalizeBudget, parseSchemaOptions } from '@op/common/client';
+import { cn } from '@op/ui/utils';
 import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -397,7 +398,7 @@ export function ProposalFormRenderer({
     );
 
   return (
-    <div className={`flex flex-col ${formGapClass}`}>
+    <div className={cn('flex flex-col', formGapClass)}>
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
