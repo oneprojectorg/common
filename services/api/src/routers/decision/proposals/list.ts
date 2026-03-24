@@ -15,6 +15,7 @@ export const listProposalsRouter = router({
 
       const phaseProposalIds = await getProposalIdsForPhase({
         instanceId: input.processInstanceId,
+        phaseId: input.phaseId,
       });
 
       const result = await listProposals({
