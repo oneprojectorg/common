@@ -11,7 +11,7 @@ import {
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
-import type { Editor, JSONContent } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
@@ -42,6 +42,7 @@ import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
+import { extractPreviewText } from './proposalPreviewContent';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
 
@@ -220,7 +221,7 @@ function ProposalEditorInner({
   templateRef.current = proposalTemplate;
 
   const proposalFields = compileProposalSchema(proposalTemplate);
-  const previewTitle = extractPreviewTitle(
+  const previewTitle = extractPreviewText(
     versionPreview?.fragmentContents.title,
   );
   const viewingLabel = versionPreview?.tiptapVersion
@@ -443,20 +444,4 @@ function ProposalEditorInner({
       )}
     </ProposalEditorLayout>
   );
-}
-
-function extractPreviewTitle(content: JSONContent | null | undefined): string {
-  if (!content) {
-    return '';
-  }
-
-  if (typeof content.text === 'string') {
-    return content.text;
-  }
-
-  if (!Array.isArray(content.content)) {
-    return '';
-  }
-
-  return content.content.map((child) => extractPreviewTitle(child)).join('');
 }

@@ -2,13 +2,12 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
-import { normalizeBudget, parseProposalData } from '@op/common/client';
+import { parseProposalData } from '@op/common/client';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
-import type { JSONContent } from '@tiptap/react';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -17,6 +16,10 @@ import { useTranslations } from '@/lib/i18n';
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';
 import { useOptionalVersionPreview } from '../VersionPreviewContext';
+import {
+  extractPreviewText,
+  parsePreviewBudget,
+} from '../proposalPreviewContent';
 import { RestoreProposalVersionModal } from './RestoreProposalVersionModal';
 
 /** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
@@ -94,12 +97,11 @@ export function ProposalVersionsAside({
 
     const currentProposalData = parseProposalData(proposalData);
     const nextTitle =
-      getPlainTextContent(versionPreview.fragmentContents.title) ||
+      extractPreviewText(versionPreview.fragmentContents.title) ||
       proposalTitle;
     const nextCategory =
-      getPlainTextContent(versionPreview.fragmentContents.category) ||
-      undefined;
-    const nextBudget = normalizePreviewBudget(
+      extractPreviewText(versionPreview.fragmentContents.category) || undefined;
+    const nextBudget = parsePreviewBudget(
       versionPreview.fragmentContents.budget,
     );
 
@@ -241,34 +243,4 @@ function VersionItem({
       )}
     </div>
   );
-}
-
-function getPlainTextContent(content: JSONContent | null | undefined): string {
-  if (!content) {
-    return '';
-  }
-
-  if (typeof content.text === 'string') {
-    return content.text;
-  }
-
-  if (!Array.isArray(content.content)) {
-    return '';
-  }
-
-  return content.content.map((child) => getPlainTextContent(child)).join('');
-}
-
-function normalizePreviewBudget(content: JSONContent | null | undefined) {
-  const raw = getPlainTextContent(content);
-
-  if (!raw) {
-    return undefined;
-  }
-
-  try {
-    return normalizeBudget(JSON.parse(raw));
-  } catch {
-    return normalizeBudget(raw);
-  }
 }

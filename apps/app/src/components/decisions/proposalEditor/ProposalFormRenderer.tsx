@@ -1,6 +1,6 @@
 'use client';
 
-import { normalizeBudget, parseSchemaOptions } from '@op/common/client';
+import { parseSchemaOptions } from '@op/common/client';
 import { cn } from '@op/ui/utils';
 import type { Editor, JSONContent } from '@tiptap/react';
 
@@ -21,6 +21,10 @@ import {
   ReadonlyTextField,
   ReadonlyTitleField,
 } from './ReadonlyProposalFields';
+import {
+  extractPreviewText,
+  parsePreviewBudget,
+} from './proposalPreviewContent';
 import type { ProposalDraftFields } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
@@ -62,43 +66,27 @@ function extractOptions(
   }));
 }
 
-function extractPlainText(content: JSONContent | null | undefined): string {
-  if (!content) {
-    return '';
-  }
-
-  if (content.text) {
-    return content.text;
-  }
-
-  return (content.content ?? []).map(extractPlainText).join('');
-}
-
 function formatPreviewBudget(
   content: JSONContent | null | undefined,
 ): string | null {
-  const text = extractPlainText(content);
+  const text = extractPreviewText(content);
 
   if (!text) {
     return null;
   }
 
-  try {
-    const budget = normalizeBudget(JSON.parse(text));
+  const budget = parsePreviewBudget(content);
 
-    if (!budget) {
-      return text;
-    }
-
-    return budget.amount.toLocaleString(undefined, {
-      style: 'currency',
-      currency: budget.currency,
-      currencyDisplay: 'narrowSymbol',
-      maximumFractionDigits: 0,
-    });
-  } catch {
+  if (!budget) {
     return text;
   }
+
+  return budget.amount.toLocaleString(undefined, {
+    style: 'currency',
+    currency: budget.currency,
+    currencyDisplay: 'narrowSymbol',
+    maximumFractionDigits: 0,
+  });
 }
 
 function getPreviewText({
@@ -111,7 +99,7 @@ function getPreviewText({
   previewContent: JSONContent | null | undefined;
 }): string | null {
   if (mode === 'preview-version') {
-    const previewText = extractPlainText(previewContent);
+    const previewText = extractPreviewText(previewContent);
     return previewText || null;
   }
 
