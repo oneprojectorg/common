@@ -82,6 +82,10 @@ export function useRestoreProposalVersion({
     versionId: number,
     fragmentContents: Record<string, JSONContent | null>,
   ): Promise<void> {
+    if (Object.keys(fragmentContents).length === 0) {
+      return;
+    }
+
     const restoredData = buildRestoredProposalData(fragmentContents);
 
     provider.revertToVersion(versionId, fragmentNames);
