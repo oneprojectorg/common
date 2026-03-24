@@ -3,6 +3,7 @@
 import { Button } from '@op/ui/Button';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
 import type { JSONContent } from '@tiptap/react';
+import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -34,11 +35,19 @@ export function ReadonlyTextField({
   placeholder: string;
   multiline: boolean;
 }) {
+  // Force React to remount the TipTap viewer when content changes, since
+  // useEditor only uses `content` on initialization.
+  const contentKey = useMemo(
+    () => (content ? JSON.stringify(content) : 'empty'),
+    [content],
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <FieldHeader title={title} description={description} />
       {content ? (
         <RichTextViewer
+          key={contentKey}
           extensions={getViewerExtensions()}
           content={content}
           editorClassName={multiline ? 'min-h-32' : 'min-h-8'}

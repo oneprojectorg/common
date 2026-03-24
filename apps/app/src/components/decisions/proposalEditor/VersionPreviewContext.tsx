@@ -121,6 +121,7 @@ export function VersionPreviewProvider({
       return;
     }
 
+    console.log('[VersionPreview] requesting preview for version:', versionId);
     provider.previewVersion(versionId);
   }, [provider, versionId]);
 
@@ -132,6 +133,12 @@ export function VersionPreviewProvider({
           version?: number;
         };
 
+        console.log('[VersionPreview] stateless event:', {
+          event: parsed.event,
+          version: parsed.version,
+          expectedVersion: versionId,
+        });
+
         if (
           parsed.event !== 'version.preview' ||
           parsed.version !== versionId
@@ -141,10 +148,13 @@ export function VersionPreviewProvider({
 
         const contents: Record<string, JSONContent | null> = {};
 
+        console.log('[VersionPreview] fragmentNames:', fragmentNames);
+
         for (const name of fragmentNames) {
           try {
             contents[name] = getNormalizedPreviewContent(data.payload, name);
           } catch {
+            console.warn(`[VersionPreview] failed to parse fragment "${name}"`);
             contents[name] = null;
           }
         }
@@ -170,6 +180,13 @@ export function VersionPreviewProvider({
         : null,
     [fragmentContents, tiptapVersion],
   );
+
+  console.log('[VersionPreview] context value:', {
+    versionId,
+    tiptapVersion: tiptapVersion?.version ?? null,
+    fragmentKeys: Object.keys(fragmentContents),
+    fragmentContents,
+  });
 
   return (
     <VersionPreviewContext.Provider value={value}>
