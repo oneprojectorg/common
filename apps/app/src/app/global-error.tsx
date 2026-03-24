@@ -4,8 +4,6 @@ import { posthogUIHost } from '@op/core';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
 
-import { capturePostHogException } from '@/lib/capturePostHogException';
-
 // This component replaces the root layout on catastrophic errors, so
 // PostHogProvider, next-intl, Tailwind, and @op/ui are all unavailable.
 // Hardcoded strings, inline styles, and the manual posthog.init are intentional.
@@ -28,7 +26,7 @@ export default function GlobalError({
   }, []);
 
   useEffect(() => {
-    capturePostHogException(error, {
+    posthog.captureException(error, {
       error_digest: error.digest,
     });
   }, [error]);

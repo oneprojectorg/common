@@ -1,9 +1,8 @@
 'use client';
 
+import posthog from 'posthog-js';
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-
-import { capturePostHogException } from '@/lib/capturePostHogException';
 
 import { ErrorMessage } from './ErrorMessage';
 
@@ -30,7 +29,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
-    capturePostHogException(error, {
+    posthog.captureException(error, {
       ...(errorInfo.componentStack && {
         component_stack: errorInfo.componentStack,
       }),
