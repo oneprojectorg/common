@@ -1,11 +1,8 @@
 'use client';
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
-import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/ui/Button';
-import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
@@ -15,41 +12,37 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';
-import { useOptionalVersionPreview } from '../VersionPreviewContext';
-import { getFragmentText, parsePreviewBudget } from '../proposalPreviewContent';
 import { RestoreProposalVersionModal } from './RestoreProposalVersionModal';
 
 /** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
-  proposalId: string;
-  proposalData: unknown;
-  proposalTitle: string;
-  fragmentNames: string[];
   versionId: number | null;
+  isPending: boolean;
+  canRestore: boolean;
   onSelectVersion: (versionId: number | null) => void;
+  onRestoreVersion: () => void;
   onClose: () => void;
 }
 
 /**
  * Aside panel for proposal version history.
- * Reads versions directly from the TipTap collaboration provider.
+ *
+ * Pure presentation component — reads versions from the TipTap collaboration
+ * provider and delegates restore actions to the parent via `onRestoreVersion`.
  */
 export function ProposalVersionsAside({
-  proposalId,
-  proposalData,
-  proposalTitle,
-  fragmentNames,
   versionId,
+  isPending,
+  canRestore,
   onSelectVersion,
+  onRestoreVersion,
   onClose,
 }: ProposalVersionsAsideProps) {
   const locale = useLocale();
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
-  const utils = trpc.useUtils();
-  const versionPreview = useOptionalVersionPreview();
 
   const readVersions = useCallback(
     () => [...provider.getVersions()].sort((a, b) => b.version - a.version),
@@ -58,15 +51,6 @@ export function ProposalVersionsAside({
 
   const [versions, setVersions] = useState<THistoryVersion[]>(readVersions);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
-
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onError: (error) => {
-      toast.error({
-        title: t('Failed to restore proposal version'),
-        message: error.message || t('An unexpected error occurred'),
-      });
-    },
-  });
 
   useEffect(() => {
     const onUpdate = () => setVersions(readVersions());
@@ -79,53 +63,14 @@ export function ProposalVersionsAside({
     [versionId, versions],
   );
 
-  const isSelectedVersionPreviewReady =
-    selectedVersion !== null &&
-    versionPreview?.tiptapVersion?.version === selectedVersion.version &&
-    Object.keys(versionPreview?.fragmentContents ?? {}).length > 0;
   const selectedVersionDate = selectedVersion
     ? new Date(selectedVersion.date).toISOString()
     : null;
 
-  async function handleRestore() {
-    if (!selectedVersion || !versionPreview || !isSelectedVersionPreviewReady) {
-      return;
-    }
-
-    const currentProposalData = parseProposalData(proposalData);
-    const nextTitle =
-      getFragmentText(versionPreview.fragmentContents.title) || proposalTitle;
-    const nextCategory =
-      getFragmentText(versionPreview.fragmentContents.category) || undefined;
-    const nextBudget = parsePreviewBudget(
-      versionPreview.fragmentContents.budget,
-    );
-
-    provider.revertToVersion(selectedVersion.version, fragmentNames);
-
-    await updateProposalMutation.mutateAsync({
-      proposalId,
-      data: {
-        title: nextTitle,
-        proposalData: {
-          ...currentProposalData,
-          collaborationDocId: currentProposalData.collaborationDocId,
-          category: nextCategory,
-          budget: nextBudget,
-        },
-      },
-    });
-
-    await Promise.all([
-      utils.decision.getProposal.invalidate(),
-      utils.decision.listProposals.invalidate(),
-    ]);
-
+  function handleRestore() {
+    onRestoreVersion();
     setIsRestoreModalOpen(false);
     onSelectVersion(null);
-    toast.success({
-      message: t('Proposal version restored'),
-    });
   }
 
   return (
@@ -162,8 +107,8 @@ export function ProposalVersionsAside({
                 isRecent={isRecent}
                 locale={locale}
                 isSelected={versionId === version.version}
-                canRestore={isSelectedVersionPreviewReady}
-                isPending={updateProposalMutation.isPending}
+                canRestore={canRestore}
+                isPending={isPending}
                 onRestore={() => setIsRestoreModalOpen(true)}
                 onSelect={() => onSelectVersion(version.version)}
               />
@@ -175,10 +120,10 @@ export function ProposalVersionsAside({
       {selectedVersion && (
         <RestoreProposalVersionModal
           isOpen={isRestoreModalOpen}
-          isPending={updateProposalMutation.isPending}
+          isPending={isPending}
           versionDate={selectedVersionDate ?? ''}
           onClose={() => setIsRestoreModalOpen(false)}
-          onConfirm={() => void handleRestore()}
+          onConfirm={handleRestore}
         />
       )}
     </>
