@@ -31,7 +31,9 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
     capturePostHogException(error, 'ErrorBoundary', {
-      $exception_componentStack: errorInfo.componentStack,
+      ...(errorInfo.componentStack && {
+        $exception_componentStack: errorInfo.componentStack,
+      }),
     });
   }
 

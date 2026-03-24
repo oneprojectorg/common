@@ -1,18 +1,12 @@
 import posthog from 'posthog-js';
 
-/**
- * Captures a $exception event via PostHog. Safe to call whether or not
- * PostHogProvider has initialized — posthog-js queues events internally.
- */
+/** Captures an exception via PostHog. Safe to call before PostHogProvider mounts. */
 export function capturePostHogException(
-  error: Error,
+  error: unknown,
   source: string,
   extra?: Record<string, unknown>,
 ) {
-  posthog.capture('$exception', {
-    $exception_message: error.message,
-    $exception_type: error.name,
-    $exception_stack_trace_raw: error.stack,
+  posthog.captureException(error, {
     $exception_source: source,
     ...extra,
   });

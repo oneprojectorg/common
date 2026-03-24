@@ -25,7 +25,9 @@ export default function GlobalError({
         __add_tracing_headers: true,
       });
     }
+  }, []);
 
+  useEffect(() => {
     capturePostHogException(error, 'global-error', {
       $exception_digest: error.digest,
     });
@@ -46,7 +48,7 @@ export default function GlobalError({
           }}
         >
           <h2>Something went wrong</h2>
-          <button type="button" onClick={() => reset()}>
+          <button type="button" onClick={reset}>
             Try again
           </button>
         </div>
