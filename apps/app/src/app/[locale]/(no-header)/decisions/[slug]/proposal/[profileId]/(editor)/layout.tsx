@@ -218,8 +218,8 @@ function ProposalEditorContent({
             versionId: nextVersionId,
           })
         }
-        onRestoreVersion={() =>
-          void restoreVersion().then(() =>
+        onRestoreVersion={(versionId) =>
+          void restoreVersion(versionId).then(() =>
             setAsideState({ aside: 'versions', versionId: null }),
           )
         }

@@ -22,7 +22,7 @@ interface ProposalVersionsAsideProps {
   isPending: boolean;
   canRestore: boolean;
   onSelectVersion: (versionId: number | null) => void;
-  onRestoreVersion: () => void;
+  onRestoreVersion: (versionId: number) => void;
   onClose: () => void;
 }
 
@@ -68,9 +68,12 @@ export function ProposalVersionsAside({
     : null;
 
   function handleRestore() {
-    onRestoreVersion();
+    if (versionId === null) {
+      return;
+    }
+
+    onRestoreVersion(versionId);
     setIsRestoreModalOpen(false);
-    onSelectVersion(null);
   }
 
   return (

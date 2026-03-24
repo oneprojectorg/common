@@ -82,13 +82,17 @@ export function useRestoreProposalVersion({
     Object.keys(versionPreview.fragmentContents).length > 0;
 
   /**
-   * Restores the proposal to the currently previewed version.
+   * Restores the proposal to the specified version.
    *
    * Reverts the collaborative document and persists the extracted field
    * values. No-ops if the version preview isn't ready.
    */
-  async function restoreVersion(): Promise<void> {
-    if (!versionPreview?.tiptapVersion || !canRestore) {
+  async function restoreVersion(versionId: number): Promise<void> {
+    if (
+      !versionPreview?.tiptapVersion ||
+      versionPreview.tiptapVersion.version !== versionId ||
+      !canRestore
+    ) {
       return;
     }
 
@@ -96,7 +100,7 @@ export function useRestoreProposalVersion({
       versionPreview.fragmentContents,
     );
 
-    provider.revertToVersion(versionPreview.tiptapVersion.version, fragmentNames);
+    provider.revertToVersion(versionId, fragmentNames);
 
     await updateProposalMutation.mutateAsync({
       proposalId,
