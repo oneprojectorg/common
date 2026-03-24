@@ -28,8 +28,8 @@ export default function GlobalError({
   }, []);
 
   useEffect(() => {
-    capturePostHogException(error, 'global-error', {
-      $exception_digest: error.digest,
+    capturePostHogException(error, {
+      error_digest: error.digest,
     });
   }, [error]);
 
