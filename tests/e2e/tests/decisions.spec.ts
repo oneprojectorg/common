@@ -30,9 +30,9 @@ test.describe('Decisions', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // 5. Click the "Submit a proposal" button
+    // 5. Click the "Start a proposal" button
     const submitButton = authenticatedPage.getByRole('button', {
-      name: 'Submit a proposal',
+      name: 'Start a proposal',
     });
     await expect(submitButton).toBeVisible({ timeout: 15_000 });
     await submitButton.click();
