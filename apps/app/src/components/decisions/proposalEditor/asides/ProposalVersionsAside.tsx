@@ -87,7 +87,7 @@ export function ProposalVersionsAside({
     ? new Date(selectedVersion.date).toISOString()
     : null;
 
-  const handleRestore = useCallback(async () => {
+  async function handleRestore() {
     if (!selectedVersion || !versionPreview || !isSelectedVersionPreviewReady) {
       return;
     }
@@ -128,21 +128,7 @@ export function ProposalVersionsAside({
     toast.success({
       message: t('Proposal version restored'),
     });
-  }, [
-    fragmentNames,
-    isSelectedVersionPreviewReady,
-    onSelectVersion,
-    proposalId,
-    proposalData,
-    proposalTitle,
-    provider,
-    selectedVersion,
-    t,
-    updateProposalMutation,
-    utils.decision.getProposal,
-    utils.decision.listProposals,
-    versionPreview,
-  ]);
+  }
 
   return (
     <>
