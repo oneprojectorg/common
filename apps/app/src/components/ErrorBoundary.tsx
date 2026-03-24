@@ -3,6 +3,8 @@
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 
+import { capturePostHogException } from '@/lib/capturePostHogException';
+
 import { ErrorMessage } from './ErrorMessage';
 
 interface Props {
@@ -28,6 +30,9 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    capturePostHogException(error, 'ErrorBoundary', {
+      $exception_componentStack: errorInfo.componentStack,
+    });
   }
 
   public render() {

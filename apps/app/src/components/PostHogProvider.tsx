@@ -12,7 +12,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       api_host: '/stats',
       ui_host: posthogUIHost,
       capture_pageview: false, // We capture pageviews manually
-      capture_pageleave: true, // Enable pageleave capture
+      capture_pageleave: true,
+      capture_exceptions: true,
       __add_tracing_headers: true,
       // debug: process.env.NODE_ENV === 'development',
     });
