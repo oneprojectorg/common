@@ -21,8 +21,6 @@ export default function GlobalError({
       posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
         api_host: '/stats',
         ui_host: posthogUIHost,
-        capture_pageview: false,
-        capture_pageleave: true,
         capture_exceptions: true,
         __add_tracing_headers: true,
       });
