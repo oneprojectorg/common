@@ -1,7 +1,13 @@
 import { sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import { relations } from 'drizzle-orm/_relations';
-import { index, pgTable, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import {
+  foreignKey,
+  index,
+  pgTable,
+  timestamp,
+  unique,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies } from '../../helpers';
 import { proposalHistory } from './proposalHistory.sql';
@@ -27,12 +33,7 @@ export const decisionTransitionProposals = pgTable(
         onDelete: 'cascade',
       }),
 
-    proposalHistoryId: uuid('proposal_history_id')
-      .notNull()
-      .references(() => proposalHistory.historyId, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
+    proposalHistoryId: uuid('proposal_history_id').notNull(),
 
     createdAt: timestamp({
       withTimezone: true,
@@ -41,29 +42,17 @@ export const decisionTransitionProposals = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.transitionHistoryId),
     index().on(table.proposalId),
     index().on(table.proposalHistoryId),
     unique().on(table.transitionHistoryId, table.proposalId),
+    foreignKey({
+      name: 'dtp_proposal_history_fkey',
+      columns: [table.proposalId, table.proposalHistoryId],
+      foreignColumns: [proposalHistory.id, proposalHistory.historyId],
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
   ],
-);
-
-export const decisionTransitionProposalsRelations = relations(
-  decisionTransitionProposals,
-  ({ one }) => ({
-    transitionHistory: one(stateTransitionHistory, {
-      fields: [decisionTransitionProposals.transitionHistoryId],
-      references: [stateTransitionHistory.id],
-    }),
-    proposal: one(proposals, {
-      fields: [decisionTransitionProposals.proposalId],
-      references: [proposals.id],
-    }),
-    proposalHistorySnapshot: one(proposalHistory, {
-      fields: [decisionTransitionProposals.proposalHistoryId],
-      references: [proposalHistory.historyId],
-    }),
-  }),
 );
 
 export type DecisionTransitionProposal = InferModel<

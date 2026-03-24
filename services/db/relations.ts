@@ -42,6 +42,86 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.proposals.id,
       to: r.proposalAttachments.proposalId,
     }),
+    transitionProposals: r.many.decisionTransitionProposals({
+      from: r.proposals.id,
+      to: r.decisionTransitionProposals.proposalId,
+    }),
+  },
+
+  /**
+   * Decision Transition Proposals relations (junction table)
+   *
+   * Links state transitions to the proposals that were active at that point.
+   */
+  decisionTransitionProposals: {
+    transitionHistory: r.one.stateTransitionHistory({
+      from: r.decisionTransitionProposals.transitionHistoryId,
+      to: r.stateTransitionHistory.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.decisionTransitionProposals.proposalId,
+      to: r.proposals.id,
+      optional: false,
+    }),
+    proposalHistorySnapshot: r.one.proposalHistory({
+      from: r.decisionTransitionProposals.proposalHistoryId,
+      to: r.proposalHistory.historyId,
+      optional: false,
+    }),
+  },
+
+  /**
+   * State Transition History relations
+   */
+  stateTransitionHistory: {
+    processInstance: r.one.processInstances({
+      from: r.stateTransitionHistory.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    triggeredBy: r.one.profiles({
+      from: r.stateTransitionHistory.triggeredByProfileId,
+      to: r.profiles.id,
+      alias: 'stateTransitionHistory_triggeredBy',
+    }),
+    transitionProposals: r.many.decisionTransitionProposals({
+      from: r.stateTransitionHistory.id,
+      to: r.decisionTransitionProposals.transitionHistoryId,
+    }),
+  },
+
+  /**
+   * Proposal History relations
+   */
+  proposalHistory: {
+    proposal: r.one.proposals({
+      from: r.proposalHistory.id,
+      to: r.proposals.id,
+      optional: false,
+    }),
+    processInstance: r.one.processInstances({
+      from: r.proposalHistory.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    submittedBy: r.one.profiles({
+      from: r.proposalHistory.submittedByProfileId,
+      to: r.profiles.id,
+      alias: 'proposalHistory_submittedBy',
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.proposalHistory.profileId,
+      to: r.profiles.id,
+      alias: 'proposalHistory_profile',
+      optional: false,
+    }),
+    lastEditedBy: r.one.profiles({
+      from: r.proposalHistory.lastEditedByProfileId,
+      to: r.profiles.id,
+      alias: 'proposalHistory_lastEditedBy',
+    }),
   },
 
   /**

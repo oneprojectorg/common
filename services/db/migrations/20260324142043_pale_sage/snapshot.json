@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "1c841a72-1175-4512-bf89-ee35adaa24c1",
+  "id": "08d63b7a-b833-445f-bc3a-eacc81fa74a2",
   "prevIds": [
     "d069c130-7344-49e4-b867-04c517f1e091"
   ],
@@ -6025,27 +6025,6 @@
       "nameExplicit": false,
       "columns": [
         {
-          "value": "transition_history_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "decision_transition_proposals_transition_history_id_index",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "decision_transition_proposals"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        {
           "value": "proposal_id",
           "isExpression": false,
           "asc": true,
@@ -9273,18 +9252,20 @@
       "table": "decision_transition_proposals"
     },
     {
-      "nameExplicit": false,
+      "nameExplicit": true,
       "columns": [
+        "proposal_id",
         "proposal_history_id"
       ],
       "schemaTo": "public",
       "tableTo": "decision_proposal_history",
       "columnsTo": [
+        "id",
         "history_id"
       ],
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
-      "name": "decision_transition_proposals_tzgkzYtWxFMm_fkey",
+      "name": "dtp_proposal_history_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "decision_transition_proposals"
@@ -11155,6 +11136,18 @@
       "entityType": "uniques",
       "schema": "public",
       "table": "decision_proposal_attachments"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "id",
+        "history_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "prop_hist_id_history_id_uniq",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "decision_proposal_history"
     },
     {
       "nameExplicit": false,

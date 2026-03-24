@@ -11,7 +11,6 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies } from '../../helpers';
-import { decisionTransitionProposals } from './decisionTransitionProposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
@@ -56,7 +55,7 @@ export const stateTransitionHistory = pgTable(
 
 export const stateTransitionHistoryRelations = relations(
   stateTransitionHistory,
-  ({ one, many }) => ({
+  ({ one }) => ({
     processInstance: one(processInstances, {
       fields: [stateTransitionHistory.processInstanceId],
       references: [processInstances.id],
@@ -65,7 +64,6 @@ export const stateTransitionHistoryRelations = relations(
       fields: [stateTransitionHistory.triggeredByProfileId],
       references: [profiles.id],
     }),
-    transitionProposals: many(decisionTransitionProposals),
   }),
 );
 
