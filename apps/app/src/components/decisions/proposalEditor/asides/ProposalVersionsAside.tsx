@@ -6,7 +6,13 @@ import { Button } from '@op/ui/Button';
 import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -19,7 +25,6 @@ const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 interface ProposalVersionsAsideProps {
   versionId: number | null;
-  isPending: boolean;
   canRestore: boolean;
   onSelectVersion: (versionId: number | null) => void;
   onRestoreVersion: (versionId: number) => void;
@@ -34,7 +39,6 @@ interface ProposalVersionsAsideProps {
  */
 export function ProposalVersionsAside({
   versionId,
-  isPending,
   canRestore,
   onSelectVersion,
   onRestoreVersion,
@@ -43,6 +47,7 @@ export function ProposalVersionsAside({
   const locale = useLocale();
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
+  const [isPending, startTransition] = useTransition();
 
   const readVersions = useCallback(
     () => [...provider.getVersions()].sort((a, b) => b.version - a.version),
@@ -72,7 +77,9 @@ export function ProposalVersionsAside({
       return;
     }
 
-    onRestoreVersion(versionId);
+    startTransition(() => {
+      onRestoreVersion(versionId);
+    });
     setIsRestoreModalOpen(false);
   }
 

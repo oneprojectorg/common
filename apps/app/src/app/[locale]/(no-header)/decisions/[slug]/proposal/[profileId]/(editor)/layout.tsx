@@ -199,10 +199,7 @@ function ProposalEditorContent({
 }) {
   const versionPreview = useOptionalVersionPreview();
 
-  const {
-    restoreVersion,
-    isPending: isRestorePending,
-  } = useRestoreProposalVersion({
+  const { restoreVersion } = useRestoreProposalVersion({
     proposalId: proposal.id,
     proposalData: proposal.proposalData,
     fragmentNames,
@@ -217,7 +214,6 @@ function ProposalEditorContent({
     asideState.aside === 'versions' ? (
       <ProposalVersionsAside
         versionId={asideState.versionId}
-        isPending={isRestorePending}
         canRestore={canRestore}
         onSelectVersion={(nextVersionId) =>
           setAsideState({

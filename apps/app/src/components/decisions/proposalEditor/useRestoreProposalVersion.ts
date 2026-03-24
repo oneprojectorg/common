@@ -94,6 +94,5 @@ export function useRestoreProposalVersion({
 
   return {
     restoreVersion,
-    isPending: updateProposalMutation.isPending,
   };
 }
