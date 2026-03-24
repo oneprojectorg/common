@@ -42,7 +42,7 @@ import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
-import { extractPreviewText } from './proposalPreviewContent';
+import { getFragmentText } from './proposalPreviewContent';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
 
@@ -221,9 +221,7 @@ function ProposalEditorInner({
   templateRef.current = proposalTemplate;
 
   const proposalFields = compileProposalSchema(proposalTemplate);
-  const previewTitle = extractPreviewText(
-    versionPreview?.fragmentContents.title,
-  );
+  const previewTitle = getFragmentText(versionPreview?.fragmentContents.title);
   const viewingLabel = versionPreview?.tiptapVersion
     ? t('Viewing {date}', {
         date: formatDate(

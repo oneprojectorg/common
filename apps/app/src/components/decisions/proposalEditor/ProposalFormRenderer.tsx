@@ -21,10 +21,7 @@ import {
   ReadonlyTextField,
   ReadonlyTitleField,
 } from './ReadonlyProposalFields';
-import {
-  extractPreviewText,
-  parsePreviewBudget,
-} from './proposalPreviewContent';
+import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
 import type { ProposalDraftFields } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
@@ -69,7 +66,7 @@ function extractOptions(
 function formatPreviewBudget(
   content: JSONContent | null | undefined,
 ): string | null {
-  const text = extractPreviewText(content);
+  const text = getFragmentText(content);
 
   if (!text) {
     return null;
@@ -99,7 +96,7 @@ function getPreviewText({
   previewContent: JSONContent | null | undefined;
 }): string | null {
   if (mode === 'preview-version') {
-    const previewText = extractPreviewText(previewContent);
+    const previewText = getFragmentText(previewContent);
     return previewText || null;
   }
 

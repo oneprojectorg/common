@@ -16,10 +16,7 @@ import { useTranslations } from '@/lib/i18n';
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';
 import { useOptionalVersionPreview } from '../VersionPreviewContext';
-import {
-  extractPreviewText,
-  parsePreviewBudget,
-} from '../proposalPreviewContent';
+import { getFragmentText, parsePreviewBudget } from '../proposalPreviewContent';
 import { RestoreProposalVersionModal } from './RestoreProposalVersionModal';
 
 /** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
@@ -97,10 +94,9 @@ export function ProposalVersionsAside({
 
     const currentProposalData = parseProposalData(proposalData);
     const nextTitle =
-      extractPreviewText(versionPreview.fragmentContents.title) ||
-      proposalTitle;
+      getFragmentText(versionPreview.fragmentContents.title) || proposalTitle;
     const nextCategory =
-      extractPreviewText(versionPreview.fragmentContents.category) || undefined;
+      getFragmentText(versionPreview.fragmentContents.category) || undefined;
     const nextBudget = parsePreviewBudget(
       versionPreview.fragmentContents.budget,
     );
