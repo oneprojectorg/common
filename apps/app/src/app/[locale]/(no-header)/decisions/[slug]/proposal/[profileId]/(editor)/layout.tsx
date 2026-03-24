@@ -3,10 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import {
-  type ProcessInstance,
-  type proposalEncoder,
-} from '@op/api/encoders';
+import { type ProcessInstance, type proposalEncoder } from '@op/api/encoders';
 import { getProposalFragmentNames, parseProposalData } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
@@ -27,7 +24,6 @@ import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
-import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 import {
   type ProposalEditorAside,
   type ProposalEditorAsideState,
@@ -39,6 +35,7 @@ import {
   proposalEditorAsideValues,
   proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
+import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 
 /**
  * Shared layout for the proposal editor route.
