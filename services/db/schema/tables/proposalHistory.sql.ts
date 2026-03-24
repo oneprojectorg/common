@@ -12,8 +12,7 @@ import {
 import { autoId, serviceRolePolicies, tstzrange } from '../../helpers';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
-import { proposalColumns } from './proposalColumns.sql';
-import { proposals } from './proposals.sql';
+import { proposalColumns, proposals } from './proposals.sql';
 
 export const proposalHistory = pgTable(
   'decision_proposal_history',

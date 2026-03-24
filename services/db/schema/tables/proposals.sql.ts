@@ -1,21 +1,108 @@
+import { sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
-import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies } from '../../helpers';
+import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
 import { decisions } from './decisions.sql';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalAttachments } from './proposalAttachments.sql';
-import { proposalColumns } from './proposalColumns.sql';
 import { taxonomyTerms } from './taxonomies.sql';
+import { Visibility, visibilityEnum } from './visibility.sql';
 
-export {
-  ProposalStatus,
-  proposalColumns,
-  proposalStatusEnum,
-} from './proposalColumns.sql';
+export enum ProposalStatus {
+  DRAFT = 'draft',
+  SUBMITTED = 'submitted',
+  SHORTLISTED = 'shortlisted',
+  UNDER_REVIEW = 'under_review',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DUPLICATE = 'duplicate',
+  SELECTED = 'selected',
+}
+
+export const proposalStatusEnum = pgEnum(
+  'decision_proposal_status',
+  enumToPgEnum(ProposalStatus),
+);
+
+/**
+ * ALL fields that are copied to history
+ * When adding/removing columns, also update the proposal_history_trigger
+ */
+export const proposalColumns = {
+  // Reference to the process instance
+  processInstanceId: uuid('process_instance_id')
+    .notNull()
+    .references(() => processInstances.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    }),
+
+  // Proposal data following the template schema
+  proposalData: jsonb('proposal_data').notNull(),
+
+  // Proposal status (defaults to DRAFT for new proposals)
+  status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
+
+  // Proposal visibility (defaults to VISIBLE)
+  visibility: visibilityEnum('visibility')
+    .default(Visibility.VISIBLE)
+    .notNull(),
+
+  // Who originally submitted this proposal
+  submittedByProfileId: uuid('submitted_by_profile_id')
+    .notNull()
+    .references(() => profiles.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    }),
+
+  // The proposal's own profile (for social features)
+  profileId: uuid('profile_id')
+    .references(() => profiles.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    })
+    .notNull(),
+
+  // Who last edited this proposal (for version history tracking)
+  lastEditedByProfileId: uuid('last_edited_by_profile_id').references(
+    () => profiles.id,
+    {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    },
+  ),
+
+  // Timestamps
+  createdAt: timestamp({
+    withTimezone: true,
+    mode: 'string',
+  }).default(sql`(now() AT TIME ZONE 'utc'::text)`),
+
+  updatedAt: timestamp({
+    withTimezone: true,
+    mode: 'string',
+  })
+    .default(sql`(now() AT TIME ZONE 'utc'::text)`)
+    .$onUpdate(() => sql`(now() AT TIME ZONE 'utc'::text)`),
+
+  deletedAt: timestamp({
+    withTimezone: true,
+    mode: 'string',
+  }),
+} as const;
 
 export const proposals = pgTable(
   'decision_proposals',
