@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "08d63b7a-b833-445f-bc3a-eacc81fa74a2",
+  "id": "fde50793-a336-42bc-be3a-f8b14de201b7",
   "prevIds": [
     "d069c130-7344-49e4-b867-04c517f1e091"
   ],
@@ -9247,6 +9247,23 @@
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
       "name": "decision_transition_proposals_aOIDjvnmiOm6_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_transition_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "proposal_history_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_proposal_history",
+      "columnsTo": [
+        "history_id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_transition_proposals_tzgkzYtWxFMm_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "decision_transition_proposals"

@@ -13,5 +13,6 @@ CREATE INDEX "decision_transition_proposals_proposal_id_index" ON "decision_tran
 CREATE INDEX "decision_transition_proposals_proposal_history_id_index" ON "decision_transition_proposals" ("proposal_history_id");--> statement-breakpoint
 ALTER TABLE "decision_transition_proposals" ADD CONSTRAINT "decision_transition_proposals_cQhIehV2hQEj_fkey" FOREIGN KEY ("transition_history_id") REFERENCES "decision_transition_history"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "decision_transition_proposals" ADD CONSTRAINT "decision_transition_proposals_aOIDjvnmiOm6_fkey" FOREIGN KEY ("proposal_id") REFERENCES "decision_proposals"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
+ALTER TABLE "decision_transition_proposals" ADD CONSTRAINT "decision_transition_proposals_tzgkzYtWxFMm_fkey" FOREIGN KEY ("proposal_history_id") REFERENCES "decision_proposal_history"("history_id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "decision_transition_proposals" ADD CONSTRAINT "dtp_proposal_history_fkey" FOREIGN KEY ("proposal_id","proposal_history_id") REFERENCES "decision_proposal_history"("id","history_id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
 CREATE POLICY "service-role" ON "decision_transition_proposals" AS PERMISSIVE FOR ALL TO "service_role";
