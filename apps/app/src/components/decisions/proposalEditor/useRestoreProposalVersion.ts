@@ -9,7 +9,6 @@ import type { JSONContent } from '@tiptap/react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../collaboration';
-import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
 
 interface UseRestoreProposalVersionOptions {
@@ -21,7 +20,7 @@ interface UseRestoreProposalVersionOptions {
 /**
  * Encapsulates the logic for restoring a proposal to a previous version.
  *
- * Handles extracting field values from the version preview fragments,
+ * Handles extracting field values from the provided fragment contents,
  * reverting the collaborative document, and persisting the restored
  * proposal data via mutation.
  */
@@ -33,7 +32,6 @@ export function useRestoreProposalVersion({
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
   const utils = trpc.useUtils();
-  const versionPreview = useOptionalVersionPreview();
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: () => {
@@ -75,30 +73,16 @@ export function useRestoreProposalVersion({
     };
   }
 
-  /** Whether the version preview is loaded and ready for the current version. */
-  const canRestore =
-    versionPreview !== null &&
-    versionPreview.tiptapVersion !== null &&
-    Object.keys(versionPreview.fragmentContents).length > 0;
-
   /**
-   * Restores the proposal to the specified version.
-   *
-   * Reverts the collaborative document and persists the extracted field
-   * values. No-ops if the version preview isn't ready.
+   * Restores the proposal to the specified version using the provided
+   * fragment contents. Reverts the collaborative document and persists
+   * the extracted field values.
    */
-  async function restoreVersion(versionId: number): Promise<void> {
-    if (
-      !versionPreview?.tiptapVersion ||
-      versionPreview.tiptapVersion.version !== versionId ||
-      !canRestore
-    ) {
-      return;
-    }
-
-    const restoredData = buildRestoredProposalData(
-      versionPreview.fragmentContents,
-    );
+  async function restoreVersion(
+    versionId: number,
+    fragmentContents: Record<string, JSONContent | null>,
+  ): Promise<void> {
+    const restoredData = buildRestoredProposalData(fragmentContents);
 
     provider.revertToVersion(versionId, fragmentNames);
 
@@ -110,7 +94,6 @@ export function useRestoreProposalVersion({
 
   return {
     restoreVersion,
-    canRestore,
     isPending: updateProposalMutation.isPending,
   };
 }

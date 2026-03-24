@@ -25,6 +25,7 @@ import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
+import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 import {
@@ -196,15 +197,21 @@ function ProposalEditorContent({
   asideHeaderIcons: React.ReactNode[];
   isMobile: boolean;
 }) {
+  const versionPreview = useOptionalVersionPreview();
+
   const {
     restoreVersion,
-    canRestore,
     isPending: isRestorePending,
   } = useRestoreProposalVersion({
     proposalId: proposal.id,
     proposalData: proposal.proposalData,
     fragmentNames,
   });
+
+  const canRestore =
+    versionPreview !== null &&
+    versionPreview.tiptapVersion !== null &&
+    Object.keys(versionPreview.fragmentContents).length > 0;
 
   const asideSlot =
     asideState.aside === 'versions' ? (
@@ -218,11 +225,13 @@ function ProposalEditorContent({
             versionId: nextVersionId,
           })
         }
-        onRestoreVersion={(versionId) =>
-          void restoreVersion(versionId).then(() =>
-            setAsideState({ aside: 'versions', versionId: null }),
-          )
-        }
+        onRestoreVersion={async (versionId) => {
+          await restoreVersion(
+            versionId,
+            versionPreview?.fragmentContents ?? {},
+          );
+          setAsideState({ aside: 'versions', versionId: null });
+        }}
         onClose={() => setAsideState({ aside: null })}
       />
     ) : undefined;
