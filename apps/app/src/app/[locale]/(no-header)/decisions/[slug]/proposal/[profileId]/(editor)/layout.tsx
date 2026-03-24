@@ -206,11 +206,6 @@ function ProposalEditorContent({
     fragmentNames,
   });
 
-  const handleRestoreVersion = async () => {
-    await restoreVersion();
-    setAsideState({ aside: 'versions', versionId: null });
-  };
-
   const asideSlot =
     asideState.aside === 'versions' ? (
       <ProposalVersionsAside
@@ -223,7 +218,11 @@ function ProposalEditorContent({
             versionId: nextVersionId,
           })
         }
-        onRestoreVersion={() => void handleRestoreVersion()}
+        onRestoreVersion={() =>
+          void restoreVersion().then(() =>
+            setAsideState({ aside: 'versions', versionId: null }),
+          )
+        }
         onClose={() => setAsideState({ aside: null })}
       />
     ) : undefined;
