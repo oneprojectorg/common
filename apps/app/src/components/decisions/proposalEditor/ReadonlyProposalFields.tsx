@@ -35,7 +35,7 @@ export function ReadonlyTextField({
   multiline: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       <FieldHeader title={title} description={description} />
       {content ? (
         <RichTextViewer
@@ -67,7 +67,7 @@ export function ReadonlyDropdownField({
   placeholder: string;
 }) {
   const content = (
-    <Button variant="pill" color="pill">
+    <Button variant="pill" color="pill" className="justify-start text-left">
       {value ?? placeholder}
     </Button>
   );
