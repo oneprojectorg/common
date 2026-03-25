@@ -1,12 +1,4 @@
-import {
-  and,
-  count,
-  countDistinct,
-  db,
-  inArray,
-  isNull,
-  ne,
-} from '@op/db/client';
+import { and, count, countDistinct, db, inArray, ne } from '@op/db/client';
 import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -88,7 +80,6 @@ export const listUserInvites = async ({
         and(
           inArray(proposals.processInstanceId, instanceIds),
           ne(proposals.status, ProposalStatus.DRAFT),
-          isNull(proposals.deletedAt),
         ),
       )
       .groupBy(proposals.processInstanceId);

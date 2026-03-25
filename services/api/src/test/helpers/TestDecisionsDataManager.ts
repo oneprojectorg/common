@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import type { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import type { ProcessStatus } from '@op/db/schema';
 import {
   decisionProcesses,
   organizationUserToAccessRoles,
@@ -499,7 +499,6 @@ export class TestDecisionsDataManager {
     callerEmail,
     processInstanceId,
     proposalData,
-    status,
   }: {
     callerEmail: string;
     processInstanceId: string;
@@ -508,7 +507,6 @@ export class TestDecisionsDataManager {
       description?: string;
       collaborationDocId?: string;
     };
-    status?: ProposalStatus;
   }) {
     this.ensureCleanupRegistered();
 
@@ -523,32 +521,15 @@ export class TestDecisionsDataManager {
       this.createdProfileIds.push(proposal.profileId);
     }
 
-    const updateData: {
-      proposalData?: Record<string, unknown>;
-      status?: ProposalStatus;
-    } = {};
-
     if (proposalData.description) {
       const { collaborationDocId: _, ...legacyProposalData } =
         proposal.proposalData as Record<string, unknown>;
-      updateData.proposalData = { ...legacyProposalData, ...proposalData };
-    }
-
-    if (status) {
-      updateData.status = status;
-    }
-
-    if (Object.keys(updateData).length > 0) {
+      const updatedProposalData = { ...legacyProposalData, ...proposalData };
       await db
         .update(proposals)
-        .set(updateData)
+        .set({ proposalData: updatedProposalData })
         .where(eq(proposals.id, proposal.id));
-
-      return {
-        ...proposal,
-        proposalData: updateData.proposalData ?? proposal.proposalData,
-        status: updateData.status ?? proposal.status,
-      };
+      return { ...proposal, proposalData: updatedProposalData };
     }
 
     return proposal;

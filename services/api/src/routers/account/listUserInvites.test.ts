@@ -3,6 +3,7 @@ import {
   EntityType,
   ProposalStatus,
   profileInvites,
+  proposals,
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
@@ -350,11 +351,14 @@ describe.concurrent('account.listUserInvites', () => {
         title: 'Submitted proposal',
         description: 'Ready to review',
       },
-      status: ProposalStatus.SUBMITTED,
     });
 
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, submittedProposal.id));
+
     expect(draftProposal.status).toBe(ProposalStatus.DRAFT);
-    expect(submittedProposal.status).toBe(ProposalStatus.SUBMITTED);
 
     const { session } = await createIsolatedSession(invitee.email);
     const caller = createCaller(await createTestContextWithSession(session));
