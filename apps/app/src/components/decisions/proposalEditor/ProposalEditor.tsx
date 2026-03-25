@@ -262,7 +262,19 @@ function ProposalEditorInner({
       return;
     }
 
-    const handleDocumentChange = (transaction: { local: boolean }) => {
+    const handleDocumentChange = (transaction: {
+      local: boolean;
+      origin: unknown;
+    }) => {
+      console.log('[ProposalEditor] afterTransaction', {
+        local: transaction.local,
+        origin: String(transaction.origin),
+        originType: typeof transaction.origin,
+        originConstructor:
+          transaction.origin?.constructor?.name ?? 'no constructor',
+        collaborationDocId,
+      });
+
       if (!transaction.local) {
         return;
       }
