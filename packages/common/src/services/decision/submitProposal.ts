@@ -102,9 +102,21 @@ export const submitProposal = async ({
   // Stamp the latest TipTap version into proposalData so the history row
   // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
-  const collaborationDocVersionId = await resolveCollaborationDocVersionId(
-    parsed.collaborationDocId,
-  );
+  let collaborationDocVersionId: number | null = null;
+
+  if (parsed.collaborationDocId) {
+    try {
+      const client = getTipTapClient();
+      collaborationDocVersionId = await client.getLatestVersionId(
+        parsed.collaborationDocId,
+      );
+    } catch (error) {
+      console.error(
+        `[submitProposal] Failed to fetch TipTap version for ${parsed.collaborationDocId}:`,
+        error,
+      );
+    }
+  }
 
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
@@ -143,27 +155,3 @@ export const submitProposal = async ({
 
   return updatedProposal;
 };
-
-/**
- * Fetch the latest TipTap version ID for a collaboration document.
- * Returns `null` when no collab doc exists or the API errors,
- * so this never blocks submission.
- */
-async function resolveCollaborationDocVersionId(
-  collaborationDocId: string | null | undefined,
-): Promise<number | null> {
-  if (!collaborationDocId) {
-    return null;
-  }
-
-  try {
-    const client = getTipTapClient();
-    return await client.getLatestVersionId(collaborationDocId);
-  } catch (error) {
-    console.error(
-      `[submitProposal] Failed to fetch TipTap version for ${collaborationDocId}:`,
-      error,
-    );
-    return null;
-  }
-}
