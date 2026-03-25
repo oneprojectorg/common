@@ -1,8 +1,11 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalStatus,
   decisionProcesses,
   processInstances,
+  proposals,
+  users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -164,6 +167,79 @@ describe.concurrent('listLegacyInstances', () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.proposalCount).toBe(0);
     expect(result[0]?.participantCount).toBe(0);
+  });
+
+  it('should exclude draft proposals from counts', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+
+    const [process] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Legacy Process ${task.id}`,
+        processSchema: legacyProcessSchema,
+        createdByProfileId: setup.organization.profileId,
+      })
+      .returning();
+
+    await db.insert(processInstances).values({
+      name: 'Legacy With Proposals',
+      processId: process!.id,
+      ownerProfileId: setup.organization.profileId,
+      instanceData: legacyInstanceData,
+      currentStateId: 'submission',
+      status: ProcessStatus.PUBLISHED,
+      profileId: null,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const instances = await caller.decision.listLegacyInstances({
+      ownerProfileId: setup.organization.profileId,
+    });
+
+    const legacyInstance = instances[0];
+    if (!legacyInstance) {
+      throw new Error('No legacy instance found');
+    }
+
+    const [submitter] = await db
+      .select({ profileId: users.profileId })
+      .from(users)
+      .where(eq(users.authUserId, setup.user.id));
+
+    if (!submitter?.profileId) {
+      throw new Error('No submitter profile found');
+    }
+
+    await db.insert(proposals).values([
+      {
+        processInstanceId: legacyInstance.id,
+        proposalData: { title: 'Draft proposal' },
+        status: ProposalStatus.DRAFT,
+        submittedByProfileId: submitter.profileId,
+        profileId: submitter.profileId,
+      },
+      {
+        processInstanceId: legacyInstance.id,
+        proposalData: { title: 'Submitted proposal' },
+        status: ProposalStatus.SUBMITTED,
+        submittedByProfileId: submitter.profileId,
+        profileId: submitter.profileId,
+      },
+    ]);
+
+    const result = await caller.decision.listLegacyInstances({
+      ownerProfileId: setup.organization.profileId,
+    });
+
+    expect(result[0]?.proposalCount).toBe(1);
+    expect(result[0]?.participantCount).toBe(1);
   });
 
   it('should return empty array when no legacy instances exist', async ({

@@ -1,8 +1,14 @@
-import { db } from '@op/db/client';
-import { EntityType, profileInvites } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import {
+  EntityType,
+  ProposalStatus,
+  profileInvites,
+  users,
+} from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
+import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   createIsolatedSession,
@@ -288,6 +294,78 @@ describe.concurrent('account.listUserInvites', () => {
     // Verify inviter relation is populated with the correct inviter
     expect(inviteInviter).toBeDefined();
     expect(inviteInviter?.id).toBe(adminUser.userProfileId);
+  });
+
+  it('should exclude draft proposals from decision invite counts', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const inviteData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const invitee = await inviteData.createStandaloneUser();
+    const instance = setup.instances[0];
+
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [submitter] = await db
+      .select({ profileId: users.profileId })
+      .from(users)
+      .where(eq(users.authUserId, setup.user.id));
+
+    if (!submitter?.profileId) {
+      throw new Error('No submitter profile found');
+    }
+
+    await db.insert(profileInvites).values({
+      email: invitee.email,
+      profileId: instance.profileId,
+      profileEntityType: EntityType.DECISION,
+      accessRoleId: ROLES.MEMBER.id,
+      invitedBy: submitter.profileId,
+      notifiedAt: new Date().toISOString(),
+    });
+
+    inviteData.trackProfileInvite(invitee.email, instance.profileId);
+
+    const draftProposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Draft proposal',
+        description: 'Still drafting',
+      },
+    });
+
+    const submittedProposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Submitted proposal',
+        description: 'Ready to review',
+      },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    expect(draftProposal.status).toBe(ProposalStatus.DRAFT);
+    expect(submittedProposal.status).toBe(ProposalStatus.SUBMITTED);
+
+    const { session } = await createIsolatedSession(invitee.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+    const result = await caller.listUserInvites({
+      entityType: EntityType.DECISION,
+      pending: true,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.proposalCount).toBe(1);
+    expect(result[0]?.participantCount).toBe(1);
   });
 
   it('should not return invites for other users', async ({
