@@ -47,6 +47,8 @@ import { useProposalValidation } from './useProposalValidation';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
+const AUTOVERSION_INTERVAL_SECONDS = 900; // 15 minutes
+
 /**
  * Tracks which TipTap editor currently has focus.
  *
@@ -182,7 +184,6 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
-  const PROPOSAL_VERSION_DEBOUNCE_MS = 5_000;
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations();
@@ -286,11 +287,11 @@ function ProposalEditorInner({
         });
 
         provider.createVersion(undefined, true);
-      }, PROPOSAL_VERSION_DEBOUNCE_MS);
+      }, AUTOVERSION_INTERVAL_SECONDS * 1000);
 
       console.log('[ProposalEditor] scheduled debounced version', {
         collaborationDocId,
-        delayMs: PROPOSAL_VERSION_DEBOUNCE_MS,
+        delayMs: AUTOVERSION_INTERVAL_SECONDS * 1000,
       });
     };
 
@@ -304,7 +305,7 @@ function ProposalEditorInner({
         pendingVersionTimeoutRef.current = null;
       }
     };
-  }, [PROPOSAL_VERSION_DEBOUNCE_MS, isPreviewMode, isSynced, provider, ydoc]);
+  }, [isPreviewMode, isSynced, provider, ydoc]);
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
