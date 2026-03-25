@@ -521,6 +521,7 @@ export class TestDecisionsDataManager {
       this.createdProfileIds.push(proposal.profileId);
     }
 
+    // Simulate legacy proposal by removing collaborationDocId when description is provided
     if (proposalData.description) {
       const { collaborationDocId: _, ...legacyProposalData } =
         proposal.proposalData as Record<string, unknown>;
