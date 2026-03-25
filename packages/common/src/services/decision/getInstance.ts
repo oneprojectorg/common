@@ -119,7 +119,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     // Calculate proposal and participant counts
     const nonDraftProposals =
-      instance.proposals?.filter(
+      instance.proposals.filter(
         (proposal) => proposal.status !== ProposalStatus.DRAFT,
       ) || [];
     const proposalCount = nonDraftProposals.length;
