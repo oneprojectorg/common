@@ -1,3 +1,4 @@
+import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -124,5 +125,56 @@ describe.concurrent('getInstance', () => {
         instanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('should exclude draft proposals from stats', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const draftProposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Draft proposal',
+        description: 'Still drafting',
+      },
+    });
+
+    const submittedProposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Submitted proposal',
+        description: 'Ready to review',
+      },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const submittedResult = await caller.decision.submitProposal({
+      proposalId: submittedProposal.id,
+    });
+
+    expect(draftProposal.status).toBe(ProposalStatus.DRAFT);
+    expect(submittedResult.status).toBe(ProposalStatus.SUBMITTED);
+
+    const result = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(result.proposalCount).toBe(1);
+    expect(result.participantCount).toBe(1);
   });
 });

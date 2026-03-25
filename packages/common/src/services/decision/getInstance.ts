@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { organizations } from '@op/db/schema';
+import { ProposalStatus, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { checkPermission, collapseRoles, permission } from 'access-zones';
 import type { NormalizedRole } from 'access-zones';
@@ -78,6 +78,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         proposals: {
           columns: {
             id: true,
+            status: true,
             submittedByProfileId: true,
           },
         },
@@ -117,9 +118,13 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     );
 
     // Calculate proposal and participant counts
-    const proposalCount = instance.proposals?.length || 0;
+    const submittedProposals =
+      instance.proposals?.filter(
+        (proposal) => proposal.status !== ProposalStatus.DRAFT,
+      ) || [];
+    const proposalCount = submittedProposals.length;
     const uniqueParticipants = new Set(
-      instance.proposals?.map((p) => p.submittedByProfileId),
+      submittedProposals.map((proposal) => proposal.submittedByProfileId),
     );
     const participantCount = uniqueParticipants.size;
 
