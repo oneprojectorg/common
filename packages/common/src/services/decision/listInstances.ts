@@ -113,9 +113,9 @@ export const listInstances = async ({
 
     // Transform instances to include proposal and participant counts
     const instancesWithCounts = instanceList.map((instance) => {
-      const proposalCount = instance.proposals?.length || 0;
+      const proposalCount = instance.proposals.length || 0;
       const uniqueParticipants = new Set(
-        instance.proposals?.map((p) => p.submittedByProfileId),
+        instance.proposals.map((p) => p.submittedByProfileId),
       );
       const participantCount = uniqueParticipants.size;
 
