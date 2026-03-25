@@ -6,6 +6,7 @@ import {
   jsonb,
   pgTable,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -45,6 +46,10 @@ export const stateTransitionHistory = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
+    unique('transition_history_process_instance_uniq').on(
+      table.processInstanceId,
+      table.id,
+    ),
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.triggeredByProfileId),

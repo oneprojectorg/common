@@ -8,6 +8,7 @@ import {
   pgTable,
   primaryKey,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -114,6 +115,10 @@ export const proposals = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
+    unique('proposals_process_instance_uniq').on(
+      table.processInstanceId,
+      table.id,
+    ),
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.submittedByProfileId).concurrently(),

@@ -35,7 +35,11 @@ export const proposalHistory = pgTable(
     ...serviceRolePolicies,
 
     // Composite unique for FK target from decisionTransitionProposals
-    unique('prop_hist_id_history_id_uniq').on(table.id, table.historyId),
+    unique('prop_hist_process_id_history_id_uniq').on(
+      table.processInstanceId,
+      table.id,
+      table.historyId,
+    ),
 
     // Indexes
     index().on(table.historyId).concurrently(),

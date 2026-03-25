@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies } from '../../helpers';
+import { processInstances } from './processInstances.sql';
 import { proposalHistory } from './proposalHistory.sql';
 import { proposals } from './proposals.sql';
 import { stateTransitionHistory } from './stateTransitionHistory.sql';
@@ -19,26 +20,18 @@ export const decisionTransitionProposals = pgTable(
   {
     id: autoId().primaryKey(),
 
-    transitionHistoryId: uuid('transition_history_id')
+    processInstanceId: uuid('process_instance_id')
       .notNull()
-      .references(() => stateTransitionHistory.id, {
+      .references(() => processInstances.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
 
-    proposalId: uuid('proposal_id')
-      .notNull()
-      .references(() => proposals.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
+    transitionHistoryId: uuid('transition_history_id').notNull(),
 
-    proposalHistoryId: uuid('proposal_history_id')
-      .notNull()
-      .references(() => proposalHistory.historyId, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
+    proposalId: uuid('proposal_id').notNull(),
+
+    proposalHistoryId: uuid('proposal_history_id').notNull(),
 
     createdAt: timestamp({
       withTimezone: true,
@@ -47,13 +40,42 @@ export const decisionTransitionProposals = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
+    index().on(table.processInstanceId),
+    index().on(table.transitionHistoryId),
     index().on(table.proposalId),
     index().on(table.proposalHistoryId),
     unique().on(table.transitionHistoryId, table.proposalId),
+
+    // Composite FKs ensure all references belong to the same process instance
+    foreignKey({
+      name: 'dtp_transition_history_fkey',
+      columns: [table.processInstanceId, table.transitionHistoryId],
+      foreignColumns: [
+        stateTransitionHistory.processInstanceId,
+        stateTransitionHistory.id,
+      ],
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+    foreignKey({
+      name: 'dtp_proposal_fkey',
+      columns: [table.processInstanceId, table.proposalId],
+      foreignColumns: [proposals.processInstanceId, proposals.id],
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
     foreignKey({
       name: 'dtp_proposal_history_fkey',
-      columns: [table.proposalId, table.proposalHistoryId],
-      foreignColumns: [proposalHistory.id, proposalHistory.historyId],
+      columns: [
+        table.processInstanceId,
+        table.proposalId,
+        table.proposalHistoryId,
+      ],
+      foreignColumns: [
+        proposalHistory.processInstanceId,
+        proposalHistory.id,
+        proposalHistory.historyId,
+      ],
     })
       .onUpdate('cascade')
       .onDelete('cascade'),

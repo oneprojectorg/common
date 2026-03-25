@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "fde50793-a336-42bc-be3a-f8b14de201b7",
+  "id": "3d22894b-cd01-4b32-8ce6-7157370c4267",
   "prevIds": [
     "d069c130-7344-49e4-b867-04c517f1e091"
   ],
@@ -1464,6 +1464,19 @@
       "generated": null,
       "identity": null,
       "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_transition_proposals"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "process_instance_id",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_transition_proposals"
@@ -6025,6 +6038,48 @@
       "nameExplicit": false,
       "columns": [
         {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decision_transition_proposals_process_instance_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_transition_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "transition_history_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decision_transition_proposals_transition_history_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_transition_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
           "value": "proposal_id",
           "isExpression": false,
           "asc": true,
@@ -9220,50 +9275,16 @@
     {
       "nameExplicit": false,
       "columns": [
-        "transition_history_id"
+        "process_instance_id"
       ],
       "schemaTo": "public",
-      "tableTo": "decision_transition_history",
+      "tableTo": "decision_process_instances",
       "columnsTo": [
         "id"
       ],
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
-      "name": "decision_transition_proposals_cQhIehV2hQEj_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "decision_transition_proposals"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "proposal_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "decision_proposals",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "decision_transition_proposals_aOIDjvnmiOm6_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "decision_transition_proposals"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "proposal_history_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "decision_proposal_history",
-      "columnsTo": [
-        "history_id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "decision_transition_proposals_tzgkzYtWxFMm_fkey",
+      "name": "decision_transition_proposals_DfIHz26xbtO4_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "decision_transition_proposals"
@@ -9271,12 +9292,52 @@
     {
       "nameExplicit": true,
       "columns": [
+        "process_instance_id",
+        "transition_history_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_transition_history",
+      "columnsTo": [
+        "process_instance_id",
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "dtp_transition_history_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_transition_proposals"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "process_instance_id",
+        "proposal_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_proposals",
+      "columnsTo": [
+        "process_instance_id",
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "dtp_proposal_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_transition_proposals"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "process_instance_id",
         "proposal_id",
         "proposal_history_id"
       ],
       "schemaTo": "public",
       "tableTo": "decision_proposal_history",
       "columnsTo": [
+        "process_instance_id",
         "id",
         "history_id"
       ],
@@ -11157,14 +11218,39 @@
     {
       "nameExplicit": true,
       "columns": [
+        "process_instance_id",
         "id",
         "history_id"
       ],
       "nullsNotDistinct": false,
-      "name": "prop_hist_id_history_id_uniq",
+      "name": "prop_hist_process_id_history_id_uniq",
       "entityType": "uniques",
       "schema": "public",
       "table": "decision_proposal_history"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "process_instance_id",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "proposals_process_instance_uniq",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "decision_proposals"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "process_instance_id",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "transition_history_process_instance_uniq",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "decision_transition_history"
     },
     {
       "nameExplicit": false,
