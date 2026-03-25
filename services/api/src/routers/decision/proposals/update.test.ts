@@ -1,5 +1,10 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
+import {
+  ProposalStatus,
+  Visibility,
+  proposalHistory,
+  proposals,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
@@ -601,5 +606,243 @@ describe.concurrent('updateProposal validation', () => {
     ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     });
+  });
+});
+
+describe.concurrent('checkpointProposalUpdate', () => {
+  it('stamps the latest TipTap version on explicit proposal updates', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        'x-field-order': ['title'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted proposal' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        status: ProposalStatus.SUBMITTED,
+        proposalData: {
+          title: 'Submitted proposal',
+          collaborationDocId,
+          collaborationDocVersionId: 2,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const initialHistoryRows = await db
+      .select()
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Submitted proposal',
+    });
+    mockCollab.setVersions(collaborationDocId, [
+      { version: 1, createdAt: '2026-03-20T08:00:00.000Z' },
+      { version: 3, createdAt: '2026-03-20T09:00:00.000Z' },
+      { version: 2, createdAt: '2026-03-20T08:30:00.000Z' },
+    ]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.checkpointProposalUpdate({
+      proposalId: proposal.id,
+      data: {
+        title: 'Submitted proposal',
+        proposalData: {
+          title: 'Submitted proposal',
+          collaborationDocId,
+        },
+      },
+    });
+
+    expect(
+      (result.proposalData as Record<string, unknown>).collaborationDocVersionId,
+    ).toBe(3);
+
+    const historyRows = await db
+      .select()
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposal.id));
+
+    expect(historyRows).toHaveLength(initialHistoryRows.length + 1);
+  });
+
+  it('no-ops when there is no newer TipTap version to checkpoint', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        'x-field-order': ['title'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted proposal' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        status: ProposalStatus.SUBMITTED,
+        proposalData: {
+          title: 'Submitted proposal',
+          collaborationDocId,
+          collaborationDocVersionId: 3,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const initialHistoryRows = await db
+      .select()
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Submitted proposal',
+    });
+    mockCollab.setVersions(collaborationDocId, [
+      { version: 1, createdAt: '2026-03-20T08:00:00.000Z' },
+      { version: 3, createdAt: '2026-03-20T09:00:00.000Z' },
+      { version: 2, createdAt: '2026-03-20T08:30:00.000Z' },
+    ]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.checkpointProposalUpdate({
+      proposalId: proposal.id,
+      data: {
+        title: 'Submitted proposal',
+        proposalData: {
+          title: 'Submitted proposal',
+          collaborationDocId,
+        },
+      },
+    });
+
+    expect(
+      (result.proposalData as Record<string, unknown>).collaborationDocVersionId,
+    ).toBe(3);
+
+    const historyRows = await db
+      .select()
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposal.id));
+
+    expect(historyRows).toHaveLength(initialHistoryRows.length);
+  });
+
+  it('leaves autosave updates free of collab version stamping', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        'x-field-order': ['title'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted proposal' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        status: ProposalStatus.SUBMITTED,
+        proposalData: {
+          title: 'Submitted proposal',
+          collaborationDocId,
+          collaborationDocVersionId: 2,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Submitted proposal (edited)',
+    });
+    mockCollab.setVersions(collaborationDocId, [
+      { version: 1, createdAt: '2026-03-20T08:00:00.000Z' },
+      { version: 3, createdAt: '2026-03-20T09:00:00.000Z' },
+    ]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: {
+          title: 'Submitted proposal (edited)',
+          collaborationDocId,
+          collaborationDocVersionId: 2,
+        },
+      },
+    });
+
+    expect(
+      (result.proposalData as Record<string, unknown>).collaborationDocVersionId,
+    ).toBe(2);
   });
 });

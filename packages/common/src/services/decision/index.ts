@@ -37,6 +37,7 @@ export * from './acceptProposalInvite';
 // Proposal management
 export * from './proposalDataSchema';
 export * from './createProposal';
+export * from './checkpointProposalUpdate';
 export * from './submitProposal';
 export * from './updateProposal';
 export * from './getProposal';

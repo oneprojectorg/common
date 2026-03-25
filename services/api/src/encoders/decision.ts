@@ -708,6 +708,12 @@ export const updateProposalInputSchema = createProposalInputSchema
       .optional(),
   });
 
+export const checkpointProposalUpdateInputSchema =
+  updateProposalInputSchema.pick({
+    title: true,
+    proposalData: true,
+  });
+
 export const submitDecisionInputSchema = z.object({
   proposalId: z.uuid(),
   decisionData: z.record(z.string(), z.unknown()), // Decision data matching voting definition
