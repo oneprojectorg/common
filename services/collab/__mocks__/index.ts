@@ -261,6 +261,14 @@ export function createTipTapClient(_config?: unknown) {
     listVersions: async (docName: string): Promise<TipTapVersion[]> => {
       return [...(docVersions.get(docName) ?? [])];
     },
+
+    getLatestVersionId: async (docName: string): Promise<number | null> => {
+      const versions = docVersions.get(docName) ?? [];
+      if (versions.length === 0) {
+        return null;
+      }
+      return Math.max(...versions.map((v) => v.version));
+    },
   };
 }
 

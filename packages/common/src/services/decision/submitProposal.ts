@@ -145,8 +145,8 @@ export const submitProposal = async ({
 };
 
 /**
- * Resolve the latest TipTap Cloud version ID for a collaboration document.
- * Returns `null` when no collab doc exists or when the API returns no versions,
+ * Fetch the latest TipTap version ID for a collaboration document.
+ * Returns `null` when no collab doc exists or the API errors,
  * so this never blocks submission.
  */
 async function resolveCollaborationDocVersionId(
@@ -158,18 +158,10 @@ async function resolveCollaborationDocVersionId(
 
   try {
     const client = getTipTapClient();
-    const versions = await client.listVersions(collaborationDocId);
-
-    if (versions.length === 0) {
-      return null;
-    }
-
-    // Versions are not guaranteed to be sorted; pick the highest version number.
-    return Math.max(...versions.map((v) => v.version));
+    return await client.getLatestVersionId(collaborationDocId);
   } catch (error) {
-    // Log but don't fail submission — the version is informational, not critical.
     console.error(
-      `[submitProposal] Failed to fetch TipTap versions for ${collaborationDocId}:`,
+      `[submitProposal] Failed to fetch TipTap version for ${collaborationDocId}:`,
       error,
     );
     return null;

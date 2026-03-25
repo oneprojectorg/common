@@ -144,5 +144,23 @@ export function createTipTapClient(config: TipTapClientConfig) {
         >(`documents/${encodeURIComponent(docName)}/versions`)
         .json();
     },
+
+    /**
+     * Return the highest version number for a document, or `null` when
+     * no versions exist yet.
+     */
+    getLatestVersionId: async (docName: string): Promise<number | null> => {
+      const versions = await api
+        .get<
+          TipTapVersion[]
+        >(`documents/${encodeURIComponent(docName)}/versions`)
+        .json();
+
+      if (versions.length === 0) {
+        return null;
+      }
+
+      return Math.max(...versions.map((v) => v.version));
+    },
   };
 }
