@@ -1,8 +1,8 @@
 import { db } from '@op/db/client';
 import {
   decisionTransitionProposals,
-  proposals,
   proposalHistory,
+  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
