@@ -280,12 +280,8 @@ describe.concurrent('submitProposal', () => {
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
 
     // Verify the latest version ID was stamped into proposalData
-    const submitted = await db.query.proposals.findFirst({
-      where: { id: proposal.id },
-    });
-
-    const submittedData = submitted?.proposalData as Record<string, unknown>;
-    expect(submittedData.collaborationDocVersionId).toBe(3);
+    const resultData = result.proposalData as Record<string, unknown>;
+    expect(resultData.collaborationDocVersionId).toBe(3);
   });
 
   it('should reject submission when required fields are missing from proposal data', async ({
