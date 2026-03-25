@@ -1,4 +1,5 @@
-import { getInstance } from '@op/common';
+import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
+import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 
 import {
@@ -69,21 +70,47 @@ export const getInstanceRouter = router({
     .input(getInstanceInputSchema)
     .output(processInstanceWithSchemaEncoder)
     .query(async ({ ctx, input }) => {
-      const { user } = ctx;
+      const { user, logger } = ctx;
 
-      const instance = await getInstance({
-        instanceId: input.instanceId,
-        user,
-      });
+      try {
+        const instance = await getInstance({
+          instanceId: input.instanceId,
+          user,
+        });
 
-      // Track process viewed event
-      // TODO: double check why are we tracking a view event in the API.
-      waitUntil(trackProcessViewed(ctx, input.instanceId));
+        // Track process viewed event
+        waitUntil(trackProcessViewed(ctx, input.instanceId));
 
-      return processInstanceWithSchemaEncoder.parse({
-        ...instance,
-        instanceData: instance.instanceData,
-        process: instance.process,
-      });
+        return processInstanceWithSchemaEncoder.parse({
+          ...instance,
+          instanceData: instance.instanceData,
+          process: instance.process,
+        });
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: error.message,
+          });
+        }
+
+        logger.error('Error retrieving process instance', {
+          userId: user.id,
+          instanceId: input.instanceId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve process instance',
+        });
+      }
     }),
 });
