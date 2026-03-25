@@ -17,8 +17,6 @@ export interface UseTiptapCollabOptions {
   enabled?: boolean;
   /** User's display name for the collaboration cursor */
   userName?: string;
-  /** Enables automatic version snapshots at the given interval in seconds */
-  autoVersioningIntervalSeconds?: number;
 }
 
 export interface UseTiptapCollabReturn {
@@ -36,7 +34,6 @@ export function useTiptapCollab({
   docId,
   enabled = true,
   userName = 'Anonymous',
-  autoVersioningIntervalSeconds,
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
@@ -93,15 +90,6 @@ export function useTiptapCollab({
       provider.setAwarenessField('user', user);
     }
   }, [provider, user, status]);
-
-  useEffect(() => {
-    if (!provider || !isSynced || autoVersioningIntervalSeconds === undefined) {
-      return;
-    }
-
-    provider.setAutoVersioningInterval(autoVersioningIntervalSeconds);
-    provider.enableAutoVersioning();
-  }, [autoVersioningIntervalSeconds, isSynced, provider]);
 
   return {
     ydoc,
