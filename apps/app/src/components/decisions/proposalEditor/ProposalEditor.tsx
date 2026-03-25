@@ -47,7 +47,7 @@ import { useProposalValidation } from './useProposalValidation';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-const AUTOVERSION_INTERVAL_SECONDS = 900; // 15 minutes
+const AUTOVERSION_INTERVAL_SECONDS = 10; // DEBUG: 10s for staging testing
 
 /**
  * Tracks which TipTap editor currently has focus.
