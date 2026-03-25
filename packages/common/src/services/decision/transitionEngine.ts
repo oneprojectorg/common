@@ -328,6 +328,7 @@ export class TransitionEngine {
 
           await trx.insert(decisionTransitionProposals).values(
             latestHistoryRows.map(({ proposalId, historyId }) => ({
+              processInstanceId: data.instanceId,
               transitionHistoryId: insertedTransition.id,
               proposalId,
               proposalHistoryId: historyId,
