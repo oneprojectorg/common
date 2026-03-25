@@ -34,6 +34,8 @@ interface CollaborativeDocProviderProps {
   docId: string;
   /** User's display name for collaboration cursors */
   userName?: string;
+  /** Enables automatic version snapshots at the given interval in seconds */
+  autoVersioningIntervalSeconds?: number;
   /** Loading state to show while the collaboration provider initializes */
   fallback?: ReactNode;
   children: ReactNode;
@@ -55,6 +57,7 @@ interface CollaborativeDocProviderProps {
 export function CollaborativeDocProvider({
   docId,
   userName = 'Anonymous',
+  autoVersioningIntervalSeconds,
   fallback = null,
   children,
 }: CollaborativeDocProviderProps) {
@@ -62,6 +65,7 @@ export function CollaborativeDocProvider({
     docId,
     enabled: true,
     userName,
+    autoVersioningIntervalSeconds,
   });
 
   if (!provider) {

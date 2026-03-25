@@ -182,16 +182,18 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
+  const PROPOSAL_VERSION_DEBOUNCE_MS = 5_000;
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const { ydoc } = useCollaborativeDoc();
+  const { ydoc, provider, isSynced } = useCollaborativeDoc();
   const versionPreview = useOptionalVersionPreview();
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
+  const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
@@ -253,6 +255,56 @@ function ProposalEditorInner({
       setShowInfoModal(true);
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
+
+  useEffect(() => {
+    if (!provider || !isSynced || isPreviewMode) {
+      return;
+    }
+
+    const handleDocumentChange = (transaction: { local: boolean }) => {
+      if (!transaction.local) {
+        return;
+      }
+
+      console.log('[ProposalEditor] local change detected', {
+        collaborationDocId,
+      });
+
+      if (pendingVersionTimeoutRef.current !== null) {
+        window.clearTimeout(pendingVersionTimeoutRef.current);
+
+        console.log('[ProposalEditor] reset pending version timer', {
+          collaborationDocId,
+        });
+      }
+
+      pendingVersionTimeoutRef.current = window.setTimeout(() => {
+        pendingVersionTimeoutRef.current = null;
+
+        console.log('[ProposalEditor] creating debounced version', {
+          collaborationDocId,
+        });
+
+        provider.createVersion(undefined, true);
+      }, PROPOSAL_VERSION_DEBOUNCE_MS);
+
+      console.log('[ProposalEditor] scheduled debounced version', {
+        collaborationDocId,
+        delayMs: PROPOSAL_VERSION_DEBOUNCE_MS,
+      });
+    };
+
+    ydoc.on('afterTransaction', handleDocumentChange);
+
+    return () => {
+      ydoc.off('afterTransaction', handleDocumentChange);
+
+      if (pendingVersionTimeoutRef.current !== null) {
+        window.clearTimeout(pendingVersionTimeoutRef.current);
+        pendingVersionTimeoutRef.current = null;
+      }
+    };
+  }, [PROPOSAL_VERSION_DEBOUNCE_MS, isPreviewMode, isSynced, provider, ydoc]);
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
