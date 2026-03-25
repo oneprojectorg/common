@@ -46,7 +46,7 @@ export const proposalDataSchema = z
       .transform((v) => v ?? []),
     collaborationDocId: z.string().nullish(),
     /** TipTap version number stamped on submit. Not a source of truth for the current version. */
-    collaborationDocVersionId: z.number().int().nullish(),
+    collaborationDocVersionId: z.number().int().optional(),
   })
 
   .transform((data) => {

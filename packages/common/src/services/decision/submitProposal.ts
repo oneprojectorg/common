@@ -91,32 +91,32 @@ export const submitProposal = async ({
     instance.processId,
   );
 
-  if (proposalTemplate) {
-    await validateProposalAgainstTemplate(
-      proposalTemplate,
-      existingProposal.proposalData,
-      existingProposal.profile.name,
-    );
-  }
-
   // Stamp the latest TipTap version into proposalData so the history row
   // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
-  let collaborationDocVersionId: number | null = null;
 
-  if (parsed.collaborationDocId) {
-    try {
-      const client = getTipTapClient();
-      collaborationDocVersionId = await client.getLatestVersionId(
-        parsed.collaborationDocId,
-      );
-    } catch (error) {
-      console.error(
-        `[submitProposal] Failed to fetch TipTap version for ${parsed.collaborationDocId}:`,
-        error,
-      );
-    }
-  }
+  // Validation and version fetch are independent — run them in parallel.
+  // The version fetch is best-effort; failures are logged but never block.
+  const [, collaborationDocVersionId] = await Promise.all([
+    proposalTemplate
+      ? validateProposalAgainstTemplate(
+          proposalTemplate,
+          existingProposal.proposalData,
+          existingProposal.profile.name,
+        )
+      : undefined,
+    parsed.collaborationDocId
+      ? getTipTapClient()
+          .getLatestVersionId(parsed.collaborationDocId)
+          .catch((error: unknown) => {
+            console.error(
+              `[submitProposal] Failed to fetch TipTap version for ${parsed.collaborationDocId}:`,
+              error,
+            );
+            return null;
+          })
+      : null,
+  ]);
 
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
