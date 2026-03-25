@@ -72,6 +72,50 @@ export interface UpdateProposalInput {
   visibility?: Visibility;
 }
 
+export const assertCanUpdateProposal = async ({
+  proposal,
+  data,
+  user,
+}: {
+  proposal: {
+    profileId: string;
+    processInstance: Parameters<typeof assertInstanceProfileAccess>[0]['instance'];
+  };
+  data: UpdateProposalInput;
+  user: User;
+}) => {
+  // Status and visibility changes only require instance-level decisions: ADMIN
+  if (data.status || data.visibility) {
+    await assertInstanceProfileAccess({
+      user: { id: user.id },
+      instance: proposal.processInstance,
+      profilePermissions: { decisions: permission.ADMIN },
+      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
+    });
+    return;
+  }
+
+  // Data updates require profile-level update permission on the proposal's profile
+  const proposalProfileUser = await getProfileAccessUser({
+    user: { id: user.id },
+    profileId: proposal.profileId,
+  });
+
+  const hasProposalUpdate = checkPermission(
+    { profile: permission.UPDATE },
+    proposalProfileUser?.roles ?? [],
+  );
+
+  if (!hasProposalUpdate) {
+    await assertInstanceProfileAccess({
+      user: { id: user.id },
+      instance: proposal.processInstance,
+      profilePermissions: { decisions: permission.UPDATE },
+      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
+    });
+  }
+};
+
 export const updateProposal = async ({
   proposalId,
   data,
@@ -103,35 +147,11 @@ export const updateProposal = async ({
 
     const processInstance = existingProposal.processInstance;
 
-    // Status and visibility changes only require instance-level decisions: ADMIN
-    if (data.status || data.visibility) {
-      await assertInstanceProfileAccess({
-        user: { id: user.id },
-        instance: processInstance,
-        profilePermissions: { decisions: permission.ADMIN },
-        orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-      });
-    } else {
-      // Data updates require profile-level update permission on the proposal's profile
-      const proposalProfileUser = await getProfileAccessUser({
-        user: { id: user.id },
-        profileId: existingProposal.profileId,
-      });
-
-      const hasProposalUpdate = checkPermission(
-        { profile: permission.UPDATE },
-        proposalProfileUser?.roles ?? [],
-      );
-
-      if (!hasProposalUpdate) {
-        await assertInstanceProfileAccess({
-          user: { id: user.id },
-          instance: processInstance,
-          profilePermissions: { decisions: permission.UPDATE },
-          orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-        });
-      }
-    }
+    await assertCanUpdateProposal({
+      proposal: existingProposal,
+      data,
+      user,
+    });
 
     // Validate proposal data against template schema when updating non-draft proposals.
     // Drafts are inherently incomplete — validation is enforced on submission.

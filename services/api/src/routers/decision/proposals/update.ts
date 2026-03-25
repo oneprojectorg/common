@@ -1,6 +1,6 @@
 import { invalidate } from '@op/cache';
 import {
-  checkpointProposalUpdate,
+  commitProposalUpdate,
   NotFoundError,
   UnauthorizedError,
   ValidationError,
@@ -10,7 +10,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import {
-  checkpointProposalUpdateInputSchema,
+  commitProposalUpdateInputSchema,
   proposalEncoder,
   updateProposalInputSchema,
 } from '../../../encoders/decision';
@@ -81,13 +81,13 @@ export const updateProposalRouter = router({
         });
       }
     }),
-  checkpointProposalUpdate: commonAuthedProcedure({
+  commitProposalUpdate: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .input(
       z.object({
         proposalId: z.uuid(),
-        data: checkpointProposalUpdateInputSchema,
+        data: commitProposalUpdateInputSchema,
       }),
     )
     .output(proposalEncoder)
@@ -96,7 +96,7 @@ export const updateProposalRouter = router({
       const { proposalId } = input;
 
       try {
-        const proposal = await checkpointProposalUpdate({
+        const proposal = await commitProposalUpdate({
           proposalId,
           data: input.data,
           user,
@@ -109,7 +109,7 @@ export const updateProposalRouter = router({
 
         return proposalEncoder.parse(proposal);
       } catch (error: unknown) {
-        logger.error('Failed to checkpoint proposal update', {
+        logger.error('Failed to commit proposal update', {
           userId: user.id,
           proposalId,
           error,
@@ -140,7 +140,7 @@ export const updateProposalRouter = router({
         }
 
         throw new TRPCError({
-          message: 'Failed to checkpoint proposal update',
+          message: 'Failed to commit proposal update',
           code: 'INTERNAL_SERVER_ERROR',
         });
       }

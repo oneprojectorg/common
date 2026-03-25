@@ -708,11 +708,7 @@ export const updateProposalInputSchema = createProposalInputSchema
       .optional(),
   });
 
-export const checkpointProposalUpdateInputSchema =
-  updateProposalInputSchema.pick({
-    title: true,
-    proposalData: true,
-  });
+export const commitProposalUpdateInputSchema = updateProposalInputSchema;
 
 export const submitDecisionInputSchema = z.object({
   proposalId: z.uuid(),

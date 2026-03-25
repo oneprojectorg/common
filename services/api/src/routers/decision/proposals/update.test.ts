@@ -609,7 +609,7 @@ describe.concurrent('updateProposal validation', () => {
   });
 });
 
-describe.concurrent('checkpointProposalUpdate', () => {
+describe.concurrent('commitProposalUpdate', () => {
   it('stamps the latest TipTap version on explicit proposal updates', async ({
     task,
     onTestFinished,
@@ -670,7 +670,7 @@ describe.concurrent('checkpointProposalUpdate', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.checkpointProposalUpdate({
+    const result = await caller.decision.commitProposalUpdate({
       proposalId: proposal.id,
       data: {
         title: 'Submitted proposal',
@@ -753,7 +753,7 @@ describe.concurrent('checkpointProposalUpdate', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.checkpointProposalUpdate({
+    const result = await caller.decision.commitProposalUpdate({
       proposalId: proposal.id,
       data: {
         title: 'Submitted proposal',

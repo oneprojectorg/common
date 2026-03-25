@@ -239,8 +239,8 @@ function ProposalEditorInner({
     onError: (error) => handleMutationError(error, 'submit', t),
   });
 
-  const checkpointProposalUpdateMutation =
-    trpc.decision.checkpointProposalUpdate.useMutation({
+  const commitProposalUpdateMutation =
+    trpc.decision.commitProposalUpdate.useMutation({
       onError: (error) => handleMutationError(error, 'update', t),
     });
 
@@ -306,7 +306,7 @@ function ProposalEditorInner({
           proposalId: proposal.id,
         });
       } else {
-        await checkpointProposalUpdateMutation.mutateAsync({
+        await commitProposalUpdateMutation.mutateAsync({
           proposalId: proposal.id,
           data: {
             title: currentDraft.title,
@@ -334,7 +334,7 @@ function ProposalEditorInner({
     collaborationDocId,
     proposal,
     isDraft,
-    checkpointProposalUpdateMutation,
+    commitProposalUpdateMutation,
     submitProposalMutation,
     updateProposalMutation,
     draftRef,
