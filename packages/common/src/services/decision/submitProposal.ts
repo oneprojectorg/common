@@ -1,3 +1,4 @@
+import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
@@ -5,6 +6,7 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { decisionPermission } from './permissions';
+import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -97,12 +99,28 @@ export const submitProposal = async ({
     );
   }
 
+  // Stamp the latest TipTap version into proposalData so the history row
+  // created by the DB trigger links back to a concrete document revision.
+  const parsed = parseProposalData(existingProposal.proposalData);
+  const collaborationDocVersionId = await resolveCollaborationDocVersionId(
+    parsed.collaborationDocId,
+  );
+
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
+    const proposalDataUpdate =
+      collaborationDocVersionId != null
+        ? {
+            ...(existingProposal.proposalData as Record<string, unknown>),
+            collaborationDocVersionId,
+          }
+        : undefined;
+
     const [submittedProposal] = await tx
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
+        ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
       })
       .where(eq(proposals.id, data.proposalId))
       .returning();
@@ -125,3 +143,35 @@ export const submitProposal = async ({
 
   return updatedProposal;
 };
+
+/**
+ * Resolve the latest TipTap Cloud version ID for a collaboration document.
+ * Returns `null` when no collab doc exists or when the API returns no versions,
+ * so this never blocks submission.
+ */
+async function resolveCollaborationDocVersionId(
+  collaborationDocId: string | null | undefined,
+): Promise<number | null> {
+  if (!collaborationDocId) {
+    return null;
+  }
+
+  try {
+    const client = getTipTapClient();
+    const versions = await client.listVersions(collaborationDocId);
+
+    if (versions.length === 0) {
+      return null;
+    }
+
+    // Versions are not guaranteed to be sorted; pick the highest version number.
+    return Math.max(...versions.map((v) => v.version));
+  } catch (error) {
+    // Log but don't fail submission — the version is informational, not critical.
+    console.error(
+      `[submitProposal] Failed to fetch TipTap versions for ${collaborationDocId}:`,
+      error,
+    );
+    return null;
+  }
+}
