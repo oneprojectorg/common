@@ -23,11 +23,8 @@ import {
   FundingInformationForm,
   validator as FundingInformationFormValidator,
 } from './FundingInformationForm';
-import {
-  MatchingOrganizationsFormSuspense,
-  validator as MatchingOrganizationsFormValidator,
-} from './MatchingOrganizationsForm';
 import { OrganizationDetailsForm } from './OrganizationDetailsForm';
+import { OrganizationSearchScreenSuspense } from './OrganizationSearchScreenSuspense';
 import {
   PersonalDetailsForm,
   validator as PersonalDetailsFormValidator,
@@ -41,8 +38,10 @@ import { organizationFormValidator as OrganizationDetailsFormValidator } from '.
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 import { sendOnboardingAnalytics } from './utils';
 
+const OrganizationSearchStepValidator = z.object({});
+
 export type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
-  z.infer<typeof MatchingOrganizationsFormValidator>;
+  z.infer<typeof OrganizationSearchStepValidator>;
 
 type OrgCreationFormValues = z.infer<typeof OrganizationDetailsFormValidator> &
   z.infer<typeof FundingInformationFormValidator> &
@@ -106,7 +105,7 @@ export const OnboardingFlow = () => {
   const getStepValues = useCallback(() => {
     return [
       personalDetails,
-      {}, // MatchingOrganizationsForm handles its own logic
+      {}, // OrganizationSearchScreen handles its own logic
     ];
   }, [personalDetails]);
 
@@ -188,12 +187,11 @@ export const OnboardingFlow = () => {
     [setOrganizationDetails],
   );
 
-  // Wrap MatchingOrganizationsFormSuspense to pass search screen callbacks
-  const MatchingOrganizationsStep = useMemo(() => {
-    const Step = (props: StepProps) => (
-      <MatchingOrganizationsFormSuspense
-        {...props}
-        onSearchContinue={handleSearchContinue}
+  // Wrap OrganizationSearchScreen to pass callbacks and domain-matched orgs
+  const OrganizationSearchStep = useMemo(() => {
+    const Step = (_props: StepProps) => (
+      <OrganizationSearchScreenSuspense
+        onContinue={handleSearchContinue}
         onAddOrganization={handleAddOrganization}
         isSubmitting={isSubmitting}
       />
@@ -296,11 +294,8 @@ export const OnboardingFlow = () => {
 
   return (
     <MultiStepForm
-      steps={[PersonalDetailsForm, MatchingOrganizationsStep]}
-      schemas={[
-        PersonalDetailsFormValidator,
-        MatchingOrganizationsFormValidator,
-      ]}
+      steps={[PersonalDetailsForm, OrganizationSearchStep]}
+      schemas={[PersonalDetailsFormValidator, OrganizationSearchStepValidator]}
       ProgressComponent={ProgressInPortal}
       getStepValues={getStepValues}
       hasHydrated={hasHydrated}
