@@ -263,7 +263,7 @@ function ProposalEditorInner({
       return;
     }
 
-    const handleDocumentChange = (transaction: { local: boolean }) => {
+    const scheduleVersionOnLocalChange = (transaction: { local: boolean }) => {
       if (!transaction.local) {
         return;
       }
@@ -279,10 +279,10 @@ function ProposalEditorInner({
       }, VERSION_INTERVAL_SECONDS * 1000);
     };
 
-    ydoc.on('afterTransaction', handleDocumentChange);
+    ydoc.on('afterTransaction', scheduleVersionOnLocalChange);
 
     return () => {
-      ydoc.off('afterTransaction', handleDocumentChange);
+      ydoc.off('afterTransaction', scheduleVersionOnLocalChange);
 
       if (pendingVersionTimeoutRef.current !== null) {
         window.clearTimeout(pendingVersionTimeoutRef.current);
