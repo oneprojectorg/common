@@ -263,10 +263,7 @@ function ProposalEditorInner({
       return;
     }
 
-    const handleDocumentChange = (transaction: {
-      local: boolean;
-      origin: unknown;
-    }) => {
+    const handleDocumentChange = (transaction: { local: boolean }) => {
       if (!transaction.local) {
         return;
       }
