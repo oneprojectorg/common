@@ -224,6 +224,14 @@ function PhaseDetailForm({
     setTouchedFields((prev) => new Set(prev).add(field));
   };
 
+  const toLocalDateString = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getErrors = () => {
     if (!phase) {
       return {};
@@ -242,8 +250,8 @@ function PhaseDetailForm({
       errors.endDate = t('End date is required');
     }
     if (phase.startDate && phase.endDate) {
-      const startPart = phase.startDate.split('T')[0] ?? '';
-      const endPart = phase.endDate.split('T')[0] ?? '';
+      const startPart = toLocalDateString(phase.startDate);
+      const endPart = toLocalDateString(phase.endDate);
       if (endPart.localeCompare(startPart) < 0) {
         errors.endDate = t('End date must be on or after the start date');
       }
@@ -255,14 +263,12 @@ function PhaseDetailForm({
   const getErrorMessage = (field: string) =>
     touchedFields.has(field) ? errors[field] : undefined;
 
-  // Date helpers
   const safeParseDateString = (dateStr: string | undefined) => {
     if (!dateStr) {
       return undefined;
     }
     try {
-      const datePart = dateStr.split('T')[0];
-      return datePart ? parseDate(datePart) : undefined;
+      return parseDate(toLocalDateString(dateStr));
     } catch {
       return undefined;
     }
@@ -273,7 +279,8 @@ function PhaseDetailForm({
     month: number;
     day: number;
   }) => {
-    return new Date(date.year, date.month - 1, date.day).toISOString();
+    const localMidnight = new Date(date.year, date.month - 1, date.day);
+    return localMidnight.toISOString();
   };
 
   if (!phase) {
