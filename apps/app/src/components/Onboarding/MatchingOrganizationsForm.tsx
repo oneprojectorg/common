@@ -21,17 +21,23 @@ import { StepProps } from '../MultiStepForm';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
+import {
+  OrganizationSearchScreen,
+  OrganizationSearchScreenProps,
+} from './OrganizationSearchScreen';
 
 export const validator = z.object({});
 
 type MatchingOrganizationsFormProps = StepProps & {
   className?: string;
+  onSearchContinue?: OrganizationSearchScreenProps['onContinue'];
+  onSearchSkip?: OrganizationSearchScreenProps['onSkip'];
 };
 
 export const MatchingOrganizationsForm = ({
-  onNext,
-  // onBack,
   className,
+  onSearchContinue,
+  onSearchSkip,
 }: MatchingOrganizationsFormProps): ReactNode => {
   const t = useTranslations();
   const router = useRouter();
@@ -54,15 +60,10 @@ export const MatchingOrganizationsForm = ({
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [privacyAccepted, setPrivacyAccepted] = useState<boolean>(false);
 
-  // If no matching organizations, automatically proceed to next step
   // If there are organizations, select the first one by default
   useEffect(() => {
-    if (matchingOrgs) {
-      if (matchingOrgs.length === 0) {
-        onNext({});
-      } else if (matchingOrgs.length > 0 && !selectedOrganizationId) {
-        setSelectedOrganizationId(matchingOrgs[0]?.id);
-      }
+    if (matchingOrgs && matchingOrgs.length > 0 && !selectedOrganizationId) {
+      setSelectedOrganizationId(matchingOrgs[0]?.id);
     }
   }, [matchingOrgs]);
 
@@ -116,9 +117,17 @@ export const MatchingOrganizationsForm = ({
   // onNext({});
   // };
 
-  // Don't render if no organizations (useEffect will handle navigation)
+  // No domain-matched orgs: show the organization search screen
   if (!matchingOrgs || matchingOrgs.length === 0) {
-    return <LoadingSpinner />;
+    if (onSearchContinue && onSearchSkip) {
+      return (
+        <OrganizationSearchScreen
+          onContinue={onSearchContinue}
+          onSkip={onSearchSkip}
+        />
+      );
+    }
+    return null;
   }
 
   return (
