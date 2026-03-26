@@ -253,9 +253,9 @@ function PhaseDetailForm({
       errors.endDate = t('End date is required');
     }
     if (phase.startDate && phase.endDate) {
-      const startPart = safeParseLocal(phase.startDate)?.toString() ?? '';
-      const endPart = safeParseLocal(phase.endDate)?.toString() ?? '';
-      if (endPart.localeCompare(startPart) < 0) {
+      const start = safeParseLocal(phase.startDate);
+      const end = safeParseLocal(phase.endDate);
+      if (start && end && end.compare(start) < 0) {
         errors.endDate = t('End date must be on or after the start date');
       }
     }
