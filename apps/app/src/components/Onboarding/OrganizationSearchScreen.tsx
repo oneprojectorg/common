@@ -192,45 +192,55 @@ export const OrganizationSearchScreen = ({
                   </div>
                 ) : (
                   <>
-                    {searchResults?.map((org) => (
-                      <button
-                        key={org.id}
-                        type="button"
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-neutral-offWhite"
-                        onClick={() => handleSelectOrg(org)}
-                      >
-                        <OrganizationAvatar
-                          profile={org.profile}
-                          withLink={false}
-                          className="size-8"
-                        />
-                        <div className="flex min-w-0 flex-col">
-                          <span className="truncate text-sm text-neutral-charcoal">
-                            {highlightMatch(
-                              org.profile?.name ?? '',
-                              searchQuery,
-                            )}
-                          </span>
-                          {getOrgLocation(org) && (
-                            <span className="truncate text-xs text-neutral-gray4">
-                              {getOrgLocation(org)}
+                    {searchResults && searchResults.length > 0 ? (
+                      searchResults.map((org) => (
+                        <button
+                          key={org.id}
+                          type="button"
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-neutral-offWhite"
+                          onClick={() => handleSelectOrg(org)}
+                        >
+                          <OrganizationAvatar
+                            profile={org.profile}
+                            withLink={false}
+                            className="size-8"
+                          />
+                          <div className="flex min-w-0 flex-col">
+                            <span className="truncate text-sm text-neutral-charcoal">
+                              {highlightMatch(
+                                org.profile?.name ?? '',
+                                searchQuery,
+                              )}
                             </span>
-                          )}
-                        </div>
-                      </button>
-                    ))}
+                            {getOrgLocation(org) && (
+                              <span className="truncate text-xs text-neutral-gray4">
+                                {getOrgLocation(org)}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-neutral-gray4">
+                        {t('No results')}
+                      </div>
+                    )}
 
                     {/* Add organization fallback */}
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 border-t border-neutral-gray2 px-4 py-3 text-left text-primary-teal hover:bg-neutral-offWhite"
-                      onClick={() => onAddOrganization?.(searchQuery)}
-                    >
-                      <LuPlus className="size-4" />
-                      <span className="text-sm">
-                        {t('Add {searchTerm}', { searchTerm: searchQuery })}
-                      </span>
-                    </button>
+                    {onAddOrganization && searchQuery && (
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 border-t border-neutral-gray2 px-4 py-3 text-left text-primary-teal hover:bg-neutral-offWhite"
+                        onClick={() => onAddOrganization(searchQuery)}
+                      >
+                        <LuPlus className="size-4" />
+                        <span className="text-sm">
+                          {t('Add {searchTerm}', {
+                            searchTerm: searchQuery,
+                          })}
+                        </span>
+                      </button>
+                    )}
                   </>
                 )}
               </div>

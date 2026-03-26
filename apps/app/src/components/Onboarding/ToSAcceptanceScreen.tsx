@@ -49,6 +49,7 @@ export const ToSAcceptanceScreen = ({
               <a
                 href="/info/tos"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-primary-teal hover:underline"
               >
                 {t('Terms of Service')}
@@ -66,6 +67,7 @@ export const ToSAcceptanceScreen = ({
               <a
                 href="/info/privacy"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-primary-teal hover:underline"
               >
                 {t('Privacy Policy')}
