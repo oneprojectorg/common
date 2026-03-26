@@ -69,14 +69,10 @@ export const OnboardingFlow = () => {
   // Callbacks for the OrganizationSearchScreen (no-domain-match path)
   const handleSearchContinue = useCallback(
     (_selectedOrgs: Array<{ id: string; profileId: string }>) => {
-      // TODO: Implemented in US-005/US-006 — submit join requests and navigate to ToS
+      // TODO: Implemented in US-006 — submit join requests and redirect
     },
     [],
   );
-
-  const handleSearchSkip = useCallback(() => {
-    // TODO: Implemented in US-005 — navigate to ToS screen with no orgs selected
-  }, []);
 
   // Wrap MatchingOrganizationsFormSuspense to pass search screen callbacks
   const MatchingOrganizationsStep = useMemo(() => {
@@ -84,11 +80,10 @@ export const OnboardingFlow = () => {
       <MatchingOrganizationsFormSuspense
         {...props}
         onSearchContinue={handleSearchContinue}
-        onSearchSkip={handleSearchSkip}
       />
     );
     return Step;
-  }, [handleSearchContinue, handleSearchSkip]);
+  }, [handleSearchContinue]);
 
   if (!hasHydrated) {
     return <DecisionInvitesSkeleton />;
