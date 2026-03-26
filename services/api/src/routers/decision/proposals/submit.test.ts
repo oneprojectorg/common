@@ -264,6 +264,13 @@ describe.concurrent('submitProposal', () => {
         'Testing that x-field-order and x-format do not break validation',
     });
 
+    // Seed version history so submit can stamp the latest version
+    mockCollab.setVersions(collaborationDocId, [
+      { version: 1, createdAt: '2026-03-18T08:50:00.000Z' },
+      { version: 3, createdAt: '2026-03-18T09:00:00.000Z' },
+      { version: 2, createdAt: '2026-03-18T08:55:00.000Z' },
+    ]);
+
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.submitProposal({
@@ -271,6 +278,10 @@ describe.concurrent('submitProposal', () => {
     });
 
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
+
+    // Verify the latest version ID was stamped into proposalData
+    const resultData = result.proposalData as Record<string, unknown>;
+    expect(resultData.collaborationDocVersionId).toBe(3);
   });
 
   it('should reject submission when required fields are missing from proposal data', async ({
