@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
 import type { XFormatPropertySchema } from './types';
 
+const categoryValueSchema = z
+  .union([z.string(), z.array(z.string()), z.null()])
+  .nullish()
+  .transform((value) => normalizeProposalCategories(value));
+
 /**
  * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
  *
@@ -38,7 +43,7 @@ export const proposalDataSchema = z
     title: z.string().nullish(),
     description: z.string().nullish(),
     content: z.string().nullish(), // backward compatibility
-    category: z.string().nullish(),
+    category: categoryValueSchema,
     budget: budgetValueSchema,
     attachmentIds: z
       .array(z.string())
@@ -62,6 +67,23 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 
 /** Input type for proposal data (before parsing/defaults) */
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
+
+export function normalizeProposalCategories(raw: unknown): string[] {
+  const values = Array.isArray(raw)
+    ? raw
+    : typeof raw === 'string'
+      ? [raw]
+      : [];
+
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+export function formatProposalCategories(
+  categories: string[],
+  separator = ', ',
+): string {
+  return categories.join(separator);
+}
 
 /**
  * Normalize a raw budget value into a `MoneyAmount` using `budgetValueSchema`.
@@ -104,7 +126,7 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     title: (raw.title as string) ?? undefined,
     description: (raw.description as string) ?? undefined,
     content: (raw.content as string) ?? undefined,
-    category: (raw.category as string) ?? undefined,
+    category: normalizeProposalCategories(raw.category),
     budget: normalizeBudget(raw.budget),
     attachmentIds: (raw.attachmentIds as string[]) ?? [],
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
@@ -139,9 +161,43 @@ export interface SchemaOption {
  */
 export function buildCategorySchema(
   categories: string[],
-  existing?: Record<string, unknown>,
+  options?: {
+    allowMultipleCategories?: boolean;
+    requireCategorySelection?: boolean;
+    existing?: Record<string, unknown>;
+  },
 ): XFormatPropertySchema {
-  const { enum: _legacyEnum, ...rest } = existing ?? {};
+  const {
+    allowMultipleCategories = false,
+    requireCategorySelection = false,
+    existing,
+  } = options ?? {};
+  const {
+    enum: _legacyEnum,
+    oneOf: _oneOf,
+    type: _type,
+    items: _items,
+    minItems: _minItems,
+    uniqueItems: _uniqueItems,
+    ...rest
+  } = existing ?? {};
+
+  if (allowMultipleCategories) {
+    return {
+      ...rest,
+      type: 'array',
+      'x-format': 'dropdown',
+      items: {
+        type: 'string',
+        oneOf: categories.map((category) => ({
+          const: category,
+          title: category,
+        })),
+      },
+      uniqueItems: true,
+      ...(requireCategorySelection ? { minItems: 1 } : {}),
+    };
+  }
 
   return {
     ...rest,
@@ -183,6 +239,33 @@ export function parseSchemaOptions(
       .map((entry) => ({ value: entry.const, title: entry.title }));
   }
 
+  const itemSchema =
+    typeof schema.items === 'object' &&
+    schema.items !== null &&
+    !Array.isArray(schema.items)
+      ? schema.items
+      : undefined;
+
+  if (Array.isArray(itemSchema?.oneOf)) {
+    return itemSchema.oneOf
+      .filter(
+        (entry): entry is { const: string; title: string } =>
+          typeof entry === 'object' &&
+          entry !== null &&
+          'const' in entry &&
+          typeof (entry as Record<string, unknown>).const === 'string' &&
+          'title' in entry &&
+          typeof (entry as Record<string, unknown>).title === 'string',
+      )
+      .map((entry) => ({ value: entry.const, title: entry.title }));
+  }
+
+  if (Array.isArray(itemSchema?.enum)) {
+    return itemSchema.enum
+      .filter((value): value is string => typeof value === 'string')
+      .map((value) => ({ value, title: value }));
+  }
+
   // Legacy: plain enum array
   if (Array.isArray(schema.enum)) {
     return schema.enum
@@ -203,4 +286,17 @@ export function schemaHasOptions(
   schema: XFormatPropertySchema | null | undefined,
 ): boolean {
   return parseSchemaOptions(schema).length > 0;
+}
+
+export function schemaAllowsMultipleSelection(
+  schema: XFormatPropertySchema | null | undefined,
+): boolean {
+  if (!schema) {
+    return false;
+  }
+
+  return (
+    schema.type === 'array' ||
+    (Array.isArray(schema.type) && schema.type.includes('array'))
+  );
 }

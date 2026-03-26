@@ -7,7 +7,10 @@ import {
   Visibility,
   type proposalEncoder,
 } from '@op/api/encoders';
-import type { ProposalTemplateSchema } from '@op/common/client';
+import {
+  type ProposalTemplateSchema,
+  normalizeProposalCategories,
+} from '@op/common/client';
 import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
@@ -200,7 +203,7 @@ export function ProposalCardMeta({
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <ProposalCardAuthor proposal={proposal} withLink={withLink} />
       <ProposalCardCategory proposal={proposal} />
       <ProposalCardStatus proposal={proposal} />
@@ -264,23 +267,30 @@ export function ProposalCardCategory({
 }) {
   const cardTranslation = useCardTranslation(proposal.profileId);
   const { category } = resolveProposalSystemFields(proposal);
-  const displayCategory = cardTranslation?.category ?? category;
+  const displayCategories = cardTranslation?.category
+    ? [cardTranslation.category]
+    : normalizeProposalCategories(category);
 
-  if (!displayCategory || !proposal.submittedBy) {
+  if (displayCategories.length === 0 || !proposal.submittedBy) {
     return null;
   }
 
   return (
     <>
       <Bullet />
-      <Chip
-        className={cn(
-          'max-w-96 min-w-6 overflow-hidden text-nowrap overflow-ellipsis',
-          className,
-        )}
-      >
-        {displayCategory}
-      </Chip>
+      <div className="flex flex-wrap items-center gap-1">
+        {displayCategories.map((displayCategory) => (
+          <Chip
+            key={displayCategory}
+            className={cn(
+              'max-w-96 min-w-6 overflow-hidden text-nowrap overflow-ellipsis',
+              className,
+            )}
+          >
+            {displayCategory}
+          </Chip>
+        ))}
+      </div>
     </>
   );
 }

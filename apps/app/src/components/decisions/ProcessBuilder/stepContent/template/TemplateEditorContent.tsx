@@ -81,6 +81,10 @@ export function TemplateEditorContent({
     storeData?.config?.requireCategorySelection ??
     instanceData?.config?.requireCategorySelection ??
     false;
+  const allowMultipleCategories =
+    storeData?.config?.allowMultipleCategories ??
+    instanceData?.config?.allowMultipleCategories ??
+    false;
   const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
@@ -96,9 +100,15 @@ export function TemplateEditorContent({
       titleLabel: t('Proposal title'),
       categoryLabel: t('Category'),
       categories,
+      allowMultipleCategories,
       requireCategorySelection,
     });
-  }, [instanceData?.proposalTemplate, categories, requireCategorySelection]);
+  }, [
+    instanceData?.proposalTemplate,
+    categories,
+    allowMultipleCategories,
+    requireCategorySelection,
+  ]);
 
   const [template, setTemplate] =
     useState<ProposalTemplateSchema>(initialTemplate);
@@ -129,10 +139,11 @@ export function TemplateEditorContent({
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
         categories,
+        allowMultipleCategories,
         requireCategorySelection,
       }),
     );
-  }, [categories, requireCategorySelection]);
+  }, [categories, allowMultipleCategories, requireCategorySelection]);
 
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   // "Show on blur, clear on change" validation: errors are snapshotted when
@@ -215,6 +226,7 @@ export function TemplateEditorContent({
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
         categories,
+        allowMultipleCategories,
         requireCategorySelection,
       });
       setProposalTemplateSchema(decisionProfileId, normalized);
@@ -328,7 +340,7 @@ export function TemplateEditorContent({
         );
       }
     },
-    [template],
+    [template, allowMultipleCategories],
   );
 
   const handleUpdateJsonSchema = useCallback(

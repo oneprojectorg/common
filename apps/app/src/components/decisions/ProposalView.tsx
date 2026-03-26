@@ -7,7 +7,10 @@ import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
-import { parseTranslatedMeta } from '@op/common/client';
+import {
+  normalizeProposalCategories,
+  parseTranslatedMeta,
+} from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
@@ -151,12 +154,12 @@ export function ProposalView({
   const {
     title: originalTitle,
     budget,
-    category: originalCategory,
+    category: originalCategories,
   } = resolveProposalSystemFields(currentProposal);
 
-  // Use translated category when available, otherwise original
-  const category =
-    translatedHtmlContent?.translated.category ?? originalCategory;
+  const categories = translatedHtmlContent?.translated.category
+    ? [translatedHtmlContent.translated.category]
+    : normalizeProposalCategories(originalCategories);
 
   const resolvedHtmlContent =
     translatedHtmlContent?.translated ?? currentProposal.htmlContent;
@@ -234,14 +237,19 @@ export function ProposalView({
             <div className="space-y-6">
               {/* Metadata Row */}
               <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
-                {category && (
+                {categories.length > 0 && (
                   <TagGroup className="max-w-full">
-                    <Tag className="max-w-full sm:max-w-96 sm:rounded-md">
-                      <span
-                        className="truncate"
-                        dangerouslySetInnerHTML={{ __html: category }}
-                      />
-                    </Tag>
+                    {categories.map((category) => (
+                      <Tag
+                        key={category}
+                        className="max-w-full sm:max-w-96 sm:rounded-md"
+                      >
+                        <span
+                          className="truncate"
+                          dangerouslySetInnerHTML={{ __html: category }}
+                        />
+                      </Tag>
+                    ))}
                   </TagGroup>
                 )}
                 {budget && (

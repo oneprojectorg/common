@@ -4,6 +4,7 @@ import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { buildCategorySchema } from './proposalDataSchema';
 import type { ProcessSchema } from './types';
 
 /**
@@ -137,16 +138,23 @@ export const updateProcess = async ({
       if (data.processSchema.proposalTemplate) {
         const currentProposalTemplate = data.processSchema
           .proposalTemplate as any;
+        const allowMultipleCategories = Boolean(
+          (data.processSchema as any)?.config?.allowMultipleCategories,
+        );
+        const requireCategorySelection = Boolean(
+          (data.processSchema as any)?.config?.requireCategorySelection,
+        );
         const updatedProposalTemplate = {
           ...currentProposalTemplate,
           properties: {
             ...currentProposalTemplate.properties,
             ...(categories.length > 0
               ? {
-                  category: {
-                    type: ['string', 'null'],
-                    enum: [...categories, null],
-                  },
+                  category: buildCategorySchema(categories, {
+                    allowMultipleCategories,
+                    requireCategorySelection,
+                    existing: currentProposalTemplate.properties?.category,
+                  }),
                 }
               : {}),
           },

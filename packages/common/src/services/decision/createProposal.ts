@@ -25,7 +25,10 @@ import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
-import type { ProposalDataInput } from './proposalDataSchema';
+import {
+  type ProposalDataInput,
+  parseProposalData,
+} from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
 
@@ -94,24 +97,26 @@ export const createProposal = async ({
       );
     }
 
+    const parsedProposalData = parseProposalData(data.proposalData);
+
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
 
-    // Pre-fetch category term if specified to avoid lookup inside transaction
-    const categoryLabel = (data.proposalData as any)?.category;
-    let categoryTermId: string | null = null;
+    // Pre-fetch category terms if specified to avoid lookup inside transaction
+    const categoryLabels = parsedProposalData.category;
+    const categoryTermIds: string[] = [];
 
-    if (categoryLabel?.trim()) {
+    for (const categoryLabel of categoryLabels) {
       try {
         const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-          where: eq(taxonomyTerms.label, categoryLabel.trim()),
+          where: eq(taxonomyTerms.label, categoryLabel),
           with: {
             taxonomy: true,
           },
         });
 
         if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
-          categoryTermId = taxonomyTerm.id;
+          categoryTermIds.push(taxonomyTerm.id);
         } else {
           console.warn(
             `No valid proposal taxonomy term found for category: ${categoryLabel}`,
@@ -119,7 +124,7 @@ export const createProposal = async ({
         }
       } catch (error) {
         console.warn(
-          'Error fetching category term, proceeding without category:',
+          `Error fetching category term for category: ${categoryLabel}`,
           error,
         );
       }
@@ -179,6 +184,10 @@ export const createProposal = async ({
           proposalData: {
             ...data.proposalData,
             collaborationDocId,
+            category:
+              parsedProposalData.category.length > 0
+                ? parsedProposalData.category
+                : undefined,
           },
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
@@ -190,12 +199,14 @@ export const createProposal = async ({
         throw new CommonError('Failed to create proposal');
       }
 
-      // Link to category within transaction if we have a valid term
-      if (categoryTermId) {
-        await tx.insert(proposalCategories).values({
-          proposalId: insertedProposal.id,
-          taxonomyTermId: categoryTermId,
-        });
+      // Link to categories within transaction if we have valid terms
+      if (categoryTermIds.length > 0) {
+        await tx.insert(proposalCategories).values(
+          categoryTermIds.map((taxonomyTermId) => ({
+            proposalId: insertedProposal.id,
+            taxonomyTermId,
+          })),
+        );
       }
 
       // Link attachments to proposal if provided

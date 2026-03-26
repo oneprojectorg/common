@@ -2,7 +2,10 @@ import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 
 import { getProposal } from '../decision/getProposal';
-import { parseSchemaOptions } from '../decision/proposalDataSchema';
+import {
+  formatProposalCategories,
+  parseSchemaOptions,
+} from '../decision/proposalDataSchema';
 import type { ProposalTemplateSchema } from '../decision/types';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -40,10 +43,10 @@ export async function translateProposal({
     });
   }
 
-  if (proposalData.category) {
+  if (proposalData.category.length > 0) {
     entries.push({
       contentKey: `proposal:${proposalId}:category`,
-      text: proposalData.category,
+      text: formatProposalCategories(proposalData.category),
     });
   }
 

@@ -415,6 +415,7 @@ export function ensureLockedFields(
     titleLabel: string;
     categoryLabel: string;
     categories?: { label: string }[];
+    allowMultipleCategories?: boolean;
     /** When true, the category field is included in the template. Defaults to true. */
     requireCategorySelection?: boolean;
   },
@@ -437,7 +438,11 @@ export function ensureLockedFields(
   if (hasCategories) {
     const categoryLabels = (options.categories ?? []).map((c) => c.label);
     const existing = getFieldSchema(result, 'category');
-    const categorySchema = buildCategorySchema(categoryLabels, existing ?? {});
+    const categorySchema = buildCategorySchema(categoryLabels, {
+      allowMultipleCategories: options.allowMultipleCategories,
+      requireCategorySelection: options.requireCategorySelection,
+      existing: existing ?? {},
+    });
     // Preserve existing title or fall back to the configured label
     categorySchema.title =
       (existing?.title as string | undefined) ?? options.categoryLabel;

@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { parseProposalData } from '@op/common/client';
+import {
+  normalizeProposalCategories,
+  parseProposalData,
+} from '@op/common/client';
 import type { ProposalData } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { JSONContent } from '@tiptap/react';
@@ -58,8 +61,9 @@ export function useRestoreProposalVersion({
   ): { title: string; proposalData: ProposalData } {
     const currentProposalData = parseProposalData(proposalData);
     const nextTitle = getFragmentText(fragmentContents.title);
-    const nextCategory =
-      getFragmentText(fragmentContents.category) || undefined;
+    const nextCategory = normalizeProposalCategories(
+      getFragmentText(fragmentContents.category),
+    );
     const nextBudget = parsePreviewBudget(fragmentContents.budget);
 
     return {
@@ -88,9 +92,7 @@ export function useRestoreProposalVersion({
 
     const restoredData = buildRestoredProposalData(fragmentContents);
 
-    provider.revertToVersion(versionId, {
-      fields: fragmentNames,
-    });
+    provider.revertToVersion(versionId, fragmentNames);
 
     await updateProposalMutation.mutateAsync({
       proposalId,
