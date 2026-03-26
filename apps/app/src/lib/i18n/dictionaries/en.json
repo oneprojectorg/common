@@ -979,5 +979,6 @@
   "Find organizations you belong to": "Find organizations you belong to",
   "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.": "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.",
   "Search or add your organization...": "Search or add your organization...",
-  "Skip for now": "Skip for now"
+  "Skip for now": "Skip for now",
+  "Add {searchTerm}": "Add {searchTerm}"
 }
