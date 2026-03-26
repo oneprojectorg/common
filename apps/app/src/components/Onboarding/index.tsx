@@ -126,6 +126,15 @@ export const OnboardingFlow = () => {
         const currentProfileId = userAccount?.profile?.id;
 
         // If user selected orgs, submit join requests
+        if (selectedOrgs.length > 0 && !currentProfileId) {
+          toast.error({
+            title: t("That didn't work"),
+            message: t('Please try submitting the form again.'),
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
         if (selectedOrgs.length > 0 && currentProfileId) {
           const results = await Promise.allSettled(
             selectedOrgs.map((org) =>
@@ -224,13 +233,11 @@ export const OnboardingFlow = () => {
 
       createOrganization
         .mutateAsync(processOrgInputs(combined))
-        .then(() => {
+        .then(async () => {
           sendOnboardingAnalytics(combined);
-          trpcUtils.account.getMyAccount.invalidate();
-          trpcUtils.account.getMyAccount.reset();
-          trpcUtils.account.getMyAccount.refetch().then(() => {
-            router.push('/?new=1');
-          });
+          await trpcUtils.account.getMyAccount.invalidate();
+          await trpcUtils.account.getMyAccount.refetch();
+          router.push('/?new=1');
         })
         .catch((err) => {
           console.error('ERROR', err);
