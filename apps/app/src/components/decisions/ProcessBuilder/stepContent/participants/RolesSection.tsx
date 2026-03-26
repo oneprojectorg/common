@@ -444,16 +444,9 @@ function usePermissionToggle(roleId: string, profileId: string) {
     profileId,
   });
 
+  // Local overlay: null = use server data, non-null = use local override
   const [localPermissions, setLocalPermissions] =
     useState<DecisionRolePermissions | null>(null);
-
-  // Sync local state when server data arrives and no local edits are pending
-  const hasPendingEdits = useRef(false);
-  useEffect(() => {
-    if (serverPermissions && !hasPendingEdits.current) {
-      setLocalPermissions(serverPermissions);
-    }
-  }, [serverPermissions]);
 
   const localRef = useRef(localPermissions);
   localRef.current = localPermissions;
@@ -468,18 +461,15 @@ function usePermissionToggle(roleId: string, profileId: string) {
       updatePermissions.mutate(
         { roleId, decisionPermissions: toSend },
         {
-          onSuccess: () => {
+          onSettled: (_data, error) => {
             if (!flush.isPending()) {
-              hasPendingEdits.current = false;
+              setLocalPermissions(null);
             }
-            toast.success({ message: t('Role updated successfully') });
-            utils.profile.getDecisionRole.invalidate({ roleId, profileId });
-          },
-          onError: () => {
-            if (!flush.isPending()) {
-              hasPendingEdits.current = false;
+            if (error) {
+              toast.error({ message: t('Failed to update role') });
+            } else {
+              toast.success({ message: t('Role updated successfully') });
             }
-            toast.error({ message: t('Failed to update role') });
             utils.profile.getDecisionRole.invalidate({ roleId, profileId });
           },
         },
@@ -497,17 +487,18 @@ function usePermissionToggle(roleId: string, profileId: string) {
   }, [flush]);
 
   const togglePermission = (key: DecisionRoleKey) => {
-    setLocalPermissions((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      return { ...prev, [key]: !prev[key] };
-    });
-    hasPendingEdits.current = true;
+    const base = localPermissions ?? serverPermissions;
+    if (!base) {
+      return;
+    }
+    setLocalPermissions({ ...base, [key]: !base[key] });
     flush();
   };
 
-  return { optimisticPermissions: localPermissions, togglePermission };
+  return {
+    optimisticPermissions: localPermissions ?? serverPermissions ?? null,
+    togglePermission,
+  };
 }
 
 function DecisionRoleCheckboxes({
