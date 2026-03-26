@@ -47,6 +47,9 @@ import { useProposalValidation } from './useProposalValidation';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
+// Create a version snapshot after 60 seconds without local edits.
+const VERSION_INTERVAL_SECONDS = 60;
+
 /**
  * Tracks which TipTap editor currently has focus.
  *
@@ -186,12 +189,13 @@ function ProposalEditorInner({
   const locale = useLocale();
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const { ydoc } = useCollaborativeDoc();
+  const { ydoc, provider, isSynced } = useCollaborativeDoc();
   const versionPreview = useOptionalVersionPreview();
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
+  const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
@@ -253,6 +257,39 @@ function ProposalEditorInner({
       setShowInfoModal(true);
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
+
+  useEffect(() => {
+    if (!provider || !isSynced || isPreviewMode) {
+      return;
+    }
+
+    const scheduleVersionOnLocalChange = (transaction: { local: boolean }) => {
+      if (!transaction.local) {
+        return;
+      }
+
+      if (pendingVersionTimeoutRef.current !== null) {
+        window.clearTimeout(pendingVersionTimeoutRef.current);
+      }
+
+      pendingVersionTimeoutRef.current = window.setTimeout(() => {
+        pendingVersionTimeoutRef.current = null;
+
+        provider.createVersion(undefined, true);
+      }, VERSION_INTERVAL_SECONDS * 1000);
+    };
+
+    ydoc.on('afterTransaction', scheduleVersionOnLocalChange);
+
+    return () => {
+      ydoc.off('afterTransaction', scheduleVersionOnLocalChange);
+
+      if (pendingVersionTimeoutRef.current !== null) {
+        window.clearTimeout(pendingVersionTimeoutRef.current);
+        pendingVersionTimeoutRef.current = null;
+      }
+    };
+  }, [isPreviewMode, isSynced, provider, ydoc]);
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
