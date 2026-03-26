@@ -1,6 +1,9 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { Button } from '@op/ui/Button';
+import { TextField } from '@op/ui/TextField';
+import { ReactNode, useState } from 'react';
+import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -16,8 +19,7 @@ export const OrganizationSearchScreen = ({
   onSkip,
 }: OrganizationSearchScreenProps): ReactNode => {
   const t = useTranslations();
-
-  void onSkip;
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <div className="flex w-full max-w-lg flex-col items-center">
@@ -28,8 +30,30 @@ export const OrganizationSearchScreen = ({
           )}
         </FormHeader>
 
-        {/* Search input, dropdown, chips - implemented in US-002 through US-004 */}
-        {/* Skip button - implemented in US-002 */}
+        <div className="flex flex-col gap-6">
+          {/* Search input */}
+          <TextField
+            value={searchQuery}
+            onChange={setSearchQuery}
+            inputProps={{
+              placeholder: t('Search or add your organization...'),
+              icon: <LuSearch className="size-4 text-neutral-gray4" />,
+            }}
+            aria-label={t('Search or add your organization...')}
+          />
+
+          {/* Divider with "or" */}
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-neutral-gray1" />
+            <span className="text-sm text-neutral-gray4">{t('or')}</span>
+            <div className="h-px flex-1 bg-neutral-gray1" />
+          </div>
+
+          {/* Skip for now button */}
+          <Button className="w-full" color="neutral" onPress={onSkip}>
+            {t('Skip for now')}
+          </Button>
+        </div>
       </FormContainer>
     </div>
   );
