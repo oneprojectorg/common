@@ -4,7 +4,7 @@ import {
   organizations,
   users,
 } from '@op/db/schema';
-import { db, and, eq } from '@op/db/test';
+import { and, db, eq } from '@op/db/test';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -93,9 +93,7 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
       const joinRequests = await db
         .select()
         .from(joinProfileRequests)
-        .where(
-          eq(joinProfileRequests.requestProfileId, userRecord.profileId),
-        );
+        .where(eq(joinProfileRequests.requestProfileId, userRecord.profileId));
 
       expect(joinRequests).toHaveLength(0);
     }
@@ -226,9 +224,7 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
     const joinRequests = await db
       .select()
       .from(joinProfileRequests)
-      .where(
-        eq(joinProfileRequests.requestProfileId, userRecord!.profileId!),
-      );
+      .where(eq(joinProfileRequests.requestProfileId, userRecord!.profileId!));
 
     expect(joinRequests).toHaveLength(2);
 
@@ -351,9 +347,7 @@ test.describe('Onboarding - Domain-matched organization', () => {
       const joinRequests = await db
         .select()
         .from(joinProfileRequests)
-        .where(
-          eq(joinProfileRequests.requestProfileId, userRecord.profileId),
-        );
+        .where(eq(joinProfileRequests.requestProfileId, userRecord.profileId));
 
       expect(joinRequests).toHaveLength(0);
     }
