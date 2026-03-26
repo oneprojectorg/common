@@ -95,12 +95,13 @@ export const OrganizationSearchScreen = ({
 
   const handleAcceptToS = useCallback(() => {
     onContinue(
-      selectedOrgs
-        .filter((org) => org.profile?.id)
-        .map((org) => ({
-          id: org.id,
-          profileId: org.profile!.id,
-        })),
+      selectedOrgs.flatMap((org) => {
+        const profileId = org.profile?.id;
+        if (!profileId) {
+          return [];
+        }
+        return [{ id: org.id, profileId }];
+      }),
     );
   }, [selectedOrgs, onContinue]);
 
