@@ -315,7 +315,9 @@ function ProposalEditorInner({
         ...parseProposalData(proposal.proposalData),
         collaborationDocId,
         category: hasCategories
-          ? (currentDraft.category ?? undefined)
+          ? currentDraft.category.length > 0
+            ? currentDraft.category
+            : undefined
           : undefined,
         budget: currentDraft.budget ?? undefined,
       };

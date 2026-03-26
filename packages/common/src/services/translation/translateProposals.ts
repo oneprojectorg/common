@@ -7,6 +7,10 @@ import { permission } from 'access-zones';
 import { assertInstanceProfileAccess } from '../access';
 import { generateProposalHtml } from '../decision/generateProposalHtml';
 import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
+import {
+  formatProposalCategories,
+  parseProposalData,
+} from '../decision/proposalDataSchema';
 import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -123,7 +127,7 @@ export async function translateProposals({
   const entries: TranslatableEntry[] = [];
 
   for (const proposal of proposals) {
-    const proposalData = proposal.proposalData as Record<string, unknown>;
+    const proposalData = parseProposalData(proposal.proposalData);
     const pid = proposal.profileId;
 
     if (!pid) {
@@ -137,10 +141,10 @@ export async function translateProposals({
       });
     }
 
-    if (proposalData.category && typeof proposalData.category === 'string') {
+    if (proposalData.category.length > 0) {
       entries.push({
         contentKey: `batch:${pid}:category`,
-        text: proposalData.category,
+        text: formatProposalCategories(proposalData.category),
       });
     }
 

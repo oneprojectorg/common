@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { buildCategorySchema } from './proposalDataSchema';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -165,6 +166,12 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
 
         if (existingProcess) {
           const currentProcessSchema = existingProcess.processSchema as any;
+          const allowMultipleCategories = Boolean(
+            currentProcessSchema?.config?.allowMultipleCategories,
+          );
+          const requireCategorySelection = Boolean(
+            currentProcessSchema?.config?.requireCategorySelection,
+          );
 
           // Update the proposal template to include the new category enums
           const currentProposalTemplate =
@@ -175,10 +182,11 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
               ...currentProposalTemplate.properties,
               ...(categories.length > 0
                 ? {
-                    category: {
-                      type: ['string', 'null'],
-                      enum: [...categories, null],
-                    },
+                    category: buildCategorySchema(categories, {
+                      allowMultipleCategories,
+                      requireCategorySelection,
+                      existing: currentProposalTemplate.properties?.category,
+                    }),
                   }
                 : {}),
             },

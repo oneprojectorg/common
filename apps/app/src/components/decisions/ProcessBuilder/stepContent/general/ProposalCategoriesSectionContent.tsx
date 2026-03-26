@@ -90,7 +90,8 @@ export function ProposalCategoriesSectionContent({
     setSaveStatus(decisionProfileId, 'saving');
     setInstanceData(decisionProfileId, { config: data });
 
-    const existingTemplate = instance.instanceData.proposalTemplate;
+    const existingTemplate =
+      storeData?.proposalTemplate ?? instance.instanceData.proposalTemplate;
 
     const mutation: Parameters<typeof updateInstance.mutate>[0] = {
       instanceId,
@@ -102,6 +103,7 @@ export function ProposalCategoriesSectionContent({
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
         categories: data.categories,
+        allowMultipleCategories: data.allowMultipleCategories,
         requireCategorySelection: data.requireCategorySelection,
       });
       mutation.proposalTemplate = syncedTemplate;
