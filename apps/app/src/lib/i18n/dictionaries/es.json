@@ -977,5 +977,7 @@
   "Are you sure you want to delete this field? This action cannot be undone.": "¿Estás seguro de que deseas eliminar este campo? Esta acción no se puede deshacer.",
   "A decision-making process stewarded by {stewardName}.": "Un proceso de toma de decisiones administrado por {stewardName}.",
   "Find organizations you belong to": "Find organizations you belong to",
-  "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.": "Select the organization(s) you want to link to your Common profile. You can add more later from your profile."
+  "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.": "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.",
+  "Search or add your organization...": "Search or add your organization...",
+  "Skip for now": "Skip for now"
 }
