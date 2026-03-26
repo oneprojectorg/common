@@ -975,5 +975,7 @@
   "Untitled field": "Campo sem título",
   "Delete field": "Excluir campo",
   "Are you sure you want to delete this field? This action cannot be undone.": "Tem certeza de que deseja excluir este campo? Esta ação não pode ser desfeita.",
-  "A decision-making process stewarded by {stewardName}.": "Um processo de tomada de decisão administrado por {stewardName}."
+  "A decision-making process stewarded by {stewardName}.": "Um processo de tomada de decisão administrado por {stewardName}.",
+  "Find organizations you belong to": "Find organizations you belong to",
+  "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.": "Select the organization(s) you want to link to your Common profile. You can add more later from your profile."
 }

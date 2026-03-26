@@ -982,5 +982,7 @@
   "Untitled field": "শিরোনামহীন ক্ষেত্র",
   "Delete field": "ক্ষেত্র মুছুন",
   "Are you sure you want to delete this field? This action cannot be undone.": "আপনি কি নিশ্চিত যে আপনি এই ক্ষেত্রটি মুছতে চান? এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না।",
-  "A decision-making process stewarded by {stewardName}.": "{stewardName} দ্বারা পরিচালিত একটি সিদ্ধান্ত গ্রহণ প্রক্রিয়া।"
+  "A decision-making process stewarded by {stewardName}.": "{stewardName} দ্বারা পরিচালিত একটি সিদ্ধান্ত গ্রহণ প্রক্রিয়া।",
+  "Find organizations you belong to": "Find organizations you belong to",
+  "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.": "Select the organization(s) you want to link to your Common profile. You can add more later from your profile."
 }
