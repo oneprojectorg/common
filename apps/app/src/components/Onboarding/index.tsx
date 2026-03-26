@@ -138,18 +138,21 @@ export const OnboardingFlow = () => {
           );
 
           const failures = results.filter((r) => r.status === 'rejected');
-          if (failures.length > 0 && failures.length < results.length) {
-            toast.error({
-              title: t("That didn't work"),
-              message: t('Please try submitting the form again.'),
-            });
-          } else if (failures.length === results.length) {
+          if (failures.length === results.length) {
+            // All requests failed — stay on page so user can retry
             toast.error({
               title: t("That didn't work"),
               message: t('Please try submitting the form again.'),
             });
             setIsSubmitting(false);
             return;
+          }
+          if (failures.length > 0) {
+            // Partial failure — some succeeded, proceed but warn
+            toast.error({
+              title: t("That didn't work"),
+              message: t('Please try submitting the form again.'),
+            });
           }
         }
 
