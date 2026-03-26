@@ -263,6 +263,7 @@ function PhaseDetailForm({
   const getErrorMessage = (field: string) =>
     touchedFields.has(field) ? errors[field] : undefined;
 
+  // Date helpers
   const safeParseDateString = (dateStr: string | undefined) => {
     if (!dateStr) {
       return undefined;
@@ -279,8 +280,7 @@ function PhaseDetailForm({
     month: number;
     day: number;
   }) => {
-    const localMidnight = new Date(date.year, date.month - 1, date.day);
-    return localMidnight.toISOString();
+    return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
   if (!phase) {
