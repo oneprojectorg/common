@@ -31,11 +31,13 @@ export const validator = z.object({});
 type MatchingOrganizationsFormProps = StepProps & {
   className?: string;
   onSearchContinue?: OrganizationSearchScreenProps['onContinue'];
+  isSubmitting?: boolean;
 };
 
 export const MatchingOrganizationsForm = ({
   className,
   onSearchContinue,
+  isSubmitting,
 }: MatchingOrganizationsFormProps): ReactNode => {
   const t = useTranslations();
   const router = useRouter();
@@ -118,7 +120,12 @@ export const MatchingOrganizationsForm = ({
   // No domain-matched orgs: show the organization search screen
   if (!matchingOrgs || matchingOrgs.length === 0) {
     if (onSearchContinue) {
-      return <OrganizationSearchScreen onContinue={onSearchContinue} />;
+      return (
+        <OrganizationSearchScreen
+          onContinue={onSearchContinue}
+          isSubmitting={isSubmitting}
+        />
+      );
     }
     return null;
   }
