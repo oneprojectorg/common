@@ -5,8 +5,8 @@ import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
-import { ReactNode, useEffect, useRef, useState } from 'react';
-import { LuPlus, LuSearch } from 'react-icons/lu';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { LuPlus, LuSearch, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -23,6 +23,7 @@ export type OrganizationSearchScreenProps = {
 };
 
 export const OrganizationSearchScreen = ({
+  onContinue,
   onSkip,
   onAddOrganization,
 }: OrganizationSearchScreenProps): ReactNode => {
@@ -30,6 +31,7 @@ export const OrganizationSearchScreen = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 300);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedOrgs, setSelectedOrgs] = useState<SearchOrganization[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -66,11 +68,33 @@ export const OrganizationSearchScreen = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelectOrg = (org: SearchOrganization) => {
-    // Will be wired up in US-004 for multi-select chips
-    void org;
+  const handleSelectOrg = useCallback((org: SearchOrganization) => {
+    setSelectedOrgs((prev) => {
+      if (prev.some((o) => o.id === org.id)) {
+        return prev;
+      }
+      return [...prev, org];
+    });
+    setSearchQuery('');
     setIsDropdownOpen(false);
-  };
+  }, []);
+
+  const handleRemoveOrg = useCallback((orgId: string) => {
+    setSelectedOrgs((prev) => prev.filter((o) => o.id !== orgId));
+  }, []);
+
+  const handleContinue = useCallback(() => {
+    onContinue(
+      selectedOrgs
+        .filter((org) => org.profile?.id)
+        .map((org) => ({
+          id: org.id,
+          profileId: org.profile!.id,
+        })),
+    );
+  }, [selectedOrgs, onContinue]);
+
+  const hasSelectedOrgs = selectedOrgs.length > 0;
 
   const getOrgLocation = (org: SearchOrganization): string => {
     if (org.profile?.city && org.profile?.state) {
@@ -189,17 +213,62 @@ export const OrganizationSearchScreen = ({
             )}
           </div>
 
-          {/* Divider with "or" */}
-          <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-neutral-gray1" />
-            <span className="text-sm text-neutral-gray4">{t('or')}</span>
-            <div className="h-px flex-1 bg-neutral-gray1" />
-          </div>
+          {/* Selected organization chips */}
+          {hasSelectedOrgs && (
+            <div className="flex flex-wrap gap-2">
+              {selectedOrgs.map((org) => (
+                <div
+                  key={org.id}
+                  className="flex items-center gap-2 rounded-full border border-neutral-gray2 bg-white px-3 py-1.5"
+                >
+                  <OrganizationAvatar
+                    profile={org.profile}
+                    withLink={false}
+                    className="!size-5"
+                  />
+                  <span className="text-sm text-neutral-charcoal">
+                    {org.profile?.name}
+                  </span>
+                  {getOrgLocation(org) && (
+                    <span className="text-xs text-neutral-gray4">
+                      {getOrgLocation(org)}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="ml-1 rounded-full p-0.5 text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal"
+                    onClick={() => handleRemoveOrg(org.id)}
+                    aria-label={t('Remove')}
+                  >
+                    <LuX className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
-          {/* Skip for now button */}
-          <Button className="w-full" color="neutral" onPress={onSkip}>
-            {t('Skip for now')}
-          </Button>
+          {/* Continue button when orgs are selected */}
+          {hasSelectedOrgs ? (
+            <Button className="w-full" onPress={handleContinue}>
+              {t('Continue with {count} organizations', {
+                count: selectedOrgs.length,
+              })}
+            </Button>
+          ) : (
+            <>
+              {/* Divider with "or" */}
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-neutral-gray1" />
+                <span className="text-sm text-neutral-gray4">{t('or')}</span>
+                <div className="h-px flex-1 bg-neutral-gray1" />
+              </div>
+
+              {/* Skip for now button */}
+              <Button className="w-full" color="neutral" onPress={onSkip}>
+                {t('Skip for now')}
+              </Button>
+            </>
+          )}
         </div>
       </FormContainer>
     </div>
