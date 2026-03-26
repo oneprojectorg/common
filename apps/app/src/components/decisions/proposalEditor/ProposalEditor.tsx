@@ -266,19 +266,45 @@ function ProposalEditorInner({
       local: boolean;
       origin: unknown;
     }) => {
+      console.log('[ProposalEditor] afterTransaction', {
+        local: transaction.local,
+        origin: String(transaction.origin),
+        originType: typeof transaction.origin,
+        originConstructor:
+          transaction.origin?.constructor?.name ?? 'no constructor',
+        collaborationDocId,
+      });
+
       if (!transaction.local) {
         return;
       }
 
+      console.log('[ProposalEditor] local change detected', {
+        collaborationDocId,
+      });
+
       if (pendingVersionTimeoutRef.current !== null) {
         window.clearTimeout(pendingVersionTimeoutRef.current);
+
+        console.log('[ProposalEditor] reset pending version timer', {
+          collaborationDocId,
+        });
       }
 
       pendingVersionTimeoutRef.current = window.setTimeout(() => {
         pendingVersionTimeoutRef.current = null;
 
+        console.log('[ProposalEditor] creating debounced version', {
+          collaborationDocId,
+        });
+
         provider.createVersion(undefined, true);
       }, AUTOVERSION_INTERVAL_SECONDS * 1000);
+
+      console.log('[ProposalEditor] scheduled debounced version', {
+        collaborationDocId,
+        delayMs: AUTOVERSION_INTERVAL_SECONDS * 1000,
+      });
     };
 
     ydoc.on('afterTransaction', handleDocumentChange);

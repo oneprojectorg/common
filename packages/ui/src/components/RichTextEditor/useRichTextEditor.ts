@@ -52,21 +52,6 @@ export function useRichTextEditor({
     }
   }, [editor]); // Only run when editor is ready, not on content changes
 
-  // Readonly viewers reuse one editor instance, so sync incoming content when
-  // the selected preview version changes.
-  useEffect(() => {
-    if (!editor || editable) {
-      return;
-    }
-
-    if (!content) {
-      editor.commands.clearContent();
-      return;
-    }
-
-    editor.commands.setContent(content);
-  }, [content, editable, editor]);
-
   // Notify parent when editor is ready
   useEffect(() => {
     if (editor && onEditorReady) {
