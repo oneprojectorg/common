@@ -21,11 +21,6 @@ export interface TipTapVersion {
   meta?: Record<string, unknown>;
 }
 
-export interface GetDocumentFragmentsOptions<F extends 'json' | 'text'> {
-  format?: F;
-  version?: number;
-}
-
 type TipTapClientConfig = {
   appId: string;
   secret: string;
@@ -97,7 +92,7 @@ export function createTipTapClient(config: TipTapClientConfig) {
     getDocumentFragments: async <F extends 'json' | 'text' = 'json'>(
       docName: string,
       fragments: string[],
-      options?: GetDocumentFragmentsOptions<F>,
+      options?: { format?: F; version?: number },
     ): Promise<
       F extends 'text' ? Record<string, string> : TipTapFragmentResponse
     > => {

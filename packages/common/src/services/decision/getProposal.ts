@@ -127,7 +127,7 @@ export const getProposal = async ({
     proposal.processInstance.processId,
   );
   const parsedProposalData = parseProposalData(proposal.proposalData);
-  const documentVersionId =
+  const collaborationDocVersionId =
     proposal.status === ProposalStatus.DRAFT
       ? null
       : parsedProposalData.collaborationDocVersionId;
@@ -184,7 +184,7 @@ export const getProposal = async ({
         id: proposal.id,
         proposalData: proposal.proposalData,
         proposalTemplate,
-        documentVersionId,
+        collaborationDocVersionId,
       },
     ]),
   ]);
