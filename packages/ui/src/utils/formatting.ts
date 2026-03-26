@@ -4,11 +4,7 @@
  */
 
 /**
- * Parse YYYY-MM-DD format as local date to avoid timezone issues
- * @param dateString - Date string in YYYY-MM-DD format
- * @param options - Intl.DateTimeFormatOptions for formatting
- * @param locale - Locale for formatting (default: 'en-US')
- * @returns Formatted date string
+ * Format a date string for display in the user's local timezone.
  */
 export function formatDate(
   dateString: string,
