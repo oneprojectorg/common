@@ -38,11 +38,11 @@ import {
 export type { ProposalTemplateSchema };
 
 export type FieldType = 'short_text' | 'long_text' | 'dropdown';
-type TextLengthSchema = ProposalTemplateSchema | XFormatPropertySchema;
+type TextFieldFormat = 'short-text' | 'long-text';
 
-const TEXT_FIELD_MAX_LENGTHS = {
-  short_text: 280,
-  long_text: 5000,
+const TEXT_FIELD_MAX_LENGTHS_BY_FORMAT: Record<TextFieldFormat, number> = {
+  'short-text': 280,
+  'long-text': 5000,
 } as const;
 
 /**
@@ -72,46 +72,29 @@ const X_FORMAT_TO_FIELD_TYPE: Record<string, FieldType> = {
   dropdown: 'dropdown',
 };
 
-function getDefaultTextFieldMaxLength(
-  xFormat: string | undefined,
-): number | undefined {
-  switch (xFormat) {
-    case 'short-text':
-      return TEXT_FIELD_MAX_LENGTHS.short_text;
-    case 'long-text':
-      return TEXT_FIELD_MAX_LENGTHS.long_text;
-    default:
-      return undefined;
-  }
+function isTextFieldFormat(xFormat: unknown): xFormat is TextFieldFormat {
+  return xFormat === 'short-text' || xFormat === 'long-text';
 }
 
 /**
  * Applies the default text max length for short/long text fields when one is
  * not already present in the schema.
  */
-function withDefaultTextFieldMaxLength<T extends ProposalTemplateSchema>(
-  schema: T,
-): T;
-function withDefaultTextFieldMaxLength<T extends TextLengthSchema>(
-  schema: T,
-): T;
-function withDefaultTextFieldMaxLength<
-  T extends ProposalTemplateSchema | TextLengthSchema,
->(schema: T): T {
+function withDefaultTextFieldMaxLength(
+  schema: XFormatPropertySchema,
+): XFormatPropertySchema {
   if (schema.type !== 'string' || schema.maxLength != null) {
     return schema;
   }
 
-  const maxLength = getDefaultTextFieldMaxLength(
-    typeof schema['x-format'] === 'string' ? schema['x-format'] : undefined,
-  );
-  if (maxLength == null) {
+  const xFormat = schema['x-format'];
+  if (!isTextFieldFormat(xFormat)) {
     return schema;
   }
 
   return {
     ...schema,
-    maxLength,
+    maxLength: TEXT_FIELD_MAX_LENGTHS_BY_FORMAT[xFormat],
   };
 }
 
@@ -128,15 +111,16 @@ function normalizeTextFieldMaxLengths(
   }
 
   let hasChanges = false;
-  const normalizedProperties = Object.fromEntries(
-    Object.entries(properties).map(([fieldId, fieldSchema]) => {
-      const normalizedFieldSchema = withDefaultTextFieldMaxLength(fieldSchema);
-      if (normalizedFieldSchema !== fieldSchema) {
-        hasChanges = true;
-      }
-      return [fieldId, normalizedFieldSchema];
-    }),
-  );
+  const normalizedProperties: Record<string, XFormatPropertySchema> = {};
+
+  for (const [fieldId, fieldSchema] of Object.entries(properties)) {
+    const normalizedFieldSchema = withDefaultTextFieldMaxLength(fieldSchema);
+    normalizedProperties[fieldId] = normalizedFieldSchema;
+
+    if (normalizedFieldSchema !== fieldSchema) {
+      hasChanges = true;
+    }
+  }
 
   if (!hasChanges) {
     return template;
@@ -153,13 +137,13 @@ function normalizeTextFieldMaxLengths(
 // ---------------------------------------------------------------------------
 
 function withXFormat(
-  schema: ProposalTemplateSchema,
-  xFormat: string,
-): ProposalTemplateSchema {
+  schema: XFormatPropertySchema,
+  xFormat: XFormatPropertySchema['x-format'],
+): XFormatPropertySchema {
   return withDefaultTextFieldMaxLength({ ...schema, 'x-format': xFormat });
 }
 
-export function createFieldJsonSchema(type: FieldType): ProposalTemplateSchema {
+export function createFieldJsonSchema(type: FieldType): XFormatPropertySchema {
   switch (type) {
     case 'short_text':
       return withXFormat({ type: 'string' }, 'short-text');
@@ -429,9 +413,9 @@ export function setFieldRequired(
 // ---------------------------------------------------------------------------
 
 function createLockedFieldSchema(
-  xFormat: string,
+  xFormat: XFormatPropertySchema['x-format'],
   title: string,
-): ProposalTemplateSchema {
+): XFormatPropertySchema {
   return withXFormat({ type: 'string', title }, xFormat);
 }
 
