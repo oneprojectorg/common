@@ -21,6 +21,11 @@ export interface TipTapVersion {
   meta?: Record<string, unknown>;
 }
 
+export interface GetDocumentFragmentsOptions<F extends 'json' | 'text'> {
+  format?: F;
+  version?: number;
+}
+
 type TipTapClientConfig = {
   appId: string;
   secret: string;
@@ -92,14 +97,15 @@ export function createTipTapClient(config: TipTapClientConfig) {
     getDocumentFragments: async <F extends 'json' | 'text' = 'json'>(
       docName: string,
       fragments: string[],
-      format?: F,
+      options?: GetDocumentFragmentsOptions<F>,
     ): Promise<
       F extends 'text' ? Record<string, string> : TipTapFragmentResponse
     > => {
       type R = F extends 'text'
         ? Record<string, string>
         : TipTapFragmentResponse;
-      const fmt = format ?? 'json';
+      const fmt = options?.format ?? 'json';
+      const version = options?.version;
       const docPath = `documents/${encodeURIComponent(docName)}`;
 
       if (fmt === 'text') {
@@ -110,7 +116,11 @@ export function createTipTapClient(config: TipTapClientConfig) {
           fragments.map(async (fragment) => {
             const text = await api
               .get(docPath, {
-                searchParams: { format: 'text', fragment },
+                searchParams: {
+                  format: 'text',
+                  fragment,
+                  ...(version !== undefined ? { version } : {}),
+                },
               })
               .text();
             return [fragment, text.trim()] as const;
@@ -122,6 +132,9 @@ export function createTipTapClient(config: TipTapClientConfig) {
       const params = new URLSearchParams({ format: fmt });
       for (const fragment of fragments) {
         params.append('fragment', fragment);
+      }
+      if (version !== undefined) {
+        params.set('version', String(version));
       }
 
       const response = await api.get(docPath, { searchParams: params }).json();

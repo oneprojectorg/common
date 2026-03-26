@@ -398,6 +398,161 @@ describe.concurrent('getProposal', () => {
     expect(result.documentContent).toBeUndefined();
   });
 
+  it('should fetch the saved collaboration version for non-draft proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const latestContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Latest live draft content' }],
+        },
+      ],
+    };
+    const checkpointContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Checkpointed version content' }],
+        },
+      ],
+    };
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Submitted Versioned Proposal',
+      },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+
+    mockCollab.setDocResponse(collaborationDocId, latestContent);
+    mockCollab.setVersionedDocResponse(
+      collaborationDocId,
+      2,
+      checkpointContent,
+    );
+
+    await db
+      .update(proposals)
+      .set({
+        status: ProposalStatus.SUBMITTED,
+        proposalData: {
+          ...(proposal.proposalData as Record<string, unknown>),
+          collaborationDocVersionId: 2,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.documentContent).toEqual({
+      type: 'json',
+      fragments: {
+        default: checkpointContent,
+      },
+    });
+  });
+
+  it('should fetch the latest collaboration content for draft proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const latestContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Unsaved draft content' }],
+        },
+      ],
+    };
+    const checkpointContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Old checkpoint content' }],
+        },
+      ],
+    };
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Draft Versioned Proposal',
+      },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+
+    mockCollab.setDocResponse(collaborationDocId, latestContent);
+    mockCollab.setVersionedDocResponse(
+      collaborationDocId,
+      2,
+      checkpointContent,
+    );
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          ...(proposal.proposalData as Record<string, unknown>),
+          collaborationDocVersionId: 2,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.documentContent).toEqual({
+      type: 'json',
+      fragments: {
+        default: latestContent,
+      },
+    });
+  });
+
   it('should handle legacy proposal data with null fields', async ({
     task,
     onTestFinished,

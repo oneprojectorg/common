@@ -2,6 +2,7 @@ import type { ProposalTemplateSchema } from '@op/common';
 import {
   EntityType,
   ProcessStatus,
+  ProposalStatus,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
@@ -25,6 +26,7 @@ import { expect, test } from '../fixtures/index.js';
  * from the mock (@op/collab/testing, aliased via webpack when E2E=true).
  */
 const MOCK_DOC_ID = 'test-proposal-doc';
+const VERSIONED_MOCK_DOC_ID = 'test-proposal-doc-versioned';
 
 test.describe('Proposal View', () => {
   test('renders formatted content from TipTap document', async ({
@@ -256,6 +258,64 @@ test.describe('Proposal View', () => {
     // Legacy plain-number budget (5000) is normalised to { value: 5000, currency: 'USD' }
     // and rendered as "$5,000" via formatCurrency
     await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
+  });
+
+  test('uses checkpointed collab content for submitted proposals and latest content for drafts', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    const submittedProposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: 'Submitted Versioned Proposal',
+        collaborationDocId: VERSIONED_MOCK_DOC_ID,
+        collaborationDocVersionId: 2,
+      },
+    });
+
+    const draftProposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.DRAFT,
+      proposalData: {
+        title: 'Draft Versioned Proposal',
+        collaborationDocId: VERSIONED_MOCK_DOC_ID,
+        collaborationDocVersionId: 2,
+      },
+    });
+
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${submittedProposal.profileId}`,
+    );
+    await expect(
+      authenticatedPage.getByText('Version 2 checkpoint content'),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(
+      authenticatedPage.getByText('Latest draft content'),
+    ).not.toBeVisible();
+
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${draftProposal.profileId}`,
+    );
+    await expect(
+      authenticatedPage.getByText('Latest draft content'),
+    ).toBeVisible({ timeout: 30_000 });
   });
 
   test('renders legacy proposal with old template format and description field', async ({
