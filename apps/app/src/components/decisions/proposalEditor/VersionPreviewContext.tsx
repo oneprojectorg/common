@@ -91,35 +91,17 @@ export function VersionPreviewProvider({
 
         const contents: Record<string, JSONContent | null> = {};
 
-        console.log('[VersionPreview] extracting fragments', {
-          versionId,
-          fragmentNames,
-          payloadLength: data.payload.length,
-        });
-
         for (const name of fragmentNames) {
           try {
-            const content = getPreviewContentFromVersionPayload(
+            contents[name] = getPreviewContentFromVersionPayload(
               data.payload,
               name,
             ) as JSONContent | null;
-
-            console.log(`[VersionPreview] fragment "${name}"`, {
-              hasContent: content !== null && content !== undefined,
-              content: JSON.stringify(content)?.slice(0, 200),
-            });
-
-            contents[name] = content;
-          } catch (err) {
-            console.error(`[VersionPreview] fragment "${name}" error`, err);
+          } catch {
             contents[name] = null;
           }
         }
 
-        console.log(
-          '[VersionPreview] final contents keys',
-          Object.keys(contents),
-        );
         setFragmentContents(contents);
       } catch {
         // Ignore unrelated stateless provider events.
