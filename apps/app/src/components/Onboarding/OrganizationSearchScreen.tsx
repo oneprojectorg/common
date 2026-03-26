@@ -13,25 +13,27 @@ import { useTranslations } from '@/lib/i18n';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
+import { ToSAcceptanceScreen } from './ToSAcceptanceScreen';
 
 type SearchOrganization = RouterOutput['organization']['search'][number];
 
 export type OrganizationSearchScreenProps = {
   onContinue: (selectedOrgs: Array<{ id: string; profileId: string }>) => void;
-  onSkip: () => void;
   onAddOrganization?: (searchTerm: string) => void;
+  isSubmitting?: boolean;
 };
 
 export const OrganizationSearchScreen = ({
   onContinue,
-  onSkip,
   onAddOrganization,
+  isSubmitting,
 }: OrganizationSearchScreenProps): ReactNode => {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 300);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedOrgs, setSelectedOrgs] = useState<SearchOrganization[]>([]);
+  const [showToS, setShowToS] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +85,15 @@ export const OrganizationSearchScreen = ({
     setSelectedOrgs((prev) => prev.filter((o) => o.id !== orgId));
   }, []);
 
-  const handleContinue = useCallback(() => {
+  const handleContinueToToS = useCallback(() => {
+    setShowToS(true);
+  }, []);
+
+  const handleSkipToToS = useCallback(() => {
+    setShowToS(true);
+  }, []);
+
+  const handleAcceptToS = useCallback(() => {
     onContinue(
       selectedOrgs
         .filter((org) => org.profile?.id)
@@ -93,6 +103,10 @@ export const OrganizationSearchScreen = ({
         })),
     );
   }, [selectedOrgs, onContinue]);
+
+  const handleGoBack = useCallback(() => {
+    setShowToS(false);
+  }, []);
 
   const hasSelectedOrgs = selectedOrgs.length > 0;
 
@@ -133,6 +147,16 @@ export const OrganizationSearchScreen = ({
       </>
     );
   };
+
+  if (showToS) {
+    return (
+      <ToSAcceptanceScreen
+        onAccept={handleAcceptToS}
+        onGoBack={handleGoBack}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
 
   return (
     <div className="flex w-full max-w-lg flex-col items-center">
@@ -249,7 +273,7 @@ export const OrganizationSearchScreen = ({
 
           {/* Continue button when orgs are selected */}
           {hasSelectedOrgs ? (
-            <Button className="w-full" onPress={handleContinue}>
+            <Button className="w-full" onPress={handleContinueToToS}>
               {t('Continue with {count} organizations', {
                 count: selectedOrgs.length,
               })}
@@ -264,7 +288,11 @@ export const OrganizationSearchScreen = ({
               </div>
 
               {/* Skip for now button */}
-              <Button className="w-full" color="neutral" onPress={onSkip}>
+              <Button
+                className="w-full"
+                color="neutral"
+                onPress={handleSkipToToS}
+              >
                 {t('Skip for now')}
               </Button>
             </>
