@@ -12,11 +12,10 @@ import { composeTailwindRenderProps } from '../utils';
 import { Description, FieldError, FieldGroup, Input, Label } from './Field';
 import type { InputWithVariantsProps } from './Field';
 
-export interface NumberFieldProps
-  extends Omit<
-    AriaTextFieldProps,
-    'type' | 'value' | 'defaultValue' | 'onChange' | 'onInput'
-  > {
+export interface NumberFieldProps extends Omit<
+  AriaTextFieldProps,
+  'type' | 'value' | 'defaultValue' | 'onChange' | 'onInput'
+> {
   label?: string;
   description?: string;
   /** External error message. Takes precedence over built-in min/max messages. */

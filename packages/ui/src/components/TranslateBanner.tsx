@@ -4,8 +4,10 @@ import { cn } from '../lib/utils';
 import { Button } from './Button';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 
-export interface TranslateBannerProps
-  extends Omit<React.ComponentProps<'div'>, 'children'> {
+export interface TranslateBannerProps extends Omit<
+  React.ComponentProps<'div'>,
+  'children'
+> {
   onTranslate: () => void;
   onDismiss: () => void;
   label: string;

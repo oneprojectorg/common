@@ -18,8 +18,10 @@ import type { DropdownSectionProps } from './ListBox';
 import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
-export interface ComboBoxProps<T extends object>
-  extends Omit<AriaComboBoxProps<T>, 'children'> {
+export interface ComboBoxProps<T extends object> extends Omit<
+  AriaComboBoxProps<T>,
+  'children'
+> {
   label?: string;
   description?: string | null;
   errorMessage?: string | ((validation: ValidationResult) => string);

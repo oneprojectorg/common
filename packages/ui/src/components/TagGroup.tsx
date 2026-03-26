@@ -61,7 +61,8 @@ const tagStyles = tv({
 });
 
 export interface TagGroupProps<T>
-  extends Omit<AriaTagGroupProps, 'children'>,
+  extends
+    Omit<AriaTagGroupProps, 'children'>,
     Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
   color?: Color;
   label?: string;

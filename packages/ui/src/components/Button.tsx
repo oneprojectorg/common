@@ -99,8 +99,7 @@ type ButtonVariants = VariantProps<typeof buttonStyle>;
 // type ButtonProps = React.ComponentProps<typeof RACButton>;
 
 export interface ButtonProps
-  extends React.ComponentProps<typeof RACButton>,
-    ButtonVariants {
+  extends React.ComponentProps<typeof RACButton>, ButtonVariants {
   className?: string;
   isLoading?: boolean;
 }
@@ -152,7 +151,8 @@ type LowLevelPressHandlers =
   | 'onPressUp';
 
 export interface ButtonLinkProps
-  extends Omit<React.ComponentProps<typeof RACLink>, LowLevelPressHandlers>,
+  extends
+    Omit<React.ComponentProps<typeof RACLink>, LowLevelPressHandlers>,
     ButtonVariants {
   className?: string;
   isLoading?: boolean;
