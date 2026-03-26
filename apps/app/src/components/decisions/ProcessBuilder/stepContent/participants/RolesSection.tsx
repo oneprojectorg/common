@@ -470,18 +470,34 @@ function usePermissionToggle(roleId: string, profileId: string) {
       { roleId, decisionPermissions: toSend },
       {
         onSuccess: () => {
-          hasPendingEdits.current = false;
+          // Only clear pending flag if no new debounce is queued
+          if (!debounceTimer.current) {
+            hasPendingEdits.current = false;
+          }
           toast.success({ message: t('Role updated successfully') });
           utils.profile.getDecisionRole.invalidate({ roleId, profileId });
         },
         onError: () => {
-          hasPendingEdits.current = false;
+          if (!debounceTimer.current) {
+            hasPendingEdits.current = false;
+          }
           toast.error({ message: t('Failed to update role') });
           utils.profile.getDecisionRole.invalidate({ roleId, profileId });
         },
       },
     );
   };
+
+  // Flush pending changes on unmount so edits aren't lost on navigation
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+        flushRef.current?.();
+      }
+    };
+  }, []);
 
   const togglePermission = useCallback((key: DecisionRoleKey) => {
     setLocalPermissions((prev) => {
