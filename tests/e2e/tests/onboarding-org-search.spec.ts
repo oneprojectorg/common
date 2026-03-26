@@ -1,5 +1,10 @@
-import { joinProfileRequests, organizations, users } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import {
+  joinProfileRequests,
+  organizationUsers,
+  organizations,
+  users,
+} from '@op/db/schema';
+import { db, and, eq } from '@op/db/test';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -266,7 +271,7 @@ test.describe('Onboarding - Domain-matched organization', () => {
 
     // Create a user whose email matches the org domain
     const email = `e2e-domain-match-user-${testId}@${emailDomain}`;
-    await createUser({ supabaseAdmin, email });
+    const authUser = await createUser({ supabaseAdmin, email });
 
     await authenticateAsUser(page, {
       email,
@@ -319,5 +324,38 @@ test.describe('Onboarding - Domain-matched organization', () => {
     // Step 5: Should redirect to /?new=1
     await page.waitForURL(/new=1/, { timeout: 30000 });
     expect(page.url()).toContain('new=1');
+
+    // Step 6: Verify the user was directly joined to the organization (not via join request)
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    expect(userRecord).toBeTruthy();
+
+    // Verify an organizationUser record was created for the direct join
+    const [orgUserRecord] = await db
+      .select()
+      .from(organizationUsers)
+      .where(
+        and(
+          eq(organizationUsers.authUserId, authUser.id),
+          eq(organizationUsers.organizationId, org.organization.id),
+        ),
+      );
+
+    expect(orgUserRecord).toBeTruthy();
+
+    // Verify no joinProfileRequests were created (domain-match uses direct join, not requests)
+    if (userRecord?.profileId) {
+      const joinRequests = await db
+        .select()
+        .from(joinProfileRequests)
+        .where(
+          eq(joinProfileRequests.requestProfileId, userRecord.profileId),
+        );
+
+      expect(joinRequests).toHaveLength(0);
+    }
   });
 });
