@@ -21,18 +21,22 @@ export type OrganizationSearchScreenProps = {
   onContinue: (selectedOrgs: Array<{ id: string; profileId: string }>) => void;
   onAddOrganization?: (searchTerm: string) => void;
   isSubmitting?: boolean;
+  initialOrganizations?: SearchOrganization[];
 };
 
 export const OrganizationSearchScreen = ({
   onContinue,
   onAddOrganization,
   isSubmitting,
+  initialOrganizations,
 }: OrganizationSearchScreenProps): ReactNode => {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 300);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedOrgs, setSelectedOrgs] = useState<SearchOrganization[]>([]);
+  const [selectedOrgs, setSelectedOrgs] = useState<SearchOrganization[]>(
+    () => initialOrganizations ?? [],
+  );
   const [showToS, setShowToS] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
