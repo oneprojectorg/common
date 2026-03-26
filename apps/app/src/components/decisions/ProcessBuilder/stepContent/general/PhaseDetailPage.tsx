@@ -273,9 +273,7 @@ function PhaseDetailForm({
     month: number;
     day: number;
   }) => {
-    return new Date(
-      Date.UTC(date.year, date.month - 1, date.day),
-    ).toISOString();
+    return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
   if (!phase) {
