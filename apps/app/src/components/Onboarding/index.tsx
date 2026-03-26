@@ -2,6 +2,7 @@
 
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
@@ -19,23 +20,45 @@ import { Portal } from '../Portal';
 import { DecisionInvitesFormSuspense } from './DecisionInvitesForm';
 import { DecisionInvitesSkeleton } from './DecisionInvitesSkeleton';
 import {
+  FundingInformationForm,
+  validator as FundingInformationFormValidator,
+} from './FundingInformationForm';
+import {
   MatchingOrganizationsFormSuspense,
   validator as MatchingOrganizationsFormValidator,
 } from './MatchingOrganizationsForm';
+import { OrganizationDetailsForm } from './OrganizationDetailsForm';
 import {
   PersonalDetailsForm,
   validator as PersonalDetailsFormValidator,
 } from './PersonalDetailsForm';
+import {
+  PrivacyPolicyForm,
+  validator as PrivacyPolicyFormValidator,
+} from './PrivacyPolicyForm';
+import { ToSForm, validator as ToSFormValidator } from './ToSForm';
+import { organizationFormValidator as OrganizationDetailsFormValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
+import { sendOnboardingAnalytics } from './utils';
 
 export type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
   z.infer<typeof MatchingOrganizationsFormValidator>;
+
+type OrgCreationFormValues = z.infer<typeof OrganizationDetailsFormValidator> &
+  z.infer<typeof FundingInformationFormValidator> &
+  z.infer<typeof ToSFormValidator> &
+  z.infer<typeof PrivacyPolicyFormValidator>;
 
 const ProgressInPortal = (props: ProgressComponentProps) => (
   <Portal id="top-slot">
     <StepperProgressIndicator {...props} />
   </Portal>
 );
+
+const processOrgInputs = (data: OrgCreationFormValues) => ({
+  ...data,
+  website: data.website ?? '',
+});
 
 export const OnboardingFlow = () => {
   const t = useTranslations();
@@ -44,11 +67,20 @@ export const OnboardingFlow = () => {
   const [hasHydrated, setHasHydrated] = useState(false);
   const [invitesComplete, setInvitesComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createOrgMode, setCreateOrgMode] = useState(false);
   void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
-  const { personalDetails } = useOnboardingFormStore();
+  const {
+    personalDetails,
+    organizationDetails,
+    fundingInformation,
+    tos,
+    privacyPolicy,
+    setOrganizationDetails,
+  } = useOnboardingFormStore();
   const trpcUtils = trpc.useUtils();
   const { data: userAccount } = trpc.account.getMyAccount.useQuery();
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
+  const createOrganization = trpc.organization.create.useMutation();
 
   // Handle hydration detection
   React.useEffect(() => {
@@ -144,17 +176,81 @@ export const OnboardingFlow = () => {
     [isOnline, userAccount, createJoinRequest, trpcUtils, router, t],
   );
 
+  // Handle "+ Add" org creation: pre-populate name and switch to org creation flow
+  const handleAddOrganization = useCallback(
+    (searchTerm: string) => {
+      setOrganizationDetails({ name: searchTerm });
+      setCreateOrgMode(true);
+    },
+    [setOrganizationDetails],
+  );
+
   // Wrap MatchingOrganizationsFormSuspense to pass search screen callbacks
   const MatchingOrganizationsStep = useMemo(() => {
     const Step = (props: StepProps) => (
       <MatchingOrganizationsFormSuspense
         {...props}
         onSearchContinue={handleSearchContinue}
+        onAddOrganization={handleAddOrganization}
         isSubmitting={isSubmitting}
       />
     );
     return Step;
-  }, [handleSearchContinue, isSubmitting]);
+  }, [handleSearchContinue, handleAddOrganization, isSubmitting]);
+
+  // Get step values for org creation flow
+  const getOrgCreationStepValues = useCallback(() => {
+    return [organizationDetails, fundingInformation, tos, privacyPolicy];
+  }, [organizationDetails, fundingInformation, tos, privacyPolicy]);
+
+  // Submit org creation
+  const submitOrganization = useCallback(
+    (values: Array<OrgCreationFormValues>) => {
+      if (!isOnline) {
+        toast.error({
+          title: t('No connection'),
+          message: t('Please check your internet connection and try again.'),
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      const combined = values.reduce(
+        (acc, val) => ({ ...acc, ...val }),
+        {} as OrgCreationFormValues,
+      );
+
+      createOrganization
+        .mutateAsync(processOrgInputs(combined))
+        .then(() => {
+          sendOnboardingAnalytics(combined);
+          trpcUtils.account.getMyAccount.invalidate();
+          trpcUtils.account.getMyAccount.reset();
+          trpcUtils.account.getMyAccount.refetch().then(() => {
+            router.push('/?new=1');
+          });
+        })
+        .catch((err) => {
+          console.error('ERROR', err);
+          setIsSubmitting(false);
+
+          const errorInfo = analyzeError(err);
+          if (errorInfo.isConnectionError) {
+            toast.error({
+              title: t('Connection issue'),
+              message: t('Please try submitting the form again.'),
+            });
+          } else {
+            toast.error({
+              title: t("That didn't work"),
+              message: errorInfo.message,
+            });
+          }
+        });
+    },
+    [createOrganization, isOnline, router, trpcUtils, t],
+  );
 
   if (!hasHydrated) {
     return <DecisionInvitesSkeleton />;
@@ -164,6 +260,33 @@ export const OnboardingFlow = () => {
     return (
       <DecisionInvitesFormSuspense
         onComplete={() => setInvitesComplete(true)}
+      />
+    );
+  }
+
+  if (isSubmitting) {
+    return <LoadingSpinner />;
+  }
+
+  if (createOrgMode) {
+    return (
+      <MultiStepForm
+        steps={[
+          OrganizationDetailsForm,
+          FundingInformationForm,
+          ToSForm,
+          PrivacyPolicyForm,
+        ]}
+        schemas={[
+          OrganizationDetailsFormValidator,
+          FundingInformationFormValidator,
+          ToSFormValidator,
+          PrivacyPolicyFormValidator,
+        ]}
+        onFinish={submitOrganization}
+        ProgressComponent={ProgressInPortal}
+        getStepValues={getOrgCreationStepValues}
+        hasHydrated={hasHydrated}
       />
     );
   }

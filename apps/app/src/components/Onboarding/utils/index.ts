@@ -1,8 +1,9 @@
 import posthog from 'posthog-js';
 
-import { FormValues } from '../';
-
-export const sendOnboardingAnalytics = (data: FormValues) => {
+export const sendOnboardingAnalytics = (data: {
+  isOfferingFunds?: boolean;
+  isReceivingFunds?: boolean;
+}) => {
   posthog.setPersonProperties({
     is_offering_funds: data.isOfferingFunds,
     is_seeking_funds: data.isReceivingFunds,

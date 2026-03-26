@@ -31,12 +31,14 @@ export const validator = z.object({});
 type MatchingOrganizationsFormProps = StepProps & {
   className?: string;
   onSearchContinue?: OrganizationSearchScreenProps['onContinue'];
+  onAddOrganization?: OrganizationSearchScreenProps['onAddOrganization'];
   isSubmitting?: boolean;
 };
 
 export const MatchingOrganizationsForm = ({
   className,
   onSearchContinue,
+  onAddOrganization,
   isSubmitting,
 }: MatchingOrganizationsFormProps): ReactNode => {
   const t = useTranslations();
@@ -123,6 +125,7 @@ export const MatchingOrganizationsForm = ({
       return (
         <OrganizationSearchScreen
           onContinue={onSearchContinue}
+          onAddOrganization={onAddOrganization}
           isSubmitting={isSubmitting}
         />
       );
