@@ -1,7 +1,6 @@
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
-import { Description } from '@op/ui/Field';
 import { Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
@@ -69,11 +68,7 @@ export const MatchingOrganizationsForm = ({
     }
   }, [matchingOrgs]);
 
-  const handleContinue = async ({
-    shouldContinue,
-  }: {
-    shouldContinue?: boolean;
-  } = {}) => {
+  const handleContinue = async () => {
     if (!selectedOrganizationId) {
       return;
     }
@@ -94,11 +89,7 @@ export const MatchingOrganizationsForm = ({
       );
 
       trpcUtil.account.getMyAccount.refetch().then(() => {
-        if (shouldContinue) {
-          router.push(`/start?step=2`);
-        } else {
-          router.push(`/?new=1`);
-        }
+        router.push(`/?new=1`);
       });
       // Redirect to the main app with new org flag
     } catch (error) {
@@ -114,10 +105,6 @@ export const MatchingOrganizationsForm = ({
       });
     }
   };
-
-  // const handleContinueWithNoSelection = () => {
-  // onNext({});
-  // };
 
   // No domain-matched orgs: show the organization search screen
   if (!matchingOrgs || matchingOrgs.length === 0) {
@@ -225,54 +212,22 @@ export const MatchingOrganizationsForm = ({
             </div>
           </div>
         </div>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-            <Button
-              className="w-full"
-              onPress={() => handleContinue()}
-              isDisabled={
-                !selectedOrganizationId ||
-                joinOrganization.isPending ||
-                !termsAccepted ||
-                !privacyAccepted
-              }
-            >
-              {joinOrganization.isPending || isLoading ? (
-                <LoadingSpinner />
-              ) : (
-                t('Get Started')
-              )}
-            </Button>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <Button
-              className="w-full"
-              onPress={() => handleContinue({ shouldContinue: true })}
-              isDisabled={
-                !selectedOrganizationId ||
-                joinOrganization.isPending ||
-                !termsAccepted ||
-                !privacyAccepted
-              }
-            >
-              {joinOrganization.isPending || isLoading ? (
-                <LoadingSpinner />
-              ) : (
-                t('Get Started + Add My Organization')
-              )}
-            </Button>
-            <Description className="text-center">
-              {t('Choose this if you also admin another organization')}
-            </Description>
-          </div>
-          <a
-            className="text-center text-teal hover:underline"
-            href="mailto:support@oneproject.org"
-            rel="noopener noreferrer"
-          >
-            {t('Whoops! This is not my organization.')}
-          </a>
-        </div>
+        <Button
+          className="w-full"
+          onPress={() => handleContinue()}
+          isDisabled={
+            !selectedOrganizationId ||
+            joinOrganization.isPending ||
+            !termsAccepted ||
+            !privacyAccepted
+          }
+        >
+          {joinOrganization.isPending || isLoading ? (
+            <LoadingSpinner />
+          ) : (
+            t('Get Started')
+          )}
+        </Button>
       </FormContainer>
     </div>
   );
