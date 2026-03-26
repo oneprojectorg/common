@@ -2,6 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ReactNode, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -78,7 +79,7 @@ export const ToSAcceptanceScreen = ({
               isDisabled={!canSubmit}
               onPress={onAccept}
             >
-              {t('Join Common')}
+              {isSubmitting ? <LoadingSpinner /> : t('Join Common')}
             </Button>
 
             <Button
