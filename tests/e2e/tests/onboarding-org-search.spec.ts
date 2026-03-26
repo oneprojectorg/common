@@ -1,4 +1,4 @@
-import { joinProfileRequests, users } from '@op/db/schema';
+import { joinProfileRequests, organizations, users } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { randomUUID } from 'node:crypto';
 
@@ -234,5 +234,90 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
       org2.organizationProfile.id,
     ].sort();
     expect(targetProfileIds).toEqual(expectedProfileIds);
+  });
+});
+
+test.describe('Onboarding - Domain-matched organization', () => {
+  let supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>;
+
+  test.beforeAll(() => {
+    supabaseAdmin = createSupabaseAdminClient();
+  });
+
+  test('user with domain-matched org sees MatchingOrganizationsForm and can join', async ({
+    page,
+  }) => {
+    const testId = randomUUID().slice(0, 6);
+    const emailDomain = `e2e-domain-match-${testId}.com`;
+
+    // Create an organization and set its domain to match the user's email
+    const org = await createOrganization({
+      testId,
+      supabaseAdmin,
+      users: { admin: 1, member: 0 },
+      organizationName: 'DomainMatchOrg',
+    });
+
+    // Set the organization's domain to match the user's email domain
+    await db
+      .update(organizations)
+      .set({ domain: emailDomain })
+      .where(eq(organizations.id, org.organization.id));
+
+    // Create a user whose email matches the org domain
+    const email = `e2e-domain-match-user-${testId}@${emailDomain}`;
+    await createUser({ supabaseAdmin, email });
+
+    await authenticateAsUser(page, {
+      email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
+
+    // Step 1: Fill personal details
+    await expect(
+      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+    ).toBeVisible({ timeout: 15000 });
+
+    await page.getByLabel('Full Name').fill('Domain Match User');
+    await page.getByLabel('Headline').fill('Test Engineer');
+    const emailField = page.getByLabel('Email');
+    await emailField.clear();
+    await emailField.fill(email);
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    // Step 2: Should see MatchingOrganizationsForm (not the search screen)
+    await expect(
+      page.getByRole('heading', { name: "We've found your organization" }),
+    ).toBeVisible({ timeout: 15000 });
+
+    // Verify the matched organization is displayed with its name
+    const orgName = `DomainMatchOrg-${testId}`;
+    await expect(page.getByText(orgName)).toBeVisible();
+
+    // Verify the "Get Started + Add My Organization" button is NOT present
+    await expect(
+      page.getByRole('button', { name: /Add My Organization/i }),
+    ).not.toBeVisible();
+
+    // Verify the "Find organizations you belong to" heading is NOT shown
+    await expect(
+      page.getByRole('heading', {
+        name: 'Find organizations you belong to',
+      }),
+    ).not.toBeVisible();
+
+    // Step 3: Accept ToS and Privacy Policy
+    const checkboxes = page.getByRole('checkbox');
+    await checkboxes.nth(0).click();
+    await checkboxes.nth(1).click();
+
+    // Step 4: Click "Get Started" to join the org
+    await page.getByRole('button', { name: 'Get Started' }).click();
+
+    // Step 5: Should redirect to /?new=1
+    await page.waitForURL(/new=1/, { timeout: 30000 });
+    expect(page.url()).toContain('new=1');
   });
 });
