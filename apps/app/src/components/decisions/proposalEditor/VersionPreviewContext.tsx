@@ -22,6 +22,56 @@ interface VersionPreviewState {
 const VersionPreviewContext = createContext<VersionPreviewState | null>(null);
 
 /**
+ * Extracts preview content for a fragment and normalizes it to a full TipTap
+ * document so the readonly viewer can render snapshot payloads consistently.
+ */
+function getNormalizedPreviewContent(
+  payload: string,
+  fragmentName: string,
+): JSONContent | null {
+  const content = getPreviewContentFromVersionPayload(payload, fragmentName);
+
+  if (!content || typeof content !== 'object') {
+    return null;
+  }
+
+  if (Array.isArray(content)) {
+    const normalized: JSONContent = {
+      type: 'doc',
+      content: content as JSONContent[],
+    };
+
+    return normalized;
+  }
+
+  const candidate = content as JSONContent;
+
+  if (candidate.type === 'doc') {
+    return candidate;
+  }
+
+  if (candidate.type) {
+    const normalized: JSONContent = {
+      type: 'doc',
+      content: [candidate],
+    };
+
+    return normalized;
+  }
+
+  if (Array.isArray(candidate.content)) {
+    const normalized: JSONContent = {
+      type: 'doc',
+      content: candidate.content,
+    };
+
+    return normalized;
+  }
+
+  return null;
+}
+
+/**
  * Resolves preview content for a selected TipTap document version.
  * The selected version comes from the URL state, so deep links can open a
  * specific version directly when the versions aside is visible.
@@ -93,15 +143,11 @@ export function VersionPreviewProvider({
 
         for (const name of fragmentNames) {
           try {
-            contents[name] = getPreviewContentFromVersionPayload(
-              data.payload,
-              name,
-            ) as JSONContent | null;
+            contents[name] = getNormalizedPreviewContent(data.payload, name);
           } catch {
             contents[name] = null;
           }
         }
-
         setFragmentContents(contents);
       } catch {
         // Ignore unrelated stateless provider events.
