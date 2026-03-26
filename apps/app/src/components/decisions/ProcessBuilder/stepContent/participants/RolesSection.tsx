@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
-import { useMediaQuery } from '@op/hooks';
+import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -455,51 +455,48 @@ function usePermissionToggle(roleId: string, profileId: string) {
     }
   }, [serverPermissions]);
 
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localRef = useRef(localPermissions);
   localRef.current = localPermissions;
   const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
 
-  const flushRef = useRef<() => void>(undefined);
-  flushRef.current = () => {
-    const toSend = localRef.current;
-    if (!toSend) {
-      return;
-    }
-    updatePermissions.mutate(
-      { roleId, decisionPermissions: toSend },
-      {
-        onSuccess: () => {
-          // Only clear pending flag if no new debounce is queued
-          if (!debounceTimer.current) {
-            hasPendingEdits.current = false;
-          }
-          toast.success({ message: t('Role updated successfully') });
-          utils.profile.getDecisionRole.invalidate({ roleId, profileId });
+  const flush = useDebouncedCallback(
+    () => {
+      const toSend = localRef.current;
+      if (!toSend) {
+        return;
+      }
+      updatePermissions.mutate(
+        { roleId, decisionPermissions: toSend },
+        {
+          onSuccess: () => {
+            if (!flush.isPending()) {
+              hasPendingEdits.current = false;
+            }
+            toast.success({ message: t('Role updated successfully') });
+            utils.profile.getDecisionRole.invalidate({ roleId, profileId });
+          },
+          onError: () => {
+            if (!flush.isPending()) {
+              hasPendingEdits.current = false;
+            }
+            toast.error({ message: t('Failed to update role') });
+            utils.profile.getDecisionRole.invalidate({ roleId, profileId });
+          },
         },
-        onError: () => {
-          if (!debounceTimer.current) {
-            hasPendingEdits.current = false;
-          }
-          toast.error({ message: t('Failed to update role') });
-          utils.profile.getDecisionRole.invalidate({ roleId, profileId });
-        },
-      },
-    );
-  };
+      );
+    },
+    DEBOUNCE_MS,
+    { leading: false, trailing: true },
+  );
 
   // Flush pending changes on unmount so edits aren't lost on navigation
   useEffect(() => {
     return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-        debounceTimer.current = null;
-        flushRef.current?.();
-      }
+      flush.flush();
     };
-  }, []);
+  }, [flush]);
 
-  const togglePermission = useCallback((key: DecisionRoleKey) => {
+  const togglePermission = (key: DecisionRoleKey) => {
     setLocalPermissions((prev) => {
       if (!prev) {
         return prev;
@@ -507,15 +504,8 @@ function usePermissionToggle(roleId: string, profileId: string) {
       return { ...prev, [key]: !prev[key] };
     });
     hasPendingEdits.current = true;
-
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-    debounceTimer.current = setTimeout(() => {
-      debounceTimer.current = null;
-      flushRef.current?.();
-    }, DEBOUNCE_MS);
-  }, []);
+    flush();
+  };
 
   return { optimisticPermissions: localPermissions, togglePermission };
 }
