@@ -27,6 +27,7 @@ export async function getProposalDocumentsContent(
     id: string;
     proposalData: unknown;
     proposalTemplate?: ProposalTemplateSchema | null;
+    collaborationDocVersionId?: number;
   }>,
 ): Promise<Map<string, ProposalDocumentContent>> {
   const documentContentMap = new Map<string, ProposalDocumentContent>();
@@ -35,6 +36,7 @@ export async function getProposalDocumentsContent(
     id: string;
     collaborationDocId: string;
     proposalTemplate?: ProposalTemplateSchema | null;
+    collaborationDocVersionId?: number;
   }> = [];
 
   for (const proposal of proposals) {
@@ -45,6 +47,7 @@ export async function getProposalDocumentsContent(
         id: proposal.id,
         collaborationDocId: parsed.collaborationDocId,
         proposalTemplate: proposal.proposalTemplate,
+        collaborationDocVersionId: proposal.collaborationDocVersionId,
       });
     } else if (parsed.description) {
       documentContentMap.set(proposal.id, {
@@ -60,7 +63,12 @@ export async function getProposalDocumentsContent(
 
     const results = await pMap(
       proposalsWithCollabDoc,
-      async ({ id, collaborationDocId, proposalTemplate }) => {
+      async ({
+        id,
+        collaborationDocId,
+        proposalTemplate,
+        collaborationDocVersionId,
+      }) => {
         try {
           const fragmentNames = proposalTemplate
             ? getProposalFragmentNames(proposalTemplate)
@@ -69,6 +77,9 @@ export async function getProposalDocumentsContent(
           const fragments = await client.getDocumentFragments(
             collaborationDocId,
             fragmentNames,
+            collaborationDocVersionId != null
+              ? { version: collaborationDocVersionId }
+              : undefined,
           );
 
           return { id, fragments };

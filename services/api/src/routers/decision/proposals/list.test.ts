@@ -1,4 +1,4 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
 import { db } from '@op/db/client';
 import {
   ProposalStatus,
@@ -1481,5 +1481,123 @@ describe.concurrent('listProposals', () => {
     expect(resultBIds).toContain(submittedA.id);
     expect(resultBIds).not.toContain(draftA.id);
     expect(resultB.proposals).toHaveLength(2);
+  });
+
+  it('should serve versioned system field fragments for submitted proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'budget', 'category', 'summary'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          budget: {
+            type: 'object',
+            title: 'Budget',
+            'x-format': 'money',
+            properties: {
+              amount: { type: 'number' },
+              currency: { type: 'string', default: 'USD' },
+            },
+          },
+          category: {
+            type: ['string', 'null'],
+            title: 'Category',
+            'x-format': 'dropdown',
+          },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0]!;
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Stale Title' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+
+    // Latest (live) fragments — should NOT be served for submitted proposals
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Latest Title'),
+      budget: textFragment('{"amount":999,"currency":"USD"}'),
+      category: textFragment('Latest Category'),
+      summary: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Latest summary' }],
+          },
+        ],
+      },
+    });
+
+    // Pinned version fragments — should be served for submitted proposals
+    mockCollab.setVersionedDocFragmentResponses(collaborationDocId, 2, {
+      title: textFragment('Pinned Title'),
+      budget: textFragment('{"amount":500,"currency":"EUR"}'),
+      category: textFragment('Pinned Category'),
+      summary: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Pinned summary' }],
+          },
+        ],
+      },
+    });
+
+    // Mark proposal as submitted with pinned version
+    await db
+      .update(proposals)
+      .set({
+        status: ProposalStatus.SUBMITTED,
+        proposalData: {
+          ...(proposal.proposalData as Record<string, unknown>),
+          collaborationDocVersionId: 2,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const listedProposal = result.proposals.find((p) => p.id === proposal.id);
+    expect(listedProposal).toBeDefined();
+
+    const fragments = (
+      listedProposal!.documentContent as {
+        type: 'json';
+        fragments: Record<string, unknown>;
+      }
+    ).fragments;
+    expect(fragments.title).toEqual(textFragment('Pinned Title'));
+    expect(fragments.budget).toEqual(
+      textFragment('{"amount":500,"currency":"EUR"}'),
+    );
+    expect(fragments.category).toEqual(textFragment('Pinned Category'));
   });
 });

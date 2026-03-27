@@ -7,7 +7,7 @@ import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
-import { parseProposalData, parseTranslatedMeta } from '@op/common/client';
+import { parseTranslatedMeta } from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
@@ -31,6 +31,7 @@ import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
+import { resolveProposalSystemFields } from './proposalContentUtils';
 
 type Proposal = RouterOutput['decision']['getProposal'];
 
@@ -143,11 +144,15 @@ export function ProposalView({
 
   const targetLanguageName = getLanguageName(locale);
 
-  // Parse proposal data using shared utility
-  const { budget, category: originalCategory } = parseProposalData(
-    currentProposal.proposalData,
-  );
-  const originalTitle = currentProposal.profile.name;
+  const proposalTemplate =
+    (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
+
+  // Resolve system fields from pinned TipTap version (proposalData may be stale)
+  const {
+    title: originalTitle,
+    budget,
+    category: originalCategory,
+  } = resolveProposalSystemFields(currentProposal);
 
   // Use translated category when available, otherwise original
   const category =
@@ -155,8 +160,6 @@ export function ProposalView({
 
   const resolvedHtmlContent =
     translatedHtmlContent?.translated ?? currentProposal.htmlContent;
-  const proposalTemplate =
-    (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
 
   const translatedMeta = useMemo(
     () =>

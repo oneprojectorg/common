@@ -19,7 +19,8 @@ import { expect, test } from '../fixtures/index.js';
  * The collab mock (@op/collab/testing) pre-seeds this doc ID with fixture
  * content (bold/italic text, list items, links, etc.). Any other ID 404s.
  */
-const MOCK_DOC_ID = 'test-proposal-doc';
+const MOCK_DOC_ID = 'test-proposal-listing-doc';
+const ALT_MOCK_DOC_ID = 'test-proposal-listing-doc-alt';
 
 /**
  * Helper to create a decision process, instance, profile, and admin access
@@ -206,7 +207,7 @@ test.describe('Proposal Listing', () => {
       processName: 'New Schema Listing',
     });
 
-    // 2. Create two proposals with new-format budgets, categories, and collaborationDocId
+    // 2. Create two proposals with new-format budgets, categories, and summary collab content
     await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.organizationProfile.id,
@@ -227,7 +228,7 @@ test.describe('Proposal Listing', () => {
       email: org.adminUser.email,
       proposalData: {
         title: 'Youth Mentorship Program',
-        collaborationDocId: MOCK_DOC_ID,
+        collaborationDocId: ALT_MOCK_DOC_ID,
         budget: { amount: 12500, currency: 'EUR' },
         category: 'Education',
       },
@@ -245,7 +246,9 @@ test.describe('Proposal Listing', () => {
 
     // Both proposal titles appear as links in the listing
     await expect(
-      authenticatedPage.getByRole('link', { name: 'Community Garden Project' }),
+      authenticatedPage.getByRole('link', {
+        name: 'Community Garden Project',
+      }),
     ).toBeVisible({ timeout: 15_000 });
 
     await expect(
@@ -262,14 +265,11 @@ test.describe('Proposal Listing', () => {
     await expect(authenticatedPage.getByText('Environment')).toBeVisible();
     await expect(authenticatedPage.getByText('Education')).toBeVisible();
 
-    // Card preview renders text from the collab mock fixture.
-    // The mock returns TipTap JSON with "Bold text and italic text..." content
-    // AND an iframely embed node — generateText() must handle both gracefully.
+    // Card preview renders text from the collab summary fragment.
     await expect(
       authenticatedPage.getByText('Bold text').first(),
     ).toBeVisible();
 
-    // Iframely node in the fixture must not cause "Content could not be loaded"
     await expect(
       authenticatedPage.getByText('Content could not be loaded'),
     ).not.toBeVisible();

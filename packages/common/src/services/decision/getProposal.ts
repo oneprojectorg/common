@@ -126,6 +126,11 @@ export const getProposal = async ({
     proposal.processInstance.instanceData as Record<string, unknown> | null,
     proposal.processInstance.processId,
   );
+  const parsedProposalData = parseProposalData(proposal.proposalData);
+  const collaborationDocVersionId =
+    proposal.status === ProposalStatus.DRAFT
+      ? undefined
+      : parsedProposalData.collaborationDocVersionId;
 
   // Run engagement counts and document fetch in parallel
   const [engagementCounts, documentContentMap] = await Promise.all([
@@ -179,6 +184,7 @@ export const getProposal = async ({
         id: proposal.id,
         proposalData: proposal.proposalData,
         proposalTemplate,
+        collaborationDocVersionId,
       },
     ]),
   ]);
@@ -236,7 +242,7 @@ export const getProposal = async ({
 
   return {
     ...proposal,
-    proposalData: parseProposalData(proposal.proposalData),
+    proposalData: parsedProposalData,
     proposalTemplate,
     ...engagementCounts,
     documentContent,

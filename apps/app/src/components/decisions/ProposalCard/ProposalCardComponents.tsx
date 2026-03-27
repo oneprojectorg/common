@@ -7,10 +7,7 @@ import {
   Visibility,
   type proposalEncoder,
 } from '@op/api/encoders';
-import {
-  type ProposalTemplateSchema,
-  parseProposalData,
-} from '@op/common/client';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
@@ -27,7 +24,10 @@ import { Link } from '@/lib/i18n/routing';
 import { Bullet } from '../../Bullet';
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { useCardTranslation } from '../ProposalTranslationContext';
-import { getProposalContentPreview } from '../proposalContentUtils';
+import {
+  getProposalContentPreview,
+  resolveProposalSystemFields,
+} from '../proposalContentUtils';
 
 export type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -116,9 +116,11 @@ export function ProposalCardTitle({
 }) {
   const t = useTranslations();
   const cardTranslation = useCardTranslation(proposal.profileId);
-  const title = proposal.profile.name;
+  const { title } = resolveProposalSystemFields(proposal);
 
-  const titleText = cardTranslation?.title ?? (title || t('Untitled Proposal'));
+  const titleText =
+    cardTranslation?.title ??
+    (title || proposal.profile.name || t('Untitled Proposal'));
   const titleClasses =
     'max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black';
 
@@ -151,7 +153,7 @@ export function ProposalCardBudget({
   allocated?: string | number | null;
   className?: string;
 }) {
-  const { budget } = parseProposalData(proposal.proposalData);
+  const { budget } = resolveProposalSystemFields(proposal);
 
   // Use allocated amount if provided, otherwise fall back to budget
   if (!isNullish(allocated)) {
@@ -261,7 +263,7 @@ export function ProposalCardCategory({
   className?: string;
 }) {
   const cardTranslation = useCardTranslation(proposal.profileId);
-  const { category } = parseProposalData(proposal.proposalData);
+  const { category } = resolveProposalSystemFields(proposal);
   const displayCategory = cardTranslation?.category ?? category;
 
   if (!displayCategory || !proposal.submittedBy) {

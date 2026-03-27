@@ -129,6 +129,62 @@ const E2E_FIXTURE_CONTENT: TipTapDocument = {
   ],
 };
 
+const E2E_FIXTURE_CONTENT_NO_EMBED: TipTapDocument = {
+  type: 'doc',
+  content: E2E_FIXTURE_CONTENT.content?.filter(
+    (node) =>
+      !(
+        typeof node === 'object' &&
+        node !== null &&
+        'type' in node &&
+        (node as { type?: unknown }).type === 'iframely'
+      ),
+  ),
+};
+
+const E2E_VERSIONED_FIXTURE_LATEST: TipTapDocument = {
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Latest draft content' }],
+    },
+  ],
+};
+
+const E2E_VERSIONED_FIXTURE_V2: TipTapDocument = {
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Version 2 checkpoint content' }],
+    },
+  ],
+};
+
+const E2E_LISTING_FIXTURE_FRAGMENTS: TipTapFragmentResponse = {
+  title: textFragment('Community Garden Project'),
+  budget: textFragment('{"amount":8000,"currency":"USD"}'),
+  category: textFragment('Environment'),
+  summary: E2E_FIXTURE_CONTENT_NO_EMBED,
+};
+
+const E2E_LISTING_FIXTURE_FRAGMENTS_ALT: TipTapFragmentResponse = {
+  title: textFragment('Youth Mentorship Program'),
+  budget: textFragment('{"amount":12500,"currency":"EUR"}'),
+  category: textFragment('Education'),
+  summary: E2E_FIXTURE_CONTENT_NO_EMBED,
+};
+
+const E2E_VIEW_FIXTURE_FRAGMENTS: TipTapFragmentResponse = {
+  title: textFragment('Community Solar Initiative'),
+  budget: textFragment('{"amount":10000,"currency":"EUR"}'),
+  category: textFragment('Renewable Energy'),
+  priority: textFragment('high'),
+  region: textFragment('north'),
+  summary: E2E_FIXTURE_CONTENT,
+};
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -138,6 +194,18 @@ const docResponses = new Map<string, () => Promise<unknown>>();
 
 // Per-doc, per-fragment JSON responses (matches real TipTap Cloud shape).
 const docFragmentJsonResponses = new Map<string, TipTapFragmentResponse>();
+
+// Per-doc, per-version whole-document responses.
+const docVersionResponses = new Map<
+  number,
+  Map<string, () => Promise<unknown>>
+>();
+
+// Per-doc, per-version, per-fragment JSON responses.
+const docVersionFragmentJsonResponses = new Map<
+  number,
+  Map<string, TipTapFragmentResponse>
+>();
 
 // Per-doc, per-fragment text responses for format='text' support.
 const docFragmentTextResponses = new Map<string, Record<string, string>>();
@@ -149,6 +217,30 @@ const docVersions = new Map<string, TipTapVersion[]>();
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
   Promise.resolve(E2E_FIXTURE_CONTENT),
+);
+docFragmentJsonResponses.set(
+  'test-proposal-listing-doc',
+  E2E_LISTING_FIXTURE_FRAGMENTS,
+);
+docFragmentJsonResponses.set(
+  'test-proposal-listing-doc-alt',
+  E2E_LISTING_FIXTURE_FRAGMENTS_ALT,
+);
+docFragmentJsonResponses.set(
+  'test-proposal-view-doc',
+  E2E_VIEW_FIXTURE_FRAGMENTS,
+);
+docResponses.set('test-proposal-doc-versioned', () =>
+  Promise.resolve(E2E_VERSIONED_FIXTURE_LATEST),
+);
+docVersionResponses.set(
+  2,
+  new Map([
+    [
+      'test-proposal-doc-versioned',
+      () => Promise.resolve(E2E_VERSIONED_FIXTURE_V2),
+    ],
+  ]),
 );
 
 // ---------------------------------------------------------------------------
@@ -166,6 +258,13 @@ export const mockCollab = {
     docResponses.set(docId, () => Promise.resolve(data));
   },
 
+  /** Set a whole-document mock response for a specific document version. */
+  setVersionedDocResponse: (docId: string, version: number, data: unknown) => {
+    const docsForVersion = docVersionResponses.get(version) ?? new Map();
+    docsForVersion.set(docId, () => Promise.resolve(data));
+    docVersionResponses.set(version, docsForVersion);
+  },
+
   /**
    * Set per-fragment JSON responses for a document.
    * This is the most realistic seeding method — it matches the shape returned
@@ -178,6 +277,18 @@ export const mockCollab = {
     fragments: TipTapFragmentResponse,
   ) => {
     docFragmentJsonResponses.set(docId, fragments);
+  },
+
+  /** Set per-fragment JSON responses for a specific document version. */
+  setVersionedDocFragmentResponses: (
+    docId: string,
+    version: number,
+    fragments: TipTapFragmentResponse,
+  ) => {
+    const docsForVersion =
+      docVersionFragmentJsonResponses.get(version) ?? new Map();
+    docsForVersion.set(docId, fragments);
+    docVersionFragmentJsonResponses.set(version, docsForVersion);
   },
 
   /**
@@ -204,7 +315,14 @@ export const mockCollab = {
 // ---------------------------------------------------------------------------
 
 /** Resolve a document request: seeded response or 404. */
-function resolveDoc(docName: string): Promise<unknown> {
+function resolveDoc(docName: string, version?: number): Promise<unknown> {
+  if (version !== undefined) {
+    const handler = docVersionResponses.get(version)?.get(docName);
+    if (handler) {
+      return handler();
+    }
+  }
+
   const handler = docResponses.get(docName);
   if (handler) {
     return handler();
@@ -224,7 +342,7 @@ export function createTipTapClient(_config?: unknown) {
     getDocumentFragments: async <F extends 'json' | 'text' = 'json'>(
       docName: string,
       fragments: string[],
-      format?: F,
+      options?: { format?: F; version?: number },
     ): Promise<
       F extends 'text' ? Record<string, string> : TipTapFragmentResponse
     > => {
@@ -233,14 +351,26 @@ export function createTipTapClient(_config?: unknown) {
         : TipTapFragmentResponse;
 
       // --- format='text' path ---
-      if ((format ?? 'json') === 'text') {
+      if ((options?.format ?? 'json') === 'text') {
         const seeded = docFragmentTextResponses.get(docName) ?? {};
         return Object.fromEntries(
           fragments.map((f) => [f, seeded[f] ?? '']),
         ) as R;
       }
 
+      const version = options?.version;
+
       // --- format='json' path ---
+
+      const perVersionFragment = version
+        ? docVersionFragmentJsonResponses.get(version)?.get(docName)
+        : undefined;
+      if (perVersionFragment) {
+        const emptyDoc: TipTapDocument = { type: 'doc', content: [] };
+        return Object.fromEntries(
+          fragments.map((f) => [f, perVersionFragment[f] ?? emptyDoc]),
+        ) as R;
+      }
 
       // 1. Per-fragment JSON responses (preferred — most realistic)
       const perFragment = docFragmentJsonResponses.get(docName);
@@ -252,7 +382,7 @@ export function createTipTapClient(_config?: unknown) {
       }
 
       // 2. Whole-document fallback — every fragment gets the same doc
-      const doc = await resolveDoc(docName);
+      const doc = await resolveDoc(docName, version);
       return Object.fromEntries(
         fragments.map((fragment) => [fragment, doc]),
       ) as R;

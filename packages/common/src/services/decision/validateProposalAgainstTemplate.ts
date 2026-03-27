@@ -36,7 +36,7 @@ export async function validateProposalAgainstTemplate(
     const fragmentTexts = await client.getDocumentFragments(
       parsed.collaborationDocId,
       fragmentNames,
-      'text',
+      { format: 'text' },
     );
     const validationData = assembleProposalData(
       proposalTemplate,
