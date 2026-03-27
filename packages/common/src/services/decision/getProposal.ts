@@ -14,7 +14,6 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
-import { type JSONContent, generateText } from '@tiptap/core';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -25,18 +24,12 @@ import {
   type ProposalDocumentContent,
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
-import { SYSTEM_FIELD_KEYS } from './getProposalTemplateFieldOrder';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
 } from './permissions';
-import {
-  type ProposalData,
-  normalizeBudget,
-  parseProposalData,
-} from './proposalDataSchema';
+import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { serverExtensions } from './tiptapExtensions';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -240,44 +233,6 @@ export const getProposal = async ({
   let htmlContent: Record<string, string> | undefined;
   if (documentContent?.type === 'json') {
     htmlContent = generateProposalHtml(documentContent.fragments);
-
-    // Override proposalData system fields with values from the pinned version.
-    // proposalData in the DB reflects creation-time values; the fragments
-    // reflect the version that was actually submitted.
-    const { fragments } = documentContent;
-
-    for (const key of SYSTEM_FIELD_KEYS) {
-      if (!(key in fragments)) {
-        // Fragment not in template — keep DB value
-        continue;
-      }
-      const content = fragments[key]?.content;
-      if (!content?.length) {
-        // Fragment exists but is empty — clear stale DB value so we don't
-        // pass through incompatible types (e.g. array for multi-category).
-        parsedProposalData[key] = undefined;
-        continue;
-      }
-      const text = generateText(
-        { type: 'doc', content: content as JSONContent[] },
-        serverExtensions,
-      ).trim();
-      if (!text) {
-        parsedProposalData[key] = undefined;
-        continue;
-      }
-
-      if (key === 'budget') {
-        try {
-          const parsed = normalizeBudget(JSON.parse(text));
-          parsedProposalData.budget = parsed;
-        } catch {
-          parsedProposalData.budget = undefined;
-        }
-      } else {
-        parsedProposalData[key] = text;
-      }
-    }
   } else if (documentContent?.type === 'html') {
     // Legacy HTML from proposalData.description — trusted content from our DB
     htmlContent = {

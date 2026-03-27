@@ -7,9 +7,16 @@ import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
-import { parseProposalData, parseTranslatedMeta } from '@op/common/client';
+import {
+  assembleProposalData,
+  SYSTEM_FIELD_KEYS,
+  parseProposalData,
+  parseTranslatedMeta,
+  serverExtensions,
+} from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
+import { type JSONContent, generateText } from '@tiptap/core';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
@@ -143,14 +150,51 @@ export function ProposalView({
 
   const targetLanguageName = getLanguageName(locale);
 
-  // Parse proposal data using shared utility.
-  // System fields (title, budget, category) are resolved from the pinned
-  // TipTap version on the backend, so proposalData values are authoritative.
-  const {
-    title: originalTitle,
-    budget,
-    category: originalCategory,
-  } = parseProposalData(currentProposal.proposalData);
+  const proposalTemplate =
+    (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
+
+  // Resolve system fields (title, budget, category) from the pinned TipTap
+  // version via documentContent. proposalData in the DB may be stale.
+  const resolvedSystemFields = useMemo(() => {
+    if (
+      currentProposal.documentContent?.type !== 'json' ||
+      !proposalTemplate
+    ) {
+      return null;
+    }
+    const { fragments } = currentProposal.documentContent;
+    const fragmentTexts: Record<string, string> = {};
+    for (const key of SYSTEM_FIELD_KEYS) {
+      const content = fragments[key]?.content;
+      if (!content?.length) {
+        continue;
+      }
+      try {
+        const text = generateText(
+          { type: 'doc', content: content as JSONContent[] },
+          serverExtensions,
+        ).trim();
+        if (text) {
+          fragmentTexts[key] = text;
+        }
+      } catch {
+        // skip malformed fragments
+      }
+    }
+    return assembleProposalData(proposalTemplate, fragmentTexts);
+  }, [currentProposal.documentContent, proposalTemplate]);
+
+  // Fall back to proposalData for legacy proposals without documentContent
+  const { budget: fallbackBudget, category: fallbackCategory } =
+    parseProposalData(currentProposal.proposalData);
+
+  const originalTitle =
+    (resolvedSystemFields?.title as string) ||
+    currentProposal.profile.name;
+  const budget = (resolvedSystemFields?.budget as typeof fallbackBudget) ??
+    fallbackBudget;
+  const originalCategory =
+    (resolvedSystemFields?.category as string) || fallbackCategory;
 
   // Use translated category when available, otherwise original
   const category =
@@ -158,8 +202,6 @@ export function ProposalView({
 
   const resolvedHtmlContent =
     translatedHtmlContent?.translated ?? currentProposal.htmlContent;
-  const proposalTemplate =
-    (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
 
   const translatedMeta = useMemo(
     () =>
