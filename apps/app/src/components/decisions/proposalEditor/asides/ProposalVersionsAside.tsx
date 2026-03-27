@@ -88,40 +88,27 @@ export function ProposalVersionsAside({
         onClose={onClose}
         bodyClassName="px-4 pt-4"
       >
-        <Button
-          unstyled
-          onPress={() => onSelectVersion(null)}
-          className={cn(
-            'flex w-full flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none',
-            versionId === null
-              ? 'bg-primary-tealWhite'
-              : 'hover:bg-neutral-offWhite',
-          )}
-        >
-          <p className="text-base text-neutral-black">{t('Current version')}</p>
-          <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
-        </Button>
+        <VersionItem
+          label={t('Current version')}
+          sublabel={t('Latest')}
+          isSelected={versionId === null}
+          isPending={isPending}
+          onSelect={() => onSelectVersion(null)}
+        />
 
-        <div>
-          {versions.map((version) => {
-            const createdAt = new Date(version.date).toISOString();
-            const isRecent =
-              Date.now() - version.date < RELATIVE_TIME_THRESHOLD_MS;
-
-            return (
-              <VersionItem
-                key={version.version}
-                createdAt={createdAt}
-                isRecent={isRecent}
-                locale={locale}
-                isSelected={versionId === version.version}
-                isPending={isPending}
-                onRestore={() => setIsRestoreModalOpen(true)}
-                onSelect={() => onSelectVersion(version.version)}
-              />
-            );
-          })}
-        </div>
+        <>
+          {versions.map((version) => (
+            <SavedVersionItem
+              key={version.version}
+              date={version.date}
+              locale={locale}
+              isSelected={versionId === version.version}
+              isPending={isPending}
+              onRestore={() => setIsRestoreModalOpen(true)}
+              onSelect={() => onSelectVersion(version.version)}
+            />
+          ))}
+        </>
       </ProposalEditorAside>
 
       {selectedVersion && (
@@ -138,34 +125,27 @@ export function ProposalVersionsAside({
 }
 
 function VersionItem({
-  createdAt,
-  isRecent,
-  locale,
+  label,
+  sublabel,
   isSelected,
   isPending,
   onRestore,
   onSelect,
 }: {
-  createdAt: string;
-  isRecent: boolean;
-  locale: string;
+  label: string;
+  sublabel: string;
   isSelected: boolean;
   isPending: boolean;
-  onRestore: () => void;
+  onRestore?: () => void;
   onSelect: () => void;
 }) {
   const t = useTranslations();
-  const relativeTime = useRelativeTime(createdAt, { style: 'long' });
-
-  const label = isRecent
-    ? relativeTime
-    : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
 
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-2 rounded p-2',
-        isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite',
+        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary-tealWhite',
+        isSelected && 'bg-primary-tealWhite',
       )}
     >
       <Button
@@ -175,17 +155,49 @@ function VersionItem({
         className="flex w-full flex-col items-start text-left shadow-none outline-hidden focus-visible:outline-none"
       >
         <p className="text-base text-neutral-black">{label}</p>
-        <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
+        <p className="text-sm text-neutral-charcoal">{sublabel}</p>
       </Button>
-      {isSelected && (
-        <Button
-          size="small"
-          onPress={onRestore}
-          isDisabled={isPending}
-        >
+      {isSelected && onRestore && (
+        <Button size="small" onPress={onRestore} isDisabled={isPending}>
           {t('Restore this version')}
         </Button>
       )}
     </div>
+  );
+}
+
+function SavedVersionItem({
+  date,
+  locale,
+  isSelected,
+  isPending,
+  onRestore,
+  onSelect,
+}: {
+  date: number;
+  locale: string;
+  isSelected: boolean;
+  isPending: boolean;
+  onRestore: () => void;
+  onSelect: () => void;
+}) {
+  const t = useTranslations();
+  const createdAt = new Date(date).toISOString();
+  const relativeTime = useRelativeTime(createdAt, { style: 'long' });
+  const isRecent = Date.now() - date < RELATIVE_TIME_THRESHOLD_MS;
+
+  const label = isRecent
+    ? relativeTime
+    : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
+
+  return (
+    <VersionItem
+      label={label}
+      sublabel={t('Auto-saved')}
+      isSelected={isSelected}
+      isPending={isPending}
+      onRestore={onRestore}
+      onSelect={onSelect}
+    />
   );
 }
