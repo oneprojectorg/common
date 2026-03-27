@@ -31,12 +31,29 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
     const email = `e2e-org-search-skip-${randomUUID().slice(0, 6)}@no-match-domain-test.example.com`;
     const authUser = await createUser({ supabaseAdmin, email });
 
+    // Clear any worker-level cookies before authenticating as new user
+    await page.context().clearCookies();
+
     await authenticateAsUser(page, {
       email,
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
+    // Capture console errors for debugging
+    const consoleErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
     await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
+
+    // Wait a moment for any errors to surface
+    await page.waitForTimeout(3000);
+    if (consoleErrors.length > 0) {
+      console.log('Console errors:', JSON.stringify(consoleErrors, null, 2));
+    }
 
     // Step 1: Should see the personal details form first
     await expect(

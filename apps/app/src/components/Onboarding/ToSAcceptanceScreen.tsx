@@ -2,13 +2,11 @@
 
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
+import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ReactNode, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
-
-import { FormContainer } from '../form/FormContainer';
-import { FormHeader } from '../form/FormHeader';
 
 export type ToSAcceptanceScreenProps = {
   onAccept: () => void;
@@ -28,15 +26,19 @@ export const ToSAcceptanceScreen = ({
   const canSubmit = termsAccepted && privacyAccepted && !isSubmitting;
 
   return (
-    <div className="flex w-full max-w-lg flex-col items-center">
-      <FormContainer>
-        <FormHeader text={t('One last step')}>
-          {t(
-            'Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.',
-          )}
-        </FormHeader>
+    <div className="flex h-[calc(100dvh-80px)] w-full items-center justify-center">
+      <div className="flex w-full max-w-[472px] flex-col items-center gap-8 px-4 sm:px-0">
+        {/* Header */}
+        <div className="flex flex-col gap-2 text-center">
+          <Header1 className="text-neutral-black">{t('One last step')}</Header1>
+          <p className="text-sm leading-normal text-neutral-gray4">
+            {t(
+              'Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.',
+            )}
+          </p>
+        </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex w-full flex-col gap-6">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-1">
               <Checkbox
@@ -94,7 +96,7 @@ export const ToSAcceptanceScreen = ({
             </Button>
           </div>
         </div>
-      </FormContainer>
+      </div>
     </div>
   );
 };
