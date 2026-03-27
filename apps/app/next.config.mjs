@@ -54,12 +54,6 @@ const config = {
     authInterrupts: true,
   },
   turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
     resolveAlias: {
       // Disable the 'tls' module on the client side
       tls: { browser: '' },

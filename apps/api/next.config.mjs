@@ -28,12 +28,6 @@ dotenv.config({
 const config = {
   serverExternalPackages: ['sharp', 'onnxruntime-node'],
   turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
     resolveAlias: {
       // In e2e mode, swap external services for in-process mocks so the API
       // server never makes network calls to TipTap Cloud or PostHog.
