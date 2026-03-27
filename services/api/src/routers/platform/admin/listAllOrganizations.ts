@@ -13,12 +13,24 @@ import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
 
+const memberRoleEncoder = z.object({
+  accessRole: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
+});
+
+const memberEncoder = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  email: z.string(),
+  roles: z.array(memberRoleEncoder),
+});
+
 const adminOrgEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
-    orgType: true,
     domain: true,
-    networkOrganization: true,
     createdAt: true,
   })
   .extend({
@@ -29,6 +41,7 @@ const adminOrgEncoder = createSelectSchema(organizations)
         slug: z.string(),
       })
       .nullish(),
+    members: z.array(memberEncoder),
   });
 
 export type AdminOrg = z.infer<typeof adminOrgEncoder>;
@@ -86,7 +99,7 @@ export const listAllOrganizationsRouter = router({
           : searchCondition || cursorCondition;
 
       const [allOrgs, totalCount] = await Promise.all([
-        db.query.organizations.findMany({
+        db._query.organizations.findMany({
           where: whereCondition,
           with: {
             profile: {
@@ -94,6 +107,25 @@ export const listAllOrganizationsRouter = router({
                 id: true,
                 name: true,
                 slug: true,
+              },
+            },
+            organizationUsers: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+              },
+              with: {
+                roles: {
+                  with: {
+                    accessRole: {
+                      columns: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -122,7 +154,12 @@ export const listAllOrganizationsRouter = router({
           : null;
 
       return {
-        items: items.map((org) => adminOrgEncoder.parse(org)),
+        items: items.map((org) =>
+          adminOrgEncoder.parse({
+            ...org,
+            members: org.organizationUsers ?? [],
+          }),
+        ),
         next: nextCursor,
         hasMore,
         total: totalCount,

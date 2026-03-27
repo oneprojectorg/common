@@ -17,6 +17,7 @@ import {
 } from '../../helpers';
 import { links } from './links.sql';
 import { locations } from './locations.sql';
+import { organizationUsers } from './organizationUsers.sql';
 import { profiles } from './profiles.sql';
 import { projects } from './projects.sql';
 import { organizationRelationships } from './relationships.sql';
@@ -80,6 +81,7 @@ export const organizationsRelations = relations(
     whereWeWork: many(organizationsWhereWeWork),
     strategies: many(organizationsStrategies),
     terms: many(organizationsTerms),
+    organizationUsers: many(organizationUsers),
     outgoingRelationships: many(organizationRelationships),
     incomingRelationships: many(organizationRelationships),
   }),
