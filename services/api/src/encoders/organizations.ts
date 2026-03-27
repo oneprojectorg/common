@@ -2,9 +2,9 @@ import { organizationUsers, organizations, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { baseProfileEncoder } from './baseProfile';
 import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
-import { baseProfileEncoder } from './profiles';
 import { projectEncoder } from './projects';
 import { entityTermsEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
