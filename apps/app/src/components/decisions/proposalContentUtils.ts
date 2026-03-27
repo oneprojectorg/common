@@ -3,6 +3,8 @@ import {
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   type XFormat,
+  assembleProposalData,
+  parseProposalData,
   serverExtensions,
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
@@ -79,4 +81,51 @@ export function getProposalContentPreview(
   return (
     getTextPreview({ content: documentContent.content, maxLines: 3 }) ?? ''
   );
+}
+
+/**
+ * Resolves system field values (title, budget, category) from the pinned
+ * TipTap version in `documentContent`, falling back to `proposalData`.
+ *
+ * `proposalData` in the DB may reflect creation-time values rather than
+ * the version that was actually submitted; the document fragments are
+ * the source of truth for submitted proposals.
+ */
+export function resolveProposalSystemFields(proposal: Proposal) {
+  const fallback = parseProposalData(proposal.proposalData);
+
+  const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
+  if (proposal.documentContent?.type !== 'json' || !template) {
+    return fallback;
+  }
+
+  const { fragments } = proposal.documentContent;
+  const fragmentTexts: Record<string, string> = {};
+
+  for (const key of SYSTEM_FIELD_KEYS) {
+    const content = fragments[key]?.content;
+    if (!content?.length) {
+      continue;
+    }
+    try {
+      const text = generateText(
+        { type: 'doc', content: content as JSONContent[] },
+        serverExtensions,
+      ).trim();
+      if (text) {
+        fragmentTexts[key] = text;
+      }
+    } catch {
+      // skip malformed fragments
+    }
+  }
+
+  const resolved = assembleProposalData(template, fragmentTexts);
+
+  return {
+    ...fallback,
+    ...(resolved.title != null && { title: resolved.title as string }),
+    ...(resolved.budget != null && { budget: resolved.budget as typeof fallback.budget }),
+    ...(resolved.category != null && { category: resolved.category as string }),
+  };
 }
