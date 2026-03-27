@@ -39,7 +39,7 @@ export const NewlyJoinedModal = () => {
       className="shadow-green inset-shadow-none"
       isOpen={modalOpen}
       onOpenChange={handleModalChange}
-      confetti={false}
+      confetti
     >
       <div className="z-10 p-12 text-center">
         <div className="flex flex-col gap-6">
