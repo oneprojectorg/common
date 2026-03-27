@@ -27,7 +27,7 @@ export async function getProposalDocumentsContent(
     id: string;
     proposalData: unknown;
     proposalTemplate?: ProposalTemplateSchema | null;
-    collaborationDocVersionId?: number | null;
+    collaborationDocVersionId?: number;
   }>,
 ): Promise<Map<string, ProposalDocumentContent>> {
   const documentContentMap = new Map<string, ProposalDocumentContent>();
@@ -36,7 +36,7 @@ export async function getProposalDocumentsContent(
     id: string;
     collaborationDocId: string;
     proposalTemplate?: ProposalTemplateSchema | null;
-    collaborationDocVersionId?: number | null;
+    collaborationDocVersionId?: number;
   }> = [];
 
   for (const proposal of proposals) {

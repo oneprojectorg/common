@@ -14,18 +14,18 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
+import { type JSONContent, generateText } from '@tiptap/core';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import { type JSONContent, generateText } from '@tiptap/core';
-
 import { generateProposalHtml } from './generateProposalHtml';
 import {
   type ProposalDocumentContent,
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
+import { SYSTEM_FIELD_KEYS } from './getProposalTemplateFieldOrder';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
@@ -136,7 +136,7 @@ export const getProposal = async ({
   const parsedProposalData = parseProposalData(proposal.proposalData);
   const collaborationDocVersionId =
     proposal.status === ProposalStatus.DRAFT
-      ? null
+      ? undefined
       : parsedProposalData.collaborationDocVersionId;
 
   // Run engagement counts and document fetch in parallel
@@ -246,7 +246,7 @@ export const getProposal = async ({
     // reflect the version that was actually submitted.
     const { fragments } = documentContent;
 
-    for (const key of ['title', 'category', 'budget'] as const) {
+    for (const key of SYSTEM_FIELD_KEYS) {
       if (!(key in fragments)) {
         // Fragment not in template — keep DB value
         continue;
