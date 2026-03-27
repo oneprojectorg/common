@@ -27,6 +27,22 @@ const memberEncoder = z.object({
   roles: z.array(memberRoleEncoder),
 });
 
+type OrganizationMemberNameSource = {
+  name: string | null;
+  serviceUser?: {
+    name: string | null;
+    profile?: {
+      name: string | null;
+    } | null;
+  } | null;
+};
+
+const getMemberDisplayName = (member: OrganizationMemberNameSource) => {
+  return (
+    member.name ?? member.serviceUser?.profile?.name ?? member.serviceUser?.name
+  );
+};
+
 const adminOrgEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
@@ -115,6 +131,18 @@ export const listAllOrganizationsRouter = router({
                 email: true,
               },
               with: {
+                serviceUser: {
+                  columns: {
+                    name: true,
+                  },
+                  with: {
+                    profile: {
+                      columns: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
                 roles: {
                   with: {
                     accessRole: {
@@ -156,7 +184,11 @@ export const listAllOrganizationsRouter = router({
         items: items.map((org) =>
           adminOrgEncoder.parse({
             ...org,
-            members: org.organizationUsers ?? [],
+            members:
+              org.organizationUsers?.map((member) => ({
+                ...member,
+                name: getMemberDisplayName(member),
+              })) ?? [],
           }),
         ),
         next: nextCursor,
