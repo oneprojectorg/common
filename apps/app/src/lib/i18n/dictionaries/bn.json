@@ -166,6 +166,7 @@
   "Restore this version": "এই সংস্করণটি পুনরুদ্ধার করুন",
   "Restore this version?": "এই সংস্করণটি পুনরুদ্ধার করবেন?",
   "Your proposal will be restored to the version from {date}.": "আপনার প্রস্তাবটি {date} এর সংস্করণে পুনরুদ্ধার করা হবে।",
+  "Your proposal will be restored to the version from <bold>{date}</bold>.": "আপনার প্রস্তাবটি <bold>{date}</bold> এর সংস্করণে পুনরুদ্ধার করা হবে।",
   "Your current version will be saved and you can restore it anytime.": "আপনার বর্তমান সংস্করণ সংরক্ষিত থাকবে এবং আপনি যেকোনো সময় তা পুনরুদ্ধার করতে পারবেন।",
   "Keep current": "বর্তমানটি রাখুন",
   "Restore": "পুনরুদ্ধার করুন",

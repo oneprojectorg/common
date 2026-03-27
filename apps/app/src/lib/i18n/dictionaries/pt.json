@@ -166,6 +166,7 @@
   "Restore this version": "Restaurar esta versão",
   "Restore this version?": "Restaurar esta versão?",
   "Your proposal will be restored to the version from {date}.": "Sua proposta será restaurada para a versão de {date}.",
+  "Your proposal will be restored to the version from <bold>{date}</bold>.": "Sua proposta será restaurada para a versão de <bold>{date}</bold>.",
   "Your current version will be saved and you can restore it anytime.": "Sua versão atual será salva e você poderá restaurá-la a qualquer momento.",
   "Keep current": "Manter atual",
   "Restore": "Restaurar",

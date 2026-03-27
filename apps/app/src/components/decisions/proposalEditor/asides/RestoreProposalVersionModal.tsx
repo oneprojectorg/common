@@ -39,14 +39,19 @@ export function RestoreProposalVersionModal({
           onClose();
         }
       }}
-      surface="flat"
     >
       <ModalHeader>{t('Restore this version?')}</ModalHeader>
       <ModalBody className="gap-4 text-base text-neutral-charcoal">
         <p>
-          {t('Your proposal will be restored to the version from {date}.', {
-            date: formattedDate,
-          })}
+          {t.rich(
+            'Your proposal will be restored to the version from <bold>{date}</bold>.',
+            {
+              date: formattedDate,
+              bold: (chunks: React.ReactNode) => (
+                <span className="font-bold">{chunks}</span>
+              ),
+            },
+          )}
         </p>
         <p>
           {t(

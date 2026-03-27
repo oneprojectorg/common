@@ -164,7 +164,7 @@ function VersionItem({
   return (
     <div
       className={cn(
-        'w-full rounded',
+        'flex w-full flex-col gap-2 rounded p-2',
         isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite',
       )}
     >
@@ -172,14 +172,13 @@ function VersionItem({
         unstyled
         onPress={onSelect}
         isDisabled={isPending}
-        className="flex w-full flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none"
+        className="flex w-full flex-col items-start text-left shadow-none outline-hidden focus-visible:outline-none"
       >
         <p className="text-base text-neutral-black">{label}</p>
         <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
       </Button>
       {isSelected && (
         <Button
-          className="mx-2 mb-2"
           size="small"
           onPress={onRestore}
           isDisabled={isPending}
