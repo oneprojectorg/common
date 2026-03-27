@@ -132,7 +132,13 @@ const E2E_FIXTURE_CONTENT: TipTapDocument = {
 const E2E_FIXTURE_CONTENT_NO_EMBED: TipTapDocument = {
   type: 'doc',
   content: E2E_FIXTURE_CONTENT.content?.filter(
-    (node) => node.type !== 'iframely',
+    (node) =>
+      !(
+        typeof node === 'object' &&
+        node !== null &&
+        'type' in node &&
+        (node as { type?: unknown }).type === 'iframely'
+      ),
   ),
 };
 
