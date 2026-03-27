@@ -34,6 +34,7 @@ import { TranslateBanner } from './TranslateBanner';
 
 type Proposal = RouterOutput['decision']['getProposal'];
 
+
 export function ProposalView({
   proposal: initialProposal,
   backHref,
@@ -143,11 +144,13 @@ export function ProposalView({
 
   const targetLanguageName = getLanguageName(locale);
 
-  // Parse proposal data using shared utility
+  // Parse proposal data using shared utility.
+  // System fields (title, budget, category) are resolved from the pinned
+  // TipTap version on the backend, so proposalData values are authoritative.
   const { budget, category: originalCategory } = parseProposalData(
     currentProposal.proposalData,
   );
-  const originalTitle = currentProposal.profile.name;
+  const originalTitle = currentProposal.proposalData.title;
 
   // Use translated category when available, otherwise original
   const category =
