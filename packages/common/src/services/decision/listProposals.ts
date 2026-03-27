@@ -321,13 +321,20 @@ export const listProposals = async ({
         ])
       : Promise.resolve(null),
 
-    // Get document contents for all proposals
+    // Get document contents for all proposals, pinned to the submitted version
     getProposalDocumentsContent(
-      proposalList.map((proposal) => ({
-        id: proposal.id,
-        proposalData: proposal.proposalData,
-        proposalTemplate,
-      })),
+      proposalList.map((proposal) => {
+        const parsed = parseProposalData(proposal.proposalData);
+        return {
+          id: proposal.id,
+          proposalData: proposal.proposalData,
+          proposalTemplate,
+          collaborationDocVersionId:
+            proposal.status === ProposalStatus.DRAFT
+              ? undefined
+              : parsed.collaborationDocVersionId,
+        };
+      }),
     ),
   ]);
 

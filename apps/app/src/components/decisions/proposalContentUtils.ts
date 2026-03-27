@@ -122,6 +122,7 @@ export function resolveProposalSystemFields(proposal: Proposal) {
 
   const resolved = assembleProposalData(template, fragmentTexts);
 
+  console.log('Resolved proposal system fields:', resolved);
   return {
     ...fallback,
     ...(resolved.title != null && { title: resolved.title as string }),
