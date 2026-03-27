@@ -10,7 +10,8 @@ import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-type ListAllOrgsOutput = RouterOutput['platform']['admin']['listAllOrganizations'];
+type ListAllOrgsOutput =
+  RouterOutput['platform']['admin']['listAllOrganizations'];
 type Org = ListAllOrgsOutput['items'][number];
 type Member = Org['members'][number];
 
@@ -25,8 +26,7 @@ export const OrgMembersModal = ({
 }) => {
   const t = useTranslations();
   const members = org.members ?? [];
-  const orgName =
-    org.profile?.name ?? t('platformAdmin_orgMembers_unknownOrg');
+  const orgName = org.profile?.name ?? t('platformAdmin_orgMembers_unknownOrg');
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
@@ -35,7 +35,7 @@ export const OrgMembersModal = ({
       </ModalHeader>
       <ModalBody className="space-y-4 pb-6">
         {/* Organization Info */}
-        <div className="rounded-lg bg-neutral-gray0 p-4">
+        <div className="bg-neutral-gray0 rounded-lg p-4">
           <ProfileItem
             avatar={
               <Avatar placeholder={orgName} className="size-10 shrink-0" />

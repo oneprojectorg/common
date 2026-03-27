@@ -2,7 +2,11 @@ import { createClient } from '@op/api/serverClient';
 import { isUserEmailPlatformAdmin } from '@op/common';
 import { notFound } from 'next/navigation';
 
-import { OrgsTable, PlatformStats, UsersTable } from '@/components/screens/PlatformAdmin';
+import {
+  OrgsTable,
+  PlatformStats,
+  UsersTable,
+} from '@/components/screens/PlatformAdmin';
 import { PlatformAdminHeader } from '@/components/screens/PlatformAdmin/PlatformAdminHeader';
 
 // Force dynamic rendering to ensure fresh data on each request
