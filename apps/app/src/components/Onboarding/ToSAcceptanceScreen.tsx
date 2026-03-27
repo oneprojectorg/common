@@ -2,11 +2,42 @@
 
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
-import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ReactNode, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { OnboardingCenterLayout } from './OnboardingCenterLayout';
+
+function PolicyCheckbox({
+  checked,
+  onChange,
+  href,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  href: string;
+  label: string;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className="flex items-center gap-1">
+      <Checkbox size="small" value={'' + checked} onChange={onChange}>
+        {t('I accept the')}{' '}
+      </Checkbox>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-primary-teal hover:underline"
+      >
+        {label}
+      </a>
+    </div>
+  );
+}
 
 export type ToSAcceptanceScreenProps = {
   onAccept: () => void;
@@ -26,77 +57,43 @@ export const ToSAcceptanceScreen = ({
   const canSubmit = termsAccepted && privacyAccepted && !isSubmitting;
 
   return (
-    <div className="flex h-[calc(100dvh-80px)] w-full items-center justify-center">
-      <div className="flex w-full max-w-[472px] flex-col items-center gap-8 px-4 sm:px-0">
-        {/* Header */}
-        <div className="flex flex-col gap-2 text-center">
-          <Header1 className="text-neutral-black">{t('One last step')}</Header1>
-          <p className="text-sm leading-normal text-neutral-gray4">
-            {t(
-              'Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.',
-            )}
-          </p>
+    <OnboardingCenterLayout
+      title={t('One last step')}
+      subtitle={t(
+        'Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.',
+      )}
+    >
+      <div className="flex w-full flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          <PolicyCheckbox
+            checked={termsAccepted}
+            onChange={setTermsAccepted}
+            href="/info/tos"
+            label={t('Terms of Service')}
+          />
+          <PolicyCheckbox
+            checked={privacyAccepted}
+            onChange={setPrivacyAccepted}
+            href="/info/privacy"
+            label={t('Privacy Policy')}
+          />
         </div>
 
-        <div className="flex w-full flex-col gap-6">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-1">
-              <Checkbox
-                size="small"
-                value={'' + termsAccepted}
-                onChange={setTermsAccepted}
-              >
-                {t('I accept the')}{' '}
-              </Checkbox>
-              <a
-                href="/info/tos"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary-teal hover:underline"
-              >
-                {t('Terms of Service')}
-              </a>
-            </div>
+        <div className="flex flex-col gap-3">
+          <Button className="w-full" isDisabled={!canSubmit} onPress={onAccept}>
+            {isSubmitting ? <LoadingSpinner /> : t('Join Common')}
+          </Button>
 
-            <div className="flex items-center gap-1">
-              <Checkbox
-                size="small"
-                value={'' + privacyAccepted}
-                onChange={setPrivacyAccepted}
-              >
-                {t('I accept the')}{' '}
-              </Checkbox>
-              <a
-                href="/info/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary-teal hover:underline"
-              >
-                {t('Privacy Policy')}
-              </a>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Button
-              className="w-full"
-              isDisabled={!canSubmit}
-              onPress={onAccept}
-            >
-              {isSubmitting ? <LoadingSpinner /> : t('Join Common')}
-            </Button>
-
-            <Button
-              className="w-full"
-              color="neutral"
-              onPress={onGoBack}
-              isDisabled={isSubmitting}
-            >
-              {t('Go back')}
-            </Button>
-          </div>
+          <Button
+            className="w-full"
+            color="neutral"
+            onPress={onGoBack}
+            isDisabled={isSubmitting}
+          >
+            {t('Go back')}
+          </Button>
         </div>
       </div>
-    </div>
+    </OnboardingCenterLayout>
   );
 };

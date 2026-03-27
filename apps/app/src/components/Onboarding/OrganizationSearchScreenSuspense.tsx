@@ -6,7 +6,7 @@ import { ReactNode, Suspense } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { ErrorMessage } from '../ErrorMessage';
-import { FormContainer } from '../form/FormContainer';
+import { OnboardingCenterLayout } from './OnboardingCenterLayout';
 import {
   OrganizationSearchScreen,
   OrganizationSearchScreenProps,
@@ -38,13 +38,11 @@ export const OrganizationSearchScreenSuspense = (
     <ErrorBoundary fallback={<ErrorMessage />}>
       <Suspense
         fallback={
-          <div>
-            <FormContainer>
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner />
-              </div>
-            </FormContainer>
-          </div>
+          <OnboardingCenterLayout title="" subtitle="">
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          </OnboardingCenterLayout>
         }
       >
         <OrganizationSearchScreenWithDomainMatch {...props} />
