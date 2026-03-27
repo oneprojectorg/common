@@ -145,6 +145,7 @@ export function VersionPreviewProvider({
           try {
             contents[name] = getNormalizedPreviewContent(data.payload, name);
           } catch {
+            console.warn(`[VersionPreview] failed to parse fragment "${name}"`);
             contents[name] = null;
           }
         }

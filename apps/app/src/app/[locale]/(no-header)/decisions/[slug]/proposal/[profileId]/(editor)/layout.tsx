@@ -3,6 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { type ProcessInstance, type proposalEncoder } from '@op/api/encoders';
 import { getProposalFragmentNames, parseProposalData } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
@@ -13,6 +14,7 @@ import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
 import { LuHistory } from 'react-icons/lu';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -20,6 +22,7 @@ import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
+import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
 import {
   type ProposalEditorAside,
@@ -32,6 +35,7 @@ import {
   proposalEditorAsideValues,
   proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
+import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 
 /**
  * Shared layout for the proposal editor route.
@@ -119,20 +123,6 @@ export default function ProposalEditorLayout({
     versionHistoryLabel,
   });
 
-  const asideSlot =
-    asideState.aside === 'versions' ? (
-      <ProposalVersionsAside
-        versionId={asideState.versionId}
-        onSelectVersion={(nextVersionId) =>
-          setAsideState({
-            aside: 'versions',
-            versionId: nextVersionId,
-          })
-        }
-        onClose={() => setAsideState({ aside: null })}
-      />
-    ) : undefined;
-
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
       proposal.proposalData,
@@ -161,21 +151,92 @@ export default function ProposalEditorLayout({
         }
         fragmentNames={fragmentNames}
       >
-        <div className="flex h-screen bg-white">
-          <ProposalEditor
-            instance={instance}
-            backHref={`/decisions/${slug}`}
-            proposal={proposal}
-            isEditMode
-            asideHeaderIcons={
-              asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
-            }
-            showHeaderActions={isMobile || !asideSlot}
-          />
-          {asideSlot}
-        </div>
+        <ProposalEditorContent
+          proposal={proposal}
+          instance={instance}
+          slug={slug}
+          fragmentNames={fragmentNames}
+          asideState={asideState}
+          setAsideState={setAsideState}
+          asideHeaderIcons={asideHeaderIcons}
+          isMobile={isMobile}
+        />
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
+  );
+}
+
+type Proposal = z.infer<typeof proposalEncoder>;
+
+/**
+ * Inner content rendered within the collaborative document providers.
+ *
+ * Separated from the layout so hooks that depend on `CollaborativeDocProvider`
+ * and `VersionPreviewProvider` (like `useRestoreProposalVersion`) can safely
+ * access those contexts.
+ */
+function ProposalEditorContent({
+  proposal,
+  instance,
+  slug,
+  fragmentNames,
+  asideState,
+  setAsideState,
+  asideHeaderIcons,
+  isMobile,
+}: {
+  proposal: Proposal;
+  instance: ProcessInstance;
+  slug: string;
+  fragmentNames: string[];
+  asideState: ProposalEditorAsideState;
+  setAsideState: (state: ProposalEditorAsideState) => void;
+  asideHeaderIcons: React.ReactNode[];
+  isMobile: boolean;
+}) {
+  const versionPreview = useOptionalVersionPreview();
+
+  const { restoreVersion } = useRestoreProposalVersion({
+    proposalId: proposal.id,
+    proposalData: proposal.proposalData,
+    fragmentNames,
+  });
+
+  const asideSlot =
+    asideState.aside === 'versions' ? (
+      <ProposalVersionsAside
+        versionId={asideState.versionId}
+        onSelectVersion={(nextVersionId) =>
+          setAsideState({
+            aside: 'versions',
+            versionId: nextVersionId,
+          })
+        }
+        onRestoreVersion={async (versionId) => {
+          await restoreVersion(
+            versionId,
+            versionPreview?.fragmentContents ?? {},
+          );
+          setAsideState({ aside: 'versions', versionId: null });
+        }}
+        onClose={() => setAsideState({ aside: null })}
+      />
+    ) : undefined;
+
+  return (
+    <div className="flex h-screen bg-white">
+      <ProposalEditor
+        instance={instance}
+        backHref={`/decisions/${slug}`}
+        proposal={proposal}
+        isEditMode
+        asideHeaderIcons={
+          asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
+        }
+        showHeaderActions={isMobile || !asideSlot}
+      />
+      {asideSlot}
+    </div>
   );
 }
 

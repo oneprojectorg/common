@@ -6,12 +6,19 @@ import { Button } from '@op/ui/Button';
 import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';
+import { RestoreProposalVersionModal } from './RestoreProposalVersionModal';
 
 /** Show relative time (e.g. "5 minutes ago") for versions newer than 24 hours. */
 const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
@@ -19,21 +26,26 @@ const RELATIVE_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 interface ProposalVersionsAsideProps {
   versionId: number | null;
   onSelectVersion: (versionId: number | null) => void;
+  onRestoreVersion: (versionId: number) => void;
   onClose: () => void;
 }
 
 /**
  * Aside panel for proposal version history.
- * Reads versions directly from the TipTap collaboration provider.
+ *
+ * Reads versions from the TipTap collaboration provider and delegates
+ * restore actions to the parent via `onRestoreVersion`.
  */
 export function ProposalVersionsAside({
   versionId,
   onSelectVersion,
+  onRestoreVersion,
   onClose,
 }: ProposalVersionsAsideProps) {
   const locale = useLocale();
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
+  const [isPending, startTransition] = useTransition();
 
   const readVersions = useCallback(
     () => [...provider.getVersions()].sort((a, b) => b.version - a.version),
@@ -41,6 +53,7 @@ export function ProposalVersionsAside({
   );
 
   const [versions, setVersions] = useState<THistoryVersion[]>(readVersions);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   useEffect(() => {
     const onUpdate = () => setVersions(readVersions());
@@ -48,79 +61,143 @@ export function ProposalVersionsAside({
     return () => provider.unwatchVersions(onUpdate);
   }, [provider, readVersions]);
 
+  const selectedVersion = useMemo(
+    () => versions.find((version) => version.version === versionId) ?? null,
+    [versionId, versions],
+  );
+
+  const selectedVersionDate = selectedVersion
+    ? new Date(selectedVersion.date).toISOString()
+    : null;
+
+  function handleRestore() {
+    if (versionId === null) {
+      return;
+    }
+
+    startTransition(() => {
+      onRestoreVersion(versionId);
+    });
+    setIsRestoreModalOpen(false);
+  }
+
   return (
-    <ProposalEditorAside
-      title={t('Version history')}
-      onClose={onClose}
-      bodyClassName="px-4 pt-4"
-    >
-      <Button
-        unstyled
-        onPress={() => onSelectVersion(null)}
-        className={cn(
-          'flex w-full flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none',
-          versionId === null
-            ? 'bg-primary-tealWhite'
-            : 'hover:bg-neutral-offWhite',
-        )}
+    <>
+      <ProposalEditorAside
+        title={t('Version history')}
+        onClose={onClose}
+        bodyClassName="px-4 pt-4"
       >
-        <p className="text-base text-neutral-black">{t('Current version')}</p>
-        <p className="text-base text-neutral-charcoal">{t('Latest')}</p>
-      </Button>
+        <VersionItem
+          label={t('Current version')}
+          sublabel={t('Latest')}
+          isSelected={versionId === null}
+          isPending={isPending}
+          onSelect={() => onSelectVersion(null)}
+        />
 
-      <div>
-        {versions.map((version) => {
-          const createdAt = new Date(version.date).toISOString();
-          const isRecent =
-            Date.now() - version.date < RELATIVE_TIME_THRESHOLD_MS;
-
-          return (
-            <VersionItem
+        <>
+          {versions.map((version) => (
+            <SavedVersionItem
               key={version.version}
-              createdAt={createdAt}
-              isRecent={isRecent}
+              date={version.date}
               locale={locale}
               isSelected={versionId === version.version}
+              isPending={isPending}
+              onRestore={() => setIsRestoreModalOpen(true)}
               onSelect={() => onSelectVersion(version.version)}
             />
-          );
-        })}
-      </div>
-    </ProposalEditorAside>
+          ))}
+        </>
+      </ProposalEditorAside>
+
+      {selectedVersion && (
+        <RestoreProposalVersionModal
+          isOpen={isRestoreModalOpen}
+          isPending={isPending}
+          versionDate={selectedVersionDate ?? ''}
+          onClose={() => setIsRestoreModalOpen(false)}
+          onConfirm={handleRestore}
+        />
+      )}
+    </>
   );
 }
 
 function VersionItem({
-  createdAt,
-  isRecent,
-  locale,
+  label,
+  sublabel,
   isSelected,
+  isPending,
+  onRestore,
   onSelect,
 }: {
-  createdAt: string;
-  isRecent: boolean;
-  locale: string;
+  label: string;
+  sublabel: string;
   isSelected: boolean;
+  isPending: boolean;
+  onRestore?: () => void;
   onSelect: () => void;
 }) {
   const t = useTranslations();
+
+  return (
+    <div
+      className={cn(
+        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary-tealWhite',
+        isSelected && 'bg-primary-tealWhite',
+      )}
+    >
+      <Button
+        unstyled
+        onPress={onSelect}
+        isDisabled={isPending}
+        className="flex w-full flex-col items-start text-left shadow-none outline-hidden focus-visible:outline-none"
+      >
+        <p className="text-base text-neutral-black">{label}</p>
+        <p className="text-sm text-neutral-charcoal">{sublabel}</p>
+      </Button>
+      {isSelected && onRestore && (
+        <Button size="small" onPress={onRestore} isDisabled={isPending}>
+          {t('Restore this version')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function SavedVersionItem({
+  date,
+  locale,
+  isSelected,
+  isPending,
+  onRestore,
+  onSelect,
+}: {
+  date: number;
+  locale: string;
+  isSelected: boolean;
+  isPending: boolean;
+  onRestore: () => void;
+  onSelect: () => void;
+}) {
+  const t = useTranslations();
+  const createdAt = new Date(date).toISOString();
   const relativeTime = useRelativeTime(createdAt, { style: 'long' });
+  const isRecent = Date.now() - date < RELATIVE_TIME_THRESHOLD_MS;
 
   const label = isRecent
     ? relativeTime
     : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
 
   return (
-    <Button
-      unstyled
-      onPress={onSelect}
-      className={cn(
-        'flex w-full flex-col items-start rounded p-2 text-left shadow-none outline-hidden focus-visible:outline-none',
-        isSelected ? 'bg-primary-tealWhite' : 'hover:bg-neutral-offWhite',
-      )}
-    >
-      <p className="text-base text-neutral-black">{label}</p>
-      <p className="text-sm text-neutral-charcoal">{t('Auto-saved')}</p>
-    </Button>
+    <VersionItem
+      label={label}
+      sublabel={t('Auto-saved')}
+      isSelected={isSelected}
+      isPending={isPending}
+      onRestore={onRestore}
+      onSelect={onSelect}
+    />
   );
 }
