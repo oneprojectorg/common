@@ -66,7 +66,10 @@ const config = {
       // In e2e mode, swap the real TipTap client for an in-process mock
       // so the server never makes HTTP calls to TipTap Cloud.
       ...(process.env.E2E === 'true'
-        ? { '@op/collab': '@op/collab/testing' }
+        ? {
+            '@op/collab': '@op/collab/testing',
+            '@op/analytics': '@op/analytics/testing',
+          }
         : {}),
     },
   },
