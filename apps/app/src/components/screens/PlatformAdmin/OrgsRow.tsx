@@ -37,9 +37,7 @@ export const OrgsRow = ({ org }: { org: Org }) => {
         {org.domain ?? '—'}
       </div>
       <div className="flex items-center text-sm font-normal text-neutral-charcoal">
-        {org.networkOrganization
-          ? t('platformAdmin_orgNetworkYes')
-          : t('platformAdmin_orgNetworkNo')}
+        {org.networkOrganization ? t('Yes') : t('No')}
       </div>
       <div className="flex items-center text-sm font-normal text-neutral-charcoal">
         {createdAt ? (

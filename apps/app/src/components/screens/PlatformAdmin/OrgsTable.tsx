@@ -29,12 +29,12 @@ export const OrgsTable = () => {
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-md font-serif text-neutral-black">
-          {t('platformAdmin_allOrgs')}
+          {t('All Organizations')}
         </h2>
         <div className="w-64">
           <SearchField
-            aria-label={t('platformAdmin_searchOrgsPlaceholder')}
-            placeholder={t('platformAdmin_searchOrgsPlaceholder')}
+            aria-label={t('Search organizations by name')}
+            placeholder={t('Search organizations by name')}
             value={searchQuery}
             onChange={setSearchQuery}
           />
@@ -57,10 +57,10 @@ const OrgsTableHeader = () => {
   const t = useTranslations();
 
   const columnHeadings = [
-    t('platformAdmin_columnName'),
-    t('platformAdmin_columnOrgType'),
-    t('platformAdmin_columnDomain'),
-    t('platformAdmin_columnNetworkOrg'),
+    t('Name'),
+    t('Type'),
+    t('Domain'),
+    t('Network'),
     t('platformAdmin_columnCreated'),
   ];
 
@@ -122,7 +122,7 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
             totalItems: total,
             itemsPerPage: limit,
             page: currentPage,
-            label: t('platformAdmin_paginationOrgs'),
+            label: t('organizations'),
           }}
           next={hasMore ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
