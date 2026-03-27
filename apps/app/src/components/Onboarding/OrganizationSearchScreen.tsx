@@ -40,8 +40,7 @@ export const OrganizationSearchScreen = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [closedByClick, setClosedByClick] = useState(false);
 
-  const isDropdownOpen =
-    debouncedQuery.length >= 2 && !closedByClick;
+  const isDropdownOpen = debouncedQuery.length >= 2 && !closedByClick;
 
   const { data: searchResults, isFetching } = trpc.organization.search.useQuery(
     { q: debouncedQuery },
