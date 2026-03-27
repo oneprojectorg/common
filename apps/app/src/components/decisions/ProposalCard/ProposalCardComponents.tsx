@@ -119,7 +119,8 @@ export function ProposalCardTitle({
   const { title } = resolveProposalSystemFields(proposal);
 
   const titleText =
-    cardTranslation?.title ?? (title || proposal.profile.name || t('Untitled Proposal'));
+    cardTranslation?.title ??
+    (title || proposal.profile.name || t('Untitled Proposal'));
   const titleClasses =
     'max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black';
 

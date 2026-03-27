@@ -125,7 +125,9 @@ export function resolveProposalSystemFields(proposal: Proposal) {
   return {
     ...fallback,
     ...(resolved.title != null && { title: resolved.title as string }),
-    ...(resolved.budget != null && { budget: resolved.budget as typeof fallback.budget }),
+    ...(resolved.budget != null && {
+      budget: resolved.budget as typeof fallback.budget,
+    }),
     ...(resolved.category != null && { category: resolved.category as string }),
   };
 }
