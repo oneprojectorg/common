@@ -4,27 +4,14 @@
  */
 
 /**
- * Parse YYYY-MM-DD format as local date to avoid timezone issues
- * @param dateString - Date string in YYYY-MM-DD format
- * @param options - Intl.DateTimeFormatOptions for formatting
- * @param locale - Locale for formatting (default: 'en-US')
- * @returns Formatted date string
+ * Format a date string for display in the user's local timezone.
  */
 export function formatDate(
   dateString: string,
   options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' },
   locale: string = 'en-US',
 ): string {
-  // Parse YYYY-MM-DD format as local date to avoid timezone issues (NOT UTC).
-  const parts = dateString.split('-').map(Number);
-  if (parts.length !== 3 || parts.some((part) => isNaN(part))) {
-    // Fallback to original parsing if format is unexpected
-    const date = new Date(dateString);
-    return date.toLocaleDateString(locale, options);
-  }
-
-  const [year, month, day] = parts as [number, number, number];
-  const date = new Date(year, month - 1, day); // month is 0-indexed
+  const date = new Date(dateString);
   return date.toLocaleDateString(locale, options);
 }
 
