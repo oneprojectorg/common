@@ -88,7 +88,9 @@ export function useRestoreProposalVersion({
 
     const restoredData = buildRestoredProposalData(fragmentContents);
 
-    provider.revertToVersion(versionId, fragmentNames);
+    provider.revertToVersion(versionId, {
+      fields: fragmentNames,
+    });
 
     await updateProposalMutation.mutateAsync({
       proposalId,
