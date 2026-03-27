@@ -125,7 +125,6 @@ export const OnboardingFlow = () => {
       try {
         const currentProfileId = userAccount?.profile?.id;
 
-        // If user selected orgs, submit join requests
         if (selectedOrgs.length > 0 && !currentProfileId) {
           toast.error({
             title: t("That didn't work"),
@@ -147,7 +146,6 @@ export const OnboardingFlow = () => {
 
           const failures = results.filter((r) => r.status === 'rejected');
           if (failures.length === results.length) {
-            // All requests failed — stay on page so user can retry
             toast.error({
               title: t("That didn't work"),
               message: t('Please try submitting the form again.'),
@@ -156,7 +154,6 @@ export const OnboardingFlow = () => {
             return;
           }
           if (failures.length > 0) {
-            // Partial failure — some succeeded, proceed but warn
             toast.error({
               title: t("That didn't work"),
               message: t('Please try submitting the form again.'),
@@ -164,8 +161,6 @@ export const OnboardingFlow = () => {
           }
         }
 
-        // Invalidate and redirect
-        await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
         router.push('/?new=1');
       } catch (err) {
@@ -202,11 +197,10 @@ export const OnboardingFlow = () => {
       <OrganizationSearchScreenSuspense
         onContinue={handleSearchContinue}
         onAddOrganization={handleAddOrganization}
-        isSubmitting={isSubmitting}
       />
     );
     return Step;
-  }, [handleSearchContinue, handleAddOrganization, isSubmitting]);
+  }, [handleSearchContinue, handleAddOrganization]);
 
   // Get step values for org creation flow
   const getOrgCreationStepValues = useCallback(() => {

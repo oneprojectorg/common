@@ -3,7 +3,9 @@
 import { RouterOutput, trpc } from '@op/api/client';
 import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
+import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { ProfileItem } from '@op/ui/ProfileItem';
 import { TextField } from '@op/ui/TextField';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { LuPlus, LuSearch, LuX } from 'react-icons/lu';
@@ -11,8 +13,6 @@ import { LuPlus, LuSearch, LuX } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
-import { FormContainer } from '../form/FormContainer';
-import { FormHeader } from '../form/FormHeader';
 import { ToSAcceptanceScreen } from './ToSAcceptanceScreen';
 
 type SearchOrganization = RouterOutput['organization']['search'][number];
@@ -33,13 +33,15 @@ export const OrganizationSearchScreen = ({
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 300);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedOrgs, setSelectedOrgs] = useState<SearchOrganization[]>(
     () => initialOrganizations ?? [],
   );
   const [showToS, setShowToS] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [closedByClick, setClosedByClick] = useState(false);
+
+  const isDropdownOpen =
+    debouncedQuery.length >= 2 && !closedByClick;
 
   const { data: searchResults, isFetching } = trpc.organization.search.useQuery(
     { q: debouncedQuery },
@@ -50,13 +52,9 @@ export const OrganizationSearchScreen = ({
     },
   );
 
-  // Show dropdown when we have a query
+  // Reset closedByClick when query changes
   useEffect(() => {
-    if (debouncedQuery.length >= 2) {
-      setIsDropdownOpen(true);
-    } else {
-      setIsDropdownOpen(false);
-    }
+    setClosedByClick(false);
   }, [debouncedQuery]);
 
   // Close dropdown on outside click
@@ -66,7 +64,7 @@ export const OrganizationSearchScreen = ({
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
       ) {
-        setIsDropdownOpen(false);
+        setClosedByClick(true);
       }
     };
 
@@ -82,18 +80,13 @@ export const OrganizationSearchScreen = ({
       return [...prev, org];
     });
     setSearchQuery('');
-    setIsDropdownOpen(false);
   }, []);
 
   const handleRemoveOrg = useCallback((orgId: string) => {
     setSelectedOrgs((prev) => prev.filter((o) => o.id !== orgId));
   }, []);
 
-  const handleContinueToToS = useCallback(() => {
-    setShowToS(true);
-  }, []);
-
-  const handleSkipToToS = useCallback(() => {
+  const handleShowToS = useCallback(() => {
     setShowToS(true);
   }, []);
 
@@ -134,24 +127,9 @@ export const OrganizationSearchScreen = ({
     return '';
   };
 
-  const highlightMatch = (text: string, query: string): ReactNode => {
-    if (!query) {
-      return text;
-    }
-    const index = text.toLowerCase().indexOf(query.toLowerCase());
-    if (index === -1) {
-      return text;
-    }
-    return (
-      <>
-        {text.slice(0, index)}
-        <strong className="font-semibold">
-          {text.slice(index, index + query.length)}
-        </strong>
-        {text.slice(index + query.length)}
-      </>
-    );
-  };
+  const continueLabel = t('Continue with {count} organizations', {
+    count: selectedOrgs.length,
+  });
 
   if (showToS) {
     return (
@@ -164,156 +142,160 @@ export const OrganizationSearchScreen = ({
   }
 
   return (
-    <div className="flex w-full max-w-lg flex-col items-center">
-      <FormContainer>
-        <FormHeader text={t('Find organizations you belong to')}>
-          {t(
-            'Select the organization(s) you want to link to your Common profile. You can add more later from your profile.',
-          )}
-        </FormHeader>
+    <div className="flex h-[calc(100dvh-80px)] w-full items-center justify-center">
+      <div className="flex w-full max-w-[472px] flex-col items-center gap-8 px-4 sm:px-0">
+        <div className="flex flex-col gap-2 text-center">
+          <Header1 className="text-neutral-black">
+            {t('Find organizations you belong to')}
+          </Header1>
+          <p className="text-sm leading-normal text-neutral-gray4">
+            {t(
+              'Select the organization(s) you want to link to your Common profile. You can add more later from your profile.',
+            )}
+          </p>
+        </div>
 
-        <div className="flex flex-col gap-6">
-          {/* Search input with dropdown */}
-          <div ref={containerRef} className="relative">
-            <TextField
-              value={searchQuery}
-              onChange={setSearchQuery}
-              inputProps={{
-                placeholder: t('Search or add your organization...'),
-                icon: <LuSearch className="size-4 text-neutral-gray4" />,
-              }}
-              aria-label={t('Search or add your organization...')}
-            />
+        <div className="flex w-full flex-col gap-6">
+          <div className="flex flex-col gap-4">
+            <div ref={containerRef} className="relative">
+              <TextField
+                value={searchQuery}
+                onChange={setSearchQuery}
+                inputProps={{
+                  placeholder: t('Search or add your organization...'),
+                  icon: <LuSearch className="size-4 text-neutral-gray4" />,
+                }}
+                aria-label={t('Search or add your organization...')}
+              />
 
-            {/* Search results dropdown */}
-            {isDropdownOpen && (
-              <div
-                ref={dropdownRef}
-                className="absolute top-full right-0 left-0 z-10 mt-1 max-h-64 overflow-y-auto rounded-lg border border-neutral-gray2 bg-white shadow-lg"
-              >
-                {isFetching && !searchResults ? (
-                  <div className="flex items-center justify-center py-4">
-                    <LoadingSpinner />
-                  </div>
-                ) : (
-                  <>
-                    {searchResults && searchResults.length > 0 ? (
-                      searchResults.map((org) => (
+              {isDropdownOpen && (
+                <div className="absolute top-full right-0 left-0 z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg">
+                  {isFetching && !searchResults ? (
+                    <div className="flex items-center justify-center py-4">
+                      <LoadingSpinner />
+                    </div>
+                  ) : (
+                    <>
+                      {searchResults && searchResults.length > 0 ? (
+                        searchResults.map((org) => {
+                          const location = getOrgLocation(org);
+                          return (
+                            <button
+                              key={org.id}
+                              type="button"
+                              className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite"
+                              onClick={() => handleSelectOrg(org)}
+                            >
+                              <ProfileItem
+                                size="small"
+                                avatar={
+                                  <OrganizationAvatar
+                                    profile={org.profile}
+                                    withLink={false}
+                                    className="size-10"
+                                  />
+                                }
+                                title={org.profile?.name ?? ''}
+                              >
+                                {location && (
+                                  <div className="text-xs text-neutral-gray4">
+                                    {location}
+                                  </div>
+                                )}
+                              </ProfileItem>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-neutral-gray4">
+                          {t('No results')}
+                        </div>
+                      )}
+
+                      {onAddOrganization && searchQuery && (
                         <button
-                          key={org.id}
                           type="button"
-                          className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-neutral-offWhite"
-                          onClick={() => handleSelectOrg(org)}
+                          className="flex w-full items-center gap-2 border-t border-neutral-gray1 px-4 py-3 text-left text-primary-teal hover:bg-neutral-offWhite"
+                          onClick={() => onAddOrganization(searchQuery)}
                         >
-                          <OrganizationAvatar
-                            profile={org.profile}
-                            withLink={false}
-                            className="size-8"
-                          />
-                          <div className="flex min-w-0 flex-col">
-                            <span className="truncate text-sm text-neutral-charcoal">
-                              {highlightMatch(
-                                org.profile?.name ?? '',
-                                searchQuery,
-                              )}
-                            </span>
-                            {getOrgLocation(org) && (
-                              <span className="truncate text-xs text-neutral-gray4">
-                                {getOrgLocation(org)}
-                              </span>
-                            )}
-                          </div>
+                          <LuPlus className="size-4" />
+                          <span className="text-sm">
+                            {t('Add {searchTerm}', {
+                              searchTerm: searchQuery,
+                            })}
+                          </span>
                         </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-sm text-neutral-gray4">
-                        {t('No results')}
-                      </div>
-                    )}
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
-                    {/* Add organization fallback */}
-                    {onAddOrganization && searchQuery && (
+            {hasSelectedOrgs && (
+              <div className="flex flex-wrap gap-2">
+                {selectedOrgs.map((org) => {
+                  const location = getOrgLocation(org);
+                  return (
+                    <div
+                      key={org.id}
+                      className="flex items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <OrganizationAvatar
+                          profile={org.profile}
+                          withLink={false}
+                          className="size-6"
+                        />
+                        <div className="flex flex-col leading-normal">
+                          <span className="text-sm text-neutral-charcoal">
+                            {org.profile?.name}
+                          </span>
+                          {location && (
+                            <span className="text-xs text-neutral-gray4">
+                              {location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <button
                         type="button"
-                        className="flex w-full items-center gap-2 border-t border-neutral-gray2 px-4 py-3 text-left text-primary-teal hover:bg-neutral-offWhite"
-                        onClick={() => onAddOrganization(searchQuery)}
+                        className="rounded-full p-1 text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal"
+                        onClick={() => handleRemoveOrg(org.id)}
+                        aria-label={t('Remove')}
                       >
-                        <LuPlus className="size-4" />
-                        <span className="text-sm">
-                          {t('Add {searchTerm}', {
-                            searchTerm: searchQuery,
-                          })}
-                        </span>
+                        <LuX className="size-4" />
                       </button>
-                    )}
-                  </>
-                )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Selected organization chips */}
-          {hasSelectedOrgs && (
-            <div className="flex flex-wrap gap-2">
-              {selectedOrgs.map((org) => (
-                <div
-                  key={org.id}
-                  className="flex items-center gap-2 rounded-full border border-neutral-gray2 bg-white px-3 py-1.5"
-                >
-                  <OrganizationAvatar
-                    profile={org.profile}
-                    withLink={false}
-                    className="!size-5"
-                  />
-                  <span className="text-sm text-neutral-charcoal">
-                    {org.profile?.name}
-                  </span>
-                  {getOrgLocation(org) && (
-                    <span className="text-xs text-neutral-gray4">
-                      {getOrgLocation(org)}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    className="ml-1 rounded-full p-0.5 text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal"
-                    onClick={() => handleRemoveOrg(org.id)}
-                    aria-label={t('Remove')}
-                  >
-                    <LuX className="size-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Continue button when orgs are selected */}
           {hasSelectedOrgs ? (
-            <Button className="w-full" onPress={handleContinueToToS}>
-              {t('Continue with {count} organizations', {
-                count: selectedOrgs.length,
-              })}
+            <Button className="w-full" onPress={handleShowToS}>
+              {continueLabel}
             </Button>
           ) : (
             <>
-              {/* Divider with "or" */}
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-neutral-gray1" />
-                <span className="text-sm text-neutral-gray4">{t('or')}</span>
+                <span className="text-sm text-neutral-gray3">{t('or')}</span>
                 <div className="h-px flex-1 bg-neutral-gray1" />
               </div>
 
-              {/* Skip for now button */}
               <Button
                 className="w-full"
                 color="neutral"
-                onPress={handleSkipToToS}
+                onPress={handleShowToS}
               >
                 {t('Skip for now')}
               </Button>
             </>
           )}
         </div>
-      </FormContainer>
+      </div>
     </div>
   );
 };

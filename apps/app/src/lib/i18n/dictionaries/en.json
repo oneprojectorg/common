@@ -981,7 +981,7 @@
   "Search or add your organization...": "Search or add your organization...",
   "Skip for now": "Skip for now",
   "Add {searchTerm}": "Add {searchTerm}",
-  "Continue with {count} organizations": "Continue with {count} organizations",
+  "Continue with {count} organizations": "Continue with {count, plural, =1 {1 organization} other {# organizations}}",
   "One last step": "One last step",
   "Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.": "Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.",
   "I accept the": "I accept the",
