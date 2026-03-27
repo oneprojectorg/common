@@ -35,12 +35,12 @@ const config = {
       },
     },
     resolveAlias: {
-      // In e2e mode, swap the real TipTap client for an in-process mock
-      // so the API server never makes HTTP calls to TipTap Cloud.
+      // In e2e mode, swap external services for in-process mocks so the API
+      // server never makes network calls to TipTap Cloud or PostHog.
       ...(process.env.E2E === 'true'
         ? {
-            '@op/collab': '@op/collab/testing',
-            '@op/analytics': '@op/analytics/testing',
+            '@op/collab': '../../services/collab/__mocks__/index.ts',
+            '@op/analytics': '../../packages/analytics/src/testing.ts',
           }
         : {}),
     },

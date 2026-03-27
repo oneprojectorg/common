@@ -63,12 +63,12 @@ const config = {
     resolveAlias: {
       // Disable the 'tls' module on the client side
       tls: { browser: '' },
-      // In e2e mode, swap the real TipTap client for an in-process mock
-      // so the server never makes HTTP calls to TipTap Cloud.
+      // In e2e mode, swap external services for in-process mocks so the app
+      // never makes network calls to TipTap Cloud or PostHog.
       ...(process.env.E2E === 'true'
         ? {
-            '@op/collab': '@op/collab/testing',
-            '@op/analytics': '@op/analytics/testing',
+            '@op/collab': '../../services/collab/__mocks__/index.ts',
+            '@op/analytics': '../../packages/analytics/src/testing.ts',
           }
         : {}),
     },
