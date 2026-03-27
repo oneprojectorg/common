@@ -1,4 +1,3 @@
-import { cache } from '@op/cache';
 import {
   decodeCursor,
   encodeCursor,
@@ -7,7 +6,6 @@ import {
 import { and, count, db, ilike, inArray } from '@op/db/client';
 import { organizations, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
-import crypto from 'crypto';
 import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
@@ -87,8 +85,8 @@ export const listAllOrganizationsRouter = router({
           ? and(cursorCondition, searchCondition)
           : searchCondition || cursorCondition;
 
-      const [allOrgs, totalCountResult] = await Promise.all([
-        db._query.organizations.findMany({
+      const [allOrgs, totalCount] = await Promise.all([
+        db.query.organizations.findMany({
           where: whereCondition,
           with: {
             profile: {
@@ -105,26 +103,13 @@ export const listAllOrganizationsRouter = router({
               : desc(organizations.createdAt),
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
-        cache<{ value: number }>({
-          type: 'organization',
-          params: [
-            'admin-search-total-' + (query ? hashSearch(query) : 'all'),
-          ],
-          fetch: async () => {
-            const [result] = await db
-              .select({ value: count() })
-              .from(organizations)
-              .where(searchCondition);
-            return result ?? { value: 0 };
-          },
-          options: {
-            ttl: 1 * 60 * 1000, // 1 min
-            skipMemCache: true,
-          },
-        }),
+        db
+          .select({ value: count() })
+          .from(organizations)
+          .where(searchCondition)
+          .then(([result]) => result?.value ?? 0),
       ]);
 
-      const totalCount = totalCountResult.value ?? 0;
       const hasMore = limit !== undefined && allOrgs.length > limit;
       const items = hasMore ? allOrgs.slice(0, limit) : allOrgs;
       const lastItem = items[items.length - 1];
@@ -144,8 +129,3 @@ export const listAllOrganizationsRouter = router({
       };
     }),
 });
-
-/** Utility to hash search strings for cache keys */
-function hashSearch(search: string) {
-  return crypto.createHash('md5').update(search).digest('hex').substring(0, 16);
-}
