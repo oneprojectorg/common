@@ -62,7 +62,6 @@ export const listAllOrganizationsRouter = router({
       z.object({
         items: z.array(adminOrgEncoder),
         next: z.string().nullish(),
-        hasMore: z.boolean(),
         total: z.number(),
       }),
     )
@@ -161,7 +160,6 @@ export const listAllOrganizationsRouter = router({
           }),
         ),
         next: nextCursor,
-        hasMore,
         total: totalCount,
       };
     }),

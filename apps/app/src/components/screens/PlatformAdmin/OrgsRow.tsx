@@ -17,7 +17,8 @@ import { OrgMembersModal } from './OrgMembersModal';
 const ORGS_TABLE_GRID =
   'grid grid-cols-[minmax(200px,2fr)_minmax(150px,1.5fr)_minmax(100px,0.8fr)_minmax(150px,1.5fr)_80px] gap-4';
 
-type ListAllOrgsOutput = RouterOutput['platform']['admin']['listAllOrganizations'];
+type ListAllOrgsOutput =
+  RouterOutput['platform']['admin']['listAllOrganizations'];
 type Org = ListAllOrgsOutput['items'][number];
 
 export const OrgsRow = ({ org }: { org: Org }) => {
@@ -49,7 +50,9 @@ export const OrgsRow = ({ org }: { org: Org }) => {
               <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
                 {format.dateTime(createdAt, { dateStyle: 'medium' })}
               </Button>
-              <Tooltip>{format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}</Tooltip>
+              <Tooltip>
+                {format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
+              </Tooltip>
             </TooltipTrigger>
           ) : (
             '—'

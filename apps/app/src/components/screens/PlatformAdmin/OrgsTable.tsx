@@ -17,7 +17,8 @@ const ORGS_TABLE_MIN_WIDTH = 'min-w-[800px]';
 const ORGS_TABLE_GRID =
   'grid grid-cols-[minmax(200px,2fr)_minmax(150px,1.5fr)_minmax(100px,0.8fr)_minmax(150px,1.5fr)_80px] gap-4';
 
-type ListAllOrgsInput = RouterInput['platform']['admin']['listAllOrganizations'];
+type ListAllOrgsInput =
+  RouterInput['platform']['admin']['listAllOrganizations'];
 
 /** Main organizations table component with suspense boundary */
 export const OrgsTable = () => {
@@ -67,7 +68,10 @@ const OrgsTableHeader = () => {
   return (
     <div className={cn('bg-neutral-gray0 border-b py-3', ORGS_TABLE_GRID)}>
       {columnHeadings.map((heading) => (
-        <div key={heading} className="text-sm font-normal text-neutral-charcoal">
+        <div
+          key={heading}
+          className="text-sm font-normal text-neutral-charcoal"
+        >
           {heading}
         </div>
       ))}
@@ -99,12 +103,13 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
     query: searchQuery || undefined,
   };
 
-  const [data] = trpc.platform.admin.listAllOrganizations.useSuspenseQuery(queryInput);
+  const [data] =
+    trpc.platform.admin.listAllOrganizations.useSuspenseQuery(queryInput);
 
-  const { items: orgs, next, hasMore, total } = data;
+  const { items: orgs, next, total } = data;
 
   const onNext = () => {
-    if (hasMore && next) {
+    if (next) {
       handleNext(next);
     }
   };
@@ -124,7 +129,7 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
             page: currentPage,
             label: t('organizations'),
           }}
-          next={hasMore ? onNext : undefined}
+          next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />
       </div>
