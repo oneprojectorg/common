@@ -25,7 +25,7 @@ import { expect, test } from '../fixtures/index.js';
  * Any doc ID that doesn't contain "nonexistent" will return fixture content
  * from the mock (@op/collab/testing, aliased via webpack when E2E=true).
  */
-const MOCK_DOC_ID = 'test-proposal-doc';
+const MOCK_DOC_ID = 'test-proposal-view-doc';
 const VERSIONED_MOCK_DOC_ID = 'test-proposal-doc-versioned';
 
 test.describe('Proposal View', () => {
@@ -127,15 +127,14 @@ test.describe('Proposal View', () => {
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
     );
 
-    // Title rendered (wait for client-side hydration)
+    // Title rendered from the collab title fragment.
     await expect(
       authenticatedPage.getByRole('heading', {
         name: 'Community Solar Initiative',
       }),
     ).toBeVisible({ timeout: 30_000 });
 
-    // Formatted text rendered with correct tags (use .first() because the mock
-    // returns the same fixture content for every fragment, including dropdowns)
+    // Formatted text rendered from the summary fragment.
     await expect(
       authenticatedPage.locator('strong', { hasText: 'Bold text' }).first(),
     ).toBeVisible();
@@ -163,10 +162,8 @@ test.describe('Proposal View', () => {
       authenticatedPage.getByText('youtube.com').first(),
     ).toBeVisible();
 
-    // New-format budget { value: 10000, currency: 'EUR' } rendered as "€10,000"
+    // Budget and category rendered from collab system-field fragments.
     await expect(authenticatedPage.getByText('€10,000').first()).toBeVisible();
-
-    // Category value rendered in a Tag component on the proposal view
     await expect(
       authenticatedPage.getByText('Renewable Energy').first(),
     ).toBeVisible();
@@ -304,17 +301,19 @@ test.describe('Proposal View', () => {
       `/en/decisions/${instance.slug}/proposal/${submittedProposal.profileId}`,
     );
     await expect(
-      authenticatedPage.getByText('Version 2 checkpoint content'),
+      authenticatedPage.getByRole('heading', {
+        name: 'Version 2 checkpoint content',
+      }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
-      authenticatedPage.getByText('Latest draft content'),
+      authenticatedPage.getByRole('heading', { name: 'Latest draft content' }),
     ).not.toBeVisible();
 
     await authenticatedPage.goto(
       `/en/decisions/${instance.slug}/proposal/${draftProposal.profileId}`,
     );
     await expect(
-      authenticatedPage.getByText('Latest draft content'),
+      authenticatedPage.getByRole('heading', { name: 'Latest draft content' }),
     ).toBeVisible({ timeout: 30_000 });
   });
 

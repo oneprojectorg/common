@@ -129,6 +129,13 @@ const E2E_FIXTURE_CONTENT: TipTapDocument = {
   ],
 };
 
+const E2E_FIXTURE_CONTENT_NO_EMBED: TipTapDocument = {
+  type: 'doc',
+  content: E2E_FIXTURE_CONTENT.content?.filter(
+    (node) => node.type !== 'iframely',
+  ),
+};
+
 const E2E_VERSIONED_FIXTURE_LATEST: TipTapDocument = {
   type: 'doc',
   content: [
@@ -147,6 +154,29 @@ const E2E_VERSIONED_FIXTURE_V2: TipTapDocument = {
       content: [{ type: 'text', text: 'Version 2 checkpoint content' }],
     },
   ],
+};
+
+const E2E_LISTING_FIXTURE_FRAGMENTS: TipTapFragmentResponse = {
+  title: textFragment('Community Garden Project'),
+  budget: textFragment('{"amount":8000,"currency":"USD"}'),
+  category: textFragment('Environment'),
+  summary: E2E_FIXTURE_CONTENT_NO_EMBED,
+};
+
+const E2E_LISTING_FIXTURE_FRAGMENTS_ALT: TipTapFragmentResponse = {
+  title: textFragment('Youth Mentorship Program'),
+  budget: textFragment('{"amount":12500,"currency":"EUR"}'),
+  category: textFragment('Education'),
+  summary: E2E_FIXTURE_CONTENT_NO_EMBED,
+};
+
+const E2E_VIEW_FIXTURE_FRAGMENTS: TipTapFragmentResponse = {
+  title: textFragment('Community Solar Initiative'),
+  budget: textFragment('{"amount":10000,"currency":"EUR"}'),
+  category: textFragment('Renewable Energy'),
+  priority: textFragment('high'),
+  region: textFragment('north'),
+  summary: E2E_FIXTURE_CONTENT,
 };
 
 // ---------------------------------------------------------------------------
@@ -181,6 +211,18 @@ const docVersions = new Map<string, TipTapVersion[]>();
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
   Promise.resolve(E2E_FIXTURE_CONTENT),
+);
+docFragmentJsonResponses.set(
+  'test-proposal-listing-doc',
+  E2E_LISTING_FIXTURE_FRAGMENTS,
+);
+docFragmentJsonResponses.set(
+  'test-proposal-listing-doc-alt',
+  E2E_LISTING_FIXTURE_FRAGMENTS_ALT,
+);
+docFragmentJsonResponses.set(
+  'test-proposal-view-doc',
+  E2E_VIEW_FIXTURE_FRAGMENTS,
 );
 docResponses.set('test-proposal-doc-versioned', () =>
   Promise.resolve(E2E_VERSIONED_FIXTURE_LATEST),

@@ -107,6 +107,7 @@ export function resolveProposalSystemFields(proposal: Proposal) {
     if (!content?.length) {
       continue;
     }
+
     try {
       const text = generateText(
         { type: 'doc', content: content as JSONContent[] },
@@ -122,7 +123,6 @@ export function resolveProposalSystemFields(proposal: Proposal) {
 
   const resolved = assembleProposalData(template, fragmentTexts);
 
-  console.log('Resolved proposal system fields:', resolved);
   return {
     ...fallback,
     ...(resolved.title != null && { title: resolved.title as string }),
