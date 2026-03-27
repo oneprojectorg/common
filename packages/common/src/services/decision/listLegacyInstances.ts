@@ -1,5 +1,5 @@
 import { db, desc, eq } from '@op/db/client';
-import { organizations, processInstances } from '@op/db/schema';
+import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -41,6 +41,7 @@ export const listLegacyInstances = async ({
       proposals: {
         columns: {
           id: true,
+          status: true,
           submittedByProfileId: true,
         },
       },
@@ -49,9 +50,13 @@ export const listLegacyInstances = async ({
   });
 
   return instanceList.map((instance) => {
-    const proposalCount = instance.proposals?.length || 0;
+    const nonDraftProposals =
+      instance.proposals?.filter(
+        (proposal) => proposal.status !== ProposalStatus.DRAFT,
+      ) || [];
+    const proposalCount = nonDraftProposals.length;
     const uniqueParticipants = new Set(
-      instance.proposals?.map((p) => p.submittedByProfileId),
+      nonDraftProposals.map((proposal) => proposal.submittedByProfileId),
     );
     const participantCount = uniqueParticipants.size;
 

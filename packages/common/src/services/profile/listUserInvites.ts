@@ -1,5 +1,5 @@
-import { count, countDistinct, db, inArray } from '@op/db/client';
-import { proposals } from '@op/db/schema';
+import { and, count, countDistinct, db, inArray, ne } from '@op/db/client';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 /**
@@ -76,7 +76,12 @@ export const listUserInvites = async ({
         participantCount: countDistinct(proposals.submittedByProfileId),
       })
       .from(proposals)
-      .where(inArray(proposals.processInstanceId, instanceIds))
+      .where(
+        and(
+          inArray(proposals.processInstanceId, instanceIds),
+          ne(proposals.status, ProposalStatus.DRAFT),
+        ),
+      )
       .groupBy(proposals.processInstanceId);
 
     for (const row of counts) {

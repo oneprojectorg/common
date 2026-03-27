@@ -132,7 +132,7 @@ test.describe('Decision Role Capabilities', () => {
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
-      memberPage.getByRole('button', { name: 'Submit a proposal' }),
+      memberPage.getByRole('button', { name: 'Start a proposal' }),
     ).toBeVisible({ timeout: 5000 });
   });
 
@@ -161,7 +161,7 @@ test.describe('Decision Role Capabilities', () => {
 
     // Even though admin has submitProposals permission, phase rules block the button
     await expect(
-      authenticatedPage.getByRole('button', { name: 'Submit a proposal' }),
+      authenticatedPage.getByRole('button', { name: 'Start a proposal' }),
     ).not.toBeVisible();
   });
 

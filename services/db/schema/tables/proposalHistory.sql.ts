@@ -5,6 +5,7 @@ import {
   index,
   pgTable,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -32,6 +33,13 @@ export const proposalHistory = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
+
+    // Composite unique for FK target from decisionTransitionProposals
+    unique('prop_hist_process_id_history_id_uniq').on(
+      table.processInstanceId,
+      table.id,
+      table.historyId,
+    ),
 
     // Indexes
     index().on(table.historyId).concurrently(),

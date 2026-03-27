@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
@@ -10,7 +11,8 @@ import {
 import { type ProposalDataInput, parseProposalData } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
-import type { Editor } from '@tiptap/react';
+import type { Editor, JSONContent } from '@tiptap/react';
+import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
   type ReactNode,
@@ -38,11 +40,15 @@ import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
+import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
 
 type Proposal = z.infer<typeof proposalEncoder>;
+
+// Create a version snapshot after 60 seconds without local edits.
+const VERSION_INTERVAL_SECONDS = 60;
 
 /**
  * Tracks which TipTap editor currently has focus.
@@ -180,12 +186,16 @@ function ProposalEditorInner({
   proposalTemplate: ProposalTemplateSchema;
 }) {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const { ydoc } = useCollaborativeDoc();
+  const { ydoc, provider, isSynced } = useCollaborativeDoc();
+  const versionPreview = useOptionalVersionPreview();
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isPreviewMode = Boolean(versionPreview);
+  const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
@@ -210,6 +220,18 @@ function ProposalEditorInner({
   templateRef.current = proposalTemplate;
 
   const proposalFields = compileProposalSchema(proposalTemplate);
+  const previewTitle = extractPreviewTitle(
+    versionPreview?.fragmentContents.title,
+  );
+  const viewingLabel = versionPreview?.tiptapVersion
+    ? t('Viewing {date}', {
+        date: formatDate(
+          new Date(versionPreview.tiptapVersion.date).toISOString(),
+          locale,
+          DATE_TIME_UTC_FORMAT,
+        ),
+      })
+    : null;
 
   // -- Validation ------------------------------------------------------------
 
@@ -235,6 +257,39 @@ function ProposalEditorInner({
       setShowInfoModal(true);
     }
   }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
+
+  useEffect(() => {
+    if (!provider || !isSynced || isPreviewMode) {
+      return;
+    }
+
+    const scheduleVersionOnLocalChange = (transaction: { local: boolean }) => {
+      if (!transaction.local) {
+        return;
+      }
+
+      if (pendingVersionTimeoutRef.current !== null) {
+        window.clearTimeout(pendingVersionTimeoutRef.current);
+      }
+
+      pendingVersionTimeoutRef.current = window.setTimeout(() => {
+        pendingVersionTimeoutRef.current = null;
+
+        provider.createVersion(undefined, true);
+      }, VERSION_INTERVAL_SECONDS * 1000);
+    };
+
+    ydoc.on('afterTransaction', scheduleVersionOnLocalChange);
+
+    return () => {
+      ydoc.off('afterTransaction', scheduleVersionOnLocalChange);
+
+      if (pendingVersionTimeoutRef.current !== null) {
+        window.clearTimeout(pendingVersionTimeoutRef.current);
+        pendingVersionTimeoutRef.current = null;
+      }
+    };
+  }, [isPreviewMode, isSynced, provider, ydoc]);
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
@@ -320,11 +375,19 @@ function ProposalEditorInner({
   return (
     <ProposalEditorLayout
       backHref={backHref}
-      title={draft.title}
+      title={isPreviewMode ? previewTitle || draft.title : draft.title}
+      statusSlot={
+        viewingLabel ? (
+          <div className="rounded-sm bg-neutral-gray1 px-4 py-2 text-sm text-neutral-charcoal">
+            {viewingLabel}
+          </div>
+        ) : undefined
+      }
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
       isDraft={isDraft}
+      readOnlyMode={isPreviewMode}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
       showHeaderActions={showHeaderActions}
@@ -345,6 +408,8 @@ function ProposalEditorInner({
             onFieldChange={handleFieldChange}
             onEditorFocus={onEditorFocus}
             onEditorBlur={onEditorBlur}
+            mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
+            previewVersionFragmentContents={versionPreview?.fragmentContents}
           />
 
           <div className="border-t border-neutral-gray1 pt-8">
@@ -378,4 +443,20 @@ function ProposalEditorInner({
       )}
     </ProposalEditorLayout>
   );
+}
+
+function extractPreviewTitle(content: JSONContent | null | undefined): string {
+  if (!content) {
+    return '';
+  }
+
+  if (typeof content.text === 'string') {
+    return content.text;
+  }
+
+  if (!Array.isArray(content.content)) {
+    return '';
+  }
+
+  return content.content.map((child) => extractPreviewTitle(child)).join('');
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, use } from 'react';
+import { createContext, use, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type {
   CellProps,
   ColumnProps,
@@ -29,6 +30,7 @@ import { twJoin, twMerge } from 'tailwind-merge';
 
 import { cx } from '../../lib/primitive';
 import { Checkbox } from '../Checkbox';
+import { Popover } from '../Popover';
 
 interface TableProps extends Omit<TablePrimitiveProps, 'className'> {
   allowResize?: boolean;
@@ -329,5 +331,88 @@ const TableCell = ({ className, ref, ...props }: TableCellProps) => {
   );
 };
 
-export type { TableProps, TableColumnProps, TableRowProps };
-export { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow };
+interface EditableCellProps extends Omit<TableCellProps, 'children'> {
+  children: ReactNode;
+  /** Render the editing UI shown inside the popover. */
+  renderEditing: (close: () => void) => ReactNode;
+  /** Controlled editing state. */
+  isEditing?: boolean;
+  /** Called when the editing state changes. */
+  onEditChange?: (isEditing: boolean) => void;
+  /** Popover placement relative to the cell. */
+  placement?:
+    | 'bottom start'
+    | 'bottom end'
+    | 'bottom'
+    | 'top start'
+    | 'top end'
+    | 'top';
+  /** Additional class name for the popover. */
+  popoverClassName?: string;
+}
+
+const EditableCell = ({
+  children,
+  renderEditing,
+  isEditing: controlledIsEditing,
+  onEditChange,
+  placement = 'top start',
+  popoverClassName,
+  className,
+  ...cellProps
+}: EditableCellProps) => {
+  const [uncontrolledIsEditing, setUncontrolledIsEditing] = useState(false);
+  const isEditing = controlledIsEditing ?? uncontrolledIsEditing;
+  const cellRef = useRef<HTMLTableCellElement>(null);
+  const [showPopover, setShowPopover] = useState(false);
+
+  // Defer popover rendering by one frame so the cell is laid out and measured
+  useEffect(() => {
+    if (isEditing) {
+      const id = requestAnimationFrame(() => setShowPopover(true));
+      return () => cancelAnimationFrame(id);
+    }
+    setShowPopover(false);
+  }, [isEditing]);
+
+  const setIsEditing = (value: boolean) => {
+    onEditChange?.(value);
+    setUncontrolledIsEditing(value);
+  };
+
+  const close = () => setIsEditing(false);
+  const cellHeight = cellRef.current?.offsetHeight ?? 0;
+  const cellWidth = cellRef.current?.offsetWidth ?? 0;
+
+  return (
+    <TableCell ref={cellRef} className={className} {...cellProps}>
+      {children}
+      {showPopover && (
+        <Popover
+          triggerRef={cellRef as React.RefObject<Element>}
+          isOpen
+          isNonModal
+          shouldCloseOnInteractOutside={() => false}
+          placement={placement}
+          offset={-cellHeight}
+          containerPadding={0}
+          className={twMerge('!z-0 border-b bg-white', popoverClassName)}
+          style={{ height: cellHeight, width: cellWidth }}
+        >
+          {renderEditing(close)}
+        </Popover>
+      )}
+    </TableCell>
+  );
+};
+
+export type { TableProps, TableColumnProps, TableRowProps, EditableCellProps };
+export {
+  EditableCell,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+};

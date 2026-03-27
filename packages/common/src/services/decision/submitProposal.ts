@@ -1,3 +1,4 @@
+import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
@@ -5,6 +6,7 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { decisionPermission } from './permissions';
+import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -89,20 +91,48 @@ export const submitProposal = async ({
     instance.processId,
   );
 
-  if (proposalTemplate) {
-    await validateProposalAgainstTemplate(
-      proposalTemplate,
-      existingProposal.proposalData,
-      existingProposal.profile.name,
-    );
-  }
+  // Stamp the latest TipTap version into proposalData so the history row
+  // created by the DB trigger links back to a concrete document revision.
+  const parsed = parseProposalData(existingProposal.proposalData);
+
+  // Validation and version fetch are independent — run them in parallel.
+  // The version fetch is best-effort; failures are logged but never block.
+  const [, collaborationDocVersionId] = await Promise.all([
+    proposalTemplate
+      ? validateProposalAgainstTemplate(
+          proposalTemplate,
+          existingProposal.proposalData,
+          existingProposal.profile.name,
+        )
+      : undefined,
+    parsed.collaborationDocId
+      ? getTipTapClient()
+          .getLatestVersionId(parsed.collaborationDocId)
+          .catch((error: unknown) => {
+            console.error(
+              `[submitProposal] Failed to fetch TipTap version for ${parsed.collaborationDocId}:`,
+              error,
+            );
+            return null;
+          })
+      : null,
+  ]);
 
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
+    const proposalDataUpdate =
+      collaborationDocVersionId != null
+        ? {
+            ...(existingProposal.proposalData as Record<string, unknown>),
+            collaborationDocVersionId,
+          }
+        : undefined;
+
     const [submittedProposal] = await tx
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
+        ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
       })
       .where(eq(proposals.id, data.proposalId))
       .returning();

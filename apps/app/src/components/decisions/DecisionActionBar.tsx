@@ -94,7 +94,7 @@ export const DecisionActionBar = ({
             onPress={handleCreateProposal}
           >
             {isCreating ? <LoadingSpinner /> : null}
-            {t('Submit a proposal')}
+            {t('Start a proposal')}
           </Button>
         )}
       </div>

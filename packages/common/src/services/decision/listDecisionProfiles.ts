@@ -2,6 +2,7 @@ import { and, db, eq, inArray } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
+  ProposalStatus,
   processInstances,
   profileUsers,
 } from '@op/db/schema';
@@ -127,6 +128,7 @@ export const listDecisionProfiles = async ({
           proposals: {
             columns: {
               id: true,
+              status: true,
               submittedByProfileId: true,
             },
           },
@@ -174,9 +176,13 @@ export const listDecisionProfiles = async ({
 
     if (profile.processInstance) {
       const { proposals, ...instanceRest } = profile.processInstance;
-      const proposalCount = proposals?.length ?? 0;
+      const nonDraftProposals =
+        proposals?.filter(
+          (proposal) => proposal.status !== ProposalStatus.DRAFT,
+        ) ?? [];
+      const proposalCount = nonDraftProposals.length;
       const uniqueParticipants = new Set(
-        proposals?.map((proposal) => proposal.submittedByProfileId),
+        nonDraftProposals.map((proposal) => proposal.submittedByProfileId),
       );
       const participantCount = uniqueParticipants.size;
 

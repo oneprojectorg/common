@@ -1,6 +1,6 @@
 'use client';
 
-import { parseDate } from '@internationalized/date';
+import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
@@ -224,6 +224,17 @@ function PhaseDetailForm({
     setTouchedFields((prev) => new Set(prev).add(field));
   };
 
+  const safeParseLocal = (dateStr: string | undefined) => {
+    if (!dateStr) {
+      return undefined;
+    }
+    try {
+      return toCalendarDate(parseAbsoluteToLocal(dateStr));
+    } catch {
+      return undefined;
+    }
+  };
+
   const getErrors = () => {
     if (!phase) {
       return {};
@@ -242,9 +253,9 @@ function PhaseDetailForm({
       errors.endDate = t('End date is required');
     }
     if (phase.startDate && phase.endDate) {
-      const startPart = phase.startDate.split('T')[0] ?? '';
-      const endPart = phase.endDate.split('T')[0] ?? '';
-      if (endPart.localeCompare(startPart) < 0) {
+      const start = safeParseLocal(phase.startDate);
+      const end = safeParseLocal(phase.endDate);
+      if (start && end && end.compare(start) < 0) {
         errors.endDate = t('End date must be on or after the start date');
       }
     }
@@ -255,27 +266,12 @@ function PhaseDetailForm({
   const getErrorMessage = (field: string) =>
     touchedFields.has(field) ? errors[field] : undefined;
 
-  // Date helpers
-  const safeParseDateString = (dateStr: string | undefined) => {
-    if (!dateStr) {
-      return undefined;
-    }
-    try {
-      const datePart = dateStr.split('T')[0];
-      return datePart ? parseDate(datePart) : undefined;
-    } catch {
-      return undefined;
-    }
-  };
-
   const formatDateValue = (date: {
     year: number;
     month: number;
     day: number;
   }) => {
-    return new Date(
-      Date.UTC(date.year, date.month - 1, date.day),
-    ).toISOString();
+    return new Date(date.year, date.month - 1, date.day).toISOString();
   };
 
   if (!phase) {
@@ -350,8 +346,8 @@ function PhaseDetailForm({
           <div className="flex-1">
             <DatePicker
               label={t('Start date')}
-              value={safeParseDateString(phase.startDate)}
-              maxValue={safeParseDateString(phase.endDate)}
+              value={safeParseLocal(phase.startDate)}
+              maxValue={safeParseLocal(phase.endDate)}
               onChange={(date) =>
                 updatePhase({ startDate: formatDateValue(date) })
               }
@@ -361,8 +357,8 @@ function PhaseDetailForm({
             <DatePicker
               label={t('End date')}
               isRequired
-              value={safeParseDateString(phase.endDate)}
-              minValue={safeParseDateString(phase.startDate)}
+              value={safeParseLocal(phase.endDate)}
+              minValue={safeParseLocal(phase.startDate)}
               onChange={(date) => {
                 updatePhase({ endDate: formatDateValue(date) });
                 markTouched('endDate');

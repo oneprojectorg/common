@@ -1,6 +1,7 @@
-import { and, count, countDistinct, db, eq } from '@op/db/client';
+import { and, countDistinct, db, eq, ne } from '@op/db/client';
 import {
   EntityType,
+  ProposalStatus,
   processInstances,
   profileUsers,
   profiles,
@@ -58,7 +59,7 @@ export const getDecisionBySlug = async ({
     db
       .select({
         profileId: profiles.id,
-        proposalCount: count(proposals.id),
+        proposalCount: countDistinct(proposals.id),
         participantCount: countDistinct(proposals.submittedByProfileId),
       })
       .from(profiles)
@@ -71,7 +72,13 @@ export const getDecisionBySlug = async ({
       )
       .innerJoin(processInstances, eq(processInstances.profileId, profiles.id))
       // left join to remove processes that don't exist
-      .leftJoin(proposals, eq(proposals.processInstanceId, processInstances.id))
+      .leftJoin(
+        proposals,
+        and(
+          eq(proposals.processInstanceId, processInstances.id),
+          ne(proposals.status, ProposalStatus.DRAFT),
+        ),
+      )
       .where(
         and(eq(profiles.type, EntityType.DECISION), eq(profiles.slug, slug)),
       )

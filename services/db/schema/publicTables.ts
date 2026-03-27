@@ -167,6 +167,9 @@ export {
 } from './tables/stateTransitionHistory.sql';
 export type { StateTransitionHistory } from './tables/stateTransitionHistory.sql';
 
+export { decisionTransitionProposals } from './tables/decisionTransitionProposals.sql';
+export type { DecisionTransitionProposal } from './tables/decisionTransitionProposals.sql';
+
 export {
   decisionProcessTransitions,
   decisionProcessTransitionsRelations,

@@ -45,6 +45,8 @@ export const proposalDataSchema = z
       .nullish()
       .transform((v) => v ?? []),
     collaborationDocId: z.string().nullish(),
+    /** TipTap version number stamped on submit. Not a source of truth for the current version. */
+    collaborationDocVersionId: z.number().int().optional(),
   })
 
   .transform((data) => {
@@ -106,6 +108,8 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     budget: normalizeBudget(raw.budget),
     attachmentIds: (raw.attachmentIds as string[]) ?? [],
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
+    collaborationDocVersionId:
+      (raw.collaborationDocVersionId as number) ?? undefined,
   };
 }
 
