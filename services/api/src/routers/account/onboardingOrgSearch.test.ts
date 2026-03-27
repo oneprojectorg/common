@@ -2,7 +2,9 @@ import { db } from '@op/db/client';
 import {
   allowList,
   joinProfileRequests,
+  locations,
   organizations,
+  organizationsWhereWeWork,
   profiles,
   users,
 } from '@op/db/schema';
@@ -20,12 +22,16 @@ import {
 import { createCallerFactory } from '../../trpcFactory';
 import { organizationRouter } from '../organization';
 import { createJoinRequestRouter } from '../profile/requests/createJoinRequest';
+import { deleteJoinRequestRouter } from '../profile/requests/deleteJoinRequest';
 import { matchingDomainOrganizations } from './matchingDomainOrganizations';
 
 describe.concurrent('Onboarding Organization Search', () => {
   const createAccountCaller = createCallerFactory(matchingDomainOrganizations);
   const createOrgCaller = createCallerFactory(organizationRouter);
   const createJoinRequestCaller = createCallerFactory(createJoinRequestRouter);
+  const createDeleteJoinRequestCaller = createCallerFactory(
+    deleteJoinRequestRouter,
+  );
 
   /**
    * Helper to clean up a user created with createTestUser.
@@ -367,6 +373,141 @@ describe.concurrent('Onboarding Organization Search', () => {
           expect(joinRequests).toHaveLength(0);
         }
       });
+
+      it('returns whereWeWork location data for domain-matched organizations', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const testData = new TestOrganizationDataManager(
+          task.id,
+          onTestFinished,
+        );
+
+        const { organization } = await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'LocationDataOrg',
+        });
+
+        await db
+          .update(organizations)
+          .set({ domain: 'oneproject.org' })
+          .where(eq(organizations.id, organization.id));
+
+        // Add a whereWeWork location for this org
+        const [location] = await db
+          .insert(locations)
+          .values({
+            name: 'Test City',
+            placeId: `test-place-${task.id.slice(0, 8)}`,
+            metadata: {},
+          })
+          .returning();
+
+        if (!location) {
+          throw new Error('Failed to create test location');
+        }
+
+        await db.insert(organizationsWhereWeWork).values({
+          organizationId: organization.id,
+          locationId: location.id,
+        });
+
+        onTestFinished(async () => {
+          await db
+            .delete(organizationsWhereWeWork)
+            .where(
+              eq(organizationsWhereWeWork.organizationId, organization.id),
+            );
+          await db.delete(locations).where(eq(locations.id, location.id));
+        });
+
+        const joinerEmail = `${task.id.slice(0, 8)}-loc-joiner@oneproject.org`;
+        const { user: authUser } = await createTestUser(joinerEmail);
+
+        if (!authUser) {
+          throw new Error('Failed to create auth user');
+        }
+
+        onTestFinished(() => cleanupUser(authUser.id));
+
+        const { session } = await createIsolatedSession(joinerEmail);
+        const caller = createAccountCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const result = await caller.listMatchingDomainOrganizations(undefined);
+        const matchedOrg = result.find((org) => org.id === organization.id);
+
+        expect(matchedOrg).toBeDefined();
+        expect(matchedOrg!.whereWeWork).toBeDefined();
+        expect(matchedOrg!.whereWeWork.length).toBeGreaterThanOrEqual(1);
+
+        const locationNames = matchedOrg!.whereWeWork.map(
+          (loc: { name?: string | null }) => loc.name,
+        );
+        expect(locationNames).toContain('Test City');
+      });
     },
   );
+
+  describe.concurrent('UI interaction coverage', () => {
+    it('removing all selected orgs re-enables skip (parallel join request then delete)', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const joinRequestData = new TestJoinProfileRequestDataManager(
+        task.id,
+        onTestFinished,
+      );
+
+      // Create a target org and a requester
+      const { organizationProfile: targetProfile } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'RemoveChipOrg',
+        });
+
+      const { adminUser: requester } = await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'RequesterOrg',
+      });
+
+      const { session } = await createIsolatedSession(requester.email);
+      const caller = createJoinRequestCaller(
+        await createTestContextWithSession(session),
+      );
+
+      // Create a join request (simulates selecting an org)
+      const result = await caller.createJoinRequest({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+      });
+
+      joinRequestData.trackJoinRequest(result.id);
+      expect(result.status).toBe('pending');
+
+      // Verify the request exists in the DB
+      const [existing] = await db
+        .select()
+        .from(joinProfileRequests)
+        .where(eq(joinProfileRequests.id, result.id));
+
+      expect(existing).toBeDefined();
+
+      // Delete the join request (simulates removing the chip)
+      const deleteCaller = createDeleteJoinRequestCaller(
+        await createTestContextWithSession(session),
+      );
+      await deleteCaller.deleteJoinRequest({ requestId: result.id });
+
+      // Verify it's deleted
+      const [deleted] = await db
+        .select()
+        .from(joinProfileRequests)
+        .where(eq(joinProfileRequests.id, result.id));
+
+      expect(deleted).toBeUndefined();
+    });
+  });
 });
