@@ -49,7 +49,7 @@ import { useProposalValidation } from './useProposalValidation';
 type Proposal = z.infer<typeof proposalEncoder>;
 
 // Create a version snapshot after 60 seconds without local edits.
-const VERSION_INTERVAL_SECONDS = 10;
+const VERSION_INTERVAL_SECONDS = 60;
 
 /**
  * Tracks which TipTap editor currently has focus.
