@@ -148,34 +148,34 @@ const config = {
   skipTrailingSlashRedirect: true,
 };
 
-// Get current git branch (works in both local dev and Vercel)
-const getCurrentBranch = () => {
-  // In Vercel, use VERCEL_GIT_COMMIT_REF
-  if (process.env.VERCEL_GIT_COMMIT_REF) {
-    return process.env.VERCEL_GIT_COMMIT_REF;
-  }
-
-  // Locally, try to get branch from git
+const tryGit = (cmd) => {
   try {
     const { execSync } = require('child_process');
-    return execSync('git rev-parse --abbrev-ref HEAD', {
-      encoding: 'utf8',
-    }).trim();
+    return execSync(cmd, { encoding: 'utf8' }).trim();
   } catch {
     return null;
   }
 };
 
-const currentBranch = getCurrentBranch();
+const getGitInfo = () => ({
+  branch:
+    process.env.VERCEL_GIT_COMMIT_REF ??
+    tryGit('git rev-parse --abbrev-ref HEAD'),
+  sha:
+    process.env.VERCEL_GIT_COMMIT_SHA ?? tryGit('git rev-parse HEAD'),
+});
+
+const { branch: currentBranch, sha: commitSha } = getGitInfo();
 const allowedBranches = ['dev', 'main'];
 const shouldUploadSourcemaps = allowedBranches.includes(currentBranch);
 
 export default withPostHogConfig(withBundleAnalyzer(withNextIntl(config)), {
   personalApiKey: process.env.POSTHOG_API_KEY,
   envId: process.env.POSTHOG_ENV_ID,
-  project: 'common',
   host: 'https://eu.i.posthog.com',
   sourcemaps: {
     enabled: shouldUploadSourcemaps,
+    project: 'common',
+    version: commitSha,
   },
 });

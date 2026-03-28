@@ -1,5 +1,6 @@
 'use client';
 
+import posthog from 'posthog-js';
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 
@@ -28,6 +29,11 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    posthog.captureException(error, {
+      ...(errorInfo.componentStack && {
+        component_stack: errorInfo.componentStack,
+      }),
+    });
   }
 
   public render() {
