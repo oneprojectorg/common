@@ -197,6 +197,10 @@ function ProposalEditorInner({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
   const pendingVersionTimeoutRef = useRef<number | null>(null);
+  // Guard against creating versions from internal TipTap/Yjs transactions that
+  // fire during initialization — only schedule once the user has actually
+  // focused an editor.
+  const hasUserInteractedRef = useRef(false);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
@@ -263,7 +267,7 @@ function ProposalEditorInner({
     }
 
     const scheduleVersionOnLocalChange = (transaction: { local: boolean }) => {
-      if (!transaction.local) {
+      if (!transaction.local || !hasUserInteractedRef.current) {
         return;
       }
 
@@ -367,9 +371,17 @@ function ProposalEditorInner({
 
   const {
     editor: focusedEditor,
-    onEditorFocus,
+    onEditorFocus: rawOnEditorFocus,
     onEditorBlur,
   } = useFocusedEditor();
+
+  const onEditorFocus = useCallback(
+    (e: Editor) => {
+      hasUserInteractedRef.current = true;
+      rawOnEditorFocus(e);
+    },
+    [rawOnEditorFocus],
+  );
 
   return (
     <ProposalEditorLayout
