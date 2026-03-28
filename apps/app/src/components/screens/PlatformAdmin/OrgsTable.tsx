@@ -90,7 +90,7 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
     handlePrevious,
     canGoPrevious,
     reset,
-  } = useCursorPagination(10);
+  } = useCursorPagination(5);
 
   // Reset pagination when search query changes
   useEffect(() => {
