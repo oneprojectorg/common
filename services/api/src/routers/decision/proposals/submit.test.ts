@@ -328,6 +328,55 @@ describe.concurrent('submitProposal', () => {
     });
   });
 
+  it('should reject submission when a text field exceeds the template character limit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title'],
+        'x-field-order': ['title'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            maxLength: 10,
+            'x-format': 'short-text',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'A title that is too long' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitProposal({
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringContaining('Title cannot exceed 10 characters'),
+      },
+    });
+  });
+
   it('should use schema title in validation errors for UUID-keyed custom fields', async ({
     task,
     onTestFinished,

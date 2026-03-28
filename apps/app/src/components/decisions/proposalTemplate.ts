@@ -38,6 +38,14 @@ export type { ProposalTemplateSchema };
 
 export type FieldType = 'short_text' | 'long_text' | 'dropdown';
 
+export const DEFAULT_TEXT_FIELD_MAX_LENGTH: Record<
+  Extract<FieldType, 'short_text' | 'long_text'>,
+  number
+> = {
+  short_text: 255,
+  long_text: 1500,
+};
+
 /**
  * Flat read-only view of a single field, derived from a proposal template.
  * Gives builder/renderer code a friendly object instead of requiring
@@ -79,9 +87,21 @@ function withXFormat(
 export function createFieldJsonSchema(type: FieldType): ProposalTemplateSchema {
   switch (type) {
     case 'short_text':
-      return withXFormat({ type: 'string' }, 'short-text');
+      return withXFormat(
+        {
+          type: 'string',
+          maxLength: DEFAULT_TEXT_FIELD_MAX_LENGTH.short_text,
+        },
+        'short-text',
+      );
     case 'long_text':
-      return withXFormat({ type: 'string' }, 'long-text');
+      return withXFormat(
+        {
+          type: 'string',
+          maxLength: DEFAULT_TEXT_FIELD_MAX_LENGTH.long_text,
+        },
+        'long-text',
+      );
     case 'dropdown':
       return withXFormat(
         {
