@@ -14,7 +14,7 @@ export const PlatformAdminHeader = () => {
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
         <h1 className="font-serif text-title-md text-neutral-black">
-          {t('platformAdmin_title')}
+          {t('Platform admin')}
         </h1>
       </div>
       <Button
@@ -26,7 +26,7 @@ export const PlatformAdminHeader = () => {
         className="gap-2"
       >
         <LuArrowUpRight className="size-4" />
-        {t('platformAdmin_viewAllAnalytics')}
+        {t('View all analytics')}
       </Button>
     </div>
   );

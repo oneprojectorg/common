@@ -97,7 +97,7 @@ export const UsersRow = ({ user }: { user: User }) => {
                 }}
                 className="px-3 py-1"
               >
-                {t('platformAdmin_actionViewAnalytics')}
+                {t('View analytics')}
               </MenuItem>
               <MenuItem
                 key="edit-profile"
@@ -109,7 +109,7 @@ export const UsersRow = ({ user }: { user: User }) => {
                 className="px-3 py-1"
                 isDisabled={!user.profile}
               >
-                {t('platformAdmin_actionEditProfile')}
+                {t('Edit profile')}
               </MenuItem>
               <MenuItem
                 key="add-to-org"
@@ -128,9 +128,7 @@ export const UsersRow = ({ user }: { user: User }) => {
                 }}
                 className="px-3 py-1"
               >
-                <span className="text-functional-red">
-                  {t('platformAdmin_actionRemoveUser')}
-                </span>
+                <span className="text-functional-red">{t('Remove user')}</span>
               </MenuItem>
             </Menu>
           </OptionMenu>

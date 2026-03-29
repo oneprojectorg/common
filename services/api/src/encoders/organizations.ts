@@ -36,6 +36,37 @@ export const organizationsWithProfileEncoder = organizationsEncoder.extend({
   profile: baseProfileEncoder,
 });
 
+const adminOrgMemberRoleEncoder = z.object({
+  accessRole: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
+});
+
+const adminOrgMemberEncoder = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  email: z.string(),
+  roles: z.array(adminOrgMemberRoleEncoder),
+});
+
+export const adminOrgEncoder = createSelectSchema(organizations)
+  .pick({
+    id: true,
+    domain: true,
+    createdAt: true,
+  })
+  .extend({
+    profile: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        slug: z.string(),
+      })
+      .nullish(),
+    members: z.array(adminOrgMemberEncoder),
+  });
+
 const organizationFields = createSelectSchema(organizations).pick({
   isOfferingFunds: true,
   isReceivingFunds: true,
@@ -69,5 +100,6 @@ export type OrganizationCreateInput = z.infer<
 
 export type OrganizationSearchResult = z.infer<typeof organizationsEncoder>;
 export type Organization = z.infer<typeof organizationsWithProfileEncoder>;
+export type AdminOrg = z.infer<typeof adminOrgEncoder>;
 
 export const orgUserEncoder = createSelectSchema(organizationUsers);
