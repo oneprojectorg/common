@@ -8,7 +8,7 @@ import { Buffer } from 'node:buffer';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
+import { MAX_FILE_SIZE, MAX_VIDEO_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -78,9 +78,12 @@ export const uploadProposalAttachment = router({
       }
 
       // Check file size
-      if (buffer.length > MAX_FILE_SIZE) {
+      const isVideo = mimeType.startsWith('video/');
+      const sizeLimit = isVideo ? MAX_VIDEO_FILE_SIZE : MAX_FILE_SIZE;
+
+      if (buffer.length > sizeLimit) {
         throw new CommonError(
-          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          `File too large. Maximum size is ${sizeLimit / 1024 / 1024}MB`,
         );
       }
 

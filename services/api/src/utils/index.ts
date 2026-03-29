@@ -87,3 +87,4 @@ export function sanitizeS3Filename(filename: string) {
 }
 
 export const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+export const MAX_VIDEO_FILE_SIZE = 100 * 1024 * 1024; // 100MB

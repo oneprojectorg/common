@@ -10,8 +10,12 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalAttachmentList } from './ProposalAttachmentList';
 
 const MAX_FILES = 5;
-const MAX_SIZE_MB = 10;
+const MAX_SIZE_MB = 4;
+const MAX_VIDEO_SIZE_MB = 100;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+
+const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 const ACCEPTED_TYPES = [
   'image/png',
@@ -104,7 +108,10 @@ export function ProposalAttachments({
     const filesToUpload = files.slice(0, remainingSlots);
 
     for (const file of filesToUpload) {
-      if (file.size > MAX_SIZE_BYTES) {
+      const isVideo = VIDEO_TYPES.includes(file.type);
+      const maxBytes = isVideo ? MAX_VIDEO_SIZE_BYTES : MAX_SIZE_BYTES;
+
+      if (file.size > maxBytes) {
         toast.error({
           message: t('File too large: {name}', { name: file.name }),
         });
@@ -180,10 +187,10 @@ export function ProposalAttachments({
       <FileDropZone
         acceptedFileTypes={ACCEPTED_TYPES}
         onSelectFiles={handleSelectFiles}
-        description={t('Accepts {types} and more up to {size}MB', {
-          types: 'PDF, DOCX, XLSX, MP4, WebM, MOV',
-          size: MAX_SIZE_MB,
-        })}
+        description={t(
+          'Accepts PDF, DOCX, XLSX (up to {size}MB) and MP4, WebM, MOV videos (up to {videoSize}MB)',
+          { size: MAX_SIZE_MB, videoSize: MAX_VIDEO_SIZE_MB },
+        )}
         allowsMultiple
         isDisabled={!canAddMore}
       />
