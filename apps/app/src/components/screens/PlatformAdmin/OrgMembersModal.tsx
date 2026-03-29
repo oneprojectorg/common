@@ -1,6 +1,6 @@
 'use client';
 
-import type { RouterOutput } from '@op/api/client';
+import type { AdminOrg } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
@@ -10,29 +10,24 @@ import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-type ListAllOrgsOutput =
-  RouterOutput['platform']['admin']['listAllOrganizations'];
-type Org = ListAllOrgsOutput['items'][number];
-type Member = Org['members'][number];
+type Member = AdminOrg['members'][number];
 
 export const OrgMembersModal = ({
   org,
   isOpen,
   onOpenChange,
 }: {
-  org: Org;
+  org: AdminOrg;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) => {
   const t = useTranslations();
   const members = org.members ?? [];
-  const orgName = org.profile?.name ?? t('platformAdmin_orgMembers_unknownOrg');
+  const orgName = org.profile?.name ?? t('Unknown organization');
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <ModalHeader>
-        {t('platformAdmin_orgMembers_modalTitle', { orgName })}
-      </ModalHeader>
+      <ModalHeader>{t('Members of {orgName}', { orgName })}</ModalHeader>
       <ModalBody className="space-y-4 pb-6">
         {/* Organization Info */}
         <div className="bg-neutral-gray0 rounded-lg p-4">
@@ -52,7 +47,7 @@ export const OrgMembersModal = ({
               <LuUsers className="h-6 w-6 text-neutral-gray4" />
             </div>
             <p className="text-sm text-neutral-charcoal">
-              {t('platformAdmin_orgMembers_noMembers')}
+              {t('No members found')}
             </p>
           </div>
         ) : (
@@ -78,7 +73,7 @@ const MemberRow = ({ member }: { member: Member }) => {
   const roles =
     member.roles && member.roles.length > 0
       ? member.roles.map((r) => r.accessRole.name)
-      : [t('platformAdmin_orgMembers_noRoles')];
+      : [t('No roles')];
 
   return (
     <Surface className="flex items-center gap-3 p-3">

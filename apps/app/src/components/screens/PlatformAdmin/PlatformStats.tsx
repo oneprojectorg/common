@@ -22,17 +22,17 @@ const PlatformStatsWithData = () => {
   const [stats] = trpc.platform.getStats.useSuspenseQuery();
 
   const statItems = [
-    { label: t('platformAdmin_totalUsers'), value: stats.totalUsers },
+    { label: t('Total users'), value: stats.totalUsers },
     {
-      label: t('platformAdmin_totalOrganizations'),
+      label: t('Total organizations'),
       value: stats.totalOrganizations,
     },
     {
-      label: t('platformAdmin_totalRelationships'),
+      label: t('Total relationships'),
       value: stats.totalRelationships,
     },
     {
-      label: t('platformAdmin_newOrganizations'),
+      label: t('New organizations'),
       value: stats.newOrganizations,
     },
   ];

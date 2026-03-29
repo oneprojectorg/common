@@ -5,27 +5,13 @@ import {
 } from '@op/common';
 import { and, count, db, ilike, inArray } from '@op/db/client';
 import { organizations, profiles } from '@op/db/schema';
-import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { adminOrgEncoder } from '../../../encoders';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
-
-const memberRoleEncoder = z.object({
-  accessRole: z.object({
-    id: z.string(),
-    name: z.string(),
-  }),
-});
-
-const memberEncoder = z.object({
-  id: z.string(),
-  name: z.string().nullable(),
-  email: z.string(),
-  roles: z.array(memberRoleEncoder),
-});
 
 type OrganizationMemberNameSource = {
   name: string | null;
@@ -42,25 +28,6 @@ const getMemberDisplayName = (member: OrganizationMemberNameSource) => {
     member.name ?? member.serviceUser?.profile?.name ?? member.serviceUser?.name
   );
 };
-
-const adminOrgEncoder = createSelectSchema(organizations)
-  .pick({
-    id: true,
-    domain: true,
-    createdAt: true,
-  })
-  .extend({
-    profile: z
-      .object({
-        id: z.string(),
-        name: z.string(),
-        slug: z.string(),
-      })
-      .nullish(),
-    members: z.array(memberEncoder),
-  });
-
-export type AdminOrg = z.infer<typeof adminOrgEncoder>;
 
 export const listAllOrganizationsRouter = router({
   listAllOrganizations: commonProcedure

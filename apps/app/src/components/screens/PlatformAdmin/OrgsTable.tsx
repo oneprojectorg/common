@@ -61,8 +61,8 @@ const OrgsTableHeader = () => {
     t('Name'),
     t('Domain'),
     t('Members'),
-    t('platformAdmin_columnCreated'),
-    t('platformAdmin_columnActions'),
+    t('Created'),
+    t('Actions'),
   ];
 
   return (

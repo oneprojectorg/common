@@ -1,7 +1,7 @@
 'use client';
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
-import type { RouterOutput } from '@op/api/client';
+import type { AdminOrg } from '@op/api/encoders';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
@@ -17,11 +17,7 @@ import { OrgMembersModal } from './OrgMembersModal';
 const ORGS_TABLE_GRID =
   'grid grid-cols-[minmax(200px,2fr)_minmax(150px,1.5fr)_minmax(100px,0.8fr)_minmax(150px,1.5fr)_80px] gap-4';
 
-type ListAllOrgsOutput =
-  RouterOutput['platform']['admin']['listAllOrganizations'];
-type Org = ListAllOrgsOutput['items'][number];
-
-export const OrgsRow = ({ org }: { org: Org }) => {
+export const OrgsRow = ({ org }: { org: AdminOrg }) => {
   const format = useFormatter();
   const t = useTranslations();
   const createdAt = org.createdAt ? new Date(org.createdAt) : null;
@@ -66,7 +62,7 @@ export const OrgsRow = ({ org }: { org: Org }) => {
                 onAction={() => setIsMembersModalOpen(true)}
                 className="px-3 py-1"
               >
-                {t('platformAdmin_orgAction_viewMembers')}
+                {t('View members')}
               </MenuItem>
             </Menu>
           </OptionMenu>
