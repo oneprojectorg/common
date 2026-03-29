@@ -4,8 +4,8 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '@op/common';
-import { and, count, db, ilike } from '@op/db/client';
-import { users } from '@op/db/schema';
+import { and, asc, count, db, eq, ilike, inArray, isNotNull } from '@op/db/client';
+import { profileInvites, profiles, users } from '@op/db/schema';
 import crypto from 'crypto';
 import { z } from 'zod';
 
@@ -141,8 +141,37 @@ export const listAllUsersRouter = router({
         });
       });
 
+      // Fetch who invited each user via accepted profile invites
+      const inviterMap = new Map<string, string>();
+      if (items.length > 0) {
+        const emails = items.map((u) => u.email);
+        const inviteRows = await db
+          .select({
+            email: profileInvites.email,
+            inviterName: profiles.name,
+          })
+          .from(profileInvites)
+          .innerJoin(profiles, eq(profileInvites.invitedBy, profiles.id))
+          .where(
+            and(
+              inArray(profileInvites.email, emails),
+              isNotNull(profileInvites.acceptedOn),
+            ),
+          )
+          .orderBy(asc(profileInvites.acceptedOn));
+
+        for (const row of inviteRows) {
+          if (!inviterMap.has(row.email)) {
+            inviterMap.set(row.email, row.inviterName);
+          }
+        }
+      }
+
       return {
-        items: items.map((user) => userEncoder.parse(user)),
+        items: items.map((user) => ({
+          ...userEncoder.parse(user),
+          invitedBy: inviterMap.get(user.email) ?? null,
+        })),
         next: nextCursor,
         hasMore,
         total: totalCount,

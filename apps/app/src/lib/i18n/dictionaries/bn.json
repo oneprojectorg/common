@@ -444,7 +444,7 @@
   "platformAdmin_columnEmail": "ইমেইল",
   "platformAdmin_columnRole": "ভূমিকা",
   "platformAdmin_columnOrganization": "সংস্থা",
-  "platformAdmin_columnCreated": "তৈরি",
+  "platformAdmin_columnInvitedBy": "আমন্ত্রণকারী",
   "platformAdmin_columnLastSignIn": "শেষ সাইন ইন",
   "platformAdmin_columnActions": "কর্ম",
   "platformAdmin_actionViewAnalytics": "বিশ্লেষণ দেখুন",

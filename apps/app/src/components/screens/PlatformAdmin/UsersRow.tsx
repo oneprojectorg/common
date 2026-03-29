@@ -33,8 +33,6 @@ export const UsersRow = ({ user }: { user: User }) => {
   const utils = trpc.useUtils();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
-  const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
-  const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
   const lastSignInAt = user.authUser?.lastSignInAt
     ? new Date(user.authUser.lastSignInAt)
     : null;
@@ -60,18 +58,7 @@ export const UsersRow = ({ user }: { user: User }) => {
           organizationUsers={user.organizationUsers ?? []}
         />
         <div className="flex items-center text-sm font-normal text-neutral-charcoal">
-          {updatedAt ? (
-            <TooltipTrigger>
-              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
-                {relativeUpdatedAt}
-              </Button>
-              <Tooltip>
-                {format.dateTime(updatedAt, DATE_TIME_UTC_FORMAT)}
-              </Tooltip>
-            </TooltipTrigger>
-          ) : (
-            '—'
-          )}
+          {user.invitedBy ?? '—'}
         </div>
         <div className="flex items-center text-sm font-normal text-neutral-charcoal">
           {lastSignInAt ? (

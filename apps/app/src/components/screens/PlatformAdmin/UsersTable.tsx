@@ -138,7 +138,7 @@ const UsersTableHeader = () => {
     t('platformAdmin_columnEmail'),
     t('platformAdmin_columnRole'),
     t('platformAdmin_columnOrganization'),
-    t('platformAdmin_columnCreated'),
+    t('platformAdmin_columnInvitedBy'),
     t('platformAdmin_columnLastSignIn'),
     t('platformAdmin_columnActions'),
   ];

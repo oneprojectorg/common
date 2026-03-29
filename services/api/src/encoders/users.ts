@@ -70,6 +70,7 @@ export const userEncoder = createSelectSchema(users).extend({
   currentOrganization: organizationsWithProfileEncoder.nullish(),
   currentProfile: baseProfileEncoder.nullish(),
   profile: baseProfileEncoder.nullish(),
+  invitedBy: z.string().nullish(),
 });
 
 export type CommonUser = z.infer<typeof userEncoder>;

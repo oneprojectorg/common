@@ -445,7 +445,7 @@
   "platformAdmin_columnEmail": "E-mail",
   "platformAdmin_columnRole": "Função",
   "platformAdmin_columnOrganization": "Organização",
-  "platformAdmin_columnCreated": "Criado",
+  "platformAdmin_columnInvitedBy": "Convidado por",
   "platformAdmin_columnLastSignIn": "Último login",
   "platformAdmin_columnActions": "Ações",
   "platformAdmin_actionViewAnalytics": "Ver análises",
