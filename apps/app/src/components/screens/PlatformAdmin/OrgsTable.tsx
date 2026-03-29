@@ -143,9 +143,21 @@ const OrgsTableContentSkeleton = () => {
     <div className="divide-y divide-neutral-gray1">
       {[...Array(5)].map((_, i) => (
         <div key={i} className={cn('py-4', ORGS_TABLE_GRID)}>
-          {[...Array(5)].map((_, j) => (
-            <Skeleton key={j} className="h-4 w-full" />
-          ))}
+          <div className="flex items-center">
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <div className="flex items-center">
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <div className="flex items-center">
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <div className="flex items-center">
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <div className="flex items-center justify-end">
+            <Skeleton className="h-8 w-8" />
+          </div>
         </div>
       ))}
     </div>
