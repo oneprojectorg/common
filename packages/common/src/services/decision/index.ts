@@ -7,6 +7,7 @@ export * from './listProcesses';
 
 // Instance management
 export * from './createInstanceFromTemplate';
+export * from './duplicateInstance';
 export * from './updateInstance';
 export * from './updateDecisionInstance';
 export * from './listInstances';
