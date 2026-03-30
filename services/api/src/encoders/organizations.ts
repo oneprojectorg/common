@@ -67,6 +67,7 @@ export type OrganizationCreateInput = z.infer<
   typeof organizationsCreateInputEncoder
 >;
 
+export type OrganizationSearchResult = z.infer<typeof organizationsEncoder>;
 export type Organization = z.infer<typeof organizationsWithProfileEncoder>;
 
 export const orgUserEncoder = createSelectSchema(organizationUsers);
