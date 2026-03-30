@@ -155,7 +155,9 @@ export const DuplicateProcessModal = ({
           color="primary"
           className="w-full sm:w-fit"
           onPress={handleDuplicate}
-          isDisabled={!name.trim() || duplicateMutation.isPending}
+          isDisabled={
+            !name.trim() || !effectiveStewardId || duplicateMutation.isPending
+          }
         >
           {duplicateMutation.isPending
             ? t('Duplicating...')

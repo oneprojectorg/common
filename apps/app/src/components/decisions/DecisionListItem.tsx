@@ -111,7 +111,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           </div>
         </Link>
 
-        {canManage && (
+        {(canManage || canDelete) && (
           <div className="flex items-center pt-4 pr-2 sm:pt-0 sm:pl-12">
             <OptionMenu
               variant="outline"
@@ -119,15 +119,22 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
               size="medium"
             >
               <Menu className="min-w-28 p-2">
-                <MenuItem key="settings" href={`/decisions/${item.slug}/edit`}>
-                  {t('Settings')}
-                </MenuItem>
-                <MenuItem
-                  key="duplicate"
-                  onAction={() => setShowDuplicateModal(true)}
-                >
-                  {t('Duplicate')}
-                </MenuItem>
+                {canManage && (
+                  <MenuItem
+                    key="settings"
+                    href={`/decisions/${item.slug}/edit`}
+                  >
+                    {t('Settings')}
+                  </MenuItem>
+                )}
+                {canManage && (
+                  <MenuItem
+                    key="duplicate"
+                    onAction={() => setShowDuplicateModal(true)}
+                  >
+                    {t('Duplicate')}
+                  </MenuItem>
+                )}
                 {canDelete && (
                   <MenuItem
                     key="delete"
