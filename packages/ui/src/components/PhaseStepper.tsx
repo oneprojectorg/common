@@ -36,7 +36,7 @@ const StepIndicator = ({
   onTransition?: (phaseId: string) => void;
 }) => {
   const baseStyles = cn(
-    'flex size-6 items-center justify-center rounded-full font-serif transition-colors',
+    'flex size-6 items-center justify-center rounded-full font-serif transition-all',
     stepState === 'completed' &&
       'bg-functional-greenWhite text-functional-green',
     stepState === 'current' && 'bg-neutral-charcoal text-neutral-offWhite',
@@ -52,24 +52,39 @@ const StepIndicator = ({
   }
 
   return (
-    <button
-      type="button"
-      aria-label={`Advance to ${phase.name}`}
-      onClick={() => onTransition?.(phase.id)}
-      className={cn(
-        baseStyles,
-        'group cursor-pointer hover:bg-primary-teal hover:text-neutral-offWhite',
-      )}
-    >
-      {stepState === 'completed' ? (
-        <LuCheck className="size-4" />
-      ) : (
-        <>
-          <LuPlay className="hidden size-3 fill-current group-hover:block" />
-          <span className="group-hover:hidden">{index + 1}</span>
-        </>
-      )}
-    </button>
+    <div className="relative flex size-8 items-center justify-center">
+      <div
+        className="absolute size-8 rounded-full"
+        style={{
+          border:
+            '1px solid color-mix(in srgb, var(--color-primary-teal) 12%, transparent)',
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 28,
+          height: 28,
+          border:
+            '1px solid color-mix(in srgb, var(--color-primary-teal) 32%, transparent)',
+        }}
+      />
+      <button
+        type="button"
+        aria-label={`Advance to ${phase.name}`}
+        onClick={() => onTransition?.(phase.id)}
+        className={cn(
+          baseStyles,
+          'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite',
+        )}
+      >
+        {stepState === 'completed' ? (
+          <LuCheck className="size-4" />
+        ) : (
+          <LuPlay className="size-3 fill-current" />
+        )}
+      </button>
+    </div>
   );
 };
 
