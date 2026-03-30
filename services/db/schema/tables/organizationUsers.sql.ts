@@ -51,9 +51,10 @@ export const organizationUsers = pgTable(
     index('organizationUsers_auth_user_id_idx')
       .on(table.authUserId)
       .concurrently(),
-    uniqueIndex('organizationUsers_org_auth_user_unique')
-      .on(table.organizationId, table.authUserId)
-      .concurrently(),
+    uniqueIndex('organizationUsers_org_auth_user_unique').on(
+      table.organizationId,
+      table.authUserId,
+    ),
   ],
 );
 
