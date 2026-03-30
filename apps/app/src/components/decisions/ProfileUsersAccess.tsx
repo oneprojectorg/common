@@ -4,15 +4,14 @@ import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type { SortDir } from '@op/common';
-import { useCursorPagination, useDebounce, useMediaQuery } from '@op/hooks';
+import { useDebounce, useInfiniteScroll, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
-import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
-import { Skeleton } from '@op/ui/Skeleton';
-import { useEffect, useState } from 'react';
+import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUserPlus } from 'react-icons/lu';
 
@@ -41,39 +40,41 @@ export const ProfileUsersAccess = ({
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  // Sorting state
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: 'name',
     direction: 'ascending',
   });
 
-  // Cursor pagination
-  const { cursor, handleNext, handlePrevious, canGoPrevious, reset } =
-    useCursorPagination(ITEMS_PER_PAGE);
-
-  // Reset pagination when search or sort changes
-  useEffect(() => {
-    reset();
-  }, [debouncedQuery, sortDescriptor.column, sortDescriptor.direction, reset]);
-
-  // Convert React Aria sort descriptor to API format
   const orderBy = sortDescriptor.column as SortColumn;
   const dir: SortDir =
     sortDescriptor.direction === 'ascending' ? 'asc' : 'desc';
+  const searchFilter = debouncedQuery.length >= 2 ? debouncedQuery : undefined;
 
-  // Build query input - only include query if >= 2 chars
-  const queryInput = {
-    profileId,
-    cursor,
-    limit: ITEMS_PER_PAGE,
-    orderBy,
-    dir,
-    query: debouncedQuery.length >= 2 ? debouncedQuery : undefined,
-  };
+  const {
+    data,
+    isPending,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = trpc.profile.listUsers.useInfiniteQuery(
+    {
+      profileId,
+      limit: ITEMS_PER_PAGE,
+      orderBy,
+      dir,
+      query: searchFilter,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.next,
+    },
+  );
 
-  // Use regular query - cache handles exact query matches, loading shown for uncached queries. We don't use a Suspense due to not wanting to suspend the entire table
-  const { data, isPending, isError, refetch } =
-    trpc.profile.listUsers.useQuery(queryInput);
+  const { ref: scrollTriggerRef, shouldShowTrigger } = useInfiniteScroll(
+    fetchNextPage,
+    { hasNextPage, isFetchingNextPage },
+  );
 
   // Fetch profile-specific roles for this decision instance
   const { data: rolesData, isPending: rolesPending } =
@@ -89,19 +90,13 @@ export const ProfileUsersAccess = ({
   const { data: invites } = trpc.profile.listProfileInvites.useQuery(
     {
       profileId,
-      query: debouncedQuery.length >= 2 ? debouncedQuery : undefined,
+      query: searchFilter,
     },
     { retry: false },
   );
 
-  const { items: profileUsers = [], next } = data ?? {};
+  const profileUsers = data?.pages.flatMap((page) => page.items) ?? [];
   const roles = rolesData?.items ?? [];
-
-  const onNext = () => {
-    if (next) {
-      handleNext(next);
-    }
-  };
 
   return (
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
@@ -150,10 +145,14 @@ export const ProfileUsersAccess = ({
           processName={processName}
         />
 
-        <Pagination
-          next={next ? onNext : undefined}
-          previous={canGoPrevious ? handlePrevious : undefined}
-        />
+        {shouldShowTrigger && (
+          <div
+            ref={scrollTriggerRef as React.RefObject<HTMLDivElement>}
+            className="flex justify-center py-4"
+          >
+            {isFetchingNextPage && <SkeletonLine lines={3} />}
+          </div>
+        )}
 
         <ProfileInviteModal
           profileId={profileId}
