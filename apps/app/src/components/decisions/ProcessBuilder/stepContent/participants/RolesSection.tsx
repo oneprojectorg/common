@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
-import { useMediaQuery } from '@op/hooks';
+import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
@@ -24,13 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import {
-  Suspense,
-  useOptimistic,
-  useRef,
-  useState,
-  useTransition,
-} from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -439,43 +433,72 @@ function RolesSectionContent({
   );
 }
 
+const DEBOUNCE_MS = 300;
+
 function usePermissionToggle(roleId: string, profileId: string) {
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const [, startTransition] = useTransition();
 
-  const { data: permissions } = trpc.profile.getDecisionRole.useQuery({
+  const { data: serverPermissions } = trpc.profile.getDecisionRole.useQuery({
     roleId,
     profileId,
   });
 
-  const [optimisticPermissions, setOptimisticPermissions] =
-    useOptimistic(permissions);
+  // Local overlay: null = use server data, non-null = use local override
+  const [localPermissions, setLocalPermissions] =
+    useState<DecisionRolePermissions | null>(null);
 
+  const localRef = useRef(localPermissions);
+  localRef.current = localPermissions;
   const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
 
+  const flush = useDebouncedCallback(
+    () => {
+      const toSend = localRef.current;
+      if (!toSend) {
+        return;
+      }
+      updatePermissions.mutate(
+        { roleId, decisionPermissions: toSend },
+        {
+          onSettled: (_data, error) => {
+            if (!flush.isPending()) {
+              setLocalPermissions(null);
+            }
+            if (error) {
+              toast.error({ message: t('Failed to update role') });
+            } else {
+              toast.success({ message: t('Role updated successfully') });
+            }
+            utils.profile.getDecisionRole.invalidate({ roleId, profileId });
+          },
+        },
+      );
+    },
+    DEBOUNCE_MS,
+    { leading: false, trailing: true },
+  );
+
+  // Flush pending changes on unmount so edits aren't lost on navigation
+  useEffect(() => {
+    return () => {
+      flush.flush();
+    };
+  }, [flush]);
+
   const togglePermission = (key: DecisionRoleKey) => {
-    if (!permissions) {
+    const base = localPermissions ?? serverPermissions;
+    if (!base) {
       return;
     }
-    const newPermissions = { ...permissions, [key]: !permissions[key] };
-    startTransition(async () => {
-      setOptimisticPermissions(newPermissions);
-      try {
-        await updatePermissions.mutateAsync({
-          roleId,
-          decisionPermissions: newPermissions,
-        });
-        toast.success({ message: t('Role updated successfully') });
-      } catch {
-        toast.error({ message: t('Failed to update role') });
-      } finally {
-        await utils.profile.getDecisionRole.invalidate({ roleId, profileId });
-      }
-    });
+    setLocalPermissions({ ...base, [key]: !base[key] });
+    flush();
   };
 
-  return { optimisticPermissions, togglePermission };
+  return {
+    optimisticPermissions: localPermissions ?? serverPermissions ?? null,
+    togglePermission,
+  };
 }
 
 function DecisionRoleCheckboxes({
