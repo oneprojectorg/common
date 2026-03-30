@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';

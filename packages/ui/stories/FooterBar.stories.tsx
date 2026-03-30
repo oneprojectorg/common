@@ -66,13 +66,10 @@ export const ProcessNavigation = () => (
     <div className="flex-1 bg-neutral-offWhite" />
     <FooterBar>
       <FooterBar.Start>
-        <button
-          type="button"
-          className="inline-flex h-10 items-center gap-1 px-2 text-base text-charcoal"
-        >
+        <Button color="ghost" size="medium">
           <LuLogOut className="size-4 rotate-180" />
           Exit
-        </button>
+        </Button>
         <Button color="secondary" size="medium">
           Back
         </Button>
