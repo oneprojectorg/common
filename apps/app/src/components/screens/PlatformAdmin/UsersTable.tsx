@@ -1,6 +1,5 @@
 'use client';
 
-import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/ui/Header';
@@ -27,9 +26,6 @@ import { UsersRow } from './UsersRow';
 const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
 const USERS_TABLE_GRID =
   'grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_minmax(80px,0.5fr)_80px] gap-4';
-
-// Infer input type for listAllUsers query
-type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 
 /**
  * Exports user data to CSV and triggers download
@@ -179,7 +175,7 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     reset();
   }, [searchQuery]);
 
-  const queryInput: ListAllUsersInput = {
+  const queryInput = {
     cursor,
     limit,
     query: searchQuery || undefined,

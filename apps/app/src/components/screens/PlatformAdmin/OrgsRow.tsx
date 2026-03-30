@@ -13,9 +13,7 @@ import { Button } from 'react-aria-components';
 import { useTranslations } from '@/lib/i18n';
 
 import { OrgMembersModal } from './OrgMembersModal';
-
-const ORGS_TABLE_GRID =
-  'grid grid-cols-[minmax(200px,2fr)_minmax(150px,1.5fr)_minmax(100px,0.8fr)_minmax(150px,1.5fr)_80px] gap-4';
+import { ORGS_TABLE_GRID, ORGS_TABLE_ROW } from './tableStyles';
 
 export const OrgsRow = ({ org }: { org: AdminOrg }) => {
   const format = useFormatter();
@@ -27,7 +25,8 @@ export const OrgsRow = ({ org }: { org: AdminOrg }) => {
     <>
       <div
         className={cn(
-          'hover:bg-neutral-gray0 py-4 transition-colors',
+          'hover:bg-neutral-gray0 transition-colors',
+          ORGS_TABLE_ROW,
           ORGS_TABLE_GRID,
         )}
       >

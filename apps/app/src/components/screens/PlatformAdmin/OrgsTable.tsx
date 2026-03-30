@@ -1,6 +1,5 @@
 'use client';
 
-import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Pagination } from '@op/ui/Pagination';
@@ -12,13 +11,11 @@ import { Suspense, useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { OrgsRow } from './OrgsRow';
-
-const ORGS_TABLE_MIN_WIDTH = 'min-w-[800px]';
-const ORGS_TABLE_GRID =
-  'grid grid-cols-[minmax(200px,2fr)_minmax(150px,1.5fr)_minmax(100px,0.8fr)_minmax(150px,1.5fr)_80px] gap-4';
-
-type ListAllOrgsInput =
-  RouterInput['platform']['admin']['listAllOrganizations'];
+import {
+  ORGS_TABLE_GRID,
+  ORGS_TABLE_MIN_WIDTH,
+  ORGS_TABLE_ROW,
+} from './tableStyles';
 
 /** Main organizations table component with suspense boundary */
 export const OrgsTable = () => {
@@ -97,7 +94,7 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
     reset();
   }, [searchQuery]);
 
-  const queryInput: ListAllOrgsInput = {
+  const queryInput = {
     cursor,
     limit,
     query: searchQuery || undefined,
@@ -142,7 +139,7 @@ const OrgsTableContentSkeleton = () => {
   return (
     <div className="divide-y divide-neutral-gray1">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className={cn('py-4', ORGS_TABLE_GRID)}>
+        <div key={i} className={cn(ORGS_TABLE_ROW, ORGS_TABLE_GRID)}>
           {[...Array(5)].map((_, j) => (
             <Skeleton key={j} className="h-4 w-full" />
           ))}
