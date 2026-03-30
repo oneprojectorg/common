@@ -340,7 +340,7 @@ export const InteractivePhases: Story = {
     docs: {
       description: {
         story:
-          'Interactive phases display a teal play icon with radiant rings and trigger onTransition when clicked. Non-interactive phases remain static.',
+          'Interactive phases display a teal play icon and show rippling rings on hover. Triggers onTransition when clicked. Non-interactive phases remain static.',
       },
     },
   },
@@ -360,7 +360,7 @@ export const MixedInteractivity: Story = {
     docs: {
       description: {
         story:
-          'Only specific phases are interactive — Development and Release show a teal play icon with radiant rings',
+          'Only specific phases are interactive — hover over Development and Release to see the ripple effect',
       },
     },
   },

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { LuCheck, LuPlay } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
@@ -24,6 +25,27 @@ interface PhaseStepperProps {
   onTransition?: (phaseId: string) => void;
 }
 
+const RIPPLE_COUNT = 3;
+const RIPPLE_DURATION_S = 1.5;
+
+const RippleRings = ({ visible }: { visible: boolean }) => (
+  <div
+    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+    style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.15s' }}
+  >
+    {Array.from({ length: RIPPLE_COUNT }, (_, i) => (
+      <div
+        key={i}
+        className="absolute size-6 rounded-full"
+        style={{
+          border: '1px solid var(--color-primary-teal)',
+          animation: `phase-ripple ${RIPPLE_DURATION_S}s ease-out ${i * (RIPPLE_DURATION_S / RIPPLE_COUNT)}s infinite`,
+        }}
+      />
+    ))}
+  </div>
+);
+
 const StepIndicator = ({
   stepState,
   index,
@@ -35,6 +57,8 @@ const StepIndicator = ({
   phase: Phase;
   onTransition?: (phaseId: string) => void;
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   const baseStyles = cn(
     'flex size-6 items-center justify-center rounded-full font-serif transition-all',
     stepState === 'completed' &&
@@ -52,23 +76,12 @@ const StepIndicator = ({
   }
 
   return (
-    <div className="relative flex size-8 items-center justify-center">
-      <div
-        className="absolute size-8 rounded-full"
-        style={{
-          border:
-            '1px solid color-mix(in srgb, var(--color-primary-teal) 12%, transparent)',
-        }}
-      />
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: 28,
-          height: 28,
-          border:
-            '1px solid color-mix(in srgb, var(--color-primary-teal) 32%, transparent)',
-        }}
-      />
+    <div
+      className="relative flex size-8 items-center justify-center"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <RippleRings visible={isHovered} />
       <button
         type="button"
         aria-label={`Advance to ${phase.name}`}
@@ -141,6 +154,12 @@ export function PhaseStepper({
 
   return (
     <div className={cn('w-full', className)}>
+      <style>{`
+        @keyframes phase-ripple {
+          0% { transform: scale(1); opacity: 0.4; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+      `}</style>
       <div className="flex justify-center gap-2">
         {sortedPhases.map((phase, index) => {
           const stepState = getStepState(index);
