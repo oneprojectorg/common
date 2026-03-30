@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { LuCheck, LuPlay } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
@@ -13,8 +12,10 @@ export interface Phase {
   startDate?: string;
   endDate?: string;
   sortOrder?: number;
-  manualTransition?: boolean;
+  interactive?: boolean;
 }
+
+type StepState = 'completed' | 'current' | 'upcoming';
 
 interface PhaseStepperProps {
   phases: Phase[];
@@ -23,53 +24,74 @@ interface PhaseStepperProps {
   onTransition?: (phaseId: string) => void;
 }
 
+const StepIndicator = ({
+  stepState,
+  index,
+  phase,
+  onTransition,
+}: {
+  stepState: StepState;
+  index: number;
+  phase: Phase;
+  onTransition?: (phaseId: string) => void;
+}) => {
+  const baseStyles = cn(
+    'flex size-6 items-center justify-center rounded-full font-serif transition-colors',
+    stepState === 'completed' &&
+      'bg-functional-greenWhite text-functional-green',
+    stepState === 'current' && 'bg-neutral-charcoal text-neutral-offWhite',
+    stepState === 'upcoming' &&
+      'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
+  );
+
+  const content =
+    stepState === 'completed' ? <LuCheck className="size-4" /> : index + 1;
+
+  if (!phase.interactive) {
+    return <div className={baseStyles}>{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label={`Advance to ${phase.name}`}
+      onClick={() => onTransition?.(phase.id)}
+      className={cn(
+        baseStyles,
+        'group cursor-pointer hover:bg-primary-teal hover:text-neutral-offWhite',
+      )}
+    >
+      {stepState === 'completed' ? (
+        <LuCheck className="size-4" />
+      ) : (
+        <>
+          <LuPlay className="hidden size-3 fill-current group-hover:block" />
+          <span className="group-hover:hidden">{index + 1}</span>
+        </>
+      )}
+    </button>
+  );
+};
+
 const Step = ({
   stepState,
   index,
   phase,
   onTransition,
 }: {
-  stepState: string;
+  stepState: StepState;
   index: number;
   phase: Phase;
   onTransition?: (phaseId: string) => void;
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const showPlayIcon = phase.manualTransition && isHovered;
-
   return (
     <div className="flex flex-col items-center gap-1 text-title-xs">
-      <button
-        type="button"
-        disabled={!phase.manualTransition}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={() => {
-          if (phase.manualTransition) {
-            onTransition?.(phase.id);
-          }
-        }}
-        className={cn(
-          'flex size-6 items-center justify-center rounded-full font-serif transition-colors',
-          stepState === 'completed' &&
-            'bg-functional-greenWhite text-functional-green',
-          stepState === 'current' &&
-            'bg-neutral-charcoal text-neutral-offWhite',
-          stepState === 'upcoming' &&
-            'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
-          phase.manualTransition &&
-            'cursor-pointer hover:bg-primary-teal hover:text-neutral-offWhite',
-          !phase.manualTransition && 'cursor-default',
-        )}
-      >
-        {stepState === 'completed' ? (
-          <LuCheck className="size-4" />
-        ) : showPlayIcon ? (
-          <LuPlay className="size-3 fill-current" />
-        ) : (
-          index + 1
-        )}
-      </button>
+      <StepIndicator
+        stepState={stepState}
+        index={index}
+        phase={phase}
+        onTransition={onTransition}
+      />
       <div className="flex max-w-6 flex-col items-center justify-center text-sm text-nowrap text-neutral-black">
         <div>{phase.name}</div>
         {(phase.startDate || phase.endDate) && (
@@ -96,7 +118,7 @@ export function PhaseStepper({
     (phase) => phase.id === currentPhaseId,
   );
 
-  const getStepState = (index: number) => {
+  const getStepState = (index: number): StepState => {
     if (index < currentPhaseIndex) return 'completed';
     if (index === currentPhaseIndex) return 'current';
     return 'upcoming';

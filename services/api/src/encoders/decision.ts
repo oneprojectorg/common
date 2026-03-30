@@ -83,7 +83,6 @@ export const processPhaseSchema = z.object({
       allowProposals: z.boolean().optional(),
     })
     .optional(),
-  manualTransition: z.boolean().optional(),
 });
 
 export type ProcessPhase = z.infer<typeof processPhaseSchema>;
