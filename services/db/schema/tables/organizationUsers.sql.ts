@@ -5,6 +5,7 @@ import {
   pgTable,
   primaryKey,
   text,
+  uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -49,6 +50,9 @@ export const organizationUsers = pgTable(
       .concurrently(),
     index('organizationUsers_auth_user_id_idx')
       .on(table.authUserId)
+      .concurrently(),
+    uniqueIndex('organizationUsers_org_auth_user_unique')
+      .on(table.organizationId, table.authUserId)
       .concurrently(),
   ],
 );

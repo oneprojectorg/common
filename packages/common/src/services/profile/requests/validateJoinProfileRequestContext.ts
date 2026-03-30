@@ -57,12 +57,11 @@ export const validateJoinProfileRequestContext = async ({
       )
       .where(inArray(profiles.id, [requestProfileId, targetProfileId])),
 
-    db._query.joinProfileRequests.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.requestProfileId, requestProfileId),
-          eq(table.targetProfileId, targetProfileId),
-        ),
+    db.query.joinProfileRequests.findFirst({
+      where: {
+        requestProfileId,
+        targetProfileId,
+      },
     }),
   ]);
 

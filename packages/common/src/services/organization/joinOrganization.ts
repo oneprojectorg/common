@@ -33,7 +33,7 @@ export const joinOrganization = async ({
     throw new CommonError('User email is invalid');
   }
 
-  const userEmailDomain = userEmailDomainPart.toLocaleLowerCase();
+  const userEmailDomain = userEmailDomainPart.toLowerCase();
 
   // Check if user is already a member of this organization and if they are on the allow list
   const [existingMembership, allowListUser] = await Promise.all([
@@ -62,7 +62,7 @@ export const joinOrganization = async ({
   }
 
   // Verify user's email domain matches organization domain
-  if (!roleId && userEmailDomain !== organization.domain?.toLocaleLowerCase()) {
+  if (!roleId && userEmailDomain !== organization.domain?.toLowerCase()) {
     if (
       !allowListUser?.organizationId ||
       allowListUser?.organizationId !== organization.id

@@ -335,6 +335,24 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Join profile requests relations
+   */
+  joinProfileRequests: {
+    requestProfile: r.one.profiles({
+      from: r.joinProfileRequests.requestProfileId,
+      to: r.profiles.id,
+      alias: 'joinProfileRequest_requestProfile',
+      optional: false,
+    }),
+    targetProfile: r.one.profiles({
+      from: r.joinProfileRequests.targetProfileId,
+      to: r.profiles.id,
+      alias: 'joinProfileRequest_targetProfile',
+      optional: false,
+    }),
+  },
+
+  /**
    * Taxonomy relations
    *
    * taxonomyTerms has a self-referential parentId which breaks Drizzle inference.

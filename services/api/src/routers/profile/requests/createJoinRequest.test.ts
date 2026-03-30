@@ -67,7 +67,7 @@ describe.concurrent('profile.createJoinRequest', () => {
     expect(result.targetProfile.id).toBe(targetProfile.id);
   });
 
-  it('should prevent duplicate requests from the same profile to the same target', async ({
+  it('should return existing pending request when re-submitting', async ({
     task,
     onTestFinished,
   }) => {
@@ -94,13 +94,14 @@ describe.concurrent('profile.createJoinRequest', () => {
     // Track the created join request for cleanup
     joinRequestData.trackJoinRequest(result.id);
 
-    // Attempt to create duplicate request should throw
-    await expect(
-      caller.createJoinRequest({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ConflictError' } });
+    // Re-submitting returns the existing pending request
+    const second = await caller.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+    });
+
+    expect(second.id).toBe(result.id);
+    expect(second.status).toBe('pending');
   });
 
   it('should prevent self-requests', async ({ task, onTestFinished }) => {
@@ -255,6 +256,16 @@ describe.concurrent('profile.createJoinRequest', () => {
     });
 
     expect(result.status).toBe('approved');
+
+    // Verify a real join request record was persisted (not a phantom)
+    const [dbRecord] = await db
+      .select()
+      .from(joinProfileRequests)
+      .where(eq(joinProfileRequests.id, result.id));
+
+    expect(dbRecord).toBeDefined();
+    expect(dbRecord).toBeDefined();
+    expect(dbRecord?.status).toBe(JoinProfileRequestStatus.APPROVED);
   });
 
   /**
@@ -360,7 +371,9 @@ describe.concurrent('profile.createJoinRequest', () => {
         accessRoles,
         eq(organizationUserToAccessRoles.accessRoleId, accessRoles.id),
       )
-      .where(eq(organizationUserToAccessRoles.organizationUserId, orgUser!.id));
+      .where(
+        eq(organizationUserToAccessRoles.organizationUserId, orgUser?.id ?? ''),
+      );
 
     expect(roleAssignment?.roleName).toBe('Member');
   });
@@ -497,6 +510,164 @@ describe.concurrent('profile.createJoinRequest', () => {
     expect(secondResult.status).toBe(JoinProfileRequestStatus.APPROVED);
     expect(secondResult.requestProfileId).toBe(joinerUser.profileId);
     expect(secondResult.targetProfileId).toBe(targetProfile.id);
+  });
+
+  it('should auto-approve a previously rejected request when domain matches', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
+
+    const { organization, organizationProfile: targetProfile } =
+      await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'Rejected Then Domain Match Org',
+      });
+
+    // Create joiner with matching domain
+    const joinerEmail = `${task.id.slice(0, 8)}-rejected-dm@oneproject.org`;
+    const { user: authUser } = await createTestUser(joinerEmail);
+
+    if (!authUser) {
+      throw new Error('Failed to create auth user');
+    }
+
+    onTestFinished(() => cleanupJoiner(authUser.id));
+
+    const [joinerUser] = await db
+      .select({ profileId: users.profileId })
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    if (!joinerUser?.profileId) {
+      throw new Error('Joiner user profile not found');
+    }
+
+    const { session } = await createIsolatedSession(joinerEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // First request — no domain set yet so it's PENDING
+    const first = await caller.createJoinRequest({
+      requestProfileId: joinerUser.profileId,
+      targetProfileId: targetProfile.id,
+    });
+
+    joinRequestData.trackJoinRequest(first.id);
+    expect(first.status).toBe(JoinProfileRequestStatus.PENDING);
+
+    // Admin rejects it
+    await db
+      .update(joinProfileRequests)
+      .set({ status: JoinProfileRequestStatus.REJECTED })
+      .where(eq(joinProfileRequests.id, first.id));
+
+    // Now the org sets a matching domain
+    await db
+      .update(organizations)
+      .set({ domain: 'oneproject.org' })
+      .where(eq(organizations.id, organization.id));
+
+    // Re-submit — should auto-approve and auto-join
+    const second = await caller.createJoinRequest({
+      requestProfileId: joinerUser.profileId,
+      targetProfileId: targetProfile.id,
+    });
+
+    expect(second.id).toBe(first.id);
+    expect(second.status).toBe(JoinProfileRequestStatus.APPROVED);
+
+    // Verify the user was added as an organization member
+    const [orgUser] = await db
+      .select()
+      .from(organizationUsers)
+      .where(
+        and(
+          eq(organizationUsers.organizationId, organization.id),
+          eq(organizationUsers.authUserId, authUser.id),
+        ),
+      );
+
+    expect(orgUser).toBeDefined();
+  });
+
+  it('should auto-approve a pending request when domain matches on re-submit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
+
+    const { organization, organizationProfile: targetProfile } =
+      await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'Pending Then Domain Match Org',
+      });
+
+    // Create joiner with matching domain
+    const joinerEmail = `${task.id.slice(0, 8)}-pending-dm@oneproject.org`;
+    const { user: authUser } = await createTestUser(joinerEmail);
+
+    if (!authUser) {
+      throw new Error('Failed to create auth user');
+    }
+
+    onTestFinished(() => cleanupJoiner(authUser.id));
+
+    const [joinerUser] = await db
+      .select({ profileId: users.profileId })
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    if (!joinerUser?.profileId) {
+      throw new Error('Joiner user profile not found');
+    }
+
+    const { session } = await createIsolatedSession(joinerEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // First request — no domain set yet so it's PENDING
+    const first = await caller.createJoinRequest({
+      requestProfileId: joinerUser.profileId,
+      targetProfileId: targetProfile.id,
+    });
+
+    joinRequestData.trackJoinRequest(first.id);
+    expect(first.status).toBe(JoinProfileRequestStatus.PENDING);
+
+    // Now the org sets a matching domain
+    await db
+      .update(organizations)
+      .set({ domain: 'oneproject.org' })
+      .where(eq(organizations.id, organization.id));
+
+    // Re-submit — should auto-approve the existing pending request
+    const second = await caller.createJoinRequest({
+      requestProfileId: joinerUser.profileId,
+      targetProfileId: targetProfile.id,
+    });
+
+    expect(second.id).toBe(first.id);
+    expect(second.status).toBe(JoinProfileRequestStatus.APPROVED);
+
+    // Verify the user was added as an organization member
+    const [orgUser] = await db
+      .select()
+      .from(organizationUsers)
+      .where(
+        and(
+          eq(organizationUsers.organizationId, organization.id),
+          eq(organizationUsers.authUserId, authUser.id),
+        ),
+      );
+
+    expect(orgUser).toBeDefined();
   });
 
   it('should handle multiple join requests in parallel for domain-matched and non-matched orgs', async ({

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY "organizationUsers_org_auth_user_unique" ON "organization_users" ("organization_id","auth_user_id");

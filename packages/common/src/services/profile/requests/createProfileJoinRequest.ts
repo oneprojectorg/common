@@ -6,7 +6,7 @@ import {
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { CommonError, ConflictError } from '../../../utils';
+import { CommonError } from '../../../utils';
 import { joinOrganization } from '../../organization/joinOrganization';
 import { JoinProfileRequestWithProfiles } from './types';
 import { validateJoinProfileRequestContext } from './validateJoinProfileRequestContext';
@@ -33,36 +33,43 @@ export const createProfileJoinRequest = async ({
       targetProfileId,
     });
 
-  // Already a member — return success without creating a new request
+  // Already a member — upsert an APPROVED request record and return
   if (existingMembership) {
-    if (existingRequest) {
-      return {
-        ...existingRequest,
-        status: JoinProfileRequestStatus.APPROVED,
-        requestProfile,
-        targetProfile,
-      };
+    const [record] = existingRequest
+      ? await db
+          .update(joinProfileRequests)
+          .set({
+            status: JoinProfileRequestStatus.APPROVED,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(joinProfileRequests.id, existingRequest.id))
+          .returning()
+      : await db
+          .insert(joinProfileRequests)
+          .values({
+            requestProfileId,
+            targetProfileId,
+            status: JoinProfileRequestStatus.APPROVED,
+          })
+          .returning();
+
+    if (!record) {
+      throw new CommonError('Failed to upsert join profile request');
     }
 
-    return {
-      id: '00000000-0000-0000-0000-000000000000',
-      requestProfileId,
-      targetProfileId,
-      status: JoinProfileRequestStatus.APPROVED,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-      requestProfile,
-      targetProfile,
-    };
+    return { ...record, requestProfile, targetProfile };
   }
 
-  // Check domain match and fetch org in a single query
   const matchedOrg = await findDomainMatchedOrg(user, targetProfileId);
   const isDomainMatched = !!matchedOrg;
 
   if (existingRequest) {
-    if (existingRequest.status === JoinProfileRequestStatus.REJECTED) {
+    // Previously rejected or still pending — if domain matches, auto-approve
+    if (
+      existingRequest.status === JoinProfileRequestStatus.REJECTED ||
+      (existingRequest.status === JoinProfileRequestStatus.PENDING &&
+        isDomainMatched)
+    ) {
       const newStatus = isDomainMatched
         ? JoinProfileRequestStatus.APPROVED
         : JoinProfileRequestStatus.PENDING;
@@ -84,15 +91,14 @@ export const createProfileJoinRequest = async ({
         throw new CommonError('Failed to update join profile request');
       }
 
-      return {
-        ...updated,
-        requestProfile,
-        targetProfile,
-      };
+      return { ...updated, requestProfile, targetProfile };
     }
-    throw new ConflictError('A join request already exists for this profile');
+
+    // PENDING without domain match or APPROVED — already in progress
+    return { ...existingRequest, requestProfile, targetProfile };
   }
 
+  // New request — auto-join if domain matches, then create the record
   if (matchedOrg) {
     await performAutoJoin(user, matchedOrg);
   }
@@ -110,18 +116,13 @@ export const createProfileJoinRequest = async ({
     throw new CommonError('Failed to create join profile request');
   }
 
-  return {
-    ...inserted,
-    requestProfile,
-    targetProfile,
-  };
+  return { ...inserted, requestProfile, targetProfile };
 };
 
 type Organization = typeof organizations.$inferSelect;
 
 /**
  * Returns the org if the user's email domain matches, null otherwise.
- * Single query replaces the old checkDomainMatch + autoJoinOrganization double-fetch.
  */
 async function findDomainMatchedOrg(
   user: User,
