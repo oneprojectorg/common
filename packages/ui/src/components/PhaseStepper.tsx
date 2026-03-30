@@ -1,6 +1,7 @@
 'use client';
 
-import { LuCheck } from 'react-icons/lu';
+import { useState } from 'react';
+import { LuCheck, LuPlay } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { formatDateRange } from '../utils/formatting';
@@ -12,38 +13,63 @@ export interface Phase {
   startDate?: string;
   endDate?: string;
   sortOrder?: number;
+  manualTransition?: boolean;
 }
 
 interface PhaseStepperProps {
   phases: Phase[];
   currentPhaseId: string;
   className?: string;
+  onTransition?: (phaseId: string) => void;
 }
 
 const Step = ({
   stepState,
   index,
   phase,
+  onTransition,
 }: {
   stepState: string;
   index: number;
   phase: Phase;
+  onTransition?: (phaseId: string) => void;
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const showPlayIcon = phase.manualTransition && isHovered;
+
   return (
     <div className="flex flex-col items-center gap-1 text-title-xs">
-      <div
+      <button
+        type="button"
+        disabled={!phase.manualTransition}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={() => {
+          if (phase.manualTransition) {
+            onTransition?.(phase.id);
+          }
+        }}
         className={cn(
-          'flex size-6 items-center justify-center rounded-full font-serif',
+          'flex size-6 items-center justify-center rounded-full font-serif transition-colors',
           stepState === 'completed' &&
             'bg-functional-greenWhite text-functional-green',
           stepState === 'current' &&
             'bg-neutral-charcoal text-neutral-offWhite',
           stepState === 'upcoming' &&
             'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
+          phase.manualTransition &&
+            'cursor-pointer hover:bg-primary-teal hover:text-neutral-offWhite',
+          !phase.manualTransition && 'cursor-default',
         )}
       >
-        {stepState === 'completed' ? <LuCheck className="size-4" /> : index + 1}
-      </div>
+        {stepState === 'completed' ? (
+          <LuCheck className="size-4" />
+        ) : showPlayIcon ? (
+          <LuPlay className="size-3 fill-current" />
+        ) : (
+          index + 1
+        )}
+      </button>
       <div className="flex max-w-6 flex-col items-center justify-center text-sm text-nowrap text-neutral-black">
         <div>{phase.name}</div>
         {(phase.startDate || phase.endDate) && (
@@ -60,6 +86,7 @@ export function PhaseStepper({
   phases,
   currentPhaseId,
   className = '',
+  onTransition,
 }: PhaseStepperProps) {
   const sortedPhases = phases
     .slice()
@@ -83,7 +110,12 @@ export function PhaseStepper({
 
           return (
             <div key={phase.id} className="flex items-start gap-2">
-              <Step stepState={stepState} index={index} phase={phase} />
+              <Step
+                stepState={stepState}
+                index={index}
+                phase={phase}
+                onTransition={onTransition}
+              />
               {/* divider line */}
               {index < sortedPhases.length - 1 && (
                 <div className="flex flex-col items-center">

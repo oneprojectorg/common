@@ -62,6 +62,7 @@ export async function DecisionHeader({
         startDate: p.startDate,
         endDate: p.endDate,
       },
+      manualTransition: templateState?.rules?.advancement?.method === 'manual',
     };
   });
 
