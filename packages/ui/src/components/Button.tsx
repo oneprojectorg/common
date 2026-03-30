@@ -22,7 +22,7 @@ const buttonStyle = tv({
       primary:
         'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
       secondary:
-        'border border-offWhite bg-white text-teal hover:bg-neutral-offWhite pressed:bg-white',
+        'border border-neutral-gray1 bg-white text-neutral-black shadow-light hover:bg-neutral-offWhite pressed:bg-neutral-gray1',
       gradient: '',
       unverified:
         'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-offWhite pressed:bg-white',
