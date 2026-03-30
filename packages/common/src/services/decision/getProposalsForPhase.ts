@@ -1,7 +1,8 @@
-import { and, db, desc, eq, isNull } from '@op/db/client';
+import { and, db, desc, eq, isNull, ne } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
+  ProposalStatus,
   decisionTransitionProposals,
   proposals,
   stateTransitionHistory,
@@ -50,7 +51,7 @@ async function resolveTransition(
  * - If phaseId is provided: returns proposals that survived the transition into that phase.
  *   Returns [] if phaseId does not match any recorded transition.
  * - If phaseId is omitted: returns proposals for the current (most recent) phase.
- * - If no transition exists yet: returns all non-deleted proposals for the instance.
+ * - If no transition exists yet: returns all non-draft, non-deleted proposals for the instance.
  */
 export async function getProposalIdsForPhase({
   instanceId,
@@ -91,6 +92,7 @@ export async function getProposalIdsForPhase({
       .where(
         and(
           eq(proposals.processInstanceId, instanceId),
+          ne(proposals.status, ProposalStatus.DRAFT),
           isNull(proposals.deletedAt),
         ),
       );
@@ -111,7 +113,7 @@ export async function getProposalIdsForPhase({
  * - If phaseId is provided: returns proposals that survived the transition into that phase.
  *   Returns [] if phaseId does not match any recorded transition.
  * - If phaseId is omitted: returns proposals for the current (most recent) phase.
- * - If no transition exists yet: returns all non-deleted proposals for the instance.
+ * - If no transition exists yet: returns all non-draft, non-deleted proposals for the instance.
  *   Note: even a transition without a selection pipeline writes all proposals to the join
  *   table, so the full non-deleted set is returned in that case — not an indication that
  *   filtering occurred.
@@ -155,6 +157,7 @@ export async function getProposalsForPhase({
       .where(
         and(
           eq(proposals.processInstanceId, instanceId),
+          ne(proposals.status, ProposalStatus.DRAFT),
           isNull(proposals.deletedAt),
         ),
       );

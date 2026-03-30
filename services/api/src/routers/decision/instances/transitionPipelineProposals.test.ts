@@ -157,4 +157,46 @@ describe.concurrent('Transition pipeline: join table population', () => {
 
     expect(joinRows).toHaveLength(3);
   });
+
+  it('succeeds with zero join rows when pipeline eliminates all proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Schema with limit(0) — eliminates everything
+    const schemaWithZeroLimit = {
+      ...schemaWithPipeline,
+      phases: [
+        {
+          id: 'submission',
+          name: 'Submission',
+          rules: {},
+          selectionPipeline: {
+            version: '1.0.0',
+            blocks: [{ id: 'limit-zero', type: 'limit', count: 0 }],
+          },
+        },
+        { id: 'review', name: 'Review', rules: {} },
+      ],
+    };
+
+    const { instanceId, user, userEmail, caller } =
+      await createInstanceWithSchema(testData, task.id, schemaWithZeroLimit);
+
+    await createAndSubmitProposal(testData, caller, {
+      callerEmail: userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Doomed ${task.id}` },
+    });
+
+    // Transition should succeed even though all proposals are eliminated
+    await TransitionEngine.executeTransition({
+      data: { instanceId, toStateId: 'review' },
+      user,
+    });
+
+    const result = await getProposalsForPhase({ instanceId });
+    expect(result).toHaveLength(0);
+  });
 });

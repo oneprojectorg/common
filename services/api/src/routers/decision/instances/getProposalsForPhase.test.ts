@@ -16,24 +16,24 @@ import {
 const NONEXISTENT_PHASE_ID = '00000000-0000-0000-0000-000000000000';
 
 describe.concurrent('getProposalsForPhase', () => {
-  it('returns all non-deleted proposals when no transition has occurred', async ({
+  it('returns all submitted proposals when no transition has occurred', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail } = await createInstanceWithSchema(
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
     const [p1, p2] = await Promise.all([
-      testData.createProposal({
+      createAndSubmitProposal(testData, caller, {
         callerEmail: userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 1 ${task.id}` },
       }),
-      testData.createProposal({
+      createAndSubmitProposal(testData, caller, {
         callerEmail: userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 2 ${task.id}` },
@@ -80,19 +80,19 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail } = await createInstanceWithSchema(
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
     const [p1, p2] = await Promise.all([
-      testData.createProposal({
+      createAndSubmitProposal(testData, caller, {
         callerEmail: userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Active ${task.id}` },
       }),
-      testData.createProposal({
+      createAndSubmitProposal(testData, caller, {
         callerEmail: userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Soft-deleted ${task.id}` },
@@ -198,5 +198,35 @@ describe.concurrent('getProposalsForPhase', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe(p1.id);
+  });
+
+  it('excludes draft proposals in the no-transition path', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithoutPipeline,
+    );
+
+    // Create one submitted proposal and one draft (not submitted)
+    const submitted = await createAndSubmitProposal(testData, caller, {
+      callerEmail: userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Submitted ${task.id}` },
+    });
+    await testData.createProposal({
+      callerEmail: userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Draft ${task.id}` },
+    });
+
+    // No transition has occurred — should only return submitted proposals
+    const result = await getProposalsForPhase({ instanceId });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.id).toBe(submitted.id);
   });
 });
