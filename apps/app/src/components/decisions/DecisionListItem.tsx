@@ -17,6 +17,7 @@ import type { TranslationKey } from '@/lib/i18n';
 
 import { TranslatedText } from '../TranslatedText';
 import { DecisionCardHeader } from './DecisionCardHeader';
+import { DuplicateProcessModal } from './DuplicateProcessModal';
 
 const formatDateShort = (dateString: string) => {
   const date = new Date(dateString);
@@ -42,6 +43,8 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
   const isDraft = processInstance.status === ProcessStatus.DRAFT;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const canManage = processInstance.access?.admin === true;
   const canDelete =
     isDraft &&
     (processInstance.access?.delete || processInstance.access?.admin);
@@ -108,7 +111,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           </div>
         </Link>
 
-        {canDelete && (
+        {canManage && (
           <div className="flex items-center pt-4 pr-2 sm:pt-0 sm:pl-12">
             <OptionMenu
               variant="outline"
@@ -120,17 +123,32 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
                   {t('Settings')}
                 </MenuItem>
                 <MenuItem
-                  key="delete"
-                  onAction={() => setShowDeleteModal(true)}
-                  className="text-functional-red"
+                  key="duplicate"
+                  onAction={() => setShowDuplicateModal(true)}
                 >
-                  {t('Delete')}
+                  {t('Duplicate')}
                 </MenuItem>
+                {canDelete && (
+                  <MenuItem
+                    key="delete"
+                    onAction={() => setShowDeleteModal(true)}
+                    className="text-functional-red"
+                  >
+                    {t('Delete')}
+                  </MenuItem>
+                )}
               </Menu>
             </OptionMenu>
           </div>
         )}
       </div>
+
+      {showDuplicateModal && (
+        <DuplicateProcessModal
+          item={item}
+          onClose={() => setShowDuplicateModal(false)}
+        />
+      )}
 
       <Modal
         isOpen={showDeleteModal}
