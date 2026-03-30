@@ -1,8 +1,9 @@
 'use client';
 
+import { cn } from '@op/ui/utils';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { getProposalExtensions } from '../RichTextEditor';
 import { CollaborativeEditor } from './CollaborativeEditor';
@@ -16,6 +17,7 @@ import { CollaborativeEditor } from './CollaborativeEditor';
  * @param description - Optional description rendered below the title.
  * @param placeholder - Placeholder text shown when the editor is empty.
  * @param multiline - When true, renders a taller editor suitable for long text.
+ * @param maxLength - Optional character limit shown in the editor UI.
  * @param onChange - Called with the editor's HTML content on every update.
  * @param onEditorFocus - Called with the editor instance when it gains focus.
  * @param onEditorBlur - Called with the editor instance when it loses focus.
@@ -26,6 +28,7 @@ interface CollaborativeTextFieldProps {
   description?: string;
   placeholder?: string;
   multiline?: boolean;
+  maxLength?: number;
   onChange?: (html: string) => void;
   onEditorFocus?: (editor: Editor) => void;
   onEditorBlur?: (editor: Editor) => void;
@@ -43,10 +46,13 @@ export function CollaborativeTextField({
   description,
   placeholder = 'Start typing...',
   multiline = false,
+  maxLength,
   onChange,
   onEditorFocus,
   onEditorBlur,
 }: CollaborativeTextFieldProps) {
+  const [charCount, setCharCount] = useState(0);
+
   const extensions = useMemo(
     () => [
       ...getProposalExtensions({ collaborative: true }),
@@ -70,7 +76,10 @@ export function CollaborativeTextField({
   onEditorBlurRef.current = onEditorBlur;
 
   const handleEditorReady = useCallback((editor: Editor) => {
+    setCharCount(editor.getText().length);
+
     editor.on('update', () => {
+      setCharCount(editor.getText().length);
       onChangeRef.current?.(editor.getHTML());
     });
     editor.on('focus', () => {
@@ -102,6 +111,18 @@ export function CollaborativeTextField({
         onEditorReady={handleEditorReady}
         editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
       />
+      {maxLength != null && (
+        <div className="flex justify-end">
+          <span
+            className={cn(
+              'text-sm text-neutral-gray4',
+              charCount >= maxLength && 'text-functional-red',
+            )}
+          >
+            {charCount}/{maxLength}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
