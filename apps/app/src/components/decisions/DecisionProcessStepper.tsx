@@ -10,14 +10,10 @@ export function DecisionProcessStepper({
   phases,
   currentStateId,
   className = '',
-  interactivePhaseIds,
-  onTransition,
 }: {
   phases: ProcessPhase[];
   currentStateId: string;
   className?: string;
-  interactivePhaseIds?: Set<string>;
-  onTransition?: (phaseId: string) => void;
 }) {
   const translation = useDecisionTranslation();
   const translatedPhaseNames = useMemo(
@@ -36,7 +32,6 @@ export function DecisionProcessStepper({
     startDate: phase.phase?.startDate,
     endDate: phase.phase?.endDate,
     sortOrder: phase.phase?.sortOrder,
-    interactive: interactivePhaseIds?.has(phase.id),
   }));
 
   return (
@@ -44,7 +39,6 @@ export function DecisionProcessStepper({
       phases={transformedPhases}
       currentPhaseId={currentStateId}
       className={className}
-      onTransition={onTransition}
     />
   );
 }

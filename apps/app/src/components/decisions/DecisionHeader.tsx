@@ -65,17 +65,6 @@ export async function DecisionHeader({
     };
   });
 
-  const interactivePhaseIds = new Set(
-    instancePhases
-      .filter((p) => {
-        const templateState = templateStates.find(
-          (s: any) => s.id === p.phaseId,
-        );
-        return templateState?.rules?.advancement?.method === 'manual';
-      })
-      .map((p) => p.phaseId),
-  );
-
   const isResultsPhase = instance.currentStateId === 'results';
 
   return (
@@ -107,7 +96,6 @@ export async function DecisionHeader({
               phases={phases}
               currentStateId={instance.currentStateId || ''}
               className="mx-auto"
-              interactivePhaseIds={interactivePhaseIds}
             />
           </div>
         </div>
