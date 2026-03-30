@@ -1,5 +1,4 @@
-import { db, eq } from '@op/db/client';
-import { allowList, organizations } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 
 export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
@@ -14,8 +13,8 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
   }
 
   const [rawResults, preMappedOrgs] = await Promise.all([
-    db._query.organizations.findMany({
-      where: eq(organizations.domain, emailDomain.toLowerCase()),
+    db.query.organizations.findMany({
+      where: { domain: emailDomain.toLowerCase() },
       with: {
         profile: {
           with: {
@@ -29,8 +28,8 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
         },
       },
     }),
-    db._query.allowList.findMany({
-      where: eq(allowList.email, user.email.toLowerCase()),
+    db.query.allowList.findMany({
+      where: { email: user.email.toLowerCase() },
       with: {
         organization: {
           with: {

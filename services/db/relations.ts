@@ -294,6 +294,47 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Organization relations
+   */
+  organizations: {
+    profile: r.one.profiles({
+      from: r.organizations.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    whereWeWork: r.many.organizationsWhereWeWork({
+      from: r.organizations.id,
+      to: r.organizationsWhereWeWork.organizationId,
+    }),
+  },
+
+  /**
+   * Organizations where we work relations (join table)
+   */
+  organizationsWhereWeWork: {
+    organization: r.one.organizations({
+      from: r.organizationsWhereWeWork.organizationId,
+      to: r.organizations.id,
+      optional: false,
+    }),
+    location: r.one.locations({
+      from: r.organizationsWhereWeWork.locationId,
+      to: r.locations.id,
+      optional: false,
+    }),
+  },
+
+  /**
+   * Allow list relations
+   */
+  allowList: {
+    organization: r.one.organizations({
+      from: r.allowList.organizationId,
+      to: r.organizations.id,
+    }),
+  },
+
+  /**
    * Taxonomy relations
    *
    * taxonomyTerms has a self-referential parentId which breaks Drizzle inference.
