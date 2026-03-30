@@ -18,6 +18,9 @@ export * from './getDecisionBySlug';
 // Shared phase advancement core (used by transitionMonitor)
 export * from './advancePhase';
 
+// Manual transition
+export * from './manualTransition';
+
 // Transition management
 export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';
