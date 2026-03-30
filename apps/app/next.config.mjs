@@ -53,50 +53,19 @@ const config = {
   experimental: {
     authInterrupts: true,
   },
-
-  webpack: (cfg, { isServer }) => {
-    // In e2e mode, swap external services for in-process mocks so the app
-    // never makes network calls to TipTap Cloud or PostHog.
-    if (process.env.E2E === 'true') {
-      cfg.resolve.alias = {
-        ...cfg.resolve.alias,
-        '@op/collab': '@op/collab/testing',
-        '@op/analytics$': '@op/analytics/testing',
-      };
-    }
-
-    // Grab the existing rule that handles SVG imports
-    const fileLoaderRule = cfg.module.rules.find((rule) =>
-      rule.test?.test?.('.svg'),
-    );
-
-    cfg.module.rules.push(
-      // Reapply the existing rule, but only for svg imports ending in ?url
-      {
-        ...fileLoaderRule,
-        test: /\.svg$/i,
-        resourceQuery: /url/, // *.svg?url
-      },
-      // Convert all other *.svg imports to React components
-      {
-        test: /\.svg$/i,
-        issuer: fileLoaderRule.issuer,
-        resourceQuery: { not: [...fileLoaderRule.resourceQuery.not, /url/] }, // exclude if *.svg?url
-        use: ['@svgr/webpack'],
-      },
-    );
-
-    // Modify the file loader rule to ignore *.svg, since we have it handled now.
-    fileLoaderRule.exclude = /\.svg$/i;
-
-    if (!isServer) {
-      cfg.resolve.fallback = {
-        // Disable the 'tls' module on the client side
-        tls: false,
-      };
-    }
-
-    return cfg;
+  turbopack: {
+    resolveAlias: {
+      // Disable the 'tls' module on the client side
+      tls: { browser: '' },
+      // In e2e mode, swap external services for in-process mocks so the app
+      // never makes network calls to TipTap Cloud or PostHog.
+      ...(process.env.E2E === 'true'
+        ? {
+            '@op/collab': '../../services/collab/__mocks__/index.ts',
+            '@op/analytics': '../../packages/analytics/src/testing.ts',
+          }
+        : {}),
+    },
   },
   async headers() {
     return [
