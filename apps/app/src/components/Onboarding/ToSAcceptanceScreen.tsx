@@ -9,36 +9,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { OnboardingCenterLayout } from './OnboardingCenterLayout';
 
-function PolicyCheckbox({
-  checked,
-  onChange,
-  href,
-  label,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  href: string;
-  label: string;
-}) {
-  const t = useTranslations();
-
-  return (
-    <div className="flex items-center gap-1">
-      <Checkbox size="small" value={'' + checked} onChange={onChange}>
-        {t('I accept the')}{' '}
-      </Checkbox>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm text-primary-teal hover:underline"
-      >
-        {label}
-      </a>
-    </div>
-  );
-}
-
 export type ToSAcceptanceScreenProps = {
   onAccept: () => void;
   onGoBack: () => void;
@@ -97,3 +67,35 @@ export const ToSAcceptanceScreen = ({
     </OnboardingCenterLayout>
   );
 };
+
+// --- Private sub-components ---
+
+function PolicyCheckbox({
+  checked,
+  onChange,
+  href,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  href: string;
+  label: string;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className="flex items-center gap-1">
+      <Checkbox size="small" value={'' + checked} onChange={onChange}>
+        {t('I accept the')}{' '}
+      </Checkbox>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-primary-teal hover:underline"
+      >
+        {label}
+      </a>
+    </div>
+  );
+}

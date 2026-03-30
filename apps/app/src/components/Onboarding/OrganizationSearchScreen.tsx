@@ -17,150 +17,6 @@ import { ToSAcceptanceScreen } from './ToSAcceptanceScreen';
 
 type SearchOrganization = RouterOutput['organization']['search'][number];
 
-const getOrgLocation = (org: SearchOrganization): string => {
-  if (org.profile?.city && org.profile?.state) {
-    return `${org.profile.city}, ${org.profile.state}`;
-  }
-  if (org.profile?.city) {
-    return org.profile.city;
-  }
-  if (org.profile?.state) {
-    return org.profile.state;
-  }
-  if (org.whereWeWork.length > 0) {
-    return org.whereWeWork
-      .map((loc) => loc.name)
-      .filter(Boolean)
-      .join(', ');
-  }
-  return '';
-};
-
-function SearchDropdown({
-  searchResults,
-  isFetching,
-  searchQuery,
-  onSelect,
-  onAddOrganization,
-}: {
-  searchResults: SearchOrganization[] | undefined;
-  isFetching: boolean;
-  searchQuery: string;
-  onSelect: (org: SearchOrganization) => void;
-  onAddOrganization?: (searchTerm: string) => void;
-}) {
-  const t = useTranslations();
-
-  if (isFetching && !searchResults) {
-    return (
-      <div className="flex items-center justify-center py-4">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {searchResults && searchResults.length > 0 ? (
-        searchResults.map((org) => {
-          const location = getOrgLocation(org);
-          return (
-            <button
-              key={org.id}
-              type="button"
-              className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite"
-              onClick={() => onSelect(org)}
-            >
-              <ProfileItem
-                size="small"
-                avatar={
-                  <OrganizationAvatar
-                    profile={org.profile}
-                    withLink={false}
-                    className="size-10"
-                  />
-                }
-                title={org.profile?.name ?? ''}
-              >
-                {location && (
-                  <div className="text-xs text-neutral-gray4">{location}</div>
-                )}
-              </ProfileItem>
-            </button>
-          );
-        })
-      ) : (
-        <div className="px-4 py-3 text-sm text-neutral-gray4">
-          {t('No results')}
-        </div>
-      )}
-
-      {onAddOrganization && searchQuery && (
-        <button
-          type="button"
-          className="flex w-full items-center gap-2 border-t border-neutral-gray1 px-4 py-3 text-left text-primary-teal hover:bg-neutral-offWhite"
-          onClick={() => onAddOrganization(searchQuery)}
-        >
-          <LuPlus className="size-4" />
-          <span className="text-sm">
-            {t('Add {searchTerm}', { searchTerm: searchQuery })}
-          </span>
-        </button>
-      )}
-    </>
-  );
-}
-
-function SelectedOrgChip({
-  org,
-  onRemove,
-}: {
-  org: SearchOrganization;
-  onRemove: () => void;
-}) {
-  const t = useTranslations();
-  const location = getOrgLocation(org);
-
-  return (
-    <div className="flex items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
-      <div className="flex items-center gap-2">
-        <OrganizationAvatar
-          profile={org.profile}
-          withLink={false}
-          className="size-6"
-        />
-        <div className="flex flex-col leading-normal">
-          <span className="text-sm text-neutral-charcoal">
-            {org.profile?.name}
-          </span>
-          {location && (
-            <span className="text-xs text-neutral-gray4">{location}</span>
-          )}
-        </div>
-      </div>
-      <button
-        type="button"
-        className="rounded-full p-1 text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal"
-        onClick={onRemove}
-        aria-label={t('Remove')}
-      >
-        <LuX className="size-4" />
-      </button>
-    </div>
-  );
-}
-
-function OrDivider() {
-  const t = useTranslations();
-  return (
-    <div className="flex items-center gap-4">
-      <div className="h-px flex-1 bg-neutral-gray1" />
-      <span className="text-sm text-neutral-gray3">{t('or')}</span>
-      <div className="h-px flex-1 bg-neutral-gray1" />
-    </div>
-  );
-}
-
 export type OrganizationSearchScreenProps = {
   onContinue: (selectedOrgs: Array<{ id: string; profileId: string }>) => void;
   onAddOrganization?: (searchTerm: string) => void;
@@ -324,4 +180,152 @@ export const OrganizationSearchScreen = ({
       </div>
     </OnboardingCenterLayout>
   );
+};
+
+// --- Private sub-components ---
+
+function SearchDropdown({
+  searchResults,
+  isFetching,
+  searchQuery,
+  onSelect,
+  onAddOrganization,
+}: {
+  searchResults: SearchOrganization[] | undefined;
+  isFetching: boolean;
+  searchQuery: string;
+  onSelect: (org: SearchOrganization) => void;
+  onAddOrganization?: (searchTerm: string) => void;
+}) {
+  const t = useTranslations();
+
+  if (isFetching && !searchResults) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {searchResults && searchResults.length > 0 ? (
+        searchResults.map((org) => {
+          const location = getOrgLocation(org);
+          return (
+            <button
+              key={org.id}
+              type="button"
+              className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite"
+              onClick={() => onSelect(org)}
+            >
+              <ProfileItem
+                size="small"
+                avatar={
+                  <OrganizationAvatar
+                    profile={org.profile}
+                    withLink={false}
+                    className="size-10"
+                  />
+                }
+                title={org.profile?.name ?? ''}
+              >
+                {location && (
+                  <div className="text-xs text-neutral-gray4">{location}</div>
+                )}
+              </ProfileItem>
+            </button>
+          );
+        })
+      ) : (
+        <div className="px-4 py-3 text-sm text-neutral-gray4">
+          {t('No results')}
+        </div>
+      )}
+
+      {onAddOrganization && searchQuery && (
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 border-t border-neutral-gray1 px-4 py-3 text-left text-primary-teal hover:bg-neutral-offWhite"
+          onClick={() => onAddOrganization(searchQuery)}
+        >
+          <LuPlus className="size-4" />
+          <span className="text-sm">
+            {t('Add {searchTerm}', { searchTerm: searchQuery })}
+          </span>
+        </button>
+      )}
+    </>
+  );
+}
+
+function SelectedOrgChip({
+  org,
+  onRemove,
+}: {
+  org: SearchOrganization;
+  onRemove: () => void;
+}) {
+  const t = useTranslations();
+  const location = getOrgLocation(org);
+
+  return (
+    <div className="flex items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
+      <div className="flex items-center gap-2">
+        <OrganizationAvatar
+          profile={org.profile}
+          withLink={false}
+          className="size-6"
+        />
+        <div className="flex flex-col leading-normal">
+          <span className="text-sm text-neutral-charcoal">
+            {org.profile?.name}
+          </span>
+          {location && (
+            <span className="text-xs text-neutral-gray4">{location}</span>
+          )}
+        </div>
+      </div>
+      <button
+        type="button"
+        className="rounded-full p-1 text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal"
+        onClick={onRemove}
+        aria-label={t('Remove')}
+      >
+        <LuX className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function OrDivider() {
+  const t = useTranslations();
+  return (
+    <div className="flex items-center gap-4">
+      <div className="h-px flex-1 bg-neutral-gray1" />
+      <span className="text-sm text-neutral-gray3">{t('or')}</span>
+      <div className="h-px flex-1 bg-neutral-gray1" />
+    </div>
+  );
+}
+
+// --- Utilities ---
+
+const getOrgLocation = (org: SearchOrganization): string => {
+  if (org.profile?.city && org.profile?.state) {
+    return `${org.profile.city}, ${org.profile.state}`;
+  }
+  if (org.profile?.city) {
+    return org.profile.city;
+  }
+  if (org.profile?.state) {
+    return org.profile.state;
+  }
+  if (org.whereWeWork.length > 0) {
+    return org.whereWeWork
+      .map((loc) => loc.name)
+      .filter(Boolean)
+      .join(', ');
+  }
+  return '';
 };
