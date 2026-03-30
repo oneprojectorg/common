@@ -298,7 +298,7 @@ function ProposalEditorInner({
     const result = validate();
     if (!result.valid) {
       toast.error({
-        title: t('Please complete the following required fields:'),
+        title: t('Please fix the following issues:'),
         message: Object.values(result.errors).join(', '),
       });
       return;
