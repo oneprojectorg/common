@@ -27,6 +27,7 @@
     "./Field": "./src/components/Field.tsx",
     "./CollapsibleConfigCard": "./src/components/CollapsibleConfigCard.tsx",
     "./FileDropZone": "./src/components/FileDropZone.tsx",
+    "./FooterBar": "./src/components/FooterBar.tsx",
     "./Form": "./src/components/Form.tsx",
     "./Header": "./src/components/Header.tsx",
     "./HorizontalList": "./src/components/HorizontalList/index.tsx",
