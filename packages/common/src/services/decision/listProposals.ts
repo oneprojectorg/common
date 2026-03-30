@@ -83,12 +83,7 @@ const buildWhereConditions = (
     conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
   }
 
-  if (phaseProposalIds.length > 0) {
-    conditions.push(inArray(proposals.id, phaseProposalIds));
-  } else {
-    // No proposals in this phase — return empty result set
-    conditions.push(sql`false`);
-  }
+  conditions.push(inArray(proposals.id, phaseProposalIds));
 
   return conditions.length > 0 ? and(...conditions) : undefined;
 };
@@ -108,6 +103,15 @@ export const listProposals = async ({
       instanceId: processInstanceId,
       phaseId: input.phaseId,
     }));
+
+  if (phaseProposalIds.length === 0) {
+    return {
+      proposals: [],
+      total: 0,
+      hasMore: false,
+      canManageProposals: false,
+    };
+  }
 
   // Skip authentication check if this is a trusted context (e.g., background job)
   if (!skipAccessCheck && !user) {
