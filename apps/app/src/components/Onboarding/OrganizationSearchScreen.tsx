@@ -1,6 +1,7 @@
 'use client';
 
-import { RouterOutput, trpc } from '@op/api/client';
+import { trpc } from '@op/api/client';
+import type { OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -15,13 +16,11 @@ import { OrganizationAvatar } from '../OrganizationAvatar';
 import { OnboardingCenterLayout } from './OnboardingCenterLayout';
 import { ToSAcceptanceScreen } from './ToSAcceptanceScreen';
 
-type SearchOrganization = RouterOutput['organization']['search'][number];
-
 export type OrganizationSearchScreenProps = {
   onContinue: (selectedOrgs: Array<{ id: string; profileId: string }>) => void;
   onAddOrganization?: (searchTerm: string) => void;
   isSubmitting?: boolean;
-  initialOrganizations?: SearchOrganization[];
+  initialOrganizations?: OrganizationSearchResult[];
 };
 
 export const OrganizationSearchScreen = ({
@@ -33,7 +32,7 @@ export const OrganizationSearchScreen = ({
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 300);
-  const [selectedOrgs, setSelectedOrgs] = useState<SearchOrganization[]>(
+  const [selectedOrgs, setSelectedOrgs] = useState<OrganizationSearchResult[]>(
     () => initialOrganizations ?? [],
   );
   const [showToS, setShowToS] = useState(false);
@@ -69,7 +68,7 @@ export const OrganizationSearchScreen = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelectOrg = useCallback((org: SearchOrganization) => {
+  const handleSelectOrg = useCallback((org: OrganizationSearchResult) => {
     setSelectedOrgs((prev) => {
       if (prev.some((o) => o.id === org.id)) {
         return prev;
@@ -191,10 +190,10 @@ function SearchDropdown({
   onSelect,
   onAddOrganization,
 }: {
-  searchResults: SearchOrganization[] | undefined;
+  searchResults: OrganizationSearchResult[] | undefined;
   isFetching: boolean;
   searchQuery: string;
-  onSelect: (org: SearchOrganization) => void;
+  onSelect: (org: OrganizationSearchResult) => void;
   onAddOrganization?: (searchTerm: string) => void;
 }) {
   const t = useTranslations();
@@ -263,7 +262,7 @@ function SelectedOrgChip({
   org,
   onRemove,
 }: {
-  org: SearchOrganization;
+  org: OrganizationSearchResult;
   onRemove: () => void;
 }) {
   const t = useTranslations();
@@ -311,7 +310,7 @@ function OrDivider() {
 
 // --- Utilities ---
 
-const getOrgLocation = (org: SearchOrganization): string => {
+const getOrgLocation = (org: OrganizationSearchResult): string => {
   if (org.profile?.city && org.profile?.state) {
     return `${org.profile.city}, ${org.profile.state}`;
   }
