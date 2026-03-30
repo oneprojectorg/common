@@ -56,14 +56,10 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
 
   const results = rawResults.map(transformOrg);
 
-  if (preMappedOrgs.length > 0) {
-    for (const preMappedOrg of preMappedOrgs) {
-      const rawOrg = preMappedOrg?.organization as unknown as
-        | (typeof rawResults)[number]
-        | undefined;
-      if (rawOrg && !results.find((r) => r.id === rawOrg.id)) {
-        results.push(transformOrg(rawOrg));
-      }
+  for (const preMappedOrg of preMappedOrgs) {
+    const { organization } = preMappedOrg;
+    if (organization && !results.find((r) => r.id === organization.id)) {
+      results.push(transformOrg(organization));
     }
   }
 
