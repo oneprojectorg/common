@@ -1,6 +1,6 @@
 'use client';
 
-import { TextField } from '@op/ui/TextField';
+import { NumberField } from '@op/ui/NumberField';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,32 +17,26 @@ export function FieldConfigText({
   onUpdateJsonSchema,
 }: FieldConfigProps) {
   const t = useTranslations();
-
   const defaultMaxLength =
     field.fieldType === 'long_text'
       ? DEFAULT_TEXT_FIELD_MAX_LENGTH.long_text
       : DEFAULT_TEXT_FIELD_MAX_LENGTH.short_text;
   const value =
-    typeof fieldSchema.maxLength === 'number' ? String(fieldSchema.maxLength) : '';
+    typeof fieldSchema.maxLength === 'number'
+      ? fieldSchema.maxLength
+      : defaultMaxLength;
 
   return (
-    <TextField
+    <NumberField
       label={t('Character limit')}
       value={value}
+      minValue={1}
       onChange={(nextValue) => {
-        const digitsOnly = nextValue.replace(/\D/g, '');
-
         onUpdateJsonSchema({
-          maxLength: digitsOnly ? Number(digitsOnly) : undefined,
+          maxLength: nextValue ?? undefined,
         });
       }}
-      description={t('Default: {count} characters', {
-        count: defaultMaxLength,
-      })}
       inputProps={{
-        inputMode: 'numeric',
-        pattern: '[0-9]*',
-        placeholder: t('Set character limit'),
         className: 'bg-white',
       }}
     />

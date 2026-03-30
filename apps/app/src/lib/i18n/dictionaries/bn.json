@@ -94,8 +94,6 @@
   "Enter a name for your organization": "আপনার সংস্থার জন্য একটি নাম লিখুন",
   "Must be at most 100 characters": "সর্বোচ্চ ১০০ অক্ষর হতে পারবে",
   "Character limit": "ক্যারেক্টার সীমা",
-  "Set character limit": "ক্যারেক্টার সীমা সেট করুন",
-  "Default: {count} characters": "ডিফল্ট: {count} অক্ষর",
   "Select an organization type": "একটি সংস্থার ধরন নির্বাচন করুন",
   "Enter an organization bio": "সংস্থার জীবনী লিখুন",
   "Must be at most 150 characters": "সর্বোচ্চ ১৫০ অক্ষর হতে পারবে",

@@ -42,8 +42,8 @@ export const DEFAULT_TEXT_FIELD_MAX_LENGTH: Record<
   Extract<FieldType, 'short_text' | 'long_text'>,
   number
 > = {
-  short_text: 255,
-  long_text: 1500,
+  short_text: 500,
+  long_text: 3000,
 };
 
 /**

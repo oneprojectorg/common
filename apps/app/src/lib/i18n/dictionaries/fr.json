@@ -94,8 +94,6 @@
   "Enter a name for your organization": "Entrez un nom pour votre organisation",
   "Must be at most 100 characters": "Doit contenir au maximum 100 caractères",
   "Character limit": "Limite de caracteres",
-  "Set character limit": "Définir la limite de caracteres",
-  "Default: {count} characters": "Par défaut : {count} caractères",
   "Select an organization type": "Sélectionnez un type d'organisation",
   "Enter an organization bio": "Entrez une biographie de l'organisation",
   "Must be at most 150 characters": "Doit contenir au maximum 150 caractères",
