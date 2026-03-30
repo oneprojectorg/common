@@ -778,6 +778,8 @@
   "Delete draft": "Eliminar borrador",
   "Decision deleted successfully": "Decisión eliminada exitosamente",
   "Failed to delete decision": "Error al eliminar la decisión",
+  "Decision duplicated successfully": "Decisión duplicada exitosamente",
+  "Failed to duplicate decision": "Error al duplicar la decisión",
   "A bridge to the": "Un puente hacia la",
   "new economy.": "nueva economía.",
   "Connect with your network.": "Conéctate con tu red.",

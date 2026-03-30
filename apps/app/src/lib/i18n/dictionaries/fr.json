@@ -778,6 +778,8 @@
   "Delete draft": "Supprimer le brouillon",
   "Decision deleted successfully": "Décision supprimée avec succès",
   "Failed to delete decision": "Échec de la suppression de la décision",
+  "Decision duplicated successfully": "Décision dupliquée avec succès",
+  "Failed to duplicate decision": "Échec de la duplication de la décision",
   "A bridge to the": "Un pont vers la",
   "new economy.": "nouvelle économie.",
   "Connect with your network.": "Connectez-vous avec votre réseau.",

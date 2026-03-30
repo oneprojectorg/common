@@ -774,6 +774,8 @@
   "Delete draft": "Excluir rascunho",
   "Decision deleted successfully": "Decisão excluída com sucesso",
   "Failed to delete decision": "Falha ao excluir a decisão",
+  "Decision duplicated successfully": "Decisão duplicada com sucesso",
+  "Failed to duplicate decision": "Falha ao duplicar a decisão",
   "A bridge to the": "Uma ponte para a",
   "new economy.": "nova economia.",
   "Connect with your network.": "Conecte-se com sua rede.",

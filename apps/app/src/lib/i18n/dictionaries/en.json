@@ -779,6 +779,8 @@
   "Delete draft": "Delete draft",
   "Decision deleted successfully": "Decision deleted successfully",
   "Failed to delete decision": "Failed to delete decision",
+  "Decision duplicated successfully": "Decision duplicated successfully",
+  "Failed to duplicate decision": "Failed to duplicate decision",
   "A bridge to the": "A bridge to the",
   "new economy.": "new economy.",
   "Connect with your network.": "Connect with your network.",

@@ -786,6 +786,8 @@
   "Delete draft": "খসড়া মুছুন",
   "Decision deleted successfully": "সিদ্ধান্ত সফলভাবে মুছে ফেলা হয়েছে",
   "Failed to delete decision": "সিদ্ধান্ত মুছে ফেলতে ব্যর্থ",
+  "Decision duplicated successfully": "সিদ্ধান্ত সফলভাবে ডুপ্লিকেট করা হয়েছে",
+  "Failed to duplicate decision": "সিদ্ধান্ত ডুপ্লিকেট করতে ব্যর্থ",
   "A bridge to the": "একটি সেতু",
   "new economy.": "নতুন অর্থনীতির দিকে।",
   "Connect with your network.": "আপনার নেটওয়ার্কের সাথে সংযুক্ত হন।",

@@ -7,6 +7,8 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
+import { toast } from '@op/ui/Toast';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -14,13 +16,13 @@ import { useTranslations } from '@/lib/i18n';
 export const DuplicateProcessModal = ({
   item,
   onClose,
-  onDuplicate,
 }: {
   item: DecisionProfile;
   onClose: () => void;
-  onDuplicate?: (slug: string) => void;
 }) => {
   const t = useTranslations();
+  const router = useRouter();
+  const utils = trpc.useUtils();
 
   const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
 
@@ -60,11 +62,14 @@ export const DuplicateProcessModal = ({
   }
 
   const duplicateMutation = trpc.decision.duplicateInstance.useMutation({
-    onSuccess: (data) => {
-      onDuplicate?.(data.slug);
+    onSuccess: () => {
+      toast.success({ message: t('Decision duplicated successfully') });
+      utils.decision.listDecisionProfiles.invalidate();
       onClose();
+      router.push('/decisions?tab=drafts');
     },
     onError: () => {
+      toast.error({ message: t('Failed to duplicate decision') });
       onClose();
     },
   });
