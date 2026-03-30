@@ -361,7 +361,7 @@ async function copyCustomRoles({
       .returning();
 
     if (!newRole) {
-      continue;
+      throw new CommonError(`Failed to create custom role: ${role.name}`);
     }
 
     // Copy zone permissions

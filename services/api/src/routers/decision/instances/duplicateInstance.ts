@@ -59,7 +59,7 @@ export const duplicateInstanceRouter = router({
       });
 
       if (!sourceInstance?.profileId) {
-        throw new Error('Source instance not found');
+        throw new CommonError('Source instance not found');
       }
 
       const profileUser = await getProfileAccessUser({
@@ -68,7 +68,7 @@ export const duplicateInstanceRouter = router({
       });
 
       assertAccess(
-        [{ decisions: permission.ADMIN }],
+        { decisions: permission.ADMIN },
         profileUser?.roles ?? [],
       );
 
