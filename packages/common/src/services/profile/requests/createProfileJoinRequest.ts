@@ -1,4 +1,4 @@
-import { type TransactionType, db, eq } from '@op/db/client';
+import { type TransactionType, db, eq, sql } from '@op/db/client';
 import {
   JoinProfileRequestStatus,
   joinProfileRequests,
@@ -6,7 +6,7 @@ import {
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { CommonError } from '../../../utils';
+import { CommonError, ValidationError } from '../../../utils';
 import { joinOrganization } from '../../organization/joinOrganization';
 import { JoinProfileRequestWithProfiles } from './types';
 import { validateJoinProfileRequestContext } from './validateJoinProfileRequestContext';
@@ -33,31 +33,8 @@ export const createProfileJoinRequest = async ({
       targetProfileId,
     });
 
-  // Already a member — upsert an APPROVED request record and return
   if (existingMembership) {
-    const [record] = existingRequest
-      ? await db
-          .update(joinProfileRequests)
-          .set({
-            status: JoinProfileRequestStatus.APPROVED,
-            updatedAt: new Date().toISOString(),
-          })
-          .where(eq(joinProfileRequests.id, existingRequest.id))
-          .returning()
-      : await db
-          .insert(joinProfileRequests)
-          .values({
-            requestProfileId,
-            targetProfileId,
-            status: JoinProfileRequestStatus.APPROVED,
-          })
-          .returning();
-
-    if (!record) {
-      throw new CommonError('Failed to upsert join profile request');
-    }
-
-    return { ...record, requestProfile, targetProfile };
+    throw new ValidationError('You are already a member of this profile');
   }
 
   const matchedOrg = await findDomainMatchedOrg(user, targetProfileId);
@@ -170,15 +147,15 @@ async function findDomainMatchedOrg(
     return null;
   }
 
-  const org = await db.query.organizations.findFirst({
-    where: { profileId: targetProfileId },
-  });
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(
+      sql`${organizations.profileId} = ${targetProfileId} AND lower(${organizations.domain}) = ${userEmailDomain}`,
+    )
+    .limit(1);
 
-  if (!org?.domain || userEmailDomain !== org.domain.toLowerCase()) {
-    return null;
-  }
-
-  return org;
+  return org ?? null;
 }
 
 async function performAutoJoin(

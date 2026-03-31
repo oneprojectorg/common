@@ -18,7 +18,6 @@ import {
   createIsolatedSession,
   createTestContextWithSession,
   createTestUser,
-  supabaseTestAdminClient,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 import { createJoinRequestRouter } from './createJoinRequest';
@@ -267,24 +266,6 @@ describe.concurrent('profile.createJoinRequest', () => {
     expect(dbRecord?.status).toBe(JoinProfileRequestStatus.APPROVED);
   });
 
-  /**
-   * Helper to clean up a joiner user created with createTestUser.
-   * Deletes the individual profile (cascades to profile_users) then the auth user
-   * (cascades to the users row).
-   */
-  const cleanupJoiner = async (authUserId: string) => {
-    const [userRecord] = await db
-      .select({ profileId: users.profileId })
-      .from(users)
-      .where(eq(users.authUserId, authUserId));
-
-    if (userRecord?.profileId) {
-      await db.delete(profiles).where(eq(profiles.id, userRecord.profileId));
-    }
-
-    await supabaseTestAdminClient?.auth.admin.deleteUser(authUserId);
-  };
-
   it('should auto-join with APPROVED status when email domain matches org domain', async ({
     task,
     onTestFinished,
@@ -315,7 +296,7 @@ describe.concurrent('profile.createJoinRequest', () => {
       throw new Error('Failed to create auth user');
     }
 
-    onTestFinished(() => cleanupJoiner(authUser.id));
+    joinRequestData.trackAuthUser(authUser.id);
 
     // Get the joiner's individual profile ID
     const [joinerUser] = await db
@@ -408,7 +389,7 @@ describe.concurrent('profile.createJoinRequest', () => {
       throw new Error('Failed to create auth user');
     }
 
-    onTestFinished(() => cleanupJoiner(authUser.id));
+    joinRequestData.trackAuthUser(authUser.id);
 
     const [joinerUser] = await db
       .select({ profileId: users.profileId })
@@ -476,7 +457,7 @@ describe.concurrent('profile.createJoinRequest', () => {
       throw new Error('Failed to create auth user');
     }
 
-    onTestFinished(() => cleanupJoiner(authUser.id));
+    joinRequestData.trackAuthUser(authUser.id);
 
     const [joinerUser] = await db
       .select({ profileId: users.profileId })
@@ -535,7 +516,7 @@ describe.concurrent('profile.createJoinRequest', () => {
       throw new Error('Failed to create auth user');
     }
 
-    onTestFinished(() => cleanupJoiner(authUser.id));
+    joinRequestData.trackAuthUser(authUser.id);
 
     const [joinerUser] = await db
       .select({ profileId: users.profileId })
@@ -617,7 +598,7 @@ describe.concurrent('profile.createJoinRequest', () => {
       throw new Error('Failed to create auth user');
     }
 
-    onTestFinished(() => cleanupJoiner(authUser.id));
+    joinRequestData.trackAuthUser(authUser.id);
 
     const [joinerUser] = await db
       .select({ profileId: users.profileId })
@@ -713,7 +694,7 @@ describe.concurrent('profile.createJoinRequest', () => {
       throw new Error('Failed to create auth user');
     }
 
-    onTestFinished(() => cleanupJoiner(authUser.id));
+    joinRequestData.trackAuthUser(authUser.id);
 
     const [joinerUser] = await db
       .select({ profileId: users.profileId })
