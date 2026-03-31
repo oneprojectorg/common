@@ -4,20 +4,23 @@ import { z } from 'zod';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const manualTransitionRouter = router({
-  manualTransition: commonAuthedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 5 },
-  })
+  manualTransition: commonAuthedProcedure()
     .input(
       z.object({
         instanceId: z.uuid(),
       }),
     )
+    .output(
+      z.object({
+        instanceId: z.string(),
+        currentPhaseId: z.string(),
+        previousPhaseId: z.string(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const result = await manualTransition({
+      return manualTransition({
         instanceId: input.instanceId,
         user: ctx.user,
       });
-
-      return result;
     }),
 });
