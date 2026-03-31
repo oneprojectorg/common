@@ -79,6 +79,7 @@ export const OnboardingFlow = () => {
   const trpcUtils = trpc.useUtils();
   const { data: userAccount } = trpc.account.getMyAccount.useQuery();
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
+  const completeOnboarding = trpc.account.completeOnboarding.useMutation();
   const createOrganization = trpc.organization.create.useMutation();
 
   // Handle hydration detection
@@ -161,6 +162,8 @@ export const OnboardingFlow = () => {
           }
         }
 
+        await completeOnboarding.mutateAsync();
+        await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
         router.push('/?new=1');
       } catch (err) {
@@ -179,7 +182,15 @@ export const OnboardingFlow = () => {
         }
       }
     },
-    [isOnline, userAccount, createJoinRequest, trpcUtils, router, t],
+    [
+      isOnline,
+      userAccount,
+      createJoinRequest,
+      completeOnboarding,
+      trpcUtils,
+      router,
+      t,
+    ],
   );
 
   // Handle "+ Add" org creation: pre-populate name and switch to org creation flow
@@ -229,6 +240,7 @@ export const OnboardingFlow = () => {
         .mutateAsync(processOrgInputs(combined))
         .then(async () => {
           sendOnboardingAnalytics(combined);
+          await completeOnboarding.mutateAsync();
           await trpcUtils.account.getMyAccount.invalidate();
           await trpcUtils.account.getMyAccount.refetch();
           router.push('/?new=1');

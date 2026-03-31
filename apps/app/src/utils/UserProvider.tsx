@@ -54,7 +54,7 @@ export const UserProviderSuspense = ({
     staleTime: 30 * 1000,
   });
 
-  if (user.organizationUsers?.length === 0) {
+  if (!user.onboardedAt) {
     router.push('/start');
   }
 

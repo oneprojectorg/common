@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  if (user?.organizationUsers?.length === 0) {
+  if (!user?.onboardedAt) {
     redirect('/en/start');
   }
 
