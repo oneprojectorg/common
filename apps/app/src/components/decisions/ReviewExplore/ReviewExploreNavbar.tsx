@@ -35,13 +35,14 @@ export function ReviewExploreNavbar({
         </Link>
         <LuChevronRight className="size-4 shrink-0 text-midGray" />
         <Button
-          unstyled
           onPress={onOpenProposalList}
+          variant="pill"
+          color="pill"
           className={cn(
-            'flex items-center gap-2 rounded px-2 py-1 text-base text-primary-teal',
-            isProposalListOpen && 'bg-primary-tealWhite',
-            !isProposalListOpen && 'sm:bg-primary-tealWhite',
-            'sm:px-3 sm:py-2',
+            'text-base shadow-none',
+            isProposalListOpen
+              ? 'bg-primary-tealWhite'
+              : 'bg-transparent sm:bg-primary-tealWhite',
           )}
         >
           <LuList className="size-4 shrink-0" />
