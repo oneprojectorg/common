@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@op/ui/Button';
 import { Sidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import { LuCircleCheck, LuClock4 } from 'react-icons/lu';
@@ -80,8 +81,8 @@ function SidebarItem({ proposal }: { proposal: SidebarProposal }) {
   })();
 
   return (
-    <button
-      type="button"
+    <Button
+      unstyled
       className={cn(
         'flex h-8 w-full items-center gap-2 rounded-sm px-2 text-left text-base',
         proposal.isActive && 'bg-whiteish text-midGray',
@@ -95,6 +96,6 @@ function SidebarItem({ proposal }: { proposal: SidebarProposal }) {
     >
       {icon}
       <span className="truncate">{proposal.name}</span>
-    </button>
+    </Button>
   );
 }
