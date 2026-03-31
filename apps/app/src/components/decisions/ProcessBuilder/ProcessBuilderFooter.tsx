@@ -89,6 +89,7 @@ export const ProcessBuilderFooter = ({
         stewardProfileId: storeData?.stewardProfileId || undefined,
         phases: storeData?.phases,
         proposalTemplate: storeData?.proposalTemplate,
+        rubricTemplate: storeData?.rubricTemplate,
         config: storeData?.config,
       });
     }
