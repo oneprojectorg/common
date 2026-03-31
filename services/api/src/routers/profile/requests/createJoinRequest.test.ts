@@ -264,7 +264,6 @@ describe.concurrent('profile.createJoinRequest', () => {
       .where(eq(joinProfileRequests.id, result.id));
 
     expect(dbRecord).toBeDefined();
-    expect(dbRecord).toBeDefined();
     expect(dbRecord?.status).toBe(JoinProfileRequestStatus.APPROVED);
   });
 
