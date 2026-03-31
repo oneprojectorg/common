@@ -14,6 +14,7 @@ const meta: Meta<typeof PhaseStepper> = {
       control: 'select',
       options: ['phase-1', 'phase-2', 'phase-3', 'phase-4'],
     },
+    onTransition: { action: 'onTransition' },
   },
 };
 
@@ -320,6 +321,46 @@ export const PartialDates: Story = {
     docs: {
       description: {
         story: 'Phases can have only start dates, only end dates, or no dates',
+      },
+    },
+  },
+};
+
+export const InteractivePhases: Story = {
+  args: {
+    phases: [
+      { id: 'phase-1', name: 'Proposal', sortOrder: 1, interactive: true },
+      { id: 'phase-2', name: 'Review', sortOrder: 2, interactive: true },
+      { id: 'phase-3', name: 'Voting', sortOrder: 3, interactive: true },
+      { id: 'phase-4', name: 'Results', sortOrder: 4 },
+    ],
+    currentPhaseId: 'phase-2',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Interactive phases display a teal play icon and show rippling rings on hover. Triggers onTransition when clicked. Non-interactive phases remain static.',
+      },
+    },
+  },
+};
+
+export const MixedInteractivity: Story = {
+  args: {
+    phases: [
+      { id: 'phase-1', name: 'Planning', sortOrder: 1 },
+      { id: 'phase-2', name: 'Development', sortOrder: 2, interactive: true },
+      { id: 'phase-3', name: 'Testing', sortOrder: 3 },
+      { id: 'phase-4', name: 'Release', sortOrder: 4, interactive: true },
+    ],
+    currentPhaseId: 'phase-1',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Only specific phases are interactive — hover over Development and Release to see the ripple effect',
       },
     },
   },
