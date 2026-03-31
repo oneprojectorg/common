@@ -29,6 +29,7 @@ const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
   phases: PhasesSection,
   proposalCategories: ProposalCategoriesSection,
   templateEditor: TemplateEditorSection,
+  criteria: CriteriaSection,
   reviewSettings: ReviewSettingsSection,
   reviewRubric: CriteriaSection,
   roles: RolesSection,

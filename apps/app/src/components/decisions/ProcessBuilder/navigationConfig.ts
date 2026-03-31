@@ -21,6 +21,7 @@ export const SECTIONS_BY_STEP = {
   ],
   template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
   reviews: [
+    { id: 'criteria', labelKey: 'Review Rubric' },
     { id: 'reviewSettings', labelKey: 'Reviews' },
     { id: 'reviewRubric', labelKey: 'Review Rubric' },
   ],
@@ -55,7 +56,7 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
   sections: {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
-    reviews: ['reviewSettings', 'reviewRubric'],
+    reviews: ['criteria'],
     participants: ['roles', 'participants'],
     summary: ['summary'],
   },
@@ -83,6 +84,11 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     id: 'templateEditor',
     labelKey: 'Proposal Template',
     parentStepId: 'template',
+  },
+  {
+    id: 'criteria',
+    labelKey: 'Review Rubric',
+    parentStepId: 'reviews',
   },
   {
     id: 'reviewSettings',

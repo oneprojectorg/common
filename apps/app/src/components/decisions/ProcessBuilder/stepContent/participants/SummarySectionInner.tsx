@@ -18,8 +18,8 @@ const CHECKLIST_SECTION_MAP: Record<string, string> = {
   phaseDetails: 'phases',
   proposalTemplate: 'templateEditor',
   proposalTemplateErrors: 'templateEditor',
-  rubricCriteria: 'reviewRubric',
-  rubricCriteriaErrors: 'reviewRubric',
+  rubricCriteria: 'criteria',
+  rubricCriteriaErrors: 'criteria',
   inviteMembers: 'participants',
 };
 
