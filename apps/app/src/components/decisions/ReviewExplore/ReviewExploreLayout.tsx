@@ -3,9 +3,11 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { Header1, Header2 } from '@op/ui/Header';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -130,18 +132,16 @@ export function ReviewExploreLayout({ slug }: ReviewExploreLayoutProps) {
 
 function ReviewProposalPane({ className }: { className?: string }) {
   return (
-    <div className={`min-w-0 flex-1 ${className ?? ''}`}>
-      <h1 className="text-title-lg text-neutral-black">
-        Community Garden Expansion
-      </h1>
+    <div className={cn('min-w-0 flex-1', className)}>
+      <Header1 className="font-sans">Community Garden Expansion</Header1>
     </div>
   );
 }
 
 function ReviewRubricPane({ className }: { className?: string }) {
   return (
-    <div className={`min-w-0 flex-1 ${className ?? ''}`}>
-      <h2 className="text-title-base text-neutral-black">Review Proposal</h2>
+    <div className={cn('min-w-0 flex-1', className)}>
+      <Header2 className="text-title-base">Review Proposal</Header2>
     </div>
   );
 }
