@@ -14,6 +14,7 @@ export interface SidebarProposal {
   isActive: boolean;
 }
 
+// Temporary placeholder data until review proposals are provided by the backend.
 export const mockReviewProposals: SidebarProposal[] = [
   {
     id: '1',
