@@ -1,4 +1,11 @@
-import { type TransactionType, db, eq, sql } from '@op/db/client';
+import {
+  type DatabaseType,
+  type TransactionType,
+  and,
+  db,
+  eq,
+  sql,
+} from '@op/db/client';
 import {
   JoinProfileRequestStatus,
   joinProfileRequests,
@@ -7,6 +14,7 @@ import {
 import { User } from '@op/supabase/lib';
 
 import { CommonError, ValidationError } from '../../../utils';
+import { assertGlobalRole } from '../../assert';
 import { joinOrganization } from '../../organization/joinOrganization';
 import { JoinProfileRequestWithProfiles } from './types';
 import { validateJoinProfileRequestContext } from './validateJoinProfileRequestContext';
@@ -52,8 +60,12 @@ export const createProfileJoinRequest = async ({
         : JoinProfileRequestStatus.PENDING;
 
       if (matchedOrg) {
+        // Resolve the role before the transaction to avoid the cache/allowList
+        // call inside joinOrganization acquiring a separate DB connection
+        const memberRole = await assertGlobalRole('Member');
+
         const updated = await db.transaction(async (tx) => {
-          await performAutoJoin(user, matchedOrg, tx);
+          await performAutoJoin(user, matchedOrg, memberRole.id, tx);
 
           const [record] = await tx
             .update(joinProfileRequests)
@@ -96,8 +108,10 @@ export const createProfileJoinRequest = async ({
 
   // New request — auto-join if domain matches, then create the record
   if (matchedOrg) {
+    const memberRole = await assertGlobalRole('Member');
+
     const inserted = await db.transaction(async (tx) => {
-      await performAutoJoin(user, matchedOrg, tx);
+      await performAutoJoin(user, matchedOrg, memberRole.id, tx);
 
       const [record] = await tx
         .insert(joinProfileRequests)
@@ -151,7 +165,10 @@ async function findDomainMatchedOrg(
     .select()
     .from(organizations)
     .where(
-      sql`${organizations.profileId} = ${targetProfileId} AND lower(${organizations.domain}) = ${userEmailDomain}`,
+      and(
+        eq(organizations.profileId, targetProfileId),
+        sql`lower(${organizations.domain}) = ${userEmailDomain}`,
+      ),
     )
     .limit(1);
 
@@ -161,9 +178,10 @@ async function findDomainMatchedOrg(
 async function performAutoJoin(
   user: User,
   organization: Organization,
-  tx?: TransactionType,
+  roleId: string,
+  tx: DatabaseType | TransactionType,
 ): Promise<void> {
-  const commonUser = await db.query.users.findFirst({
+  const commonUser = await tx.query.users.findFirst({
     where: { authUserId: user.id },
   });
 
@@ -174,6 +192,7 @@ async function performAutoJoin(
   await joinOrganization({
     user: commonUser,
     organization,
-    tx,
+    roleId,
+    db: tx,
   });
 }

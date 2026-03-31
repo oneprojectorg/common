@@ -1,5 +1,11 @@
 import { cache } from '@op/cache';
-import { type TransactionType, db } from '@op/db/client';
+import {
+  type DatabaseType,
+  type TransactionType,
+  and,
+  db as defaultDb,
+  eq,
+} from '@op/db/client';
 import {
   type AccessRole,
   type CommonUser,
@@ -22,13 +28,13 @@ export const joinOrganization = async ({
   user,
   organization,
   roleId,
-  tx,
+  db,
 }: {
   user: CommonUser;
   organization: Organization;
   /** If provided the allowlist checks are skipped and this role is assigned */
   roleId?: AccessRole['id'];
-  tx?: TransactionType;
+  db?: DatabaseType | TransactionType;
 }): Promise<OrganizationUser> => {
   const userEmailDomainPart = user.email.split('@')[1];
   if (!userEmailDomainPart) {
@@ -37,15 +43,21 @@ export const joinOrganization = async ({
 
   const userEmailDomain = userEmailDomainPart.toLowerCase();
 
+  const client = db ?? defaultDb;
+
   // Check if user is already a member of this organization and if they are on the allow list
   const [existingMembership, allowListUser] = await Promise.all([
-    db._query.organizationUsers.findFirst({
-      where: (table, { and, eq }) =>
+    client
+      .select()
+      .from(organizationUsers)
+      .where(
         and(
-          eq(table.authUserId, user.authUserId),
-          eq(table.organizationId, organization.id),
+          eq(organizationUsers.authUserId, user.authUserId),
+          eq(organizationUsers.organizationId, organization.id),
         ),
-    }),
+      )
+      .limit(1)
+      .then(([row]) => row),
     roleId
       ? null
       : cache<ReturnType<typeof getAllowListUser>>({
@@ -75,15 +87,10 @@ export const joinOrganization = async ({
     }
   }
 
-  // Resolve the target role before opening the transaction — assertGlobalRole
-  // uses the global db pool and must not be called inside a transaction callback,
-  // as that would require a second connection while one is already held by the
-  // transaction, which can exhaust the connection pool in serverless environments.
   const targetRole = await determineTargetRole(
     roleId ?? allowListUser?.metadata?.roleId,
+    client,
   );
-
-  const client = tx ?? db;
 
   return await client.transaction<OrganizationUser>(async (innerTx) => {
     const [newOrgUser] = await innerTx
@@ -113,15 +120,13 @@ export const joinOrganization = async ({
  * Determines which role to assign to a user joining an organization.
  * If a roleId is provided and exists in the DB, that role is used.
  * Otherwise, falls back to the global "Member" role.
- *
- * Must be called OUTSIDE a transaction to avoid acquiring a second DB
- * connection while one is already held by the transaction.
  */
 const determineTargetRole = async (
-  roleId?: AccessRole['id'],
+  roleId: AccessRole['id'] | undefined,
+  client: DatabaseType | TransactionType,
 ): Promise<AccessRole> => {
   if (roleId) {
-    const role = await db.query.accessRoles.findFirst({
+    const role = await client.query.accessRoles.findFirst({
       where: { id: roleId },
     });
 
@@ -130,5 +135,5 @@ const determineTargetRole = async (
     }
   }
 
-  return assertGlobalRole('Member');
+  return assertGlobalRole('Member', client);
 };

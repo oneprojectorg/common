@@ -225,7 +225,7 @@ describe.concurrent('profile.createJoinRequest', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('should return approved request for existing members instead of erroring', async ({
+  it('should reject join request for existing members', async ({
     task,
     onTestFinished,
   }) => {
@@ -247,22 +247,13 @@ describe.concurrent('profile.createJoinRequest', () => {
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Should return an approved request instead of throwing
-    const result = await caller.createJoinRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-    });
-
-    expect(result.status).toBe('approved');
-
-    // Verify a real join request record was persisted (not a phantom)
-    const [dbRecord] = await db
-      .select()
-      .from(joinProfileRequests)
-      .where(eq(joinProfileRequests.id, result.id));
-
-    expect(dbRecord).toBeDefined();
-    expect(dbRecord?.status).toBe(JoinProfileRequestStatus.APPROVED);
+    // Should throw because user is already a member
+    await expect(
+      caller.createJoinRequest({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should auto-join with APPROVED status when email domain matches org domain', async ({
@@ -426,7 +417,7 @@ describe.concurrent('profile.createJoinRequest', () => {
     expect(orgUsers).toHaveLength(0);
   });
 
-  it('should return APPROVED for an already-a-member user without erroring', async ({
+  it('should throw for an already-a-member user on re-submit', async ({
     task,
     onTestFinished,
   }) => {
@@ -479,16 +470,13 @@ describe.concurrent('profile.createJoinRequest', () => {
     joinRequestData.trackJoinRequest(firstResult.id);
     expect(firstResult.status).toBe(JoinProfileRequestStatus.APPROVED);
 
-    // Second call: user is now already a member - should succeed gracefully
-    const secondResult = await caller.createJoinRequest({
-      requestProfileId: joinerUser.profileId,
-      targetProfileId: targetProfile.id,
-    });
-
-    // Should still be APPROVED and not throw
-    expect(secondResult.status).toBe(JoinProfileRequestStatus.APPROVED);
-    expect(secondResult.requestProfileId).toBe(joinerUser.profileId);
-    expect(secondResult.targetProfileId).toBe(targetProfile.id);
+    // Second call: user is now already a member - should throw
+    await expect(
+      caller.createJoinRequest({
+        requestProfileId: joinerUser.profileId,
+        targetProfileId: targetProfile.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should auto-approve a previously rejected request when domain matches', async ({
