@@ -16,6 +16,10 @@ interface ReviewExploreLayoutProps {
 export function ReviewExploreLayout({ slug }: ReviewExploreLayoutProps) {
   const reviewFlowEnabled = useFeatureFlag('review_flow');
 
+  const handlePrev = () => {};
+  const handleNext = () => {};
+  const handleSubmit = () => {};
+
   if (reviewFlowEnabled === false) {
     notFound();
   }
@@ -45,7 +49,11 @@ export function ReviewExploreLayout({ slug }: ReviewExploreLayoutProps) {
           </div>
         </div>
 
-        <ReviewExploreFooter />
+        <ReviewExploreFooter
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onSubmit={handleSubmit}
+        />
       </div>
     </SidebarProvider>
   );

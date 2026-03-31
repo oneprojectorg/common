@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@op/ui/Button';
 import { useSidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import { LuChevronRight, LuList } from 'react-icons/lu';
@@ -27,9 +28,9 @@ export function ReviewExploreNavbar({ slug }: ReviewExploreNavbarProps) {
           {t('All proposals')}
         </Link>
         <LuChevronRight className="size-4 shrink-0 text-midGray" />
-        <button
-          type="button"
-          onClick={toggleSidebar}
+        <Button
+          unstyled
+          onPress={toggleSidebar}
           className={cn(
             'flex items-center gap-2 rounded px-2 py-1 text-base text-primary-teal',
             open && 'bg-primary-tealWhite',
@@ -37,7 +38,7 @@ export function ReviewExploreNavbar({ slug }: ReviewExploreNavbarProps) {
         >
           <LuList className="size-4 shrink-0" />
           <span className="truncate">Community Garden Expansion</span>
-        </button>
+        </Button>
       </div>
       <div className="flex shrink-0 items-center gap-3 pr-4 md:pr-8">
         <LocaleChooser />

@@ -6,13 +6,23 @@ import { LuCheck, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-export function ReviewExploreFooter() {
+interface ReviewExploreFooterProps {
+  onPrev: () => void;
+  onNext: () => void;
+  onSubmit: () => void;
+}
+
+export function ReviewExploreFooter({
+  onPrev,
+  onNext,
+  onSubmit,
+}: ReviewExploreFooterProps) {
   const t = useTranslations();
 
   return (
     <FooterBar padding="spacious">
       <FooterBar.Start>
-        <Button color="neutral" size="medium">
+        <Button color="neutral" size="medium" onPress={onPrev}>
           <LuChevronLeft className="size-4" />
           {t('Previous')}
         </Button>
@@ -27,7 +37,7 @@ export function ReviewExploreFooter() {
       </FooterBar.Center>
 
       <FooterBar.End>
-        <Button color="secondary" size="medium">
+        <Button color="secondary" size="medium" onPress={onNext}>
           {t('Next')}
           <LuChevronRight className="size-4" />
         </Button>
@@ -36,7 +46,7 @@ export function ReviewExploreFooter() {
       <FooterBar.Divider />
 
       <FooterBar.End>
-        <Button color="primary" size="medium">
+        <Button color="primary" size="medium" onPress={onSubmit}>
           <LuCheck className="size-4" />
           {t('Submit review')}
         </Button>
