@@ -58,7 +58,7 @@ export function ReviewSettingsContent({
     reviewsAllowRevisions:
       instanceData?.config?.reviewsAllowRevisions ??
       config?.reviewsAllowRevisions ??
-      false,
+      true,
     reviewsAnonymousFeedback:
       instanceData?.config?.reviewsAnonymousFeedback ??
       config?.reviewsAnonymousFeedback ??
