@@ -68,6 +68,7 @@ export type SidebarItem =
       id: SectionId;
       labelKey: TranslationKey;
       parentStepId?: StepId;
+      parentSectionId?: SectionId;
       isDynamic?: false;
     }
   | { id: string; labelKey: string; parentStepId?: StepId; isDynamic: true };
@@ -99,6 +100,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     id: 'reviewRubric',
     labelKey: 'Review Rubric',
     parentStepId: 'reviews',
+    parentSectionId: 'reviewSettings',
   },
   {
     id: 'roles',

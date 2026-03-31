@@ -38,12 +38,16 @@ export function SidebarNavItems({
       {visibleSections
         .filter(
           (section): section is StaticSidebarItem =>
-            !section.isDynamic && section.id !== 'reviewRubric',
+            !section.isDynamic && !section.parentSectionId,
         )
         .map((section) => (
           <SectionItem
             key={section.id}
             section={section}
+            childSections={visibleSections.filter(
+              (s): s is StaticSidebarItem =>
+                !s.isDynamic && s.parentSectionId === section.id,
+            )}
             phases={phases}
             currentSectionId={currentSectionId}
             phaseValidation={phaseValidation}
@@ -57,6 +61,7 @@ export function SidebarNavItems({
 
 interface SectionItemProps {
   section: StaticSidebarItem;
+  childSections: StaticSidebarItem[];
   phases: ProcessPhase[];
   currentSectionId: string | undefined;
   phaseValidation: Record<string, boolean>;
@@ -66,6 +71,7 @@ interface SectionItemProps {
 
 function SectionItem({
   section,
+  childSections,
   phases,
   currentSectionId,
   phaseValidation,
@@ -106,23 +112,25 @@ function SectionItem({
           ))}
         </ul>
       )}
-      {section.id === 'reviewSettings' && (
+      {childSections.length > 0 && (
         <ul className="mt-0.5 flex flex-col gap-0.5">
-          <li>
-            <button
-              type="button"
-              onClick={() => onSectionClick('reviewRubric')}
-              className={cn(
-                'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
-                currentSectionId === 'reviewRubric'
-                  ? 'bg-primary-tealWhite text-primary'
-                  : 'text-neutral-black hover:bg-neutral-gray1',
-              )}
-            >
-              <CornerDownRight className="shrink-0 opacity-50" />
-              <span className="truncate">{t('Review Rubric')}</span>
-            </button>
-          </li>
+          {childSections.map((child) => (
+            <li key={child.id}>
+              <button
+                type="button"
+                onClick={() => onSectionClick(child.id)}
+                className={cn(
+                  'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
+                  currentSectionId === child.id
+                    ? 'bg-primary-tealWhite text-primary'
+                    : 'text-neutral-black hover:bg-neutral-gray1',
+                )}
+              >
+                <CornerDownRight className="shrink-0 opacity-50" />
+                <span className="truncate">{t(child.labelKey)}</span>
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </li>
