@@ -5,6 +5,7 @@ import { LuCheck, LuPlay } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { formatDateRange } from '../utils/formatting';
+import { IconButton } from './IconButton';
 
 export interface Phase {
   id: string;
@@ -82,13 +83,14 @@ const StepIndicator = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <RippleRings visible={isHovered} />
-      <button
-        type="button"
+      <IconButton
         aria-label={`Advance to ${phase.name}`}
-        onClick={() => onTransition?.(phase.id)}
+        onPress={() => onTransition?.(phase.id)}
+        size="small"
+        variant="ghost"
         className={cn(
           baseStyles,
-          'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite',
+          'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal pressed:bg-primary-teal',
         )}
       >
         {stepState === 'completed' ? (
@@ -96,7 +98,7 @@ const StepIndicator = ({
         ) : (
           <LuPlay className="size-3 fill-current" />
         )}
-      </button>
+      </IconButton>
     </div>
   );
 };
