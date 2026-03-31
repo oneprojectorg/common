@@ -87,3 +87,4 @@ export type {
   ProcessConfig,
   ReviewsPolicy,
 } from './schemas/types';
+export { REVIEWS_POLICIES } from './schemas/types';

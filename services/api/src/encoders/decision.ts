@@ -1,3 +1,4 @@
+import { REVIEWS_POLICIES } from '@op/common';
 import { proposalDataSchema } from '@op/common/client';
 import {
   ProcessStatus,
@@ -160,11 +161,7 @@ const categoryEncoder = z.object({
 });
 
 /** Reviews policy enum */
-const reviewsPolicyEncoder = z.enum([
-  'full_coverage',
-  'self_selection',
-  'random_assignment',
-]);
+const reviewsPolicyEncoder = z.enum(REVIEWS_POLICIES);
 
 /** Process-level configuration */
 const processConfigEncoder = z.object({
