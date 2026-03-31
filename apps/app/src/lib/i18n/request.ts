@@ -39,6 +39,19 @@ export default getRequestConfig(async ({ requestLocale }) => {
     // messages: await getConfig(locale),
     messages: await getConfig(rawMessages),
     timeZone: 'UTC',
+    getMessageFallback({
+      key,
+    }: {
+      namespace?: string;
+      key: string;
+      error: { code: string };
+    }): string {
+      // Return the key as-is to match the client-side I18nProvider's
+      // getMessageFallback behavior (provider/index.tsx). Without this,
+      // next-intl's default fallback returns the last path segment,
+      // causing server/client text divergence for missing keys.
+      return key;
+    },
     onError(error: { code: string }) {
       if (error.code === IntlErrorCode.ENVIRONMENT_FALLBACK) {
         // Silently ignore — timeZone is set globally, but now/relativeTime

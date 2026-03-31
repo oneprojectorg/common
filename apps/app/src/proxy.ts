@@ -19,10 +19,25 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   event.waitUntil(logger.flush());
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
+
   const pathnameIsMissingLocale = i18nConfig.locales.every(
     (locale) =>
       !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
   );
+
+  // Set X-NEXT-INTL-LOCALE header for locale-prefixed requests so getLocale()
+  // in the root layout resolves to the correct locale (not the default).
+  // next-intl's createMiddleware normally sets this, but it only runs for
+  // authenticated users with a missing locale prefix.
+  if (!pathnameIsMissingLocale && !pathname.startsWith('/api')) {
+    const urlLocale = i18nConfig.locales.find(
+      (locale) =>
+        pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+    );
+    if (urlLocale) {
+      request.headers.set('X-NEXT-INTL-LOCALE', urlLocale);
+    }
+  }
 
   // Set locale cookie if URL contains a locale (for preference learning)
   let localeResponse: NextResponse | null = null;
