@@ -998,5 +998,9 @@
   "Reviewers can request revisions": "Les évaluateurs peuvent demander des révisions",
   "Reviewers can ask authors to revise their proposal before scoring": "Les évaluateurs peuvent demander aux auteurs de réviser leur proposition avant de la noter",
   "Anonymous feedback": "Commentaires anonymes",
-  "Revision feedback appears without reviewer names": "Les commentaires de révision apparaissent sans le nom des évaluateurs"
+  "Revision feedback appears without reviewer names": "Les commentaires de révision apparaissent sans le nom des évaluateurs",
+  "Previous": "Précédent",
+  "Submit review": "Soumettre la révision",
+  "Proposal {current} of {total}": "Proposition {current} sur {total}",
+  "{count} completed": "{count} terminées"
 }

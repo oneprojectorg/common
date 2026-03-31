@@ -998,5 +998,9 @@
   "Reviewers can request revisions": "Las personas revisoras pueden solicitar cambios",
   "Reviewers can ask authors to revise their proposal before scoring": "Las personas revisoras pueden pedir a las autoras o autores que revisen su propuesta antes de puntuarla",
   "Anonymous feedback": "Comentarios anónimos",
-  "Revision feedback appears without reviewer names": "Los comentarios sobre las modificaciones aparecen sin los nombres de las personas revisoras"
+  "Revision feedback appears without reviewer names": "Los comentarios sobre las modificaciones aparecen sin los nombres de las personas revisoras",
+  "Previous": "Anterior",
+  "Submit review": "Enviar revisión",
+  "Proposal {current} of {total}": "Propuesta {current} de {total}",
+  "{count} completed": "{count} completadas"
 }
