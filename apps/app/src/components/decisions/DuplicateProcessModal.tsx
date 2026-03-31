@@ -9,7 +9,7 @@ import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -31,9 +31,7 @@ export const DuplicateProcessModal = ({
   const [name, setName] = useState(
     t('Duplicate of {name}', { name: item.processInstance.name || item.name }),
   );
-  const [stewardProfileId, setStewardProfileId] = useState<string | null>(
-    currentUserProfile?.id ?? null,
-  );
+  const [stewardProfileId, setStewardProfileId] = useState<string | null>(null);
   const [include, setInclude] = useState({
     processSettings: true,
     phases: true,
@@ -44,8 +42,12 @@ export const DuplicateProcessModal = ({
     roles: true,
   });
 
-  // Keep steward in sync when profiles load
-  const effectiveStewardId = stewardProfileId ?? currentUserProfile?.id ?? null;
+  // Set steward to current user once profiles load
+  useEffect(() => {
+    if (currentUserProfile?.id && stewardProfileId === null) {
+      setStewardProfileId(currentUserProfile.id);
+    }
+  }, [currentUserProfile?.id, stewardProfileId]);
 
   const profileItems = (userProfiles ?? []).map((p) => ({
     id: p.id,
@@ -70,18 +72,17 @@ export const DuplicateProcessModal = ({
     },
     onError: () => {
       toast.error({ message: t('Failed to duplicate decision') });
-      onClose();
     },
   });
 
   const handleDuplicate = () => {
-    if (!name.trim() || !effectiveStewardId) {
+    if (!name.trim() || !stewardProfileId) {
       return;
     }
     duplicateMutation.mutate({
       instanceId: item.processInstance.id,
       name: name.trim(),
-      stewardProfileId: effectiveStewardId,
+      stewardProfileId,
       include,
     });
   };
@@ -123,7 +124,7 @@ export const DuplicateProcessModal = ({
               label={t('Who is stewarding this process?')}
               isRequired
               placeholder={t('Select')}
-              selectedKey={effectiveStewardId}
+              selectedKey={stewardProfileId}
               onSelectionChange={(key) => setStewardProfileId(key as string)}
             >
               {profileItems.map((profile) => (
@@ -156,7 +157,7 @@ export const DuplicateProcessModal = ({
           className="w-full sm:w-fit"
           onPress={handleDuplicate}
           isDisabled={
-            !name.trim() || !effectiveStewardId || duplicateMutation.isPending
+            !name.trim() || !stewardProfileId || duplicateMutation.isPending
           }
         >
           {duplicateMutation.isPending

@@ -1,9 +1,9 @@
 import {
+  CommonError,
+  UnauthorizedError,
   assertUserByAuthId,
   duplicateInstance,
   getProfileAccessUser,
-  CommonError,
-  UnauthorizedError,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { assertAccess, permission } from 'access-zones';
@@ -14,7 +14,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const duplicateInstanceInputSchema = z.object({
   instanceId: z.string().uuid(),
-  name: z.string().min(1),
+  name: z.string().min(1).max(255).trim(),
   stewardProfileId: z.string().uuid().optional(),
   include: z.object({
     processSettings: z.boolean(),
@@ -67,10 +67,7 @@ export const duplicateInstanceRouter = router({
         profileId: sourceInstance.profileId,
       });
 
-      assertAccess(
-        { decisions: permission.ADMIN },
-        profileUser?.roles ?? [],
-      );
+      assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
       const profile = await duplicateInstance({
         instanceId: input.instanceId,
