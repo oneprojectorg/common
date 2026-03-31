@@ -1,9 +1,8 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { useMemo } from 'react';
-
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 import {
   DEFAULT_NAVIGATION_CONFIG,
