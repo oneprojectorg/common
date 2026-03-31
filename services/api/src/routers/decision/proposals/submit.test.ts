@@ -365,16 +365,16 @@ describe.concurrent('submitProposal', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    await expect(
-      caller.decision.submitProposal({
-        proposalId: proposal.id,
-      }),
-    ).rejects.toMatchObject({
-      cause: {
-        name: 'ValidationError',
-        message: expect.stringContaining('Title cannot exceed 10 characters'),
-      },
+    const submission = caller.decision.submitProposal({
+      proposalId: proposal.id,
     });
+
+    await expect(submission).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+    await expect(submission).rejects.toThrow(
+      /Title cannot exceed 10 characters/,
+    );
   });
 
   it('should use schema title in validation errors for UUID-keyed custom fields', async ({
