@@ -6,7 +6,6 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
-  profiles,
   users,
 } from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
