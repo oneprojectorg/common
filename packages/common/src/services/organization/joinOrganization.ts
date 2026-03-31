@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { db } from '@op/db/client';
+import { type TransactionType, db } from '@op/db/client';
 import {
   type AccessRole,
   type CommonUser,
@@ -22,11 +22,13 @@ export const joinOrganization = async ({
   user,
   organization,
   roleId,
+  tx,
 }: {
   user: CommonUser;
   organization: Organization;
   /** If provided the allowlist checks are skipped and this role is assigned */
   roleId?: AccessRole['id'];
+  tx?: TransactionType;
 }): Promise<OrganizationUser> => {
   const userEmailDomainPart = user.email.split('@')[1];
   if (!userEmailDomainPart) {
@@ -81,8 +83,10 @@ export const joinOrganization = async ({
     roleId ?? allowListUser?.metadata?.roleId,
   );
 
-  return await db.transaction<OrganizationUser>(async (tx) => {
-    const [newOrgUser] = await tx
+  const client = tx ?? db;
+
+  return await client.transaction<OrganizationUser>(async (innerTx) => {
+    const [newOrgUser] = await innerTx
       .insert(organizationUsers)
       .values({
         organizationId: organization.id,
@@ -96,7 +100,7 @@ export const joinOrganization = async ({
       throw new CommonError('Failed to add user to organization');
     }
 
-    await tx.insert(organizationUserToAccessRoles).values({
+    await innerTx.insert(organizationUserToAccessRoles).values({
       organizationUserId: newOrgUser.id,
       accessRoleId: targetRole.id,
     });

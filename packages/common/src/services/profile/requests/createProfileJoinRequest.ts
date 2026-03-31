@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { type TransactionType, db, eq } from '@op/db/client';
 import {
   JoinProfileRequestStatus,
   joinProfileRequests,
@@ -75,7 +75,26 @@ export const createProfileJoinRequest = async ({
         : JoinProfileRequestStatus.PENDING;
 
       if (matchedOrg) {
-        await performAutoJoin(user, matchedOrg);
+        const updated = await db.transaction(async (tx) => {
+          await performAutoJoin(user, matchedOrg, tx);
+
+          const [record] = await tx
+            .update(joinProfileRequests)
+            .set({
+              status: newStatus,
+              updatedAt: new Date().toISOString(),
+            })
+            .where(eq(joinProfileRequests.id, existingRequest.id))
+            .returning();
+
+          return record;
+        });
+
+        if (!updated) {
+          throw new CommonError('Failed to update join profile request');
+        }
+
+        return { ...updated, requestProfile, targetProfile };
       }
 
       const [updated] = await db
@@ -100,7 +119,26 @@ export const createProfileJoinRequest = async ({
 
   // New request — auto-join if domain matches, then create the record
   if (matchedOrg) {
-    await performAutoJoin(user, matchedOrg);
+    const inserted = await db.transaction(async (tx) => {
+      await performAutoJoin(user, matchedOrg, tx);
+
+      const [record] = await tx
+        .insert(joinProfileRequests)
+        .values({
+          requestProfileId,
+          targetProfileId,
+          status: JoinProfileRequestStatus.APPROVED,
+        })
+        .returning();
+
+      return record;
+    });
+
+    if (!inserted) {
+      throw new CommonError('Failed to create join profile request');
+    }
+
+    return { ...inserted, requestProfile, targetProfile };
   }
 
   const [inserted] = await db
@@ -108,7 +146,6 @@ export const createProfileJoinRequest = async ({
     .values({
       requestProfileId,
       targetProfileId,
-      status: isDomainMatched ? JoinProfileRequestStatus.APPROVED : undefined,
     })
     .returning();
 
@@ -147,6 +184,7 @@ async function findDomainMatchedOrg(
 async function performAutoJoin(
   user: User,
   organization: Organization,
+  tx?: TransactionType,
 ): Promise<void> {
   const commonUser = await db.query.users.findFirst({
     where: { authUserId: user.id },
@@ -159,5 +197,6 @@ async function performAutoJoin(
   await joinOrganization({
     user: commonUser,
     organization,
+    tx,
   });
 }
