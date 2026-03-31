@@ -130,7 +130,7 @@ export function ReviewExploreLayout({ slug }: ReviewExploreLayoutProps) {
 
 function ReviewProposalPane({ className }: { className?: string }) {
   return (
-    <div className={className}>
+    <div className={`min-w-0 flex-1 ${className ?? ''}`}>
       <h1 className="text-title-lg text-neutral-black">
         Community Garden Expansion
       </h1>
@@ -140,7 +140,7 @@ function ReviewProposalPane({ className }: { className?: string }) {
 
 function ReviewRubricPane({ className }: { className?: string }) {
   return (
-    <div className={className}>
+    <div className={`min-w-0 flex-1 ${className ?? ''}`}>
       <h2 className="text-title-base text-neutral-black">Review Proposal</h2>
     </div>
   );
