@@ -168,6 +168,7 @@
       "tsx": "$tsx",
       "turbo": "$turbo",
       "typescript": "$typescript",
+      "axios": "<1.14.1",
       "undici": "5.27.1",
       "use-error-boundary": "$use-error-boundary",
       "zustand": "$zustand"
