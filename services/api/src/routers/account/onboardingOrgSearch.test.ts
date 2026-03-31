@@ -23,6 +23,8 @@ import { createCallerFactory } from '../../trpcFactory';
 import { organizationRouter } from '../organization';
 import { createJoinRequestRouter } from '../profile/requests/createJoinRequest';
 import { deleteJoinRequestRouter } from '../profile/requests/deleteJoinRequest';
+import { completeOnboarding } from './completeOnboarding';
+import { getMyAccount } from './getMyAccount';
 import { matchingDomainOrganizations } from './matchingDomainOrganizations';
 
 describe.concurrent('Onboarding Organization Search', () => {
@@ -32,6 +34,8 @@ describe.concurrent('Onboarding Organization Search', () => {
   const createDeleteJoinRequestCaller = createCallerFactory(
     deleteJoinRequestRouter,
   );
+  const createCompleteCaller = createCallerFactory(completeOnboarding);
+  const createAccountCaller2 = createCallerFactory(getMyAccount);
 
   /**
    * Helper to clean up a user created with createTestUser.
@@ -510,4 +514,50 @@ describe.concurrent('Onboarding Organization Search', () => {
       expect(deleted).toBeUndefined();
     });
   });
+
+  describe.concurrent(
+    'Onboarding completion: user who skips org selection can access the app',
+    () => {
+      it('sets onboardedAt when completeOnboarding is called, preventing redirect loop', async ({
+        task,
+        onTestFinished,
+      }) => {
+        const joinerEmail = `${task.id.slice(0, 8)}-skip-loop@oneproject.org`;
+        const { user: authUser } = await createTestUser(joinerEmail);
+
+        if (!authUser) {
+          throw new Error('Failed to create auth user');
+        }
+
+        onTestFinished(() => cleanupUser(authUser.id));
+
+        const { session } = await createIsolatedSession(joinerEmail);
+
+        // Before onboarding: user has no onboardedAt and no org memberships
+        const accountCaller = createAccountCaller2(
+          await createTestContextWithSession(session),
+        );
+        const userBefore = await accountCaller.getMyAccount();
+
+        expect(userBefore.onboardedAt).toBeNull();
+        expect(userBefore.organizationUsers).toHaveLength(0);
+
+        // Complete onboarding (simulates clicking "Join Common" after skipping org selection)
+        const completeCaller = createCompleteCaller(
+          await createTestContextWithSession(session),
+        );
+        await completeCaller.completeOnboarding();
+
+        // After onboarding: onboardedAt is set, tos and privacy are true
+        const userAfter = await accountCaller.getMyAccount();
+
+        expect(userAfter.onboardedAt).toBeTruthy();
+        expect(userAfter.tos).toBe(true);
+        expect(userAfter.privacy).toBe(true);
+
+        // User still has no org memberships — but onboardedAt prevents the redirect loop
+        expect(userAfter.organizationUsers).toHaveLength(0);
+      });
+    },
+  );
 });
