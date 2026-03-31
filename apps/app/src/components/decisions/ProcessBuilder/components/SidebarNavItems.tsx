@@ -3,7 +3,6 @@
 import { cn } from '@op/ui/utils';
 
 import { useTranslations } from '@/lib/i18n';
-import type { TranslationKey } from '@/lib/i18n';
 
 import {
   type SectionId,
@@ -108,12 +107,23 @@ function SectionItem({
         </ul>
       )}
       {section.id === 'reviewSettings' && (
-        <ChildSectionItem
-          sectionId="reviewRubric"
-          labelKey="Review Rubric"
-          currentSectionId={currentSectionId}
-          onSectionClick={onSectionClick}
-        />
+        <ul className="mt-0.5 flex flex-col gap-0.5">
+          <li>
+            <button
+              type="button"
+              onClick={() => onSectionClick('reviewRubric')}
+              className={cn(
+                'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
+                currentSectionId === 'reviewRubric'
+                  ? 'bg-primary-tealWhite text-primary'
+                  : 'text-neutral-black hover:bg-neutral-gray1',
+              )}
+            >
+              <CornerDownRight className="shrink-0 opacity-50" />
+              <span className="truncate">{t('Review Rubric')}</span>
+            </button>
+          </li>
+        </ul>
       )}
     </li>
   );
@@ -158,40 +168,5 @@ function PhaseItem({
         )}
       </button>
     </li>
-  );
-}
-
-function ChildSectionItem({
-  sectionId,
-  labelKey,
-  currentSectionId,
-  onSectionClick,
-}: {
-  sectionId: string;
-  labelKey: TranslationKey;
-  currentSectionId: string | undefined;
-  onSectionClick: (sectionId: string) => void;
-}) {
-  const t = useTranslations();
-  const isActive = currentSectionId === sectionId;
-
-  return (
-    <ul className="mt-0.5 flex flex-col gap-0.5">
-      <li>
-        <button
-          type="button"
-          onClick={() => onSectionClick(sectionId)}
-          className={cn(
-            'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
-            isActive
-              ? 'bg-primary-tealWhite text-primary'
-              : 'text-neutral-black hover:bg-neutral-gray1',
-          )}
-        >
-          <CornerDownRight className="shrink-0 opacity-50" />
-          <span className="truncate">{t(labelKey)}</span>
-        </button>
-      </li>
-    </ul>
   );
 }
