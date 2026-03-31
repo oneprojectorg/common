@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/ui/Button';
 import { FooterBar } from '@op/ui/FooterBar';
 import { LuCheck, LuChevronLeft, LuChevronRight } from 'react-icons/lu';

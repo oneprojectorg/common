@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/ui/Button';
 import { Sidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
