@@ -25,8 +25,8 @@ export function ReviewExploreNavbar({
   const t = useTranslations();
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white">
-      <div className="flex min-w-0 items-center gap-2 pl-4 md:pl-8">
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white px-6 md:px-8">
+      <div className="flex min-w-0 items-center gap-2">
         <Link
           href={`/decisions/${slug}`}
           className="shrink-0 text-base text-primary-teal"
@@ -38,18 +38,17 @@ export function ReviewExploreNavbar({
           unstyled
           onPress={onOpenProposalList}
           className={cn(
-            'flex items-center gap-2 rounded px-2 py-1 text-base text-primary-teal sm:hidden',
+            'flex items-center gap-2 rounded px-2 py-1 text-base text-primary-teal',
             isProposalListOpen && 'bg-primary-tealWhite',
+            !isProposalListOpen && 'sm:bg-primary-tealWhite',
+            'sm:px-3 sm:py-2',
           )}
         >
           <LuList className="size-4 shrink-0" />
           <span className="truncate">{proposalName}</span>
         </Button>
-        <span className="hidden truncate text-base text-primary-teal sm:inline">
-          {proposalName}
-        </span>
       </div>
-      <div className="flex shrink-0 items-center gap-3 pr-4 md:pr-8">
+      <div className="flex shrink-0 items-center gap-3">
         <LocaleChooser />
         <UserAvatarMenu className="hidden sm:block" />
       </div>

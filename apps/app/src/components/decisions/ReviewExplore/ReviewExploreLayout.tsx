@@ -7,7 +7,7 @@ import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { notFound } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -28,6 +28,7 @@ export function ReviewExploreLayout({ slug }: ReviewExploreLayoutProps) {
   const t = useTranslations();
   const reviewFlowEnabled = useFeatureFlag('review_flow');
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProposalListOpen, setIsProposalListOpen] = useState(false);
 
   const handlePrev = () => {};
@@ -37,18 +38,36 @@ export function ReviewExploreLayout({ slug }: ReviewExploreLayoutProps) {
     mockReviewProposals.find((proposal) => proposal.isActive)?.name ??
     'Community Garden Expansion';
 
+  useEffect(() => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+      return;
+    }
+
+    setIsSidebarOpen(true);
+  }, [isMobile]);
+
+  const handleProposalListTrigger = () => {
+    if (isMobile) {
+      setIsProposalListOpen(true);
+      return;
+    }
+
+    setIsSidebarOpen((open) => !open);
+  };
+
   if (reviewFlowEnabled === false) {
     notFound();
   }
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider isOpen={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
       <div className="flex h-dvh flex-col bg-white">
         <ReviewExploreNavbar
           slug={slug}
           proposalName={activeProposalName}
-          isProposalListOpen={isProposalListOpen}
-          onOpenProposalList={() => setIsProposalListOpen(true)}
+          isProposalListOpen={isMobile ? isProposalListOpen : isSidebarOpen}
+          onOpenProposalList={handleProposalListTrigger}
         />
 
         <div className="hidden min-h-0 flex-1 sm:flex">
@@ -64,21 +83,21 @@ export function ReviewExploreLayout({ slug }: ReviewExploreLayoutProps) {
           className="min-h-0 flex-1 gap-0 sm:hidden"
           defaultSelectedKey="review"
         >
-          <TabList className="px-6" variant="default">
+          <TabList className="mx-6" variant="default">
             <Tab id="proposal">{t('Proposal')}</Tab>
             <Tab id="review">{t('Review')}</Tab>
           </TabList>
 
           <TabPanel
             id="proposal"
-            className="min-h-0 overflow-y-auto px-6 pt-6 pb-4"
+            className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
           >
             <ReviewProposalPane />
           </TabPanel>
 
           <TabPanel
             id="review"
-            className="min-h-0 overflow-y-auto px-6 pt-6 pb-4"
+            className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
           >
             <ReviewRubricPane />
           </TabPanel>
