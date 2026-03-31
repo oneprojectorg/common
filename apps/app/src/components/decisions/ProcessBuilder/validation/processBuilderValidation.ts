@@ -85,6 +85,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   phases: (data) => phasesSchema.safeParse(data).success,
   proposalCategories: () => true,
   templateEditor: validateTemplateEditor,
+  reviewSettings: () => true,
   criteria: (data) =>
     !hasReviewPhase(data) ||
     (hasRubricCriteria(data) && allRubricCriteriaValid(data)),

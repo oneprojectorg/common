@@ -57,6 +57,11 @@ export interface ProposalCategory {
   description: string;
 }
 
+export type ReviewsPolicy =
+  | 'full_coverage'
+  | 'self_selection'
+  | 'random_assignment';
+
 export interface ProcessConfig {
   hideBudget?: boolean;
   categories?: ProposalCategory[];
@@ -65,6 +70,9 @@ export interface ProcessConfig {
   organizeByCategories?: boolean;
   requireCollaborativeProposals?: boolean;
   isPrivate?: boolean;
+  reviewsPolicy?: ReviewsPolicy;
+  reviewsAllowRevisions?: boolean;
+  reviewsAnonymousFeedback?: boolean;
 }
 
 /**

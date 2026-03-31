@@ -16,6 +16,9 @@ import { CornerDownRight } from './CornerDownRight';
 
 type StaticSidebarItem = Extract<SidebarItem, { isDynamic?: false }>;
 
+/** Section IDs that are rendered as children of another section */
+const CHILD_SECTION_IDS = new Set(['criteria']);
+
 interface SidebarNavItemsProps {
   visibleSections: SidebarItem[];
   phases: ProcessPhase[];
@@ -36,7 +39,10 @@ export function SidebarNavItems({
   return (
     <ul className="flex flex-col gap-1">
       {visibleSections
-        .filter((section): section is StaticSidebarItem => !section.isDynamic)
+        .filter(
+          (section): section is StaticSidebarItem =>
+            !section.isDynamic && !CHILD_SECTION_IDS.has(section.id),
+        )
         .map((section) => (
           <SectionItem
             key={section.id}
@@ -45,6 +51,7 @@ export function SidebarNavItems({
             currentSectionId={currentSectionId}
             phaseValidation={phaseValidation}
             validationSections={validationSections}
+            visibleSections={visibleSections}
             onSectionClick={onSectionClick}
           />
         ))}
@@ -58,6 +65,7 @@ interface SectionItemProps {
   currentSectionId: string | undefined;
   phaseValidation: Record<string, boolean>;
   validationSections: Record<SectionId, boolean>;
+  visibleSections: SidebarItem[];
   onSectionClick: (sectionId: string) => void;
 }
 
@@ -67,10 +75,19 @@ function SectionItem({
   currentSectionId,
   phaseValidation,
   validationSections,
+  visibleSections,
   onSectionClick,
 }: SectionItemProps) {
   const t = useTranslations();
   const isActive = currentSectionId === section.id;
+
+  // Find child sections that should be rendered under this item
+  const childSections = visibleSections.filter(
+    (s): s is StaticSidebarItem =>
+      !s.isDynamic &&
+      CHILD_SECTION_IDS.has(s.id) &&
+      s.parentStepId === section.parentStepId,
+  );
 
   return (
     <li>
@@ -98,6 +115,18 @@ function SectionItem({
               phase={phase}
               currentSectionId={currentSectionId}
               phaseValidation={phaseValidation}
+              onSectionClick={onSectionClick}
+            />
+          ))}
+        </ul>
+      )}
+      {section.id === 'reviewSettings' && childSections.length > 0 && (
+        <ul className="mt-0.5 flex flex-col gap-0.5">
+          {childSections.map((child) => (
+            <ChildSectionItem
+              key={child.id}
+              section={child}
+              currentSectionId={currentSectionId}
               onSectionClick={onSectionClick}
             />
           ))}
@@ -144,6 +173,39 @@ function PhaseItem({
         {phaseValidation[phase.phaseId] === false && (
           <span className="ml-auto size-1.5 shrink-0 rounded-full bg-primary-teal" />
         )}
+      </button>
+    </li>
+  );
+}
+
+interface ChildSectionItemProps {
+  section: StaticSidebarItem;
+  currentSectionId: string | undefined;
+  onSectionClick: (sectionId: string) => void;
+}
+
+function ChildSectionItem({
+  section,
+  currentSectionId,
+  onSectionClick,
+}: ChildSectionItemProps) {
+  const t = useTranslations();
+  const isActive = currentSectionId === section.id;
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onSectionClick(section.id)}
+        className={cn(
+          'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
+          isActive
+            ? 'bg-primary-tealWhite text-primary'
+            : 'text-neutral-black hover:bg-neutral-gray1',
+        )}
+      >
+        <CornerDownRight className="shrink-0 opacity-50" />
+        <span className="truncate">{t(section.labelKey)}</span>
       </button>
     </li>
   );

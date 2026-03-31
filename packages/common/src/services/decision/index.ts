@@ -85,4 +85,5 @@ export type {
   PhaseDefinition,
   PhaseRules,
   ProcessConfig,
+  ReviewsPolicy,
 } from './schemas/types';

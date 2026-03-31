@@ -5,7 +5,7 @@ import type { TranslationKey } from '@/lib/i18n';
 export const STEPS = [
   { id: 'general', labelKey: 'General' },
   { id: 'template', labelKey: 'Proposal Template' },
-  { id: 'rubric', labelKey: 'Review Rubric' },
+  { id: 'reviews', labelKey: 'Reviews' },
   { id: 'participants', labelKey: 'Participants' },
   { id: 'summary', labelKey: 'Summary' },
 ] as const;
@@ -20,7 +20,10 @@ export const SECTIONS_BY_STEP = {
     { id: 'proposalCategories', labelKey: 'Proposal Categories' },
   ],
   template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
-  rubric: [{ id: 'criteria', labelKey: 'Criteria' }],
+  reviews: [
+    { id: 'reviewSettings', labelKey: 'Reviews' },
+    { id: 'criteria', labelKey: 'Review Rubric' },
+  ],
   participants: [
     { id: 'roles', labelKey: 'Roles & permissions' },
     { id: 'participants', labelKey: 'Participants' },
@@ -45,14 +48,14 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
   steps: {
     general: true,
     template: true,
-    rubric: false,
+    reviews: false,
     participants: true,
     summary: true,
   },
   sections: {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
-    rubric: ['criteria'],
+    reviews: ['reviewSettings', 'criteria'],
     participants: ['roles', 'participants'],
     summary: ['summary'],
   },
@@ -82,9 +85,14 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     parentStepId: 'template',
   },
   {
+    id: 'reviewSettings',
+    labelKey: 'Reviews',
+    parentStepId: 'reviews',
+  },
+  {
     id: 'criteria',
     labelKey: 'Review Rubric',
-    parentStepId: 'rubric',
+    parentStepId: 'reviews',
   },
   {
     id: 'roles',

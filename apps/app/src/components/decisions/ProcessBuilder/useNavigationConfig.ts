@@ -24,7 +24,7 @@ export function useNavigationConfig(
   return useMemo(
     () => ({
       ...DEFAULT_NAVIGATION_CONFIG,
-      steps: { ...DEFAULT_NAVIGATION_CONFIG.steps, rubric: hasReviewPhase },
+      steps: { ...DEFAULT_NAVIGATION_CONFIG.steps, reviews: hasReviewPhase },
     }),
     [hasReviewPhase],
   );

@@ -11,6 +11,7 @@ import ParticipantsSection from './stepContent/participants/ParticipantsSection'
 import RolesSection from './stepContent/participants/RolesSection';
 import SummarySectionContent from './stepContent/participants/SummarySectionContent';
 import CriteriaSection from './stepContent/rubric/CriteriaSection';
+import ReviewSettingsSection from './stepContent/rubric/ReviewSettingsSection';
 import TemplateEditorSection from './stepContent/template/TemplateEditorSection';
 
 // Props that all section components receive
@@ -28,6 +29,7 @@ const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
   phases: PhasesSection,
   proposalCategories: ProposalCategoriesSection,
   templateEditor: TemplateEditorSection,
+  reviewSettings: ReviewSettingsSection,
   criteria: CriteriaSection,
   roles: RolesSection,
   participants: ParticipantsSection,
