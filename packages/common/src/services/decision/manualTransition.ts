@@ -98,27 +98,49 @@ export async function manualTransition({
   const nextPhase = phases[currentPhaseIndex + 1]!;
   const nextPhaseId = nextPhase.phaseId;
   const isFinalPhase = currentPhaseIndex + 1 === phases.length - 1;
+  const now = new Date().toISOString();
 
   // Execute transition atomically
   await db.transaction(async (tx) => {
-    // Update instance state
-    await tx
+    // Update instance state with optimistic lock on currentStateId
+    // to prevent concurrent transitions from double-advancing.
+    // Also write stateData.enteredAt for the new phase so time-based
+    // conditions in the TransitionEngine work correctly.
+    const updated = await tx
       .update(processInstances)
       .set({
         currentStateId: nextPhaseId,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
         instanceData: sql`jsonb_set(
-          ${processInstances.instanceData},
-          '{currentPhaseId}',
-          to_jsonb(${nextPhaseId}::text)
+          jsonb_set(
+            jsonb_set(
+              coalesce(${processInstances.instanceData}, '{}'::jsonb),
+              '{currentPhaseId}',
+              to_jsonb(${nextPhaseId}::text)
+            ),
+            '{stateData}',
+            coalesce(${processInstances.instanceData}->'stateData', '{}'::jsonb)
+          ),
+          ${`{stateData,${nextPhaseId}}`},
+          ${JSON.stringify({ enteredAt: now, metadata: { manual: true } })}::jsonb
         )`,
       })
-      .where(eq(processInstances.id, instanceId));
+      .where(
+        and(
+          eq(processInstances.id, instanceId),
+          eq(processInstances.currentStateId, currentPhaseId),
+        ),
+      )
+      .returning({ id: processInstances.id });
+
+    if (updated.length === 0) {
+      throw new CommonError('Phase was already advanced by another request');
+    }
 
     // Mark any pending scheduled transition for the current phase as completed
     await tx
       .update(decisionProcessTransitions)
-      .set({ completedAt: new Date().toISOString() })
+      .set({ completedAt: now })
       .where(
         and(
           eq(decisionProcessTransitions.processInstanceId, instanceId),
