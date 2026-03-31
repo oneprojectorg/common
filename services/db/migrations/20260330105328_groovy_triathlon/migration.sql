@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "organizationUsers_org_auth_user_unique" ON "organization_users" ("organization_id","auth_user_id");
