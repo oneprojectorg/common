@@ -7,16 +7,16 @@ import { LuCircleCheck, LuClock4 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-type ReviewStatus = 'not-started' | 'in-progress' | 'completed';
+export type ReviewStatus = 'not-started' | 'in-progress' | 'completed';
 
-interface SidebarProposal {
+export interface SidebarProposal {
   id: string;
   name: string;
   reviewStatus: ReviewStatus;
   isActive: boolean;
 }
 
-const mockProposals: SidebarProposal[] = [
+export const mockReviewProposals: SidebarProposal[] = [
   {
     id: '1',
     name: 'Community Garden Expansion',
@@ -60,16 +60,38 @@ export function ReviewExploreSidebar() {
 
   return (
     <Sidebar label={t('Proposals')} className="border-r">
-      <nav className="flex w-64 flex-col gap-1 px-8 pt-8">
-        {mockProposals.map((proposal) => (
-          <SidebarItem key={proposal.id} proposal={proposal} />
-        ))}
-      </nav>
+      <ReviewExploreProposalList className="w-64 px-8 pt-8" />
     </Sidebar>
   );
 }
 
-function SidebarItem({ proposal }: { proposal: SidebarProposal }) {
+export function ReviewExploreProposalList({
+  className,
+  onSelectProposal,
+}: {
+  className?: string;
+  onSelectProposal?: (proposal: SidebarProposal) => void;
+}) {
+  return (
+    <nav className={cn('flex flex-col gap-1', className)}>
+      {mockReviewProposals.map((proposal) => (
+        <SidebarItem
+          key={proposal.id}
+          proposal={proposal}
+          onSelectProposal={onSelectProposal}
+        />
+      ))}
+    </nav>
+  );
+}
+
+function SidebarItem({
+  proposal,
+  onSelectProposal,
+}: {
+  proposal: SidebarProposal;
+  onSelectProposal?: (proposal: SidebarProposal) => void;
+}) {
   const icon = (() => {
     if (proposal.reviewStatus === 'completed') {
       return <LuCircleCheck className="size-4 shrink-0" />;
@@ -83,6 +105,7 @@ function SidebarItem({ proposal }: { proposal: SidebarProposal }) {
   return (
     <Button
       unstyled
+      onPress={() => onSelectProposal?.(proposal)}
       className={cn(
         'flex h-8 w-full items-center gap-2 rounded-sm px-2 text-left text-base',
         proposal.isActive && 'bg-whiteish text-midGray',

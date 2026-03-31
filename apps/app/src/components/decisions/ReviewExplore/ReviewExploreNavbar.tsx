@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { useSidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import { LuChevronRight, LuList } from 'react-icons/lu';
 
@@ -12,11 +11,18 @@ import { UserAvatarMenu } from '@/components/SiteHeader';
 
 interface ReviewExploreNavbarProps {
   slug: string;
+  proposalName: string;
+  isProposalListOpen: boolean;
+  onOpenProposalList: () => void;
 }
 
-export function ReviewExploreNavbar({ slug }: ReviewExploreNavbarProps) {
+export function ReviewExploreNavbar({
+  slug,
+  proposalName,
+  isProposalListOpen,
+  onOpenProposalList,
+}: ReviewExploreNavbarProps) {
   const t = useTranslations();
-  const { open, toggleSidebar } = useSidebar();
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white">
@@ -30,15 +36,18 @@ export function ReviewExploreNavbar({ slug }: ReviewExploreNavbarProps) {
         <LuChevronRight className="size-4 shrink-0 text-midGray" />
         <Button
           unstyled
-          onPress={toggleSidebar}
+          onPress={onOpenProposalList}
           className={cn(
-            'flex items-center gap-2 rounded px-2 py-1 text-base text-primary-teal',
-            open && 'bg-primary-tealWhite',
+            'flex items-center gap-2 rounded px-2 py-1 text-base text-primary-teal sm:hidden',
+            isProposalListOpen && 'bg-primary-tealWhite',
           )}
         >
           <LuList className="size-4 shrink-0" />
-          <span className="truncate">Community Garden Expansion</span>
+          <span className="truncate">{proposalName}</span>
         </Button>
+        <span className="hidden truncate text-base text-primary-teal sm:inline">
+          {proposalName}
+        </span>
       </div>
       <div className="flex shrink-0 items-center gap-3 pr-4 md:pr-8">
         <LocaleChooser />

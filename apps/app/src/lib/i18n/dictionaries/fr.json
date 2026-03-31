@@ -756,6 +756,7 @@
   "Manage Process": "Gérer le processus",
   "Invite Members": "Inviter des membres",
   "Review": "Réviser",
+  "Proposal": "Proposition",
   "Submit Proposals": "Soumettre des propositions",
   "Vote": "Voter",
   "Advanced permissions": "Permissions avancées",
@@ -1002,5 +1003,6 @@
   "Previous": "Précédent",
   "Submit review": "Soumettre la révision",
   "Proposal {current} of {total}": "Proposition {current} sur {total}",
+  "{current} of {total}": "{current} sur {total}",
   "{count} completed": "{count} terminées"
 }

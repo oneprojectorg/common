@@ -756,6 +756,7 @@
   "Manage Process": "Gestionar proceso",
   "Invite Members": "Invitar miembros",
   "Review": "Revisar",
+  "Proposal": "Propuesta",
   "Submit Proposals": "Enviar propuestas",
   "Vote": "Votar",
   "Advanced permissions": "Permisos avanzados",
@@ -1002,5 +1003,6 @@
   "Previous": "Anterior",
   "Submit review": "Enviar revisión",
   "Proposal {current} of {total}": "Propuesta {current} de {total}",
+  "{current} of {total}": "{current} de {total}",
   "{count} completed": "{count} completadas"
 }

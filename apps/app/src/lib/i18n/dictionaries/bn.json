@@ -764,6 +764,7 @@
   "Manage Process": "প্রক্রিয়া পরিচালনা করুন",
   "Invite Members": "সদস্যদের আমন্ত্রণ জানান",
   "Review": "পর্যালোচনা",
+  "Proposal": "প্রস্তাব",
   "Submit Proposals": "প্রস্তাব জমা দিন",
   "Vote": "ভোট দিন",
   "Advanced permissions": "উন্নত অনুমতি",
@@ -1009,5 +1010,6 @@
   "Previous": "পূর্ববর্তী",
   "Submit review": "পর্যালোচনা জমা দিন",
   "Proposal {current} of {total}": "প্রস্তাব {current} এর মধ্যে {total}",
+  "{current} of {total}": "{current} এর মধ্যে {total}",
   "{count} completed": "{count} সম্পন্ন"
 }
