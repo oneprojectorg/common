@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type { ReviewsPolicy } from '@op/common';
 import { useDebouncedCallback } from '@op/hooks';
+import { Chip } from '@op/ui/Chip';
 import { Header2 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { ToggleButton } from '@op/ui/ToggleButton';
@@ -76,28 +77,25 @@ export function ReviewSettingsContent({
     },
   });
 
-  const debouncedSave = useDebouncedCallback(
-    (updated: ReviewSettings) => {
-      setSaveStatus(decisionProfileId, 'saving');
+  const debouncedSave = useDebouncedCallback((updated: ReviewSettings) => {
+    setSaveStatus(decisionProfileId, 'saving');
 
-      setInstanceData(decisionProfileId, {
-        config: {
-          ...instanceData?.config,
-          ...updated,
-        },
+    setInstanceData(decisionProfileId, {
+      config: {
+        ...instanceData?.config,
+        ...updated,
+      },
+    });
+
+    if (isDraft) {
+      updateInstance.mutate({
+        instanceId,
+        config: updated,
       });
-
-      if (isDraft) {
-        updateInstance.mutate({
-          instanceId,
-          config: updated,
-        });
-      } else {
-        markSaved(decisionProfileId);
-      }
-    },
-    AUTOSAVE_DEBOUNCE_MS,
-  );
+    } else {
+      markSaved(decisionProfileId);
+    }
+  }, AUTOSAVE_DEBOUNCE_MS);
   debouncedSaveRef.current = () => debouncedSave.isPending();
 
   const updateSettings = (updates: Partial<ReviewSettings>) => {
@@ -143,20 +141,22 @@ export function ReviewSettingsContent({
               </span>
             </div>
           </Radio>
-          <Radio value="self_selection">
+          <Radio value="self_selection" isDisabled className="opacity-50">
             <div className="flex flex-col">
-              <span className="text-base text-neutral-charcoal">
+              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
                 {t('Self-selection')}
+                <Chip className="opacity-100">{t('Coming soon')}</Chip>
               </span>
               <span className="text-sm text-neutral-gray4">
                 {t('Reviewers choose what proposals to review')}
               </span>
             </div>
           </Radio>
-          <Radio value="random_assignment">
+          <Radio value="random_assignment" isDisabled className="opacity-50">
             <div className="flex flex-col">
-              <span className="text-base text-neutral-charcoal">
+              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
                 {t('Random assignment')}
+                <Chip className="opacity-100">{t('Coming soon')}</Chip>
               </span>
               <span className="text-sm text-neutral-gray4">
                 {t('Proposals are randomly distributed among reviewers')}
@@ -182,17 +182,13 @@ export function ReviewSettingsContent({
           >
             <ToggleButton
               isSelected={settings.reviewsAllowRevisions}
-              onChange={(val) =>
-                updateSettings({ reviewsAllowRevisions: val })
-              }
+              onChange={(val) => updateSettings({ reviewsAllowRevisions: val })}
               size="small"
             />
           </ToggleRow>
           <ToggleRow
             label={t('Anonymous feedback')}
-            description={t(
-              'Revision feedback appears without reviewer names',
-            )}
+            description={t('Revision feedback appears without reviewer names')}
           >
             <ToggleButton
               isSelected={settings.reviewsAnonymousFeedback}

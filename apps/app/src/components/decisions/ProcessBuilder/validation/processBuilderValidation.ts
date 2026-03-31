@@ -86,7 +86,7 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   proposalCategories: () => true,
   templateEditor: validateTemplateEditor,
   reviewSettings: () => true,
-  criteria: (data) =>
+  reviewRubric: (data) =>
     !hasReviewPhase(data) ||
     (hasRubricCriteria(data) && allRubricCriteriaValid(data)),
   roles: () => true,
