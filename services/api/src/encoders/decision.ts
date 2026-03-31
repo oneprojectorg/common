@@ -1,5 +1,4 @@
-import { REVIEWS_POLICIES } from '@op/common';
-import { proposalDataSchema } from '@op/common/client';
+import { REVIEWS_POLICIES, proposalDataSchema } from '@op/common/client';
 import {
   ProcessStatus,
   ProposalStatus,

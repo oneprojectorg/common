@@ -18,6 +18,7 @@ export {
 } from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { isRationaleField } from './services/decision/getRubricScoringInfo';
+export { REVIEWS_POLICIES } from './services/decision/schemas/types';
 
 // Translation constants (no server dependencies)
 export {

@@ -63,6 +63,8 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
 };
 
 // Flat sidebar items for the unified sidebar navigation
+// TODO: Consider using parentSectionId for dynamic items (phases) too,
+// which would let us remove the isDynamic discriminator entirely.
 export type SidebarItem =
   | {
       id: SectionId;
