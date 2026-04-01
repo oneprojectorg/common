@@ -2,12 +2,12 @@ import {
   createInstanceFromTemplateCore,
   createOrganization as createOrganizationService,
   createProposal as createProposalService,
+  joinOrganization,
 } from '@op/common';
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
   decisionProcesses,
-  organizationUserToAccessRoles,
   organizationUsers,
   processInstances,
   profiles,
@@ -465,25 +465,23 @@ export class TestDecisionsDataManager {
       this.createdProfileIds.push(userRecord.profileId);
     }
 
-    // Add user to organization
-    const [orgUser] = await db
-      .insert(organizationUsers)
-      .values({
-        organizationId: organization.id,
-        authUserId: authUser.id,
-        email: authUser.email,
-      })
-      .returning();
+    const orgRecord = await db.query.organizations.findFirst({
+      where: { id: organization.id },
+    });
+
+    if (!orgRecord) {
+      throw new Error(`Failed to find organization ${organization.id}`);
+    }
+
+    const orgUser = await joinOrganization({
+      user: userRecord,
+      organization: orgRecord,
+      roleId: ROLES.MEMBER.id,
+    });
 
     if (!orgUser) {
       throw new Error(`Failed to create organization user for ${email}`);
     }
-
-    // Assign Member role to organization user
-    await db.insert(organizationUserToAccessRoles).values({
-      organizationUserId: orgUser.id,
-      accessRoleId: ROLES.MEMBER.id,
-    });
 
     // Grant access to instance profiles if provided (member role, not admin)
     for (const profileId of instanceProfileIds) {
