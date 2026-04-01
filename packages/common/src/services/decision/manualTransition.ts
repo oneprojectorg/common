@@ -80,8 +80,11 @@ export async function manualTransition({
     throw new CommonError('Instance has no phases defined');
   }
 
-  const currentPhaseId =
-    instanceData.currentPhaseId || instance.currentStateId || '';
+  const currentPhaseId = instanceData.currentPhaseId || instance.currentStateId;
+
+  if (!currentPhaseId) {
+    throw new CommonError('Instance has no current phase set');
+  }
 
   const currentPhaseIndex = phases.findIndex(
     (p) => p.phaseId === currentPhaseId,
@@ -160,6 +163,9 @@ export async function manualTransition({
   });
 
   // Process results when transitioning to the final phase
+  // TODO: processResults runs outside the transaction. If it fails, the instance
+  // is stuck on the final phase with no results and no retry path. Consider adding
+  // try/catch with error logging, or making results processing idempotent/retriable.
   if (isFinalPhase) {
     await processResults({ processInstanceId: instanceId });
   }
