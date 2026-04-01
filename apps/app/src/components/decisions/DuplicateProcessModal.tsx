@@ -4,7 +4,6 @@ import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
-import { Header3 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
@@ -108,15 +107,14 @@ export const DuplicateProcessModal = ({
   return (
     <Modal
       isOpen
+      isDismissable
       onOpenChange={(open) =>
         !open && !duplicateMutation.isPending && onClose()
       }
     >
-      <ModalHeader className="pl-6 text-left">
-        {t('Duplicate process')}
-      </ModalHeader>
+      <ModalHeader>{t('Duplicate process')}</ModalHeader>
       <ModalBody className="gap-6">
-        <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="flex flex-col gap-6 sm:flex-row">
           <div className="flex-1">
             <TextField
               label={t('Process Name')}
@@ -142,12 +140,15 @@ export const DuplicateProcessModal = ({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <Header3 className="font-serif">{t('Include')}</Header3>
+        <div className="flex flex-col gap-4">
+          <span className="font-serif text-title-sm12 text-neutral-black">
+            {t('Include')}
+          </span>
           <div className="flex flex-col gap-2">
             {includeOptions.map((option) => (
               <Checkbox
                 key={option.key}
+                size="small"
                 isSelected={include[option.key]}
                 onChange={() => toggleInclude(option.key)}
               >
@@ -160,7 +161,6 @@ export const DuplicateProcessModal = ({
       <ModalFooter>
         <Button
           color="primary"
-          className="w-full sm:w-fit"
           onPress={handleDuplicate}
           isDisabled={
             !name.trim() || !stewardProfileId || duplicateMutation.isPending
