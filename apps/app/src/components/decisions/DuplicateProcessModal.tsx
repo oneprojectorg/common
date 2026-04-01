@@ -7,6 +7,7 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
+import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -137,7 +138,7 @@ export const DuplicateProcessModal = ({
         </div>
 
         <div className="flex flex-col gap-3">
-          <h3 className="font-serif text-title-base">{t('Include')}</h3>
+          <Header3 className="font-serif">{t('Include')}</Header3>
           <div className="flex flex-col gap-2">
             {includeOptions.map((option) => (
               <Checkbox
