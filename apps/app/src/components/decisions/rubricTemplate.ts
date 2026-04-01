@@ -283,12 +283,6 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
     errors.push('Criterion description is required');
   }
 
-  if (criterion.criterionType === 'scored') {
-    if (criterion.scoreLabels.some((l) => !l.trim())) {
-      errors.push('Score labels cannot be empty');
-    }
-  }
-
   return errors;
 }
 
