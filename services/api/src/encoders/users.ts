@@ -63,6 +63,7 @@ const profileUserWithPermissionsEncoder = createSelectSchema(
  * Includes avatar, organization memberships, roles, and profile information
  */
 export const userEncoder = createSelectSchema(users).extend({
+  onboardedAt: z.string().nullish(),
   authUser: createSelectSchema(authUsers).nullish(),
   avatarImage: storageItemEncoder.nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
