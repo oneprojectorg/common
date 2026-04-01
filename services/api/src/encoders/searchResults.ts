@@ -32,7 +32,9 @@ const searchOrganizationEncoder = createSelectSchema(organizations)
   .nullable();
 
 // Search-specific user encoder (nullable fields from left join)
-const searchUserEncoder = createSelectSchema(users).nullable();
+const searchUserEncoder = createSelectSchema(users)
+  .omit({ onboardedAt: true })
+  .nullable();
 
 // Profile search result encoder
 export const profileSearchResultEncoder = createSelectSchema(profiles).extend({
