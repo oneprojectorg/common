@@ -89,7 +89,6 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
       name: decisionName,
-      description: 'A test decision from template',
     });
 
     // result.id is now the profile ID
@@ -125,37 +124,9 @@ describe.concurrent('createInstanceFromTemplate', () => {
     );
     const caller = await createAuthenticatedCaller(userEmail);
 
-    // Create instance with custom phase dates
-    const now = new Date();
-    const phase1End = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    const phase2End = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 14 days
-    const phase3End = new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000); // 21 days
-    const phase4Start = new Date(now.getTime() + 28 * 24 * 60 * 60 * 1000); // 28 days
-
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
       name: `Transition Test ${task.id}`,
-      phases: [
-        {
-          phaseId: 'submission',
-          startDate: now.toISOString(),
-          endDate: phase1End.toISOString(),
-        },
-        {
-          phaseId: 'review',
-          startDate: phase1End.toISOString(),
-          endDate: phase2End.toISOString(),
-        },
-        {
-          phaseId: 'voting',
-          startDate: phase2End.toISOString(),
-          endDate: phase3End.toISOString(),
-        },
-        {
-          phaseId: 'results',
-          startDate: phase4Start.toISOString(),
-        },
-      ],
     });
 
     // result.id is now the profile ID
@@ -174,51 +145,6 @@ describe.concurrent('createInstanceFromTemplate', () => {
     });
 
     expect(transitions.length).toBe(0);
-  });
-
-  it('should accept phase settings', async ({ task, onTestFinished }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    // Create the template and get authenticated user
-    const { templateId, userEmail } = await createSimpleTemplate(
-      testData,
-      task.id,
-    );
-    const caller = await createAuthenticatedCaller(userEmail);
-
-    const result = await caller.decision.createInstanceFromTemplate({
-      templateId,
-      name: `Settings Test ${task.id}`,
-      phases: [
-        {
-          phaseId: 'submission',
-          settings: { maxProposalsPerMember: 5 },
-        },
-        {
-          phaseId: 'voting',
-          settings: { maxVotesPerMember: 3 },
-        },
-      ],
-    });
-
-    // result.id is now the profile ID
-    testData.trackProfileForCleanup(result.id);
-
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, result.processInstance.id),
-    });
-
-    const instanceData = instance!.instanceData as DecisionInstanceData;
-
-    // Find the voting phase and check its settings
-    const votingPhase = instanceData.phases.find((p) => p.phaseId === 'voting');
-    expect(votingPhase?.settings?.maxVotesPerMember).toBe(3);
-
-    // Find the submission phase and check its settings
-    const submissionPhase = instanceData.phases.find(
-      (p) => p.phaseId === 'submission',
-    );
-    expect(submissionPhase?.settings?.maxProposalsPerMember).toBe(5);
   });
 
   it('should require authentication', async ({ task }) => {

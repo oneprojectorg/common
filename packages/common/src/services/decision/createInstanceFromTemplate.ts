@@ -12,19 +12,22 @@ import type { User } from '@op/supabase/lib';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import { createDecisionRole } from './decisionRoles';
-import { getTemplate } from './getTemplate';
 import {
-  type PhaseOverride,
-  createInstanceDataFromTemplate,
-} from './schemas/instanceData';
+  type CustomRoleDefinition,
+  createDefaultDecisionRoles,
+} from './decisionRoles';
+import { getTemplate } from './getTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
-/** Options for the core instance creation function (no auth required) */
-export type CreateInstanceFromTemplateCoreOptions = {
-  templateId: string;
+/** Options for creating a decision instance. */
+export type CreateDecisionInstanceOptions = {
+  /** The DB UUID of the process template (decisionProcesses.id). */
+  processId: string;
+  /** The instance data to store. Build from a template via createInstanceDataFromTemplate, or construct directly. */
+  instanceData: DecisionInstanceData;
   name: string;
   description?: string;
-  phases?: PhaseOverride[];
   ownerProfileId: string;
   /** Defaults to ownerProfileId when not provided */
   stewardProfileId?: string;
@@ -32,31 +35,27 @@ export type CreateInstanceFromTemplateCoreOptions = {
   creatorEmail: string;
   /** Defaults to DRAFT */
   status?: ProcessStatus;
+  /** Custom roles to create alongside the default Admin and Participant roles. */
+  customRoles?: CustomRoleDefinition[];
 };
 
 /**
- * Core logic for creating a decision process instance from a template.
- * This function does not require a User object - it takes primitive values directly,
- * making it suitable for use in tests and internal services.
+ * Creates a decision process instance from a resolved template.
+ * Optionally accepts pre-built instanceData and custom roles.
+ * Does not require a User object - takes primitive values directly.
  */
-export const createInstanceFromTemplateCore = async ({
-  templateId,
+export const createDecisionInstance = async ({
+  processId,
+  instanceData,
   name,
   description,
-  phases,
   ownerProfileId,
   stewardProfileId = ownerProfileId,
   creatorAuthUserId,
   creatorEmail,
   status = ProcessStatus.DRAFT,
-}: CreateInstanceFromTemplateCoreOptions) => {
-  const template = await getTemplate(templateId);
-
-  const instanceData = createInstanceDataFromTemplate({
-    template,
-    phaseOverrides: phases,
-  });
-
+  customRoles,
+}: CreateDecisionInstanceOptions) => {
   const instance = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
     const slug = await generateUniqueProfileSlug({
@@ -81,8 +80,8 @@ export const createInstanceFromTemplateCore = async ({
     const [newInstance] = await tx
       .insert(processInstances)
       .values({
-        processId: templateId, // this naming has shifted and might need to be changed in the DB eventually
-        name: '', // TODO: we will remove this constraint shortly from the DB
+        processId,
+        name,
         description,
         instanceData,
         currentStateId: instanceData.currentPhaseId, // DB column is currentStateId but stores phaseId
@@ -97,71 +96,12 @@ export const createInstanceFromTemplateCore = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
-    // Create default roles for the decision instance
-    const [adminRole] = await Promise.all([
-      createDecisionRole({
-        name: 'Admin',
-        profileId: instanceProfile.id,
-        permissions: {
-          profile: {
-            type: 'acrud',
-            value: {
-              admin: true,
-              create: true,
-              read: true,
-              update: true,
-              delete: true,
-            },
-          },
-          decisions: {
-            type: 'decision',
-            value: {
-              create: true,
-              read: true,
-              update: true,
-              delete: true,
-              admin: true,
-              inviteMembers: true,
-              review: true,
-              submitProposals: true,
-              vote: true,
-            },
-          },
-        },
-        tx,
-      }),
-      createDecisionRole({
-        name: 'Participant',
-        profileId: instanceProfile.id,
-        permissions: {
-          profile: {
-            type: 'acrud',
-            value: {
-              admin: false,
-              create: false,
-              read: true,
-              update: false,
-              delete: false,
-            },
-          },
-          decisions: {
-            type: 'decision',
-            value: {
-              create: false,
-              read: true,
-              update: false,
-              delete: false,
-              admin: false,
-              inviteMembers: false,
-              review: false,
-              submitProposals: true,
-              vote: true,
-            },
-          },
-        },
-        tx,
-      }),
-    ]);
+    // Create default Admin and Participant roles
+    const adminRole = await createDefaultDecisionRoles({
+      profileId: instanceProfile.id,
+      customRoles,
+      tx,
+    });
 
     // Add the creator as a profile user with Admin role
     const [newProfileUser] = await tx
@@ -209,20 +149,16 @@ export const createInstanceFromTemplateCore = async ({
 export type CreateInstanceFromTemplateOptions = {
   templateId: string;
   name: string;
-  description?: string;
-  phases?: PhaseOverride[];
   user: User;
 };
 
 /**
  * Creates a decision process instance from a template.
- * Validates the user and delegates to createInstanceFromTemplateCore.
+ * Validates the user, fetches the template, and delegates to createDecisionInstance.
  */
 export const createInstanceFromTemplate = async ({
   templateId,
   name,
-  description,
-  phases,
   user,
 }: CreateInstanceFromTemplateOptions) => {
   const dbUser = await assertUserByAuthId(
@@ -243,11 +179,13 @@ export const createInstanceFromTemplate = async ({
     );
   }
 
-  return createInstanceFromTemplateCore({
-    templateId,
+  const template = await getTemplate(templateId);
+  const instanceData = createInstanceDataFromTemplate({ template });
+
+  return createDecisionInstance({
+    processId: templateId,
+    instanceData,
     name,
-    description,
-    phases,
     ownerProfileId,
     stewardProfileId: ownerProfileId,
     creatorAuthUserId: user.id,

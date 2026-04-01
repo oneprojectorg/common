@@ -12,7 +12,7 @@ import {
   toDecisionBitField,
 } from './permissions';
 
-type ZonePermission =
+export type ZonePermission =
   | { type: 'decision'; value: DecisionRolePermissions }
   | {
       type: 'acrud';
@@ -24,6 +24,12 @@ type ZonePermission =
         delete: boolean;
       };
     };
+
+export type CustomRoleDefinition = {
+  name: string;
+  description?: string;
+  permissions: Record<string, ZonePermission>;
+};
 
 function toBitfield(zonePermission: ZonePermission): number {
   if (zonePermission.type === 'decision') {
@@ -112,6 +118,102 @@ export async function createDecisionRole({
   );
 
   return { id: role.id, name: role.name, permissions };
+}
+
+/**
+ * Creates the default Admin and Participant roles for a decision instance,
+ * plus any custom roles provided. Returns the admin role (needed for assigning the creator).
+ */
+export async function createDefaultDecisionRoles({
+  profileId,
+  customRoles,
+  tx,
+}: {
+  profileId: string;
+  customRoles?: CustomRoleDefinition[];
+  tx?: TransactionType;
+}) {
+  const [adminRole] = await Promise.all([
+    createDecisionRole({
+      name: 'Admin',
+      profileId,
+      permissions: {
+        profile: {
+          type: 'acrud',
+          value: {
+            admin: true,
+            create: true,
+            read: true,
+            update: true,
+            delete: true,
+          },
+        },
+        decisions: {
+          type: 'decision',
+          value: {
+            create: true,
+            read: true,
+            update: true,
+            delete: true,
+            admin: true,
+            inviteMembers: true,
+            review: true,
+            submitProposals: true,
+            vote: true,
+          },
+        },
+      },
+      tx,
+    }),
+    createDecisionRole({
+      name: 'Participant',
+      profileId,
+      permissions: {
+        profile: {
+          type: 'acrud',
+          value: {
+            admin: false,
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+          },
+        },
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: false,
+            submitProposals: true,
+            vote: true,
+          },
+        },
+      },
+      tx,
+    }),
+  ]);
+
+  // Create any custom roles provided
+  if (customRoles?.length) {
+    await Promise.all(
+      customRoles.map((role) =>
+        createDecisionRole({
+          name: role.name,
+          description: role.description,
+          profileId,
+          permissions: role.permissions,
+          tx,
+        }),
+      ),
+    );
+  }
+
+  return adminRole;
 }
 
 /**

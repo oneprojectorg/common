@@ -139,16 +139,16 @@ async function createPublishedInstanceWithDueTransitions(
   const result = await caller.decision.createInstanceFromTemplate({
     templateId,
     name: `Monitor Test ${taskId}`,
-    phases,
   });
 
   testData.trackProfileForCleanup(result.id);
 
   const instanceId = result.processInstance.id;
 
-  // Publish the instance (this creates transitions)
+  // Set phase dates and publish the instance (this creates transitions)
   await caller.decision.updateDecisionInstance({
     instanceId,
+    phases,
     status: ProcessStatus.PUBLISHED,
   });
 
@@ -262,41 +262,10 @@ describe('processDecisionsTransitions', () => {
     const now = new Date();
     const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 1 day ago
 
-    // Create instance with past dates (but don't publish)
+    // Create a draft instance (don't publish)
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
       name: `Draft Monitor Test ${task.id}`,
-      phases: [
-        {
-          phaseId: 'submission',
-          startDate: new Date(
-            pastDate.getTime() - 7 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-          endDate: pastDate.toISOString(),
-        },
-        {
-          phaseId: 'review',
-          startDate: pastDate.toISOString(),
-          endDate: new Date(
-            pastDate.getTime() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-        {
-          phaseId: 'voting',
-          startDate: new Date(
-            pastDate.getTime() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-          endDate: new Date(
-            pastDate.getTime() + 14 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-        {
-          phaseId: 'results',
-          startDate: new Date(
-            pastDate.getTime() + 14 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-      ],
     });
 
     testData.trackProfileForCleanup(result.id);
@@ -461,50 +430,52 @@ describe('processDecisionsTransitions', () => {
     const caller2 = await createAuthenticatedCaller(userEmail);
 
     const now = new Date();
+    const badPhases = [
+      {
+        phaseId: 'submission',
+        startDate: now.toISOString(),
+        endDate: new Date(
+          now.getTime() + 7 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      },
+      {
+        phaseId: 'review',
+        startDate: new Date(
+          now.getTime() + 7 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        endDate: new Date(
+          now.getTime() + 14 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      },
+      {
+        phaseId: 'voting',
+        startDate: new Date(
+          now.getTime() + 14 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        endDate: new Date(
+          now.getTime() + 21 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      },
+      {
+        phaseId: 'results',
+        startDate: new Date(
+          now.getTime() + 21 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      },
+    ];
+
     const badResult = await caller2.decision.createInstanceFromTemplate({
       templateId,
       name: `Bad Monitor Test ${task.id}`,
-      phases: [
-        {
-          phaseId: 'submission',
-          startDate: now.toISOString(),
-          endDate: new Date(
-            now.getTime() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-        {
-          phaseId: 'review',
-          startDate: new Date(
-            now.getTime() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-          endDate: new Date(
-            now.getTime() + 14 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-        {
-          phaseId: 'voting',
-          startDate: new Date(
-            now.getTime() + 14 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-          endDate: new Date(
-            now.getTime() + 21 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-        {
-          phaseId: 'results',
-          startDate: new Date(
-            now.getTime() + 21 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-      ],
     });
 
     testData.trackProfileForCleanup(badResult.id);
     const badInstanceId = badResult.processInstance.id;
 
-    // Publish the bad instance
+    // Set phase dates and publish the bad instance
     await caller2.decision.updateDecisionInstance({
       instanceId: badInstanceId,
+      phases: badPhases,
       status: ProcessStatus.PUBLISHED,
     });
 
