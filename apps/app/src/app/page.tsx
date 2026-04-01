@@ -16,7 +16,7 @@ const MainPage = () => {
       return <ComingSoonScreen />;
     }
 
-    if (account?.organizationUsers?.length === 0) {
+    if (!account?.onboardedAt) {
       router.push('/start');
 
       return;
