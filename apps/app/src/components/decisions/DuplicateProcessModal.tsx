@@ -16,80 +16,35 @@ import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-const StewardSelect = ({
-  stewardProfileId,
-  onSelectionChange,
-  currentSteward,
+export const DuplicateProcessModal = ({
+  item,
+  onClose,
 }: {
-  stewardProfileId: string;
-  onSelectionChange: (key: string) => void;
-  currentSteward?: { id: string; name: string | null } | null;
+  item: DecisionProfile;
+  onClose: () => void;
 }) => {
   const t = useTranslations();
-  const [userProfiles] = trpc.account.getUserProfiles.useSuspenseQuery();
-
-  const profileItems = useMemo(() => {
-    const items = (userProfiles ?? []).map((p) => ({
-      id: p.id,
-      name: p.name,
-    }));
-    if (currentSteward && !items.some((p) => p.id === currentSteward.id)) {
-      items.push({ id: currentSteward.id, name: currentSteward.name ?? '' });
-    }
-    return items;
-  }, [userProfiles, currentSteward]);
-
-  // Set steward to current user on mount if not already set
-  const defaultProfileId = userProfiles?.[0]?.id;
-  useEffect(() => {
-    if (defaultProfileId && !stewardProfileId) {
-      onSelectionChange(defaultProfileId);
-    }
-  }, [defaultProfileId, stewardProfileId, onSelectionChange]);
+  const isPendingRef = useRef(false);
 
   return (
-    <Select
-      label={t('Who is stewarding this process?')}
-      isRequired
-      placeholder={t('Select')}
-      selectedKey={stewardProfileId || defaultProfileId || null}
-      onSelectionChange={(key) => onSelectionChange(key as string)}
+    <Modal
+      isOpen
+      isDismissable
+      onOpenChange={(open) => !open && !isPendingRef.current && onClose()}
     >
-      {profileItems.map((profile) => (
-        <SelectItem key={profile.id} id={profile.id}>
-          {profile.name}
-        </SelectItem>
-      ))}
-    </Select>
+      <ModalHeader>{t('Duplicate process')}</ModalHeader>
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={<DuplicateFormSkeleton />}>
+          <DuplicateFormContent
+            item={item}
+            onClose={onClose}
+            isPendingRef={isPendingRef}
+          />
+        </Suspense>
+      </ErrorBoundary>
+    </Modal>
   );
 };
-
-const DuplicateFormSkeleton = () => (
-  <ModalBody className="gap-6">
-    <div className="flex flex-col gap-6 sm:flex-row">
-      <div className="flex-1">
-        <div className="flex flex-col gap-1">
-          <Skeleton className="h-4.5 w-24" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-        </div>
-      </div>
-      <div className="flex-1">
-        <div className="flex flex-col gap-1">
-          <Skeleton className="h-4.5 w-48" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-        </div>
-      </div>
-    </div>
-    <div className="flex flex-col gap-4">
-      <Skeleton className="h-4 w-16" />
-      <div className="flex flex-col gap-2">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <Skeleton key={i} className="h-4 w-32" />
-        ))}
-      </div>
-    </div>
-  </ModalBody>
-);
 
 const DuplicateFormContent = ({
   item,
@@ -217,32 +172,77 @@ const DuplicateFormContent = ({
   );
 };
 
-export const DuplicateProcessModal = ({
-  item,
-  onClose,
+const DuplicateFormSkeleton = () => (
+  <ModalBody className="gap-6">
+    <div className="flex flex-col gap-6 sm:flex-row">
+      <div className="flex-1">
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-4.5 w-24" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+      </div>
+      <div className="flex-1">
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-4.5 w-48" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+      </div>
+    </div>
+    <div className="flex flex-col gap-4">
+      <Skeleton className="h-4 w-16" />
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <Skeleton key={i} className="h-4 w-32" />
+        ))}
+      </div>
+    </div>
+  </ModalBody>
+);
+
+const StewardSelect = ({
+  stewardProfileId,
+  onSelectionChange,
+  currentSteward,
 }: {
-  item: DecisionProfile;
-  onClose: () => void;
+  stewardProfileId: string;
+  onSelectionChange: (key: string) => void;
+  currentSteward?: { id: string; name: string | null } | null;
 }) => {
   const t = useTranslations();
-  const isPendingRef = useRef(false);
+  const [userProfiles] = trpc.account.getUserProfiles.useSuspenseQuery();
+
+  const profileItems = useMemo(() => {
+    const items = (userProfiles ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+    }));
+    if (currentSteward && !items.some((p) => p.id === currentSteward.id)) {
+      items.push({ id: currentSteward.id, name: currentSteward.name ?? '' });
+    }
+    return items;
+  }, [userProfiles, currentSteward]);
+
+  // Set steward to current user on mount if not already set
+  const defaultProfileId = userProfiles?.[0]?.id;
+  useEffect(() => {
+    if (defaultProfileId && !stewardProfileId) {
+      onSelectionChange(defaultProfileId);
+    }
+  }, [defaultProfileId, stewardProfileId, onSelectionChange]);
 
   return (
-    <Modal
-      isOpen
-      isDismissable
-      onOpenChange={(open) => !open && !isPendingRef.current && onClose()}
+    <Select
+      label={t('Who is stewarding this process?')}
+      isRequired
+      placeholder={t('Select')}
+      selectedKey={stewardProfileId || defaultProfileId || null}
+      onSelectionChange={(key) => onSelectionChange(key as string)}
     >
-      <ModalHeader>{t('Duplicate process')}</ModalHeader>
-      <ErrorBoundary fallback={null}>
-        <Suspense fallback={<DuplicateFormSkeleton />}>
-          <DuplicateFormContent
-            item={item}
-            onClose={onClose}
-            isPendingRef={isPendingRef}
-          />
-        </Suspense>
-      </ErrorBoundary>
-    </Modal>
+      {profileItems.map((profile) => (
+        <SelectItem key={profile.id} id={profile.id}>
+          {profile.name}
+        </SelectItem>
+      ))}
+    </Select>
   );
 };
