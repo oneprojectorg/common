@@ -19,6 +19,7 @@ import {
   TextArea,
 } from './Field';
 import type { InputWithVariantsProps } from './Field';
+import { TextCounter } from './ui/text-counter';
 
 export interface TextFieldProps extends AriaTextFieldProps {
   label?: string;
@@ -72,15 +73,16 @@ export const TextField = ({
   };
 
   const counterElement = maxLength != null && (
-    <span
+    <TextCounter
+      textLength={charCount}
+      max={maxLength}
+      showCurrent
+      highlightAtLimit
       className={cn(
-        'text-sm text-neutral-gray4',
         'group-data-[disabled=true]:opacity-50',
-        (charCount === maxLength || isInvalid) && 'text-functional-red',
+        isInvalid && 'text-functional-red',
       )}
-    >
-      {charCount}/{maxLength}
-    </span>
+    />
   );
 
   return (

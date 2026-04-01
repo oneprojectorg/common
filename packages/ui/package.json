@@ -63,6 +63,8 @@
     "./Stepper": "./src/components/Stepper/index.ts",
     "./Tabs": "./src/components/Tabs.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
+    "./TextCounter": "./src/components/ui/text-counter.tsx",
+    "./ui/text-counter": "./src/components/ui/text-counter.tsx",
     "./TranslateBanner": "./src/components/TranslateBanner.tsx",
     "./TextField": "./src/components/TextField.tsx",
     "./Toast": "./src/components/Toast.tsx",

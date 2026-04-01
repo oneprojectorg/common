@@ -13,6 +13,7 @@ import { Form } from '@op/ui/Form';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { Skeleton } from '@op/ui/Skeleton';
+import { TextCounter } from '@op/ui/TextCounter';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
@@ -26,25 +27,6 @@ import { FeedItem, FeedMain } from '@/components/Feed';
 import { LinkPreview } from '@/components/LinkPreview';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
-
-const TextCounter = ({ text, max }: { text: string; max: number }) => {
-  if (!text || text.length === 0) {
-    return null;
-  }
-  const textLength = text.length;
-  const countDown = max - textLength;
-
-  return (
-    <span
-      className={cn(
-        'text-neutral-charcoal',
-        countDown < 0 && 'text-functional-red',
-      )}
-    >
-      {countDown}
-    </span>
-  );
-};
 
 const PostUpdateWithUser = ({
   organization,
@@ -708,7 +690,11 @@ const PostUpdateWithUser = ({
               {t('Media')}
             </button>
             <div className="flex items-center gap-2 text-neutral-charcoal">
-              <TextCounter text={content} max={characterLimit} />
+              <TextCounter
+                textLength={content.length}
+                max={characterLimit}
+                className="text-neutral-charcoal"
+              />
               {lastFailedPost && (
                 <Button
                   size="small"
