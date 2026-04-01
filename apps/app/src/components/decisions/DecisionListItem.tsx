@@ -150,6 +150,8 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         )}
       </div>
 
+      {/* Manual state instead of DialogTrigger because the trigger is a MenuItem
+         inside a Menu popover — DialogTrigger conflicts with menu focus/close behavior */}
       {showDuplicateModal && (
         <DuplicateProcessModal
           item={item}
