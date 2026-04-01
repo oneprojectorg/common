@@ -356,7 +356,6 @@ describe.concurrent('listDecisionProfiles', () => {
       await otherUserCaller.decision.createInstanceFromTemplate({
         templateId: setup.process.id,
         name: 'Other User Instance',
-        description: 'Instance owned by other user',
       });
     // Track the profile for cleanup
     testData.trackProfileForCleanup(otherUserInstance.id);
