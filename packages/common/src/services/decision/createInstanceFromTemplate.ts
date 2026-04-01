@@ -12,10 +12,7 @@ import type { User } from '@op/supabase/lib';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import {
-  type CustomRoleDefinition,
-  createDefaultDecisionRoles,
-} from './decisionRoles';
+import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
@@ -35,8 +32,6 @@ export type CreateDecisionInstanceOptions = {
   creatorEmail: string;
   /** Defaults to DRAFT */
   status?: ProcessStatus;
-  /** Custom roles to create alongside the default Admin and Participant roles. */
-  customRoles?: CustomRoleDefinition[];
 };
 
 /**
@@ -54,7 +49,6 @@ export const createDecisionInstance = async ({
   creatorAuthUserId,
   creatorEmail,
   status = ProcessStatus.DRAFT,
-  customRoles,
 }: CreateDecisionInstanceOptions) => {
   const instance = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
@@ -99,7 +93,6 @@ export const createDecisionInstance = async ({
     // Create default Admin and Participant roles
     const adminRole = await createDefaultDecisionRoles({
       profileId: instanceProfile.id,
-      customRoles,
       tx,
     });
 
