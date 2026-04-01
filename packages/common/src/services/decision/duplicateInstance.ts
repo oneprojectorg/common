@@ -1,18 +1,8 @@
 import { type TransactionType, db, eq } from '@op/db/client';
-import {
-  EntityType,
-  ProcessStatus,
-  accessRolePermissionsOnAccessZones,
-  accessRoles,
-  processInstances,
-  profileUserToAccessRoles,
-  profileUsers,
-  profiles,
-} from '@op/db/schema';
+import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 
 import { CommonError, NotFoundError } from '../../utils';
-import { generateUniqueProfileSlug } from '../profile/utils';
-import { createDecisionRole } from './decisionRoles';
+import { createDecisionInstance } from './createInstanceFromTemplate';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -42,13 +32,13 @@ export type DuplicateInstanceOptions = {
 
 /**
  * Duplicates a process instance into a new draft with selectable include options.
- * Follows the same creation pattern as createInstanceFromTemplateCore.
+ * Delegates core creation to createDecisionInstance, then copies custom roles separately.
  */
 export const duplicateInstance = async ({
   instanceId,
   name,
   ownerProfileId,
-  stewardProfileId = ownerProfileId,
+  stewardProfileId,
   creatorAuthUserId,
   creatorEmail,
   include,
@@ -66,6 +56,10 @@ export const duplicateInstance = async ({
     throw new CommonError('Source instance has no profile');
   }
 
+  if (!sourceInstance.processId) {
+    throw new CommonError('Source instance has no process template');
+  }
+
   const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
   if (!sourceData) {
     throw new CommonError('Source instance has no instance data');
@@ -74,162 +68,25 @@ export const duplicateInstance = async ({
   // Build new instance data based on include flags
   const newInstanceData = buildInstanceData(sourceData, include);
 
-  const instance = await db.transaction(async (tx) => {
-    // Create a DECISION profile for the new instance
-    const slug = await generateUniqueProfileSlug({
-      name: `decision-${name}`,
-      db: tx,
-    });
-
-    const [instanceProfile] = await tx
-      .insert(profiles)
-      .values({
-        type: EntityType.DECISION,
-        name,
-        slug,
-      })
-      .returning();
-
-    if (!instanceProfile) {
-      throw new CommonError('Failed to create decision instance profile');
-    }
-
-    // Run instance insert, role creation, custom role copy, and profile user
-    // insert in parallel — they all depend only on instanceProfile.id
-    const [instanceResult, [adminRole], , profileUserResult] =
-      await Promise.all([
-        // Create the new instance
-        tx
-          .insert(processInstances)
-          .values({
-            processId: sourceInstance.processId,
-            name,
-            description: sourceInstance.description,
-            instanceData: newInstanceData,
-            currentStateId: newInstanceData.currentPhaseId,
-            ownerProfileId,
-            stewardProfileId,
-            profileId: instanceProfile.id,
-            status: ProcessStatus.DRAFT,
-          })
-          .returning(),
-
-        // Create default roles (always created regardless of include.roles flag)
-        Promise.all([
-          createDecisionRole({
-            name: 'Admin',
-            profileId: instanceProfile.id,
-            permissions: {
-              profile: {
-                type: 'acrud',
-                value: {
-                  admin: true,
-                  create: true,
-                  read: true,
-                  update: true,
-                  delete: true,
-                },
-              },
-              decisions: {
-                type: 'decision',
-                value: {
-                  create: true,
-                  read: true,
-                  update: true,
-                  delete: true,
-                  admin: true,
-                  inviteMembers: true,
-                  review: true,
-                  submitProposals: true,
-                  vote: true,
-                },
-              },
-            },
-            tx,
-          }),
-          createDecisionRole({
-            name: 'Participant',
-            profileId: instanceProfile.id,
-            permissions: {
-              profile: {
-                type: 'acrud',
-                value: {
-                  admin: false,
-                  create: false,
-                  read: true,
-                  update: false,
-                  delete: false,
-                },
-              },
-              decisions: {
-                type: 'decision',
-                value: {
-                  create: false,
-                  read: true,
-                  update: false,
-                  delete: false,
-                  admin: false,
-                  inviteMembers: false,
-                  review: false,
-                  submitProposals: true,
-                  vote: true,
-                },
-              },
-            },
-            tx,
-          }),
-        ]),
-
-        // Copy custom roles from source if requested
-        include.roles
-          ? copyCustomRoles({
-              sourceProfileId: sourceInstance.profileId!,
-              targetProfileId: instanceProfile.id,
-              tx,
-            })
-          : Promise.resolve(),
-
-        // Add the creator as a profile user
-        tx
-          .insert(profileUsers)
-          .values({
-            profileId: instanceProfile.id,
-            authUserId: creatorAuthUserId,
-            email: creatorEmail,
-            isOwner: true,
-          })
-          .returning(),
-      ]);
-
-    const [newInstance] = instanceResult;
-    if (!newInstance) {
-      throw new CommonError('Failed to create duplicated process instance');
-    }
-
-    const [newProfileUser] = profileUserResult;
-    if (!newProfileUser) {
-      throw new CommonError('Failed to add creator as profile user');
-    }
-
-    // Assign admin role to creator — depends on both adminRole and newProfileUser
-    await tx.insert(profileUserToAccessRoles).values({
-      profileUserId: newProfileUser.id,
-      accessRoleId: adminRole.id,
-    });
-
-    return newInstance;
+  // Delegate core creation (profile, instance, default roles, profile user)
+  const profile = await createDecisionInstance({
+    processId: sourceInstance.processId,
+    name,
+    description: sourceInstance.description ?? undefined,
+    ownerProfileId,
+    stewardProfileId,
+    creatorAuthUserId,
+    creatorEmail,
+    instanceData: newInstanceData,
   });
 
-  // Fetch the profile with processInstance joined for the response
-  const profile = await db.query.profiles.findFirst({
-    where: { id: instance.profileId! },
-    with: {
-      processInstance: true,
-    },
-  });
-
-  if (!profile) {
-    throw new CommonError('Failed to fetch created decision profile');
+  // Copy custom roles from source if requested (separate step because
+  // custom role copying works with raw DB records, not CustomRoleDefinition)
+  if (include.roles && profile.processInstance) {
+    await copyCustomRoles({
+      sourceProfileId: sourceInstance.profileId,
+      targetProfileId: profile.id,
+    });
   }
 
   return profile;
@@ -348,10 +205,12 @@ async function copyCustomRoles({
 }: {
   sourceProfileId: string;
   targetProfileId: string;
-  tx: TransactionType;
+  tx?: TransactionType;
 }) {
+  const client = tx ?? db;
+
   // Fetch all roles for the source profile with their zone permissions
-  const sourceRoles = await tx._query.accessRoles.findMany({
+  const sourceRoles = await client._query.accessRoles.findMany({
     where: eq(accessRoles.profileId, sourceProfileId),
     with: {
       zonePermissions: true,
@@ -365,7 +224,7 @@ async function copyCustomRoles({
 
   for (const role of customRoles) {
     // Create the role on the new profile
-    const [newRole] = await tx
+    const [newRole] = await client
       .insert(accessRoles)
       .values({
         name: role.name,
@@ -380,7 +239,7 @@ async function copyCustomRoles({
 
     // Copy zone permissions
     if (role.zonePermissions.length > 0) {
-      await tx.insert(accessRolePermissionsOnAccessZones).values(
+      await client.insert(accessRolePermissionsOnAccessZones).values(
         role.zonePermissions.map((zp) => ({
           accessRoleId: newRole.id,
           accessZoneId: zp.accessZoneId,
