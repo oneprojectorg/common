@@ -1,12 +1,10 @@
 import { OPURLConfig } from '@op/core';
-import { and, db, eq } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
   processInstances,
   profiles,
-  taxonomies,
-  taxonomyTerms,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
@@ -24,61 +22,7 @@ import type {
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
-
-async function ensureProposalTaxonomy(categories: string[]): Promise<void> {
-  if (categories.length === 0) {
-    return;
-  }
-
-  let proposalTaxonomy = await db._query.taxonomies.findFirst({
-    where: eq(taxonomies.name, 'proposal'),
-  });
-
-  if (!proposalTaxonomy) {
-    const [newTaxonomy] = await db
-      .insert(taxonomies)
-      .values({
-        name: 'proposal',
-        description:
-          'Categories for organizing proposals in decision-making processes',
-      })
-      .returning();
-
-    if (!newTaxonomy) {
-      throw new CommonError('Failed to create proposal taxonomy');
-    }
-
-    proposalTaxonomy = newTaxonomy;
-  }
-
-  for (const category of categories) {
-    const categoryLabel = category.trim();
-    if (!categoryLabel) {
-      continue;
-    }
-
-    const termUri = categoryLabel
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
-
-    const existingTerm = await db._query.taxonomyTerms.findFirst({
-      where: and(
-        eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
-        eq(taxonomyTerms.termUri, termUri),
-      ),
-    });
-
-    if (!existingTerm) {
-      await db.insert(taxonomyTerms).values({
-        taxonomyId: proposalTaxonomy.id,
-        termUri,
-        label: categoryLabel,
-        definition: `Category for ${categoryLabel} proposals`,
-      });
-    }
-  }
-}
+import { ensureProposalTaxonomy } from './utils/taxonomy';
 
 /**
  * Updates a decision process instance.
