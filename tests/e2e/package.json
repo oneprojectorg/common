@@ -6,7 +6,7 @@
   "scripts": {
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
+    "format:check": "biome check .",
     "supabase:migrate": "tsx supabase-e2e.ts migrate",
     "supabase:reset": "tsx supabase-e2e.ts reset",
     "supabase:seed": "tsx supabase-e2e.ts seed",
