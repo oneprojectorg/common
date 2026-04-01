@@ -9,7 +9,6 @@ import {
   proposalAttachments,
   proposalCategories,
   proposals,
-  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -31,6 +30,7 @@ import {
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
+import { resolveProposalCategoryTermIds } from './utils/taxonomy';
 
 export interface CreateProposalInput {
   processInstanceId: string;
@@ -104,31 +104,8 @@ export const createProposal = async ({
 
     // Pre-fetch category terms if specified to avoid lookup inside transaction
     const categoryLabels = parsedProposalData.category;
-    const categoryTermIds: string[] = [];
-
-    for (const categoryLabel of categoryLabels) {
-      try {
-        const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-          where: eq(taxonomyTerms.label, categoryLabel),
-          with: {
-            taxonomy: true,
-          },
-        });
-
-        if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
-          categoryTermIds.push(taxonomyTerm.id);
-        } else {
-          console.warn(
-            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
-          );
-        }
-      } catch (error) {
-        console.warn(
-          `Error fetching category term for category: ${categoryLabel}`,
-          error,
-        );
-      }
-    }
+    const categoryTermIds =
+      await resolveProposalCategoryTermIds(categoryLabels);
 
     const [profileId, adminRole] = await Promise.all([
       getCurrentProfileId(authUserId),

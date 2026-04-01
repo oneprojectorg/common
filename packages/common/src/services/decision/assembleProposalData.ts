@@ -1,7 +1,7 @@
 import {
   extractBudgetValue,
   normalizeBudget,
-  normalizeProposalCategories,
+  parseCategoryFragmentValue,
   schemaAllowsMultipleSelection,
 } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
@@ -38,11 +38,7 @@ export function assembleProposalData(
       case 'long-text':
       case 'dropdown':
         if (schemaAllowsMultipleSelection(schema)) {
-          try {
-            data[key] = normalizeProposalCategories(JSON.parse(text));
-          } catch {
-            data[key] = normalizeProposalCategories(text);
-          }
+          data[key] = parseCategoryFragmentValue(text);
         } else {
           data[key] = text;
         }

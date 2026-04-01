@@ -1,12 +1,10 @@
-import { type TransactionType, and, db, eq } from '@op/db/client';
+import { type TransactionType, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   type Visibility,
   profiles,
   proposalCategories,
   proposals,
-  taxonomies,
-  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
@@ -22,6 +20,7 @@ import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { resolveProposalCategoryTermIds } from './utils/taxonomy';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
@@ -30,7 +29,6 @@ async function updateProposalCategoryLink(
   proposalId: string,
   newCategoryLabels: string[],
 ): Promise<void> {
-  // Remove existing category links
   await tx
     .delete(proposalCategories)
     .where(eq(proposalCategories.proposalId, proposalId));
@@ -39,31 +37,10 @@ async function updateProposalCategoryLink(
     return;
   }
 
-  const proposalTaxonomy = await tx._query.taxonomies.findFirst({
-    where: eq(taxonomies.name, 'proposal'),
-  });
-
-  if (!proposalTaxonomy) {
-    console.warn('No "proposal" taxonomy found, skipping category linking');
-    return;
-  }
-
-  const taxonomyTermIds: string[] = [];
-
-  for (const categoryLabel of newCategoryLabels) {
-    const taxonomyTerm = await tx._query.taxonomyTerms.findFirst({
-      where: and(
-        eq(taxonomyTerms.label, categoryLabel),
-        eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
-      ),
-    });
-
-    if (taxonomyTerm) {
-      taxonomyTermIds.push(taxonomyTerm.id);
-    } else {
-      console.warn(`No taxonomy term found for category: ${categoryLabel}`);
-    }
-  }
+  const taxonomyTermIds = await resolveProposalCategoryTermIds(
+    newCategoryLabels,
+    tx,
+  );
 
   if (taxonomyTermIds.length > 0) {
     await tx.insert(proposalCategories).values(

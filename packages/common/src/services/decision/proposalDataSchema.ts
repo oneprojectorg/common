@@ -78,6 +78,18 @@ export function normalizeProposalCategories(raw: unknown): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
+export function parseCategoryFragmentValue(value: string): string[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    return normalizeProposalCategories(JSON.parse(value));
+  } catch {
+    return normalizeProposalCategories(value);
+  }
+}
+
 export function formatProposalCategories(
   categories: string[],
   separator = ', ',

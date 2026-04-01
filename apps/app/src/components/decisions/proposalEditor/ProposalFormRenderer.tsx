@@ -2,7 +2,7 @@
 
 import {
   formatProposalCategories,
-  normalizeProposalCategories,
+  parseCategoryFragmentValue,
   parseSchemaOptions,
   schemaAllowsMultipleSelection,
 } from '@op/common/client';
@@ -119,17 +119,7 @@ function getPreviewCategories({
   previewContent: JSONContent | null | undefined;
 }): string[] {
   if (mode === 'preview-version') {
-    const previewText = getFragmentText(previewContent);
-
-    if (!previewText) {
-      return [];
-    }
-
-    try {
-      return normalizeProposalCategories(JSON.parse(previewText));
-    } catch {
-      return normalizeProposalCategories(previewText);
-    }
+    return parseCategoryFragmentValue(getFragmentText(previewContent) ?? '');
   }
 
   return draftValue;

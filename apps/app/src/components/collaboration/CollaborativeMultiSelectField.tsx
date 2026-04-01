@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import { normalizeProposalCategories } from '@op/common/client';
+import { parseCategoryFragmentValue } from '@op/common/client';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -17,18 +17,6 @@ interface CollaborativeMultiSelectFieldProps {
   fragmentName: string;
   /** Placeholder text shown when no value is selected. */
   placeholder?: string;
-}
-
-function parseFragmentValue(value: string): string[] {
-  if (!value) {
-    return [];
-  }
-
-  try {
-    return normalizeProposalCategories(JSON.parse(value));
-  } catch {
-    return normalizeProposalCategories(value);
-  }
 }
 
 /**
@@ -54,7 +42,7 @@ export function CollaborativeMultiSelectField({
   );
 
   const selectedValues = useMemo(
-    () => parseFragmentValue(syncedValue),
+    () => parseCategoryFragmentValue(syncedValue),
     [syncedValue],
   );
   const selectedOptions = useMemo(
