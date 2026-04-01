@@ -88,7 +88,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - Follow existing code conventions and patterns in the file being edited
 - Using `any` to fix type errors should always be avoided
 - Avoide type assertions (`as` keyword)
-- Code quality is enforced via **Prettier** (pnpm format) and **TypeScript** (type checking) only
+- Code quality is enforced via **Biome** (pnpm format) and **TypeScript** (type checking) only
 
 ### Coding Conventions
 

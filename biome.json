@@ -24,20 +24,14 @@
     }
   },
   "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "nursery": {
-        "useSortedClasses": "warn"
-      }
-    }
+    "enabled": false
   },
   "css": {
-    "linter": {
-      "enabled": true
-    },
     "formatter": {
-      "enabled": true
+      "enabled": false
+    },
+    "parser": {
+      "cssModules": true
     }
   },
   "files": {
@@ -54,7 +48,9 @@
       "storybook-static",
       "playwright-report/",
       "test-results/",
-      "playwright/.auth/"
+      "playwright/.auth/",
+      ".claude/",
+      "*.css"
     ]
   }
 }
