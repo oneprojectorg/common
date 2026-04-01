@@ -94,116 +94,124 @@ export const duplicateInstance = async ({
       throw new CommonError('Failed to create decision instance profile');
     }
 
-    // Create the new instance
-    const [newInstance] = await tx
-      .insert(processInstances)
-      .values({
-        processId: sourceInstance.processId,
-        name,
-        description: sourceInstance.description,
-        instanceData: newInstanceData,
-        currentStateId: newInstanceData.currentPhaseId,
-        ownerProfileId,
-        stewardProfileId,
-        profileId: instanceProfile.id,
-        status: ProcessStatus.DRAFT,
-      })
-      .returning();
+    // Run instance insert, role creation, custom role copy, and profile user
+    // insert in parallel — they all depend only on instanceProfile.id
+    const [instanceResult, [adminRole], , profileUserResult] =
+      await Promise.all([
+        // Create the new instance
+        tx
+          .insert(processInstances)
+          .values({
+            processId: sourceInstance.processId,
+            name,
+            description: sourceInstance.description,
+            instanceData: newInstanceData,
+            currentStateId: newInstanceData.currentPhaseId,
+            ownerProfileId,
+            stewardProfileId,
+            profileId: instanceProfile.id,
+            status: ProcessStatus.DRAFT,
+          })
+          .returning(),
 
+        // Create default roles (always created regardless of include.roles flag)
+        Promise.all([
+          createDecisionRole({
+            name: 'Admin',
+            profileId: instanceProfile.id,
+            permissions: {
+              profile: {
+                type: 'acrud',
+                value: {
+                  admin: true,
+                  create: true,
+                  read: true,
+                  update: true,
+                  delete: true,
+                },
+              },
+              decisions: {
+                type: 'decision',
+                value: {
+                  create: true,
+                  read: true,
+                  update: true,
+                  delete: true,
+                  admin: true,
+                  inviteMembers: true,
+                  review: true,
+                  submitProposals: true,
+                  vote: true,
+                },
+              },
+            },
+            tx,
+          }),
+          createDecisionRole({
+            name: 'Participant',
+            profileId: instanceProfile.id,
+            permissions: {
+              profile: {
+                type: 'acrud',
+                value: {
+                  admin: false,
+                  create: false,
+                  read: true,
+                  update: false,
+                  delete: false,
+                },
+              },
+              decisions: {
+                type: 'decision',
+                value: {
+                  create: false,
+                  read: true,
+                  update: false,
+                  delete: false,
+                  admin: false,
+                  inviteMembers: false,
+                  review: false,
+                  submitProposals: true,
+                  vote: true,
+                },
+              },
+            },
+            tx,
+          }),
+        ]),
+
+        // Copy custom roles from source if requested
+        include.roles
+          ? copyCustomRoles({
+              sourceProfileId: sourceInstance.profileId!,
+              targetProfileId: instanceProfile.id,
+              tx,
+            })
+          : Promise.resolve(),
+
+        // Add the creator as a profile user
+        tx
+          .insert(profileUsers)
+          .values({
+            profileId: instanceProfile.id,
+            authUserId: creatorAuthUserId,
+            email: creatorEmail,
+            isOwner: true,
+          })
+          .returning(),
+      ]);
+
+    const [newInstance] = instanceResult;
     if (!newInstance) {
       throw new CommonError('Failed to create duplicated process instance');
     }
 
-    // Create default roles (always created regardless of include.roles flag)
-    const [adminRole] = await Promise.all([
-      createDecisionRole({
-        name: 'Admin',
-        profileId: instanceProfile.id,
-        permissions: {
-          profile: {
-            type: 'acrud',
-            value: {
-              admin: true,
-              create: true,
-              read: true,
-              update: true,
-              delete: true,
-            },
-          },
-          decisions: {
-            type: 'decision',
-            value: {
-              create: true,
-              read: true,
-              update: true,
-              delete: true,
-              admin: true,
-              inviteMembers: true,
-              review: true,
-              submitProposals: true,
-              vote: true,
-            },
-          },
-        },
-        tx,
-      }),
-      createDecisionRole({
-        name: 'Participant',
-        profileId: instanceProfile.id,
-        permissions: {
-          profile: {
-            type: 'acrud',
-            value: {
-              admin: false,
-              create: false,
-              read: true,
-              update: false,
-              delete: false,
-            },
-          },
-          decisions: {
-            type: 'decision',
-            value: {
-              create: false,
-              read: true,
-              update: false,
-              delete: false,
-              admin: false,
-              inviteMembers: false,
-              review: false,
-              submitProposals: true,
-              vote: true,
-            },
-          },
-        },
-        tx,
-      }),
-    ]);
-
-    // Copy custom roles from source if include.roles is true
-    if (include.roles) {
-      await copyCustomRoles({
-        sourceProfileId: sourceInstance.profileId!,
-        targetProfileId: instanceProfile.id,
-        tx,
-      });
-    }
-
-    // Add the creator as a profile user with Admin role
-    const [newProfileUser] = await tx
-      .insert(profileUsers)
-      .values({
-        profileId: instanceProfile.id,
-        authUserId: creatorAuthUserId,
-        email: creatorEmail,
-        isOwner: true,
-      })
-      .returning();
-
+    const [newProfileUser] = profileUserResult;
     if (!newProfileUser) {
       throw new CommonError('Failed to add creator as profile user');
     }
 
+    // Assign admin role to creator — depends on both adminRole and newProfileUser
     await tx.insert(profileUserToAccessRoles).values({
       profileUserId: newProfileUser.id,
       accessRoleId: adminRole.id,
