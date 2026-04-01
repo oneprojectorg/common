@@ -64,21 +64,19 @@ const DuplicateFormContent = ({
   );
   const [stewardProfileId, setStewardProfileId] = useState('');
 
-  const includeKeys = [
-    'processSettings',
-    'phases',
-    'proposalCategories',
-    'proposalTemplate',
-    'reviewSettings',
-    'reviewRubric',
-    'roles',
+  const includeOptions = [
+    { key: 'processSettings', label: t('Process Settings') },
+    { key: 'phases', label: t('Phases') },
+    { key: 'proposalCategories', label: t('Proposal Categories') },
+    { key: 'proposalTemplate', label: t('Proposal Template') },
+    { key: 'reviewSettings', label: t('Review Settings') },
+    { key: 'reviewRubric', label: t('Review Rubric') },
+    { key: 'roles', label: t('Roles') },
   ] as const;
 
-  type IncludeKey = (typeof includeKeys)[number];
-
-  const [selectedIncludes, setSelectedIncludes] = useState<string[]>([
-    ...includeKeys,
-  ]);
+  const [selectedIncludes, setSelectedIncludes] = useState<string[]>(
+    includeOptions.map((o) => o.key),
+  );
 
   const duplicateMutation = trpc.decision.duplicateInstance.useMutation({
     onSuccess: () => {
@@ -104,23 +102,10 @@ const DuplicateFormContent = ({
       name: name.trim(),
       stewardProfileId,
       include: Object.fromEntries(
-        includeKeys.map((key) => [key, selectedIncludes.includes(key)]),
-      ) as Record<IncludeKey, boolean>,
+        includeOptions.map((o) => [o.key, selectedIncludes.includes(o.key)]),
+      ) as Record<(typeof includeOptions)[number]['key'], boolean>,
     });
   };
-
-  const includeOptions: Array<{
-    key: IncludeKey;
-    label: string;
-  }> = [
-    { key: 'processSettings', label: t('Process Settings') },
-    { key: 'phases', label: t('Phases') },
-    { key: 'proposalCategories', label: t('Proposal Categories') },
-    { key: 'proposalTemplate', label: t('Proposal Template') },
-    { key: 'reviewSettings', label: t('Review Settings') },
-    { key: 'reviewRubric', label: t('Review Rubric') },
-    { key: 'roles', label: t('Roles') },
-  ];
 
   return (
     <>
