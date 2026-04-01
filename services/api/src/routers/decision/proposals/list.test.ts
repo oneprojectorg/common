@@ -46,12 +46,12 @@ describe.concurrent('listProposals', () => {
     // Create multiple proposals and caller in parallel
     const [proposal1, proposal2, caller] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'First Proposal', description: 'Description 1' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: {
           title: 'Second Proposal',
@@ -98,7 +98,7 @@ describe.concurrent('listProposals', () => {
 
     // Member creates a proposal
     await testData.createProposal({
-      callerEmail: memberUser.email,
+      userEmail: memberUser.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -132,7 +132,7 @@ describe.concurrent('listProposals', () => {
     // Create proposal and non-admin member in parallel
     const [, memberUser] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Test Proposal', description: 'A test' },
       }),
@@ -176,7 +176,7 @@ describe.concurrent('listProposals', () => {
     // Submitter creates their own proposal and caller in parallel
     const [proposal, submitterCaller] = await Promise.all([
       testData.createProposal({
-        callerEmail: submitter.email,
+        userEmail: submitter.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'My Proposal', description: 'My description' },
       }),
@@ -211,12 +211,12 @@ describe.concurrent('listProposals', () => {
     const [visibleProposal, hiddenProposal, adminCaller, memberUser] =
       await Promise.all([
         testData.createProposal({
-          callerEmail: setup.userEmail,
+          userEmail: setup.userEmail,
           processInstanceId: instance.instance.id,
           proposalData: { title: 'Visible Proposal', description: 'A test' },
         }),
         testData.createProposal({
-          callerEmail: setup.userEmail,
+          userEmail: setup.userEmail,
           processInstanceId: instance.instance.id,
           proposalData: { title: 'Hidden Proposal', description: 'A test' },
         }),
@@ -279,12 +279,12 @@ describe.concurrent('listProposals', () => {
     // Create visible and hidden proposals (by member) and admin caller in parallel
     const [visibleProposal, hiddenProposal, adminCaller] = await Promise.all([
       testData.createProposal({
-        callerEmail: memberUser.email,
+        userEmail: memberUser.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Visible Proposal', description: 'A test' },
       }),
       testData.createProposal({
-        callerEmail: memberUser.email,
+        userEmail: memberUser.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Hidden Proposal', description: 'A test' },
       }),
@@ -342,7 +342,7 @@ describe.concurrent('listProposals', () => {
     ]);
 
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Proposal', description: 'My description' },
     });
@@ -383,17 +383,17 @@ describe.concurrent('listProposals', () => {
     // Create 3 proposals and caller in parallel
     const [, , , caller] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal 1', description: 'Desc 1' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal 2', description: 'Desc 2' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal 3', description: 'Desc 3' },
       }),
@@ -443,7 +443,7 @@ describe.concurrent('listProposals', () => {
     const [newFormatProposal, legacyProposal, caller] = await Promise.all([
       // New format: API generates collaborationDocId
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: {
           title: 'New Format Proposal',
@@ -451,7 +451,7 @@ describe.concurrent('listProposals', () => {
       }),
       // Legacy format: uses description field (HTML content)
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: {
           title: 'Legacy Proposal',
@@ -530,7 +530,7 @@ describe.concurrent('listProposals', () => {
 
     // Create a proposal
     await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -584,7 +584,7 @@ describe.concurrent('listProposals', () => {
 
     const [proposal, caller] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: {
           title: 'Legacy Proposal',
@@ -623,7 +623,7 @@ describe.concurrent('listProposals', () => {
 
     // Create proposal first to get the API-generated collaborationDocId
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Collab Proposal',
@@ -682,7 +682,7 @@ describe.concurrent('listProposals', () => {
 
     const [proposal, caller] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: {
           title: 'Failed Fetch Proposal',
@@ -719,12 +719,12 @@ describe.concurrent('listProposals', () => {
     // Create proposals first to get API-generated collaborationDocIds
     const [proposal1, proposal2] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal 1' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal 2' },
       }),
@@ -795,17 +795,17 @@ describe.concurrent('listProposals', () => {
     // Create proposals first (collab and empty both get API-generated docIds)
     const [collabProposal, legacyProposal, emptyProposal] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Collab' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Legacy', description: '<p>HTML</p>' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Empty' },
       }),
@@ -917,12 +917,12 @@ describe.concurrent('listProposals', () => {
     // 3. Create proposals and raw-patch their data to simulate legacy DB state
     const [proposalA, proposalB] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Legacy A' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Legacy B' },
       }),
@@ -1011,12 +1011,12 @@ describe.concurrent('listProposals', () => {
     // Create proposals via API (new schema — gets collaborationDocId)
     const [newSchemaProposal, legacyProposal] = await Promise.all([
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'New Schema' },
       }),
       testData.createProposal({
-        callerEmail: setup.userEmail,
+        userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Legacy' },
       }),
@@ -1124,7 +1124,7 @@ describe.concurrent('listProposals', () => {
 
     // Creator makes a proposal (starts as DRAFT)
     const draftProposal = await testData.createProposal({
-      callerEmail: creator.email,
+      userEmail: creator.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Draft Proposal' },
     });
@@ -1187,7 +1187,7 @@ describe.concurrent('listProposals', () => {
     });
 
     await testData.createProposal({
-      callerEmail: member.email,
+      userEmail: member.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Member Draft' },
     });
@@ -1236,7 +1236,7 @@ describe.concurrent('listProposals', () => {
 
     // Member A creates a draft proposal
     await testData.createProposal({
-      callerEmail: memberA.email,
+      userEmail: memberA.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Member A Draft' },
     });
@@ -1273,7 +1273,7 @@ describe.concurrent('listProposals', () => {
     });
 
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Submitted Proposal' },
     });
@@ -1325,7 +1325,7 @@ describe.concurrent('listProposals', () => {
     });
 
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Submitted Proposal' },
     });
@@ -1370,7 +1370,7 @@ describe.concurrent('listProposals', () => {
     });
 
     const draftProposal = await testData.createProposal({
-      callerEmail: creator.email,
+      userEmail: creator.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Shared Draft' },
     });
@@ -1433,12 +1433,12 @@ describe.concurrent('listProposals', () => {
     // Member A creates a draft and a submitted proposal
     const [draftA, submittedA] = await Promise.all([
       testData.createProposal({
-        callerEmail: memberA.email,
+        userEmail: memberA.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Draft A' },
       }),
       testData.createProposal({
-        callerEmail: memberA.email,
+        userEmail: memberA.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Submitted A' },
       }),
@@ -1452,7 +1452,7 @@ describe.concurrent('listProposals', () => {
 
     // Member B creates their own draft
     const draftB = await testData.createProposal({
-      callerEmail: memberB.email,
+      userEmail: memberB.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Draft B' },
     });
@@ -1527,7 +1527,7 @@ describe.concurrent('listProposals', () => {
     const instance = setup.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Stale Title' },
     });

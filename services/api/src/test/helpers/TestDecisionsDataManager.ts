@@ -506,15 +506,15 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Creates a proposal via the tRPC router and tracks its profile for cleanup.
+   * Creates a proposal via the decision service and tracks its profile for cleanup.
    * If `description` is provided, removes `collaborationDocId` to simulate legacy proposals.
    */
   async createProposal({
-    callerEmail,
+    userEmail,
     processInstanceId,
     proposalData,
   }: {
-    callerEmail: string;
+    userEmail: string;
     processInstanceId: string;
     proposalData: {
       title: string;
@@ -524,7 +524,7 @@ export class TestDecisionsDataManager {
   }) {
     this.ensureCleanupRegistered();
 
-    const user = await this.getAuthUserByEmail(callerEmail);
+    const user = await this.getAuthUserByEmail(userEmail);
     const proposal = await createProposalService({
       data: {
         processInstanceId,

@@ -53,7 +53,7 @@ describe.concurrent('getProposal', () => {
     };
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData,
     });
@@ -92,7 +92,7 @@ describe.concurrent('getProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test proposal' },
     });
@@ -136,7 +136,7 @@ describe.concurrent('getProposal', () => {
 
     // MemberA creates a proposal and it gets submitted
     const proposal = await testData.createProposal({
-      callerEmail: memberA.email,
+      userEmail: memberA.email,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Test Proposal',
@@ -183,7 +183,7 @@ describe.concurrent('getProposal', () => {
 
     // Submitter creates their own proposal
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Proposal', description: 'My description' },
     });
@@ -233,7 +233,7 @@ describe.concurrent('getProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Hidden Proposal', description: 'A test' },
     });
@@ -281,7 +281,7 @@ describe.concurrent('getProposal', () => {
     ]);
 
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Proposal', description: 'My description' },
     });
@@ -320,7 +320,7 @@ describe.concurrent('getProposal', () => {
 
     // Create proposal first to get the API-generated collaborationDocId
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'TipTap Test Proposal',
@@ -378,7 +378,7 @@ describe.concurrent('getProposal', () => {
     // 404 is the default behavior when docId not in docResponses
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Missing Doc Proposal',
@@ -434,7 +434,7 @@ describe.concurrent('getProposal', () => {
     };
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Submitted Versioned Proposal',
@@ -520,7 +520,7 @@ describe.concurrent('getProposal', () => {
     const instance = setup.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Stale Title' },
     });
@@ -628,7 +628,7 @@ describe.concurrent('getProposal', () => {
     };
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Draft Versioned Proposal',
@@ -687,7 +687,7 @@ describe.concurrent('getProposal', () => {
 
     // Create proposal first
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Legacy Data Test',
@@ -806,7 +806,7 @@ describe.concurrent('getProposal', () => {
 
     // 3. Create proposal and simulate legacy data with budget as plain number
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Cowop Legacy Proposal' },
     });
@@ -901,7 +901,7 @@ describe.concurrent('getProposal', () => {
       .where(eq(processInstances.id, instance.instance.id));
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Horizon Legacy Proposal' },
     });
@@ -989,7 +989,7 @@ describe.concurrent('getProposal', () => {
       .where(eq(processInstances.id, instance.instance.id));
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Simple Legacy Proposal' },
     });
@@ -1053,7 +1053,7 @@ describe.concurrent('getProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Plain Number Budget' },
     });
@@ -1101,7 +1101,7 @@ describe.concurrent('getProposal', () => {
     const { instance } = setup.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Org Admin Fallback Proposal' },
     });
@@ -1132,7 +1132,7 @@ describe.concurrent('getProposal', () => {
     const { instance } = setup.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Org Member Fallback Proposal' },
     });
@@ -1175,7 +1175,7 @@ describe.concurrent('getProposal', () => {
     const { instance, profileId } = setup.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Cross-Org Profile Access Proposal' },
     });
@@ -1224,7 +1224,7 @@ describe.concurrent('getProposal', () => {
     const { instance } = setup.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Unauthorized Proposal' },
     });
@@ -1265,7 +1265,7 @@ describe.concurrent('getProposal', () => {
 
     // Create a proposal
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Proposal With Attachments',
@@ -1334,7 +1334,7 @@ describe.concurrent('getProposal', () => {
 
     // createProposal creates in DRAFT status by default
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Draft Proposal' },
     });
@@ -1386,7 +1386,7 @@ describe.concurrent('getProposal', () => {
 
     // Submitter creates a draft proposal
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Secret Draft' },
     });
@@ -1430,7 +1430,7 @@ describe.concurrent('getProposal', () => {
 
     // Submitter creates and submits a proposal
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Public Submitted Proposal' },
     });

@@ -62,13 +62,13 @@ describe('translation.translateProposals', () => {
 
     // Create two proposals with different content
     const proposal1 = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Solar Panel Initiative' },
     });
 
     const proposal2 = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Water Purification Project' },
     });
@@ -165,7 +165,7 @@ describe('translation.translateProposals', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Cached Batch Proposal' },
     });
@@ -235,7 +235,7 @@ describe('translation.translateProposals', () => {
 
     // Create a proposal with a title but an empty TipTap document
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Minimal Proposal' },
     });

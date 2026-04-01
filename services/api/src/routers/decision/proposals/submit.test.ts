@@ -42,7 +42,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Valid Proposal',
@@ -76,7 +76,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Already Submitted', description: 'A test' },
     });
@@ -115,7 +115,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Phase Blocked', description: 'A test' },
     });
@@ -170,7 +170,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Unauthorized Proposal', description: 'A test' },
     });
@@ -235,7 +235,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Proposal with vendor extensions' },
     });
@@ -310,7 +310,7 @@ describe.concurrent('submitProposal', () => {
 
     // Create a proposal with an empty title
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: '' },
     });
@@ -358,7 +358,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'A title that is too long' },
     });
@@ -438,7 +438,7 @@ describe.concurrent('submitProposal', () => {
 
     // Create proposal with only title — missing the UUID-keyed required fields
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Incomplete Proposal' },
     });
@@ -496,7 +496,7 @@ describe.concurrent('submitProposal', () => {
     // Create a proposal, then directly overwrite proposalData
     // with a budget that exceeds the template maximum
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Over Budget Proposal' },
     });
@@ -570,7 +570,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Has Title' },
     });
@@ -637,7 +637,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'No Budget' },
     });
@@ -726,7 +726,7 @@ describe.concurrent('submitProposal', () => {
     //    Legacy proposals have no collaborationDocId — the submit path validates
     //    proposalData directly instead of reading from a collaboration document.
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Legacy Submit Test' },
     });
@@ -791,7 +791,7 @@ describe.concurrent('submitProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'OneOf Category Test' },
     });

@@ -37,7 +37,7 @@ describe.concurrent('updateProposal visibility', () => {
 
     // Create a proposal via router
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -71,7 +71,7 @@ describe.concurrent('updateProposal visibility', () => {
 
     // Create a proposal via router
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -111,7 +111,7 @@ describe.concurrent('updateProposal visibility', () => {
 
     // Create a proposal as the admin via router
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -153,13 +153,13 @@ describe.concurrent('updateProposal visibility', () => {
 
     // Create two proposals via router
     const visibleProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Visible Proposal', description: 'A test' },
     });
 
     const hiddenProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Hidden Proposal', description: 'A test' },
     });
@@ -223,7 +223,7 @@ describe.concurrent('updateProposal visibility', () => {
 
     // Submitter creates a proposal via router
     const proposal = await testData.createProposal({
-      callerEmail: submitter.email,
+      userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Proposal', description: 'A test' },
     });
@@ -264,13 +264,13 @@ describe.concurrent('updateProposal visibility', () => {
 
     // Create two proposals via router
     await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Visible Proposal', description: 'A test' },
     });
 
     const hiddenProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Hidden Proposal', description: 'A test' },
     });
@@ -311,7 +311,7 @@ describe.concurrent('updateProposal status', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -344,7 +344,7 @@ describe.concurrent('updateProposal status', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -375,7 +375,7 @@ describe.concurrent('updateProposal status', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -415,7 +415,7 @@ describe.concurrent('updateProposal status', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -460,7 +460,7 @@ describe.concurrent('updateProposal status', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -518,7 +518,7 @@ describe.concurrent('updateProposal validation', () => {
 
     // Proposal is created in DRAFT status by default
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Draft' },
     });
@@ -570,7 +570,7 @@ describe.concurrent('updateProposal validation', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Draft' },
     });

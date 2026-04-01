@@ -38,7 +38,7 @@ describe.concurrent('deleteProposalAttachment', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -95,7 +95,7 @@ describe.concurrent('deleteProposalAttachment', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
@@ -165,7 +165,7 @@ describe.concurrent('deleteProposalAttachment', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });

@@ -38,7 +38,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal' },
     });
@@ -122,7 +122,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal' },
     });
@@ -203,7 +203,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal' },
     });
@@ -301,7 +301,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal' },
     });
@@ -379,7 +379,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Test Proposal' },
     });
