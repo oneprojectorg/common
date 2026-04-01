@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { useMemo } from 'react';
 
@@ -16,6 +17,8 @@ export function useNavigationConfig(
     { enabled: !!instanceId },
   );
 
+  const reviewFlowEnabled = useFeatureFlag('review_flow');
+
   const phases = instance?.instanceData?.phases ?? [];
   const hasReviewPhase = phases.some(
     (p) => p.rules?.proposals?.review === true,
@@ -24,8 +27,14 @@ export function useNavigationConfig(
   return useMemo(
     () => ({
       ...DEFAULT_NAVIGATION_CONFIG,
-      steps: { ...DEFAULT_NAVIGATION_CONFIG.steps, rubric: hasReviewPhase },
+      steps: { ...DEFAULT_NAVIGATION_CONFIG.steps, reviews: hasReviewPhase },
+      sections: {
+        ...DEFAULT_NAVIGATION_CONFIG.sections,
+        reviews: reviewFlowEnabled
+          ? ['reviewSettings', 'reviewRubric']
+          : ['criteria'],
+      },
     }),
-    [hasReviewPhase],
+    [hasReviewPhase, reviewFlowEnabled],
   );
 }

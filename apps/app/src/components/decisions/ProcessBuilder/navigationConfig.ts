@@ -5,7 +5,7 @@ import type { TranslationKey } from '@/lib/i18n';
 export const STEPS = [
   { id: 'general', labelKey: 'General' },
   { id: 'template', labelKey: 'Proposal Template' },
-  { id: 'rubric', labelKey: 'Review Rubric' },
+  { id: 'reviews', labelKey: 'Reviews' },
   { id: 'participants', labelKey: 'Participants' },
   { id: 'summary', labelKey: 'Summary' },
 ] as const;
@@ -20,7 +20,11 @@ export const SECTIONS_BY_STEP = {
     { id: 'proposalCategories', labelKey: 'Proposal Categories' },
   ],
   template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
-  rubric: [{ id: 'criteria', labelKey: 'Criteria' }],
+  reviews: [
+    { id: 'criteria', labelKey: 'Review Rubric' },
+    { id: 'reviewSettings', labelKey: 'Reviews' },
+    { id: 'reviewRubric', labelKey: 'Review Rubric' },
+  ],
   participants: [
     { id: 'roles', labelKey: 'Roles & permissions' },
     { id: 'participants', labelKey: 'Participants' },
@@ -45,25 +49,28 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
   steps: {
     general: true,
     template: true,
-    rubric: false,
+    reviews: false,
     participants: true,
     summary: true,
   },
   sections: {
     general: ['overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
-    rubric: ['criteria'],
+    reviews: ['criteria'],
     participants: ['roles', 'participants'],
     summary: ['summary'],
   },
 };
 
 // Flat sidebar items for the unified sidebar navigation
+// TODO: Consider using parentSectionId for dynamic items (phases) too,
+// which would let us remove the isDynamic discriminator entirely.
 export type SidebarItem =
   | {
       id: SectionId;
       labelKey: TranslationKey;
       parentStepId?: StepId;
+      parentSectionId?: SectionId;
       isDynamic?: false;
     }
   | { id: string; labelKey: string; parentStepId?: StepId; isDynamic: true };
@@ -84,7 +91,18 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'criteria',
     labelKey: 'Review Rubric',
-    parentStepId: 'rubric',
+    parentStepId: 'reviews',
+  },
+  {
+    id: 'reviewSettings',
+    labelKey: 'Reviews',
+    parentStepId: 'reviews',
+  },
+  {
+    id: 'reviewRubric',
+    labelKey: 'Review Rubric',
+    parentStepId: 'reviews',
+    parentSectionId: 'reviewSettings',
   },
   {
     id: 'roles',

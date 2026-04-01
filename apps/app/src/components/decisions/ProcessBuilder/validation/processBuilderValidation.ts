@@ -88,6 +88,10 @@ const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
   criteria: (data) =>
     !hasReviewPhase(data) ||
     (hasRubricCriteria(data) && allRubricCriteriaValid(data)),
+  reviewSettings: () => true,
+  reviewRubric: (data) =>
+    !hasReviewPhase(data) ||
+    (hasRubricCriteria(data) && allRubricCriteriaValid(data)),
   roles: () => true,
   participants: () => true,
   summary: (data) => LAUNCH_CHECKLIST.every((item) => item.validate(data)),

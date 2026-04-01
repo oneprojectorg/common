@@ -1,4 +1,4 @@
-import { proposalDataSchema } from '@op/common/client';
+import { REVIEWS_POLICIES, proposalDataSchema } from '@op/common/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -159,6 +159,9 @@ const categoryEncoder = z.object({
   description: z.string(),
 });
 
+/** Reviews policy enum */
+const reviewsPolicyEncoder = z.enum(REVIEWS_POLICIES);
+
 /** Process-level configuration */
 const processConfigEncoder = z.object({
   hideBudget: z.boolean().optional(),
@@ -168,6 +171,9 @@ const processConfigEncoder = z.object({
   organizeByCategories: z.boolean().optional(),
   requireCollaborativeProposals: z.boolean().optional(),
   isPrivate: z.boolean().optional(),
+  reviewsPolicy: reviewsPolicyEncoder.optional(),
+  reviewsAllowRevisions: z.boolean().optional(),
+  reviewsAnonymousFeedback: z.boolean().optional(),
 });
 
 /** DecisionSchemaDefinition encoder */
@@ -637,17 +643,7 @@ export const updateDecisionInstanceInputSchema = z.object({
   status: z.enum(ProcessStatus).optional(),
   stewardProfileId: z.string().uuid().optional(),
   /** Process-level configuration (e.g., hideBudget, categories) */
-  config: z
-    .object({
-      hideBudget: z.boolean().optional(),
-      categories: z.array(categoryEncoder).optional(),
-      requireCategorySelection: z.boolean().optional(),
-      allowMultipleCategories: z.boolean().optional(),
-      organizeByCategories: z.boolean().optional(),
-      requireCollaborativeProposals: z.boolean().optional(),
-      isPrivate: z.boolean().optional(),
-    })
-    .optional(),
+  config: processConfigEncoder.optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
   /** Proposal template (JSON Schema) */

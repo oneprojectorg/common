@@ -984,5 +984,19 @@
   "Untitled field": "Untitled field",
   "Delete field": "Delete field",
   "Are you sure you want to delete this field? This action cannot be undone.": "Are you sure you want to delete this field? This action cannot be undone.",
-  "A decision-making process stewarded by {stewardName}.": "A decision-making process stewarded by {stewardName}."
+  "A decision-making process stewarded by {stewardName}.": "A decision-making process stewarded by {stewardName}.",
+  "Reviews": "Reviews",
+  "Coverage": "Coverage",
+  "How should proposals get distributed to reviewers?": "How should proposals get distributed to reviewers?",
+  "Full coverage": "Full coverage",
+  "Every reviewer scores every proposal": "Every reviewer scores every proposal",
+  "Self-selection": "Self-selection",
+  "Reviewers choose what proposals to review": "Reviewers choose what proposals to review",
+  "Random assignment": "Random assignment",
+  "Proposals are randomly distributed among reviewers": "Proposals are randomly distributed among reviewers",
+  "Revisions": "Revisions",
+  "Reviewers can request revisions": "Reviewers can request revisions",
+  "Reviewers can ask authors to revise their proposal before scoring": "Reviewers can ask authors to revise their proposal before scoring",
+  "Anonymous feedback": "Anonymous feedback",
+  "Revision feedback appears without reviewer names": "Revision feedback appears without reviewer names"
 }

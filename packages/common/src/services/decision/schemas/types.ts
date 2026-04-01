@@ -57,6 +57,14 @@ export interface ProposalCategory {
   description: string;
 }
 
+export const REVIEWS_POLICIES = [
+  'full_coverage',
+  'self_selection',
+  'random_assignment',
+] as const;
+
+export type ReviewsPolicy = (typeof REVIEWS_POLICIES)[number];
+
 export interface ProcessConfig {
   hideBudget?: boolean;
   categories?: ProposalCategory[];
@@ -65,6 +73,9 @@ export interface ProcessConfig {
   organizeByCategories?: boolean;
   requireCollaborativeProposals?: boolean;
   isPrivate?: boolean;
+  reviewsPolicy?: ReviewsPolicy;
+  reviewsAllowRevisions?: boolean;
+  reviewsAnonymousFeedback?: boolean;
 }
 
 /**
