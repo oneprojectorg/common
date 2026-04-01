@@ -338,24 +338,11 @@ export function TemplateEditorContent({
         if (!existing) {
           return prev;
         }
-
-        const normalizedUpdates = Object.fromEntries(
-          Object.entries(updates).filter(([, value]) => value !== undefined),
-        );
-        const keysToRemove = new Set(
-          Object.entries(updates)
-            .filter(([, value]) => value === undefined)
-            .map(([key]) => key),
-        );
-        const normalizedExisting = Object.fromEntries(
-          Object.entries(existing).filter(([key]) => !keysToRemove.has(key)),
-        );
-
         return {
           ...prev,
           properties: {
             ...prev.properties,
-            [fieldId]: { ...normalizedExisting, ...normalizedUpdates },
+            [fieldId]: { ...existing, ...updates },
           },
         };
       });
