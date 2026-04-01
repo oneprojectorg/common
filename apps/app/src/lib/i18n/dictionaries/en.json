@@ -757,6 +757,7 @@
   "Manage Process": "Manage Process",
   "Invite Members": "Invite Members",
   "Review": "Review",
+  "Proposal": "Proposal",
   "Submit Proposals": "Submit Proposals",
   "Vote": "Vote",
   "Advanced permissions": "Advanced permissions",
@@ -998,5 +999,10 @@
   "Reviewers can request revisions": "Reviewers can request revisions",
   "Reviewers can ask authors to revise their proposal before scoring": "Reviewers can ask authors to revise their proposal before scoring",
   "Anonymous feedback": "Anonymous feedback",
-  "Revision feedback appears without reviewer names": "Revision feedback appears without reviewer names"
+  "Revision feedback appears without reviewer names": "Revision feedback appears without reviewer names",
+  "Previous": "Previous",
+  "Submit review": "Submit review",
+  "Proposal {current} of {total}": "Proposal {current} of {total}",
+  "{current} of {total}": "{current} of {total}",
+  "{count} completed": "{count} completed"
 }
