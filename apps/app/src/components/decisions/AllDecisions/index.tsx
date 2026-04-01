@@ -6,7 +6,7 @@ import { ProcessStatus } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { useSearchParams } from 'next/navigation';
+import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -109,7 +109,7 @@ const DecisionsListSuspense = ({
 const AllDecisionsTabs = () => {
   const t = useTranslations();
   const { user } = useUser();
-  const searchParams = useSearchParams();
+  const [tab] = useQueryState('tab');
   const ownerProfileId = user.currentProfile?.id;
 
   const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
@@ -119,8 +119,7 @@ const AllDecisionsTabs = () => {
   });
 
   const hasDrafts = draftsCheck.items.length > 0;
-  const tabParam = searchParams.get('tab');
-  const defaultTab = tabParam === 'drafts' && hasDrafts ? 'drafts' : 'active';
+  const defaultTab = tab === 'drafts' && hasDrafts ? 'drafts' : 'active';
 
   return (
     <Tabs defaultSelectedKey={defaultTab} key={defaultTab}>
