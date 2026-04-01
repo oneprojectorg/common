@@ -4,10 +4,10 @@ import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
+import { Header3 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
-import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -106,7 +106,12 @@ export const DuplicateProcessModal = ({
   ];
 
   return (
-    <Modal isOpen onOpenChange={(open) => !open && !duplicateMutation.isPending && onClose()} surface="flat">
+    <Modal
+      isOpen
+      onOpenChange={(open) =>
+        !open && !duplicateMutation.isPending && onClose()
+      }
+    >
       <ModalHeader className="pl-6 text-left">
         {t('Duplicate process')}
       </ModalHeader>
