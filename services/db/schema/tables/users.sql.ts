@@ -47,6 +47,7 @@ export const users = pgTable(
     }),
     tos: boolean(),
     privacy: boolean(),
+    // Used for measuring when a user completed onboarding
     onboardedAt: timestamp({ withTimezone: true, mode: 'string' }),
     ...timestamps,
   },
