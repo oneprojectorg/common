@@ -174,7 +174,7 @@ export function OverviewSectionForm({
   // synchronously on every save, so it's always the freshest source.
   const initialStewardProfileId =
     instanceData?.stewardProfileId ?? instance.steward?.id ?? '';
-  const initialName = instanceData?.name ?? instance.name ?? decisionName ?? '';
+  const initialName = instanceData?.name ?? decisionName ?? '';
   const initialDescription =
     instanceData?.description ?? instance.description ?? '';
 
