@@ -1,5 +1,6 @@
 import {
   createInstanceFromTemplateCore,
+  createOrganization as createOrganizationService,
   createProposal as createProposalService,
 } from '@op/common';
 import { db } from '@op/db/client';
@@ -26,18 +27,9 @@ import type {
   processInstanceWithSchemaEncoder,
 } from '../../encoders/decision';
 import { processInstanceWithSchemaEncoder as processInstanceEncoder } from '../../encoders/decision';
-import { appRouter } from '../../routers';
-import { createCallerFactory } from '../../trpcFactory';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-  createTestUser,
-  supabaseTestAdminClient,
-} from '../supabase-utils';
+import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
 
 type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
-
-const createCaller = createCallerFactory(appRouter);
 
 interface CreateDecisionSetupOptions {
   organizationName?: string;
@@ -116,14 +108,6 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Creates an authenticated tRPC caller for a user by email
-   */
-  private async createAuthenticatedCaller(email: string) {
-    const { session } = await createIsolatedSession(email);
-    return createCaller(await createTestContextWithSession(session));
-  }
-
-  /**
    * Resolves a Supabase auth user from an email without creating a session.
    */
   private async getAuthUserByEmail(email: string): Promise<User> {
@@ -158,8 +142,6 @@ export class TestDecisionsDataManager {
    * - An organization
    * - A decision process
    * - Optional process instances with profile access
-   *
-   * All operations go through the tRPC router boundary.
    *
    * @param opts - Options for setup creation
    * @returns Complete decision setup with user, organization, process, and instances
@@ -204,8 +186,6 @@ export class TestDecisionsDataManager {
     }
     this.createdProfileIds.push(userRecord.profileId);
 
-    const userProfileId = userRecord.profileId;
-
     const user: User = {
       id: authUser.id,
       email: authUser.email,
@@ -215,33 +195,31 @@ export class TestDecisionsDataManager {
       created_at: authUser.created_at,
     };
 
-    // Create authenticated caller for this user
-    const caller = await this.createAuthenticatedCaller(userEmail);
-
-    // 2. Create organization via router
-    const organization = await caller.organization.create({
-      name: this.generateUniqueName(organizationName),
-      website: 'https://test.com',
-      email: 'contact@test.com',
-      orgType: 'nonprofit',
-      bio: 'Organization for testing',
-      mission: 'To test decision profiles',
-      networkOrganization: false,
-      isReceivingFunds: false,
-      isOfferingFunds: false,
-      acceptingApplications: false,
+    // 2. Create organization via service
+    const organization = await createOrganizationService({
+      user,
+      data: {
+        name: this.generateUniqueName(organizationName),
+        website: 'https://test.com',
+        email: 'contact@test.com',
+        orgType: 'nonprofit',
+        bio: 'Organization for testing',
+        mission: 'To test decision profiles',
+        networkOrganization: false,
+        isReceivingFunds: false,
+        isOfferingFunds: false,
+        acceptingApplications: false,
+      },
     });
 
-    // Get profileId from the profile relation (available in the encoder response)
+    // Get profileId from the created profile
     const orgProfileId = organization.profile?.id;
     if (!orgProfileId) {
       throw new Error('Organization profile ID not found in response');
     }
     this.createdProfileIds.push(orgProfileId);
 
-    // 3. Create decision process via direct DB insert with new schema format
-    // We insert directly because the createProcess router uses the legacy format,
-    // but listDecisionProfiles and other new endpoints expect the new format.
+    // 3. Create decision process via direct DB insert with the new schema format
     const newProcessSchema = {
       ...testMinimalSchema,
       name: processName,
@@ -254,7 +232,7 @@ export class TestDecisionsDataManager {
         name: this.generateUniqueName(processName),
         description: processDescription,
         processSchema: newProcessSchema,
-        createdByProfileId: userProfileId,
+        createdByProfileId: userRecord.profileId,
       })
       .returning();
 
