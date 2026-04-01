@@ -1,3 +1,4 @@
+import { createProposal as createProposalService } from '@op/common';
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
@@ -116,6 +117,35 @@ export class TestDecisionsDataManager {
   private async createAuthenticatedCaller(email: string) {
     const { session } = await createIsolatedSession(email);
     return createCaller(await createTestContextWithSession(session));
+  }
+
+  /**
+   * Resolves a Supabase auth user from an email without creating a session.
+   */
+  private async getAuthUserByEmail(email: string): Promise<User> {
+    const [organizationUser] = await db
+      .select({ authUserId: organizationUsers.authUserId })
+      .from(organizationUsers)
+      .where(eq(organizationUsers.email, email));
+
+    if (!organizationUser?.authUserId) {
+      throw new Error(`Failed to find auth user for ${email}`);
+    }
+
+    if (!supabaseTestAdminClient) {
+      throw new Error('Supabase admin test client not initialized');
+    }
+
+    const { data, error } =
+      await supabaseTestAdminClient.auth.admin.getUserById(
+        organizationUser.authUserId,
+      );
+
+    if (error || !data.user) {
+      throw new Error(`Failed to load auth user for ${email}`);
+    }
+
+    return data.user;
   }
 
   /**
@@ -493,10 +523,13 @@ export class TestDecisionsDataManager {
   }) {
     this.ensureCleanupRegistered();
 
-    const caller = await this.createAuthenticatedCaller(callerEmail);
-    const proposal = await caller.decision.createProposal({
-      processInstanceId,
-      proposalData,
+    const user = await this.getAuthUserByEmail(callerEmail);
+    const proposal = await createProposalService({
+      data: {
+        processInstanceId,
+        proposalData,
+      },
+      user,
     });
 
     // Track the proposal's profile for cleanup
