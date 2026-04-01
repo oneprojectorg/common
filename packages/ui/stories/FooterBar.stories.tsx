@@ -7,6 +7,7 @@ import {
 
 import { Button } from '../src/components/Button';
 import { FooterBar } from '../src/components/FooterBar';
+import { StepperProgressIndicator } from '../src/components/Stepper';
 
 export default {
   title: 'FooterBar',
@@ -76,13 +77,10 @@ export const ProcessNavigation = () => (
       </FooterBar.Start>
 
       <FooterBar.Center className="gap-4">
-        <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2">
-          <div
-            className="absolute inset-y-0 left-0 rounded-full bg-gradient"
-            style={{ width: '48%' }}
-          />
+        <div className="w-40">
+          <StepperProgressIndicator currentStep={1} numItems={4} />
         </div>
-        <span className="shrink-0 text-base text-charcoal">48% complete</span>
+        <span className="shrink-0 text-base text-charcoal">50% complete</span>
       </FooterBar.Center>
 
       <FooterBar.End>
