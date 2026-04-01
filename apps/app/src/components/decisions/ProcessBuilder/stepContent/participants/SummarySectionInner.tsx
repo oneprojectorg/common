@@ -67,7 +67,7 @@ export function SummarySectionInner({
   const activeUsersCount = usersData.items?.length ?? 0;
   const participantsCount = activeUsersCount + (invites?.length ?? 0);
 
-  const processName = decisionName || instance.name || '';
+  const processName = decisionName || '';
 
   if (!isReadyToLaunch) {
     const incompleteItems = checklist.filter((item) => !item.isValid);

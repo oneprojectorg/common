@@ -99,7 +99,8 @@ export const duplicateInstance = async ({
       .insert(processInstances)
       .values({
         processId: sourceInstance.processId,
-        name: '',
+        name,
+        description: sourceInstance.description,
         instanceData: newInstanceData,
         currentStateId: newInstanceData.currentPhaseId,
         ownerProfileId,

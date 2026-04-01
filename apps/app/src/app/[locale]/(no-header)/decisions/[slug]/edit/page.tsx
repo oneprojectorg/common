@@ -36,7 +36,7 @@ const EditDecisionPage = async ({
 
   // Seed the store with server data so validation works immediately.
   const serverData: ProcessBuilderInstanceData = {
-    name: processInstance.name ?? undefined,
+    name: decisionProfile.name ?? undefined,
     description: processInstance.description ?? undefined,
     stewardProfileId: processInstance.steward?.id,
     phases: instanceData.phases,
