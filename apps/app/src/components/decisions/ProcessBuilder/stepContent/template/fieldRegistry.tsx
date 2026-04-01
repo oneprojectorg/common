@@ -7,6 +7,7 @@ import type { TranslationKey } from '@/lib/i18n';
 
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
+import { FieldConfigText } from './FieldConfigText';
 
 /**
  * Props passed to field config components.
@@ -35,11 +36,13 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     icon: LuAlignLeft,
     labelKey: 'Short text',
     placeholderKey: 'Short answer text',
+    ConfigComponent: FieldConfigText,
   },
   long_text: {
     icon: LuLetterText,
     labelKey: 'Long text',
     placeholderKey: 'Long answer text',
+    ConfigComponent: FieldConfigText,
   },
   dropdown: {
     icon: LuChevronDown,

@@ -260,6 +260,7 @@ function renderField(
           description={schema.description}
           placeholder={placeholder}
           multiline={format === 'long-text'}
+          maxLength={schema.maxLength}
           onChange={(html) => onFieldChange(key, html)}
           onEditorFocus={onEditorFocus}
           onEditorBlur={onEditorBlur}

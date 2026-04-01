@@ -161,7 +161,7 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please complete the following required fields:' });
+      .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast).toBeVisible({ timeout: 6_000 });
     await expect(errorToast).toContainText('Title');
@@ -185,7 +185,7 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast2 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please complete the following required fields:' });
+      .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast2).toBeVisible({ timeout: 6_000 });
     await expect(errorToast2).not.toContainText('Title');
@@ -214,7 +214,7 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast3 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please complete the following required fields:' });
+      .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast3).toBeVisible({ timeout: 6_000 });
     await expect(errorToast3).not.toContainText('Title');
@@ -251,7 +251,7 @@ test.describe('Proposal Submit Validation', () => {
     // required fields.
     const errorToast4 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please complete the following required fields:' });
+      .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast4).toBeVisible({ timeout: 6_000 });
     await expect(errorToast4).toContainText('Summary');
@@ -283,7 +283,7 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast5 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please complete the following required fields:' });
+      .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast5).toBeVisible({ timeout: 6_000 });
     await expect(errorToast5).not.toContainText('Summary');
@@ -315,7 +315,7 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast6 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please complete the following required fields:' });
+      .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast6).toBeVisible({ timeout: 6_000 });
     await expect(errorToast6).not.toContainText('Summary');
@@ -344,7 +344,7 @@ test.describe('Proposal Submit Validation', () => {
 
     const errorToast7 = authenticatedPage
       .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Please complete the following required fields:' });
+      .filter({ hasText: 'Please fix the following issues:' });
 
     await expect(errorToast7).toBeVisible({ timeout: 6_000 });
     await expect(errorToast7).not.toContainText('Priority Level');
@@ -372,7 +372,7 @@ test.describe('Proposal Submit Validation', () => {
     await expect(
       authenticatedPage
         .locator('[data-sonner-toast]')
-        .filter({ hasText: 'Please complete the following required fields:' }),
+        .filter({ hasText: 'Please fix the following issues:' }),
     ).not.toBeVisible({ timeout: 6_000 });
   });
 });
