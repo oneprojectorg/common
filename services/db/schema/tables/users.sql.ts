@@ -5,6 +5,7 @@ import {
   index,
   pgTable,
   text,
+  timestamp,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -46,6 +47,7 @@ export const users = pgTable(
     }),
     tos: boolean(),
     privacy: boolean(),
+    onboardedAt: timestamp({ withTimezone: true, mode: 'string' }),
     ...timestamps,
   },
   (table) => [
