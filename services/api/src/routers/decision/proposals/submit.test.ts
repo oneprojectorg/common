@@ -363,6 +363,22 @@ describe.concurrent('submitProposal', () => {
       proposalData: { title: 'A title that is too long' },
     });
 
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'A title that is too long',
+          collaborationDocId,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'A title that is too long',
+    });
+
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const submission = caller.decision.submitProposal({
