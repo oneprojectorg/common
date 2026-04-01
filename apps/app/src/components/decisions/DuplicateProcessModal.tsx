@@ -63,15 +63,22 @@ const DuplicateFormContent = ({
     t('Duplicate of {name}', { name: item.name || item.processInstance.name }),
   );
   const [stewardProfileId, setStewardProfileId] = useState('');
-  const [include, setInclude] = useState({
-    processSettings: true,
-    phases: true,
-    proposalCategories: true,
-    proposalTemplate: true,
-    reviewSettings: true,
-    reviewRubric: true,
-    roles: true,
-  });
+
+  const includeKeys = [
+    'processSettings',
+    'phases',
+    'proposalCategories',
+    'proposalTemplate',
+    'reviewSettings',
+    'reviewRubric',
+    'roles',
+  ] as const;
+
+  type IncludeKey = (typeof includeKeys)[number];
+
+  const [selectedIncludes, setSelectedIncludes] = useState<string[]>([
+    ...includeKeys,
+  ]);
 
   const duplicateMutation = trpc.decision.duplicateInstance.useMutation({
     onSuccess: () => {
@@ -96,16 +103,14 @@ const DuplicateFormContent = ({
       instanceId: item.processInstance.id,
       name: name.trim(),
       stewardProfileId,
-      include,
+      include: Object.fromEntries(
+        includeKeys.map((key) => [key, selectedIncludes.includes(key)]),
+      ) as Record<IncludeKey, boolean>,
     });
   };
 
-  const toggleInclude = (key: keyof typeof include) => {
-    setInclude((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const includeOptions: Array<{
-    key: keyof typeof include;
+    key: IncludeKey;
     label: string;
   }> = [
     { key: 'processSettings', label: t('Process Settings') },
@@ -142,14 +147,11 @@ const DuplicateFormContent = ({
           label={t('Include')}
           labelClassName="font-serif text-title-sm12"
           className="gap-4"
+          value={selectedIncludes}
+          onChange={setSelectedIncludes}
         >
           {includeOptions.map((option) => (
-            <Checkbox
-              key={option.key}
-              size="small"
-              isSelected={include[option.key]}
-              onChange={() => toggleInclude(option.key)}
-            >
+            <Checkbox key={option.key} value={option.key} size="small">
               {option.label}
             </Checkbox>
           ))}
@@ -158,6 +160,7 @@ const DuplicateFormContent = ({
       <ModalFooter>
         <Button
           color="primary"
+          className="w-full sm:w-auto"
           onPress={handleDuplicate}
           isDisabled={
             !name.trim() || !stewardProfileId || duplicateMutation.isPending
