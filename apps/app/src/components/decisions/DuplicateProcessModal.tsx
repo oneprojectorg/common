@@ -29,7 +29,7 @@ export const DuplicateProcessModal = ({
   const currentUserProfile = userProfiles?.[0];
 
   const [name, setName] = useState(
-    t('Duplicate of {name}', { name: item.processInstance.name || item.name }),
+    t('Duplicate of {name}', { name: item.name || item.processInstance.name }),
   );
   const [stewardProfileId, setStewardProfileId] = useState<string | null>(null);
   const [include, setInclude] = useState({
@@ -105,7 +105,7 @@ export const DuplicateProcessModal = ({
   ];
 
   return (
-    <Modal isOpen onOpenChange={(open) => !open && onClose()} surface="flat">
+    <Modal isOpen onOpenChange={(open) => !open && !duplicateMutation.isPending && onClose()} surface="flat">
       <ModalHeader className="pl-6 text-left">
         {t('Duplicate process')}
       </ModalHeader>
