@@ -17,11 +17,8 @@ import { getTemplate } from './getTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
-/** Options for creating a decision instance. */
 export type CreateDecisionInstanceOptions = {
-  /** The DB UUID of the process template (decisionProcesses.id). */
   processId: string;
-  /** The instance data to store. Build from a template via createInstanceDataFromTemplate, or construct directly. */
   instanceData: DecisionInstanceData;
   name: string;
   description?: string;
@@ -34,11 +31,6 @@ export type CreateDecisionInstanceOptions = {
   status?: ProcessStatus;
 };
 
-/**
- * Creates a decision process instance from a resolved template.
- * Optionally accepts pre-built instanceData and custom roles.
- * Does not require a User object - takes primitive values directly.
- */
 export const createDecisionInstance = async ({
   processId,
   instanceData,
