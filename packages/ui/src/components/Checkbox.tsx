@@ -20,6 +20,7 @@ import { Description, FieldError, Label } from './Field';
 export interface CheckboxGroupProps
   extends Omit<AriaCheckboxGroupProps, 'children'> {
   label?: string;
+  labelClassName?: string;
   children?: ReactNode;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -35,7 +36,7 @@ export const CheckboxGroup = (props: CheckboxGroupProps) => {
       )}
     >
       <span className="flex flex-col">
-        <Label>
+        <Label className={props.labelClassName}>
           {props.label}
           {props.isRequired && <span className="text-functional-red"> *</span>}
         </Label>

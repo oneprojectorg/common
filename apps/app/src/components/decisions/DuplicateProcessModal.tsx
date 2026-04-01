@@ -3,13 +3,13 @@
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
+import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -49,19 +49,18 @@ export const DuplicateProcessModal = ({
     }
   }, [currentUserProfile?.id, stewardProfileId]);
 
-  const profileItems = (userProfiles ?? []).map((p) => ({
-    id: p.id,
-    name: p.name,
-  }));
-
-  // Ensure current steward appears in dropdown
-  const steward = item.processInstance.steward;
-  if (steward && !profileItems.some((p) => p.id === steward.id)) {
-    profileItems.push({
-      id: steward.id,
-      name: steward.name ?? '',
-    });
-  }
+  const profileItems = useMemo(() => {
+    const items = (userProfiles ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+    }));
+    // Ensure current steward appears in dropdown
+    const steward = item.processInstance.steward;
+    if (steward && !items.some((p) => p.id === steward.id)) {
+      items.push({ id: steward.id, name: steward.name ?? '' });
+    }
+    return items;
+  }, [userProfiles, item.processInstance.steward]);
 
   const duplicateMutation = trpc.decision.duplicateInstance.useMutation({
     onSuccess: () => {
@@ -140,23 +139,22 @@ export const DuplicateProcessModal = ({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <span className="font-serif text-title-sm12 text-neutral-black">
-            {t('Include')}
-          </span>
-          <div className="flex flex-col gap-2">
-            {includeOptions.map((option) => (
-              <Checkbox
-                key={option.key}
-                size="small"
-                isSelected={include[option.key]}
-                onChange={() => toggleInclude(option.key)}
-              >
-                {option.label}
-              </Checkbox>
-            ))}
-          </div>
-        </div>
+        <CheckboxGroup
+          label={t('Include')}
+          labelClassName="font-serif text-title-sm12"
+          className="gap-4"
+        >
+          {includeOptions.map((option) => (
+            <Checkbox
+              key={option.key}
+              size="small"
+              isSelected={include[option.key]}
+              onChange={() => toggleInclude(option.key)}
+            >
+              {option.label}
+            </Checkbox>
+          ))}
+        </CheckboxGroup>
       </ModalBody>
       <ModalFooter>
         <Button
