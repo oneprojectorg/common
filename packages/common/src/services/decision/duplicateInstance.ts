@@ -13,7 +13,10 @@ import {
 import { CommonError, NotFoundError } from '../../utils';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createDecisionRole } from './decisionRoles';
-import type { DecisionInstanceData, PhaseInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 
 export type DuplicateInstanceIncludeFlags = {
@@ -301,11 +304,13 @@ function buildInstanceData(
     // Even without phases, we need at least a reference from source
     // to have a valid currentPhaseId
     if (source.phases.length > 0) {
-      base.phases = source.phases.map((phase): PhaseInstanceData => ({
-        phaseId: phase.phaseId,
-        name: phase.name,
-        // Minimal phase - just identity
-      }));
+      base.phases = source.phases.map(
+        (phase): PhaseInstanceData => ({
+          phaseId: phase.phaseId,
+          name: phase.name,
+          // Minimal phase - just identity
+        }),
+      );
       base.currentPhaseId = base.phases[0]!.phaseId;
     }
   }
