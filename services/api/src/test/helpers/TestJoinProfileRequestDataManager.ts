@@ -1,10 +1,14 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   JoinProfileRequest,
   JoinProfileRequestStatus,
   joinProfileRequests,
+  profiles,
+  users,
 } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
+
+import { supabaseTestAdminClient } from '../../test/supabase-utils';
 
 /**
  * Test Join Profile Request Data Manager
@@ -38,6 +42,7 @@ export class TestJoinProfileRequestDataManager {
 
   // Track exact IDs created by this test instance for precise cleanup
   private createdJoinRequestIds: string[] = [];
+  private trackedAuthUserIds: string[] = [];
 
   constructor(
     /* not needed in this implementation, but kept for consistency */
@@ -101,6 +106,16 @@ export class TestJoinProfileRequestDataManager {
   }
 
   /**
+   * Tracks an auth user ID for cleanup.
+   * Deletes the user's individual profile (cascading to profile_users)
+   * and then the auth user (cascading to the users row).
+   */
+  trackAuthUser(authUserId: string): void {
+    this.ensureCleanupRegistered();
+    this.trackedAuthUserIds.push(authUserId);
+  }
+
+  /**
    * Registers the cleanup handler for this test.
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
@@ -128,6 +143,19 @@ export class TestJoinProfileRequestDataManager {
       await db
         .delete(joinProfileRequests)
         .where(inArray(joinProfileRequests.id, this.createdJoinRequestIds));
+    }
+
+    for (const authUserId of this.trackedAuthUserIds) {
+      const [userRecord] = await db
+        .select({ profileId: users.profileId })
+        .from(users)
+        .where(eq(users.authUserId, authUserId));
+
+      if (userRecord?.profileId) {
+        await db.delete(profiles).where(eq(profiles.id, userRecord.profileId));
+      }
+
+      await supabaseTestAdminClient?.auth.admin.deleteUser(authUserId);
     }
   }
 }

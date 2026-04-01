@@ -1,14 +1,28 @@
-import { db } from '@op/db/client';
-import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
+import {
+  type DatabaseType,
+  type TransactionType,
+  and,
+  db,
+  eq,
+  sql,
+} from '@op/db/client';
+import {
+  JoinProfileRequestStatus,
+  joinProfileRequests,
+  organizations,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
 
-import { CommonError, ConflictError, ValidationError } from '../../../utils';
+import { CommonError, ValidationError } from '../../../utils';
+import { assertGlobalRole } from '../../assert';
+import { joinOrganization } from '../../organization/joinOrganization';
 import { JoinProfileRequestWithProfiles } from './types';
 import { validateJoinProfileRequestContext } from './validateJoinProfileRequestContext';
 
 /**
  * Creates a new request from one profile to join another profile.
+ * If the user's email domain matches the target organization's domain,
+ * auto-joins and marks the request as approved immediately.
  * Returns the join profile request with associated profiles.
  */
 export const createProfileJoinRequest = async ({
@@ -27,18 +41,55 @@ export const createProfileJoinRequest = async ({
       targetProfileId,
     });
 
-  // Check if user is already a member of the target profile
   if (existingMembership) {
     throw new ValidationError('You are already a member of this profile');
   }
 
+  const matchedOrg = await findDomainMatchedOrg(user, targetProfileId);
+  const isDomainMatched = !!matchedOrg;
+
   if (existingRequest) {
-    // If previously rejected, reset to pending with updated timestamp
-    if (existingRequest.status === JoinProfileRequestStatus.REJECTED) {
+    // Previously rejected or still pending — if domain matches, auto-approve
+    if (
+      existingRequest.status === JoinProfileRequestStatus.REJECTED ||
+      (existingRequest.status === JoinProfileRequestStatus.PENDING &&
+        isDomainMatched)
+    ) {
+      const newStatus = isDomainMatched
+        ? JoinProfileRequestStatus.APPROVED
+        : JoinProfileRequestStatus.PENDING;
+
+      if (matchedOrg) {
+        // Resolve the role before the transaction to avoid the cache/allowList
+        // call inside joinOrganization acquiring a separate DB connection
+        const memberRole = await assertGlobalRole('Member');
+
+        const updated = await db.transaction(async (tx) => {
+          await performAutoJoin(user, matchedOrg, memberRole.id, tx);
+
+          const [record] = await tx
+            .update(joinProfileRequests)
+            .set({
+              status: newStatus,
+              updatedAt: new Date().toISOString(),
+            })
+            .where(eq(joinProfileRequests.id, existingRequest.id))
+            .returning();
+
+          return record;
+        });
+
+        if (!updated) {
+          throw new CommonError('Failed to update join profile request');
+        }
+
+        return { ...updated, requestProfile, targetProfile };
+      }
+
       const [updated] = await db
         .update(joinProfileRequests)
         .set({
-          status: JoinProfileRequestStatus.PENDING,
+          status: newStatus,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(joinProfileRequests.id, existingRequest.id))
@@ -48,13 +99,37 @@ export const createProfileJoinRequest = async ({
         throw new CommonError('Failed to update join profile request');
       }
 
-      return {
-        ...updated,
-        requestProfile,
-        targetProfile,
-      };
+      return { ...updated, requestProfile, targetProfile };
     }
-    throw new ConflictError('A join request already exists for this profile');
+
+    // PENDING without domain match or APPROVED — already in progress
+    return { ...existingRequest, requestProfile, targetProfile };
+  }
+
+  // New request — auto-join if domain matches, then create the record
+  if (matchedOrg) {
+    const memberRole = await assertGlobalRole('Member');
+
+    const inserted = await db.transaction(async (tx) => {
+      await performAutoJoin(user, matchedOrg, memberRole.id, tx);
+
+      const [record] = await tx
+        .insert(joinProfileRequests)
+        .values({
+          requestProfileId,
+          targetProfileId,
+          status: JoinProfileRequestStatus.APPROVED,
+        })
+        .returning();
+
+      return record;
+    });
+
+    if (!inserted) {
+      throw new CommonError('Failed to create join profile request');
+    }
+
+    return { ...inserted, requestProfile, targetProfile };
   }
 
   const [inserted] = await db
@@ -62,7 +137,6 @@ export const createProfileJoinRequest = async ({
     .values({
       requestProfileId,
       targetProfileId,
-      // will default to "pending"
     })
     .returning();
 
@@ -70,9 +144,55 @@ export const createProfileJoinRequest = async ({
     throw new CommonError('Failed to create join profile request');
   }
 
-  return {
-    ...inserted,
-    requestProfile,
-    targetProfile,
-  };
+  return { ...inserted, requestProfile, targetProfile };
 };
+
+type Organization = typeof organizations.$inferSelect;
+
+/**
+ * Returns the org if the user's email domain matches, null otherwise.
+ */
+async function findDomainMatchedOrg(
+  user: User,
+  targetProfileId: string,
+): Promise<Organization | null> {
+  const userEmailDomain = user.email?.split('@')[1]?.toLowerCase();
+  if (!userEmailDomain) {
+    return null;
+  }
+
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(
+      and(
+        eq(organizations.profileId, targetProfileId),
+        sql`lower(${organizations.domain}) = ${userEmailDomain}`,
+      ),
+    )
+    .limit(1);
+
+  return org ?? null;
+}
+
+async function performAutoJoin(
+  user: User,
+  organization: Organization,
+  roleId: string,
+  tx: DatabaseType | TransactionType,
+): Promise<void> {
+  const commonUser = await tx.query.users.findFirst({
+    where: { authUserId: user.id },
+  });
+
+  if (!commonUser) {
+    throw new CommonError('User record not found');
+  }
+
+  await joinOrganization({
+    user: commonUser,
+    organization,
+    roleId,
+    db: tx,
+  });
+}
