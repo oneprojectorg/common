@@ -46,8 +46,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const canManage = processInstance.access?.admin === true;
   const canDelete =
-    isDraft &&
-    (processInstance.access?.delete || processInstance.access?.admin);
+    isDraft && (processInstance.access?.delete || canManage);
 
   const deleteMutation = trpc.decision.deleteDecision.useMutation({
     onSuccess: () => {
