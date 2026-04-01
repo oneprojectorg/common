@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { TextCounter } from '@op/ui/TextCounter';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -113,14 +113,12 @@ export function CollaborativeTextField({
       />
       {maxLength != null && (
         <div className="flex justify-end">
-          <span
-            className={cn(
-              'text-sm text-neutral-gray4',
-              charCount >= maxLength && 'text-functional-red',
-            )}
-          >
-            {charCount}/{maxLength}
-          </span>
+          <TextCounter
+            textLength={charCount}
+            max={maxLength}
+            showCurrent
+            highlightAtLimit
+          />
         </div>
       )}
     </div>

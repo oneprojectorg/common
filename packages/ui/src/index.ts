@@ -48,6 +48,7 @@ export * from './components/Stepper';
 export * from './components/Surface';
 export * from './components/Tabs';
 export * from './components/TagGroup';
+export * from './components/ui/text-counter';
 export * from './components/TextField';
 export * from './components/Toast';
 export * from './components/ToggleButton';
