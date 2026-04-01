@@ -90,8 +90,7 @@ export const createDecisionInstance = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
-    // Create default Admin and Participant roles
-    const adminRole = await createDefaultDecisionRoles({
+    const { admin: adminRole } = await createDefaultDecisionRoles({
       profileId: instanceProfile.id,
       tx,
     });

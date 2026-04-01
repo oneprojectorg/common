@@ -122,7 +122,7 @@ export async function createDecisionRole({
 
 /**
  * Creates the default Admin and Participant roles for a decision instance.
- * Returns the admin role (needed for assigning the creator).
+ * Returns [adminRole, participantRole] — admin first for easy destructuring.
  */
 export async function createDefaultDecisionRoles({
   profileId,
@@ -131,7 +131,7 @@ export async function createDefaultDecisionRoles({
   profileId: string;
   tx?: TransactionType;
 }) {
-  const [adminRole] = await Promise.all([
+  const [admin, participant] = await Promise.all([
     createDecisionRole({
       name: 'Admin',
       profileId,
@@ -196,7 +196,7 @@ export async function createDefaultDecisionRoles({
     }),
   ]);
 
-  return adminRole;
+  return { admin, participant };
 }
 
 /**
