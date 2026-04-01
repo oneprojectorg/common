@@ -1,4 +1,7 @@
-import { createProposal as createProposalService } from '@op/common';
+import {
+  createInstanceFromTemplateCore,
+  createProposal as createProposalService,
+} from '@op/common';
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
@@ -22,6 +25,7 @@ import type {
   decisionSchemaDefinitionEncoder,
   processInstanceWithSchemaEncoder,
 } from '../../encoders/decision';
+import { processInstanceWithSchemaEncoder as processInstanceEncoder } from '../../encoders/decision';
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
 import {
@@ -272,8 +276,8 @@ export class TestDecisionsDataManager {
     const instances: CreatedInstance[] = [];
     for (let i = 0; i < instanceCount; i++) {
       const instance = await this.createInstanceForProcess({
-        caller,
         processId: process.id,
+        user,
         name: `Instance ${i + 1}`,
         budget: 50000 * (i + 1),
       });
@@ -306,7 +310,6 @@ export class TestDecisionsDataManager {
   async createInstanceForProcess(
     this: TestDecisionsDataManager,
     {
-      caller,
       processId,
       process,
       user,
@@ -314,9 +317,6 @@ export class TestDecisionsDataManager {
       budget = 50000,
       status,
     }: {
-      caller?: Awaited<
-        ReturnType<TestDecisionsDataManager['createAuthenticatedCaller']>
-      >;
       processId?: string;
       process?: EncodedDecisionProcess;
       user?: User;
@@ -327,42 +327,67 @@ export class TestDecisionsDataManager {
   ): Promise<CreatedInstance> {
     this.ensureCleanupRegistered();
 
-    // Resolve caller - either use provided caller or create one from user
-    let resolvedCaller = caller;
-    if (!resolvedCaller && user?.email) {
-      resolvedCaller = await this.createAuthenticatedCaller(user.email);
-    }
-    if (!resolvedCaller) {
-      throw new Error('Either caller or user with email must be provided');
+    if (!user?.email) {
+      throw new Error('User with email must be provided');
     }
 
-    // Resolve processId - either use provided processId or get from process object
     const resolvedProcessId = processId ?? process?.id;
     if (!resolvedProcessId) {
       throw new Error('Either processId or process must be provided');
     }
 
-    // Use createInstanceFromTemplate which returns a profile with processInstance
-    const profile = await resolvedCaller.decision.createInstanceFromTemplate({
+    const [dbUser] = await db
+      .select({
+        currentProfileId: users.currentProfileId,
+        profileId: users.profileId,
+      })
+      .from(users)
+      .where(eq(users.authUserId, user.id));
+
+    const ownerProfileId = dbUser?.currentProfileId ?? dbUser?.profileId;
+    if (!ownerProfileId) {
+      throw new Error(`Failed to resolve owner profile for ${user.email}`);
+    }
+
+    const profile = await createInstanceFromTemplateCore({
       templateId: resolvedProcessId,
       name: this.generateUniqueName(name),
+      description: `Test instance ${name}`,
+      phases: [
+        {
+          phaseId: 'initial',
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          phaseId: 'final',
+          startDate: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          endDate: new Date(
+            Date.now() + 14 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        },
+      ],
+      ownerProfileId,
+      stewardProfileId: ownerProfileId,
+      creatorAuthUserId: user.id,
+      creatorEmail: user.email,
+      status,
     });
 
     const profileId = profile.id;
-    this.createdProfileIds.push(profileId);
-
-    // Update status if provided (direct DB update since there's no router for this)
-    if (status) {
-      await db
-        .update(processInstances)
-        .set({ status })
-        .where(eq(processInstances.id, profile.processInstance.id));
+    const processInstance = profile.processInstance;
+    if (!processInstance) {
+      throw new Error('Failed to load created process instance');
     }
+
+    this.createdProfileIds.push(profileId);
 
     // Update budget if needed (instanceData may not include budget from template)
     if (budget) {
       const instanceRecord = await db._query.processInstances.findFirst({
-        where: eq(processInstances.id, profile.processInstance.id),
+        where: eq(processInstances.id, processInstance.id),
       });
       if (instanceRecord) {
         const instanceData = instanceRecord.instanceData as Record<
@@ -378,12 +403,12 @@ export class TestDecisionsDataManager {
               hideBudget: false,
             },
           })
-          .where(eq(processInstances.id, profile.processInstance.id));
+          .where(eq(processInstances.id, processInstance.id));
       }
     }
 
     return {
-      instance: profile.processInstance,
+      instance: processInstanceEncoder.parse(processInstance),
       profileId,
       slug: profile.slug,
     };
