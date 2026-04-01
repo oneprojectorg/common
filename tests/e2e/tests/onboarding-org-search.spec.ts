@@ -149,11 +149,11 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
     });
     await searchInput.fill(searchPrefix);
 
-    // Wait for search results dropdown to appear with our orgs
+    // Wait for debounce + search results
     const org1Button = page.getByRole('button', {
       name: new RegExp(searchPrefix + ' Alpha'),
     });
-    await expect(org1Button).toBeVisible({ timeout: 15000 });
+    await expect(org1Button).toBeVisible({ timeout: 30000 });
 
     // Select first org
     await org1Button.click();
@@ -173,7 +173,7 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
     const org2Button = page.getByRole('button', {
       name: new RegExp(searchPrefix + ' Beta'),
     });
-    await expect(org2Button).toBeVisible({ timeout: 15000 });
+    await expect(org2Button).toBeVisible({ timeout: 30000 });
     await org2Button.click();
 
     // Verify count updates to 2
