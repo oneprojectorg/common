@@ -62,7 +62,7 @@ export const { mergeRouters } = t;
 export const createCallerFactory = t.createCallerFactory;
 export const commonProcedure = t.procedure.use(withChannelMeta).use(withLogger);
 
-const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
+const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 50 };
 
 interface CommonAuthedProcedureOptions {
   rateLimit?: {
