@@ -97,9 +97,8 @@ describe.concurrent('manualTransition', () => {
     });
 
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
-    const stateData = (instanceData as Record<string, unknown>).stateData as
-      | Record<string, { enteredAt?: string }>
-      | undefined;
+    const stateData = (instanceData as unknown as Record<string, unknown>)
+      .stateData as Record<string, { enteredAt?: string }> | undefined;
 
     expect(stateData?.final?.enteredAt).toBeDefined();
     expect(new Date(stateData!.final!.enteredAt!).getTime()).toBeGreaterThan(0);
