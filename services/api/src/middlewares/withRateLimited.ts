@@ -4,7 +4,11 @@ import rateLimited from '../lib/rateLimited';
 import type { MiddlewareBuilderBase } from '../types';
 
 const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
-  const withRateLimitedInner: MiddlewareBuilderBase = async ({ ctx, next }) => {
+  const withRateLimitedInner: MiddlewareBuilderBase = async ({
+    ctx,
+    path,
+    next,
+  }) => {
     // Skip rate limiting for server-side calls since they are trusted
     if (ctx.isServerSideCall) {
       return next({ ctx });
@@ -17,16 +21,12 @@ const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
       });
     }
 
-    if (!ctx.reqUrl) {
-      throw new TRPCError({
-        message: `Bad request. Please try again.`,
-        code: 'BAD_REQUEST',
-      });
-    }
-
+    // Key on the procedure path (e.g. "decision.listDecisionProfiles")
+    // instead of the full batch URL, so procedures in the same batch
+    // each get their own rate-limit bucket.
     const isRateLimited = rateLimited(
       ctx.ip,
-      ctx.reqUrl,
+      path,
       opts.windowSize,
       opts.maxRequests,
     );
