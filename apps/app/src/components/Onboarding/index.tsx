@@ -124,9 +124,9 @@ export const OnboardingFlow = () => {
       setIsSubmitting(true);
 
       try {
-        const currentProfileId = userAccount?.profile?.id;
+        const userProfileId = userAccount?.profile?.id;
 
-        if (selectedOrgs.length > 0 && !currentProfileId) {
+        if (selectedOrgs.length > 0 && !userProfileId) {
           toast.error({
             title: t("That didn't work"),
             message: t('Please try submitting the form again.'),
@@ -135,11 +135,11 @@ export const OnboardingFlow = () => {
           return;
         }
 
-        if (selectedOrgs.length > 0 && currentProfileId) {
+        if (selectedOrgs.length > 0 && userProfileId) {
           const results = await Promise.allSettled(
             selectedOrgs.map((org) =>
               createJoinRequest.mutateAsync({
-                requestProfileId: currentProfileId,
+                requestProfileId: userProfileId,
                 targetProfileId: org.profileId,
               }),
             ),
