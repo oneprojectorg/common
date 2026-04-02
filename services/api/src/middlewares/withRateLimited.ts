@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 
 import rateLimited from '../lib/rateLimited';
@@ -32,6 +33,15 @@ const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
     );
 
     if (isRateLimited.status) {
+      logger.warn('Rate limit exceeded', {
+        ip: ctx.ip,
+        path,
+        requestId: ctx.requestId,
+        windowSize: opts.windowSize,
+        maxRequests: opts.maxRequests,
+        retryAfterMs: isRateLimited.timeToRefresh,
+      });
+
       throw new TRPCError({
         message: `Too many requests. Please try again in ${Math.round(isRateLimited.timeToRefresh / 1000)} seconds.`,
         code: 'TOO_MANY_REQUESTS',
