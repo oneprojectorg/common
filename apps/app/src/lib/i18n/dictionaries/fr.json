@@ -1004,5 +1004,17 @@
   "Submit review": "Soumettre la révision",
   "Proposal {current} of {total}": "Proposition {current} sur {total}",
   "{current} of {total}": "{current} sur {total}",
-  "{count} completed": "{count} terminées"
+  "{count} completed": "{count} terminées",
+  "Please complete the following required fields:": "Veuillez remplir les champs obligatoires suivants :",
+  "Find organizations you belong to": "Trouvez les organisations auxquelles vous appartenez",
+  "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.": "Sélectionnez la ou les organisations que vous souhaitez associer à votre profil Common. Vous pourrez en ajouter d'autres plus tard depuis votre profil.",
+  "Search or add your organization...": "Rechercher ou ajouter votre organisation...",
+  "Skip for now": "Passer pour le moment",
+  "Add {searchTerm}": "Ajouter {searchTerm}",
+  "Continue with {count} organizations": "Continuer avec {count} organisations",
+  "One last step": "Une dernière étape",
+  "Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.": "Notre communauté a élaboré ces politiques pour qu'elles fonctionnent pour de vraies organisations comme la vôtre. Vos données restent les vôtres et les décisions concernant la plateforme sont prises démocratiquement.",
+  "I accept the": "J'accepte les",
+  "Terms of Service": "Conditions d'utilisation",
+  "Join Common": "Rejoindre Common"
 }
