@@ -1,4 +1,4 @@
-import type { InstanceData, StateDefinition } from '@op/common';
+import type { InstanceData, StateDefinition } from '@op/common/client';
 
 export interface NextStep {
   id: string;

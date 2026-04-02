@@ -31,7 +31,7 @@
  * - `saveStates[decisionId]` - UI save indicator state
  */
 import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
-import type { ProposalTemplateSchema, RubricTemplateSchema } from '@op/common';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from '@op/common/client';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 

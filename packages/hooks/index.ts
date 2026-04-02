@@ -1,3 +1,5 @@
+'use client';
+
 import useAuthLogout from './src/useAuthLogout';
 import useAuthUser from './src/useAuthUser';
 import { useCursorPagination } from './src/useCursorPagination';

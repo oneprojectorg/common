@@ -1,5 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { CommonError } from '@op/common';
+import { CommonError } from '@op/common/client';
 import { Skeleton } from '@op/ui/Skeleton';
 import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';

@@ -1,6 +1,6 @@
 'use client';
 
-import { ProposalTemplateSchema } from '@op/common';
+import type { ProposalTemplateSchema } from '@op/common/client';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';

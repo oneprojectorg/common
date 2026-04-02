@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import type { ProposalCategory } from '@op/common';
+import type { ProposalCategory } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';

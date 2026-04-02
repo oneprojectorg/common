@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
-import type { DecisionRolePermissions } from '@op/common';
+import type { DecisionRolePermissions } from '@op/common/client';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';

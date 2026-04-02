@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import type { ReviewsPolicy } from '@op/common';
+import type { ReviewsPolicy } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { Chip } from '@op/ui/Chip';
 import { Header2 } from '@op/ui/Header';

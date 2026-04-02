@@ -3,7 +3,7 @@
 import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import type { SortDir } from '@op/common';
+import type { SortDir } from '@op/common/client';
 import { useDebounce, useInfiniteScroll, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { AlertBanner } from '@op/ui/AlertBanner';

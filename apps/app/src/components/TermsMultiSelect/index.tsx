@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { TermWithChildren } from '@op/common';
+import type { TermWithChildren } from '@op/common/client';
 import { MultiSelectComboBox, type Option } from '@op/ui/MultiSelectComboBox';
 import { useState } from 'react';
 

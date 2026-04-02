@@ -1,5 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { isUserEmailPlatformAdmin } from '@op/common';
+import { isUserEmailPlatformAdmin } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
 import { PlatformStats, UsersTable } from '@/components/screens/PlatformAdmin';

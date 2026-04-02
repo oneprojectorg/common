@@ -18,7 +18,27 @@ export {
 } from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { isRationaleField } from './services/decision/getRubricScoringInfo';
-export { REVIEWS_POLICIES } from './services/decision/schemas/types';
+export {
+  REVIEWS_POLICIES,
+  type ReviewsPolicy,
+  type ProposalCategory,
+  type ProcessConfig,
+} from './services/decision/schemas/types';
+export type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './services/decision/schemas/instanceData';
+export type { DecisionRolePermissions } from './services/decision/permissions';
+export type { SortDir } from './utils/db';
+export type { TermWithChildren } from './services/terms';
+export {
+  CommonError,
+  NotFoundError,
+  ValidationError,
+  UnauthorizedError,
+  ConflictError,
+} from './utils/error';
+export { isUserEmailPlatformAdmin } from './services/access/platformAdmin';
 
 // Translation constants (no server dependencies)
 export {

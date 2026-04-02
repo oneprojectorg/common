@@ -1,6 +1,6 @@
 import { type ProcessPhase } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
-import type { DecisionInstanceData } from '@op/common';
+import type { DecisionInstanceData } from '@op/common/client';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
