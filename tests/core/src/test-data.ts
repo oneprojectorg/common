@@ -76,6 +76,12 @@ export async function createUser(opts: CreateUserOptions) {
     throw new Error(`No user returned when creating test user: ${email}`);
   }
 
+  // Mark test users as onboarded so they aren't redirected to /start
+  await db
+    .update(users)
+    .set({ onboardedAt: new Date().toISOString() })
+    .where(eq(users.authUserId, data.user.id));
+
   return {
     id: data.user.id,
     email: data.user.email ?? email,

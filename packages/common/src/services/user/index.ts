@@ -510,3 +510,22 @@ export const switchUserOrganization = async (
 
   return result[0];
 };
+
+export const completeOnboarding = async ({
+  authUserId,
+  tos,
+  privacy,
+}: {
+  authUserId: string;
+  tos: boolean;
+  privacy: boolean;
+}) => {
+  await db
+    .update(users)
+    .set({
+      onboardedAt: new Date().toISOString(),
+      tos,
+      privacy,
+    })
+    .where(eq(users.authUserId, authUserId));
+};

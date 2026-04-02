@@ -95,6 +95,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - If statements should never be all on one line; always use K&R style for if statements
 - Always prefer suspense queries over a query with useEffect
 - When using Suspense Queries, always add proper error boundaries
+- **Component file structure**: Types and interfaces at the top, then the main exported component, then private sub-components and helper functions below. The primary export should be easy to find near the top of the file — don't bury it under utilities.
 
 ### Internationalization (i18n)
 
