@@ -162,7 +162,7 @@ export const OnboardingFlow = () => {
           }
         }
 
-        await completeOnboarding.mutateAsync();
+        await completeOnboarding.mutateAsync({ tos: true, privacy: true });
         await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
         router.push('/?new=1');
@@ -240,7 +240,7 @@ export const OnboardingFlow = () => {
         .mutateAsync(processOrgInputs(combined))
         .then(async () => {
           sendOnboardingAnalytics(combined);
-          await completeOnboarding.mutateAsync();
+          await completeOnboarding.mutateAsync({ tos: true, privacy: true });
           await trpcUtils.account.getMyAccount.invalidate();
           await trpcUtils.account.getMyAccount.refetch();
           router.push('/?new=1');

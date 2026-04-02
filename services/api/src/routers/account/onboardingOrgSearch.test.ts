@@ -546,7 +546,7 @@ describe.concurrent('Onboarding Organization Search', () => {
         const completeCaller = createCompleteCaller(
           await createTestContextWithSession(session),
         );
-        await completeCaller.completeOnboarding();
+        await completeCaller.completeOnboarding({ tos: true, privacy: true });
 
         // After onboarding: onboardedAt is set, tos and privacy are true
         const userAfter = await accountCaller.getMyAccount();
