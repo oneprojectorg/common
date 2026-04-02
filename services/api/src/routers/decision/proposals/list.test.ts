@@ -113,6 +113,51 @@ describe.concurrent('listProposals', () => {
     expect(result.canManageProposals).toBe(true);
   });
 
+  it('should normalize legacy category arrays in proposalData', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Legacy category proposal',
+        description: 'Uses legacy category arrays',
+      },
+    });
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          ...proposal.proposalData,
+          category: ['Infrastructure'],
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.proposalData.category).toBe('Infrastructure');
+  });
+
   it('should set canManageProposals to false for non-admin users', async ({
     task,
     onTestFinished,

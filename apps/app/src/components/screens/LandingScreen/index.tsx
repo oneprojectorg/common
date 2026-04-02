@@ -1,30 +1,26 @@
 import { getUser } from '@/utils/getUser';
 import { Organization } from '@op/api/encoders';
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { createServerUtils, dehydrate } from '@op/api/server';
 import { Header1, Header3 } from '@op/ui/Header';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Suspense } from 'react';
 
 import { ActiveDecisionsNotifications } from '@/components/ActiveDecisionsNotifications';
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { JoinProfileRequestsNotifications } from '@/components/JoinProfileRequestsNotifications';
-import { NewOrganizations } from '@/components/NewOrganizations';
+import {
+  NewOrganizations,
+  NewOrganizationsListSkeleton,
+} from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
-import { OrganizationListSkeleton } from '@/components/OrganizationList';
 import { PendingDecisionInvites } from '@/components/PendingDecisionInvites';
 import { PendingRelationships } from '@/components/PendingRelationships';
 import { PlatformHighlights } from '@/components/PlatformHighlights';
 import { PostFeedSkeleton } from '@/components/PostFeed';
-import { PostUpdate } from '@/components/PostUpdate';
 import { TranslatedText } from '@/components/TranslatedText';
 
-import { Feed } from './Feed';
+import { LandingPostFeedClient } from './LandingPostFeedClient';
 import { Welcome } from './Welcome';
 
 /**
@@ -84,7 +80,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
-            <OrganizationListSkeleton />
+            <NewOrganizationsListSkeleton />
           </Surface>
         </div>
       </div>
@@ -104,7 +100,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
-            <SkeletonLine lines={5} />
+            <NewOrganizationsListSkeleton />
           </Surface>
         </TabPanel>
       </Tabs>
@@ -138,33 +134,10 @@ const PostFeedSection = async ({
   }
 
   return (
-    <>
-      {showPostUpdate ? (
-        <>
-          <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
-              <PostUpdate label={<TranslatedText text="Post" />} />
-            </Surface>
-          </Suspense>
-          <hr />
-        </>
-      ) : null}
-      <div className="mt-4 sm:mt-0">
-        <ErrorBoundary
-          fallback={
-            <div className="flex flex-col items-center justify-center py-8">
-              <span className="text-neutral-charcoal">
-                <TranslatedText text="Unable to load posts. Please try refreshing." />
-              </span>
-            </div>
-          }
-        >
-          <HydrationBoundary state={dehydrate(queryClient)}>
-            <Feed />
-          </HydrationBoundary>
-        </ErrorBoundary>
-      </div>
-    </>
+    <LandingPostFeedClient
+      showPostUpdate={showPostUpdate}
+      state={dehydrate(queryClient)}
+    />
   );
 };
 
@@ -284,7 +257,7 @@ const UserContentSkeleton = () => {
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
-            <OrganizationListSkeleton />
+            <NewOrganizationsListSkeleton />
           </Surface>
         </div>
       </div>

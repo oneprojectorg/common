@@ -1,16 +1,18 @@
+ 'use client';
+
+import { notFound, useParams, useSearchParams } from 'next/navigation';
+
 import { Profile } from '@/components/screens/Profile';
 
-const ProfilePage = async ({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ tab?: string }>;
-}) => {
-  const { slug } = await params;
-  const { tab } = await searchParams;
+const ProfilePage = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const searchParams = useSearchParams();
 
-  return <Profile slug={slug} initialTab={tab} />;
+  if (!slug) {
+    notFound();
+  }
+
+  return <Profile slug={slug} initialTab={searchParams.get('tab') ?? undefined} />;
 };
 
 export default ProfilePage;

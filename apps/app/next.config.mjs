@@ -37,6 +37,8 @@ dotenv.config({
 // Deployment environment variables (sourced from Vercel's injected env vars)
 const DEPLOY_ENV = process.env.VERCEL_ENV;
 const PREVIEW_BRANCH_URL = process.env.VERCEL_BRANCH_URL;
+const AUTH_INTERRUPTS_ENABLED =
+  process.env.NEXT_DISABLE_AUTH_INTERRUPTS !== 'true';
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -51,7 +53,7 @@ const config = {
   },
   serverExternalPackages: ['sharp', 'onnxruntime-node'],
   experimental: {
-    authInterrupts: true,
+    authInterrupts: AUTH_INTERRUPTS_ENABLED,
   },
   turbopack: {
     resolveAlias: {

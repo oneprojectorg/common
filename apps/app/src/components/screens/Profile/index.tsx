@@ -1,5 +1,11 @@
+ 'use client';
+
 import { getPublicUrl } from '@/utils';
-import { createClient } from '@op/api/serverClient';
+import { trpc } from '@op/api/client';
+import type {
+  Organization as OrganizationEntity,
+  Profile as ProfileEntity,
+} from '@op/api/encoders';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -8,131 +14,105 @@ import { LuArrowLeft } from 'react-icons/lu';
 import { Link } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
-import { ProfileDetails } from '@/components/Profile/ProfileDetails';
+import { ProfileBodyClient } from './ProfileBodyClient';
 
-import {
-  IndividualProfileTabsRenderer,
-  ProfileTabsRenderer,
-} from './ProfileTabsRenderer';
-
-const ProfileWithData = async ({
-  slug,
+const ProfileLayout = ({
   initialTab,
+  profile,
+  profileEntity,
 }: {
-  slug: string;
   initialTab?: string;
+  profile: ProfileEntity;
+  profileEntity: OrganizationEntity;
 }) => {
-  try {
-    const client = await createClient();
+  const { headerImage, avatarImage } = profile;
+  const headerUrl = getPublicUrl(headerImage?.name);
+  const avatarUrl = getPublicUrl(avatarImage?.name);
 
-    // First, get the profile data
-    const profile = await client.profile.getBySlug({
-      slug,
-    });
+  const gradientBg = getGradientForString(profile.name || 'Common');
+  const gradientBgHeader = getGradientForString(profile.name + 'C' || 'Common');
 
-    const { headerImage, avatarImage } = profile;
-    const headerUrl = getPublicUrl(headerImage?.name);
-    const avatarUrl = getPublicUrl(avatarImage?.name);
+  return (
+    <>
+      <ImageHeader
+        headerImage={
+          headerUrl ? (
+            <Image src={headerUrl} alt="" fill className="object-cover" />
+          ) : (
+            <div className={cn('h-full w-full', gradientBgHeader)} />
+          )
+        }
+        avatarImage={
+          avatarUrl ? (
+            <Image src={avatarUrl} alt="" fill className="object-cover" />
+          ) : (
+            <div className={cn('h-full w-full', gradientBg)} />
+          )
+        }
+      />
+      <ProfileBodyClient
+        profile={profile}
+        profileEntity={profileEntity}
+        initialTab={initialTab}
+      />
+    </>
+  );
+};
 
-    const gradientBg = getGradientForString(profile.name || 'Common');
-    const gradientBgHeader = getGradientForString(
-      profile.name + 'C' || 'Common',
-    );
+const OrganizationProfile = ({
+  initialTab,
+  profile,
+}: {
+  initialTab?: string;
+  profile: ProfileEntity;
+}) => {
+  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
+    slug: profile.slug,
+  });
 
-    // If it's an organization profile, query organization-specific data separately
-    if (profile.type === 'org') {
-      // Get the org with profile attached
-      const organization = await client.organization.getBySlug({
-        slug,
-      });
-
-      return organization ? (
-        <>
-          <ImageHeader
-            headerImage={
-              headerUrl ? (
-                <Image src={headerUrl} alt="" fill className="object-cover" />
-              ) : (
-                <div className={cn('h-full w-full', gradientBgHeader)} />
-              )
-            }
-            avatarImage={
-              avatarUrl ? (
-                <Image src={avatarUrl} alt="" fill className="object-cover" />
-              ) : (
-                <div className={cn('h-full w-full', gradientBg)} />
-              )
-            }
-          />
-
-          <ProfileDetails organization={organization} />
-          <ProfileTabsRenderer
-            organization={organization}
-            profile={profile}
-            initialTab={initialTab}
-          />
-        </>
-      ) : null;
-    }
-
-    // For user profiles, create a simplified profile object based on the profile data
-    // TODO: this is jammed in until we update the individual profile and a better typing
-    const userProfile = {
-      id: profile.id,
-      profile,
-      // Add minimal required properties for existing components
-      links: [],
-      networkOrganization: null,
-      isOfferingFunds: false,
-      isReceivingFunds: false,
-      projects: [],
-      posts: [],
-      terms: [],
-      whereWeWork: [],
-      strategies: [],
-      receivingFundsTerms: [],
-      orgType: '',
-      domain: null,
-      isVerified: false,
-      relationshipCounts: {
-        partners: 0,
-        funders: 0,
-        fundees: 0,
-        collaborators: 0,
-      },
-    };
-
-    return (
-      <>
-        <ImageHeader
-          headerImage={
-            headerUrl ? (
-              <Image src={headerUrl} alt="" fill className="object-cover" />
-            ) : (
-              <div className={cn('h-full w-full', gradientBgHeader)} />
-            )
-          }
-          avatarImage={
-            avatarUrl ? (
-              <Image src={avatarUrl} alt="" fill className="object-cover" />
-            ) : (
-              <div className={cn('h-full w-full', gradientBg)} />
-            )
-          }
-        />
-
-        <ProfileDetails organization={userProfile} />
-        <IndividualProfileTabsRenderer
-          userProfile={userProfile}
-          profile={profile}
-          initialTab={initialTab}
-        />
-      </>
-    );
-  } catch (e) {
-    console.error(e);
+  if (!organization) {
     notFound();
   }
+
+  return (
+    <ProfileLayout
+      initialTab={initialTab}
+      profile={profile}
+      profileEntity={organization}
+    />
+  );
+};
+
+const IndividualProfile = ({
+  initialTab,
+  profile,
+}: {
+  initialTab?: string;
+  profile: ProfileEntity;
+}) => {
+  const userProfile = {
+    id: profile.id,
+    profile,
+    acceptingApplications: false,
+    links: [],
+    networkOrganization: null,
+    isOfferingFunds: false,
+    isReceivingFunds: false,
+    projects: [],
+    whereWeWork: [],
+    strategies: [],
+    receivingFundsTerms: [],
+    orgType: '',
+    domain: null,
+  } satisfies OrganizationEntity;
+
+  return (
+    <ProfileLayout
+      initialTab={initialTab}
+      profile={profile}
+      profileEntity={userProfile}
+    />
+  );
 };
 
 export const Profile = ({
@@ -142,6 +122,14 @@ export const Profile = ({
   slug: string;
   initialTab?: string;
 }) => {
+  const [profile] = trpc.profile.getBySlug.useSuspenseQuery({
+    slug,
+  });
+
+  if (!profile) {
+    notFound();
+  }
+
   return (
     <>
       {/* nav arrow */}
@@ -151,7 +139,11 @@ export const Profile = ({
         </Link>
       </header>
       <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-offWhite">
-        <ProfileWithData slug={slug} initialTab={initialTab} />
+        {profile.type === 'org' ? (
+          <OrganizationProfile profile={profile} initialTab={initialTab} />
+        ) : (
+          <IndividualProfile profile={profile} initialTab={initialTab} />
+        )}
       </div>
     </>
   );

@@ -28,6 +28,23 @@ export const budgetValueSchema = z
  */
 export type BudgetData = MoneyAmount;
 
+const normalizeCategory = (raw: unknown): string | undefined => {
+  if (typeof raw === 'string') {
+    return raw;
+  }
+
+  if (Array.isArray(raw)) {
+    return raw.find((value): value is string => typeof value === 'string');
+  }
+
+  return undefined;
+};
+
+const categoryValueSchema = z
+  .union([z.string(), z.array(z.string())])
+  .nullish()
+  .transform((value) => normalizeCategory(value));
+
 /**
  * Zod schema for proposal data with known fields.
  * Uses looseObject to allow additional fields from custom proposal templates.
@@ -38,7 +55,7 @@ export const proposalDataSchema = z
     title: z.string().nullish(),
     description: z.string().nullish(),
     content: z.string().nullish(), // backward compatibility
-    category: z.string().nullish(),
+    category: categoryValueSchema,
     budget: budgetValueSchema,
     attachmentIds: z
       .array(z.string())
@@ -104,7 +121,7 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     title: (raw.title as string) ?? undefined,
     description: (raw.description as string) ?? undefined,
     content: (raw.content as string) ?? undefined,
-    category: (raw.category as string) ?? undefined,
+    category: normalizeCategory(raw.category),
     budget: normalizeBudget(raw.budget),
     attachmentIds: (raw.attachmentIds as string[]) ?? [],
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,

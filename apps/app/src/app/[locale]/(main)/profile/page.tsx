@@ -1,7 +1,7 @@
 import { EntityType } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 
-import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
+import AllOrganizationsPageClient from '@/components/Organizations/AllOrganizations/AllOrganizationsPageClient';
 import {
   ListPageLayout,
   ListPageLayoutHeader,
@@ -21,7 +21,7 @@ const ProfileListingPage = async () => {
       <ListPageLayout>
         <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
-        <AllOrganizations
+        <AllOrganizationsPageClient
           initialData={organizations}
           types={[EntityType.INDIVIDUAL]}
           limit={20}
@@ -33,7 +33,7 @@ const ProfileListingPage = async () => {
       <ListPageLayout>
         <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
-        <AllOrganizations
+        <AllOrganizationsPageClient
           initialData={{ items: [], next: null }}
           types={[EntityType.USER]}
           limit={20}

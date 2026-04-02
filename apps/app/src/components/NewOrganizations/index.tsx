@@ -1,13 +1,8 @@
 import { createClient } from '@op/api/serverClient';
+import { SkeletonLine } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
-import { Link } from '@/lib/i18n';
-
-import {
-  OrganizationList,
-  OrganizationListSkeleton,
-} from '../OrganizationList';
-import { TranslatedText } from '../TranslatedText';
+import { NewOrganizationsContentClient } from './NewOrganizationsContentClient';
 
 export const NewOrganizationsSuspense = async ({
   limit = 5,
@@ -23,24 +18,19 @@ export const NewOrganizationsSuspense = async ({
       orderBy: 'createdAt',
     });
 
-    return (
-      <div className="flex flex-col gap-4">
-        <OrganizationList organizations={organizations} />
-        <div className="px-8 sm:px-0">
-          <Link href="/org" className="text-teal">
-            <TranslatedText text="See more" />
-          </Link>
-        </div>
-      </div>
-    );
+    return <NewOrganizationsContentClient organizations={organizations} />;
   } catch (e) {
     return <div>Could not load organizations</div>;
   }
 };
 
+export const NewOrganizationsListSkeleton = () => {
+  return <SkeletonLine lines={5} />;
+};
+
 export const NewOrganizations = ({ limit }: { limit?: number }) => {
   return (
-    <Suspense fallback={<OrganizationListSkeleton />}>
+    <Suspense fallback={<NewOrganizationsListSkeleton />}>
       <NewOrganizationsSuspense limit={limit} />
     </Suspense>
   );
