@@ -316,23 +316,6 @@ export class TestDecisionsDataManager {
     const profile = await resolvedCaller.decision.createInstanceFromTemplate({
       templateId: resolvedProcessId,
       name: this.generateUniqueName(name),
-      description: `Test instance ${name}`,
-      phases: [
-        {
-          phaseId: 'initial',
-          startDate: new Date().toISOString(),
-          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          phaseId: 'final',
-          startDate: new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-          endDate: new Date(
-            Date.now() + 14 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        },
-      ],
     });
 
     const profileId = profile.id;
