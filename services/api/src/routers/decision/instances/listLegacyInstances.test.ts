@@ -88,6 +88,9 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
+    // Create org so the legacy instances have an org owner
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a legacy process directly in the DB with state-based schema
     const [process] = await db
       .insert(decisionProcesses)
@@ -95,7 +98,7 @@ describe.concurrent('listLegacyInstances', () => {
         name: `Legacy Process ${task.id}`,
         description: 'A legacy process',
         processSchema: legacyProcessSchema,
-        createdByProfileId: setup.organization.profileId,
+        createdByProfileId: organization.profileId,
       })
       .returning();
 
@@ -105,7 +108,7 @@ describe.concurrent('listLegacyInstances', () => {
       await db.insert(processInstances).values({
         name,
         processId: process!.id,
-        ownerProfileId: setup.organization.profileId,
+        ownerProfileId: organization.profileId,
         instanceData: legacyInstanceData,
         currentStateId: 'submission',
         status: ProcessStatus.PUBLISHED,
@@ -116,7 +119,7 @@ describe.concurrent('listLegacyInstances', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listLegacyInstances({
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: organization.profileId,
     });
 
     expect(result).toHaveLength(2);
@@ -136,19 +139,21 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     const [process] = await db
       .insert(decisionProcesses)
       .values({
         name: `Legacy Process ${task.id}`,
         processSchema: legacyProcessSchema,
-        createdByProfileId: setup.organization.profileId,
+        createdByProfileId: organization.profileId,
       })
       .returning();
 
     await db.insert(processInstances).values({
       name: 'Legacy With Proposals',
       processId: process!.id,
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: organization.profileId,
       instanceData: legacyInstanceData,
       currentStateId: 'submission',
       status: ProcessStatus.PUBLISHED,
@@ -158,7 +163,7 @@ describe.concurrent('listLegacyInstances', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listLegacyInstances({
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: organization.profileId,
     });
 
     expect(result).toHaveLength(1);
@@ -176,10 +181,12 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listLegacyInstances({
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: organization.profileId,
     });
 
     expect(result).toHaveLength(0);
@@ -195,13 +202,15 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a process with legacy schema
     const [legacyProcess] = await db
       .insert(decisionProcesses)
       .values({
         name: `Legacy Process ${task.id}`,
         processSchema: legacyProcessSchema,
-        createdByProfileId: setup.organization.profileId,
+        createdByProfileId: organization.profileId,
       })
       .returning();
 
@@ -222,7 +231,7 @@ describe.concurrent('listLegacyInstances', () => {
             },
           ],
         },
-        createdByProfileId: setup.organization.profileId,
+        createdByProfileId: organization.profileId,
       })
       .returning();
 
@@ -231,7 +240,7 @@ describe.concurrent('listLegacyInstances', () => {
       {
         name: 'Legacy Instance',
         processId: legacyProcess!.id,
-        ownerProfileId: setup.organization.profileId,
+        ownerProfileId: organization.profileId,
         instanceData: legacyInstanceData,
         currentStateId: 'submission',
         status: ProcessStatus.PUBLISHED,
@@ -240,7 +249,7 @@ describe.concurrent('listLegacyInstances', () => {
       {
         name: 'New Format Instance',
         processId: newProcess!.id,
-        ownerProfileId: setup.organization.profileId,
+        ownerProfileId: organization.profileId,
         instanceData: legacyInstanceData,
         currentStateId: 'initial',
         status: ProcessStatus.PUBLISHED,
@@ -251,7 +260,7 @@ describe.concurrent('listLegacyInstances', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listLegacyInstances({
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: organization.profileId,
     });
 
     // Only the legacy instance should be returned (new format is filtered out by safeParse)
@@ -270,6 +279,8 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
+    const organizationA = await testData.createOrganization(orgA.userEmail);
+
     // Create a separate org B user who has no access to org A
     const orgB = await testData.createDecisionSetup({
       instanceCount: 0,
@@ -280,14 +291,14 @@ describe.concurrent('listLegacyInstances', () => {
       .values({
         name: `Legacy Process ${task.id}`,
         processSchema: legacyProcessSchema,
-        createdByProfileId: orgA.organization.profileId,
+        createdByProfileId: organizationA.profileId,
       })
       .returning();
 
     await db.insert(processInstances).values({
       name: 'Private Legacy Instance',
       processId: process!.id,
-      ownerProfileId: orgA.organization.profileId,
+      ownerProfileId: organizationA.profileId,
       instanceData: legacyInstanceData,
       currentStateId: 'submission',
       status: ProcessStatus.PUBLISHED,
@@ -299,9 +310,9 @@ describe.concurrent('listLegacyInstances', () => {
 
     await expect(
       caller.decision.listLegacyInstances({
-        ownerProfileId: orgA.organization.profileId,
+        ownerProfileId: organizationA.profileId,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('should include process and owner data', async ({
@@ -314,19 +325,21 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     const [process] = await db
       .insert(decisionProcesses)
       .values({
         name: `Legacy Process ${task.id}`,
         processSchema: legacyProcessSchema,
-        createdByProfileId: setup.organization.profileId,
+        createdByProfileId: organization.profileId,
       })
       .returning();
 
     await db.insert(processInstances).values({
       name: 'Legacy With Relations',
       processId: process!.id,
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: organization.profileId,
       instanceData: legacyInstanceData,
       currentStateId: 'submission',
       status: ProcessStatus.PUBLISHED,
@@ -336,7 +349,7 @@ describe.concurrent('listLegacyInstances', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.listLegacyInstances({
-      ownerProfileId: setup.organization.profileId,
+      ownerProfileId: organization.profileId,
     });
 
     expect(result).toHaveLength(1);
@@ -349,6 +362,6 @@ describe.concurrent('listLegacyInstances', () => {
 
     // Owner should be the org profile
     expect(instance.owner).toBeDefined();
-    expect(instance.owner?.id).toBe(setup.organization.profileId);
+    expect(instance.owner?.id).toBe(organization.profileId);
   });
 });

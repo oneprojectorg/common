@@ -175,9 +175,11 @@ describe.concurrent('submitProposal', () => {
       proposalData: { title: 'Unauthorized Proposal', description: 'A test' },
     });
 
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a member user WITHOUT access to this decision's profile
     const outsider = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [], // no access to the instance profile
     });
 

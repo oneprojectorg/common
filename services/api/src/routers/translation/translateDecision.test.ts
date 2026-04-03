@@ -38,7 +38,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe.concurrent('translation.translateDecision', () => {
+describe('translation.translateDecision', () => {
   it('should translate headline, phase description, and phase names', async ({
     task,
     onTestFinished,
@@ -320,7 +320,7 @@ describe.concurrent('translation.translateDecision', () => {
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'es',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('should throw UnauthorizedError for user without decision access', async ({
@@ -365,7 +365,7 @@ describe.concurrent('translation.translateDecision', () => {
         decisionProfileId: instance.profileId,
         targetLocale: 'es',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should allow org member without direct profile access via org fallback', async ({
@@ -374,15 +374,14 @@ describe.concurrent('translation.translateDecision', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: false, // owner gets profile access, not the member
+    // Create org BEFORE instance so ownerProfileId = orgProfileId (org fallback applies)
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const organization = await testData.createOrganization(setup.userEmail);
+    const instance = await testData.createInstanceForProcess({
+      user: setup.user,
+      process: setup.process,
+      name: 'Instance 1',
     });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
 
     // Patch instance with some content so we get a non-empty result
     const instanceRecord = await db._query.processInstances.findFirst({
@@ -414,7 +413,7 @@ describe.concurrent('translation.translateDecision', () => {
 
     // Create a member of the same org (no direct profile access)
     const member = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [], // no profile access granted
     });
 

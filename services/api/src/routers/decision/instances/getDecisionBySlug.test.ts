@@ -55,9 +55,12 @@ describe.concurrent('getDecisionBySlug', () => {
 
     const { slug } = setup.instances[0]!;
 
+    // Create an org so the member user has somewhere to belong
+    const organization = await testData.createOrganization(setup.userEmail);
+
     // Create a different user who doesn't have access to the instance
     const otherUser = await testData.createMemberUser({
-      organization: setup.organization,
+      organization,
       instanceProfileIds: [], // Don't grant access to any instances
     });
     const caller = await createAuthenticatedCaller(otherUser.email);
@@ -100,7 +103,7 @@ describe.concurrent('getDecisionBySlug', () => {
 
     expect(result.processInstance.instanceData.templateId).toBeDefined();
     expect(result.processInstance.owner).toBeDefined();
-    expect(result.processInstance.owner?.id).toBe(setup.organization.profileId);
+    expect(result.processInstance.owner?.id).toBe(setup.userProfileId);
   });
 
   it('should exclude draft proposals from stats', async ({
