@@ -9,12 +9,9 @@ import { ComingSoonScreen } from '@/components/screens/ComingSoon/ComingSoonScre
 const MainPage = () => {
   const router = useRouter();
   const authUser = useAuthUser();
-  const { data: account, isPending } = trpc.account.getMyAccount.useQuery(
-    undefined,
-    { staleTime: 0 },
-  );
+  const { data: account, isFetching } = trpc.account.getMyAccount.useQuery();
 
-  if (authUser?.data && !isPending) {
+  if (authUser?.data && !isFetching) {
     if (authUser.data.user === null) {
       return <ComingSoonScreen />;
     }
