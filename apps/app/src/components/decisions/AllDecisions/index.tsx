@@ -3,9 +3,11 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { match } from '@op/core';
 import { useInfiniteScroll } from '@op/hooks';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -108,6 +110,7 @@ const DecisionsListSuspense = ({
 const AllDecisionsTabs = () => {
   const t = useTranslations();
   const { user } = useUser();
+  const [tab, setTab] = useQueryState('tab');
   const ownerProfileId = user.currentProfile?.id;
 
   const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
@@ -117,9 +120,19 @@ const AllDecisionsTabs = () => {
   });
 
   const hasDrafts = draftsCheck.items.length > 0;
+  const selectedTab = match(tab, {
+    drafts: () => (hasDrafts ? 'drafts' : 'active'),
+    other: 'other',
+    _: 'active',
+  });
 
   return (
-    <Tabs defaultSelectedKey="active">
+    <Tabs
+      selectedKey={selectedTab}
+      onSelectionChange={(key) => {
+        setTab(key === 'active' ? null : String(key));
+      }}
+    >
       <TabList variant="pill" className="gap-4 border-none">
         <Tab id="active" variant="pill">
           Your active processes

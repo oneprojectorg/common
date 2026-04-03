@@ -1,6 +1,7 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { createInstanceFromTemplateRouter } from './createInstanceFromTemplate';
 import { deleteDecisionRouter } from './deleteDecision';
+import { duplicateInstanceRouter } from './duplicateInstance';
 import { getCategoriesRouter } from './getCategories';
 import { getDecisionBySlugRouter } from './getDecisionBySlug';
 import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
@@ -13,6 +14,7 @@ import { updateInstanceRouter } from './updateInstance';
 export const instancesRouter = mergeRouters(
   createInstanceFromTemplateRouter,
   deleteDecisionRouter,
+  duplicateInstanceRouter,
   updateInstanceRouter,
   updateDecisionInstanceRouter,
   listInstancesRouter,
