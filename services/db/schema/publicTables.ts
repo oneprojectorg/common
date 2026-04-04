@@ -143,6 +143,23 @@ export {
   proposalAttachmentsRelations,
 } from './tables/proposalAttachments.sql';
 
+export {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  ProposalReviewState,
+  proposalReviewAssignmentStatusEnum,
+  proposalReviewAssignments,
+  proposalReviewRequestStateEnum,
+  proposalReviewRequests,
+  proposalReviewStateEnum,
+  proposalReviews,
+} from './tables/proposalReviews.sql';
+export type {
+  ProposalReview,
+  ProposalReviewAssignment,
+  ProposalReviewRequest,
+} from './tables/proposalReviews.sql';
+
 export { decisions, decisionsRelations } from './tables/decisions.sql';
 export type { Decision } from './tables/decisions.sql';
 

@@ -42,6 +42,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.proposals.id,
       to: r.proposalAttachments.proposalId,
     }),
+    reviewAssignments: r.many.proposalReviewAssignments({
+      from: r.proposals.id,
+      to: r.proposalReviewAssignments.proposalId,
+    }),
     transitionProposals: r.many.decisionTransitionProposals({
       from: r.proposals.id,
       to: r.decisionTransitionProposals.proposalId,
@@ -122,6 +126,18 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       alias: 'proposalHistory_lastEditedBy',
     }),
+    assignedByReviewAssignments: r.many.proposalReviewAssignments({
+      from: r.proposalHistory.historyId,
+      to: r.proposalReviewAssignments.assignedProposalHistoryId,
+    }),
+    requestedByReviewRequests: r.many.proposalReviewRequests({
+      from: r.proposalHistory.historyId,
+      to: r.proposalReviewRequests.requestedProposalHistoryId,
+    }),
+    respondedByReviewRequests: r.many.proposalReviewRequests({
+      from: r.proposalHistory.historyId,
+      to: r.proposalReviewRequests.respondedProposalHistoryId,
+    }),
   },
 
   /**
@@ -174,6 +190,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.profileUsers.profileId,
     }),
+    reviewerAssignments: r.many.proposalReviewAssignments({
+      from: r.profiles.id,
+      to: r.proposalReviewAssignments.reviewerProfileId,
+    }),
   },
 
   /**
@@ -206,6 +226,75 @@ export const relations = defineRelations(schema, (r) => ({
     proposals: r.many.proposals({
       from: r.processInstances.id,
       to: r.proposals.processInstanceId,
+    }),
+    reviewAssignments: r.many.proposalReviewAssignments({
+      from: r.processInstances.id,
+      to: r.proposalReviewAssignments.processInstanceId,
+    }),
+  },
+
+  /**
+   * Proposal review assignment relations.
+   */
+  proposalReviewAssignments: {
+    processInstance: r.one.processInstances({
+      from: r.proposalReviewAssignments.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.proposalReviewAssignments.proposalId,
+      to: r.proposals.id,
+      optional: false,
+    }),
+    assignedProposalHistory: r.one.proposalHistory({
+      from: r.proposalReviewAssignments.assignedProposalHistoryId,
+      to: r.proposalHistory.historyId,
+      alias: 'proposalReviewAssignment_assignedHistory',
+    }),
+    reviewer: r.one.profiles({
+      from: r.proposalReviewAssignments.reviewerProfileId,
+      to: r.profiles.id,
+      alias: 'proposalReviewAssignment_reviewer',
+      optional: false,
+    }),
+    requests: r.many.proposalReviewRequests({
+      from: r.proposalReviewAssignments.id,
+      to: r.proposalReviewRequests.assignmentId,
+    }),
+    reviews: r.many.proposalReviews({
+      from: r.proposalReviewAssignments.id,
+      to: r.proposalReviews.assignmentId,
+    }),
+  },
+
+  /**
+   * Proposal review request relations.
+   */
+  proposalReviewRequests: {
+    assignment: r.one.proposalReviewAssignments({
+      from: r.proposalReviewRequests.assignmentId,
+      to: r.proposalReviewAssignments.id,
+      optional: false,
+    }),
+    requestedProposalHistory: r.one.proposalHistory({
+      from: r.proposalReviewRequests.requestedProposalHistoryId,
+      to: r.proposalHistory.historyId,
+    }),
+    respondedProposalHistory: r.one.proposalHistory({
+      from: r.proposalReviewRequests.respondedProposalHistoryId,
+      to: r.proposalHistory.historyId,
+    }),
+  },
+
+  /**
+   * Proposal review relations.
+   */
+  proposalReviews: {
+    assignment: r.one.proposalReviewAssignments({
+      from: r.proposalReviews.assignmentId,
+      to: r.proposalReviewAssignments.id,
+      optional: false,
     }),
   },
 
