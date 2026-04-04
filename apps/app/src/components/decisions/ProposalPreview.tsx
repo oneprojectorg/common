@@ -99,6 +99,11 @@ export function ProposalPreview({
         <div className="space-y-6">
           {/* Metadata Row */}
           <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
+            {budget && (
+              <span className="font-serif text-title-base text-neutral-black">
+                {formatCurrency(budget.amount, undefined, budget.currency)}
+              </span>
+            )}
             {category && (
               <TagGroup className="max-w-full">
                 <Tag className="max-w-full sm:max-w-96 sm:rounded-md">
@@ -108,11 +113,6 @@ export function ProposalPreview({
                   />
                 </Tag>
               </TagGroup>
-            )}
-            {budget && (
-              <span className="font-serif text-title-base text-neutral-black">
-                {formatCurrency(budget.amount, undefined, budget.currency)}
-              </span>
             )}
           </div>
 
