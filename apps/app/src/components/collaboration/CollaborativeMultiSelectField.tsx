@@ -2,8 +2,10 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
+import { Button } from '@op/ui/Button';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import { useEffect, useMemo, useRef } from 'react';
+import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -55,6 +57,8 @@ export function CollaborativeMultiSelectField({
 
   const onChangeRef = useRef(onChange);
   const lastEmittedValueRef = useRef<string | undefined>(undefined);
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -70,22 +74,87 @@ export function CollaborativeMultiSelectField({
     onChangeRef.current?.(selectedValues);
   }, [selectedValues]);
 
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+
+      if (!fieldRef.current?.contains(target)) {
+        setIsEditing(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [isEditing]);
+
+  const handleSelectedOptionsChange = (
+    value: Array<{ id: string; label: string }>,
+  ) => {
+    const nextValues = value.map((option) => option.id);
+    setSyncedValue(JSON.stringify(nextValues));
+  };
+
+  const buttonLabel =
+    selectedOptions.length === 0
+      ? (placeholder ?? t('Select option'))
+      : selectedOptions.length === 1
+        ? t('1 category selected')
+        : t('{count} categories selected', { count: selectedOptions.length });
+
   if (options.length === 0) {
     return null;
   }
 
   return (
-    <MultiSelectComboBox
-      items={options.map((option) => ({
-        id: option.value,
-        label: option.label,
-      }))}
-      value={selectedOptions}
-      onChange={(value) => {
-        const nextValues = value.map((option) => option.id);
-        setSyncedValue(JSON.stringify(nextValues));
-      }}
-      placeholder={placeholder ?? t('Select option')}
-    />
+    <div ref={fieldRef} className="flex flex-col gap-2">
+      {isEditing ? (
+        <div className="w-full max-w-md">
+          <MultiSelectComboBox
+            items={options.map((option) => ({
+              id: option.value,
+              label: option.label,
+            }))}
+            value={selectedOptions}
+            onChange={handleSelectedOptionsChange}
+            placeholder={t('Search')}
+          />
+        </div>
+      ) : (
+        <>
+          <Button
+            variant="pill"
+            color="pill"
+            className="justify-start text-left"
+            onPress={() => setIsEditing(true)}
+          >
+            {buttonLabel}
+          </Button>
+          {selectedOptions.length > 0 && (
+            <TagGroup
+              onRemove={(keys) => {
+                handleSelectedOptionsChange(
+                  selectedOptions.filter((option) => !keys.has(option.id)),
+                );
+              }}
+            >
+              {selectedOptions.map((option) => (
+                <Tag
+                  key={option.id}
+                  id={option.id}
+                  textValue={option.label}
+                  className="text-base leading-none"
+                >
+                  {option.label}
+                </Tag>
+              ))}
+            </TagGroup>
+          )}
+        </>
+      )}
+    </div>
   );
 }

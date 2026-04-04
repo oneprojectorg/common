@@ -394,7 +394,7 @@ function renderField(
  *
  * Layout:
  * - Title at full width
- * - Category + Budget side-by-side
+ * - Budget stacked above category
  * - Dynamic template fields stacked below
  */
 export function ProposalFormRenderer({
@@ -431,9 +431,9 @@ export function ProposalFormRenderer({
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
-        <div className="flex gap-6">
-          {categoryField && render(categoryField)}
+        <div className="flex flex-col gap-4">
           {budgetField && render(budgetField)}
+          {categoryField && render(categoryField)}
         </div>
       )}
 
