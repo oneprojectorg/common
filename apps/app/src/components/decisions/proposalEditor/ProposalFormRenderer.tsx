@@ -431,7 +431,7 @@ export function ProposalFormRenderer({
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
-        <div className="flex flex-col gap-6 md:flex-row">
+        <div className="flex gap-6">
           {categoryField && render(categoryField)}
           {budgetField && render(budgetField)}
         </div>

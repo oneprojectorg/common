@@ -1,80 +1,12 @@
 import { db, eq } from '@op/db/client';
-import { decisionProcesses, taxonomies, taxonomyTerms } from '@op/db/schema';
+import { decisionProcesses } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { buildCategorySchema } from './proposalDataSchema';
+import { ensureProposalTaxonomy } from './proposalTaxonomy';
 import type { ProcessSchema } from './types';
-
-async function ensureProposalTaxonomy(categories: string[]): Promise<string[]> {
-  if (!categories || categories.length === 0) {
-    return [];
-  }
-
-  let proposalTaxonomy = await db._query.taxonomies.findFirst({
-    where: eq(taxonomies.name, 'proposal'),
-  });
-
-  if (!proposalTaxonomy) {
-    const [newTaxonomy] = await db
-      .insert(taxonomies)
-      .values({
-        name: 'proposal',
-        description:
-          'Categories for organizing proposals in decision-making processes',
-      })
-      .returning();
-
-    if (!newTaxonomy) {
-      throw new CommonError('Failed to create proposal taxonomy');
-    }
-    proposalTaxonomy = newTaxonomy;
-  }
-
-  const taxonomyTermIds: string[] = [];
-
-  for (const categoryName of categories) {
-    if (!categoryName.trim()) {
-      continue;
-    }
-
-    const categoryLabel = categoryName.trim();
-    const termUri = categoryLabel
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
-
-    let existingTerm = await db._query.taxonomyTerms.findFirst({
-      where: eq(taxonomyTerms.termUri, termUri),
-    });
-
-    if (!existingTerm) {
-      const [newTerm] = await db
-        .insert(taxonomyTerms)
-        .values({
-          taxonomyId: proposalTaxonomy.id,
-          termUri,
-          label: categoryLabel,
-          definition: `Category for ${categoryLabel} proposals`,
-        })
-        .returning();
-
-      if (!newTerm) {
-        throw new CommonError(
-          `Failed to create taxonomy term for category: ${categoryLabel}`,
-        );
-      }
-      existingTerm = newTerm;
-    }
-
-    if (existingTerm) {
-      taxonomyTermIds.push(existingTerm.id);
-    }
-  }
-
-  return taxonomyTermIds;
-}
 
 export interface UpdateProcessInput {
   name?: string;
