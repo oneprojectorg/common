@@ -65,12 +65,22 @@ jobs:
       - name: Start Supabase
         run: |
           echo "Starting Supabase with CI config..."
-          unset SUPABASE_INTERNAL_IMAGE_REGISTRY
           supabase start
           echo "Supabase started successfully"
 
       - name: Check Supabase status
         run: supabase status
+
+      - name: Debug GoTrue auth container
+        run: |
+          echo "=== GoTrue container logs ==="
+          docker logs supabase_auth_common-test 2>&1 | tail -50
+          echo "=== Test auth.admin.createUser ==="
+          curl -s -X POST http://127.0.0.1:55321/auth/v1/admin/users \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"debug-test@example.com","password":"test1234","email_confirm":true}' | jq .
 
       - name: Wait for Supabase to be ready and run migrations
         run: pnpm w:db migrate:test
