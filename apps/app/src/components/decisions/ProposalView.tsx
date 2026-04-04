@@ -1,36 +1,25 @@
 'use client';
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
-import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
-import { formatCurrency, formatDate } from '@/utils/formatting';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { ProposalStatus } from '@op/api/encoders';
 import { parseTranslatedMeta } from '@op/common/client';
-import type { Proposal, SupportedLocale } from '@op/common/client';
-import type { ProposalTemplateSchema } from '@op/common/client';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Avatar } from '@op/ui/Avatar';
-import { Header1 } from '@op/ui/Header';
-import { Link } from '@op/ui/Link';
+import type { SupportedLocale } from '@op/common/client';
 import { Surface } from '@op/ui/Surface';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { useLocale } from 'next-intl';
-import Image from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
-import { DocumentNotAvailable } from './DocumentNotAvailable';
-import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
-import { ProposalContentRenderer } from './ProposalContentRenderer';
-import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { ProposalPreview } from './ProposalPreview';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
 import { resolveProposalSystemFields } from './proposalContentUtils';
+
+type Proposal = RouterOutput['decision']['getProposal'];
 
 export function ProposalView({
   proposal: initialProposal,
@@ -141,9 +130,6 @@ export function ProposalView({
 
   const targetLanguageName = getLanguageName(locale);
 
-  const proposalTemplate =
-    (currentProposal.proposalTemplate as ProposalTemplateSchema) ?? null;
-
   // Resolve system fields from pinned TipTap version (proposalData may be stale)
   const {
     title: originalTitle,
@@ -151,7 +137,8 @@ export function ProposalView({
     category: originalCategory,
   } = resolveProposalSystemFields(currentProposal);
 
-  // Use translated category when available, otherwise original
+  // Use translated category/title when available, otherwise original
+  const title = translatedHtmlContent?.translated.title ?? originalTitle;
   const category =
     translatedHtmlContent?.translated.category ?? originalCategory;
 
@@ -165,12 +152,6 @@ export function ProposalView({
         : null,
     [translatedHtmlContent],
   );
-
-  // Legacy proposals store HTML under a single "default" key with no collab doc.
-  // Render them directly instead of going through the template-driven renderer.
-  const legacyHtml = resolvedHtmlContent?.default as string | undefined;
-
-  const isDraft = currentProposal.status === ProposalStatus.DRAFT;
 
   // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
   const showBanner =
@@ -189,224 +170,76 @@ export function ProposalView({
     >
       {/* Content */}
       <div className="flex-1 px-6 py-8">
-        <div className="mx-auto flex max-w-xl flex-col gap-8">
-          {/* Draft mode banner */}
-          {isDraft && (
-            <AlertBanner intent="default" variant="banner">
-              {t(
-                'This proposal is currently in draft mode, only you and collaborators can access it.',
-              )}
-            </AlertBanner>
-          )}
+        <ProposalPreview
+          proposal={currentProposal}
+          title={title}
+          budget={budget}
+          category={category}
+          htmlContent={resolvedHtmlContent}
+          translatedMeta={translatedMeta}
+          sourceLanguageName={
+            translatedHtmlContent ? sourceLanguageName : undefined
+          }
+          onViewOriginal={handleViewOriginal}
+        />
 
-          <div className="space-y-4">
-            <Header1 className="font-serif text-title-lg">
-              {translatedHtmlContent?.translated.title ? (
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html: translatedHtmlContent.translated.title,
-                  }}
+        {/* Comments Section */}
+        <div className="mx-auto mt-12 max-w-xl" ref={commentsContainerRef}>
+          <div className="border-t pt-8">
+            <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
+              {t('Comments')} ({comments.length})
+            </h3>
+
+            {/* Comment Input */}
+            <div className="mb-8">
+              <Surface className="border-0 p-0 sm:border sm:p-4">
+                <PostUpdate
+                  profileId={currentProposal.profileId || undefined}
+                  placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
+                  label={t('Comment')}
+                  onSuccess={scrollToComments}
+                  proposalId={currentProposal.id}
+                  processInstanceId={currentProposal.processInstanceId}
                 />
-              ) : (
-                originalTitle || t('Untitled Proposal')
-              )}
-            </Header1>
+              </Surface>
+            </div>
 
-            {/* Translation attribution */}
-            {translatedHtmlContent && (
-              <p className="text-sm text-neutral-gray3">
-                {t('Translated from {language}', {
-                  language: sourceLanguageName,
-                })}{' '}
-                &middot;{' '}
-                <Link
-                  onPress={handleViewOriginal}
-                  className="text-sm font-semibold"
-                >
-                  {t('View original')}
-                </Link>
-              </p>
-            )}
-
-            <div className="space-y-6">
-              {/* Metadata Row */}
-              <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
-                {category && (
-                  <TagGroup className="max-w-full">
-                    <Tag className="max-w-full sm:max-w-96 sm:rounded-md">
-                      <span
-                        className="truncate"
-                        dangerouslySetInnerHTML={{ __html: category }}
+            {/* Comments Display */}
+            {commentsLoading ? (
+              <div
+                className="py-8 text-center text-gray-500"
+                role="status"
+                aria-label={t('Loading comments')}
+              >
+                {t('Loading comments...')}
+              </div>
+            ) : comments.length > 0 ? (
+              <div role="feed" aria-label={`${comments.length} comments`}>
+                <PostFeed>
+                  {comments.map((comment, i) => (
+                    <div key={comment.id}>
+                      <PostItem
+                        post={comment}
+                        organization={null}
+                        user={user}
+                        withLinks={false}
+                        onReactionClick={handleReactionClick}
+                        className="sm:px-0"
                       />
-                    </Tag>
-                  </TagGroup>
-                )}
-                {budget && (
-                  <span className="font-serif text-title-base text-neutral-black">
-                    {formatCurrency(budget.amount, undefined, budget.currency)}
-                  </span>
-                )}
-              </div>
-
-              {/* Author and submission info */}
-              <div className="flex items-center gap-2">
-                {currentProposal.submittedBy && (
-                  <>
-                    <Avatar
-                      placeholder={
-                        currentProposal.submittedBy.name ||
-                        currentProposal.submittedBy.slug ||
-                        'U'
-                      }
-                      className="size-8"
-                    >
-                      {currentProposal.submittedBy.avatarImage?.name ? (
-                        <Image
-                          src={
-                            getPublicUrl(
-                              currentProposal.submittedBy.avatarImage.name,
-                            ) ?? ''
-                          }
-                          alt={
-                            currentProposal.submittedBy.name ||
-                            currentProposal.submittedBy.slug ||
-                            ''
-                          }
-                          fill
-                          className="aspect-square object-cover"
-                        />
-                      ) : null}
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-base text-neutral-black">
-                        {currentProposal.submittedBy.name ||
-                          currentProposal.submittedBy.slug}
-                      </span>
-                      {!isDraft && (
-                        <span className="text-sm text-neutral-charcoal">
-                          {t('Submitted on')}{' '}
-                          {formatDate(currentProposal.createdAt)}
-                        </span>
-                      )}
+                      {comments.length !== i + 1 && <hr className="my-4" />}
                     </div>
-                  </>
-                )}
+                  ))}
+                </PostFeed>
               </div>
-
-              {/* Engagement Stats */}
-              <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-neutral-gray4">
-                <div className="flex items-center gap-1">
-                  <LuHeart className="h-4 w-4" />
-                  <span>
-                    {currentProposal.likesCount || 0} {t('Likes')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <LuMessageCircle className="h-4 w-4" />
-                  <span>
-                    {currentProposal.commentsCount || 0}{' '}
-                    {(currentProposal.commentsCount || 0) !== 1
-                      ? t('Comments')
-                      : t('Comment')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <LuBookmark className="size-4" />
-                  <span>
-                    {currentProposal.followersCount || 0}{' '}
-                    {(currentProposal.followersCount || 0) !== 1
-                      ? t('Followers')
-                      : t('Follower')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Proposal Content */}
-          {legacyHtml ? (
-            <ProposalHtmlContent html={legacyHtml} />
-          ) : resolvedHtmlContent ? (
-            <ProposalContentRenderer
-              proposalTemplate={proposalTemplate}
-              htmlContent={resolvedHtmlContent}
-              translatedMeta={translatedMeta}
-            />
-          ) : (
-            <DocumentNotAvailable />
-          )}
-
-          {/* Attachments Section */}
-          {currentProposal.attachments &&
-            currentProposal.attachments.length > 0 && (
-              <div className="border-t pt-8">
-                <h3 className="mb-4 text-lg font-semibold text-neutral-charcoal">
-                  {t('Attachments')}
-                </h3>
-                <ProposalAttachmentViewList
-                  attachments={currentProposal.attachments}
-                />
+            ) : (
+              <div
+                className="py-8 text-center text-gray-500"
+                role="status"
+                aria-label={t('No comments')}
+              >
+                {t('No comments yet. Be the first to comment!')}
               </div>
             )}
-
-          {/* Comments Section */}
-          <div className="mt-12" ref={commentsContainerRef}>
-            <div className="border-t pt-8">
-              <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
-                {t('Comments')} ({comments.length})
-              </h3>
-
-              {/* Comment Input */}
-              <div className="mb-8">
-                <Surface className="border-0 p-0 sm:border sm:p-4">
-                  <PostUpdate
-                    profileId={currentProposal.profileId || undefined}
-                    placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
-                    label={t('Comment')}
-                    onSuccess={scrollToComments}
-                    proposalId={currentProposal.id}
-                    processInstanceId={currentProposal.processInstanceId}
-                  />
-                </Surface>
-              </div>
-
-              {/* Comments Display */}
-              {commentsLoading ? (
-                <div
-                  className="py-8 text-center text-gray-500"
-                  role="status"
-                  aria-label={t('Loading comments')}
-                >
-                  {t('Loading comments...')}
-                </div>
-              ) : comments.length > 0 ? (
-                <div role="feed" aria-label={`${comments.length} comments`}>
-                  <PostFeed>
-                    {comments.map((comment, i) => (
-                      <div key={comment.id}>
-                        <PostItem
-                          post={comment}
-                          organization={null}
-                          user={user}
-                          withLinks={false}
-                          onReactionClick={handleReactionClick}
-                          className="sm:px-0"
-                        />
-                        {comments.length !== i + 1 && <hr className="my-4" />}
-                      </div>
-                    ))}
-                  </PostFeed>
-                </div>
-              ) : (
-                <div
-                  className="py-8 text-center text-gray-500"
-                  role="status"
-                  aria-label={t('No comments')}
-                >
-                  {t('No comments yet. Be the first to comment!')}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
