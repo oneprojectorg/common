@@ -5,8 +5,8 @@ import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { ProposalStatus } from '@op/api/encoders';
 import {
-  parseTranslatedMeta,
   type ProposalTemplateSchema,
+  parseTranslatedMeta,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
@@ -38,7 +38,10 @@ export type ProposalPreviewProps = {
   translation?: ProposalTranslation;
 };
 
-export function ProposalPreview({ proposal, translation }: ProposalPreviewProps) {
+export function ProposalPreview({
+  proposal,
+  translation,
+}: ProposalPreviewProps) {
   const t = useTranslations();
 
   const proposalTemplate =
@@ -46,8 +49,11 @@ export function ProposalPreview({ proposal, translation }: ProposalPreviewProps)
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
 
-  const { title: originalTitle, budget, category: originalCategory } =
-    resolveProposalSystemFields(proposal);
+  const {
+    title: originalTitle,
+    budget,
+    category: originalCategory,
+  } = resolveProposalSystemFields(proposal);
 
   const htmlContent = translation?.htmlContent ?? proposal.htmlContent;
   const title = translation?.htmlContent.title ?? originalTitle;
