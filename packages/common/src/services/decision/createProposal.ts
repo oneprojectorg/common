@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq, inArray } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
@@ -9,6 +9,7 @@ import {
   proposalAttachments,
   proposalCategories,
   proposals,
+  taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -31,42 +32,6 @@ import {
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
-
-async function resolveProposalCategoryTermIds(
-  categoryLabels: string[],
-): Promise<string[]> {
-  const ids: string[] = [];
-
-  for (const categoryLabel of categoryLabels) {
-    if (!categoryLabel.trim()) {
-      continue;
-    }
-
-    try {
-      const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-        where: eq(taxonomyTerms.label, categoryLabel.trim()),
-        with: {
-          taxonomy: true,
-        },
-      });
-
-      if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
-        ids.push(taxonomyTerm.id);
-      } else {
-        console.warn(
-          `No valid proposal taxonomy term found for category: ${categoryLabel}`,
-        );
-      }
-    } catch (error) {
-      console.warn(
-        `Error fetching category term for ${categoryLabel}, skipping category:`,
-        error,
-      );
-    }
-  }
-
-  return ids;
-}
 
 export interface CreateProposalInput {
   processInstanceId: string;
@@ -139,9 +104,50 @@ export const createProposal = async ({
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
 
     // Pre-fetch category terms if specified to avoid lookup inside transaction
-    const categoryLabels = parsedProposalData.category;
-    const categoryTermIds =
-      await resolveProposalCategoryTermIds(categoryLabels);
+    const categoryLabels = [...new Set(parsedProposalData.category)];
+    let categoryTermIds: string[] = [];
+
+    if (categoryLabels.length > 0) {
+      try {
+        const proposalTaxonomy = await db._query.taxonomies.findFirst({
+          where: eq(taxonomies.name, 'proposal'),
+        });
+
+        if (proposalTaxonomy) {
+          const categoryTerms = await db._query.taxonomyTerms.findMany({
+            where: and(
+              eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
+              inArray(taxonomyTerms.label, categoryLabels),
+            ),
+          });
+
+          categoryTermIds = categoryTerms.map((term) => term.id);
+
+          const matchedLabels = new Set(
+            categoryTerms.map((term) => term.label),
+          );
+
+          for (const categoryLabel of categoryLabels) {
+            if (!matchedLabels.has(categoryLabel)) {
+              console.warn(
+                `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+              );
+            }
+          }
+        } else {
+          for (const categoryLabel of categoryLabels) {
+            console.warn(
+              `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+            );
+          }
+        }
+      } catch (error) {
+        console.warn(
+          'Error fetching category terms, proceeding without category links:',
+          error,
+        );
+      }
+    }
 
     const [profileId, adminRole] = await Promise.all([
       getCurrentProfileId(authUserId),
