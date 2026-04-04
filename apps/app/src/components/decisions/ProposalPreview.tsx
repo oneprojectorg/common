@@ -38,6 +38,7 @@ export type ProposalPreviewProposal = Pick<
   | 'attachments'
   | 'proposalTemplate'
   | 'createdAt'
+  | 'htmlContent'
 >;
 
 export type ProposalPreviewProps = {
@@ -48,11 +49,11 @@ export type ProposalPreviewProps = {
   budget: MoneyAmount | null | undefined;
   /** Category string — may be translated HTML */
   category: string | null | undefined;
-  /** Pre-rendered HTML per fragment key — may already be the translated variant */
-  htmlContent: Record<string, string> | null | undefined;
+  /** When set, overrides proposal.htmlContent with translated HTML and shows attribution */
+  translatedHtmlContent?: Record<string, string>;
   /** Parsed translation metadata for field titles/descriptions/option labels */
   translatedMeta: TranslatedMeta | null;
-  /** When set, shows "Translated from {language}" attribution below the title */
+  /** Shown in "Translated from {language}" attribution — only relevant when translatedHtmlContent is set */
   sourceLanguageName?: string;
   onViewOriginal?: () => void;
 };
@@ -62,7 +63,7 @@ export function ProposalPreview({
   title,
   budget,
   category,
-  htmlContent,
+  translatedHtmlContent,
   translatedMeta,
   sourceLanguageName,
   onViewOriginal,
@@ -73,6 +74,8 @@ export function ProposalPreview({
     (proposal.proposalTemplate as ProposalTemplateSchema) ?? null;
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
+
+  const htmlContent = translatedHtmlContent ?? proposal.htmlContent;
 
   // Legacy proposals store HTML under a single "default" key with no collab doc.
   // Render them directly instead of going through the template-driven renderer.

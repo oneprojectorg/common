@@ -142,9 +142,6 @@ export function ProposalView({
   const category =
     translatedHtmlContent?.translated.category ?? originalCategory;
 
-  const resolvedHtmlContent =
-    translatedHtmlContent?.translated ?? currentProposal.htmlContent;
-
   const translatedMeta = useMemo(
     () =>
       translatedHtmlContent
@@ -175,7 +172,7 @@ export function ProposalView({
           title={title}
           budget={budget}
           category={category}
-          htmlContent={resolvedHtmlContent}
+          translatedHtmlContent={translatedHtmlContent?.translated}
           translatedMeta={translatedMeta}
           sourceLanguageName={
             translatedHtmlContent ? sourceLanguageName : undefined
