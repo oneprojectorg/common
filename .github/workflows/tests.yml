@@ -62,13 +62,13 @@ jobs:
       - name: Use CI config
         run: cp supabase/supabase-ci.toml supabase/config.toml
 
-      - name: Pin GoTrue Docker image from Docker Hub
+      - name: Pin GoTrue Docker image
         run: |
-          # Blacksmith's ghcr.io mirror serves a broken GoTrue image for the
-          # v2.184.0 tag. Pre-pull from Docker Hub and re-tag so supabase start
-          # uses the correct image instead of the broken mirror.
-          docker pull supabase/gotrue:v2.184.0
-          docker tag supabase/gotrue:v2.184.0 ghcr.io/supabase/gotrue:v2.184.0
+          # The gotrue:v2.184.0 tag was re-pushed with a broken build on both
+          # Docker Hub and ghcr.io. Pin to v2.183.0 (last known good) and
+          # re-tag it as v2.184.0 so supabase start uses it.
+          docker pull supabase/gotrue:v2.183.0
+          docker tag supabase/gotrue:v2.183.0 ghcr.io/supabase/gotrue:v2.184.0
 
       - name: Start Supabase
         run: |
