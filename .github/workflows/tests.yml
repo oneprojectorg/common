@@ -11,9 +11,12 @@ jobs:
     env:
       # Tiptap Pro registry authentication
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
-      # Static env vars (Supabase keys are set dynamically after `supabase start`)
+      # Supabase test instance environment variables (using local dev keys)
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
       SUPABASE_URL: http://127.0.0.1:55321
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
       NEXT_PUBLIC_POSTHOG_KEY: test_posthog_key
 
@@ -59,6 +62,14 @@ jobs:
       - name: Use CI config
         run: cp supabase/supabase-ci.toml supabase/config.toml
 
+      - name: Pin GoTrue Docker image from Docker Hub
+        run: |
+          # Blacksmith's ghcr.io mirror serves a broken GoTrue image for the
+          # v2.184.0 tag. Pre-pull from Docker Hub and re-tag so supabase start
+          # uses the correct image instead of the broken mirror.
+          docker pull supabase/gotrue:v2.184.0
+          docker tag supabase/gotrue:v2.184.0 ghcr.io/supabase/gotrue:v2.184.0
+
       - name: Start Supabase
         run: |
           echo "Starting Supabase with CI config..."
@@ -67,15 +78,6 @@ jobs:
 
       - name: Check Supabase status
         run: supabase status
-
-      - name: Export Supabase auth keys
-        run: |
-          eval "$(supabase status -o env | grep -E '^(PUBLISHABLE_KEY|SECRET_KEY)=')"
-          {
-            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
-            echo "SUPABASE_ANON_KEY=${SECRET_KEY}"
-            echo "SUPABASE_SERVICE_ROLE=${SECRET_KEY}"
-          } >> "$GITHUB_ENV"
 
       - name: Wait for Supabase to be ready and run migrations
         run: pnpm w:db migrate:test
