@@ -9,6 +9,7 @@ import {
   proposalAttachments,
   proposalCategories,
   proposals,
+  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -30,7 +31,42 @@ import {
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
-import { resolveProposalCategoryTermIds } from './utils/taxonomy';
+
+async function resolveProposalCategoryTermIds(
+  categoryLabels: string[],
+): Promise<string[]> {
+  const ids: string[] = [];
+
+  for (const categoryLabel of categoryLabels) {
+    if (!categoryLabel.trim()) {
+      continue;
+    }
+
+    try {
+      const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
+        where: eq(taxonomyTerms.label, categoryLabel.trim()),
+        with: {
+          taxonomy: true,
+        },
+      });
+
+      if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
+        ids.push(taxonomyTerm.id);
+      } else {
+        console.warn(
+          `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+        );
+      }
+    } catch (error) {
+      console.warn(
+        `Error fetching category term for ${categoryLabel}, skipping category:`,
+        error,
+      );
+    }
+  }
+
+  return ids;
+}
 
 export interface CreateProposalInput {
   processInstanceId: string;

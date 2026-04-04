@@ -1,10 +1,12 @@
-import { type TransactionType, db, eq } from '@op/db/client';
+import { type TransactionType, and, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   type Visibility,
   profiles,
   proposalCategories,
   proposals,
+  taxonomies,
+  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
@@ -21,7 +23,6 @@ import type { ProposalDataInput } from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { resolveProposalCategoryTermIds } from './utils/taxonomy';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 async function updateProposalCategoryLink(
@@ -37,10 +38,36 @@ async function updateProposalCategoryLink(
     return;
   }
 
-  const taxonomyTermIds = await resolveProposalCategoryTermIds(
-    newCategoryLabels,
-    tx,
-  );
+  const proposalTaxonomy = await tx._query.taxonomies.findFirst({
+    where: eq(taxonomies.name, 'proposal'),
+  });
+
+  if (!proposalTaxonomy) {
+    console.warn('No "proposal" taxonomy found, skipping category linking');
+    return;
+  }
+
+  const taxonomyTermIds: string[] = [];
+
+  for (const categoryLabel of newCategoryLabels) {
+    if (!categoryLabel.trim()) {
+      continue;
+    }
+
+    const taxonomyTerm = await tx._query.taxonomyTerms.findFirst({
+      where: and(
+        eq(taxonomyTerms.label, categoryLabel.trim()),
+        eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
+      ),
+    });
+
+    if (!taxonomyTerm) {
+      console.warn(`No taxonomy term found for category: ${categoryLabel}`);
+      continue;
+    }
+
+    taxonomyTermIds.push(taxonomyTerm.id);
+  }
 
   if (taxonomyTermIds.length > 0) {
     await tx.insert(proposalCategories).values(
