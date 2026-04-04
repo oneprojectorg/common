@@ -20,8 +20,8 @@ import { assertUserByAuthId } from '../assert';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { resolveProposalCategoryTermIds } from './utils/taxonomy';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { resolveProposalCategoryTermIds } from './utils/taxonomy';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 async function updateProposalCategoryLink(

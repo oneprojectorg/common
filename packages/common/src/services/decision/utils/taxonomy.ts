@@ -1,6 +1,6 @@
 import { and, db, eq, inArray } from '@op/db/client';
-import { taxonomies, taxonomyTerms } from '@op/db/schema';
 import type { TransactionType } from '@op/db/client';
+import { taxonomies, taxonomyTerms } from '@op/db/schema';
 
 import { CommonError } from '../../../utils';
 
