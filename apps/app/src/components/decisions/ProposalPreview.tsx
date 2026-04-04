@@ -4,10 +4,9 @@ import { getPublicUrl } from '@/utils';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api';
 import { ProposalStatus } from '@op/api/encoders';
-import type {
-  MoneyAmount,
-  ProposalTemplateSchema,
+import {
   parseTranslatedMeta,
+  type ProposalTemplateSchema,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
@@ -23,51 +22,23 @@ import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { resolveProposalSystemFields } from './proposalContentUtils';
 
 type Proposal = RouterOutput['decision']['getProposal'];
 
-type TranslatedMeta = ReturnType<typeof parseTranslatedMeta>;
-
-export type ProposalPreviewProposal = Pick<
-  Proposal,
-  | 'submittedBy'
-  | 'status'
-  | 'likesCount'
-  | 'commentsCount'
-  | 'followersCount'
-  | 'attachments'
-  | 'proposalTemplate'
-  | 'createdAt'
-  | 'htmlContent'
->;
-
-export type ProposalPreviewProps = {
-  proposal: ProposalPreviewProposal;
-  /** Pre-resolved title (from document fragments or proposalData, optionally translated) */
-  title: string | null | undefined;
-  /** Pre-resolved budget (from document fragments or proposalData) */
-  budget: MoneyAmount | null | undefined;
-  /** Category string — may be translated HTML */
-  category: string | null | undefined;
-  /** When set, overrides proposal.htmlContent with translated HTML and shows attribution */
-  translatedHtmlContent?: Record<string, string>;
-  /** Parsed translation metadata for field titles/descriptions/option labels */
-  translatedMeta: TranslatedMeta | null;
-  /** Shown in "Translated from {language}" attribution — only relevant when translatedHtmlContent is set */
-  sourceLanguageName?: string;
-  onViewOriginal?: () => void;
+export type ProposalTranslation = {
+  htmlContent: Record<string, string>;
+  sourceLanguageName: string;
+  onViewOriginal: () => void;
 };
 
-export function ProposalPreview({
-  proposal,
-  title,
-  budget,
-  category,
-  translatedHtmlContent,
-  translatedMeta,
-  sourceLanguageName,
-  onViewOriginal,
-}: ProposalPreviewProps) {
+export type ProposalPreviewProps = {
+  proposal: Proposal;
+  /** When set, overrides proposal content with translated HTML and shows attribution */
+  translation?: ProposalTranslation;
+};
+
+export function ProposalPreview({ proposal, translation }: ProposalPreviewProps) {
   const t = useTranslations();
 
   const proposalTemplate =
@@ -75,7 +46,15 @@ export function ProposalPreview({
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
 
-  const htmlContent = translatedHtmlContent ?? proposal.htmlContent;
+  const { title: originalTitle, budget, category: originalCategory } =
+    resolveProposalSystemFields(proposal);
+
+  const htmlContent = translation?.htmlContent ?? proposal.htmlContent;
+  const title = translation?.htmlContent.title ?? originalTitle;
+  const category = translation?.htmlContent.category ?? originalCategory;
+  const translatedMeta = translation
+    ? parseTranslatedMeta(translation.htmlContent)
+    : null;
 
   // Legacy proposals store HTML under a single "default" key with no collab doc.
   // Render them directly instead of going through the template-driven renderer.
@@ -98,13 +77,16 @@ export function ProposalPreview({
         </Header1>
 
         {/* Translation attribution */}
-        {sourceLanguageName && (
+        {translation && (
           <p className="text-sm text-neutral-gray3">
             {t('Translated from {language}', {
-              language: sourceLanguageName,
+              language: translation.sourceLanguageName,
             })}{' '}
             &middot;{' '}
-            <Link onPress={onViewOriginal} className="text-sm font-semibold">
+            <Link
+              onPress={translation.onViewOriginal}
+              className="text-sm font-semibold"
+            >
               {t('View original')}
             </Link>
           </p>

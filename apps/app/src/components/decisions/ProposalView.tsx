@@ -4,11 +4,10 @@ import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { parseTranslatedMeta } from '@op/common/client';
 import type { SupportedLocale } from '@op/common/client';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,7 +16,6 @@ import { PostUpdate } from '../PostUpdate';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
-import { resolveProposalSystemFields } from './proposalContentUtils';
 
 type Proposal = RouterOutput['decision']['getProposal'];
 
@@ -130,26 +128,6 @@ export function ProposalView({
 
   const targetLanguageName = getLanguageName(locale);
 
-  // Resolve system fields from pinned TipTap version (proposalData may be stale)
-  const {
-    title: originalTitle,
-    budget,
-    category: originalCategory,
-  } = resolveProposalSystemFields(currentProposal);
-
-  // Use translated category/title when available, otherwise original
-  const title = translatedHtmlContent?.translated.title ?? originalTitle;
-  const category =
-    translatedHtmlContent?.translated.category ?? originalCategory;
-
-  const translatedMeta = useMemo(
-    () =>
-      translatedHtmlContent
-        ? parseTranslatedMeta(translatedHtmlContent.translated)
-        : null,
-    [translatedHtmlContent],
-  );
-
   // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
   const showBanner =
     locale !== 'en' && !bannerDismissed && !translatedHtmlContent;
@@ -169,15 +147,15 @@ export function ProposalView({
       <div className="flex-1 px-6 py-8">
         <ProposalPreview
           proposal={currentProposal}
-          title={title}
-          budget={budget}
-          category={category}
-          translatedHtmlContent={translatedHtmlContent?.translated}
-          translatedMeta={translatedMeta}
-          sourceLanguageName={
-            translatedHtmlContent ? sourceLanguageName : undefined
+          translation={
+            translatedHtmlContent
+              ? {
+                  htmlContent: translatedHtmlContent.translated,
+                  sourceLanguageName,
+                  onViewOriginal: handleViewOriginal,
+                }
+              : undefined
           }
-          onViewOriginal={handleViewOriginal}
         />
 
         {/* Comments Section */}
