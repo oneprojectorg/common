@@ -65,6 +65,7 @@ jobs:
       - name: Start Supabase
         run: |
           echo "Starting Supabase with CI config..."
+          unset SUPABASE_INTERNAL_IMAGE_REGISTRY
           supabase start
           echo "Supabase started successfully"
 
