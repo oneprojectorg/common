@@ -73,14 +73,33 @@ jobs:
 
       - name: Debug GoTrue auth container
         run: |
-          echo "=== GoTrue container logs ==="
-          docker logs supabase_auth_common-test 2>&1 | tail -50
-          echo "=== Test auth.admin.createUser ==="
+          echo "=== GoTrue container logs (last 30) ==="
+          docker logs supabase_auth_common-test 2>&1 | tail -30
+          echo ""
+          echo "=== Test admin createUser via curl ==="
           curl -s -X POST http://127.0.0.1:55321/auth/v1/admin/users \
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE" \
             -H "apikey: $SUPABASE_SERVICE_ROLE" \
             -H "Content-Type: application/json" \
-            -d '{"email":"debug-test@example.com","password":"test1234","email_confirm":true}' | jq .
+            -d '{"email":"debug-curl@example.com","password":"test1234","email_confirm":true}' | jq .
+          echo ""
+          echo "=== Test admin createUser via JS client ==="
+          node -e "
+            const { createClient } = require('@supabase/supabase-js');
+            const c = createClient('http://127.0.0.1:55321', '$SUPABASE_SERVICE_ROLE', { auth: { persistSession: false, autoRefreshToken: false } });
+            c.auth.admin.createUser({ email: 'debug-js@example.com', password: 'test1234', email_confirm: true })
+              .then(r => { console.log('SUCCESS:', JSON.stringify(r.data?.user?.id)); if (r.error) console.log('ERROR:', JSON.stringify(r.error)); })
+              .catch(e => console.log('EXCEPTION:', e.message));
+          "
+          echo ""
+          echo "=== Test signUp via JS client ==="
+          node -e "
+            const { createClient } = require('@supabase/supabase-js');
+            const c = createClient('http://127.0.0.1:55321', '$NEXT_PUBLIC_SUPABASE_ANON_KEY', { auth: { persistSession: false } });
+            c.auth.signUp({ email: 'debug-signup@example.com', password: 'test1234' })
+              .then(r => { console.log('SUCCESS:', JSON.stringify(r.data?.user?.id)); if (r.error) console.log('ERROR:', JSON.stringify(r.error)); })
+              .catch(e => console.log('EXCEPTION:', e.message));
+          "
 
       - name: Wait for Supabase to be ready and run migrations
         run: pnpm w:db migrate:test
