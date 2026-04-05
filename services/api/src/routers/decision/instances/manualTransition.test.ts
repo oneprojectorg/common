@@ -304,12 +304,10 @@ describe.concurrent('manualTransition', () => {
       .where(eq(processInstances.id, instance.instance.id));
 
     // Also update the process schema to include all 3 phases
-    const processId = (instance.instance as unknown as { processId: string })
-      .processId;
     await db
       .update(decisionProcesses)
       .set({ processSchema: threePhaseSchema })
-      .where(eq(decisionProcesses.id, processId));
+      .where(eq(decisionProcesses.id, dbInstance!.processId!));
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
