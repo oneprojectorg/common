@@ -4,12 +4,51 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import type { DecisionInstanceData } from './schemas';
 
 export interface ProcessCategory {
   id: string;
   name: string;
   termUri: string;
+}
+
+/**
+ * Extracts category labels from instance data, supporting both:
+ * - Template-based instances: config.categories (ProposalCategory[])
+ * - Legacy instances: fieldValues.categories (string[])
+ */
+function extractCategoryLabels(
+  instanceData: Record<string, unknown>,
+): string[] {
+  // Template-based path: config.categories is an array of {id, label, description}
+  const config = instanceData.config as Record<string, unknown> | undefined;
+  const configCategories = config?.categories;
+  if (Array.isArray(configCategories) && configCategories.length > 0) {
+    return configCategories
+      .filter(
+        (cat): cat is { label: string } =>
+          typeof cat === 'object' &&
+          cat !== null &&
+          'label' in cat &&
+          typeof cat.label === 'string',
+      )
+      .map((cat) => cat.label);
+  }
+
+  // Legacy path: fieldValues.categories is a string array
+  const fieldValues = instanceData.fieldValues as
+    | Record<string, unknown>
+    | undefined;
+  const fieldValuesCategories = fieldValues?.categories;
+  if (
+    Array.isArray(fieldValuesCategories) &&
+    fieldValuesCategories.length > 0
+  ) {
+    return fieldValuesCategories.filter(
+      (cat): cat is string => typeof cat === 'string' && cat.trim() !== '',
+    );
+  }
+
+  return [];
 }
 
 export const getProcessCategories = async ({
@@ -51,11 +90,11 @@ export const getProcessCategories = async ({
       }),
     ]);
 
-    // Extract categories from the instance config
-    const instanceCategories = (instance.instanceData as DecisionInstanceData)
-      .config?.categories;
+    const categoryLabels = extractCategoryLabels(
+      instance.instanceData as Record<string, unknown>,
+    );
 
-    if (!instanceCategories || instanceCategories.length === 0) {
+    if (categoryLabels.length === 0) {
       return [];
     }
 
@@ -66,8 +105,8 @@ export const getProcessCategories = async ({
     // Find matching taxonomy terms for the categories
     const categories: ProcessCategory[] = [];
 
-    for (const category of instanceCategories) {
-      const expectedTermUri = category.label
+    for (const label of categoryLabels) {
+      const expectedTermUri = label
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
