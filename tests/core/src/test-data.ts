@@ -64,7 +64,7 @@ export interface CreateUserOptions {
 export async function createUser(opts: CreateUserOptions) {
   const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
 
-  const maxRetries = 3;
+  const maxRetries = 8;
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -80,7 +80,9 @@ export async function createUser(opts: CreateUserOptions) {
         error.message.includes('Unexpected failure');
       if (isTransient && attempt < maxRetries) {
         lastError = new Error(error.message);
-        await new Promise((r) => setTimeout(r, 200 * 2 ** attempt));
+        await new Promise((r) =>
+          setTimeout(r, 100 + Math.random() * 200 * 2 ** attempt),
+        );
         continue;
       }
       throw new Error(`Failed to create test user: ${error.message}`);

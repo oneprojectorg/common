@@ -62,18 +62,6 @@ jobs:
       - name: Use CI config
         run: cp supabase/supabase-ci.toml supabase/config.toml
 
-      - name: Pin Supabase Docker images from Docker Hub
-        run: |
-          # Blacksmith mirrors Docker pulls via SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io.
-          # The ghcr.io mirror may serve stale/broken images. Pre-pull by digest
-          # from Docker Hub and tag for ghcr.io so supabase start uses them.
-          pin() { docker pull "supabase/$1@$2" && docker tag "supabase/$1@$2" "ghcr.io/supabase/$1"; }
-          pin "gotrue:v2.184.0"     "sha256:c485010238ab429edf4ac8eb70b37b41aae0a0905277a935d4a0b64bb848e393"
-          pin "postgres:17.6.1.067" "sha256:a05666de4398dcd9077cc8e2a76d712036d84356cf679d845193c38a187ed1fd"
-          pin "kong:2.8.1"          "sha256:1b53405d8680a09d6f44494b7990bf7da2ea43f84a258c59717d4539abf09f6d"
-          pin "realtime:v2.69.1"    "sha256:f38207af46fcf9a550d5b656aefb67bdf5963308b6825eec587c450e7835b5e9"
-          pin "storage-api:v1.33.4" "sha256:cfea6cdfaf7ebf425175bc0dce449af5f323cb25d6be87a4873aa4a541b57505"
-
       - name: Start Supabase
         run: |
           echo "Starting Supabase with CI config..."
