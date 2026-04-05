@@ -656,13 +656,7 @@ function ProfileInviteModalContent({
           isDisabled={allSelectedItems.length === 0}
           isPending={isSubmitting}
         >
-          {showDraftBanner
-            ? isSubmitting
-              ? t('Adding...')
-              : t('Add')
-            : isSubmitting
-              ? t('Sending...')
-              : t('Send')}
+          {isSubmitting ? t('Adding...') : t('Add')}
         </Button>
       </ModalFooter>
     </>
