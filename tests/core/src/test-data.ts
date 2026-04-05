@@ -58,33 +58,58 @@ export interface CreateUserOptions {
   password?: string;
 }
 
-/** Creates a user via Supabase admin API, bypassing email confirmation. */
+/** Creates a user via Supabase admin API, bypassing email confirmation.
+ *  Retries on transient GoTrue "Database error" failures caused by
+ *  concurrent auth operations overwhelming the service. */
 export async function createUser(opts: CreateUserOptions) {
   const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
 
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
+  const maxRetries = 3;
+  let lastError: Error | null = null;
 
-  if (error) {
-    throw new Error(`Failed to create test user: ${error.message}`);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+
+    if (error) {
+      const isTransient =
+        error.message.includes('Database error') ||
+        error.message.includes('Unexpected failure');
+      if (isTransient && attempt < maxRetries) {
+        lastError = new Error(error.message);
+        await new Promise((r) => setTimeout(r, 200 * 2 ** attempt));
+        continue;
+      }
+      throw new Error(`Failed to create test user: ${error.message}`);
+    }
+
+    if (!data.user) {
+      throw new Error(`No user returned when creating test user: ${email}`);
+    }
+
+    return finishUserCreation(data.user, email);
   }
 
-  if (!data.user) {
-    throw new Error(`No user returned when creating test user: ${email}`);
-  }
+  throw lastError ?? new Error(`Failed to create test user after retries`);
+}
+
+async function finishUserCreation(
+  user: { id: string; email?: string },
+  email: string,
+) {
 
   // Mark test users as onboarded so they aren't redirected to /start
   await db
     .update(users)
     .set({ onboardedAt: new Date().toISOString() })
-    .where(eq(users.authUserId, data.user.id));
+    .where(eq(users.authUserId, user.id));
 
   return {
-    id: data.user.id,
-    email: data.user.email ?? email,
+    id: user.id,
+    email: user.email ?? email,
   };
 }
 

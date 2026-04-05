@@ -78,7 +78,8 @@ export async function createTestContextWithSession(
 }
 
 /**
- * Create a test user and return the user object
+ * Create a test user and return the user object.
+ * Retries on transient GoTrue errors from concurrent auth load.
  */
 export async function createTestUser(
   email: string,
@@ -88,19 +89,32 @@ export async function createTestUser(
     throw new Error('Supabase test client not initialized');
   }
 
-  const { data, error } = await supabaseTestClient.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: undefined,
-    },
-  });
+  const maxRetries = 3;
 
-  if (error) {
-    throw new Error(`Failed to create test user: ${error.message}`);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const { data, error } = await supabaseTestClient.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: undefined,
+      },
+    });
+
+    if (error) {
+      const isTransient =
+        error.message.includes('Database error') ||
+        error.message.includes('Unexpected failure');
+      if (isTransient && attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 200 * 2 ** attempt));
+        continue;
+      }
+      throw new Error(`Failed to create test user: ${error.message}`);
+    }
+
+    return data;
   }
 
-  return data;
+  throw new Error(`Failed to create test user after retries`);
 }
 
 /**
