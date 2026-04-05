@@ -25,9 +25,11 @@ type Proposal = z.infer<typeof proposalEncoder>;
 export function ProposalCardMenu({
   proposal,
   canManage = false,
+  hideDelete = false,
 }: {
   proposal: Proposal;
   canManage?: boolean;
+  hideDelete?: boolean;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -248,8 +250,8 @@ export function ProposalCardMenu({
       });
     }
 
-    // Delete action for own proposals (including drafts)
-    if (proposal.isEditable) {
+    // Delete action for own proposals (including drafts) — skip if already shown elsewhere on the card
+    if (proposal.isEditable && !hideDelete) {
       items.push({
         key: 'delete',
         icon: <LuTrash2 className="size-5" />,
@@ -266,8 +268,15 @@ export function ProposalCardMenu({
     return items;
   };
 
+  const menuItems = getMenuItems();
+
+  // Don't render the menu at all if there are no items
+  if (menuItems.length === 0) {
+    return null;
+  }
+
   const renderMenuItems = (forMobile: boolean) => {
-    const items = getMenuItems();
+    const items = menuItems;
 
     if (forMobile) {
       return items.map((item, index) => (
