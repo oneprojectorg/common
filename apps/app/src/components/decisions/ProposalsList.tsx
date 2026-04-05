@@ -406,7 +406,6 @@ const ViewProposalsList = ({
                       <ProposalCardMenu
                         proposal={proposal}
                         canManage={canManageProposals}
-                        hideDelete={isEditable}
                       />
                     )
                   }
