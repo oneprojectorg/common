@@ -1,4 +1,4 @@
-import { and, db, eq, isNull, sql } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
@@ -104,32 +104,27 @@ export async function manualTransition({
     currentPhaseIndex + 1 === phases.length - 1;
   const now = new Date().toISOString();
 
+  const stateData = (instanceData as unknown as Record<string, unknown>)
+    .stateData as Record<string, unknown> | undefined;
+
+  const updatedInstanceData = {
+    ...instanceData,
+    currentPhaseId: nextPhaseId,
+    stateData: {
+      ...stateData,
+      [nextPhaseId]: { enteredAt: now, metadata: { manual: true } },
+    },
+  };
+
   // Execute transition atomically
   await db.transaction(async (tx) => {
-    // Update instance state with optimistic lock on currentStateId
-    // to prevent concurrent transitions from double-advancing.
-    // Also write stateData.enteredAt for the new phase so time-based
-    // conditions in the TransitionEngine work correctly.
-    // The jsonb path uses a parameterized array instead of string
-    // interpolation so the phaseId is always a safe SQL parameter.
+    // Optimistic lock on currentStateId prevents concurrent double-advances.
     const updated = await tx
       .update(processInstances)
       .set({
         currentStateId: nextPhaseId,
         updatedAt: now,
-        instanceData: sql`jsonb_set(
-          jsonb_set(
-            jsonb_set(
-              coalesce(${processInstances.instanceData}, '{}'::jsonb),
-              '{currentPhaseId}',
-              to_jsonb(${nextPhaseId}::text)
-            ),
-            '{stateData}',
-            coalesce(${processInstances.instanceData}->'stateData', '{}'::jsonb)
-          ),
-          array['stateData', ${nextPhaseId}]::text[],
-          ${JSON.stringify({ enteredAt: now, metadata: { manual: true } })}::jsonb
-        )`,
+        instanceData: updatedInstanceData,
       })
       .where(
         and(
