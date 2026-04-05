@@ -13,6 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertProfileAdmin } from '../assert';
+import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -220,13 +221,27 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to update decision process instance');
     }
 
-    // Keep the profile name in sync with the instance name
-    if (name !== undefined) {
-      await tx.update(profiles).set({ name }).where(eq(profiles.id, profileId));
-    }
-
     // Determine the final status (updated or existing)
     const finalStatus = status ?? existingInstance.status;
+
+    // Keep the profile name in sync with the instance name.
+    // When the instance is still a draft, also regenerate the slug to match.
+    // Once published, the slug is locked to avoid breaking shared links.
+    if (name !== undefined) {
+      const profileUpdate: { name: string; slug?: string } = { name };
+
+      if (finalStatus === ProcessStatus.DRAFT) {
+        profileUpdate.slug = await generateUniqueProfileSlug({
+          name: `decision-${name}`,
+          db: tx,
+        });
+      }
+
+      await tx
+        .update(profiles)
+        .set(profileUpdate)
+        .where(eq(profiles.id, profileId));
+    }
     const isBeingPublished =
       status === ProcessStatus.PUBLISHED &&
       existingInstance.status === ProcessStatus.DRAFT;

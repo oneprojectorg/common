@@ -1,6 +1,6 @@
 import { type DecisionInstanceData } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProcessStatus, processInstances } from '@op/db/schema';
+import { ProcessStatus, processInstances, profiles } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -42,6 +42,86 @@ describe.concurrent('updateDecisionInstance', () => {
 
     expect(result.processInstance.name).toBe(newName);
     expect(result.processInstance.id).toBe(instance.instance.id);
+  });
+
+  it('should update slug when name changes on a draft instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const newName = `My Awesome Process ${task.id}`;
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      name: newName,
+    });
+
+    expect(result.processInstance.name).toBe(newName);
+
+    // Verify the slug was updated to match the new name
+    const profile = await db._query.profiles.findFirst({
+      where: eq(profiles.id, instance.profileId),
+    });
+
+    expect(profile!.slug).toContain('decision-my-awesome-process');
+  });
+
+  it('should not update slug when name changes on a published instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Publish the instance
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    // Capture the slug after publishing
+    const profileAfterPublish = await db._query.profiles.findFirst({
+      where: eq(profiles.id, instance.profileId),
+    });
+    const slugAfterPublish = profileAfterPublish!.slug;
+
+    // Update the name on the published instance
+    const newName = `Renamed Published Process ${task.id}`;
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      name: newName,
+    });
+
+    // Verify the slug was NOT changed
+    const profileAfterRename = await db._query.profiles.findFirst({
+      where: eq(profiles.id, instance.profileId),
+    });
+
+    expect(profileAfterRename!.slug).toBe(slugAfterPublish);
+    expect(profileAfterRename!.name).toBe(newName);
   });
 
   it('should update instance description', async ({ task, onTestFinished }) => {
