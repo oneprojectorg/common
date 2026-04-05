@@ -100,7 +100,8 @@ export async function manualTransition({
 
   const nextPhase = phases[currentPhaseIndex + 1]!;
   const nextPhaseId = nextPhase.phaseId;
-  const isFinalPhase = currentPhaseIndex + 1 === phases.length - 1;
+  const isTransitioningToFinalPhase =
+    currentPhaseIndex + 1 === phases.length - 1;
   const now = new Date().toISOString();
 
   // Execute transition atomically
@@ -109,6 +110,8 @@ export async function manualTransition({
     // to prevent concurrent transitions from double-advancing.
     // Also write stateData.enteredAt for the new phase so time-based
     // conditions in the TransitionEngine work correctly.
+    // The jsonb path uses a parameterized array instead of string
+    // interpolation so the phaseId is always a safe SQL parameter.
     const updated = await tx
       .update(processInstances)
       .set({
@@ -124,7 +127,7 @@ export async function manualTransition({
             '{stateData}',
             coalesce(${processInstances.instanceData}->'stateData', '{}'::jsonb)
           ),
-          ${`{stateData,${nextPhaseId}}`},
+          array['stateData', ${nextPhaseId}]::text[],
           ${JSON.stringify({ enteredAt: now, metadata: { manual: true } })}::jsonb
         )`,
       })
@@ -162,12 +165,20 @@ export async function manualTransition({
     });
   });
 
-  // Process results when transitioning to the final phase
-  // TODO: processResults runs outside the transaction. If it fails, the instance
-  // is stuck on the final phase with no results and no retry path. Consider adding
-  // try/catch with error logging, or making results processing idempotent/retriable.
-  if (isFinalPhase) {
-    await processResults({ processInstanceId: instanceId });
+  // Process results when transitioning to the final phase.
+  // processResults runs outside the transaction — if it fails, the instance
+  // remains on the final phase. processResults is internally idempotent so
+  // it can be retried separately; we log the error but do not fail the
+  // transition itself since the phase advancement already committed.
+  if (isTransitioningToFinalPhase) {
+    try {
+      await processResults({ processInstanceId: instanceId });
+    } catch (err) {
+      console.error(
+        `processResults failed for instance ${instanceId} after manual transition to final phase:`,
+        err,
+      );
+    }
   }
 
   return {
