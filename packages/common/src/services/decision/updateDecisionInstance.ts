@@ -208,6 +208,10 @@ export const updateDecisionInstance = async ({
     return profile;
   }
 
+  const isBeingPublished =
+    status === ProcessStatus.PUBLISHED &&
+    existingInstance.status === ProcessStatus.DRAFT;
+
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     // Update the instance
@@ -228,10 +232,6 @@ export const updateDecisionInstance = async ({
     if (name !== undefined) {
       await tx.update(profiles).set({ name }).where(eq(profiles.id, profileId));
     }
-
-    const isBeingPublished =
-      status === ProcessStatus.PUBLISHED &&
-      existingInstance.status === ProcessStatus.DRAFT;
 
     // Generate a permanent, name-based slug when publishing.
     // Draft instances keep their original UUID slug so the URL stays stable
@@ -278,11 +278,7 @@ export const updateDecisionInstance = async ({
   }
 
   // When publishing a draft, send queued invite emails for this process instance's profile
-  const isPublishing =
-    status === ProcessStatus.PUBLISHED &&
-    existingInstance.status === ProcessStatus.DRAFT;
-
-  if (isPublishing) {
+  if (isBeingPublished) {
     const queuedInvites = await db.query.profileInvites.findMany({
       where: {
         profileId,

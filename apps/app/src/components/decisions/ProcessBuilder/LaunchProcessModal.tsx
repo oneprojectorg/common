@@ -44,6 +44,8 @@ export const LaunchProcessModal = ({
   const categoriesCount = instanceData?.config?.categories?.length ?? 0;
   const showNoCategoriesWarning = categoriesCount === 0;
 
+  const utils = trpc.useUtils();
+
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: (data) => {
       onOpenChange(false);
@@ -55,6 +57,11 @@ export const LaunchProcessModal = ({
         message: t('Failed to launch process'),
         title: error.message,
       });
+    },
+    onSettled: (data) => {
+      if (data?.slug) {
+        void utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
+      }
     },
   });
 
