@@ -4,6 +4,7 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
+import { toTermUri } from './utils/taxonomy';
 
 export interface ProcessCategory {
   id: string;
@@ -25,7 +26,6 @@ function extractCategoryLabels(instanceData: unknown): string[] {
     return [];
   }
   const data = instanceData as Record<string, unknown>;
-  // Template-based path: config.categories is an array of {id, label, description}
   const config = data.config as Record<string, unknown> | undefined;
   const configCategories = config?.categories;
   if (Array.isArray(configCategories) && configCategories.length > 0) {
@@ -43,7 +43,6 @@ function extractCategoryLabels(instanceData: unknown): string[] {
     }
   }
 
-  // Legacy path: fieldValues.categories is a string array
   const fieldValues = data.fieldValues as Record<string, unknown> | undefined;
   const fieldValuesCategories = fieldValues?.categories;
   if (
@@ -107,19 +106,17 @@ export const getProcessCategories = async ({
       return [];
     }
 
-    // Find matching taxonomy terms for the categories
+    // Build a lookup map for O(1) term resolution
+    type TaxonomyTerm = { id: string; label: string; termUri: string };
+    const termsByUri = new Map<string, TaxonomyTerm>(
+      proposalTaxonomy.taxonomyTerms.map(
+        (term: TaxonomyTerm) => [term.termUri, term] as const,
+      ),
+    );
+
     const categories: ProcessCategory[] = [];
-
     for (const label of categoryLabels) {
-      const expectedTermUri = label
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
-
-      const taxonomyTerm = proposalTaxonomy.taxonomyTerms.find(
-        (term: { termUri: string }) => term.termUri === expectedTermUri,
-      );
-
+      const taxonomyTerm = termsByUri.get(toTermUri(label));
       if (taxonomyTerm) {
         categories.push({
           id: taxonomyTerm.id,

@@ -1,3 +1,4 @@
+import { toTermUri } from '@op/common';
 import { db, eq, inArray } from '@op/db/client';
 import {
   organizationUsers,
@@ -60,10 +61,7 @@ async function seedProposalTaxonomy(
   const termRecords = termLabels.map((label) => ({
     id: randomUUID(),
     taxonomyId: resolvedTaxonomyId,
-    termUri: label
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, ''),
+    termUri: toTermUri(label),
     label,
   }));
 
