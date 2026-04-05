@@ -78,8 +78,7 @@ export async function createTestContextWithSession(
 }
 
 /**
- * Create a test user and return the user object.
- * Retries on transient GoTrue errors from concurrent auth load.
+ * Create a test user and return the user object
  */
 export async function createTestUser(
   email: string,
@@ -89,34 +88,19 @@ export async function createTestUser(
     throw new Error('Supabase test client not initialized');
   }
 
-  const maxRetries = 8;
+  const { data, error } = await supabaseTestClient.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: undefined,
+    },
+  });
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const { data, error } = await supabaseTestClient.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: undefined,
-      },
-    });
-
-    if (error) {
-      const isTransient =
-        error.message.includes('Database error') ||
-        error.message.includes('Unexpected failure');
-      if (isTransient && attempt < maxRetries) {
-        await new Promise((r) =>
-          setTimeout(r, 100 + Math.random() * 200 * 2 ** attempt),
-        );
-        continue;
-      }
-      throw new Error(`Failed to create test user: ${error.message}`);
-    }
-
-    return data;
+  if (error) {
+    throw new Error(`Failed to create test user: ${error.message}`);
   }
 
-  throw new Error(`Failed to create test user after retries`);
+  return data;
 }
 
 /**
@@ -130,31 +114,16 @@ export async function signInTestUser(
     throw new Error('Supabase test client not initialized');
   }
 
-  const maxRetries = 8;
+  const { data, error } = await supabaseTestClient.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const { data, error } = await supabaseTestClient.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      const isTransient =
-        error.message.includes('Database error') ||
-        error.message.includes('Unexpected failure');
-      if (isTransient && attempt < maxRetries) {
-        await new Promise((r) =>
-          setTimeout(r, 100 + Math.random() * 200 * 2 ** attempt),
-        );
-        continue;
-      }
-      throw new Error(`Failed to sign in test user: ${error.message}`);
-    }
-
-    return data;
+  if (error) {
+    throw new Error(`Failed to sign in test user: ${error.message}`);
   }
 
-  throw new Error(`Failed to sign in test user after retries`);
+  return data;
 }
 
 /**
@@ -216,34 +185,19 @@ export async function createIsolatedSession(
 ) {
   const client = createIsolatedTestClient();
 
-  const maxRetries = 8;
+  const { data, error } = await client.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const { data, error } = await client.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error || !data.session) {
-      const msg = error?.message ?? 'No session returned';
-      const isTransient =
-        msg.includes('Database error') || msg.includes('Unexpected failure');
-      if (isTransient && attempt < maxRetries) {
-        await new Promise((r) =>
-          setTimeout(r, 100 + Math.random() * 200 * 2 ** attempt),
-        );
-        continue;
-      }
-      throw new Error(`Failed to sign in user: ${msg}`);
-    }
-
-    return {
-      client,
-      session: data.session,
-    };
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in user: ${error?.message}`);
   }
 
-  throw new Error(`Failed to sign in user after retries`);
+  return {
+    client,
+    session: data.session,
+  };
 }
 
 /**
