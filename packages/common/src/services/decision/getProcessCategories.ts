@@ -16,14 +16,20 @@ export interface ProcessCategory {
  * - Template-based instances: config.categories (ProposalCategory[])
  * - Legacy instances: fieldValues.categories (string[])
  */
-function extractCategoryLabels(
-  instanceData: Record<string, unknown>,
-): string[] {
+function extractCategoryLabels(instanceData: unknown): string[] {
+  if (
+    !instanceData ||
+    typeof instanceData !== 'object' ||
+    Array.isArray(instanceData)
+  ) {
+    return [];
+  }
+  const data = instanceData as Record<string, unknown>;
   // Template-based path: config.categories is an array of {id, label, description}
-  const config = instanceData.config as Record<string, unknown> | undefined;
+  const config = data.config as Record<string, unknown> | undefined;
   const configCategories = config?.categories;
   if (Array.isArray(configCategories) && configCategories.length > 0) {
-    return configCategories
+    const labels = configCategories
       .filter(
         (cat): cat is { label: string } =>
           typeof cat === 'object' &&
@@ -32,12 +38,13 @@ function extractCategoryLabels(
           typeof cat.label === 'string',
       )
       .map((cat) => cat.label);
+    if (labels.length > 0) {
+      return labels;
+    }
   }
 
   // Legacy path: fieldValues.categories is a string array
-  const fieldValues = instanceData.fieldValues as
-    | Record<string, unknown>
-    | undefined;
+  const fieldValues = data.fieldValues as Record<string, unknown> | undefined;
   const fieldValuesCategories = fieldValues?.categories;
   if (
     Array.isArray(fieldValuesCategories) &&
@@ -90,9 +97,7 @@ export const getProcessCategories = async ({
       }),
     ]);
 
-    const categoryLabels = extractCategoryLabels(
-      instance.instanceData as Record<string, unknown>,
-    );
+    const categoryLabels = extractCategoryLabels(instance.instanceData);
 
     if (categoryLabels.length === 0) {
       return [];
