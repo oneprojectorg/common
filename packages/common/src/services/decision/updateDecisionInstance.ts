@@ -225,26 +225,25 @@ export const updateDecisionInstance = async ({
     const finalStatus = status ?? existingInstance.status;
 
     // Keep the profile name in sync with the instance name.
-    // When the instance is still a draft, also regenerate the slug to match.
-    // Once published, the slug is locked to avoid breaking shared links.
     if (name !== undefined) {
-      const profileUpdate: { name: string; slug?: string } = { name };
-
-      if (finalStatus === ProcessStatus.DRAFT) {
-        profileUpdate.slug = await generateUniqueProfileSlug({
-          name: `decision-${name}`,
-          db: tx,
-        });
-      }
-
-      await tx
-        .update(profiles)
-        .set(profileUpdate)
-        .where(eq(profiles.id, profileId));
+      await tx.update(profiles).set({ name }).where(eq(profiles.id, profileId));
     }
+
     const isBeingPublished =
       status === ProcessStatus.PUBLISHED &&
       existingInstance.status === ProcessStatus.DRAFT;
+
+    // Generate a permanent, name-based slug when publishing.
+    // Draft instances keep their original UUID slug so the URL stays stable
+    // while editing. Once published the slug is locked.
+    if (isBeingPublished) {
+      const instanceName = name ?? existingInstance.name;
+      const slug = await generateUniqueProfileSlug({
+        name: `decision-${instanceName}`,
+        db: tx,
+      });
+      await tx.update(profiles).set({ slug }).where(eq(profiles.id, profileId));
+    }
 
     // If status is DRAFT, remove all transitions
     if (finalStatus === ProcessStatus.DRAFT) {

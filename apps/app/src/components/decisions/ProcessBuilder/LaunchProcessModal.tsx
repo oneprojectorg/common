@@ -18,14 +18,12 @@ export const LaunchProcessModal = ({
   onOpenChange,
   instanceId,
   processName,
-  slug,
   decisionProfileId,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   instanceId: string;
   processName: string;
-  slug: string;
   decisionProfileId: string;
 }) => {
   const t = useTranslations();
@@ -47,9 +45,10 @@ export const LaunchProcessModal = ({
   const showNoCategoriesWarning = categoriesCount === 0;
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       onOpenChange(false);
-      router.push(`/decisions/${slug}`);
+      // Use the slug from the response — publishing generates a new name-based slug
+      router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
       toast.error({
