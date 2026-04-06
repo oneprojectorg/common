@@ -476,6 +476,7 @@ export const ProposalsList = ({
   decisionSlug,
   decisionProfileId,
   permissions,
+  initialFilter,
 }: {
   slug: string;
   instanceId: string;
@@ -485,6 +486,8 @@ export const ProposalsList = ({
   decisionProfileId?: string | null;
   /** Role-based capabilities for the current user. */
   permissions?: DecisionAccess | null;
+  /** Override the default proposal filter */
+  initialFilter?: ProposalFilter;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -695,7 +698,7 @@ export const ProposalsList = ({
     currentProfileId,
     votedProposalIds: selectedProposalIds,
     hasVoted,
-    initialFilter: undefined,
+    initialFilter,
   });
 
   // Sync URL with filter changes (both manual and automatic), skipping initial render

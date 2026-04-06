@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { ProposalFilter } from '@op/api/encoders';
 import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -179,6 +180,7 @@ function ResultsPageContent({
                     slug={slug}
                     instanceId={instanceId}
                     decisionSlug={decisionSlug}
+                    initialFilter={ProposalFilter.ALL}
                   />
                 </Suspense>
               </div>
