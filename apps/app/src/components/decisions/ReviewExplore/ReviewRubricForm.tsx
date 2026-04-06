@@ -3,6 +3,7 @@
 import {
   type RubricTemplateSchema,
   type XFormatPropertySchema,
+  parseSchemaOptions,
 } from '@op/common/client';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -24,11 +25,6 @@ import {
 
 interface ReviewRubricFormProps {
   template: RubricTemplateSchema;
-}
-
-interface RubricOption {
-  value: string | number;
-  label: string;
 }
 
 /**
@@ -185,7 +181,10 @@ function RubricFieldInput({
         );
       }
 
-      const options = extractRubricOptions(field.schema);
+      const options = parseSchemaOptions(field.schema).map((option) => ({
+        value: option.value,
+        label: option.title,
+      }));
       const selectedKey =
         typeof value === 'string' || typeof value === 'number'
           ? String(value)
@@ -234,30 +233,6 @@ function RubricFieldInput({
     default:
       return null;
   }
-}
-
-/**
- * Extract selectable options from a rubric field, preserving numeric scores.
- */
-function extractRubricOptions(schema: XFormatPropertySchema): RubricOption[] {
-  if (!Array.isArray(schema.oneOf)) {
-    return [];
-  }
-
-  return schema.oneOf.flatMap((entry) => {
-    if (
-      typeof entry !== 'object' ||
-      entry === null ||
-      !('const' in entry) ||
-      !('title' in entry) ||
-      (typeof entry.const !== 'string' && typeof entry.const !== 'number') ||
-      typeof entry.title !== 'string'
-    ) {
-      return [];
-    }
-
-    return [{ value: entry.const, label: entry.title }];
-  });
 }
 
 /**
