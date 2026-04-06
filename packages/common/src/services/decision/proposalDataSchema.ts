@@ -69,11 +69,15 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
 
 export function normalizeProposalCategories(raw: unknown): string[] {
-  const values = Array.isArray(raw)
-    ? raw
-    : typeof raw === 'string'
-      ? [raw]
-      : [];
+  if (typeof raw === 'string') {
+    try {
+      return normalizeProposalCategories(JSON.parse(raw));
+    } catch {
+      return normalizeProposalCategories([raw]);
+    }
+  }
+
+  const values = Array.isArray(raw) ? raw : [];
 
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
