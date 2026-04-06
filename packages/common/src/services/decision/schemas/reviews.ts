@@ -6,7 +6,7 @@ const jsonObjectSchema = z.record(z.string(), z.unknown());
 export const proposalReviewSchema = z.object({
   id: z.uuid(),
   assignmentId: z.uuid(),
-  state: z.nativeEnum(ProposalReviewState),
+  state: z.enum(ProposalReviewState),
   reviewData: jsonObjectSchema,
   overallComment: z.string().nullable(),
   submittedAt: z.string().nullable(),

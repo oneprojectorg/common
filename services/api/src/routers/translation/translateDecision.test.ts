@@ -1,7 +1,7 @@
 import { db } from '@op/db/client';
 import { contentTranslations, processInstances } from '@op/db/schema';
 import { eq, like } from 'drizzle-orm';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
@@ -38,7 +38,11 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe.concurrent('translation.translateDecision', () => {
+describe('translation.translateDecision', () => {
+  beforeEach(() => {
+    mockTranslateText.mockClear();
+  });
+
   it('should translate headline, phase description, and phase names', async ({
     task,
     onTestFinished,
