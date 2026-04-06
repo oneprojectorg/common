@@ -57,4 +57,11 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
+  voteSubmitted: {
+    name: 'vote/submitted' as const,
+    schema: z.object({
+      voteSubmissionId: z.string().uuid(),
+      processInstanceId: z.string().uuid(),
+    }),
+  },
 } as const;
