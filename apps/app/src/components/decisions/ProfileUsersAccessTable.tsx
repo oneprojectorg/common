@@ -117,6 +117,7 @@ const ProfileUserRoleSelect = ({
   roles,
   userName,
   processName,
+  isOwner,
   className = 'sm:w-32',
 }: {
   profileUserId: string;
@@ -125,6 +126,7 @@ const ProfileUserRoleSelect = ({
   roles: { id: string; name: string }[];
   userName: string;
   processName?: string;
+  isOwner?: boolean;
   className?: string;
 }) => {
   const t = useTranslations();
@@ -189,48 +191,52 @@ const ProfileUserRoleSelect = ({
             {role.name}
           </SelectItem>
         ))}
-        <SelectItem id="remove" className="text-functional-red">
-          {t('Remove from process')}
-        </SelectItem>
+        {!isOwner && (
+          <SelectItem id="remove" className="text-functional-red">
+            {t('Remove from process')}
+          </SelectItem>
+        )}
       </Select>
-      <DialogTrigger
-        isOpen={isRemoveModalOpen}
-        onOpenChange={setIsRemoveModalOpen}
-      >
-        <Modal isDismissable>
-          <ModalHeader>{t('Remove {name}', { name: userName })}</ModalHeader>
-          <ModalBody>
-            <p>
-              {processName
-                ? t(
-                    'Are you sure you want to remove {name} from "{processName}"?',
-                    { name: userName, processName },
-                  )
-                : t(
-                    'Are you sure you want to remove {name} from this process?',
-                    { name: userName },
-                  )}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              color="secondary"
-              className="w-full sm:w-fit"
-              onPress={() => setIsRemoveModalOpen(false)}
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
-              color="destructive"
-              className="w-full sm:w-fit"
-              onPress={() => removeUser.mutate({ profileUserId })}
-              isDisabled={removeUser.isPending}
-            >
-              {removeUser.isPending ? t('Removing...') : t('Remove')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </DialogTrigger>
+      {!isOwner && (
+        <DialogTrigger
+          isOpen={isRemoveModalOpen}
+          onOpenChange={setIsRemoveModalOpen}
+        >
+          <Modal isDismissable>
+            <ModalHeader>{t('Remove {name}', { name: userName })}</ModalHeader>
+            <ModalBody>
+              <p>
+                {processName
+                  ? t(
+                      'Are you sure you want to remove {name} from "{processName}"?',
+                      { name: userName, processName },
+                    )
+                  : t(
+                      'Are you sure you want to remove {name} from this process?',
+                      { name: userName },
+                    )}
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                color="secondary"
+                className="w-full sm:w-fit"
+                onPress={() => setIsRemoveModalOpen(false)}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                color="destructive"
+                className="w-full sm:w-fit"
+                onPress={() => removeUser.mutate({ profileUserId })}
+                isDisabled={removeUser.isPending}
+              >
+                {removeUser.isPending ? t('Removing...') : t('Remove')}
+              </Button>
+            </ModalFooter>
+          </Modal>
+        </DialogTrigger>
+      )}
     </>
   );
 };
@@ -412,6 +418,7 @@ const MobileProfileUserCard = ({
         roles={roles}
         userName={displayName}
         processName={processName}
+        isOwner={profileUser.isOwner}
         className="w-full"
       />
     </div>
@@ -629,6 +636,7 @@ const ProfileUsersAccessTableContent = ({
                     roles={roles}
                     userName={displayName}
                     processName={processName}
+                    isOwner={profileUser.isOwner}
                   />
                 </TableCell>
               </TableRow>
