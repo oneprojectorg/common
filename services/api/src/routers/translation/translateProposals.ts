@@ -17,7 +17,7 @@ export const translateProposalsRouter = router({
           z.string(),
           z.object({
             title: z.string().optional(),
-            category: z.string().optional(),
+            category: z.array(z.string()).optional(),
             preview: z.string().optional(),
           }),
         ),

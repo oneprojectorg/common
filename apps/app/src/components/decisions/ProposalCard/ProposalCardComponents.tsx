@@ -268,7 +268,7 @@ export function ProposalCardCategory({
   const cardTranslation = useCardTranslation(proposal.profileId);
   const { category } = resolveProposalSystemFields(proposal);
   const displayCategories = cardTranslation?.category
-    ? [cardTranslation.category]
+    ? cardTranslation.category
     : normalizeProposalCategories(category);
 
   if (displayCategories.length === 0 || !proposal.submittedBy) {

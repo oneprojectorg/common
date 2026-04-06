@@ -7,13 +7,15 @@ import { permission } from 'access-zones';
 import { assertInstanceProfileAccess } from '../access';
 import { generateProposalHtml } from '../decision/generateProposalHtml';
 import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
-import {
-  formatProposalCategories,
-  parseProposalData,
-} from '../decision/proposalDataSchema';
+import { parseProposalData } from '../decision/proposalDataSchema';
 import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
+import type { ProposalTranslation } from './translateProposal';
+import {
+  flattenTranslatableFields,
+  unflattenTranslatedFields,
+} from './translatedFields';
 
 /**
  * Translates proposal card-level content (title, category, preview text) for
@@ -28,10 +30,7 @@ export async function translateProposals({
   targetLocale: SupportedLocale;
   user: User;
 }): Promise<{
-  translations: Record<
-    string,
-    { title?: string; category?: string; preview?: string }
-  >;
+  translations: Record<string, ProposalTranslation>;
   sourceLocale: string;
   targetLocale: SupportedLocale;
 }> {
@@ -134,19 +133,7 @@ export async function translateProposals({
       continue;
     }
 
-    if (proposal.profile?.name) {
-      entries.push({
-        contentKey: `batch:${pid}:title`,
-        text: proposal.profile.name,
-      });
-    }
-
-    if (proposalData.category.length > 0) {
-      entries.push({
-        contentKey: `batch:${pid}:category`,
-        text: formatProposalCategories(proposalData.category),
-      });
-    }
+    let preview: string | undefined;
 
     // Generate HTML from document content and extract plain-text preview
     const documentContent = documentContentMap.get(proposal.id);
@@ -166,14 +153,17 @@ export async function translateProposals({
           maxLines: 3,
           maxLength: 200,
         });
-        if (plainText) {
-          entries.push({
-            contentKey: `batch:${pid}:preview`,
-            text: plainText,
-          });
-        }
+        preview = plainText || undefined;
       }
     }
+
+    entries.push(
+      ...flattenTranslatableFields(`batch:${pid}:`, {
+        title: proposal.profile?.name,
+        category: proposalData.category,
+        preview,
+      }),
+    );
   }
 
   if (entries.length === 0) {
@@ -184,29 +174,36 @@ export async function translateProposals({
   const results = await runTranslateBatch(entries, targetLocale);
 
   // 6. Build response grouped by profileId
-  const translations: Record<
-    string,
-    { title?: string; category?: string; preview?: string }
-  > = {};
+  const translations: Record<string, ProposalTranslation> = {};
+  const resultsByProfileId = new Map<string, typeof results>();
   let sourceLocale = '';
 
   for (const result of results) {
-    // Key format: batch:<profileId>:<field>
     const parts = result.contentKey.split(':');
     if (parts.length < 3 || parts[0] !== 'batch') {
       continue;
     }
-    const field = parts[parts.length - 1] as 'title' | 'category' | 'preview';
-    const profileId = parts.slice(1, -1).join(':');
 
-    if (!translations[profileId]) {
-      translations[profileId] = {};
+    const profileId = parts[1];
+
+    if (!profileId) {
+      continue;
     }
-    translations[profileId][field] = result.translatedText;
+
+    const profileResults = resultsByProfileId.get(profileId) ?? [];
+    profileResults.push(result);
+    resultsByProfileId.set(profileId, profileResults);
 
     if (!sourceLocale && result.sourceLocale) {
       sourceLocale = result.sourceLocale;
     }
+  }
+
+  for (const [profileId, profileResults] of resultsByProfileId) {
+    translations[profileId] = unflattenTranslatedFields(
+      `batch:${profileId}:`,
+      profileResults,
+    ).translated as ProposalTranslation;
   }
 
   return { translations, sourceLocale, targetLocale };

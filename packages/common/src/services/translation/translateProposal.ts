@@ -2,13 +2,18 @@ import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 
 import { getProposal } from '../decision/getProposal';
-import {
-  formatProposalCategories,
-  parseSchemaOptions,
-} from '../decision/proposalDataSchema';
+import { parseSchemaOptions } from '../decision/proposalDataSchema';
 import type { ProposalTemplateSchema } from '../decision/types';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
+import {
+  flattenTranslatableFields,
+  unflattenTranslatedFields,
+} from './translatedFields';
+
+export type ProposalTranslation = {
+  category?: string[];
+} & Record<string, string | string[]>;
 
 /**
  * Translates a proposal's content (title, category, HTML fragments) into the
@@ -23,7 +28,7 @@ export async function translateProposal({
   targetLocale: SupportedLocale;
   user: User;
 }): Promise<{
-  translated: Record<string, string>;
+  translated: ProposalTranslation;
   sourceLocale: string;
   targetLocale: SupportedLocale;
 }> {
@@ -36,19 +41,12 @@ export async function translateProposal({
   const { proposalData } = proposal;
 
   // TODO: eventually use `htmlContent` for all fields
-  if (proposal.profile?.name) {
-    entries.push({
-      contentKey: `proposal:${proposalId}:title`,
-      text: proposal.profile.name,
-    });
-  }
-
-  if (proposalData.category.length > 0) {
-    entries.push({
-      contentKey: `proposal:${proposalId}:category`,
-      text: formatProposalCategories(proposalData.category),
-    });
-  }
+  entries.push(
+    ...flattenTranslatableFields(`proposal:${proposalId}:`, {
+      title: proposal.profile?.name,
+      category: proposalData.category,
+    }),
+  );
 
   // HTML fragments from TipTap — proposal.htmlContent is the server-generated HTML (Record<string, string>)
   if (proposal.htmlContent) {
@@ -101,20 +99,14 @@ export async function translateProposal({
   const results = await runTranslateBatch(entries, targetLocale);
 
   // 4. Build response — strip the "proposal:<id>:" prefix to get the field name back
-  const prefix = `proposal:${proposalId}:`;
-  const translated: Record<string, string> = {};
-  let sourceLocale = '';
+  const { translated, sourceLocale } = unflattenTranslatedFields(
+    `proposal:${proposalId}:`,
+    results,
+  );
 
-  for (const result of results) {
-    const fieldName = result.contentKey.startsWith(prefix)
-      ? result.contentKey.slice(prefix.length)
-      : result.contentKey;
-    translated[fieldName] = result.translatedText;
-
-    if (!sourceLocale && result.sourceLocale) {
-      sourceLocale = result.sourceLocale;
-    }
-  }
-
-  return { translated, sourceLocale, targetLocale };
+  return {
+    translated: translated as ProposalTranslation,
+    sourceLocale,
+    targetLocale,
+  };
 }

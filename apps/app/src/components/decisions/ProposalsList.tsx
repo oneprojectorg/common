@@ -9,6 +9,7 @@ import {
 } from '@op/api/encoders';
 import {
   type Proposal,
+  type ProposalTranslation,
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from '@op/common/client';
@@ -593,10 +594,7 @@ export const ProposalsList = ({
     : null;
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translationState, setTranslationState] = useState<{
-    translations: Record<
-      string,
-      { title?: string; category?: string; preview?: string }
-    >;
+    translations: Record<string, ProposalTranslation>;
     sourceLocale: string;
   } | null>(null);
 

@@ -1,11 +1,9 @@
 'use client';
 
+import type { ProposalTranslation } from '@op/common/client';
 import { type ReactNode, createContext, useContext } from 'react';
 
-type TranslationRecord = Record<
-  string,
-  { title?: string; category?: string; preview?: string }
->;
+type TranslationRecord = Record<string, ProposalTranslation>;
 
 const ProposalTranslationContext = createContext<TranslationRecord | null>(
   null,

@@ -1,9 +1,15 @@
-export function parseTranslatedMeta(translated: Record<string, string>) {
+import type { TranslatedFields } from './translatedFields';
+
+export function parseTranslatedMeta(translated: TranslatedFields) {
   const fieldTitles: Record<string, string> = {};
   const fieldDescriptions: Record<string, string> = {};
   const optionLabels: Record<string, Record<string, string>> = {};
 
   for (const [key, value] of Object.entries(translated)) {
+    if (typeof value !== 'string') {
+      continue;
+    }
+
     if (key.startsWith('field_title:')) {
       fieldTitles[key.slice('field_title:'.length)] = value;
     } else if (key.startsWith('field_desc:')) {
