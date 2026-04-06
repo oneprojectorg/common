@@ -1,12 +1,14 @@
 /**
- * Extract unique submitters from proposals for display components like FacePile
+ * Extract unique submitters from non-draft proposals for display components like FacePile.
+ * Draft proposals are excluded so only users who have actually submitted appear in the count.
  */
 export function getUniqueSubmitters<
-  T extends { submittedBy?: { id: string } | null },
+  T extends { submittedBy?: { id: string } | null; status?: string | null },
 >(proposals: T[]): Array<NonNullable<T['submittedBy']>> {
   return proposals.reduce(
     (acc, proposal) => {
       if (
+        proposal.status !== 'draft' &&
         proposal.submittedBy &&
         !acc.some((s) => s.id === proposal.submittedBy?.id)
       ) {
