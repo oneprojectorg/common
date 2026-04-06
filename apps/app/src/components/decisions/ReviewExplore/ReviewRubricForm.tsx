@@ -4,7 +4,7 @@ import {
   type RubricTemplateSchema,
   type XFormatPropertySchema,
 } from '@op/common/client';
-import { Header2 } from '@op/ui/Header';
+import { Header2, Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
@@ -127,9 +127,9 @@ function RubricCriterionSection({
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
       <div className="flex items-center justify-between gap-4">
-        <h3 className="font-serif text-title-xs text-neutral-black">
+        <Header3 className="font-serif text-title-xs text-neutral-black">
           {field.schema.title}
-        </h3>
+        </Header3>
 
         {scoreLabel && (
           <span className="shrink-0 text-sm text-neutral-gray4">

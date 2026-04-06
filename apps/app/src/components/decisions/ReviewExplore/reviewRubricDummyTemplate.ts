@@ -1,7 +1,8 @@
 import type { RubricTemplateSchema } from '@op/common/client';
 
 /**
- * Minimal rubric fixture used while the review form renderer is being built.
+ * Temporary rubric fixture used while the review form renderer is being built.
+ * This should be removed once real review data is wired in.
  */
 export const REVIEW_RUBRIC_DUMMY_TEMPLATE: RubricTemplateSchema = {
   type: 'object',
