@@ -759,6 +759,8 @@ export const proposalFilterSchema = z
     categoryId: z.string().optional(),
     dir: z.enum(['asc', 'desc']).optional(),
     proposalIds: z.array(z.uuid()).optional(),
+    /** When set to 'results', all proposals are returned as non-editable */
+    phase: z.enum(['results']).optional(),
   })
   .extend(paginationInputSchema.shape);
 

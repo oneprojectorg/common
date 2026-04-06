@@ -43,6 +43,7 @@ export interface ListProposalsInput {
   search?: string;
   categoryId?: string;
   proposalIds?: string[];
+  phase?: 'results';
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
@@ -400,13 +401,15 @@ export const listProposals = async ({
       ? relationshipData.get(proposal.profileId)
       : null;
 
+    // In results phase, proposals are never editable
     // Check if proposal is editable by current user
     const isOwner = proposal.submittedByProfileId === currentProfileId;
     const hasAdminPermission = checkPermission(
       { profile: permission.ADMIN },
       profileUser?.roles ?? [],
     );
-    const isEditable = isOwner || hasAdminPermission;
+    const isEditable =
+      input.phase === 'results' ? false : isOwner || hasAdminPermission;
 
     return {
       id: proposal.id,

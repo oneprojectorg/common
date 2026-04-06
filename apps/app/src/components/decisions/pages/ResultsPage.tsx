@@ -182,6 +182,7 @@ function ResultsPageContent({
                     instanceId={instanceId}
                     decisionSlug={decisionSlug}
                     initialFilter={ProposalFilter.ALL}
+                    phase="results"
                   />
                 </Suspense>
               </div>
