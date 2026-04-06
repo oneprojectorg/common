@@ -18,7 +18,7 @@ import {
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
 import { MyBallot, NoVoteFound } from '../MyBallot';
-import { ProposalListSkeleton } from '../ProposalsList';
+import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
 
@@ -53,10 +53,13 @@ function ResultsPageLegacy({
 export function ResultsPage({
   instanceId,
   slug,
+  decisionSlug,
   useLegacy = false,
 }: {
   instanceId: string;
   slug: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
@@ -68,6 +71,7 @@ export function ResultsPage({
     <ResultsPageContent
       instanceId={instanceId}
       slug={slug}
+      decisionSlug={decisionSlug}
       instance={instance}
     />
   );
@@ -76,10 +80,12 @@ export function ResultsPage({
 function ResultsPageContent({
   instanceId,
   slug,
+  decisionSlug,
   instance,
 }: {
   instanceId: string;
   slug: string;
+  decisionSlug?: string;
   instance: ResultsPageInstance;
 }) {
   const t = useTranslations();
@@ -164,6 +170,18 @@ function ResultsPageContent({
                   </Suspense>
                 </div>
               </APIErrorBoundary>
+            </DecisionResultsTabPanel>
+
+            <DecisionResultsTabPanel id="all-proposals">
+              <div className="lg:col-span-3">
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ProposalsList
+                    slug={slug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                  />
+                </Suspense>
+              </div>
             </DecisionResultsTabPanel>
 
             <DecisionResultsTabPanel id="ballot">
