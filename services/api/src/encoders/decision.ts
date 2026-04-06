@@ -1,4 +1,9 @@
-import { REVIEWS_POLICIES, proposalDataSchema } from '@op/common/client';
+import {
+  REVIEWS_POLICIES,
+  proposalDataSchema,
+  type Proposal,
+  type ProposalList,
+} from '@op/common/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -798,6 +803,9 @@ export type PhaseRules = z.infer<typeof phaseRulesEncoder>;
 export type PhaseDefinition = z.infer<typeof phaseDefinitionEncoder>;
 export type InstancePhaseData = z.infer<typeof instancePhaseDataEncoder>;
 export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
+
+// Re-export shared types from @op/common so consumers can import from either package
+export type { Proposal, ProposalList } from '@op/common/client';
 
 // Legacy type exports (for backwards compatibility during migration)
 export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;
