@@ -15,7 +15,7 @@ function DecisionStateRouterLegacy({
   slug: string;
 }) {
   // Legacy instances are always in results phase
-  return <ResultsPage instanceId={instanceId} slug={slug} useLegacy />;
+  return <ResultsPage instanceId={instanceId} profileSlug={slug} useLegacy />;
 }
 
 function DecisionStateRouterNew({
@@ -37,7 +37,7 @@ function DecisionStateRouterNew({
     results: () => (
       <ResultsPage
         instanceId={instanceId}
-        slug={slug}
+        profileSlug={slug}
         decisionSlug={decisionSlug}
       />
     ),
