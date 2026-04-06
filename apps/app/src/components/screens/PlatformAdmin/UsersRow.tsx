@@ -35,8 +35,12 @@ export const UsersRow = ({ user }: { user: User }) => {
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
   const createdAt = user.createdAt ? new Date(user.createdAt) : null;
   const relativeCreatedAt = createdAt ? useRelativeTime(createdAt) : null;
-  const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
-  const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
+  const lastSignInAt = user.authUser?.lastSignInAt
+    ? new Date(user.authUser.lastSignInAt)
+    : null;
+  const relativeLastSignIn = lastSignInAt
+    ? useRelativeTime(lastSignInAt)
+    : null;
 
   return (
     <>
@@ -70,13 +74,13 @@ export const UsersRow = ({ user }: { user: User }) => {
           )}
         </div>
         <div className="flex items-center text-sm font-normal text-neutral-charcoal">
-          {updatedAt ? (
+          {lastSignInAt ? (
             <TooltipTrigger>
               <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
-                {relativeUpdatedAt}
+                {relativeLastSignIn}
               </Button>
               <Tooltip>
-                {format.dateTime(updatedAt, DATE_TIME_UTC_FORMAT)}
+                {format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
               </Tooltip>
             </TooltipTrigger>
           ) : (

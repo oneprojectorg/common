@@ -456,7 +456,6 @@
   "platformAdmin_columnOrganization": "Organization",
   "platformAdmin_columnCreated": "Created",
   "platformAdmin_columnLastSignIn": "Last sign in",
-  "platformAdmin_columnUpdated": "Updated",
   "platformAdmin_columnActions": "Actions",
   "platformAdmin_actionViewAnalytics": "View analytics",
   "platformAdmin_actionEditProfile": "Edit profile",
