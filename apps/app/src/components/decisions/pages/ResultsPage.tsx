@@ -58,8 +58,9 @@ export function ResultsPage({
   useLegacy = false,
 }: {
   instanceId: string;
+  /** Owner profile slug (e.g. "people-powered") — used for org-specific hero content and legacy URL fallbacks */
   slug: string;
-  /** Decision profile slug for building proposal links */
+  /** Decision profile slug (e.g. "pp-decides-season-5") — used for building proposal links in the new route structure */
   decisionSlug?: string;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
