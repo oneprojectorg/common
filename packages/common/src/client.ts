@@ -5,9 +5,14 @@ export * from './money';
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/schemas/reviews';
 export {
+  attachmentSchema,
+  documentContentSchema,
+  proposalAccessSchema,
+  proposalAttachmentSchema,
   proposalSchema,
   proposalListSchema,
   proposalProfileSchema,
+  storageItemSchema,
   type Proposal,
   type ProposalList,
   type ProposalProfile,

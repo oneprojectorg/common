@@ -1,8 +1,9 @@
 import {
   REVIEWS_POLICIES,
-  proposalDataSchema,
-  type Proposal,
-  type ProposalList,
+  documentContentSchema,
+  proposalAttachmentSchema,
+  proposalListSchema,
+  proposalSchema,
 } from '@op/common/client';
 import {
   ProcessStatus,
@@ -11,14 +12,11 @@ import {
   decisionProcesses,
   decisions,
   processInstances,
-  proposalAttachments,
-  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { attachmentWithUrlEncoder } from './attachments';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -450,94 +448,21 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
-// Proposal Attachment Join Table Encoder
-export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
-  .pick({
-    id: true,
-    proposalId: true,
-    attachmentId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    attachment: attachmentWithUrlEncoder.optional(),
-    uploader: baseProfileEncoder.optional(),
-  });
+// Reuse the shared proposal response shape so API and clients validate the same contract.
+export const proposalAttachmentEncoder = proposalAttachmentSchema;
 
 /**
  * Document content discriminated union.
  * - `json`: TipTap document fetched from collaboration service
  * - `html`: Legacy HTML/plain text description from proposalData
  */
-export const documentContentEncoder = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('json'),
-    fragments: z.record(
-      z.string(),
-      z.object({
-        type: z.string().optional(),
-        content: z.array(z.unknown()).optional(),
-      }),
-    ),
-  }),
-  z.object({
-    type: z.literal('html'),
-    content: z.string(),
-  }),
-]);
+export const documentContentEncoder = documentContentSchema;
 
 /** Proposal encoder (frontend gets instance data separately via getDecisionBySlug) */
-export const proposalEncoder = createSelectSchema(proposals)
-  .pick({
-    id: true,
-    processInstanceId: true,
-    proposalData: true,
-    status: true,
-    visibility: true,
-    createdAt: true,
-    updatedAt: true,
-    profileId: true,
-  })
-  .extend({
-    proposalData: proposalDataSchema,
-    submittedBy: baseProfileEncoder.optional(),
-    profile: baseProfileEncoder,
-    decisionCount: z.number().optional(),
-    likesCount: z.number().optional(),
-    followersCount: z.number().optional(),
-    commentsCount: z.number().optional(),
-    isLikedByUser: z.boolean().optional(),
-    isFollowedByUser: z.boolean().optional(),
-    isEditable: z.boolean().optional(),
-    access: z
-      .object({
-        delete: z.boolean(),
-        update: z.boolean(),
-        read: z.boolean(),
-        create: z.boolean(),
-        admin: z.boolean(),
-        inviteMembers: z.boolean(),
-        review: z.boolean(),
-        submitProposals: z.boolean(),
-        vote: z.boolean(),
-      })
-      .optional(),
-    attachments: z.array(proposalAttachmentEncoder).optional(),
-    selectionRank: z.number().nullable().optional(),
-    voteCount: z.number().optional(),
-    allocated: z.string().nullable().optional(),
-    proposalTemplate: jsonSchemaEncoder.nullable().optional(),
-    documentContent: documentContentEncoder.optional(),
-    htmlContent: z.record(z.string(), z.string()).optional(),
-  });
+export const proposalEncoder = proposalSchema;
 
 /** Proposal list encoder */
-export const proposalListEncoder = z.object({
-  proposals: z.array(proposalEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
-  canManageProposals: z.boolean().prefault(false),
-});
+export const proposalListEncoder = proposalListSchema;
 
 export const proposalVersionEncoder = z.object({
   version: z.number(),

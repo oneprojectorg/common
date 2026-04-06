@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { proposalDataSchema } from '../proposalDataSchema';
 
 // Mirrors the storageItemEncoder in services/api/src/encoders/storageItem.ts
-const storageItemSchema = z.object({
+export const storageItemSchema = z.object({
   id: z.string(),
   name: z.string(),
   metadata: z
@@ -25,24 +25,24 @@ const storageItemSchema = z.object({
  */
 export const proposalProfileSchema = z.object({
   id: z.string().uuid(),
-  type: z.string().nullish(),
-  slug: z.string().nullish(),
-  name: z.string().nullish(),
-  city: z.string().nullish(),
-  state: z.string().nullish(),
-  bio: z.string().nullish(),
-  mission: z.string().nullish(),
-  email: z.string().nullish(),
-  website: z.string().nullish(),
+  type: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  bio: z.string().nullable(),
+  mission: z.string().nullable(),
+  email: z.string().nullable(),
+  website: z.string().nullable(),
   headerImage: storageItemSchema.nullish(),
   avatarImage: storageItemSchema.nullish(),
-  individual: z.object({ pronouns: z.string().nullish() }).nullish(),
+  individual: z.object({ pronouns: z.string().nullable() }).nullish(),
 });
 
 export type ProposalProfile = z.infer<typeof proposalProfileSchema>;
 
 // Mirrors attachmentWithUrlEncoder in services/api/src/encoders/attachments.ts
-const attachmentSchema = z.object({
+export const attachmentSchema = z.object({
   id: z.string(),
   postId: z.string().nullable(),
   storageObjectId: z.string(),
@@ -57,18 +57,18 @@ const attachmentSchema = z.object({
 });
 
 // Mirrors proposalAttachmentEncoder in services/api/src/encoders/decision.ts
-const proposalAttachmentSchema = z.object({
+export const proposalAttachmentSchema = z.object({
   id: z.string(),
   proposalId: z.string(),
   attachmentId: z.string(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.string().nullish(),
+  updatedAt: z.string().nullish(),
   attachment: attachmentSchema.optional(),
   uploader: proposalProfileSchema.optional(),
 });
 
 // Mirrors documentContentEncoder in services/api/src/encoders/decision.ts
-const documentContentSchema = z.discriminatedUnion('type', [
+export const documentContentSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('json'),
     fragments: z.record(
@@ -86,7 +86,7 @@ const documentContentSchema = z.discriminatedUnion('type', [
 ]);
 
 // Mirrors the access object in proposalEncoder
-const proposalAccessSchema = z.object({
+export const proposalAccessSchema = z.object({
   delete: z.boolean(),
   update: z.boolean(),
   read: z.boolean(),
@@ -141,7 +141,7 @@ export const proposalListSchema = z.object({
   proposals: z.array(proposalSchema),
   total: z.number(),
   hasMore: z.boolean(),
-  canManageProposals: z.boolean(),
+  canManageProposals: z.boolean().prefault(false),
 });
 
 export type ProposalList = z.infer<typeof proposalListSchema>;
