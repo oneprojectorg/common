@@ -29,5 +29,17 @@ export {
   type GrantDecisionProfileAccessOptions,
 } from './decision-data';
 
+export {
+  configureProcessReviews,
+  createProposalHistorySnapshot,
+  createProposalReview,
+  createReviewAssignment,
+  defaultReviewSettings,
+  getLatestProposalHistoryId,
+  type CreateProposalReviewOptions,
+  type CreateReviewAssignmentOptions,
+  type ReviewSettings,
+} from './review-data';
+
 // Re-export schema types from @op/common for convenience
 export type { DecisionSchemaDefinition, PhaseDefinition } from '@op/common';
