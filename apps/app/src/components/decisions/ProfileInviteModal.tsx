@@ -238,19 +238,22 @@ function ProfileInviteModalContent({
     );
   }, [flattenedResults, allSelectedItems, optimisticUsers, optimisticInvites]);
 
-  // Check if query is a valid email that hasn't been selected yet (across all roles)
+  const takenEmails = useMemo(
+    () =>
+      new Set([
+        ...allSelectedItems.map((item) => item.email.toLowerCase()),
+        ...optimisticUsers.map((u) => u.email.toLowerCase()),
+        ...optimisticInvites.map((i) => i.email.toLowerCase()),
+      ]),
+    [allSelectedItems, optimisticUsers, optimisticInvites],
+  );
+
   const canAddEmail = useMemo(() => {
     if (!isValidEmail(debouncedQuery)) {
       return false;
     }
-    const lowerQuery = debouncedQuery.toLowerCase();
-    const takenEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    return !takenEmails.has(lowerQuery);
-  }, [debouncedQuery, allSelectedItems, optimisticUsers, optimisticInvites]);
+    return !takenEmails.has(debouncedQuery.toLowerCase());
+  }, [debouncedQuery, takenEmails]);
 
   // Mutations
   const inviteMutation = trpc.profile.invite.useMutation();
@@ -388,16 +391,7 @@ function ProfileInviteModalContent({
       return;
     }
     const email = searchQuery.trim();
-    if (!isValidEmail(email)) {
-      return;
-    }
-    const lowerEmail = email.toLowerCase();
-    const takenEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    if (takenEmails.has(lowerEmail)) {
+    if (!isValidEmail(email) || takenEmails.has(email.toLowerCase())) {
       return;
     }
     e.preventDefault();
@@ -410,12 +404,7 @@ function ProfileInviteModalContent({
       return;
     }
 
-    const existingEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    const emails = parseEmailPaste(pastedText, existingEmails);
+    const emails = parseEmailPaste(pastedText, takenEmails);
     if (!emails) {
       return;
     }
