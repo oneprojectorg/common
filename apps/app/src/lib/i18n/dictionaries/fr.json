@@ -456,6 +456,7 @@
   "platformAdmin_columnOrganization": "Organisation",
   "platformAdmin_columnCreated": "Créé",
   "platformAdmin_columnLastSignIn": "Dernière connexion",
+  "platformAdmin_columnUpdated": "Mis à jour",
   "platformAdmin_columnActions": "Actions",
   "platformAdmin_actionViewAnalytics": "Voir les analyses",
   "platformAdmin_actionEditProfile": "Modifier le profil",
