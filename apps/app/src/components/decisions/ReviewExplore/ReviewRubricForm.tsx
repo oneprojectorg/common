@@ -15,9 +15,10 @@ import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
+import { getCriteria, getCriterionMaxPoints } from '../rubricTemplate';
 
 interface ReviewRubricFormProps {
-  template: Parameters<typeof compileRubricSchema>[0];
+  template: RubricTemplateSchema;
 }
 
 interface RubricOption {
@@ -31,6 +32,7 @@ interface RubricOption {
 export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   const t = useTranslations();
   const fields = compileRubricSchema(template);
+  const criteria = getCriteria(template);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [overallNotes, setOverallNotes] = useState('');
 
@@ -41,8 +43,8 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
     }));
   };
 
-  const totalScore = fields.reduce<number | null>((total, field) => {
-    const value = values[field.key];
+  const totalScore = criteria.reduce<number | null>((total, criterion) => {
+    const value = values[criterion.id];
 
     if (typeof value !== 'number') {
       return total;
@@ -63,7 +65,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
         <RubricCriterionSection
           key={field.key}
           field={field}
-          maxPoints={getCriterionMaxPoints(template, field.key)}
+          maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
           value={values[field.key]}
           onChange={(value) => handleValueChange(field.key, value)}
         />
@@ -103,19 +105,6 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
       </Surface>
     </div>
   );
-}
-
-function getCriterionMaxPoints(
-  template: RubricTemplateSchema,
-  key: string,
-): number {
-  const property = template.properties?.[key];
-
-  if (property?.type !== 'integer' || typeof property.maximum !== 'number') {
-    return 0;
-  }
-
-  return property.maximum;
 }
 
 /**
