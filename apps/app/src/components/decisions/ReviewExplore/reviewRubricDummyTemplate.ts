@@ -6,7 +6,7 @@ import type { RubricTemplateSchema } from '@op/common/client';
  */
 export const REVIEW_RUBRIC_DUMMY_TEMPLATE: RubricTemplateSchema = {
   type: 'object',
-  'x-field-order': ['structuralBarriers'],
+  'x-field-order': ['structuralBarriers', 'communitySupport'],
   properties: {
     structuralBarriers: {
       type: 'integer',
@@ -24,6 +24,17 @@ export const REVIEW_RUBRIC_DUMMY_TEMPLATE: RubricTemplateSchema = {
         { const: 5, title: '5 - Excellent' },
       ],
     },
+    communitySupport: {
+      type: 'string',
+      title: 'Community Support',
+      description:
+        'Does the proposal show clear support from the community it aims to serve?',
+      'x-format': 'dropdown',
+      oneOf: [
+        { const: 'yes', title: 'Yes' },
+        { const: 'no', title: 'No' },
+      ],
+    },
   },
-  required: ['structuralBarriers'],
+  required: ['structuralBarriers', 'communitySupport'],
 };

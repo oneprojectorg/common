@@ -8,6 +8,7 @@ import { Header2, Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
+import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';
 
@@ -15,7 +16,11 @@ import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import { getCriteria, getCriterionMaxPoints } from '../rubricTemplate';
+import {
+  getCriteria,
+  getCriterionMaxPoints,
+  inferCriterionType,
+} from '../rubricTemplate';
 
 interface ReviewRubricFormProps {
   template: RubricTemplateSchema;
@@ -165,6 +170,21 @@ function RubricFieldInput({
 
   switch (field.format) {
     case 'dropdown': {
+      if (inferCriterionType(field.schema) === 'yes_no') {
+        return (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-neutral-gray4">{t('No/Yes')}</span>
+            <ToggleButton
+              size="small"
+              isSelected={value === 'yes'}
+              onChange={(isSelected) => {
+                onChange(isSelected ? 'yes' : 'no');
+              }}
+            />
+          </div>
+        );
+      }
+
       const options = extractRubricOptions(field.schema);
       const selectedKey =
         typeof value === 'string' || typeof value === 'number'
