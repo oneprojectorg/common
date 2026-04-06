@@ -124,7 +124,7 @@ export function parseProposalData(proposalData: unknown): ProposalData {
 
 /** A single selectable option extracted from a JSON Schema property. */
 export interface SchemaOption {
-  value: string;
+  value: string | number;
   title: string;
 }
 
@@ -158,7 +158,7 @@ export function buildCategorySchema(
  * Parse selectable options from a JSON Schema property.
  *
  * Handles both the canonical `oneOf` format (`[{ const, title }]`) and
- * the legacy `enum` format (`['value1', 'value2', null]`).  Null values
+ * the legacy `enum` format (`['value1', 'value2', null]`). Null values
  * are filtered out — callers receive only user-visible options.
  */
 export function parseSchemaOptions(
@@ -172,11 +172,12 @@ export function parseSchemaOptions(
   if (Array.isArray(schema.oneOf)) {
     return schema.oneOf
       .filter(
-        (entry): entry is { const: string; title: string } =>
+        (entry): entry is { const: string | number; title: string } =>
           typeof entry === 'object' &&
           entry !== null &&
           'const' in entry &&
-          typeof (entry as Record<string, unknown>).const === 'string' &&
+          (typeof (entry as Record<string, unknown>).const === 'string' ||
+            typeof (entry as Record<string, unknown>).const === 'number') &&
           'title' in entry &&
           typeof (entry as Record<string, unknown>).title === 'string',
       )
@@ -196,8 +197,8 @@ export function parseSchemaOptions(
 /**
  * Check whether a JSON Schema property has selectable options.
  *
- * Returns `true` when the schema contains a non-empty `oneOf` array
- * with at least one non-null string value.
+ * Returns `true` when the schema contains at least one non-null selectable
+ * value.
  */
 export function schemaHasOptions(
   schema: XFormatPropertySchema | null | undefined,

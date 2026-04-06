@@ -193,7 +193,7 @@ export function getFieldOptions(
   if (schema.type === 'string' || Array.isArray(schema.type)) {
     return parseSchemaOptions(schema).map((opt, i) => ({
       id: `${fieldId}-opt-${i}`,
-      value: opt.value,
+      value: String(opt.value),
     }));
   }
 

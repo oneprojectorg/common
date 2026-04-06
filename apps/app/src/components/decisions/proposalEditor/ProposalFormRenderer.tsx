@@ -58,7 +58,7 @@ function extractOptions(
   schema: FieldDescriptor['schema'],
 ): { value: string; label: string }[] {
   return parseSchemaOptions(schema).map((opt) => ({
-    value: opt.value,
+    value: String(opt.value),
     label: opt.title,
   }));
 }
