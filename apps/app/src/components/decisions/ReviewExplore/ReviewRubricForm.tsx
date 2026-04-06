@@ -57,7 +57,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div className="border-b border-neutral-gray1 pb-4">
-        <Header2 className="font-serif text-title-base text-neutral-black">
+        <Header2 className="font-serif !text-title-base font-light text-neutral-black">
           {t('Review Proposal')}
         </Header2>
       </div>
@@ -123,7 +123,9 @@ function RubricCriterionSection({
   onChange: (value: unknown) => void;
 }) {
   const t = useTranslations();
+  const criterionType = inferCriterionType(field.schema);
   const scoreLabel = maxPoints > 0 ? `${maxPoints} ${t('pts')}` : null;
+  const badgeLabel = criterionType === 'yes_no' ? t('No/Yes') : scoreLabel;
 
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
@@ -132,20 +134,34 @@ function RubricCriterionSection({
           {field.schema.title}
         </Header3>
 
-        {scoreLabel && (
+        {badgeLabel && (
           <span className="shrink-0 text-sm text-neutral-gray4">
-            {scoreLabel}
+            {badgeLabel}
           </span>
         )}
       </div>
 
-      {field.schema.description && (
-        <p className="text-base text-neutral-charcoal">
-          {field.schema.description}
-        </p>
-      )}
+      {criterionType === 'yes_no' ? (
+        <div className="flex items-center gap-3">
+          {field.schema.description && (
+            <p className="flex-1 text-base text-neutral-charcoal">
+              {field.schema.description}
+            </p>
+          )}
 
-      <RubricFieldInput field={field} value={value} onChange={onChange} />
+          <RubricFieldInput field={field} value={value} onChange={onChange} />
+        </div>
+      ) : (
+        <>
+          {field.schema.description && (
+            <p className="text-base text-neutral-charcoal">
+              {field.schema.description}
+            </p>
+          )}
+
+          <RubricFieldInput field={field} value={value} onChange={onChange} />
+        </>
+      )}
     </section>
   );
 }
@@ -168,16 +184,13 @@ function RubricFieldInput({
     case 'dropdown': {
       if (inferCriterionType(field.schema) === 'yes_no') {
         return (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-neutral-gray4">{t('No/Yes')}</span>
-            <ToggleButton
-              size="small"
-              isSelected={value === 'yes'}
-              onChange={(isSelected) => {
-                onChange(isSelected ? 'yes' : 'no');
-              }}
-            />
-          </div>
+          <ToggleButton
+            size="small"
+            isSelected={value === 'yes'}
+            onChange={(isSelected) => {
+              onChange(isSelected ? 'yes' : 'no');
+            }}
+          />
         );
       }
 
