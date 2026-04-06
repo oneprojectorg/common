@@ -972,7 +972,7 @@ describe.concurrent('listProposals', () => {
       title: 'Legacy A',
       description: '<p>body from content field</p>',
       budget: { amount: 7500, currency: 'USD' },
-      category: 'Infrastructure',
+      category: ['Infrastructure'],
     });
     // content→description backward compat
     expect(foundA?.documentContent).toEqual({
@@ -984,7 +984,7 @@ describe.concurrent('listProposals', () => {
     expect(foundB?.proposalData).toMatchObject({
       title: 'Legacy B',
       budget: { amount: 4200, currency: 'EUR' },
-      category: 'Education',
+      category: ['Education'],
     });
     expect(foundB?.documentContent).toEqual({
       type: 'html',

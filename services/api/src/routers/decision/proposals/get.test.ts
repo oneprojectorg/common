@@ -723,12 +723,13 @@ describe.concurrent('getProposal', () => {
 
     // Verify the entire proposalData object
     // All null values are preserved (via .nullish()), except:
-    // - attachmentIds: null → [] via transform
+    // - category: null -> [] via normalization
+    // - attachmentIds: null -> [] via transform
     expect(result.proposalData).toEqual({
       title: 'Legacy Data Test',
       description: null,
       content: null,
-      category: null,
+      category: [],
       budget: null,
       attachmentIds: [],
       collaborationDocId: null,
@@ -834,7 +835,7 @@ describe.concurrent('getProposal', () => {
       title: 'Cowop Legacy Proposal',
       description: 'A community garden project',
       budget: { amount: 7500, currency: 'USD' },
-      category: 'Infrastructure',
+      category: ['Infrastructure'],
     });
 
     // Verify the proposalTemplate was resolved from process_schema.
@@ -1017,7 +1018,7 @@ describe.concurrent('getProposal', () => {
       title: 'Simple Legacy Proposal',
       description: 'A simple voting proposal',
       budget: { amount: 12000, currency: 'USD' },
-      category: 'Community',
+      category: ['Community'],
     });
 
     // Verify the proposalTemplate was resolved from process_schema.

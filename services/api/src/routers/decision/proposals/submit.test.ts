@@ -753,7 +753,7 @@ describe.concurrent('submitProposal', () => {
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
   });
 
-  it('should submit successfully with new oneOf-based category template', async ({
+  it('should submit successfully with new multi-select category template', async ({
     task,
     onTestFinished,
   }) => {
@@ -773,13 +773,17 @@ describe.concurrent('submitProposal', () => {
             'x-format': 'short-text',
           },
           category: {
-            type: 'string',
+            type: 'array',
             title: 'Category',
             'x-format': 'dropdown',
-            oneOf: [
-              { const: 'Infrastructure', title: 'Infrastructure' },
-              { const: 'Education', title: 'Education' },
-            ],
+            items: {
+              type: 'string',
+              oneOf: [
+                { const: 'Infrastructure', title: 'Infrastructure' },
+                { const: 'Education', title: 'Education' },
+              ],
+            },
+            uniqueItems: true,
           },
         },
       },
@@ -803,7 +807,7 @@ describe.concurrent('submitProposal', () => {
       .set({
         proposalData: {
           title: 'OneOf Category Test',
-          category: 'Infrastructure',
+          category: ['Infrastructure'],
           collaborationDocId,
         },
       })
@@ -811,7 +815,7 @@ describe.concurrent('submitProposal', () => {
 
     mockCollab.setDocFragments(collaborationDocId, {
       title: 'OneOf Category Test',
-      category: 'Infrastructure',
+      category: JSON.stringify(['Infrastructure']),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
