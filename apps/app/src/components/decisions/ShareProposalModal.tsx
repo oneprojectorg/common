@@ -403,7 +403,7 @@ function ShareProposalModalContent({
                     <ListBoxItem
                       id="add-email"
                       textValue={debouncedQuery}
-                      className="hover:bg-neutral-gray0 focus:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
+                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
                     >
                       <div className="text-sm">
                         {t('Invite {email}', { email: debouncedQuery })}
@@ -415,7 +415,7 @@ function ShareProposalModalContent({
                       key={result.id}
                       id={result.id}
                       textValue={result.name}
-                      className="hover:bg-neutral-gray0 focus:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
+                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
                     >
                       <ProfileItem
                         size="small"

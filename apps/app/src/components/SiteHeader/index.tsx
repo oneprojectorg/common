@@ -249,7 +249,7 @@ const AvatarMenuContent = ({
       <MenuSeparator className="pt-4" />
       <MenuItem
         id="help"
-        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
         onAction={() => {
           window.open(
             'https://harmonious-peridot-9d5.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-21fa0d01a6d981f48c9cd48a4a63267e',
@@ -265,7 +265,7 @@ const AvatarMenuContent = ({
       </MenuItem>
       <MenuItem
         id="logout"
-        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
         onAction={() => {
           void logout.refetch().finally(() => router.push('/'));
           onClose?.();

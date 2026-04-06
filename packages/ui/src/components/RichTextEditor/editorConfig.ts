@@ -28,7 +28,7 @@ export const viewerProseStyles = [
 /**
  * Styles applied to the editor element
  */
-export const baseEditorStyles = `${viewerProseStyles} focus:outline-hidden placeholder:text-neutral-gray2`;
+export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2`;
 
 /**
  * Base extensions shared by both editor and viewer

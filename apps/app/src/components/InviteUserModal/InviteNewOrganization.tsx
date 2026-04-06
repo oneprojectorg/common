@@ -133,7 +133,7 @@ export const InviteNewOrganization = ({
             value={personalMessage}
             onChange={(e) => setPersonalMessage(e.target.value)}
             placeholder={t('Add a personal note to your invitation')}
-            className="min-h-[80px] rounded-lg border border-neutral-gray2 p-2 outline-hidden focus:border-primary-teal focus:ring-1 focus:ring-primary-teal"
+            className="min-h-[80px] rounded-lg border border-neutral-gray2 p-2 outline-hidden focus-visible:border-primary-teal focus-visible:ring-1 focus-visible:ring-primary-teal"
             rows={3}
           />
         </div>
