@@ -12,7 +12,7 @@ import { CommonError, ValidationError } from '../../utils';
 import { getAuthorizedReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import {
-  type ProposalReviewDto,
+  type ProposalReviewData,
   proposalReviewSchema,
 } from './schemas/reviews';
 
@@ -27,7 +27,7 @@ export async function submitReview({
   reviewData: Record<string, unknown>;
   overallComment?: string | null;
   user: User;
-}): Promise<ProposalReviewDto> {
+}): Promise<ProposalReviewData> {
   const context = await getAuthorizedReviewAssignmentContext({
     assignmentId,
     user,

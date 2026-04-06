@@ -14,4 +14,4 @@ export const proposalReviewSchema = z.object({
   updatedAt: z.string().nullable(),
 });
 
-export type ProposalReviewDto = z.infer<typeof proposalReviewSchema>;
+export type ProposalReviewData = z.infer<typeof proposalReviewSchema>;
