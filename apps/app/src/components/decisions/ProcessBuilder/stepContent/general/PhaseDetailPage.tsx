@@ -370,8 +370,13 @@ function PhaseDetailForm({
       </div>
 
       {/* Phase controls */}
-      <div className="space-y-6 rounded-lg border p-4">
-        <ToggleRow label={t('Enable proposal submission')}>
+      <div className="space-y-2">
+        <ToggleRow
+          label={t('Proposal submission')}
+          description={t(
+            'Participants can submit new proposals during this phase.',
+          )}
+        >
           <ToggleButton
             isSelected={phase.rules?.proposals?.submit ?? false}
             onChange={(val) =>
@@ -382,7 +387,10 @@ function PhaseDetailForm({
             size="small"
           />
         </ToggleRow>
-        <ToggleRow label={t('Enable proposal editing')}>
+        <ToggleRow
+          label={t('Proposal editing')}
+          description={t('Authors can edit their proposals after submitting')}
+        >
           <ToggleButton
             isSelected={phase.rules?.proposals?.edit ?? false}
             onChange={(val) =>
@@ -393,7 +401,12 @@ function PhaseDetailForm({
             size="small"
           />
         </ToggleRow>
-        <ToggleRow label={t('Enable proposal review')}>
+        <ToggleRow
+          label={t('Proposal review')}
+          description={t(
+            'Proposals can be assessed and scored during this phase.',
+          )}
+        >
           <ToggleButton
             isSelected={phase.rules?.proposals?.review ?? false}
             onChange={(val) =>
@@ -404,7 +417,12 @@ function PhaseDetailForm({
             size="small"
           />
         </ToggleRow>
-        <ToggleRow label={t('Enable voting')}>
+        <ToggleRow
+          label={t('Voting')}
+          description={t(
+            'Participants can vote on proposals during this phase.',
+          )}
+        >
           <ToggleButton
             isSelected={phase.rules?.voting?.submit ?? false}
             onChange={(val) =>
