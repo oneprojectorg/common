@@ -1,9 +1,9 @@
+import { mockCollab } from '@op/collab/testing';
 import type { RubricTemplateSchema } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
 } from '@op/db/schema';
-import { mockCollab } from '@op/collab/testing';
 import { createProposalReview } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
