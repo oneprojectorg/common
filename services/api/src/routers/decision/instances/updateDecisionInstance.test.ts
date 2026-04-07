@@ -44,6 +44,114 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.id).toBe(instance.instance.id);
   });
 
+  it('should not update slug when renaming a draft instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Capture the original slug (UUID-based) from a no-op update call
+    const before = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+    });
+    const slugBefore = before.slug;
+
+    const newName = `My Awesome Process ${task.id}`;
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      name: newName,
+    });
+
+    expect(result.processInstance.name).toBe(newName);
+
+    // Slug should stay the same — drafts keep their original UUID slug
+    expect(result.slug).toBe(slugBefore);
+  });
+
+  it('should generate a name-based slug when publishing a draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Rename the draft first
+    const newName = `My Awesome Process ${task.id}`;
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      name: newName,
+    });
+
+    // Publish — slug should now be generated from the name
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    expect(result.slug).toContain('decision-my-awesome-process');
+  });
+
+  it('should not update slug when renaming a published instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Publish the instance
+    const published = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    const slugAfterPublish = published.slug;
+
+    // Update the name on the published instance
+    const newName = `Renamed Published Process ${task.id}`;
+    const renamed = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      name: newName,
+    });
+
+    // Verify the slug was NOT changed
+    expect(renamed.slug).toBe(slugAfterPublish);
+    expect(renamed.name).toBe(newName);
+  });
+
   it('should update instance description', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
@@ -216,6 +324,9 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
     expect(instanceData.config?.hideBudget).toBe(true);
+
+    // Verify slug was generated from the name on publish
+    expect(result.slug).toContain('decision-multi-update');
   });
 
   it('should not allow non-admin to update instance', async ({

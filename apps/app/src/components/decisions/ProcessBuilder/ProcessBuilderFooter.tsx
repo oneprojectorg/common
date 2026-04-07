@@ -63,10 +63,13 @@ export const ProcessBuilderFooter = ({
   const utils = trpc.useUtils();
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       toast.success({ message: t('Changes saved successfully') });
       await utils.decision.getDecisionBySlug.invalidate({ slug });
-      router.push(`/decisions/${slug}`);
+      if (data.slug !== slug) {
+        await utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
+      }
+      router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
       toast.error({
@@ -185,7 +188,6 @@ export const ProcessBuilderFooter = ({
         onOpenChange={setIsLaunchModalOpen}
         instanceId={instanceId}
         processName={displayName}
-        slug={slug}
         decisionProfileId={decisionProfileId}
       />
     </>

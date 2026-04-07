@@ -13,6 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertProfileAdmin } from '../assert';
+import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -207,6 +208,10 @@ export const updateDecisionInstance = async ({
     return profile;
   }
 
+  const isBeingPublished =
+    status === ProcessStatus.PUBLISHED &&
+    existingInstance.status === ProcessStatus.DRAFT;
+
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     // Update the instance
@@ -220,16 +225,34 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to update decision process instance');
     }
 
-    // Keep the profile name in sync with the instance name
-    if (name !== undefined) {
-      await tx.update(profiles).set({ name }).where(eq(profiles.id, profileId));
-    }
-
     // Determine the final status (updated or existing)
     const finalStatus = status ?? existingInstance.status;
-    const isBeingPublished =
-      status === ProcessStatus.PUBLISHED &&
-      existingInstance.status === ProcessStatus.DRAFT;
+
+    // Build a single profile update for name sync and/or slug generation.
+    const profileUpdate: Record<string, string> = {};
+
+    // Keep the profile name in sync with the instance name.
+    if (name !== undefined) {
+      profileUpdate.name = name;
+    }
+
+    // Generate a permanent, name-based slug when publishing.
+    // Draft instances keep their original UUID slug so the URL stays stable
+    // while editing. Once published the slug is locked.
+    if (isBeingPublished) {
+      const instanceName = name ?? existingInstance.name;
+      profileUpdate.slug = await generateUniqueProfileSlug({
+        name: `decision-${instanceName}`,
+        db: tx,
+      });
+    }
+
+    if (Object.keys(profileUpdate).length > 0) {
+      await tx
+        .update(profiles)
+        .set(profileUpdate)
+        .where(eq(profiles.id, profileId));
+    }
 
     // If status is DRAFT, remove all transitions
     if (finalStatus === ProcessStatus.DRAFT) {
@@ -264,11 +287,7 @@ export const updateDecisionInstance = async ({
   }
 
   // When publishing a draft, send queued invite emails for this process instance's profile
-  const isPublishing =
-    status === ProcessStatus.PUBLISHED &&
-    existingInstance.status === ProcessStatus.DRAFT;
-
-  if (isPublishing) {
+  if (isBeingPublished) {
     const queuedInvites = await db.query.profileInvites.findMany({
       where: {
         profileId,
