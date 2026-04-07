@@ -23,6 +23,7 @@ interface PhaseStepperProps {
   phases: Phase[];
   currentPhaseId: string;
   className?: string;
+  locale?: string;
   onTransition?: (phaseId: string) => void;
 }
 
@@ -107,11 +108,13 @@ const Step = ({
   stepState,
   index,
   phase,
+  locale,
   onTransition,
 }: {
   stepState: StepState;
   index: number;
   phase: Phase;
+  locale?: string;
   onTransition?: (phaseId: string) => void;
 }) => {
   return (
@@ -126,7 +129,7 @@ const Step = ({
         <div>{phase.name}</div>
         {(phase.startDate || phase.endDate) && (
           <div className="text-xs text-neutral-gray4">
-            {formatDateRange(phase.startDate, phase.endDate)}
+            {formatDateRange(phase.startDate, phase.endDate, locale)}
           </div>
         )}
       </div>
@@ -138,6 +141,7 @@ export function PhaseStepper({
   phases,
   currentPhaseId,
   className = '',
+  locale,
   onTransition,
 }: PhaseStepperProps) {
   const sortedPhases = phases
@@ -172,6 +176,7 @@ export function PhaseStepper({
                 stepState={stepState}
                 index={index}
                 phase={phase}
+                locale={locale}
                 onTransition={onTransition}
               />
               {/* divider line */}

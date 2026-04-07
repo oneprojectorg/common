@@ -2,6 +2,7 @@
 
 import { formatCurrency, formatDateRange } from '@/utils/formatting';
 import { type ProcessPhase } from '@op/api/encoders';
+import { useLocale } from 'next-intl';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -18,6 +19,7 @@ export function DecisionStats({
   proposalCount,
   daysRemaining,
 }: DecisionStatsProps) {
+  const locale = useLocale();
   const t = useTranslations();
   return (
     <div className="space-y-6">
@@ -34,6 +36,7 @@ export function DecisionStats({
             {formatDateRange(
               currentPhase.phase?.startDate,
               currentPhase.phase?.endDate,
+              locale,
             ) || t('Timeline not set')}
           </p>
         )}
@@ -49,7 +52,7 @@ export function DecisionStats({
               {t('Total Budget')}
             </span>
             <span className="text-sm font-medium text-neutral-charcoal">
-              {formatCurrency(budget)}
+              {formatCurrency(budget, locale)}
             </span>
           </div>
         )}
