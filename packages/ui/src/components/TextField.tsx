@@ -129,7 +129,7 @@ export const TextField = ({
       </FieldGroup>
 
       {(description || errorMessage || counterElement) && (
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-baseline justify-between gap-4">
           <div>
             {description && !errorMessage && (
               <Description className={descriptionClassName}>
