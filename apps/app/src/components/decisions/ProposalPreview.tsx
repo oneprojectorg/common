@@ -204,9 +204,7 @@ export function ProposalPreview({
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
         <div className="border-t pt-8">
-          <Header3 className="mb-4">
-            {t('Attachments')}
-          </Header3>
+          <Header3 className="mb-4">{t('Attachments')}</Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
       )}
