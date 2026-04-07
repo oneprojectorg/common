@@ -115,23 +115,6 @@ beforeAll(async () => {
   // Make test clients available globally
   supabaseTestClient = testSupabase;
   supabaseTestAdminClient = testSupabaseAdmin;
-
-  // Verify Supabase is running
-  try {
-    const { error } = await testSupabase.from('users').select('*').limit(1);
-    if (
-      error &&
-      !error.message.includes('relation "_test_ping" does not exist')
-    ) {
-      console.warn('Supabase connection test failed:', error.message);
-    }
-  } catch (err) {
-    console.warn(
-      "Failed to connect to test Supabase instance. Make sure it's running on",
-      TEST_SUPABASE_URL,
-    );
-    throw err;
-  }
 });
 
 // Setup test environment for each test
