@@ -10,7 +10,6 @@ import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
   decisionProcesses,
-  organizationUsers,
   processInstances,
   profiles,
   proposals,
@@ -113,12 +112,12 @@ export class TestDecisionsDataManager {
    * Resolves a Supabase auth user from an email without creating a session.
    */
   private async getAuthUserByEmail(email: string): Promise<User> {
-    const [organizationUser] = await db
-      .select({ authUserId: organizationUsers.authUserId })
-      .from(organizationUsers)
-      .where(eq(organizationUsers.email, email));
+    const [userRecord] = await db
+      .select({ authUserId: users.authUserId })
+      .from(users)
+      .where(eq(users.email, email));
 
-    if (!organizationUser?.authUserId) {
+    if (!userRecord?.authUserId) {
       throw new Error(`Failed to find auth user for ${email}`);
     }
 
@@ -128,7 +127,7 @@ export class TestDecisionsDataManager {
 
     const { data, error } =
       await supabaseTestAdminClient.auth.admin.getUserById(
-        organizationUser.authUserId,
+        userRecord.authUserId,
       );
 
     if (error || !data.user) {
