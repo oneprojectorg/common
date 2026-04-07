@@ -128,7 +128,7 @@ const MobileSidebar = ({
   instanceId: string;
   decisionProfileId?: string;
 }) => {
-  const navigationConfig = useNavigationConfig(instanceId);
+  const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
   const { open, setOpen } = useSidebar();
   const { sections: validationSections } =
     useProcessBuilderValidation(decisionProfileId);
