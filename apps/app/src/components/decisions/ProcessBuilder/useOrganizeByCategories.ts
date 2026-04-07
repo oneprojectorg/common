@@ -14,11 +14,10 @@ export function useOrganizeByCategories(
   instanceId: string | undefined,
   decisionProfileId: string | undefined,
 ): boolean {
-  const storeValue = useProcessBuilderStore(
-    (s) =>
-      decisionProfileId
-        ? s.instances[decisionProfileId]?.config?.organizeByCategories
-        : undefined,
+  const storeValue = useProcessBuilderStore((s) =>
+    decisionProfileId
+      ? s.instances[decisionProfileId]?.config?.organizeByCategories
+      : undefined,
   );
 
   const { data: instance } = trpc.decision.getInstance.useQuery(
