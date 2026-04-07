@@ -178,7 +178,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             <LuSearch className="size-4 text-neutral-gray4" />
           ),
           className: cn(
-            'bg-transparent placeholder:text-neutral-gray4 focus:bg-white active:bg-white active:text-neutral-gray3',
+            'bg-transparent placeholder:text-neutral-gray4 focus-visible:bg-white active:bg-white active:text-neutral-gray3',
             'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'sm:rounded-b-none',
           ),

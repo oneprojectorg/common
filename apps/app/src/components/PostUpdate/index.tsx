@@ -640,7 +640,7 @@ const PostUpdateWithUser = ({
                       )}
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
-                        className="absolute top-2 right-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus:outline-1"
+                        className="absolute top-2 right-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus-visible:outline-1"
                         size="small"
                         color="neutral"
                       >
@@ -657,7 +657,7 @@ const PostUpdateWithUser = ({
                       />
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
-                        className="absolute top-2 right-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus:outline-1"
+                        className="absolute top-2 right-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus-visible:outline-1"
                         size="small"
                         color="neutral"
                       >

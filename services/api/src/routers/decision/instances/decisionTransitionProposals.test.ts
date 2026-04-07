@@ -50,7 +50,7 @@ describe.concurrent('decisionTransitionProposals constraints', () => {
     const instanceB = setupB.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setupB.userEmail,
+      userEmail: setupB.userEmail,
       processInstanceId: instanceB.instance.id,
       proposalData: { title: 'Proposal in process B' },
     });
@@ -89,7 +89,7 @@ describe.concurrent('decisionTransitionProposals constraints', () => {
     const instance = setup.instances[0]!;
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Proposal in same process' },
     });
