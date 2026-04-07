@@ -8,10 +8,10 @@ import {
   profiles,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { randomUUID } from 'crypto';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
-import { generateUniqueProfileSlug } from '../profile/utils';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -44,10 +44,7 @@ export const createDecisionInstance = async ({
 }: CreateDecisionInstanceOptions) => {
   const instance = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
-    const slug = await generateUniqueProfileSlug({
-      name: `decision-${name}`,
-      db: tx,
-    });
+    const slug = `draft-${randomUUID()}`;
 
     const [instanceProfile] = await tx
       .insert(profiles)
