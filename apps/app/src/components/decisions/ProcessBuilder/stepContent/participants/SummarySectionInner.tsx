@@ -64,6 +64,13 @@ export function SummarySectionInner({
     0;
 
   const categories = storeCategories ?? instanceCategories ?? [];
+  const storeOrganizeByCategories = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId]?.config?.organizeByCategories,
+  );
+  const organizeByCategories =
+    storeOrganizeByCategories ??
+    instance.instanceData?.config?.organizeByCategories ??
+    true;
   const activeUsersCount = usersData.items?.length ?? 0;
   const participantsCount = activeUsersCount + (invites?.length ?? 0);
 
@@ -151,17 +158,19 @@ export function SummarySectionInner({
           </div>
           <div className="mt-2 border-t border-neutral-gray1" />
         </div>
-        <div>
-          <div className="flex items-center justify-between">
-            <span className="text-base text-neutral-gray4">
-              {t('Categories')}
-            </span>
-            <span className="text-base text-neutral-charcoal">
-              {categories.length}
-            </span>
+        {organizeByCategories && (
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-base text-neutral-gray4">
+                {t('Categories')}
+              </span>
+              <span className="text-base text-neutral-charcoal">
+                {categories.length}
+              </span>
+            </div>
+            <div className="mt-2 border-t border-neutral-gray1" />
           </div>
-          <div className="mt-2 border-t border-neutral-gray1" />
-        </div>
+        )}
         <div className="flex items-center justify-between">
           <span className="text-base text-neutral-gray4">
             {t('Participants Invited')}
