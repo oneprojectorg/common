@@ -12,6 +12,7 @@ import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
+
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 

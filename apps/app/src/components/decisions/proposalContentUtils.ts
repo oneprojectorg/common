@@ -9,6 +9,7 @@ import {
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
 import { type JSONContent, generateText } from '@tiptap/core';
+
 type DocumentContent = NonNullable<Proposal['documentContent']>;
 
 /** `x-format` values that represent rich-text editor content suitable for preview. */

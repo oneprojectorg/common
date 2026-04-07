@@ -442,7 +442,6 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
-
 export const proposalVersionEncoder = z.object({
   version: z.number(),
   createdAt: z.string(),

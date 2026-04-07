@@ -22,6 +22,7 @@ import {
   useRef,
   useState,
 } from 'react';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorToolbar } from '../../RichTextEditor';

@@ -1,11 +1,11 @@
 import { cache } from '@op/cache';
 import { getPermissionsOnProposal, getProposal } from '@op/common';
+import { proposalSchema } from '@op/common/client';
 import { ProposalStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { proposalSchema } from '@op/common/client';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 

@@ -7,6 +7,7 @@ import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useContext, useState } from 'react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';

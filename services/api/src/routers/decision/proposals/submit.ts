@@ -1,9 +1,9 @@
 import { submitProposal } from '@op/common';
+import { proposalSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { proposalSchema } from '@op/common/client';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 

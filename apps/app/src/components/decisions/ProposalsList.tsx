@@ -27,6 +27,7 @@ import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';

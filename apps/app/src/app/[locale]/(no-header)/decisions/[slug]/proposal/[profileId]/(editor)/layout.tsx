@@ -18,6 +18,7 @@ import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
 import { LuHistory } from 'react-icons/lu';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
@@ -167,7 +168,6 @@ export default function ProposalEditorLayout({
     </CollaborativeDocProvider>
   );
 }
-
 
 /**
  * Inner content rendered within the collaborative document providers.

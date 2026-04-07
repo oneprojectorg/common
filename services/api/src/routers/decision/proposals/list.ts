@@ -1,5 +1,4 @@
 import { listProposals } from '@op/common';
-
 import { proposalListSchema } from '@op/common/client';
 
 import { proposalFilterSchema } from '../../../encoders/decision';

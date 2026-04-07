@@ -16,6 +16,7 @@ import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
+
 import { useTranslations } from '@/lib/i18n';
 
 export function ProposalCardMenu({

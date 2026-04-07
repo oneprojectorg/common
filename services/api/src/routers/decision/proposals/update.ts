@@ -5,10 +5,9 @@ import {
   ValidationError,
   updateProposal,
 } from '@op/common';
+import { proposalSchema } from '@op/common/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-
-import { proposalSchema } from '@op/common/client';
 
 import { updateProposalInputSchema } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
