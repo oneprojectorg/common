@@ -24,17 +24,27 @@ export function useNavigationConfig(
     (p) => p.rules?.proposals?.review === true,
   );
 
+  const organizeByCategories =
+    instance?.instanceData?.config?.organizeByCategories ?? true;
+
+  const generalSections = organizeByCategories
+    ? DEFAULT_NAVIGATION_CONFIG.sections?.general
+    : DEFAULT_NAVIGATION_CONFIG.sections?.general?.filter(
+        (s) => s !== 'proposalCategories',
+      );
+
   return useMemo(
     () => ({
       ...DEFAULT_NAVIGATION_CONFIG,
       steps: { ...DEFAULT_NAVIGATION_CONFIG.steps, reviews: hasReviewPhase },
       sections: {
         ...DEFAULT_NAVIGATION_CONFIG.sections,
+        general: generalSections,
         reviews: reviewFlowEnabled
           ? ['reviewSettings', 'reviewRubric']
           : ['criteria'],
       },
     }),
-    [hasReviewPhase, reviewFlowEnabled],
+    [hasReviewPhase, reviewFlowEnabled, generalSections],
   );
 }
