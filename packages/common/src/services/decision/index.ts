@@ -73,6 +73,9 @@ export * from './voting';
 // Re-export VoteData type from schema for convenience
 export type { VoteData } from '@op/db/schema';
 
+// Taxonomy utilities
+export { toTermUri } from './utils/taxonomy';
+
 // Schema validation
 export { schemaValidator } from './schemaValidator';
 

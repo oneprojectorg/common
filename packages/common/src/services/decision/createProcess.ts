@@ -5,6 +5,7 @@ import { User } from '@op/supabase/lib';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import type { ProcessSchema } from './types';
+import { toTermUri } from './utils/taxonomy';
 
 /**
  * Ensures the "proposal" taxonomy exists and creates/updates taxonomy terms for the given categories
@@ -42,10 +43,7 @@ async function ensureProposalTaxonomy(categories: string[]): Promise<string[]> {
     if (!categoryName.trim()) continue;
 
     const categoryLabel = categoryName.trim();
-    const termUri = categoryLabel
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+    const termUri = toTermUri(categoryLabel);
 
     // Check if taxonomy term already exists
     let existingTerm = await db._query.taxonomyTerms.findFirst({

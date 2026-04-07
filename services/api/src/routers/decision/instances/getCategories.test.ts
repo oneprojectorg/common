@@ -1,3 +1,4 @@
+import { toTermUri } from '@op/common';
 import { db, eq, inArray } from '@op/db/client';
 import {
   organizationUsers,
@@ -60,10 +61,7 @@ async function seedProposalTaxonomy(
   const termRecords = termLabels.map((label) => ({
     id: randomUUID(),
     taxonomyId: resolvedTaxonomyId,
-    termUri: label
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, ''),
+    termUri: toTermUri(label),
     label,
   }));
 
@@ -109,6 +107,37 @@ async function injectInstanceCategories(
         ...instanceData,
         config: {
           ...((instanceData.config as Record<string, unknown>) ?? {}),
+          categories,
+        },
+      },
+    })
+    .where(eq(processInstances.id, instanceId));
+}
+
+/**
+ * Injects fieldValues.categories (legacy string array) into an existing process instance's instanceData.
+ */
+async function injectFieldValuesCategories(
+  instanceId: string,
+  categories: string[],
+) {
+  const [instance] = await db
+    .select({ instanceData: processInstances.instanceData })
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId));
+
+  if (!instance) {
+    throw new Error(`Instance ${instanceId} not found`);
+  }
+
+  const instanceData = instance.instanceData as Record<string, unknown>;
+  await db
+    .update(processInstances)
+    .set({
+      instanceData: {
+        ...instanceData,
+        fieldValues: {
+          ...((instanceData.fieldValues as Record<string, unknown>) ?? {}),
           categories,
         },
       },
@@ -492,6 +521,148 @@ describe.concurrent('getCategories category matching', () => {
         id: termRecords[0]!.id,
         name: 'Health & Wellness',
         termUri: expectedTermUri,
+      }),
+    );
+  });
+});
+
+describe.concurrent('getCategories legacy fieldValues path', () => {
+  it('should return categories from fieldValues.categories when config.categories is absent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const { termRecords } = await seedProposalTaxonomy(
+      ['Community Gardens', 'Public Transit'],
+      onTestFinished,
+    );
+
+    await injectFieldValuesCategories(instance.instance.id, [
+      'Community Gardens',
+      'Public Transit',
+    ]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.categories).toHaveLength(2);
+    expect(result.categories).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: termRecords[0]!.id,
+          name: 'Community Gardens',
+          termUri: 'community-gardens',
+        }),
+        expect.objectContaining({
+          id: termRecords[1]!.id,
+          name: 'Public Transit',
+          termUri: 'public-transit',
+        }),
+      ]),
+    );
+  });
+
+  it('should prefer config.categories over fieldValues.categories when both exist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const { termRecords } = await seedProposalTaxonomy(
+      ['Solar Power', 'Wind Energy'],
+      onTestFinished,
+    );
+
+    // Inject both config.categories and fieldValues.categories
+    await injectInstanceCategories(instance.instance.id, [
+      {
+        id: 'cat-1',
+        label: 'Solar Power',
+        description: 'Solar power proposals',
+      },
+    ]);
+    await injectFieldValuesCategories(instance.instance.id, ['Wind Energy']);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+
+    // Should only return Solar Power (from config.categories), not Wind Energy
+    expect(result.categories).toHaveLength(1);
+    expect(result.categories[0]).toEqual(
+      expect.objectContaining({
+        id: termRecords[0]!.id,
+        name: 'Solar Power',
+        termUri: 'solar-power',
+      }),
+    );
+  });
+
+  it('should handle empty strings and whitespace in fieldValues.categories', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const { termRecords } = await seedProposalTaxonomy(
+      ['Bike Lanes'],
+      onTestFinished,
+    );
+
+    await injectFieldValuesCategories(instance.instance.id, [
+      '',
+      '  ',
+      'Bike Lanes',
+    ]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.categories).toHaveLength(1);
+    expect(result.categories[0]).toEqual(
+      expect.objectContaining({
+        id: termRecords[0]!.id,
+        name: 'Bike Lanes',
+        termUri: 'bike-lanes',
       }),
     );
   });
