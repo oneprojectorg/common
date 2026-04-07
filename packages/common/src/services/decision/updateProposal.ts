@@ -103,6 +103,13 @@ export const updateProposal = async ({
 
     const processInstance = existingProposal.processInstance;
 
+    // Reject updates when the instance is in the results phase
+    if (processInstance.currentStateId === 'results') {
+      throw new ValidationError(
+        'Proposals cannot be edited during the results phase',
+      );
+    }
+
     // Status and visibility changes only require instance-level decisions: ADMIN
     if (data.status || data.visibility) {
       await assertInstanceProfileAccess({

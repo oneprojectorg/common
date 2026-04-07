@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { ProposalFilter } from '@op/api/encoders';
 import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -18,7 +19,7 @@ import {
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
 import { MyBallot, NoVoteFound } from '../MyBallot';
-import { ProposalListSkeleton } from '../ProposalsList';
+import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
 
@@ -33,10 +34,10 @@ interface ResultsPageInstance {
 
 function ResultsPageLegacy({
   instanceId,
-  slug,
+  profileSlug,
 }: {
   instanceId: string;
-  slug: string;
+  profileSlug: string;
 }) {
   const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
     instanceId,
@@ -44,7 +45,7 @@ function ResultsPageLegacy({
   return (
     <ResultsPageContent
       instanceId={instanceId}
-      slug={slug}
+      profileSlug={profileSlug}
       instance={instance}
     />
   );
@@ -52,22 +53,29 @@ function ResultsPageLegacy({
 
 export function ResultsPage({
   instanceId,
-  slug,
+  profileSlug,
+  decisionSlug,
   useLegacy = false,
 }: {
   instanceId: string;
-  slug: string;
+  /** Owner profile slug (e.g. "people-powered") — used for org-specific hero content and legacy URL fallbacks */
+  profileSlug: string;
+  /** Decision profile slug (e.g. "pp-decides-season-5") — used for building proposal links in the new route structure */
+  decisionSlug?: string;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
   if (useLegacy) {
-    return <ResultsPageLegacy instanceId={instanceId} slug={slug} />;
+    return (
+      <ResultsPageLegacy instanceId={instanceId} profileSlug={profileSlug} />
+    );
   }
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   return (
     <ResultsPageContent
       instanceId={instanceId}
-      slug={slug}
+      profileSlug={profileSlug}
+      decisionSlug={decisionSlug}
       instance={instance}
     />
   );
@@ -75,11 +83,13 @@ export function ResultsPage({
 
 function ResultsPageContent({
   instanceId,
-  slug,
+  profileSlug,
+  decisionSlug,
   instance,
 }: {
   instanceId: string;
-  slug: string;
+  profileSlug: string;
+  decisionSlug?: string;
   instance: ResultsPageInstance;
 }) {
   const t = useTranslations();
@@ -89,7 +99,7 @@ function ResultsPageContent({
     title: string;
     description: string;
     about?: string;
-  }>(slug, {
+  }>(profileSlug, {
     'people-powered': () => ({
       title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
@@ -125,7 +135,7 @@ function ResultsPageContent({
             <ResultsStats instanceId={instanceId} />
           </Suspense>
 
-          {['cowop', 'one-project'].includes(slug) ? (
+          {['cowop', 'one-project'].includes(profileSlug) ? (
             <DecisionActionBar
               instanceId={instanceId}
               markup={true}
@@ -160,10 +170,24 @@ function ResultsPageContent({
               >
                 <div className="lg:col-span-3">
                   <Suspense fallback={<ProposalListSkeleton />}>
-                    <ResultsList slug={slug} instanceId={instanceId} />
+                    <ResultsList slug={profileSlug} instanceId={instanceId} />
                   </Suspense>
                 </div>
               </APIErrorBoundary>
+            </DecisionResultsTabPanel>
+
+            <DecisionResultsTabPanel id="all-proposals">
+              <div className="lg:col-span-3">
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ProposalsList
+                    slug={profileSlug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                    initialFilter={ProposalFilter.ALL}
+                    phase="results"
+                  />
+                </Suspense>
+              </div>
             </DecisionResultsTabPanel>
 
             <DecisionResultsTabPanel id="ballot">
@@ -174,7 +198,7 @@ function ResultsPageContent({
               >
                 <div className="lg:col-span-3">
                   <Suspense fallback={<ProposalListSkeleton />}>
-                    <MyBallot slug={slug} instanceId={instanceId} />
+                    <MyBallot slug={profileSlug} instanceId={instanceId} />
                   </Suspense>
                 </div>
               </APIErrorBoundary>

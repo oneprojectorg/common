@@ -476,6 +476,8 @@ export const ProposalsList = ({
   decisionSlug,
   decisionProfileId,
   permissions,
+  initialFilter,
+  phase,
 }: {
   slug: string;
   instanceId: string;
@@ -485,6 +487,10 @@ export const ProposalsList = ({
   decisionProfileId?: string | null;
   /** Role-based capabilities for the current user. */
   permissions?: DecisionAccess | null;
+  /** Override the default proposal filter */
+  initialFilter?: ProposalFilter;
+  /** When set to 'results', all proposals are returned as non-editable */
+  phase?: 'results';
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -556,10 +562,12 @@ export const ProposalsList = ({
       status?: ProposalStatus;
       dir: 'asc' | 'desc';
       limit: number;
+      phase?: 'results';
     } = {
       processInstanceId: instanceId,
       dir: sortOrder === 'newest' ? 'desc' : 'asc',
       limit: 50,
+      phase,
     };
 
     // Only include categoryId if it's not "all-categories"
@@ -568,7 +576,7 @@ export const ProposalsList = ({
     }
 
     return params;
-  }, [instanceId, selectedCategory, sortOrder]);
+  }, [instanceId, selectedCategory, sortOrder, phase]);
 
   const { data: proposalsData, isLoading } =
     trpc.decision.listProposals.useQuery(queryParams);
@@ -695,7 +703,7 @@ export const ProposalsList = ({
     currentProfileId,
     votedProposalIds: selectedProposalIds,
     hasVoted,
-    initialFilter: undefined,
+    initialFilter,
   });
 
   // Sync URL with filter changes (both manual and automatic), skipping initial render
