@@ -5,7 +5,7 @@ import {
   type XFormatPropertySchema,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Header2, Header3 } from '@op/ui/Header';
+import { Header3, Header4 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
@@ -15,6 +15,7 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import {
@@ -57,9 +58,9 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div className="border-b border-neutral-gray1 pb-4">
-        <Header2 className="font-serif !text-title-base font-light text-neutral-black">
+        <Header3 className="font-serif !text-title-base font-light">
           {t('Review Proposal')}
-        </Header2>
+        </Header3>
       </div>
 
       {fields.map((field) => (
@@ -74,9 +75,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
 
       <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
         <div className="flex items-center justify-between gap-4">
-          <h3 className="font-serif text-title-xs text-neutral-black">
-            {t('Overall Notes')}
-          </h3>
+          <Header4>{t('Overall Notes')}</Header4>
         </div>
 
         <TextField
@@ -129,35 +128,32 @@ function RubricCriterionSection({
 
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      <div className="flex items-center justify-between gap-4">
-        <Header3 className="font-serif text-title-xs text-neutral-black">
-          {field.schema.title}
-        </Header3>
-
-        {badgeLabel && (
-          <span className="shrink-0 text-sm text-neutral-gray4">
-            {badgeLabel}
-          </span>
-        )}
-      </div>
-
       {criterionType === 'yes_no' ? (
-        <div className="flex items-center gap-3">
-          {field.schema.description && (
-            <p className="flex-1 text-base text-neutral-charcoal">
-              {field.schema.description}
-            </p>
-          )}
+        <>
+          <FieldHeader
+            title={field.schema.title}
+            badge={badgeLabel}
+            className="gap-1"
+          />
 
-          <RubricFieldInput field={field} value={value} onChange={onChange} />
-        </div>
+          <div className="flex items-center gap-3">
+            {field.schema.description && (
+              <p className="flex-1 text-sm text-neutral-charcoal">
+                {field.schema.description}
+              </p>
+            )}
+
+            <RubricFieldInput field={field} value={value} onChange={onChange} />
+          </div>
+        </>
       ) : (
         <>
-          {field.schema.description && (
-            <p className="text-base text-neutral-charcoal">
-              {field.schema.description}
-            </p>
-          )}
+          <FieldHeader
+            title={field.schema.title}
+            description={field.schema.description}
+            badge={badgeLabel}
+            className="gap-1"
+          />
 
           <RubricFieldInput field={field} value={value} onChange={onChange} />
         </>
