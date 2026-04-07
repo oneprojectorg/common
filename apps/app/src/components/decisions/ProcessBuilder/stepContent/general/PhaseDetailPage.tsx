@@ -6,7 +6,6 @@ import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
-import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
@@ -98,6 +97,9 @@ function PhaseDetailForm({
       []
     );
   })();
+
+  const phaseIndex = allPhases.findIndex((p) => p.id === phaseId) + 1;
+  const phaseCount = allPhases.length;
 
   const initialPhase = allPhases.find((p) => p.id === phaseId);
   const [phase, setPhase] = useState<PhaseDefinition | undefined>(initialPhase);
@@ -280,10 +282,18 @@ function PhaseDetailForm({
 
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
-      <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-sm">
-          {phase.name || t('Phases')}
-        </Header2>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-neutral-gray4">
+            {t('Phase {index} of {total}', {
+              index: phaseIndex,
+              total: phaseCount,
+            })}
+          </p>
+          <h2 className="font-serif text-title-base">
+            {phase.name || t('Add phase')}
+          </h2>
+        </div>
         <SaveStatusIndicator
           status={saveState.status}
           savedAt={saveState.savedAt}
@@ -292,7 +302,7 @@ function PhaseDetailForm({
 
       <div className="space-y-4">
         <TextField
-          label={t('Phase name')}
+          label={t('Short name')}
           isRequired
           value={phase.name ?? ''}
           onChange={(value) => updatePhase({ name: value })}

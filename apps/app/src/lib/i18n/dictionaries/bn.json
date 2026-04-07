@@ -1043,5 +1043,7 @@
   "Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.": "আমাদের সম্প্রদায় এই নীতিগুলো তৈরি করেছে যাতে আপনার মতো প্রকৃত সংগঠনগুলোর জন্য কাজ করে। আপনার তথ্য আপনারই থাকবে এবং প্ল্যাটফর্ম সম্পর্কিত সিদ্ধান্ত গণতান্ত্রিকভাবে নেওয়া হয়।",
   "I accept the": "আমি স্বীকার করি",
   "Terms of Service": "সেবার শর্তাবলী",
-  "Join Common": "Common-এ যোগ দিন"
+  "Join Common": "Common-এ যোগ দিন",
+  "Phase {index} of {total}": "Phase {index} of {total}",
+  "Short name": "Short name"
 }
