@@ -10,6 +10,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { useOrganizeByCategories } from '../../useOrganizeByCategories';
 import { useProcessBuilderValidation } from '../../validation/useProcessBuilderValidation';
 
 const CHECKLIST_SECTION_MAP: Record<string, string> = {
@@ -64,13 +65,10 @@ export function SummarySectionInner({
     0;
 
   const categories = storeCategories ?? instanceCategories ?? [];
-  const storeOrganizeByCategories = useProcessBuilderStore(
-    (s) => s.instances[decisionProfileId]?.config?.organizeByCategories,
+  const organizeByCategories = useOrganizeByCategories(
+    instanceId,
+    decisionProfileId,
   );
-  const organizeByCategories =
-    storeOrganizeByCategories ??
-    instance.instanceData?.config?.organizeByCategories ??
-    true;
   const activeUsersCount = usersData.items?.length ?? 0;
   const participantsCount = activeUsersCount + (invites?.length ?? 0);
 
