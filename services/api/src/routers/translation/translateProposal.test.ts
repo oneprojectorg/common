@@ -2,7 +2,7 @@ import { mockCollab } from '@op/collab/testing';
 import { db } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
 import { like } from 'drizzle-orm';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
@@ -39,7 +39,11 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe.concurrent('translation.translateProposal', () => {
+describe('translation.translateProposal', () => {
+  beforeEach(() => {
+    mockTranslateText.mockClear();
+  });
+
   it('should translate proposal title and body content', async ({
     task,
     onTestFinished,

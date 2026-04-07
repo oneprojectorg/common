@@ -43,9 +43,9 @@ export async function validateProposalAgainstTemplate(
       fragmentTexts,
     );
 
-    schemaValidator.validateProposalData(proposalTemplate, validationData);
+    schemaValidator.assertProposalData(proposalTemplate, validationData);
   } else {
-    schemaValidator.validateProposalData(proposalTemplate, {
+    schemaValidator.assertProposalData(proposalTemplate, {
       ...storedProposalData,
       ...(shouldInjectTitle ? { title } : {}),
     });

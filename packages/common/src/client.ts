@@ -3,6 +3,7 @@
 
 export * from './money';
 export * from './services/decision/proposalDataSchema';
+export * from './services/decision/schemas/reviews';
 export * from './services/decision/types';
 export {
   SYSTEM_FIELD_KEYS,
