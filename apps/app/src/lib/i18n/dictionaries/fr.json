@@ -1037,6 +1037,6 @@
   "I accept the": "J'accepte les",
   "Terms of Service": "Conditions d'utilisation",
   "Join Common": "Rejoindre Common",
-  "Phase {index} of {total}": "Phase {index} of {total}",
-  "Short name": "Short name"
+  "Phase {index} of {total}": "Phase {index} sur {total}",
+  "Short name": "Nom court"
 }

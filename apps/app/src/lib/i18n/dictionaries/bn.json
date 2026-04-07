@@ -1044,6 +1044,6 @@
   "I accept the": "আমি স্বীকার করি",
   "Terms of Service": "সেবার শর্তাবলী",
   "Join Common": "Common-এ যোগ দিন",
-  "Phase {index} of {total}": "Phase {index} of {total}",
-  "Short name": "Short name"
+  "Phase {index} of {total}": "পর্ব {index} / {total}",
+  "Short name": "সংক্ষিপ্ত নাম"
 }
