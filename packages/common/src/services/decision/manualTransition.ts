@@ -1,4 +1,4 @@
-import { and, db, desc, eq, inArray, isNull } from '@op/db/client';
+import { and, db, desc, eq, inArray, isNull, sql } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
@@ -129,17 +129,6 @@ export async function manualTransition({
       (p) => p.id === currentPhaseId,
     )?.selectionPipeline;
 
-  // Build the updated instanceData (matches TransitionEngine's approach)
-  const instanceDataRecord = instanceData as unknown as Record<string, unknown>;
-  const updatedInstanceData = {
-    ...instanceDataRecord,
-    currentPhaseId: nextPhaseId,
-    stateData: {
-      ...(instanceDataRecord.stateData as Record<string, unknown> | undefined),
-      [nextPhaseId]: { enteredAt: now, metadata: { manual: true } },
-    },
-  } as InstanceData;
-
   // Execute transition atomically.
   // Selection pipeline + proposal persistence run inside the transaction
   // so reads and writes are from a consistent snapshot.
@@ -183,12 +172,26 @@ export async function manualTransition({
 
     // Update instance state with optimistic lock on currentStateId
     // to prevent concurrent transitions from double-advancing.
+    // Uses jsonb_set to update instanceData server-side so the write
+    // operates on the current DB value, avoiding TOCTOU races.
     const updated = await tx
       .update(processInstances)
       .set({
         currentStateId: nextPhaseId,
         updatedAt: now,
-        instanceData: updatedInstanceData,
+        instanceData: sql`jsonb_set(
+          jsonb_set(
+            jsonb_set(
+              coalesce(${processInstances.instanceData}, '{}'::jsonb),
+              '{currentPhaseId}',
+              to_jsonb(${nextPhaseId}::text)
+            ),
+            '{stateData}',
+            coalesce(${processInstances.instanceData}->'stateData', '{}'::jsonb)
+          ),
+          array['stateData', ${nextPhaseId}]::text[],
+          ${JSON.stringify({ enteredAt: now, metadata: { manual: true } })}::jsonb
+        )`,
       })
       .where(
         and(
