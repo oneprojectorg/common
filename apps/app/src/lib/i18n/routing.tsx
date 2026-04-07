@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import { cn } from '@op/ui/utils';
-import { useTranslations as _useTranslations } from 'next-intl';
+import { useTranslations as _useTranslations, useLocale } from 'next-intl';
 import { createNavigation } from 'next-intl/navigation';
 import { defineRouting } from 'next-intl/routing';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
@@ -140,4 +140,4 @@ const useTranslations = (): TranslateFn => {
   }, [translateFn]);
 };
 
-export { Link, redirect, usePathname, useRouter, useTranslations };
+export { Link, redirect, useLocale, usePathname, useRouter, useTranslations };

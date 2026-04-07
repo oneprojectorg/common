@@ -12,7 +12,6 @@ import {
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
-import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
   type ReactNode,
@@ -23,7 +22,7 @@ import {
   useState,
 } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { useLocale, useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorToolbar } from '../../RichTextEditor';
 import {

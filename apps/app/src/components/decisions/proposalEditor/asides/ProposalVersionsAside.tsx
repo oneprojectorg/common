@@ -5,7 +5,6 @@ import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
-import { useLocale } from 'next-intl';
 import {
   useCallback,
   useEffect,
@@ -14,7 +13,7 @@ import {
   useTransition,
 } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { useLocale, useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../../collaboration';
 import { ProposalEditorAside } from '../../ProposalEditorAside';

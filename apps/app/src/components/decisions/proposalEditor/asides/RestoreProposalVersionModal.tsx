@@ -3,9 +3,8 @@
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { useLocale } from 'next-intl';
 
-import { useTranslations } from '@/lib/i18n';
+import { useLocale, useTranslations } from '@/lib/i18n';
 
 interface RestoreProposalVersionModalProps {
   isOpen: boolean;
