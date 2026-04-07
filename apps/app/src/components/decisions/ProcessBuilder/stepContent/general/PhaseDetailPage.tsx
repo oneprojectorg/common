@@ -6,6 +6,7 @@ import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
+import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
@@ -290,7 +291,9 @@ function PhaseDetailForm({
               total: phaseCount,
             })}
           </p>
-          <h2 className="font-serif text-title-base">{t('Add phase')}</h2>
+          <Header2 className="font-serif text-title-base">
+            {t('Add phase')}
+          </Header2>
         </div>
         <SaveStatusIndicator
           status={saveState.status}
