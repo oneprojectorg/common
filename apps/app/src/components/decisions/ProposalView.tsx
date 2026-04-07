@@ -4,6 +4,7 @@ import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Proposal, SupportedLocale } from '@op/common/client';
+import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
@@ -159,9 +160,9 @@ export function ProposalView({
           {/* Comments Section */}
           <div ref={commentsContainerRef}>
             <div className="border-t pt-8">
-              <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
+              <Header3 className="mb-6">
                 {t('Comments')} ({comments.length})
-              </h3>
+              </Header3>
 
               {/* Comment Input */}
               <div className="mb-8">

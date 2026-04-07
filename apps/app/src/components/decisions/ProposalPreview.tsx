@@ -10,7 +10,7 @@ import {
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
-import { Header1 } from '@op/ui/Header';
+import { Header1, Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import Image from 'next/image';
@@ -204,9 +204,9 @@ export function ProposalPreview({
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
         <div className="border-t pt-8">
-          <h3 className="mb-4 text-lg font-semibold text-neutral-charcoal">
+          <Header3 className="mb-4">
             {t('Attachments')}
-          </h3>
+          </Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
       )}
