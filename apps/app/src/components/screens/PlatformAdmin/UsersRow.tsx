@@ -5,7 +5,9 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
+import { Button as UIButton } from '@op/ui/Button';
 import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
@@ -33,6 +35,13 @@ export const UsersRow = ({ user }: { user: User }) => {
   const utils = trpc.useUtils();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
+
+  const removeUser = trpc.platform.admin.removeUser.useMutation({
+    onSuccess: () => {
+      utils.platform.admin.listAllUsers.invalidate();
+    },
+  });
   const createdAt = user.createdAt ? new Date(user.createdAt) : null;
   const relativeCreatedAt = createdAt ? useRelativeTime(createdAt) : null;
   const lastSignInAt = user.authUser?.lastSignInAt
@@ -124,7 +133,7 @@ export const UsersRow = ({ user }: { user: User }) => {
               <MenuItem
                 key="remove-user"
                 onAction={() => {
-                  alert('coming soon');
+                  setIsRemoveModalOpen(true);
                 }}
                 className="px-3 py-1"
               >
@@ -152,6 +161,50 @@ export const UsersRow = ({ user }: { user: User }) => {
         isOpen={isAddToOrgModalOpen}
         onOpenChange={setIsAddToOrgModalOpen}
       />
+      <Modal
+        isOpen={isRemoveModalOpen}
+        onOpenChange={setIsRemoveModalOpen}
+        isDismissable={!removeUser.isPending}
+      >
+        <ModalHeader>{t('platformAdmin_removeUser_confirmTitle')}</ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-neutral-charcoal">
+            {t('platformAdmin_removeUser_confirmDescription', {
+              email: user.email,
+            })}
+          </p>
+          {removeUser.isError ? (
+            <p className="text-sm text-functional-red">
+              {t('platformAdmin_removeUser_errorMessage')}
+            </p>
+          ) : null}
+        </ModalBody>
+        <ModalFooter>
+          <UIButton
+            variant="outline"
+            onPress={() => setIsRemoveModalOpen(false)}
+            isDisabled={removeUser.isPending}
+          >
+            {t('platformAdmin_removeUser_cancelButton')}
+          </UIButton>
+          <UIButton
+            variant="destructive"
+            onPress={() => {
+              removeUser.mutate(
+                { authUserId: user.authUserId },
+                {
+                  onSuccess: () => {
+                    setIsRemoveModalOpen(false);
+                  },
+                },
+              );
+            }}
+            isDisabled={removeUser.isPending}
+          >
+            {t('platformAdmin_removeUser_confirmButton')}
+          </UIButton>
+        </ModalFooter>
+      </Modal>
     </>
   );
 };
