@@ -2,6 +2,7 @@
 
 import { type ProcessPhase } from '@op/api/encoders';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
+import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
 
 import { useDecisionTranslation } from './DecisionTranslationContext';
@@ -15,6 +16,7 @@ export function DecisionProcessStepper({
   currentStateId: string;
   className?: string;
 }) {
+  const locale = useLocale();
   const translation = useDecisionTranslation();
   const translatedPhaseNames = useMemo(
     () =>
@@ -39,6 +41,7 @@ export function DecisionProcessStepper({
       phases={transformedPhases}
       currentPhaseId={currentStateId}
       className={className}
+      locale={locale}
     />
   );
 }
