@@ -66,6 +66,9 @@ export const ProcessBuilderFooter = ({
     onSuccess: async (data) => {
       toast.success({ message: t('Changes saved successfully') });
       await utils.decision.getDecisionBySlug.invalidate({ slug });
+      if (data.slug !== slug) {
+        await utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
+      }
       router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
@@ -73,12 +76,6 @@ export const ProcessBuilderFooter = ({
         title: t('Failed to save changes'),
         message: error.message,
       });
-    },
-    onSettled: (data) => {
-      void utils.decision.getDecisionBySlug.invalidate({ slug });
-      if (data?.slug && data.slug !== slug) {
-        void utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
-      }
     },
   });
 

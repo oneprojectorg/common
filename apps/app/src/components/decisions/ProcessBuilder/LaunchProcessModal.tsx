@@ -47,9 +47,9 @@ export const LaunchProcessModal = ({
   const utils = trpc.useUtils();
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       onOpenChange(false);
-      // Use the slug from the response — publishing generates a new name-based slug
+      await utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
       router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
@@ -57,11 +57,6 @@ export const LaunchProcessModal = ({
         message: t('Failed to launch process'),
         title: error.message,
       });
-    },
-    onSettled: (data) => {
-      if (data?.slug) {
-        void utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
-      }
     },
   });
 
