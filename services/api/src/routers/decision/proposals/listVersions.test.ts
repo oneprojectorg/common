@@ -34,7 +34,7 @@ describe.concurrent('listProposalVersions', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Current proposal' },
     });
@@ -66,7 +66,7 @@ describe.concurrent('listProposalVersions', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Current proposal' },
     });
@@ -123,7 +123,7 @@ describe.concurrent('listProposalVersions', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Current proposal' },
     });

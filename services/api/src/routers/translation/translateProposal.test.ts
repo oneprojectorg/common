@@ -62,7 +62,7 @@ describe('translation.translateProposal', () => {
 
     // Create proposal with collaborationDocId (no description → keeps the doc)
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Community Garden Project' },
     });
@@ -138,7 +138,7 @@ describe('translation.translateProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Community Garden Project' },
     });
@@ -219,7 +219,7 @@ describe('translation.translateProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Fully Cached Proposal' },
     });
@@ -304,7 +304,7 @@ describe('translation.translateProposal', () => {
 
     // Create a legacy proposal with description instead of collaborationDocId
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Legacy Proposal',
@@ -387,7 +387,7 @@ describe('translation.translateProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Template Fields Test' },
     });
@@ -484,7 +484,7 @@ describe('translation.translateProposal', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Cached Template Test' },
     });

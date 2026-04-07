@@ -144,7 +144,7 @@ describe.concurrent('getInstance', () => {
     }
 
     const draftProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Draft proposal',
@@ -153,7 +153,7 @@ describe.concurrent('getInstance', () => {
     });
 
     const submittedProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Submitted proposal',

@@ -172,7 +172,7 @@ describe.concurrent('getResultsStats', () => {
 
     // Create a proposal so we can reference it in result selections
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Test Proposal' },
     });

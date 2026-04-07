@@ -279,7 +279,7 @@ describe.concurrent('listDecisionProfiles', () => {
     }
 
     const draftProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Draft proposal',
@@ -288,7 +288,7 @@ describe.concurrent('listDecisionProfiles', () => {
     });
 
     const submittedProposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: {
         title: 'Submitted proposal',
