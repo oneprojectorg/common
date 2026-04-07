@@ -5,6 +5,9 @@ export * from './getProcess';
 export * from './getTemplate';
 export * from './listProcesses';
 
+// Taxonomy utilities
+export * from './ensureProposalTaxonomy';
+
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';

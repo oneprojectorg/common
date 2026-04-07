@@ -15,6 +15,7 @@ import { getProfileAccessUser } from '../access';
 import { assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
+import { ensureProposalTaxonomy } from './ensureProposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -140,6 +141,11 @@ export const updateDecisionInstance = async ({
         ...existingInstanceData.config,
         ...config,
       };
+
+      // Ensure taxonomy terms exist for categories
+      if (config.categories && config.categories.length > 0) {
+        await ensureProposalTaxonomy(config.categories.map((c) => c.label));
+      }
     }
 
     // Apply phase updates — replaces the full phases array to accommodate
