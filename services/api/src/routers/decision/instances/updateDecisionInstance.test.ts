@@ -1,6 +1,6 @@
 import { type DecisionInstanceData } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProcessStatus, processInstances, profiles } from '@op/db/schema';
+import { ProcessStatus, processInstances } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -62,11 +62,11 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Capture the original slug (UUID-based)
-    const profileBefore = await db._query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
+    // Capture the original slug (UUID-based) from a no-op update call
+    const before = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
     });
-    const slugBefore = profileBefore!.slug;
+    const slugBefore = before.slug;
 
     const newName = `My Awesome Process ${task.id}`;
     const result = await caller.decision.updateDecisionInstance({
@@ -77,10 +77,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.name).toBe(newName);
 
     // Slug should stay the same — drafts keep their original UUID slug
-    const profileAfter = await db._query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
-    });
-    expect(profileAfter!.slug).toBe(slugBefore);
+    expect(result.slug).toBe(slugBefore);
   });
 
   it('should generate a name-based slug when publishing a draft', async ({
@@ -109,16 +106,12 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     // Publish — slug should now be generated from the name
-    await caller.decision.updateDecisionInstance({
+    const result = await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
       status: ProcessStatus.PUBLISHED,
     });
 
-    const profile = await db._query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
-    });
-
-    expect(profile!.slug).toContain('decision-my-awesome-process');
+    expect(result.slug).toContain('decision-my-awesome-process');
   });
 
   it('should not update slug when renaming a published instance', async ({
@@ -140,31 +133,23 @@ describe.concurrent('updateDecisionInstance', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // Publish the instance
-    await caller.decision.updateDecisionInstance({
+    const published = await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
       status: ProcessStatus.PUBLISHED,
     });
 
-    // Capture the slug after publishing
-    const profileAfterPublish = await db._query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
-    });
-    const slugAfterPublish = profileAfterPublish!.slug;
+    const slugAfterPublish = published.slug;
 
     // Update the name on the published instance
     const newName = `Renamed Published Process ${task.id}`;
-    await caller.decision.updateDecisionInstance({
+    const renamed = await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
       name: newName,
     });
 
     // Verify the slug was NOT changed
-    const profileAfterRename = await db._query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
-    });
-
-    expect(profileAfterRename!.slug).toBe(slugAfterPublish);
-    expect(profileAfterRename!.name).toBe(newName);
+    expect(renamed.slug).toBe(slugAfterPublish);
+    expect(renamed.name).toBe(newName);
   });
 
   it('should update instance description', async ({ task, onTestFinished }) => {
