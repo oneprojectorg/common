@@ -1,6 +1,14 @@
-import { REVIEWS_POLICIES, proposalSchema } from '@op/common/client';
+import {
+  REVIEWS_POLICIES,
+  proposalReviewAssignmentListItemSchema,
+  proposalReviewAssignmentListSchema,
+  proposalReviewSchema,
+  proposalSchema,
+  reviewAssignmentDetailSchema,
+} from '@op/common/client';
 import {
   ProcessStatus,
+  ProposalReviewAssignmentStatus,
   ProposalStatus,
   Visibility,
   decisionProcesses,
@@ -452,6 +460,31 @@ export const proposalVersionEncoder = z.object({
 export const proposalVersionListEncoder = z.object({
   // Ordered newest-first (descending by integer version) by the service layer.
   versions: z.array(proposalVersionEncoder),
+});
+
+const proposalReviewAssignmentStatusEncoder = z.nativeEnum(
+  ProposalReviewAssignmentStatus,
+);
+export const proposalReviewAssignmentListItemEncoder =
+  proposalReviewAssignmentListItemSchema;
+
+export const proposalReviewAssignmentListEncoder =
+  proposalReviewAssignmentListSchema;
+export const proposalReviewEncoder = proposalReviewSchema;
+export const reviewAssignmentDetailEncoder = reviewAssignmentDetailSchema;
+
+export const proposalReviewAssignmentEncoder = z.object({
+  id: z.uuid(),
+  processInstanceId: z.uuid(),
+  proposalId: z.uuid(),
+  reviewerProfileId: z.uuid(),
+  phaseId: z.string(),
+  assignedProposalHistoryId: z.uuid().nullable(),
+  status: proposalReviewAssignmentStatusEncoder,
+  assignedAt: z.string().nullable(),
+  completedAt: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
 });
 
 // Decision Encoder

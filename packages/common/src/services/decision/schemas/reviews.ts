@@ -1,6 +1,8 @@
 import { ProposalReviewState } from '@op/db/schema';
 import { z } from 'zod';
 
+import { proposalReviewAssignmentListItemSchema } from './reviewAssignments';
+
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 
 export const proposalReviewSchema = z.object({
@@ -14,4 +16,14 @@ export const proposalReviewSchema = z.object({
   updatedAt: z.string().nullable(),
 });
 
+export const reviewAssignmentDetailSchema = z.object({
+  assignment: proposalReviewAssignmentListItemSchema,
+  rubricTemplate: jsonObjectSchema.nullable(),
+  review: proposalReviewSchema.nullable(),
+});
+
 export type ProposalReviewData = z.infer<typeof proposalReviewSchema>;
+export type ProposalReview = z.infer<typeof proposalReviewSchema>;
+export type ReviewAssignmentDetail = z.infer<
+  typeof reviewAssignmentDetailSchema
+>;

@@ -17,6 +17,7 @@ export {
   type ProposalList,
   type ProposalProfile,
 } from './services/decision/schemas/proposal';
+export * from './services/decision/schemas/reviewAssignments';
 export * from './services/decision/types';
 export {
   SYSTEM_FIELD_KEYS,
@@ -31,7 +32,10 @@ export {
   type SchemaValidationResult,
 } from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
-export { isRationaleField } from './services/decision/getRubricScoringInfo';
+export {
+  getRubricScoringInfo,
+  isRationaleField,
+} from './services/decision/getRubricScoringInfo';
 export { REVIEWS_POLICIES } from './services/decision/schemas/types';
 
 // Translation constants (no server dependencies)
