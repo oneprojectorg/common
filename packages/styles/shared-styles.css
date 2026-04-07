@@ -425,6 +425,11 @@
     border-top-width: 1px;
     border-color: var(--color-neutral-gray1);
   }
+
+  /* Only show focus outlines for keyboard navigation, not mouse clicks */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 /* ============================================

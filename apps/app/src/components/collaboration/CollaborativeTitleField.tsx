@@ -54,7 +54,7 @@ export function CollaborativeTitleField({
     editorProps: {
       attributes: {
         class:
-          'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal focus:outline-none',
+          'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal outline-none',
       },
       handleKeyDown: (_view, event) => {
         if (event.key === 'Enter') {
