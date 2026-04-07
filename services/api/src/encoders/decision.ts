@@ -1,6 +1,8 @@
 import { REVIEWS_POLICIES, proposalSchema } from '@op/common/client';
 import {
   ProcessStatus,
+  ProposalReviewAssignmentStatus,
+  ProposalReviewState,
   ProposalStatus,
   Visibility,
   decisionProcesses,
@@ -693,6 +695,47 @@ export const decisionProfileFilterSchema = z.object({
   status: z.enum(ProcessStatus).optional(),
   ownerProfileId: z.uuid().optional(),
   stewardProfileId: z.uuid().optional(),
+});
+
+// =============================================================================
+// Review encoders
+// =============================================================================
+
+const jsonObjectEncoder = z.record(z.string(), z.unknown());
+
+/** Single proposal review (draft or submitted) */
+export const proposalReviewEncoder = z.object({
+  id: z.uuid(),
+  assignmentId: z.uuid(),
+  state: z.enum(ProposalReviewState),
+  reviewData: jsonObjectEncoder,
+  overallComment: z.string().nullable(),
+  submittedAt: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+
+/** Review assignment list item (assignment + embedded proposal) */
+const proposalReviewAssignmentListItemEncoder = z.object({
+  id: z.uuid(),
+  processInstanceId: z.uuid(),
+  phaseId: z.string(),
+  status: z.nativeEnum(ProposalReviewAssignmentStatus),
+  proposal: proposalSchema,
+});
+
+/** Paginated list of review assignments */
+export const proposalReviewAssignmentListEncoder = z.object({
+  assignments: z.array(proposalReviewAssignmentListItemEncoder),
+  total: z.number(),
+  completed: z.number(),
+});
+
+/** Full assignment detail (assignment + rubric + saved review) */
+export const reviewAssignmentDetailEncoder = z.object({
+  assignment: proposalReviewAssignmentListItemEncoder,
+  rubricTemplate: jsonObjectEncoder.nullable(),
+  review: proposalReviewEncoder.nullable(),
 });
 
 // Type exports

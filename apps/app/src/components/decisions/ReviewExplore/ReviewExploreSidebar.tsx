@@ -14,66 +14,38 @@ export interface SidebarProposal {
   isActive: boolean;
 }
 
-// Temporary placeholder data until review proposals are provided by the backend.
-export const mockReviewProposals: SidebarProposal[] = [
-  {
-    id: '1',
-    name: 'Community Garden Expansion',
-    reviewStatus: 'in-progress',
-    isActive: true,
-  },
-  {
-    id: '2',
-    name: 'Implement Living Wage Policy for City Contractors',
-    reviewStatus: 'not-started',
-    isActive: false,
-  },
-  {
-    id: '3',
-    name: 'Community Garden Expansion Extra line',
-    reviewStatus: 'completed',
-    isActive: false,
-  },
-  {
-    id: '4',
-    name: 'Local Art Festival Planning Extra line',
-    reviewStatus: 'completed',
-    isActive: false,
-  },
-  {
-    id: '5',
-    name: 'Neighborhood Clean-Up Initiative Extra line',
-    reviewStatus: 'in-progress',
-    isActive: false,
-  },
-  {
-    id: '6',
-    name: 'School Playground Upgrade Proposal Extra line',
-    reviewStatus: 'not-started',
-    isActive: false,
-  },
-];
-
-export function ReviewExploreSidebar() {
+export function ReviewExploreSidebar({
+  proposals,
+  onSelectProposal,
+}: {
+  proposals: SidebarProposal[];
+  onSelectProposal?: (proposal: SidebarProposal) => void;
+}) {
   const t = useTranslations();
 
   return (
     <Sidebar label={t('Proposals')} className="border-r">
-      <ReviewExploreProposalList className="w-64 px-8 pt-8" />
+      <ReviewExploreProposalList
+        proposals={proposals}
+        className="w-64 px-8 pt-8"
+        onSelectProposal={onSelectProposal}
+      />
     </Sidebar>
   );
 }
 
 export function ReviewExploreProposalList({
+  proposals,
   className,
   onSelectProposal,
 }: {
+  proposals: SidebarProposal[];
   className?: string;
   onSelectProposal?: (proposal: SidebarProposal) => void;
 }) {
   return (
     <nav className={cn('flex flex-col gap-1', className)}>
-      {mockReviewProposals.map((proposal) => (
+      {proposals.map((proposal) => (
         <SidebarItem
           key={proposal.id}
           proposal={proposal}

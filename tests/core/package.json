@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./test-data": "./src/test-data.ts",
-    "./decision-data": "./src/decision-data.ts"
+    "./decision-data": "./src/decision-data.ts",
+    "./review-data": "./src/review-data.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

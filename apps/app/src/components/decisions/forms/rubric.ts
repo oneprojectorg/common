@@ -19,6 +19,7 @@ export function compileRubricSchema(
 ): FieldDescriptor[] {
   const properties = template.properties ?? {};
   const propertyKeys = Object.keys(properties);
+  const requiredSet = new Set(template.required ?? []);
 
   if (propertyKeys.length === 0) {
     return [];
@@ -40,6 +41,7 @@ export function compileRubricSchema(
     format:
       (properties[key] as XFormatPropertySchema)['x-format'] ??
       DEFAULT_X_FORMAT,
+    required: requiredSet.has(key),
     schema: properties[key] as XFormatPropertySchema,
   }));
 }

@@ -217,31 +217,34 @@ export function ProposalCardAuthor({
     return null;
   }
 
+  const authorName =
+    proposal.submittedBy.name ?? proposal.submittedBy.slug ?? 'U';
+
   return (
     <>
       <Avatar
-        placeholder={proposal.submittedBy.name || proposal.submittedBy.slug}
+        placeholder={authorName}
         className={cn('size-6 min-h-6 min-w-6', className)}
       >
         {proposal?.submittedBy?.avatarImage?.name ? (
           <Image
             src={getPublicUrl(proposal?.submittedBy?.avatarImage?.name) ?? ''}
-            alt="User avatar"
+            alt={authorName}
             fill
             className="object-cover"
           />
         ) : null}
       </Avatar>
-      {withLink ? (
+      {withLink && proposal.submittedBy.slug ? (
         <Link
           href={`/profile/${proposal.submittedBy.slug}`}
           className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal"
         >
-          {proposal.submittedBy.name}
+          {authorName}
         </Link>
       ) : (
         <div className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal">
-          {proposal.submittedBy.name}
+          {authorName}
         </div>
       )}
     </>

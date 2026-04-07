@@ -21,6 +21,9 @@ export type ProposalDocumentContent =
  * - Proposals with neither: not included in the returned map
  *
  * @returns Map of proposalId -> DocumentContent
+ *
+ *
+ * TOOD: we should either pass a collaborationDocId id here or a description (not proposalData)
  */
 export async function getProposalDocumentsContent(
   proposals: Array<{
@@ -55,6 +58,8 @@ export async function getProposalDocumentsContent(
         content: parsed.description,
       });
     }
+
+    // TODO: What here??
   }
 
   // Fetch TipTap documents with controlled concurrency

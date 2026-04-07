@@ -2,20 +2,28 @@
  * Extract unique submitters from proposals for display components like FacePile
  */
 export function getUniqueSubmitters<
-  T extends { submittedBy?: { id: string } | null },
->(proposals: T[]): Array<NonNullable<T['submittedBy']>> {
+  T extends { submittedBy?: { id: string; slug?: string | null } | null },
+>(proposals: T[]): Array<NonNullable<T['submittedBy']> & { slug: string }> {
   return proposals.reduce(
     (acc, proposal) => {
+      const submitter = proposal.submittedBy;
+
       if (
-        proposal.submittedBy &&
-        !acc.some((s) => s.id === proposal.submittedBy?.id)
+        hasSubmitterSlug(submitter) &&
+        !acc.some((s) => s.id === submitter.id)
       ) {
-        acc.push(proposal.submittedBy);
+        acc.push(submitter);
       }
       return acc;
     },
-    [] as Array<NonNullable<T['submittedBy']>>,
+    [] as Array<NonNullable<T['submittedBy']> & { slug: string }>,
   );
+}
+
+function hasSubmitterSlug<T extends { slug?: string | null }>(
+  submitter: T | null | undefined,
+): submitter is T & { slug: string } {
+  return typeof submitter?.slug === 'string' && submitter.slug.length > 0;
 }
 
 /**

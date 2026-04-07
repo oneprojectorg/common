@@ -1,4 +1,4 @@
-import { submitReview } from '@op/common';
+import { saveReviewDraft } from '@op/common';
 import { z } from 'zod';
 
 import { proposalReviewEncoder } from '../../../encoders/decision';
@@ -10,13 +10,13 @@ const reviewInputSchema = z.object({
   overallComment: z.string().nullable().optional(),
 });
 
-export const submitReviewRouter = router({
-  submitReview: commonAuthedProcedure()
+export const saveReviewDraftRouter = router({
+  saveReviewDraft: commonAuthedProcedure()
     .input(reviewInputSchema)
     .output(proposalReviewEncoder)
     .mutation(async ({ ctx, input }) => {
       return proposalReviewEncoder.parse(
-        await submitReview({
+        await saveReviewDraft({
           assignmentId: input.assignmentId,
           reviewData: input.reviewData,
           overallComment: input.overallComment,

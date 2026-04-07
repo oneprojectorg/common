@@ -9,15 +9,11 @@ import type { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
-import {
-  getAuthorizedReviewAssignmentContext,
-  requireRubricTemplate,
-} from './reviewHelpers';
-import { schemaValidator } from './schemaValidator';
+import { getAuthorizedReviewAssignmentContext } from './reviewHelpers';
 import { type ProposalReview, proposalReviewSchema } from './schemas/reviews';
 
-/** Validates and submits a review for the current reviewer. */
-export async function submitReview({
+/** Saves or updates a draft review for the current reviewer. */
+export async function saveReviewDraft({
   assignmentId,
   reviewData,
   overallComment,
@@ -37,48 +33,44 @@ export async function submitReview({
     context.assignment.status === ProposalReviewAssignmentStatus.COMPLETED ||
     context.review?.state === ProposalReviewState.SUBMITTED
   ) {
-    throw new ValidationError('Review has already been submitted');
+    throw new ValidationError('Submitted reviews cannot be edited');
   }
 
-  const rubricTemplate = requireRubricTemplate(context.rubricTemplate);
-  schemaValidator.assertRubricData(rubricTemplate, reviewData);
-
-  const submittedAt = new Date().toISOString();
-
   const review = await db.transaction(async (tx) => {
-    const [submittedReview] = await tx
+    const [savedReview] = await tx
       .insert(proposalReviews)
       .values({
         assignmentId,
-        state: ProposalReviewState.SUBMITTED,
+        state: ProposalReviewState.DRAFT,
         reviewData,
         overallComment: overallComment ?? null,
-        submittedAt,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
         set: {
-          state: ProposalReviewState.SUBMITTED,
+          state: ProposalReviewState.DRAFT,
           reviewData,
           overallComment: overallComment ?? null,
-          submittedAt,
+          submittedAt: null,
         },
       })
       .returning();
 
-    if (!submittedReview) {
-      throw new CommonError('Failed to submit review');
+    if (!savedReview) {
+      throw new CommonError('Failed to save review draft');
     }
 
-    await tx
-      .update(proposalReviewAssignments)
-      .set({
-        status: ProposalReviewAssignmentStatus.COMPLETED,
-        completedAt: submittedAt,
-      })
-      .where(eq(proposalReviewAssignments.id, assignmentId));
+    if (context.assignment.status === ProposalReviewAssignmentStatus.PENDING) {
+      await tx
+        .update(proposalReviewAssignments)
+        .set({
+          status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+          completedAt: null,
+        })
+        .where(eq(proposalReviewAssignments.id, assignmentId));
+    }
 
-    return submittedReview;
+    return savedReview;
   });
 
   return proposalReviewSchema.parse({

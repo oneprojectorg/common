@@ -1,0 +1,4 @@
+-  [ ] check constraints at database level for reviewerProfileId to be user (profile)? 
+-  [ ] do we need assignedAt,startedAt,completedAt (for assignment)?
+-  [ ] paginate list proposal assignments
+-  [ ] cache proposal history items as they're stable

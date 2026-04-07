@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { proposalEncoder } from '@op/api/encoders';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { LuLeaf } from 'react-icons/lu';
@@ -48,7 +49,9 @@ export const ResultsList = ({
     }),
   ]);
 
-  const { items: proposals } = instanceResults;
+  const proposals = instanceResults.items.map((proposal) =>
+    proposalEncoder.parse(proposal),
+  );
 
   if (!proposals || proposals.length === 0) {
     return <NoProposalsFound />;
