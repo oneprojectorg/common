@@ -81,7 +81,9 @@ export * from './types';
 export type {
   DecisionInstanceData,
   PhaseInstanceData,
+  PhaseOverride,
 } from './schemas/instanceData';
+export { createInstanceDataFromTemplate } from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,

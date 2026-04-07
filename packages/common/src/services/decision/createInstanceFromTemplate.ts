@@ -14,10 +14,7 @@ import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
-import type {
-  DecisionInstanceData,
-  PhaseOverride,
-} from './schemas/instanceData';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
 export type CreateDecisionInstanceOptions = {
@@ -174,52 +171,5 @@ export const createInstanceFromTemplate = async ({
     stewardProfileId: ownerProfileId,
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
-  });
-};
-
-/** Options for the core instance creation function (no User required) */
-export type CreateInstanceFromTemplateCoreOptions = {
-  templateId: string;
-  name: string;
-  description?: string;
-  phases?: PhaseOverride[];
-  ownerProfileId: string;
-  stewardProfileId?: string;
-  creatorAuthUserId: string;
-  creatorEmail: string;
-  status?: ProcessStatus;
-};
-
-/**
- * Core version of createInstanceFromTemplate that accepts resolved profile IDs
- * and phase overrides directly, without requiring a User object.
- */
-export const createInstanceFromTemplateCore = async ({
-  templateId,
-  name,
-  description,
-  phases,
-  ownerProfileId,
-  stewardProfileId = ownerProfileId,
-  creatorAuthUserId,
-  creatorEmail,
-  status,
-}: CreateInstanceFromTemplateCoreOptions) => {
-  const template = await getTemplate(templateId);
-  const instanceData = createInstanceDataFromTemplate({
-    template,
-    phaseOverrides: phases,
-  });
-
-  return createDecisionInstance({
-    processId: templateId,
-    instanceData,
-    name,
-    description,
-    ownerProfileId,
-    stewardProfileId,
-    creatorAuthUserId,
-    creatorEmail,
-    status,
   });
 };

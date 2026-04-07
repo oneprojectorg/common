@@ -1,7 +1,9 @@
 import {
-  createInstanceFromTemplateCore,
+  createDecisionInstance,
+  createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
   createProposal as createProposalService,
+  getTemplate,
   joinOrganization,
 } from '@op/common';
 import { db } from '@op/db/client';
@@ -327,11 +329,10 @@ export class TestDecisionsDataManager {
       throw new Error(`Failed to resolve owner profile for ${user.email}`);
     }
 
-    const profile = await createInstanceFromTemplateCore({
-      templateId: resolvedProcessId,
-      name: this.generateUniqueName(name),
-      description: `Test instance ${name}`,
-      phases: [
+    const template = await getTemplate(resolvedProcessId);
+    const instanceData = createInstanceDataFromTemplate({
+      template,
+      phaseOverrides: [
         {
           phaseId: 'initial',
           startDate: new Date().toISOString(),
@@ -347,6 +348,13 @@ export class TestDecisionsDataManager {
           ).toISOString(),
         },
       ],
+    });
+
+    const profile = await createDecisionInstance({
+      processId: resolvedProcessId,
+      instanceData,
+      name: this.generateUniqueName(name),
+      description: `Test instance ${name}`,
       ownerProfileId,
       stewardProfileId: ownerProfileId,
       creatorAuthUserId: user.id,
