@@ -1,10 +1,4 @@
-import {
-  REVIEWS_POLICIES,
-  documentContentSchema,
-  proposalAttachmentSchema,
-  proposalListSchema,
-  proposalSchema,
-} from '@op/common/client';
+import { REVIEWS_POLICIES, proposalSchema } from '@op/common/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -448,21 +442,6 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
-// Reuse the shared proposal response shape so API and clients validate the same contract.
-export const proposalAttachmentEncoder = proposalAttachmentSchema;
-
-/**
- * Document content discriminated union.
- * - `json`: TipTap document fetched from collaboration service
- * - `html`: Legacy HTML/plain text description from proposalData
- */
-export const documentContentEncoder = documentContentSchema;
-
-/** Proposal encoder (frontend gets instance data separately via getDecisionBySlug) */
-export const proposalEncoder = proposalSchema;
-
-/** Proposal list encoder */
-export const proposalListEncoder = proposalListSchema;
 
 export const proposalVersionEncoder = z.object({
   version: z.number(),
@@ -485,7 +464,7 @@ export const decisionEncoder = createSelectSchema(decisions)
     updatedAt: true,
   })
   .extend({
-    proposal: proposalEncoder.optional(),
+    proposal: proposalSchema.optional(),
     decidedBy: baseProfileEncoder.optional(),
   });
 
@@ -518,7 +497,7 @@ export const processInstanceListEncoder = z.object({
 });
 
 export const instanceResultsEncoder = z.object({
-  items: z.array(proposalEncoder),
+  items: z.array(proposalSchema),
   next: z.string().nullish(),
 });
 

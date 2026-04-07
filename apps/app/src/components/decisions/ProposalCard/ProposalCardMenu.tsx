@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
 import { match } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
@@ -16,11 +16,7 @@ import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
-import type { z } from 'zod';
-
 import { useTranslations } from '@/lib/i18n';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 export function ProposalCardMenu({
   proposal,

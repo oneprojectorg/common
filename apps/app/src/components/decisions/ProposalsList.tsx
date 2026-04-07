@@ -6,9 +6,12 @@ import {
   type DecisionAccess,
   ProposalFilter,
   ProposalStatus,
-  type proposalEncoder,
 } from '@op/api/encoders';
-import { SUPPORTED_LOCALES, type SupportedLocale } from '@op/common/client';
+import {
+  type Proposal,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+} from '@op/common/client';
 import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
@@ -24,8 +27,6 @@ import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
-import type { z } from 'zod';
-
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
@@ -51,8 +52,6 @@ import { VotingProposalCard } from './VotingProposalCard';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
 import { useProposalExport } from './useProposalExport';
 import { useProposalFilters } from './useProposalFilters';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 const ProposalCardSkeleton = () => {
   return (

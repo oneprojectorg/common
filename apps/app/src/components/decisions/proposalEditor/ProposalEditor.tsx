@@ -3,13 +3,13 @@
 import { useUser } from '@/utils/UserProvider';
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
+import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
-  type ProcessInstance,
-  ProposalStatus,
-  type proposalEncoder,
-} from '@op/api/encoders';
-import { type ProposalDataInput, parseProposalData } from '@op/common/client';
-import type { ProposalTemplateSchema } from '@op/common/client';
+  type Proposal,
+  type ProposalDataInput,
+  type ProposalTemplateSchema,
+  parseProposalData,
+} from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
@@ -22,8 +22,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { z } from 'zod';
-
 import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorToolbar } from '../../RichTextEditor';
@@ -45,8 +43,6 @@ import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;

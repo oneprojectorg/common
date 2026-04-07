@@ -1,7 +1,6 @@
 'use client';
 
-import type { proposalEncoder } from '@op/api/encoders';
-import type { z } from 'zod';
+import type { Proposal } from '@op/common/client';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -11,8 +10,6 @@ import {
   ProposalCardContent,
   ProposalCardHeader,
 } from './ProposalCard';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 interface VoteReviewStepProps {
   proposals: Proposal[];

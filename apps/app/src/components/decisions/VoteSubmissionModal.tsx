@@ -1,14 +1,12 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useContext, useState } from 'react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
-import type { z } from 'zod';
-
 import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';
@@ -32,8 +30,6 @@ export interface CurrentSurveyData {
 
 // Generic custom data type for API
 export type CustomData = Record<string, unknown>;
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 type ModalStep = 'review' | 'survey';
 

@@ -1,16 +1,13 @@
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
 import {
   type BudgetData,
+  type Proposal,
   type ProposalDataInput,
   normalizeBudget,
   parseProposalData,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { z } from 'zod';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 /**
  * Draft state for the proposal system fields. The proposal title is sourced

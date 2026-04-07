@@ -1,15 +1,14 @@
 import { listProposals } from '@op/common';
 
-import {
-  proposalFilterSchema,
-  proposalListEncoder,
-} from '../../../encoders/decision';
+import { proposalListSchema } from '@op/common/client';
+
+import { proposalFilterSchema } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const listProposalsRouter = router({
   listProposals: commonAuthedProcedure()
     .input(proposalFilterSchema)
-    .output(proposalListEncoder)
+    .output(proposalListSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
@@ -18,6 +17,6 @@ export const listProposalsRouter = router({
         user,
       });
 
-      return proposalListEncoder.parse(result);
+      return proposalListSchema.parse(result);
     }),
 });

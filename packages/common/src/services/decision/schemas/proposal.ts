@@ -56,7 +56,6 @@ export const attachmentSchema = z.object({
   url: z.string().optional(),
 });
 
-// Mirrors proposalAttachmentEncoder in services/api/src/encoders/decision.ts
 export const proposalAttachmentSchema = z.object({
   id: z.string(),
   proposalId: z.string(),
@@ -67,7 +66,6 @@ export const proposalAttachmentSchema = z.object({
   uploader: proposalProfileSchema.optional(),
 });
 
-// Mirrors documentContentEncoder in services/api/src/encoders/decision.ts
 export const documentContentSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('json'),
@@ -85,7 +83,6 @@ export const documentContentSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
-// Mirrors the access object in proposalEncoder
 export const proposalAccessSchema = z.object({
   delete: z.boolean(),
   update: z.boolean(),
@@ -102,8 +99,6 @@ export const proposalAccessSchema = z.object({
  * Zod schema for the proposal shape returned by the API.
  *
  * This is the source of truth for the `Proposal` type across the monorepo.
- * The API encoder (services/api/src/encoders/decision.ts proposalEncoder) must
- * remain consistent with this schema.
  */
 export const proposalSchema = z.object({
   id: z.string().uuid(),

@@ -8,10 +8,9 @@ import {
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import {
-  proposalEncoder,
-  updateProposalInputSchema,
-} from '../../../encoders/decision';
+import { proposalSchema } from '@op/common/client';
+
+import { updateProposalInputSchema } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const updateProposalRouter = router({
@@ -24,7 +23,7 @@ export const updateProposalRouter = router({
         data: updateProposalInputSchema,
       }),
     )
-    .output(proposalEncoder)
+    .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
       const { proposalId } = input;
@@ -41,7 +40,7 @@ export const updateProposalRouter = router({
           params: [proposal.profileId],
         });
 
-        return proposalEncoder.parse(proposal);
+        return proposalSchema.parse(proposal);
       } catch (error: unknown) {
         logger.error('Failed to update proposal', {
           userId: user.id,

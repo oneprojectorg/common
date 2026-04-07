@@ -1,14 +1,8 @@
 'use client';
 
-import {
-  ProposalFilter,
-  ProposalStatus,
-  type proposalEncoder,
-} from '@op/api/encoders';
+import { ProposalFilter, ProposalStatus } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { z } from 'zod';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 export function useProposalFilters({
   proposals,

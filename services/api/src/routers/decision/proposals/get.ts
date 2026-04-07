@@ -5,7 +5,7 @@ import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { proposalEncoder } from '../../../encoders/decision';
+import { proposalSchema } from '@op/common/client';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 
@@ -16,7 +16,7 @@ export const getProposalRouter = router({
         profileId: z.uuid(),
       }),
     )
-    .output(proposalEncoder)
+    .output(proposalSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
       const { profileId } = input;
@@ -59,7 +59,7 @@ export const getProposalRouter = router({
         );
       }
 
-      return proposalEncoder.parse({
+      return proposalSchema.parse({
         ...proposal,
         isEditable: access?.update,
         access,

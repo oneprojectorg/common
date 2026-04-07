@@ -2,18 +2,14 @@
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
-import type { z } from 'zod';
-
 import { useTranslations } from '@/lib/i18n';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 /**
  * Like/Follow actions for viewing other users' proposals
