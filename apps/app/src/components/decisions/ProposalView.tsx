@@ -142,76 +142,78 @@ export function ProposalView({
     >
       {/* Content */}
       <div className="flex-1 px-6 py-8">
-        <ProposalPreview
-          proposal={currentProposal}
-          translation={
-            translatedHtmlContent
-              ? {
-                  htmlContent: translatedHtmlContent.translated,
-                  sourceLanguageName,
-                  onViewOriginal: handleViewOriginal,
-                }
-              : undefined
-          }
-        />
+        <div className="mx-auto flex max-w-xl flex-col gap-8">
+          <ProposalPreview
+            proposal={currentProposal}
+            translation={
+              translatedHtmlContent
+                ? {
+                    htmlContent: translatedHtmlContent.translated,
+                    sourceLanguageName,
+                    onViewOriginal: handleViewOriginal,
+                  }
+                : undefined
+            }
+          />
 
-        {/* Comments Section */}
-        <div className="mx-auto mt-12 max-w-xl" ref={commentsContainerRef}>
-          <div className="border-t pt-8">
-            <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
-              {t('Comments')} ({comments.length})
-            </h3>
+          {/* Comments Section */}
+          <div ref={commentsContainerRef}>
+            <div className="border-t pt-8">
+              <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
+                {t('Comments')} ({comments.length})
+              </h3>
 
-            {/* Comment Input */}
-            <div className="mb-8">
-              <Surface className="border-0 p-0 sm:border sm:p-4">
-                <PostUpdate
-                  profileId={currentProposal.profileId || undefined}
-                  placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
-                  label={t('Comment')}
-                  onSuccess={scrollToComments}
-                  proposalId={currentProposal.id}
-                  processInstanceId={currentProposal.processInstanceId}
-                />
-              </Surface>
+              {/* Comment Input */}
+              <div className="mb-8">
+                <Surface className="border-0 p-0 sm:border sm:p-4">
+                  <PostUpdate
+                    profileId={currentProposal.profileId || undefined}
+                    placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
+                    label={t('Comment')}
+                    onSuccess={scrollToComments}
+                    proposalId={currentProposal.id}
+                    processInstanceId={currentProposal.processInstanceId}
+                  />
+                </Surface>
+              </div>
+
+              {/* Comments Display */}
+              {commentsLoading ? (
+                <div
+                  className="py-8 text-center text-gray-500"
+                  role="status"
+                  aria-label={t('Loading comments')}
+                >
+                  {t('Loading comments...')}
+                </div>
+              ) : comments.length > 0 ? (
+                <div role="feed" aria-label={`${comments.length} comments`}>
+                  <PostFeed>
+                    {comments.map((comment, i) => (
+                      <div key={comment.id}>
+                        <PostItem
+                          post={comment}
+                          organization={null}
+                          user={user}
+                          withLinks={false}
+                          onReactionClick={handleReactionClick}
+                          className="sm:px-0"
+                        />
+                        {comments.length !== i + 1 && <hr className="my-4" />}
+                      </div>
+                    ))}
+                  </PostFeed>
+                </div>
+              ) : (
+                <div
+                  className="py-8 text-center text-gray-500"
+                  role="status"
+                  aria-label={t('No comments')}
+                >
+                  {t('No comments yet. Be the first to comment!')}
+                </div>
+              )}
             </div>
-
-            {/* Comments Display */}
-            {commentsLoading ? (
-              <div
-                className="py-8 text-center text-gray-500"
-                role="status"
-                aria-label={t('Loading comments')}
-              >
-                {t('Loading comments...')}
-              </div>
-            ) : comments.length > 0 ? (
-              <div role="feed" aria-label={`${comments.length} comments`}>
-                <PostFeed>
-                  {comments.map((comment, i) => (
-                    <div key={comment.id}>
-                      <PostItem
-                        post={comment}
-                        organization={null}
-                        user={user}
-                        withLinks={false}
-                        onReactionClick={handleReactionClick}
-                        className="sm:px-0"
-                      />
-                      {comments.length !== i + 1 && <hr className="my-4" />}
-                    </div>
-                  ))}
-                </PostFeed>
-              </div>
-            ) : (
-              <div
-                className="py-8 text-center text-gray-500"
-                role="status"
-                aria-label={t('No comments')}
-              >
-                {t('No comments yet. Be the first to comment!')}
-              </div>
-            )}
           </div>
         </div>
       </div>

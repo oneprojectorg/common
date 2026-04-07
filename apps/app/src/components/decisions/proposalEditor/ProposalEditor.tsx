@@ -123,8 +123,7 @@ export function ProposalEditor({
 
   // -- Schema compilation ----------------------------------------------------
 
-  const proposalTemplate = instance.instanceData
-    ?.proposalTemplate as ProposalTemplateSchema | null;
+  const proposalTemplate = instance.instanceData.proposalTemplate;
 
   if (!proposalTemplate) {
     throw new Error('Proposal template not found on instance');

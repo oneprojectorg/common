@@ -65,7 +65,7 @@ export function ProposalPreview({
   const legacyHtml = htmlContent?.default as string | undefined;
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-8">
+    <div className="flex flex-col gap-8">
       {/* Draft mode banner */}
       {isDraft && (
         <AlertBanner intent="default" variant="banner">

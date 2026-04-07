@@ -6,7 +6,6 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
-  type ProposalTemplateSchema,
   getProposalFragmentNames,
   parseProposalData,
 } from '@op/common/client';
@@ -89,8 +88,7 @@ export default function ProposalEditorLayout({
 
   const { user } = useUser();
 
-  const proposalTemplate = instance.instanceData
-    ?.proposalTemplate as ProposalTemplateSchema | null;
+  const proposalTemplate = instance.instanceData.proposalTemplate;
 
   const fragmentNames = useMemo(
     () => (proposalTemplate ? getProposalFragmentNames(proposalTemplate) : []),
