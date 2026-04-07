@@ -70,6 +70,19 @@ export class TestReviewsDataManager {
       throw new Error('No instance created');
     }
 
+    const reviewerUser = await db.query.users.findFirst({
+      where: {
+        authUserId: setup.user.id,
+      },
+      columns: {
+        profileId: true,
+      },
+    });
+
+    if (!reviewerUser?.profileId) {
+      throw new Error(`No user profile found for auth user ${setup.user.id}`);
+    }
+
     await configureProcessReviews({
       processId: setup.process.id,
       settings: defaultReviewSettings,
@@ -82,7 +95,7 @@ export class TestReviewsDataManager {
       defaultReviewer: {
         authUserId: setup.user.id,
         email: setup.userEmail,
-        profileId: setup.organization.profileId,
+        profileId: reviewerUser.profileId,
       },
     };
   }
