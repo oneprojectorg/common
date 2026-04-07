@@ -44,7 +44,7 @@ export const createDecisionInstance = async ({
 }: CreateDecisionInstanceOptions) => {
   const instance = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
-    const slug = `draft-${randomUUID()}`;
+    const slug = `decision-${randomUUID()}`;
 
     const [instanceProfile] = await tx
       .insert(profiles)
