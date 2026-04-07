@@ -3,7 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Header1, Header2 } from '@op/ui/Header';
+import { Header1 } from '@op/ui/Header';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { SidebarProvider } from '@op/ui/Sidebar';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -20,6 +20,8 @@ import {
   ReviewExploreSidebar,
   mockReviewProposals,
 } from './ReviewExploreSidebar';
+import { ReviewRubricForm } from './ReviewRubricForm';
+import { REVIEW_RUBRIC_DUMMY_TEMPLATE } from './reviewRubricDummyTemplate';
 
 interface ReviewExploreLayoutClientProps {
   slug: string;
@@ -143,7 +145,7 @@ function ReviewProposalPane({ className }: { className?: string }) {
 function ReviewRubricPane({ className }: { className?: string }) {
   return (
     <div className={cn('min-w-0 flex-1', className)}>
-      <Header2 className="text-title-base">Review Proposal</Header2>
+      <ReviewRubricForm template={REVIEW_RUBRIC_DUMMY_TEMPLATE} />
     </div>
   );
 }
