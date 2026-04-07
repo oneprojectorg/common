@@ -63,8 +63,9 @@ export const ProcessBuilderFooter = ({
   const utils = trpc.useUtils();
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success({ message: t('Changes saved successfully') });
+      await utils.decision.getDecisionBySlug.invalidate({ slug });
       router.push(`/decisions/${slug}`);
     },
     onError: (error) => {
@@ -72,9 +73,6 @@ export const ProcessBuilderFooter = ({
         title: t('Failed to save changes'),
         message: error.message,
       });
-    },
-    onSettled: () => {
-      void utils.decision.getDecisionBySlug.invalidate({ slug });
     },
   });
 
