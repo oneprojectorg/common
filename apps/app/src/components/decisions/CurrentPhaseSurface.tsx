@@ -7,8 +7,9 @@ import {
 } from '@/utils/formatting';
 import { type ProcessPhase } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
+import { useLocale } from 'next-intl';
 
-import { useLocale, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 interface CurrentPhaseSurfaceProps {
   currentPhase?: ProcessPhase;

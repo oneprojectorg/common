@@ -2,8 +2,9 @@
 
 import { formatCurrency, formatDateRange } from '@/utils/formatting';
 import { type ProcessPhase } from '@op/api/encoders';
+import { useLocale } from 'next-intl';
 
-import { useLocale, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 interface DecisionStatsProps {
   currentPhase?: ProcessPhase;

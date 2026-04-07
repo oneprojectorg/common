@@ -6,9 +6,10 @@ import { trpc } from '@op/api/client';
 import type { Proposal, SupportedLocale } from '@op/common/client';
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
+import { useLocale } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 
-import { useLocale, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';

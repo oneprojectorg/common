@@ -23,11 +23,12 @@ import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
+import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 
-import { useLocale, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { useSetDecisionTranslation } from './DecisionTranslationContext';

@@ -2,9 +2,8 @@
 
 import { type ProcessPhase } from '@op/api/encoders';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
+import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
-
-import { useLocale } from '@/lib/i18n';
 
 import { useDecisionTranslation } from './DecisionTranslationContext';
 
