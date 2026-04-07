@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 import { proposalDataSchema } from '../proposalDataSchema';
 
-// Mirrors the storageItemEncoder in services/api/src/encoders/storageItem.ts
 export const storageItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -19,10 +18,7 @@ export const storageItemSchema = z.object({
     .nullish(),
 });
 
-/**
- * Base profile shape as embedded in proposal API responses.
- * Mirrors baseProfileEncoder in services/api/src/encoders/baseProfile.ts.
- */
+/** Base profile shape as embedded in proposals. */
 export const proposalProfileSchema = z.object({
   id: z.string().uuid(),
   type: z.string(),
@@ -41,7 +37,6 @@ export const proposalProfileSchema = z.object({
 
 export type ProposalProfile = z.infer<typeof proposalProfileSchema>;
 
-// Mirrors attachmentWithUrlEncoder in services/api/src/encoders/attachments.ts
 export const attachmentSchema = z.object({
   id: z.string(),
   postId: z.string().nullable(),
