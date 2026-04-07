@@ -3,9 +3,14 @@
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { ReactNode, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { PrivacyPolicyContent } from '@/components/PrivacyPolicyContent';
+import { ToSContent } from '@/components/ToSContent';
 
 import { OnboardingCenterLayout } from './OnboardingCenterLayout';
 
@@ -38,14 +43,16 @@ export const ToSAcceptanceScreen = ({
           <PolicyCheckbox
             checked={termsAccepted}
             onChange={setTermsAccepted}
-            href="/info/tos"
             label={t('Terms of Service')}
+            modalTitle={t('Terms of Service')}
+            modalContent={<ToSContent />}
           />
           <PolicyCheckbox
             checked={privacyAccepted}
             onChange={setPrivacyAccepted}
-            href="/info/privacy"
             label={t('Privacy Policy')}
+            modalTitle={t('Privacy Policy')}
+            modalContent={<PrivacyPolicyContent />}
           />
         </div>
 
@@ -73,13 +80,15 @@ export const ToSAcceptanceScreen = ({
 function PolicyCheckbox({
   checked,
   onChange,
-  href,
   label,
+  modalTitle,
+  modalContent,
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  href: string;
   label: string;
+  modalTitle: string;
+  modalContent: ReactNode;
 }) {
   const t = useTranslations();
 
@@ -88,14 +97,20 @@ function PolicyCheckbox({
       <Checkbox size="small" value={'' + checked} onChange={onChange}>
         {t('I accept the')}{' '}
       </Checkbox>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm text-primary-teal hover:underline"
-      >
-        {label}
-      </a>
+      <DialogTrigger>
+        <Button unstyled className="text-sm text-primary-teal hover:underline">
+          {label}
+        </Button>
+        <Modal
+          className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
+          isDismissable
+        >
+          <Dialog>
+            <ModalHeader>{modalTitle}</ModalHeader>
+            <ModalBody>{modalContent}</ModalBody>
+          </Dialog>
+        </Modal>
+      </DialogTrigger>
     </div>
   );
 }
