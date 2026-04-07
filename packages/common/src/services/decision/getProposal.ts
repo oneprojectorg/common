@@ -30,6 +30,7 @@ import {
 } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { ProposalTemplateSchema } from './types';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -65,7 +66,7 @@ export const getProposal = async ({
     commentsCount: number;
     likesCount: number;
     followersCount: number;
-    proposalTemplate: Record<string, unknown> | null;
+    proposalTemplate: ProposalTemplateSchema | null;
     documentContent: ProposalDocumentContent | undefined;
     htmlContent: Record<string, string> | undefined;
     attachments: ProposalAttachmentWithDetails[];
