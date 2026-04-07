@@ -17,7 +17,6 @@ export {
   type ProposalList,
   type ProposalProfile,
 } from './services/decision/schemas/proposal';
-export * from './services/decision/schemas/reviewAssignments';
 export * from './services/decision/types';
 export {
   SYSTEM_FIELD_KEYS,
