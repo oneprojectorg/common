@@ -1,9 +1,6 @@
 import { and, db, eq, inArray } from '@op/db/client';
 import {
   ProfileRelationshipType,
-  ProposalReviewAssignmentStatus,
-  ProposalStatus,
-  Visibility,
   attachments,
   objectsInStorage,
   posts,
@@ -115,26 +112,11 @@ export async function getReviewAssignment({
 
   return reviewAssignmentDetailSchema.parse({
     assignment: {
-      id: assignment.id,
-      processInstanceId: assignment.processInstanceId,
-      phaseId: assignment.phaseId,
-      status: assignment.status as ProposalReviewAssignmentStatus,
+      ...assignment,
       proposal: {
-        id: snapshot.id,
-        processInstanceId: snapshot.processInstanceId,
+        ...snapshot,
         proposalData: parsedProposalData,
-        status: snapshot.status as ProposalStatus | null,
-        visibility: snapshot.visibility as Visibility,
-        createdAt: snapshot.createdAt,
-        updatedAt: snapshot.updatedAt,
-        profileId: snapshot.profileId,
-        submittedBy: snapshot.submittedBy,
-        profile: snapshot.profile,
-        likesCount: relationshipInfo.likesCount,
-        followersCount: relationshipInfo.followersCount,
-        commentsCount: relationshipInfo.commentsCount,
-        isLikedByUser: relationshipInfo.isLikedByUser,
-        isFollowedByUser: relationshipInfo.isFollowedByUser,
+        ...relationshipInfo,
         attachments: proposalAttachmentsMap.get(snapshot.id) ?? [],
         proposalTemplate,
         documentContent,
@@ -142,18 +124,7 @@ export async function getReviewAssignment({
       },
     },
     rubricTemplate: context.rubricTemplate,
-    review: review
-      ? {
-          id: review.id,
-          assignmentId: review.assignmentId,
-          state: review.state,
-          reviewData: review.reviewData,
-          overallComment: review.overallComment ?? null,
-          submittedAt: review.submittedAt ?? null,
-          createdAt: review.createdAt ?? null,
-          updatedAt: review.updatedAt ?? null,
-        }
-      : null,
+    review,
   });
 }
 
@@ -216,7 +187,7 @@ async function getProposalRelationshipInfo({
 }
 
 async function getReviewProposalAttachments(proposalIds: string[]) {
-  const proposalAttachmentRows = await db
+  const rows = await db
     .select({
       id: proposalAttachments.id,
       proposalId: proposalAttachments.proposalId,
@@ -249,63 +220,29 @@ async function getReviewProposalAttachments(proposalIds: string[]) {
     )
     .where(inArray(proposalAttachments.proposalId, proposalIds));
 
-  type ReviewProposalAttachmentRow = (typeof proposalAttachmentRows)[number];
-  type ReviewProposalAttachment = Omit<
-    ReviewProposalAttachmentRow,
-    'attachment'
-  > & {
-    attachment: Omit<
-      ReviewProposalAttachmentRow['attachment'],
-      'storagePath'
-    > & {
-      url?: string;
-    };
-  };
-
-  if (proposalAttachmentRows.length === 0) {
-    return new Map<string, ReviewProposalAttachment[]>();
+  if (rows.length === 0) {
+    return new Map<string, (typeof resolved)[number][]>();
   }
 
   const supabase = createSBServiceClient();
-  const attachmentsWithUrls: ReviewProposalAttachment[] = await Promise.all(
-    proposalAttachmentRows.map(async (attachmentRow) => {
-      const storagePath = attachmentRow.attachment.storagePath;
-
+  const resolved = await Promise.all(
+    rows.map(async (row) => {
+      const { storagePath, ...rest } = row.attachment;
       if (!storagePath) {
-        return attachmentRow;
+        return { ...row, attachment: { ...rest, url: undefined } };
       }
-
       const { data } = await supabase.storage
         .from('assets')
         .createSignedUrl(storagePath, 60 * 60 * 24);
-
-      return {
-        ...attachmentRow,
-        attachment: {
-          id: attachmentRow.attachment.id,
-          postId: attachmentRow.attachment.postId,
-          storageObjectId: attachmentRow.attachment.storageObjectId,
-          fileName: attachmentRow.attachment.fileName,
-          mimeType: attachmentRow.attachment.mimeType,
-          fileSize: attachmentRow.attachment.fileSize,
-          uploadedBy: attachmentRow.attachment.uploadedBy,
-          profileId: attachmentRow.attachment.profileId,
-          createdAt: attachmentRow.attachment.createdAt,
-          updatedAt: attachmentRow.attachment.updatedAt,
-          url: data?.signedUrl,
-        },
-      };
+      return { ...row, attachment: { ...rest, url: data?.signedUrl } };
     }),
   );
 
-  const attachmentsByProposalId = new Map<string, ReviewProposalAttachment[]>();
-
-  for (const attachmentRow of attachmentsWithUrls) {
-    const existingAttachments =
-      attachmentsByProposalId.get(attachmentRow.proposalId) ?? [];
-    existingAttachments.push(attachmentRow);
-    attachmentsByProposalId.set(attachmentRow.proposalId, existingAttachments);
+  const byProposalId = new Map<string, (typeof resolved)[number][]>();
+  for (const row of resolved) {
+    const list = byProposalId.get(row.proposalId) ?? [];
+    list.push(row);
+    byProposalId.set(row.proposalId, list);
   }
-
-  return attachmentsByProposalId;
+  return byProposalId;
 }
