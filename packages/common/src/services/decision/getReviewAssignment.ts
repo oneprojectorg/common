@@ -1,12 +1,9 @@
-import { and, db, eq, inArray } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import {
   ProfileRelationshipType,
-  attachments,
-  objectsInStorage,
   posts,
   postsToProfiles,
   profileRelationships,
-  proposalAttachments,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
@@ -100,15 +97,17 @@ export async function getReviewAssignment({
     ]);
 
   const documentContent = documentContentMap.get(snapshot.historyId);
-  let htmlContent: Record<string, string> | undefined;
 
-  if (documentContent?.type === 'json') {
-    htmlContent = generateProposalHtml(documentContent.fragments);
-  } else if (documentContent?.type === 'html') {
-    htmlContent = { default: documentContent.content };
+  if (!documentContent) {
+    throw new ValidationError(
+      `Could not resolve document content for proposal snapshot ${snapshot.historyId}`,
+    );
   }
 
-  const review = assignment.reviews[0] ?? null;
+  const htmlContent =
+    documentContent.type === 'json'
+      ? generateProposalHtml(documentContent.fragments)
+      : { default: documentContent.content };
 
   return reviewAssignmentDetailSchema.parse({
     assignment: {
@@ -124,7 +123,7 @@ export async function getReviewAssignment({
       },
     },
     rubricTemplate: context.rubricTemplate,
-    review,
+    review: context.review ?? null,
   });
 }
 
@@ -187,38 +186,18 @@ async function getProposalRelationshipInfo({
 }
 
 async function getReviewProposalAttachments(proposalIds: string[]) {
-  const rows = await db
-    .select({
-      id: proposalAttachments.id,
-      proposalId: proposalAttachments.proposalId,
-      attachmentId: proposalAttachments.attachmentId,
-      uploadedBy: proposalAttachments.uploadedBy,
-      createdAt: proposalAttachments.createdAt,
-      updatedAt: proposalAttachments.updatedAt,
+  const rows = await db.query.proposalAttachments.findMany({
+    where: {
+      proposalId: { in: proposalIds },
+    },
+    with: {
       attachment: {
-        id: attachments.id,
-        postId: attachments.postId,
-        storageObjectId: attachments.storageObjectId,
-        fileName: attachments.fileName,
-        mimeType: attachments.mimeType,
-        fileSize: attachments.fileSize,
-        uploadedBy: attachments.uploadedBy,
-        profileId: attachments.profileId,
-        createdAt: attachments.createdAt,
-        updatedAt: attachments.updatedAt,
-        storagePath: objectsInStorage.name,
+        with: {
+          storageObject: true,
+        },
       },
-    })
-    .from(proposalAttachments)
-    .innerJoin(
-      attachments,
-      eq(proposalAttachments.attachmentId, attachments.id),
-    )
-    .leftJoin(
-      objectsInStorage,
-      eq(attachments.storageObjectId, objectsInStorage.id),
-    )
-    .where(inArray(proposalAttachments.proposalId, proposalIds));
+    },
+  });
 
   if (rows.length === 0) {
     return new Map<string, (typeof resolved)[number][]>();
@@ -227,14 +206,17 @@ async function getReviewProposalAttachments(proposalIds: string[]) {
   const supabase = createSBServiceClient();
   const resolved = await Promise.all(
     rows.map(async (row) => {
-      const { storagePath, ...rest } = row.attachment;
+      const storagePath = row.attachment.storageObject?.name;
       if (!storagePath) {
-        return { ...row, attachment: { ...rest, url: undefined } };
+        return { ...row, attachment: { ...row.attachment, url: undefined } };
       }
       const { data } = await supabase.storage
         .from('assets')
         .createSignedUrl(storagePath, 60 * 60 * 24);
-      return { ...row, attachment: { ...rest, url: data?.signedUrl } };
+      return {
+        ...row,
+        attachment: { ...row.attachment, url: data?.signedUrl },
+      };
     }),
   );
 

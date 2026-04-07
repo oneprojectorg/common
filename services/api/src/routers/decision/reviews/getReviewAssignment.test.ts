@@ -3,6 +3,7 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
 } from '@op/db/schema';
+import { mockCollab } from '@op/collab/testing';
 import { createProposalReview } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
@@ -45,6 +46,18 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+function seedMockCollab(collaborationDocId: string) {
+  mockCollab.setDocResponse(collaborationDocId, {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'Community garden proposal content' }],
+      },
+    ],
+  });
+}
+
 describe.concurrent('getReviewAssignment', () => {
   it('returns the reviewer assignment with rubric and saved draft', async ({
     task,
@@ -54,6 +67,11 @@ describe.concurrent('getReviewAssignment', () => {
     const created = await testData.createReviewAssignment({
       title: 'Community Garden Expansion',
     });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
 
     await testData.setRubricTemplate(created.context, rubricTemplate);
     await testData.attachFileToProposal({
@@ -124,6 +142,11 @@ describe.concurrent('getReviewAssignment', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment();
     const otherReviewer = await testData.createReviewer(created.context);
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
 
     const otherCaller = await createAuthenticatedCaller(otherReviewer.email);
 
