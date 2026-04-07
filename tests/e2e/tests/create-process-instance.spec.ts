@@ -107,7 +107,7 @@ test.describe('Create Process Instance', () => {
       const phaseSaved = waitForAutoSave(authenticatedPage);
 
       // Fill phase name
-      await authenticatedPage.getByLabel('Phase name').fill(`Phase ${i + 1}`);
+      await authenticatedPage.getByLabel('Short name').fill(`Phase ${i + 1}`);
 
       // Fill headline
       await headlineField.fill(`Phase ${i + 1} headline`);
