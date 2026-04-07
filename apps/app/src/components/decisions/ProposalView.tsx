@@ -2,9 +2,8 @@
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
-import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import type { SupportedLocale } from '@op/common/client';
+import type { Proposal, SupportedLocale } from '@op/common/client';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
@@ -16,8 +15,6 @@ import { PostUpdate } from '../PostUpdate';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
-
-type Proposal = RouterOutput['decision']['getProposal'];
 
 export function ProposalView({
   proposal: initialProposal,

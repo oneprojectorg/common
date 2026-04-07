@@ -2,9 +2,9 @@
 
 import { getPublicUrl } from '@/utils';
 import { formatCurrency, formatDate } from '@/utils/formatting';
-import type { RouterOutput } from '@op/api';
 import { ProposalStatus } from '@op/api/encoders';
 import {
+  type Proposal,
   type ProposalTemplateSchema,
   parseTranslatedMeta,
 } from '@op/common/client';
@@ -23,8 +23,6 @@ import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { resolveProposalSystemFields } from './proposalContentUtils';
-
-type Proposal = RouterOutput['decision']['getProposal'];
 
 export type ProposalTranslation = {
   htmlContent: Record<string, string>;
