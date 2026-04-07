@@ -10,6 +10,7 @@ import {
 import type { DecisionProcess } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
+import { getProposalsForPhase } from './getProposalsForPhase';
 import {
   aggregateVoteData,
   defaultSelectionPipeline,
@@ -55,25 +56,31 @@ export async function processResults({
       );
     }
 
-    // Get all proposals for this process instance
-    const processProposals = await db._query.proposals.findMany({
-      where: eq(proposals.processInstanceId, processInstanceId),
-    });
-
     // Get the process schema
     const process = processInstance.process as DecisionProcess;
     const processSchema = process.processSchema as ProcessSchema;
     const instanceData = processInstance.instanceData as InstanceData;
+
+    // Get proposals scoped to the current phase (respects prior transition filtering)
+    const processProposals = await getProposalsForPhase({
+      instanceId: processInstanceId,
+    });
+
+    // Resolve pipeline from the current phase, falling back to top-level or default
+    const currentPhaseId = processInstance.currentStateId;
+    const phasePipeline = processSchema.phases?.find(
+      (p) => p.id === currentPhaseId,
+    )?.selectionPipeline;
+    const pipeline =
+      phasePipeline ||
+      processSchema.selectionPipeline ||
+      defaultSelectionPipeline;
 
     let selectedProposalIds: string[] = [];
     let error: string | undefined;
     let success = false;
 
     try {
-      // Use the defined pipeline or fall back to default
-      const pipeline =
-        processSchema.selectionPipeline || defaultSelectionPipeline;
-
       // Aggregate voting data
       const voteData = await aggregateVoteData(processProposals);
 
@@ -120,7 +127,8 @@ export async function processResults({
           errorMessage: error,
           selectedCount: selectedProposalIds.length,
           voterCount,
-          pipelineConfig: processSchema.selectionPipeline || null,
+          pipelineConfig:
+            pipeline === defaultSelectionPipeline ? null : pipeline,
         })
         .returning();
 
