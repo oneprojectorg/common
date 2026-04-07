@@ -1,4 +1,4 @@
-import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
+import { Channels, NotFoundError, UnauthorizedError, getInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 
@@ -80,6 +80,10 @@ export const getInstanceRouter = router({
 
         // Track process viewed event
         waitUntil(trackProcessViewed(ctx, input.instanceId));
+
+        ctx.registerQueryChannels([
+          Channels.decisionInstance(input.instanceId),
+        ]);
 
         return processInstanceWithSchemaEncoder.parse({
           ...instance,

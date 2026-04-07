@@ -25,6 +25,9 @@ export const Channels = {
     type: 'source' | 'target';
     orgId: string;
   }) => `orgRelationshipRequest:${type}:${orgId}` as const,
+
+  decisionInstance: (instanceId: string) =>
+    `decisionInstance:${instanceId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -36,6 +39,9 @@ export type ProfileJoinRequestChannel = ReturnType<
 export type OrgRelationshipRequestChannel = ReturnType<
   typeof Channels.orgRelationshipRequest
 >;
+export type DecisionInstanceChannel = ReturnType<
+  typeof Channels.decisionInstance
+>;
 
 /**
  * Union of all valid channel types
@@ -45,4 +51,5 @@ export type ChannelName =
   | OrgChannel
   | UserChannel
   | ProfileJoinRequestChannel
-  | OrgRelationshipRequestChannel;
+  | OrgRelationshipRequestChannel
+  | DecisionInstanceChannel;
