@@ -1,4 +1,4 @@
-import { REVIEWS_POLICIES, proposalDataSchema } from '@op/common/client';
+import { REVIEWS_POLICIES, proposalSchema } from '@op/common/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -6,14 +6,11 @@ import {
   decisionProcesses,
   decisions,
   processInstances,
-  proposalAttachments,
-  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { attachmentWithUrlEncoder } from './attachments';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -445,95 +442,6 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
-// Proposal Attachment Join Table Encoder
-export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
-  .pick({
-    id: true,
-    proposalId: true,
-    attachmentId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    attachment: attachmentWithUrlEncoder.optional(),
-    uploader: baseProfileEncoder.optional(),
-  });
-
-/**
- * Document content discriminated union.
- * - `json`: TipTap document fetched from collaboration service
- * - `html`: Legacy HTML/plain text description from proposalData
- */
-export const documentContentEncoder = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('json'),
-    fragments: z.record(
-      z.string(),
-      z.object({
-        type: z.string().optional(),
-        content: z.array(z.unknown()).optional(),
-      }),
-    ),
-  }),
-  z.object({
-    type: z.literal('html'),
-    content: z.string(),
-  }),
-]);
-
-/** Proposal encoder (frontend gets instance data separately via getDecisionBySlug) */
-export const proposalEncoder = createSelectSchema(proposals)
-  .pick({
-    id: true,
-    processInstanceId: true,
-    proposalData: true,
-    status: true,
-    visibility: true,
-    createdAt: true,
-    updatedAt: true,
-    profileId: true,
-  })
-  .extend({
-    proposalData: proposalDataSchema,
-    submittedBy: baseProfileEncoder.optional(),
-    profile: baseProfileEncoder,
-    decisionCount: z.number().optional(),
-    likesCount: z.number().optional(),
-    followersCount: z.number().optional(),
-    commentsCount: z.number().optional(),
-    isLikedByUser: z.boolean().optional(),
-    isFollowedByUser: z.boolean().optional(),
-    isEditable: z.boolean().optional(),
-    access: z
-      .object({
-        delete: z.boolean(),
-        update: z.boolean(),
-        read: z.boolean(),
-        create: z.boolean(),
-        admin: z.boolean(),
-        inviteMembers: z.boolean(),
-        review: z.boolean(),
-        submitProposals: z.boolean(),
-        vote: z.boolean(),
-      })
-      .optional(),
-    attachments: z.array(proposalAttachmentEncoder).optional(),
-    selectionRank: z.number().nullable().optional(),
-    voteCount: z.number().optional(),
-    allocated: z.string().nullable().optional(),
-    proposalTemplate: jsonSchemaEncoder.nullable().optional(),
-    documentContent: documentContentEncoder.optional(),
-    htmlContent: z.record(z.string(), z.string()).optional(),
-  });
-
-/** Proposal list encoder */
-export const proposalListEncoder = z.object({
-  proposals: z.array(proposalEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
-  canManageProposals: z.boolean().prefault(false),
-});
-
 export const proposalVersionEncoder = z.object({
   version: z.number(),
   createdAt: z.string(),
@@ -555,7 +463,7 @@ export const decisionEncoder = createSelectSchema(decisions)
     updatedAt: true,
   })
   .extend({
-    proposal: proposalEncoder.optional(),
+    proposal: proposalSchema.optional(),
     decidedBy: baseProfileEncoder.optional(),
   });
 
@@ -588,7 +496,7 @@ export const processInstanceListEncoder = z.object({
 });
 
 export const instanceResultsEncoder = z.object({
-  items: z.array(proposalEncoder),
+  items: z.array(proposalSchema),
   next: z.string().nullish(),
 });
 
@@ -798,6 +706,9 @@ export type PhaseRules = z.infer<typeof phaseRulesEncoder>;
 export type PhaseDefinition = z.infer<typeof phaseDefinitionEncoder>;
 export type InstancePhaseData = z.infer<typeof instancePhaseDataEncoder>;
 export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
+
+// Re-export shared types from @op/common so consumers can import from either package
+export type { Proposal, ProposalList } from '@op/common/client';
 
 // Legacy type exports (for backwards compatibility during migration)
 export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;

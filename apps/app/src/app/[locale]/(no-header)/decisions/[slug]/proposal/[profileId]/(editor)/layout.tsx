@@ -3,9 +3,13 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { type ProcessInstance, type proposalEncoder } from '@op/api/encoders';
-import { getProposalFragmentNames, parseProposalData } from '@op/common/client';
-import type { ProposalTemplateSchema } from '@op/common/client';
+import type { ProcessInstance } from '@op/api/encoders';
+import {
+  type Proposal,
+  type ProposalTemplateSchema,
+  getProposalFragmentNames,
+  parseProposalData,
+} from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
@@ -14,7 +18,6 @@ import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
 import { LuHistory } from 'react-icons/lu';
-import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -165,8 +168,6 @@ export default function ProposalEditorLayout({
     </CollaborativeDocProvider>
   );
 }
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 /**
  * Inner content rendered within the collaborative document providers.

@@ -1,5 +1,5 @@
-import type { proposalEncoder } from '@op/api/encoders';
 import {
+  type Proposal,
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   type XFormat,
@@ -9,9 +9,7 @@ import {
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
 import { type JSONContent, generateText } from '@tiptap/core';
-import type { z } from 'zod';
 
-type Proposal = z.infer<typeof proposalEncoder>;
 type DocumentContent = NonNullable<Proposal['documentContent']>;
 
 /** `x-format` values that represent rich-text editor content suitable for preview. */

@@ -4,11 +4,10 @@ import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate } from '@/utils/formatting';
-import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import { parseTranslatedMeta } from '@op/common/client';
-import type { SupportedLocale } from '@op/common/client';
+import type { Proposal, SupportedLocale } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
@@ -32,8 +31,6 @@ import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { TranslateBanner } from './TranslateBanner';
 import { resolveProposalSystemFields } from './proposalContentUtils';
-
-type Proposal = RouterOutput['decision']['getProposal'];
 
 export function ProposalView({
   proposal: initialProposal,

@@ -4,6 +4,19 @@
 export * from './money';
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/schemas/reviews';
+export {
+  attachmentSchema,
+  documentContentSchema,
+  proposalAccessSchema,
+  proposalAttachmentSchema,
+  proposalSchema,
+  proposalListSchema,
+  proposalProfileSchema,
+  storageItemSchema,
+  type Proposal,
+  type ProposalList,
+  type ProposalProfile,
+} from './services/decision/schemas/proposal';
 export * from './services/decision/types';
 export {
   SYSTEM_FIELD_KEYS,

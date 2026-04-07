@@ -2,12 +2,8 @@
 
 import { getPublicUrl } from '@/utils';
 import { formatCurrency } from '@/utils/formatting';
-import {
-  ProposalStatus,
-  Visibility,
-  type proposalEncoder,
-} from '@op/api/encoders';
-import type { ProposalTemplateSchema } from '@op/common/client';
+import { ProposalStatus, Visibility } from '@op/api/encoders';
+import type { Proposal, ProposalTemplateSchema } from '@op/common/client';
 import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
@@ -16,7 +12,6 @@ import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
-import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -29,7 +24,7 @@ import {
   resolveProposalSystemFields,
 } from '../proposalContentUtils';
 
-export type Proposal = z.infer<typeof proposalEncoder>;
+export type { Proposal } from '@op/common/client';
 
 export interface BaseProposalCardProps {
   proposal: Proposal;

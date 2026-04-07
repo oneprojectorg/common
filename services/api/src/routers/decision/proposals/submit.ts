@@ -1,9 +1,9 @@
 import { submitProposal } from '@op/common';
+import { proposalSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { proposalEncoder } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
@@ -14,7 +14,7 @@ const submitProposalInputSchema = z.object({
 export const submitProposalRouter = router({
   submitProposal: commonAuthedProcedure()
     .input(submitProposalInputSchema)
-    .output(proposalEncoder)
+    .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
@@ -38,6 +38,6 @@ export const submitProposalRouter = router({
         }),
       );
 
-      return proposalEncoder.parse(proposal);
+      return proposalSchema.parse(proposal);
     }),
 });
