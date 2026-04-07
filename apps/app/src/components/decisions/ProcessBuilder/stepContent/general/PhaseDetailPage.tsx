@@ -283,16 +283,14 @@ function PhaseDetailForm({
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           <p className="text-sm text-neutral-gray4">
             {t('Phase {index} of {total}', {
               index: phaseIndex,
               total: phaseCount,
             })}
           </p>
-          <h2 className="font-serif text-title-base">
-            {phase.name || t('Add phase')}
-          </h2>
+          <h2 className="font-serif text-title-base">{t('Add phase')}</h2>
         </div>
         <SaveStatusIndicator
           status={saveState.status}
