@@ -324,6 +324,9 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
     expect(instanceData.config?.hideBudget).toBe(true);
+
+    // Verify slug was generated from the name on publish
+    expect(result.slug).toContain('decision-multi-update');
   });
 
   it('should not allow non-admin to update instance', async ({

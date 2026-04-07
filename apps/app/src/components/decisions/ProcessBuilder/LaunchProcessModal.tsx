@@ -49,7 +49,7 @@ export const LaunchProcessModal = ({
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
       onOpenChange(false);
-      await utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
+      await utils.decision.getDecisionBySlug.invalidate();
       router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
