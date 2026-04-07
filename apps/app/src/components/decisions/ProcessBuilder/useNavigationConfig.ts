@@ -8,7 +8,7 @@ import {
   DEFAULT_NAVIGATION_CONFIG,
   type NavigationConfig,
 } from './navigationConfig';
-import { useOrganizeByCategories } from './useOrganizeByCategories';
+import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 
 export function useNavigationConfig(
   instanceId: string | undefined,
@@ -20,10 +20,12 @@ export function useNavigationConfig(
   );
 
   const reviewFlowEnabled = useFeatureFlag('review_flow');
-  const organizeByCategories = useOrganizeByCategories(
-    instanceId,
-    decisionProfileId,
-  );
+  const organizeByCategories =
+    useProcessBuilderStore((s) =>
+      decisionProfileId
+        ? s.instances[decisionProfileId]?.config?.organizeByCategories
+        : undefined,
+    ) ?? true;
 
   const phases = instance?.instanceData?.phases ?? [];
   const hasReviewPhase = phases.some(
