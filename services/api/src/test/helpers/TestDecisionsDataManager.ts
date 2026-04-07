@@ -74,7 +74,7 @@ interface MemberUserOutput {
  * Provides a pattern for managing decision process test data lifecycle with automatic cleanup.
  * All test data creation methods automatically register cleanup handlers using vitest's onTestFinished.
  *
- * Uses tRPC callers to test through the router boundary for better integration coverage.
+ * Uses service-layer calls from @op/common to set up fixtures without tRPC/session overhead.
  *
  * @example
  * ```ts
@@ -284,8 +284,7 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Creates a process instance for an existing process using createInstanceFromTemplate.
-   * Accepts either a caller directly OR a process+user to create the caller internally.
+   * Creates a process instance for an existing process using the decision service.
    */
   async createInstanceForProcess(
     this: TestDecisionsDataManager,
