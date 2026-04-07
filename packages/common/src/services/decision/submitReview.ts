@@ -44,7 +44,7 @@ export async function submitReview({
     throw new ValidationError('Rubric template not found for this assignment');
   }
 
-  schemaValidator.validateRubricData(context.rubricTemplate, reviewData);
+  schemaValidator.assertRubricData(context.rubricTemplate, reviewData);
 
   const submittedAt = new Date().toISOString();
 

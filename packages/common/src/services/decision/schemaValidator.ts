@@ -111,7 +111,7 @@ export class SchemaValidator {
    * Validate proposal data against a proposal template schema.
    * Throws ValidationError if validation fails.
    */
-  validateProposalData(
+  assertProposalData(
     proposalTemplate: JSONSchema7,
     proposalData: unknown,
   ): void {
@@ -122,7 +122,7 @@ export class SchemaValidator {
    * Validate rubric data against a rubric template schema.
    * Throws ValidationError if validation fails.
    */
-  validateRubricData(rubricTemplate: JSONSchema7, rubricData: unknown): void {
+  assertRubricData(rubricTemplate: JSONSchema7, rubricData: unknown): void {
     this.validateDataOrThrow(rubricTemplate, rubricData, 'Rubric');
   }
 
