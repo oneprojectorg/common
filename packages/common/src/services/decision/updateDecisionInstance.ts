@@ -228,9 +228,12 @@ export const updateDecisionInstance = async ({
     // Determine the final status (updated or existing)
     const finalStatus = status ?? existingInstance.status;
 
+    // Build a single profile update for name sync and/or slug generation.
+    const profileUpdate: Record<string, string> = {};
+
     // Keep the profile name in sync with the instance name.
     if (name !== undefined) {
-      await tx.update(profiles).set({ name }).where(eq(profiles.id, profileId));
+      profileUpdate.name = name;
     }
 
     // Generate a permanent, name-based slug when publishing.
@@ -238,11 +241,17 @@ export const updateDecisionInstance = async ({
     // while editing. Once published the slug is locked.
     if (isBeingPublished) {
       const instanceName = name ?? existingInstance.name;
-      const slug = await generateUniqueProfileSlug({
+      profileUpdate.slug = await generateUniqueProfileSlug({
         name: `decision-${instanceName}`,
         db: tx,
       });
-      await tx.update(profiles).set({ slug }).where(eq(profiles.id, profileId));
+    }
+
+    if (Object.keys(profileUpdate).length > 0) {
+      await tx
+        .update(profiles)
+        .set(profileUpdate)
+        .where(eq(profiles.id, profileId));
     }
 
     // If status is DRAFT, remove all transitions
