@@ -14,7 +14,7 @@ export const proposalReviewAssignmentListItemSchema = z.object({
   id: z.uuid(),
   processInstanceId: z.uuid(),
   phaseId: z.string(),
-  status: z.nativeEnum(ProposalReviewAssignmentStatus),
+  status: z.enum(ProposalReviewAssignmentStatus),
   proposal: proposalSchema,
 });
 
@@ -37,7 +37,7 @@ export const proposalReviewSchema = z.object({
   updatedAt: z.string().nullable(),
 });
 
-export const reviewAssignmentDetailSchema = z.object({
+export const reviewAssignmentExtendedSchema = z.object({
   assignment: proposalReviewAssignmentListItemSchema,
   rubricTemplate: jsonObjectSchema.nullable(),
   review: proposalReviewSchema.nullable(),
@@ -53,6 +53,6 @@ export type ListProposalReviewAssignmentsResult = z.infer<
 >;
 export type ProposalReviewData = z.infer<typeof proposalReviewSchema>;
 export type ProposalReview = z.infer<typeof proposalReviewSchema>;
-export type ReviewAssignmentDetail = z.infer<
-  typeof reviewAssignmentDetailSchema
+export type ReviewAssignmentExtended = z.infer<
+  typeof reviewAssignmentExtendedSchema
 >;

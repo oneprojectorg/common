@@ -6,18 +6,18 @@ import {
   profileRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { createSBServiceClient } from '@op/supabase/server';
 import { count as countFn } from 'drizzle-orm';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { generateProposalHtml } from './generateProposalHtml';
+import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getAuthorizedReviewAssignmentContext } from './reviewHelpers';
 import {
-  type ReviewAssignmentDetail,
-  reviewAssignmentDetailSchema,
+  type ReviewAssignmentExtended,
+  reviewAssignmentExtendedSchema,
 } from './schemas/reviews';
 
 /** Returns one authorized review assignment with its rubric template and saved review. */
@@ -27,7 +27,7 @@ export async function getReviewAssignment({
 }: {
   assignmentId: string;
   user: User;
-}): Promise<ReviewAssignmentDetail> {
+}): Promise<ReviewAssignmentExtended> {
   const context = await getAuthorizedReviewAssignmentContext({
     assignmentId,
     user,
@@ -78,7 +78,7 @@ export async function getReviewAssignment({
     );
   }
 
-  const [relationshipInfo, documentContentMap, proposalAttachmentsMap] =
+  const [relationshipInfo, documentContentMap, proposalAttachments] =
     await Promise.all([
       getProposalRelationshipInfo({
         profileId: snapshot.profileId,
@@ -93,7 +93,7 @@ export async function getReviewAssignment({
             parsedProposalData.collaborationDocVersionId,
         },
       ]),
-      getReviewProposalAttachments([snapshot.id]),
+      getProposalAttachmentsWithSignedUrls(snapshot.id),
     ]);
 
   const documentContent = documentContentMap.get(snapshot.historyId);
@@ -109,14 +109,14 @@ export async function getReviewAssignment({
       ? generateProposalHtml(documentContent.fragments)
       : { default: documentContent.content };
 
-  return reviewAssignmentDetailSchema.parse({
+  return reviewAssignmentExtendedSchema.parse({
     assignment: {
       ...assignment,
       proposal: {
         ...snapshot,
         proposalData: parsedProposalData,
         ...relationshipInfo,
-        attachments: proposalAttachmentsMap.get(snapshot.id) ?? [],
+        attachments: proposalAttachments,
         proposalTemplate,
         documentContent,
         htmlContent,
@@ -183,48 +183,4 @@ async function getProposalRelationshipInfo({
     ),
     commentsCount: Number(commentCounts[0]?.count ?? 0),
   };
-}
-
-async function getReviewProposalAttachments(proposalIds: string[]) {
-  const rows = await db.query.proposalAttachments.findMany({
-    where: {
-      proposalId: { in: proposalIds },
-    },
-    with: {
-      attachment: {
-        with: {
-          storageObject: true,
-        },
-      },
-    },
-  });
-
-  if (rows.length === 0) {
-    return new Map<string, (typeof resolved)[number][]>();
-  }
-
-  const supabase = createSBServiceClient();
-  const resolved = await Promise.all(
-    rows.map(async (row) => {
-      const storagePath = row.attachment.storageObject?.name;
-      if (!storagePath) {
-        return { ...row, attachment: { ...row.attachment, url: undefined } };
-      }
-      const { data } = await supabase.storage
-        .from('assets')
-        .createSignedUrl(storagePath, 60 * 60 * 24);
-      return {
-        ...row,
-        attachment: { ...row.attachment, url: data?.signedUrl },
-      };
-    }),
-  );
-
-  const byProposalId = new Map<string, (typeof resolved)[number][]>();
-  for (const row of resolved) {
-    const list = byProposalId.get(row.proposalId) ?? [];
-    list.push(row);
-    byProposalId.set(row.proposalId, list);
-  }
-  return byProposalId;
 }
