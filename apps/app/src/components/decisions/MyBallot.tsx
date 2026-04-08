@@ -36,7 +36,6 @@ export const MyBallot = ({
   slug: string;
   instanceId: string;
 }) => {
-  const t = useTranslations();
   const user = useUser();
 
   if (!user.user.id) {
@@ -47,21 +46,34 @@ export const MyBallot = ({
     processInstanceId: instanceId,
   });
 
-  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({
-    processInstanceId: instanceId,
-    proposalIds: voteStatus.selectedProposals?.map((p) => p.id) || [],
-  });
-
-  if (!voteStatus.hasVoted || !voteStatus.selectedProposals) {
+  if (!voteStatus.hasVoted || !voteStatus.voteSubmission) {
     return <NoVoteFound />;
   }
 
-  const selectedProposalIds = new Set(
-    voteStatus.selectedProposals.map((p) => p.id),
+  return (
+    <MyBallotProposals
+      slug={slug}
+      instanceId={instanceId}
+      votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
+    />
   );
-  const proposals = proposalsData.proposals.filter((proposal) =>
-    selectedProposalIds.has(proposal.id),
-  );
+};
+
+const MyBallotProposals = ({
+  slug,
+  instanceId,
+  votedByProfileId,
+}: {
+  slug: string;
+  instanceId: string;
+  votedByProfileId: string;
+}) => {
+  const t = useTranslations();
+
+  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instanceId,
+    votedByProfileId,
+  });
 
   return (
     <div className="flex flex-col gap-4 pb-12">
@@ -70,7 +82,7 @@ export const MyBallot = ({
       </Header3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {proposals.map((proposal) => (
+        {proposalsData.proposals.map((proposal) => (
           <VotingProposalCard
             isSelected={true}
             proposalId={proposal.id}
