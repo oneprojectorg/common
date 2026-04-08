@@ -133,8 +133,8 @@ const PostFeedSection = async ({
   const { utils, queryClient } = await createServerUtils();
   try {
     await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
-  } catch {
-    // Silently fail, client will still fetch
+  } catch (e) {
+    console.error('Homepage post prefetch failed:', e);
   }
 
   return (
