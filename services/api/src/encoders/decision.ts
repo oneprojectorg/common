@@ -668,6 +668,12 @@ export const proposalFilterSchema = z
     dir: z.enum(['asc', 'desc']).optional(),
     /** Phase ID to scope proposals to. Defaults to the current phase when omitted. */
     phaseId: z.string().optional(),
+    /**
+     * Restrict results to proposals voted on by this profile. Bypasses phase
+     * scoping so a user's ballot remains accessible after the process moves
+     * past the voting phase.
+     */
+    votedByProfileId: z.uuid().optional(),
     /** When set to 'results', all proposals are returned as non-editable */
     phase: z.enum(['results']).optional(),
   })
