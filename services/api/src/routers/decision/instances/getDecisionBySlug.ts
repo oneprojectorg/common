@@ -1,4 +1,5 @@
 import {
+  Channels,
   fromDecisionBitField,
   getDecisionBySlug,
   getProfileAccessUser,
@@ -42,6 +43,10 @@ export const getDecisionBySlugRouter = router({
 
       const decisionsBitField =
         collapseRoles(profileUser?.roles ?? [])['decisions'] ?? 0;
+
+      ctx.registerQueryChannels([
+        Channels.decisionInstance(parsed.processInstance.id),
+      ]);
 
       return decisionProfileWithSchemaEncoder.parse({
         ...parsed,
