@@ -179,6 +179,8 @@ describe.concurrent('getReviewAssignment', () => {
       otherCaller.decision.getReviewAssignment({
         assignmentId: created.assignment.id,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
   });
 });
