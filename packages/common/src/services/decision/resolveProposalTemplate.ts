@@ -10,7 +10,7 @@ import type { ProposalTemplateSchema } from './types';
  * is configured per-instance). Falls back to `decisionProcesses.processSchema`
  * (the process-level default) when the instance doesn't carry its own template.
  *
- * TODO: remove or adapat this function. it seems that we just need to fix the typing since we have the data
+ * TODO: remove or adapt this function. it seems that we just need to fix the typing since we have the data
  *
  */
 export async function resolveProposalTemplate(

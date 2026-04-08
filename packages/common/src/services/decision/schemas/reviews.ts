@@ -10,18 +10,12 @@ const jsonObjectSchema = z.record(z.string(), z.unknown());
 
 // ── Review assignment schemas ───────────────────────────────────────────
 
-export const proposalReviewAssignmentListItemSchema = z.object({
+export const proposalReviewAssignmentSchema = z.object({
   id: z.uuid(),
   processInstanceId: z.uuid(),
   phaseId: z.string(),
   status: z.enum(ProposalReviewAssignmentStatus),
   proposal: proposalSchema,
-});
-
-export const proposalReviewAssignmentListSchema = z.object({
-  assignments: z.array(proposalReviewAssignmentListItemSchema),
-  total: z.number(),
-  completed: z.number(),
 });
 
 // ── Review schemas ──────────────────────────────────────────────────────
@@ -38,20 +32,16 @@ export const proposalReviewSchema = z.object({
 });
 
 export const reviewAssignmentExtendedSchema = z.object({
-  assignment: proposalReviewAssignmentListItemSchema,
+  assignment: proposalReviewAssignmentSchema,
   rubricTemplate: jsonObjectSchema.nullable(),
   review: proposalReviewSchema.nullable(),
 });
 
 // ── Types ───────────────────────────────────────────────────────────────
 
-export type ProposalReviewAssignmentListItem = z.infer<
-  typeof proposalReviewAssignmentListItemSchema
+export type ProposalReviewAssignment = z.infer<
+  typeof proposalReviewAssignmentSchema
 >;
-export type ListProposalReviewAssignmentsResult = z.infer<
-  typeof proposalReviewAssignmentListSchema
->;
-export type ProposalReviewData = z.infer<typeof proposalReviewSchema>;
 export type ProposalReview = z.infer<typeof proposalReviewSchema>;
 export type ReviewAssignmentExtended = z.infer<
   typeof reviewAssignmentExtendedSchema

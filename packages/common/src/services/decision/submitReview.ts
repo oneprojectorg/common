@@ -11,10 +11,7 @@ import { eq } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
-import {
-  type ProposalReviewData,
-  proposalReviewSchema,
-} from './schemas/reviews';
+import { type ProposalReview, proposalReviewSchema } from './schemas/reviews';
 
 /** Validates and submits a review for the current reviewer. */
 export async function submitReview({
@@ -27,7 +24,7 @@ export async function submitReview({
   reviewData: Record<string, unknown>;
   overallComment?: string | null;
   user: User;
-}): Promise<ProposalReviewData> {
+}): Promise<ProposalReview> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,

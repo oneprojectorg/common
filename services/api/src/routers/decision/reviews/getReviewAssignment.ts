@@ -1,4 +1,7 @@
-import { getReviewAssignment } from '@op/common';
+import {
+  getReviewAssignment,
+  reviewAssignmentExtendedSchema,
+} from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -10,6 +13,7 @@ export const getReviewAssignmentRouter = router({
         assignmentId: z.uuid(),
       }),
     )
+    .output(reviewAssignmentExtendedSchema)
     .query(async ({ ctx, input }) => {
       return await getReviewAssignment({
         assignmentId: input.assignmentId,
