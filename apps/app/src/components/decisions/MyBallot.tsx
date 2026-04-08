@@ -54,7 +54,7 @@ export const MyBallot = ({
     <MyBallotProposals
       slug={slug}
       instanceId={instanceId}
-      votedByProfileId={voteStatus.voteSubmission.userId}
+      votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
     />
   );
 };

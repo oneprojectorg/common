@@ -97,7 +97,7 @@ export interface ValidateVoteSelectionInput {
 export interface VoteSubmissionResult {
   id: string;
   processInstanceId: string;
-  userId: string;
+  submittedByProfileId: string;
   selectedProposalIds: string[];
   createdAt: Date;
   signature: string | null;
@@ -328,7 +328,7 @@ export const submitVote = async ({
     return {
       id: result.voteSubmission.id,
       processInstanceId: result.voteSubmission.processInstanceId,
-      userId: result.voteSubmission.submittedByProfileId,
+      submittedByProfileId: result.voteSubmission.submittedByProfileId,
       selectedProposalIds: result.selectedProposalIds,
       createdAt: new Date(result.voteSubmission.createdAt!),
       signature: result.voteSubmission.signature || null,
@@ -455,7 +455,7 @@ export const getVotingStatus = async ({
         ? {
             id: voteSubmission.id,
             processInstanceId: voteSubmission.processInstanceId,
-            userId: voteSubmission.submittedByProfileId,
+            submittedByProfileId: voteSubmission.submittedByProfileId,
             selectedProposalIds,
             createdAt: new Date(voteSubmission.createdAt!),
             signature: voteSubmission.signature,

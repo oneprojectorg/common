@@ -101,6 +101,15 @@ export const listProposals = async ({
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
+  // Skip authentication check if this is a trusted context (e.g., background job)
+  if (!skipAccessCheck && !user) {
+    throw new UnauthorizedError('User must be authenticated');
+  }
+
+  // Resolve the caller's profile once; it's reused for ballot auth, the
+  // HIDDEN visibility filter, and owner/editable checks further down.
+  const currentProfileId = await getCurrentProfileId(input.authUserId);
+
   // Resolve a caller-provided "explicit scope" before falling back to phase
   // resolution. Explicit scope means: the caller knows the exact set of
   // proposals they want, so we bypass phase scoping entirely. This applies
@@ -112,11 +121,8 @@ export const listProposals = async ({
   } else if (input.votedByProfileId) {
     // Ballots are private: a caller can only request their own ballot.
     // Skip this check for trusted contexts (background jobs).
-    if (!skipAccessCheck) {
-      const callerProfileId = await getCurrentProfileId(input.authUserId);
-      if (callerProfileId !== input.votedByProfileId) {
-        throw new UnauthorizedError('You can only view your own ballot');
-      }
+    if (!skipAccessCheck && currentProfileId !== input.votedByProfileId) {
+      throw new UnauthorizedError('You can only view your own ballot');
     }
 
     const votedRows = await db
@@ -147,11 +153,6 @@ export const listProposals = async ({
       instanceId: processInstanceId,
       phaseId: input.phaseId,
     }));
-
-  // Skip authentication check if this is a trusted context (e.g., background job)
-  if (!skipAccessCheck && !user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
 
   // For trusted contexts (skipAccessCheck), drafts are never returned and phase
   // scoping is the only proposal-id filter — so an empty phase set means no results.
@@ -212,9 +213,6 @@ export const listProposals = async ({
       profileUser?.roles ?? [],
     );
   }
-
-  // Get current user's profile ID early for hidden filter and later for editable checks
-  const currentProfileId = await getCurrentProfileId(input.authUserId);
 
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
