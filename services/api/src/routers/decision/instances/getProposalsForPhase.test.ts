@@ -1,6 +1,6 @@
 import { TransitionEngine, getProposalsForPhase } from '@op/common';
 import { db } from '@op/db/client';
-import { proposals } from '@op/db/schema';
+import { proposals, stateTransitionHistory } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -228,5 +228,45 @@ describe.concurrent('getProposalsForPhase', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe(submitted.id);
+  });
+
+  it('falls back to all active proposals when transition exists but join table is empty (legacy)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithoutPipeline,
+    );
+
+    const [p1, p2] = await Promise.all([
+      createAndSubmitProposal(testData, caller, {
+        callerEmail: userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Legacy proposal 1 ${task.id}` },
+      }),
+      createAndSubmitProposal(testData, caller, {
+        callerEmail: userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Legacy proposal 2 ${task.id}` },
+      }),
+    ]);
+
+    // Simulate a legacy transition: insert history row WITHOUT populating the join table.
+    // This mirrors instances that transitioned before join-table writes were added.
+    await db.insert(stateTransitionHistory).values({
+      processInstanceId: instanceId,
+      toStateId: 'review',
+    });
+
+    const result = await getProposalsForPhase({ instanceId });
+
+    // Should fall back to all active proposals instead of returning empty
+    const ids = result.map((r) => r.id);
+    expect(ids).toContain(p1.id);
+    expect(ids).toContain(p2.id);
+    expect(result).toHaveLength(2);
   });
 });

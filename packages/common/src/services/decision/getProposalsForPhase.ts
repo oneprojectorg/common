@@ -45,6 +45,24 @@ async function resolveTransition(
 }
 
 /**
+ * All non-draft, non-deleted proposals for an instance.
+ * Used as the fallback when no transition exists or when a legacy transition
+ * has no join-table rows (instance transitioned before join-table writes were added).
+ */
+function allActiveProposals(instanceId: string, dbClient: DbClient) {
+  return dbClient
+    .select()
+    .from(proposals)
+    .where(
+      and(
+        eq(proposals.processInstanceId, instanceId),
+        ne(proposals.status, ProposalStatus.DRAFT),
+        isNull(proposals.deletedAt),
+      ),
+    );
+}
+
+/**
  * Returns IDs of proposals visible in the given phase. Lean variant for
  * callers that only need IDs (e.g. to pass as a filter to listProposals).
  *
@@ -52,6 +70,8 @@ async function resolveTransition(
  *   Returns [] if phaseId does not match any recorded transition.
  * - If phaseId is omitted: returns proposals for the current (most recent) phase.
  * - If no transition exists yet: returns all non-draft, non-deleted proposals for the instance.
+ * - Legacy fallback: if a transition exists but the join table is empty (instance
+ *   transitioned before join-table writes were added), returns all active proposals.
  */
 export async function getProposalIdsForPhase({
   instanceId,
@@ -62,49 +82,38 @@ export async function getProposalIdsForPhase({
   phaseId?: string;
   dbClient?: DbClient;
 }): Promise<string[]> {
-  try {
-    const transition = await resolveTransition(instanceId, phaseId, dbClient);
+  const transition = await resolveTransition(instanceId, phaseId, dbClient);
 
-    if (phaseId && !transition) {
-      return [];
-    }
+  if (phaseId && !transition) {
+    return [];
+  }
 
-    if (transition) {
-      const rows = await dbClient
-        .select({ id: decisionTransitionProposals.proposalId })
-        .from(decisionTransitionProposals)
-        .innerJoin(
-          proposals,
-          eq(decisionTransitionProposals.proposalId, proposals.id),
-        )
-        .where(
-          and(
-            eq(decisionTransitionProposals.transitionHistoryId, transition.id),
-            isNull(proposals.deletedAt),
-          ),
-        );
-      return rows.map((r) => r.id);
-    }
-
+  if (transition) {
     const rows = await dbClient
-      .select({ id: proposals.id })
-      .from(proposals)
+      .select({ id: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .innerJoin(
+        proposals,
+        eq(decisionTransitionProposals.proposalId, proposals.id),
+      )
       .where(
         and(
-          eq(proposals.processInstanceId, instanceId),
-          ne(proposals.status, ProposalStatus.DRAFT),
+          eq(decisionTransitionProposals.transitionHistoryId, transition.id),
           isNull(proposals.deletedAt),
         ),
       );
+
+    // Legacy fallback: transition exists but join table was never populated
+    if (rows.length === 0) {
+      const fallback = await allActiveProposals(instanceId, dbClient);
+      return fallback.map((r) => r.id);
+    }
+
     return rows.map((r) => r.id);
-  } catch (error) {
-    console.error('Error fetching proposal IDs for phase:', {
-      instanceId,
-      phaseId,
-      error,
-    });
-    throw error;
   }
+
+  const fallback = await allActiveProposals(instanceId, dbClient);
+  return fallback.map((r) => r.id);
 }
 
 /**
@@ -114,9 +123,8 @@ export async function getProposalIdsForPhase({
  *   Returns [] if phaseId does not match any recorded transition.
  * - If phaseId is omitted: returns proposals for the current (most recent) phase.
  * - If no transition exists yet: returns all non-draft, non-deleted proposals for the instance.
- *   Note: even a transition without a selection pipeline writes all proposals to the join
- *   table, so the full non-deleted set is returned in that case — not an indication that
- *   filtering occurred.
+ * - Legacy fallback: if a transition exists but the join table is empty (instance
+ *   transitioned before join-table writes were added), returns all active proposals.
  */
 export async function getProposalsForPhase({
   instanceId,
@@ -127,46 +135,34 @@ export async function getProposalsForPhase({
   phaseId?: string;
   dbClient?: DbClient;
 }): Promise<Proposal[]> {
-  try {
-    const transition = await resolveTransition(instanceId, phaseId, dbClient);
+  const transition = await resolveTransition(instanceId, phaseId, dbClient);
 
-    if (phaseId && !transition) {
-      return [];
-    }
+  if (phaseId && !transition) {
+    return [];
+  }
 
-    if (transition) {
-      const rows = await dbClient
-        .select({ proposal: proposals })
-        .from(decisionTransitionProposals)
-        .innerJoin(
-          proposals,
-          eq(decisionTransitionProposals.proposalId, proposals.id),
-        )
-        .where(
-          and(
-            eq(decisionTransitionProposals.transitionHistoryId, transition.id),
-            isNull(proposals.deletedAt),
-          ),
-        );
-      return rows.map((r) => r.proposal);
-    }
-
-    return dbClient
-      .select()
-      .from(proposals)
+  if (transition) {
+    const rows = await dbClient
+      .select({ proposal: proposals })
+      .from(decisionTransitionProposals)
+      .innerJoin(
+        proposals,
+        eq(decisionTransitionProposals.proposalId, proposals.id),
+      )
       .where(
         and(
-          eq(proposals.processInstanceId, instanceId),
-          ne(proposals.status, ProposalStatus.DRAFT),
+          eq(decisionTransitionProposals.transitionHistoryId, transition.id),
           isNull(proposals.deletedAt),
         ),
       );
-  } catch (error) {
-    console.error('Error fetching proposals for phase:', {
-      instanceId,
-      phaseId,
-      error,
-    });
-    throw error;
+
+    // Legacy fallback: transition exists but join table was never populated
+    if (rows.length === 0) {
+      return allActiveProposals(instanceId, dbClient);
+    }
+
+    return rows.map((r) => r.proposal);
   }
+
+  return allActiveProposals(instanceId, dbClient);
 }
