@@ -49,16 +49,20 @@ export async function manualTransition({
   user,
   currentPhaseId: expectedFromPhaseId,
 }: ManualTransitionInput): Promise<ManualTransitionResult> {
-  const dbUser = await assertUserByAuthId(user.id);
+  // assertUserByAuthId and the instance fetch are independent — run in parallel
+  // to save one round trip. getProfileAccessUser below still needs to wait on
+  // the instance fetch for profileId.
+  const [dbUser, instance] = await Promise.all([
+    assertUserByAuthId(user.id),
+    db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      with: { process: true },
+    }),
+  ]);
 
   if (!dbUser.currentProfileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
-
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-    with: { process: true },
-  });
 
   if (!instance) {
     throw new NotFoundError('Process instance not found');
