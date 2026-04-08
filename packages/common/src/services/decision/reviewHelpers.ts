@@ -6,7 +6,7 @@ import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 
 /** Loads and authorizes access to a single review assignment for the current reviewer. */
-export async function getAuthorizedReviewAssignmentContext({
+export async function assertReviewAssignmentContext({
   assignmentId,
   user,
 }: {
@@ -19,6 +19,16 @@ export async function getAuthorizedReviewAssignmentContext({
         id: assignmentId,
       },
       with: {
+        assignedProposalHistory: {
+          with: {
+            submittedBy: {
+              with: {
+                avatarImage: true,
+              },
+            },
+            profile: true,
+          },
+        },
         reviews: true,
       },
     }),
@@ -52,7 +62,7 @@ export async function getAuthorizedReviewAssignmentContext({
   return {
     assignment,
     instance,
-    review: assignment.reviews[0],
-    rubricTemplate: instance.instanceData.rubricTemplate,
+    review: assignment.reviews[0] ?? null,
+    rubricTemplate: instance.instanceData.rubricTemplate ?? null,
   };
 }

@@ -61,6 +61,8 @@ export const proposalAttachmentSchema = z.object({
   uploader: proposalProfileSchema.optional(),
 });
 
+export type ProposalAttachment = z.infer<typeof proposalAttachmentSchema>;
+
 export const documentContentSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('json'),
