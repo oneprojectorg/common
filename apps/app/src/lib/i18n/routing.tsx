@@ -60,7 +60,7 @@ const Link = ({
     <NavLink
       {...props}
       className={cn('hover:underline', className)}
-      prefetch={false}
+      prefetch={true}
     >
       {children}
     </NavLink>
