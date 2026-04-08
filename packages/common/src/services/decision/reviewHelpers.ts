@@ -62,7 +62,7 @@ export async function assertReviewAssignmentContext({
   return {
     assignment,
     instance,
-    review: assignment.reviews[0],
-    rubricTemplate: instance.instanceData.rubricTemplate,
+    review: assignment.reviews[0] ?? null,
+    rubricTemplate: instance.instanceData.rubricTemplate ?? null,
   };
 }

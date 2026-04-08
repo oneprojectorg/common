@@ -73,21 +73,73 @@ describe.concurrent('getReviewAssignment', () => {
     };
     seedMockCollab(collaborationDocId);
 
-    await testData.setRubricTemplate(created.context, rubricTemplate);
-    await testData.attachFileToProposal({
-      proposalId: created.proposal.id,
-      uploadedByProfileId: created.author.profileId,
-      fileName: 'community-garden-budget.pdf',
-    });
-    await createProposalReview({
+    const [, , , reviewerCaller] = await Promise.all([
+      testData.setRubricTemplate(created.context, rubricTemplate),
+      testData.attachFileToProposal({
+        proposalId: created.proposal.id,
+        uploadedByProfileId: created.author.profileId,
+        fileName: 'community-garden-budget.pdf',
+      }),
+      createProposalReview({
+        assignmentId: created.assignment.id,
+        state: ProposalReviewState.DRAFT,
+        reviewData: {
+          impact: 5,
+          impact__rationale: 'Strong fit',
+        },
+        overallComment: 'Promising proposal',
+      }),
+      createAuthenticatedCaller(created.reviewer.email),
+    ]);
+    const result = await reviewerCaller.decision.getReviewAssignment({
       assignmentId: created.assignment.id,
-      state: ProposalReviewState.DRAFT,
-      reviewData: {
-        impact: 5,
-        impact__rationale: 'Strong fit',
-      },
-      overallComment: 'Promising proposal',
     });
+
+    expect(result).toMatchObject({
+      assignment: {
+        id: created.assignment.id,
+        status: ProposalReviewAssignmentStatus.PENDING,
+        proposal: {
+          id: created.proposal.id,
+          likesCount: 0,
+          followersCount: 0,
+          commentsCount: 0,
+          attachments: expect.arrayContaining([
+            expect.objectContaining({
+              proposalId: created.proposal.id,
+              attachment: expect.objectContaining({
+                fileName: 'community-garden-budget.pdf',
+              }),
+            }),
+          ]),
+        },
+      },
+      rubricTemplate,
+      review: {
+        assignmentId: created.assignment.id,
+        state: ProposalReviewState.DRAFT,
+        reviewData: {
+          impact: 5,
+          impact__rationale: 'Strong fit',
+        },
+        overallComment: 'Promising proposal',
+      },
+    });
+  });
+
+  it('returns null review when reviewer has not started', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Fresh Assignment',
+    });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -96,43 +148,16 @@ describe.concurrent('getReviewAssignment', () => {
       assignmentId: created.assignment.id,
     });
 
-    // Assignment metadata
-    expect(result.assignment.id).toBe(created.assignment.id);
-    expect(result.assignment.status).toBe(
-      ProposalReviewAssignmentStatus.PENDING,
-    );
-
-    // Proposal shape
-    expect(result.assignment.proposal.id).toBe(created.proposal.id);
-    expect(result.assignment.proposal.likesCount).toBe(0);
-    expect(result.assignment.proposal.followersCount).toBe(0);
-    expect(result.assignment.proposal.commentsCount).toBe(0);
-
-    // Rubric
-    expect(result.rubricTemplate).toMatchObject(rubricTemplate);
-
-    // Saved draft review
-    expect(result.review).toMatchObject({
-      assignmentId: created.assignment.id,
-      state: ProposalReviewState.DRAFT,
-      reviewData: {
-        impact: 5,
-        impact__rationale: 'Strong fit',
+    expect(result).toMatchObject({
+      assignment: {
+        id: created.assignment.id,
+        status: ProposalReviewAssignmentStatus.PENDING,
+        proposal: {
+          id: created.proposal.id,
+        },
       },
-      overallComment: 'Promising proposal',
+      review: null,
     });
-
-    // Attachments
-    expect(result.assignment.proposal.attachments).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          proposalId: created.proposal.id,
-          attachment: expect.objectContaining({
-            fileName: 'community-garden-budget.pdf',
-          }),
-        }),
-      ]),
-    );
   });
 
   it('rejects access for a different reviewer', async ({
