@@ -4,6 +4,8 @@ import { ClientOnly } from '@/utils/ClientOnly';
 import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
+import posthog from 'posthog-js';
+import { useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
@@ -13,6 +15,12 @@ export interface ErrorProps {
 
 export default function PageError({ error }: ErrorProps) {
   const t = useTranslations();
+
+  useEffect(() => {
+    posthog.captureException(error, {
+      error_digest: error.digest,
+    });
+  }, [error]);
 
   const errorData = match(error.message, {
     UNAUTHORIZED: () => ({
