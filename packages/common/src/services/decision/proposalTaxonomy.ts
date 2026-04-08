@@ -44,7 +44,11 @@ export async function ensureProposalTaxonomy(
     }
 
     const categoryLabel = categoryName.trim();
-    const termUri = slugify(categoryLabel, { lower: true, strict: true, trim: true });
+    const termUri = slugify(categoryLabel, {
+      lower: true,
+      strict: true,
+      trim: true,
+    });
 
     let existingTerm = await db._query.taxonomyTerms.findFirst({
       where: eq(taxonomyTerms.termUri, termUri),
