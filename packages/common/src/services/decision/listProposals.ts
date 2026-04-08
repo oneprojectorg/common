@@ -68,6 +68,64 @@ export interface ListProposalsInput {
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
 }
 
+/**
+ * Resolves a caller-provided "explicit scope" for the listProposals query.
+ *
+ * Explicit scope means the caller knows the exact set of proposal IDs they
+ * want, so we bypass phase resolution entirely. There are two ways to trigger
+ * it:
+ *
+ * 1. `proposalIds` (internal-only) — used by trusted callers that already
+ *    have the IDs in hand.
+ * 2. `votedByProfileId` (public) — surfaces a user's ballot regardless of
+ *    the current phase. Subject to a self-only auth check: a caller can only
+ *    request their own ballot. The check is skipped for trusted contexts.
+ *
+ * Returns `undefined` when no explicit scope was requested (caller will fall
+ * back to phase scoping).
+ */
+const resolveExplicitScope = async ({
+  input,
+  currentProfileId,
+  skipAccessCheck,
+}: {
+  input: ListProposalsInput;
+  currentProfileId: string | undefined;
+  skipAccessCheck: boolean;
+}): Promise<string[] | undefined> => {
+  if (input.proposalIds !== undefined) {
+    return input.proposalIds;
+  }
+
+  if (!input.votedByProfileId) {
+    return undefined;
+  }
+
+  // Ballots are private: a caller can only request their own ballot.
+  if (!skipAccessCheck && currentProfileId !== input.votedByProfileId) {
+    throw new UnauthorizedError('You can only view your own ballot');
+  }
+
+  const votedRows = await db
+    .select({ proposalId: decisionsVoteProposals.proposalId })
+    .from(decisionsVoteSubmissions)
+    .innerJoin(
+      decisionsVoteProposals,
+      eq(decisionsVoteSubmissions.id, decisionsVoteProposals.voteSubmissionId),
+    )
+    .where(
+      and(
+        eq(decisionsVoteSubmissions.processInstanceId, input.processInstanceId),
+        eq(
+          decisionsVoteSubmissions.submittedByProfileId,
+          input.votedByProfileId,
+        ),
+      ),
+    );
+
+  return votedRows.map((r) => r.proposalId);
+};
+
 // Shared function to build WHERE conditions for both count and data queries
 const buildWhereConditions = (input: ListProposalsInput) => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
@@ -110,42 +168,11 @@ export const listProposals = async ({
   // HIDDEN visibility filter, and owner/editable checks further down.
   const currentProfileId = await getCurrentProfileId(input.authUserId);
 
-  // Resolve a caller-provided "explicit scope" before falling back to phase
-  // resolution. Explicit scope means: the caller knows the exact set of
-  // proposals they want, so we bypass phase scoping entirely. This applies
-  // both to internal `proposalIds` overrides and to the public `votedByProfileId`
-  // filter (which surfaces a user's ballot regardless of current phase).
-  let explicitScopeIds: string[] | undefined;
-  if (input.proposalIds !== undefined) {
-    explicitScopeIds = input.proposalIds;
-  } else if (input.votedByProfileId) {
-    // Ballots are private: a caller can only request their own ballot.
-    // Skip this check for trusted contexts (background jobs).
-    if (!skipAccessCheck && currentProfileId !== input.votedByProfileId) {
-      throw new UnauthorizedError('You can only view your own ballot');
-    }
-
-    const votedRows = await db
-      .select({ proposalId: decisionsVoteProposals.proposalId })
-      .from(decisionsVoteSubmissions)
-      .innerJoin(
-        decisionsVoteProposals,
-        eq(
-          decisionsVoteSubmissions.id,
-          decisionsVoteProposals.voteSubmissionId,
-        ),
-      )
-      .where(
-        and(
-          eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
-          eq(
-            decisionsVoteSubmissions.submittedByProfileId,
-            input.votedByProfileId,
-          ),
-        ),
-      );
-    explicitScopeIds = votedRows.map((r) => r.proposalId);
-  }
+  const explicitScopeIds = await resolveExplicitScope({
+    input,
+    currentProfileId,
+    skipAccessCheck,
+  });
 
   const phaseProposalIds =
     explicitScopeIds ??
