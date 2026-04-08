@@ -197,12 +197,15 @@ export async function manualTransition({
         and(
           eq(processInstances.id, instanceId),
           eq(processInstances.currentStateId, currentPhaseId),
+          eq(processInstances.status, ProcessStatus.PUBLISHED),
         ),
       )
       .returning({ id: processInstances.id });
 
     if (updated.length === 0) {
-      throw new CommonError('Phase was already advanced by another request');
+      throw new CommonError(
+        'Phase was already advanced, or instance is no longer published',
+      );
     }
 
     // Mark any pending scheduled transition for the current phase as completed
@@ -243,7 +246,12 @@ export async function manualTransition({
           historyId: proposalHistory.historyId,
         })
         .from(proposalHistory)
-        .where(inArray(proposalHistory.id, survivingProposalIds))
+        .where(
+          and(
+            eq(proposalHistory.processInstanceId, instanceId),
+            inArray(proposalHistory.id, survivingProposalIds),
+          ),
+        )
         .orderBy(proposalHistory.id, desc(proposalHistory.historyCreatedAt));
 
       if (latestHistoryRows.length !== survivingProposalIds.length) {
