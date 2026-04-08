@@ -16,6 +16,9 @@ export * from './getInstance';
 export * from './listDecisionProfiles';
 export * from './getDecisionBySlug';
 
+// Shared phase advancement core (used by transitionMonitor)
+export * from './advancePhase';
+
 // Transition management
 export { TransitionEngine } from './transitionEngine';
 export type { TransitionCheckResult } from './transitionEngine';
