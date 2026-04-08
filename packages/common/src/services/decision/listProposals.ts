@@ -110,6 +110,15 @@ export const listProposals = async ({
   if (input.proposalIds !== undefined) {
     explicitScopeIds = input.proposalIds;
   } else if (input.votedByProfileId) {
+    // Ballots are private: a caller can only request their own ballot.
+    // Skip this check for trusted contexts (background jobs).
+    if (!skipAccessCheck) {
+      const callerProfileId = await getCurrentProfileId(input.authUserId);
+      if (callerProfileId !== input.votedByProfileId) {
+        throw new UnauthorizedError('You can only view your own ballot');
+      }
+    }
+
     const votedRows = await db
       .select({ proposalId: decisionsVoteProposals.proposalId })
       .from(decisionsVoteSubmissions)
