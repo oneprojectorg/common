@@ -37,11 +37,7 @@ export async function createAndSubmitProposal(
     proposalData: { title: string };
   },
 ) {
-  const { callerEmail, ...rest } = options;
-  const proposal = await testData.createProposal({
-    userEmail: callerEmail,
-    ...rest,
-  });
+  const proposal = await testData.createProposal(options);
   await caller.decision.submitProposal({ proposalId: proposal.id });
   return proposal;
 }
