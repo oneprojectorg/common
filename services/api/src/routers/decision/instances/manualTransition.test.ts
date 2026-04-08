@@ -27,27 +27,17 @@ async function createAuthenticatedCaller(email: string) {
  * Helper to create a published instance with admin access.
  * Default testMinimalSchema has 2 phases: initial → final.
  */
-async function createPublishedInstance(
-  testData: TestDecisionsDataManager,
-  opts?: { grantAccess?: boolean },
-) {
-  const { grantAccess = true } = opts ?? {};
-
+async function createPublishedInstance(testData: TestDecisionsDataManager) {
   const setup = await testData.createDecisionSetup({
     instanceCount: 1,
-    grantAccess,
+    grantAccess: true,
+    status: ProcessStatus.PUBLISHED,
   });
 
   const instance = setup.instances[0];
   if (!instance) {
     throw new Error('No instance created');
   }
-
-  // Publish the instance
-  await db
-    .update(processInstances)
-    .set({ status: ProcessStatus.PUBLISHED })
-    .where(eq(processInstances.id, instance.instance.id));
 
   return { setup, instance };
 }

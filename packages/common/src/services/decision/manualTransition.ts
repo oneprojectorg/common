@@ -55,7 +55,6 @@ export async function manualTransition({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  // Fetch the instance with its process definition
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
     with: { process: true },
@@ -65,7 +64,6 @@ export async function manualTransition({
     throw new NotFoundError('Process instance not found');
   }
 
-  // Validate admin access
   if (!instance.profileId) {
     throw new CommonError(
       'Decision instance does not have an associated profile',
@@ -79,7 +77,6 @@ export async function manualTransition({
 
   assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
-  // Validate instance is eligible for transition
   if (instance.status !== ProcessStatus.PUBLISHED) {
     throw new ValidationError('Instance must be published');
   }
@@ -106,9 +103,7 @@ export async function manualTransition({
     );
   }
 
-  const currentPhaseIndex = phases.findIndex(
-    (p) => p.phaseId === fromPhaseId,
-  );
+  const currentPhaseIndex = phases.findIndex((p) => p.phaseId === fromPhaseId);
 
   if (currentPhaseIndex === -1) {
     throw new CommonError('Current phase not found in instance phases');
@@ -126,14 +121,12 @@ export async function manualTransition({
   const process = instance.process as DecisionProcess;
   const processSchema = process?.processSchema as ProcessSchema | undefined;
 
-  // Execute the phase advance atomically via the shared core
   await db.transaction(async (tx) => {
     const result = await advancePhase({
       tx,
-      instanceId,
       instance: {
+        id: instance.id,
         processId: instance.processId,
-        currentStateId: instance.currentStateId,
         instanceData,
       },
       processSchema,
@@ -150,9 +143,9 @@ export async function manualTransition({
     }
   });
 
-  // Process final results when transitioning to the final phase.
-  // This stores selections in decisionProcessResults / decisionProcessResultSelections
-  // and updates proposal statuses — separate from the per-transition join table above.
+  // processResults runs as a separate top-level operation: the join table
+  // writes inside advancePhase are per-transition, while processResults
+  // populates decisionProcessResults + selections + proposal statuses.
   if (isTransitioningToFinalPhase) {
     try {
       await processResults({ processInstanceId: instanceId });
