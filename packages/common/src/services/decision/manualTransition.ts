@@ -13,6 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import {
   CommonError,
+  ConflictError,
   NotFoundError,
   UnauthorizedError,
   ValidationError,
@@ -32,6 +33,13 @@ import type { InstanceData, ProcessSchema } from './types';
 export interface ManualTransitionInput {
   instanceId: string;
   user: User;
+  /**
+   * The phase the caller observed as current. If provided, the transition only
+   * proceeds when the instance is actually on this phase. If the instance has
+   * already moved on (e.g. concurrent admin click, retry of a stale request),
+   * a ConflictError is thrown so the caller can refetch and re-decide.
+   */
+  currentPhaseId?: string;
 }
 
 export interface ManualTransitionResult {
@@ -54,6 +62,7 @@ export interface ManualTransitionResult {
 export async function manualTransition({
   instanceId,
   user,
+  currentPhaseId: expectedFromPhaseId,
 }: ManualTransitionInput): Promise<ManualTransitionResult> {
   const dbUser = await assertUserByAuthId(user.id);
 
@@ -97,14 +106,23 @@ export async function manualTransition({
     throw new CommonError('Instance has no phases defined');
   }
 
-  const currentPhaseId = instanceData.currentPhaseId;
+  const fromPhaseId = instanceData.currentPhaseId;
 
-  if (!currentPhaseId) {
+  if (!fromPhaseId) {
     throw new CommonError('Instance has no current phase set');
   }
 
+  // Strict idempotency check: if the caller told us which phase they observed,
+  // refuse to advance unless the instance is still on that phase. This prevents
+  // double-clicks and stale retries from advancing through multiple phases.
+  if (expectedFromPhaseId && expectedFromPhaseId !== fromPhaseId) {
+    throw new ConflictError(
+      `Instance is on phase '${fromPhaseId}', not '${expectedFromPhaseId}'`,
+    );
+  }
+
   const currentPhaseIndex = phases.findIndex(
-    (p) => p.phaseId === currentPhaseId,
+    (p) => p.phaseId === fromPhaseId,
   );
 
   if (currentPhaseIndex === -1) {
@@ -126,7 +144,7 @@ export async function manualTransition({
   const processSchema = process?.processSchema as ProcessSchema | undefined;
   const selectionPipeline: SelectionPipeline | undefined =
     processSchema?.phases?.find(
-      (p) => p.id === currentPhaseId,
+      (p) => p.id === fromPhaseId,
     )?.selectionPipeline;
 
   // Execute transition atomically.
@@ -165,7 +183,7 @@ export async function manualTransition({
     if (survivingProposalIds.length === 0 && allProposals.length > 0) {
       console.warn('Manual transition produced zero surviving proposals', {
         instanceId,
-        fromStateId: currentPhaseId,
+        fromStateId: fromPhaseId,
         toStateId: nextPhaseId,
       });
     }
@@ -196,7 +214,7 @@ export async function manualTransition({
       .where(
         and(
           eq(processInstances.id, instanceId),
-          eq(processInstances.currentStateId, currentPhaseId),
+          eq(processInstances.currentStateId, fromPhaseId),
           eq(processInstances.status, ProcessStatus.PUBLISHED),
         ),
       )
@@ -215,7 +233,7 @@ export async function manualTransition({
       .where(
         and(
           eq(decisionProcessTransitions.processInstanceId, instanceId),
-          eq(decisionProcessTransitions.fromStateId, currentPhaseId),
+          eq(decisionProcessTransitions.fromStateId, fromPhaseId),
           isNull(decisionProcessTransitions.completedAt),
         ),
       );
@@ -225,7 +243,7 @@ export async function manualTransition({
       .insert(stateTransitionHistory)
       .values({
         processInstanceId: instanceId,
-        fromStateId: currentPhaseId,
+        fromStateId: fromPhaseId,
         toStateId: nextPhaseId,
         transitionData: { manual: true },
         triggeredByProfileId: dbUser.currentProfileId,
@@ -288,6 +306,6 @@ export async function manualTransition({
   return {
     instanceId,
     currentPhaseId: nextPhaseId,
-    previousPhaseId: currentPhaseId,
+    previousPhaseId: fromPhaseId,
   };
 }

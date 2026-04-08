@@ -200,6 +200,73 @@ describe.concurrent('manualTransition', () => {
     ).rejects.toThrow();
   });
 
+  it('should reject when currentPhaseId does not match actual phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createPublishedInstance(testData);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Caller passes a stale phase ID — instance is on 'initial', not 'someOldPhase'
+    await expect(
+      caller.decision.manualTransition({
+        instanceId: instance.instance.id,
+        currentPhaseId: 'someOldPhase',
+      }),
+    ).rejects.toThrow(/Instance is on phase 'initial'/);
+
+    // Verify the instance was NOT advanced
+    const dbInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+    expect(dbInstance!.currentStateId).toBe('initial');
+  });
+
+  it('should advance when currentPhaseId matches actual phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createPublishedInstance(testData);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.manualTransition({
+      instanceId: instance.instance.id,
+      currentPhaseId: 'initial',
+    });
+
+    expect(result.previousPhaseId).toBe('initial');
+    expect(result.currentPhaseId).toBe('final');
+  });
+
+  it('should be idempotent when same currentPhaseId is sent twice', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createPublishedInstance(testData);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // First call advances initial → final
+    await caller.decision.manualTransition({
+      instanceId: instance.instance.id,
+      currentPhaseId: 'initial',
+    });
+
+    // Second call with the same currentPhaseId should be rejected as a conflict —
+    // the instance has moved on, so the caller's view is stale.
+    await expect(
+      caller.decision.manualTransition({
+        instanceId: instance.instance.id,
+        currentPhaseId: 'initial',
+      }),
+    ).rejects.toThrow(/Instance is on phase 'final'/);
+  });
+
   it('should reject concurrent transitions via optimistic lock', async ({
     task,
     onTestFinished,

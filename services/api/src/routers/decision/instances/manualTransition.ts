@@ -8,6 +8,7 @@ export const manualTransitionRouter = router({
     .input(
       z.object({
         instanceId: z.uuid(),
+        currentPhaseId: z.string().optional(),
       }),
     )
     .output(
@@ -20,6 +21,7 @@ export const manualTransitionRouter = router({
     .mutation(async ({ ctx, input }) => {
       return manualTransition({
         instanceId: input.instanceId,
+        currentPhaseId: input.currentPhaseId,
         user: ctx.user,
       });
     }),
