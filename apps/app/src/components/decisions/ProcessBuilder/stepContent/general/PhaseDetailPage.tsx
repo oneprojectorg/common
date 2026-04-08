@@ -99,6 +99,9 @@ function PhaseDetailForm({
     );
   })();
 
+  const phaseIndex = allPhases.findIndex((p) => p.id === phaseId) + 1;
+  const phaseCount = allPhases.length;
+
   const initialPhase = allPhases.find((p) => p.id === phaseId);
   const [phase, setPhase] = useState<PhaseDefinition | undefined>(initialPhase);
 
@@ -280,10 +283,18 @@ function PhaseDetailForm({
 
   return (
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
-      <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-sm">
-          {phase.name || t('Phases')}
-        </Header2>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-neutral-gray4">
+            {t('Phase {index} of {total}', {
+              index: phaseIndex,
+              total: phaseCount,
+            })}
+          </p>
+          <Header2 className="font-serif text-title-base">
+            {t('Add phase')}
+          </Header2>
+        </div>
         <SaveStatusIndicator
           status={saveState.status}
           savedAt={saveState.savedAt}
@@ -292,7 +303,7 @@ function PhaseDetailForm({
 
       <div className="space-y-4">
         <TextField
-          label={t('Phase name')}
+          label={t('Short name')}
           isRequired
           value={phase.name ?? ''}
           onChange={(value) => updatePhase({ name: value })}
