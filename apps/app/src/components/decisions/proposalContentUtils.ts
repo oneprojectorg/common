@@ -4,7 +4,6 @@ import {
   SYSTEM_FIELD_KEYS,
   type XFormat,
   assembleProposalData,
-  normalizeProposalCategories,
   parseProposalData,
   serverExtensions,
 } from '@op/common/client';
@@ -127,9 +126,6 @@ export function resolveProposalSystemFields(proposal: Proposal) {
     ...(resolved.title != null && { title: resolved.title as string }),
     ...(resolved.budget != null && {
       budget: resolved.budget as typeof fallback.budget,
-    }),
-    ...(resolved.category != null && {
-      category: normalizeProposalCategories(resolved.category),
     }),
   };
 }

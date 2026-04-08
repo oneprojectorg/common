@@ -826,4 +826,76 @@ describe.concurrent('submitProposal', () => {
 
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
   });
+
+  it('should submit successfully when array category data is stored against a legacy string-type template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'category'],
+        'x-field-order': ['title', 'category'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          category: {
+            type: ['string', 'null'],
+            title: 'Category',
+            'x-format': 'dropdown',
+            oneOf: [
+              { const: 'Infrastructure', title: 'Infrastructure' },
+              { const: 'Education', title: 'Education' },
+              { const: null, title: '' },
+            ],
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Legacy Template Array Data' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    // Store category as an array even though the template expects a string —
+    // this happens when single-select categories are saved by the new editor
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Legacy Template Array Data',
+          category: ['Education'],
+          collaborationDocId,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Legacy Template Array Data',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+  });
 });

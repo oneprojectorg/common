@@ -127,6 +127,56 @@ export class SchemaValidator {
   }
 
   /**
+   * Coerce top-level data values to match schema-declared types.
+   *
+   * Handles the array ↔ scalar mismatch that arises when stored data
+   * migrates between single-value and multi-value formats while older
+   * template schemas remain unchanged (e.g. category: string → string[]).
+   */
+  coerceToSchema(
+    schema: JSONSchema7,
+    data: Record<string, unknown>,
+  ): Record<string, unknown> {
+    if (!schema.properties) {
+      return data;
+    }
+
+    const coerced = { ...data };
+
+    for (const [key, value] of Object.entries(coerced)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      const propSchema = schema.properties[key];
+      if (!propSchema || typeof propSchema !== 'object') {
+        continue;
+      }
+
+      const types = Array.isArray(propSchema.type)
+        ? propSchema.type
+        : propSchema.type
+          ? [propSchema.type]
+          : [];
+
+      const expectsArray = types.includes('array');
+      const expectsScalar =
+        types.includes('string') ||
+        types.includes('number') ||
+        types.includes('integer') ||
+        types.includes('null');
+
+      if (expectsArray && !Array.isArray(value)) {
+        coerced[key] = [value];
+      } else if (!expectsArray && expectsScalar && Array.isArray(value)) {
+        coerced[key] = value[0] ?? null;
+      }
+    }
+
+    return coerced;
+  }
+
+  /**
    * Shared helper: validate data against a schema, throwing a
    * labelled ValidationError on failure.
    */
@@ -135,7 +185,11 @@ export class SchemaValidator {
     data: unknown,
     label: string,
   ): void {
-    const result = this.validate(schema, data);
+    const coerced =
+      data && typeof data === 'object' && !Array.isArray(data)
+        ? this.coerceToSchema(schema, data as Record<string, unknown>)
+        : data;
+    const result = this.validate(schema, coerced);
 
     if (!result.valid) {
       const errorMessage = Object.values(result.errors).join(', ');

@@ -41,12 +41,7 @@ export async function validateProposalAgainstTemplate(
     const validationData = {
       ...assembleProposalData(proposalTemplate, fragmentTexts),
       ...(storedProposalData.category !== undefined
-        ? {
-            category:
-              parsed.category.length > 0
-                ? parsed.category
-                : storedProposalData.category,
-          }
+        ? { category: storedProposalData.category }
         : {}),
       ...(storedProposalData.budget !== undefined
         ? { budget: parsed.budget }
