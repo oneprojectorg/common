@@ -4,9 +4,12 @@ import type { Proposal } from '@op/db/schema';
 import {
   ProposalStatus,
   decisionTransitionProposals,
+  processInstances,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
+
+import { isLegacyInstanceData } from './isLegacyInstance';
 
 /**
  * Resolves the transition to use for phase-scoped proposal queries.
@@ -46,8 +49,7 @@ async function resolveTransition(
 
 /**
  * All non-draft, non-deleted proposals for an instance.
- * Used as the fallback when no transition exists or when a legacy transition
- * has no join-table rows (instance transitioned before join-table writes were added).
+ * Used for legacy instances and for new instances still in their initial phase.
  */
 function allActiveProposals(instanceId: string, dbClient: DbClient) {
   return dbClient
@@ -63,15 +65,42 @@ function allActiveProposals(instanceId: string, dbClient: DbClient) {
 }
 
 /**
+ * Loads the instance's legacy/current-phase context in a single query.
+ * Returns null if the instance does not exist.
+ */
+async function getInstanceContext(
+  instanceId: string,
+  dbClient: DbClient,
+): Promise<{ isLegacy: boolean; currentPhaseId?: string } | null> {
+  const [row] = await dbClient
+    .select({ instanceData: processInstances.instanceData })
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId))
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  const data = row.instanceData as { currentPhaseId?: string } | null;
+
+  return {
+    isLegacy: isLegacyInstanceData(row.instanceData),
+    currentPhaseId: data?.currentPhaseId,
+  };
+}
+
+/**
  * Returns IDs of proposals visible in the given phase. Lean variant for
  * callers that only need IDs (e.g. to pass as a filter to listProposals).
  *
- * - If phaseId is provided: returns proposals that survived the transition into that phase.
- *   Returns [] if phaseId does not match any recorded transition.
- * - If phaseId is omitted: returns proposals for the current (most recent) phase.
- * - If no transition exists yet: returns all non-draft, non-deleted proposals for the instance.
- * - Legacy fallback: if a transition exists but the join table is empty (instance
- *   transitioned before join-table writes were added), returns all active proposals.
+ * - Legacy instances (instanceData.currentStateId without currentPhaseId): always returns
+ *   all non-draft, non-deleted proposals — phase scoping does not apply.
+ * - If a transition into the requested phase exists: returns the proposals that survived
+ *   that transition (empty means empty — no fallback).
+ * - If no transition exists and the requested phase is the instance's current phase
+ *   (i.e. the initial phase, never transitioned into): returns all active proposals.
+ * - If a phaseId was passed for a phase the instance hasn't visited: returns [].
  */
 export async function getProposalIdsForPhase({
   instanceId,
@@ -82,11 +111,18 @@ export async function getProposalIdsForPhase({
   phaseId?: string;
   dbClient?: DbClient;
 }): Promise<string[]> {
-  const transition = await resolveTransition(instanceId, phaseId, dbClient);
+  const ctx = await getInstanceContext(instanceId, dbClient);
 
-  if (phaseId && !transition) {
+  if (!ctx) {
     return [];
   }
+
+  if (ctx.isLegacy) {
+    const fallback = await allActiveProposals(instanceId, dbClient);
+    return fallback.map((r) => r.id);
+  }
+
+  const transition = await resolveTransition(instanceId, phaseId, dbClient);
 
   if (transition) {
     const rows = await dbClient
@@ -103,28 +139,31 @@ export async function getProposalIdsForPhase({
         ),
       );
 
-    // Legacy fallback: transition exists but join table was never populated
-    if (rows.length === 0) {
-      const fallback = await allActiveProposals(instanceId, dbClient);
-      return fallback.map((r) => r.id);
-    }
-
     return rows.map((r) => r.id);
   }
 
-  const fallback = await allActiveProposals(instanceId, dbClient);
-  return fallback.map((r) => r.id);
+  // No transition into the requested phase.
+  // If we're sitting on that phase (or no phaseId given → current phase), it's the
+  // initial phase that's never been transitioned into → return all active proposals.
+  const isCurrentPhase = phaseId == null || phaseId === ctx.currentPhaseId;
+  if (isCurrentPhase) {
+    const fallback = await allActiveProposals(instanceId, dbClient);
+    return fallback.map((r) => r.id);
+  }
+
+  return [];
 }
 
 /**
  * Returns the proposals visible in the given phase.
  *
- * - If phaseId is provided: returns proposals that survived the transition into that phase.
- *   Returns [] if phaseId does not match any recorded transition.
- * - If phaseId is omitted: returns proposals for the current (most recent) phase.
- * - If no transition exists yet: returns all non-draft, non-deleted proposals for the instance.
- * - Legacy fallback: if a transition exists but the join table is empty (instance
- *   transitioned before join-table writes were added), returns all active proposals.
+ * - Legacy instances (instanceData.currentStateId without currentPhaseId): always returns
+ *   all non-draft, non-deleted proposals — phase scoping does not apply.
+ * - If a transition into the requested phase exists: returns the proposals that survived
+ *   that transition (empty means empty — no fallback).
+ * - If no transition exists and the requested phase is the instance's current phase
+ *   (i.e. the initial phase, never transitioned into): returns all active proposals.
+ * - If a phaseId was passed for a phase the instance hasn't visited: returns [].
  */
 export async function getProposalsForPhase({
   instanceId,
@@ -135,11 +174,17 @@ export async function getProposalsForPhase({
   phaseId?: string;
   dbClient?: DbClient;
 }): Promise<Proposal[]> {
-  const transition = await resolveTransition(instanceId, phaseId, dbClient);
+  const ctx = await getInstanceContext(instanceId, dbClient);
 
-  if (phaseId && !transition) {
+  if (!ctx) {
     return [];
   }
+
+  if (ctx.isLegacy) {
+    return allActiveProposals(instanceId, dbClient);
+  }
+
+  const transition = await resolveTransition(instanceId, phaseId, dbClient);
 
   if (transition) {
     const rows = await dbClient
@@ -156,13 +201,16 @@ export async function getProposalsForPhase({
         ),
       );
 
-    // Legacy fallback: transition exists but join table was never populated
-    if (rows.length === 0) {
-      return allActiveProposals(instanceId, dbClient);
-    }
-
     return rows.map((r) => r.proposal);
   }
 
-  return allActiveProposals(instanceId, dbClient);
+  // No transition into the requested phase.
+  // If we're sitting on that phase (or no phaseId given → current phase), it's the
+  // initial phase that's never been transitioned into → return all active proposals.
+  const isCurrentPhase = phaseId == null || phaseId === ctx.currentPhaseId;
+  if (isCurrentPhase) {
+    return allActiveProposals(instanceId, dbClient);
+  }
+
+  return [];
 }

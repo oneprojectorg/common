@@ -1,4 +1,4 @@
-import { db, desc, eq, inArray } from '@op/db/client';
+import { and, db, desc, eq, inArray } from '@op/db/client';
 import {
   decisionTransitionProposals,
   decisions,
@@ -314,7 +314,12 @@ export class TransitionEngine {
               historyId: proposalHistory.historyId,
             })
             .from(proposalHistory)
-            .where(inArray(proposalHistory.id, survivingProposalIds))
+            .where(
+              and(
+                eq(proposalHistory.processInstanceId, data.instanceId),
+                inArray(proposalHistory.id, survivingProposalIds),
+              ),
+            )
             .orderBy(
               proposalHistory.id,
               desc(proposalHistory.historyCreatedAt),

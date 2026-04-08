@@ -158,7 +158,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
     expect(joinRows).toHaveLength(3);
   });
 
-  it('falls back to all active proposals when pipeline eliminates everything (indistinguishable from legacy)', async ({
+  it('returns empty when pipeline eliminates every proposal (no legacy fallback for new instances)', async ({
     task,
     onTestFinished,
   }) => {
@@ -191,14 +191,14 @@ describe.concurrent('Transition pipeline: join table population', () => {
     });
 
     // Transition succeeds but pipeline eliminates all proposals.
-    // With zero join rows the legacy fallback kicks in, returning all active proposals.
-    // This is acceptable: a limit(0) pipeline is not a real production scenario.
+    // The transition row exists, so this is unambiguously "new system, zero survivors"
+    // (not legacy data) — getProposalsForPhase must return [].
     await TransitionEngine.executeTransition({
       data: { instanceId, toStateId: 'review' },
       user,
     });
 
     const result = await getProposalsForPhase({ instanceId });
-    expect(result).toHaveLength(1);
+    expect(result).toHaveLength(0);
   });
 });

@@ -1,6 +1,10 @@
 import { TransitionEngine, getProposalsForPhase } from '@op/common';
-import { db } from '@op/db/client';
-import { proposals, stateTransitionHistory } from '@op/db/schema';
+import { db, sql } from '@op/db/client';
+import {
+  processInstances,
+  proposals,
+  stateTransitionHistory,
+} from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -230,7 +234,7 @@ describe.concurrent('getProposalsForPhase', () => {
     expect(result[0]?.id).toBe(submitted.id);
   });
 
-  it('falls back to all active proposals when transition exists but join table is empty (legacy)', async ({
+  it('returns all active proposals for a legacy instance regardless of join table state', async ({
     task,
     onTestFinished,
   }) => {
@@ -254,8 +258,17 @@ describe.concurrent('getProposalsForPhase', () => {
       }),
     ]);
 
-    // Simulate a legacy transition: insert history row WITHOUT populating the join table.
-    // This mirrors instances that transitioned before join-table writes were added.
+    // Mutate instanceData to look like a legacy instance: drop currentPhaseId,
+    // add currentStateId. This is the signal getProposalsForPhase keys off of.
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: sql`(${processInstances.instanceData} - 'currentPhaseId') || jsonb_build_object('currentStateId', 'review')`,
+      })
+      .where(eq(processInstances.id, instanceId));
+
+    // Insert a history row WITHOUT populating the join table — mirrors legacy data
+    // that transitioned before join-table writes were added.
     await db.insert(stateTransitionHistory).values({
       processInstanceId: instanceId,
       toStateId: 'review',
@@ -263,7 +276,7 @@ describe.concurrent('getProposalsForPhase', () => {
 
     const result = await getProposalsForPhase({ instanceId });
 
-    // Should fall back to all active proposals instead of returning empty
+    // Legacy detection short-circuits join lookup → all active proposals returned.
     const ids = result.map((r) => r.id);
     expect(ids).toContain(p1.id);
     expect(ids).toContain(p2.id);
