@@ -28,7 +28,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
     // Create and submit 3 proposals (submitted proposals are eligible for transition)
     for (let i = 1; i <= 3; i++) {
       await createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
       });
@@ -74,7 +74,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
     // Submit 4 proposals; first pipeline limits to 3, second limits to 2
     for (let i = 1; i <= 4; i++) {
       await createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
       });
@@ -129,7 +129,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
     // Create and submit 3 proposals (submitted proposals are eligible for transition)
     for (let i = 1; i <= 3; i++) {
       await createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
       });
@@ -185,7 +185,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       await createInstanceWithSchema(testData, task.id, schemaWithZeroLimit);
 
     await createAndSubmitProposal(testData, caller, {
-      callerEmail: userEmail,
+      userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Doomed ${task.id}` },
     });

@@ -29,12 +29,12 @@ describe.concurrent('getProposalsForPhase', () => {
 
     const [p1, p2] = await Promise.all([
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 1 ${task.id}` },
       }),
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 2 ${task.id}` },
       }),
@@ -59,7 +59,7 @@ describe.concurrent('getProposalsForPhase', () => {
     // Create and submit 3 proposals; pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
       await createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
       });
@@ -88,12 +88,12 @@ describe.concurrent('getProposalsForPhase', () => {
 
     const [p1, p2] = await Promise.all([
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Active ${task.id}` },
       }),
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Soft-deleted ${task.id}` },
       }),
@@ -122,7 +122,7 @@ describe.concurrent('getProposalsForPhase', () => {
     // Create and submit 3 proposals; pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
       await createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
       });
@@ -171,12 +171,12 @@ describe.concurrent('getProposalsForPhase', () => {
 
     const [p1, p2] = await Promise.all([
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Active after transition ${task.id}` },
       }),
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Soft-deleted after transition ${task.id}` },
       }),
@@ -213,12 +213,12 @@ describe.concurrent('getProposalsForPhase', () => {
 
     // Create one submitted proposal and one draft (not submitted)
     const submitted = await createAndSubmitProposal(testData, caller, {
-      callerEmail: userEmail,
+      userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Submitted ${task.id}` },
     });
     await testData.createProposal({
-      callerEmail: userEmail,
+      userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Draft ${task.id}` },
     });
@@ -243,12 +243,12 @@ describe.concurrent('getProposalsForPhase', () => {
 
     const [p1, p2] = await Promise.all([
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Legacy proposal 1 ${task.id}` },
       }),
       createAndSubmitProposal(testData, caller, {
-        callerEmail: userEmail,
+        userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Legacy proposal 2 ${task.id}` },
       }),

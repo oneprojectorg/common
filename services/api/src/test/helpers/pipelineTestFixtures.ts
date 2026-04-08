@@ -32,7 +32,7 @@ export async function createAndSubmitProposal(
   testData: TestDecisionsDataManager,
   caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>,
   options: {
-    callerEmail: string;
+    userEmail: string;
     processInstanceId: string;
     proposalData: { title: string };
   },

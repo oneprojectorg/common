@@ -28,7 +28,7 @@ describe.concurrent('aggregateVoteData', () => {
     );
 
     const proposal = await createAndSubmitProposal(testData, caller, {
-      callerEmail: userEmail,
+      userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `No votes ${task.id}` },
     });
