@@ -1,7 +1,9 @@
-import { db, eq } from '@op/db/client';
+import { and, db, desc, eq, inArray } from '@op/db/client';
 import {
+  decisionTransitionProposals,
   decisions,
   processInstances,
+  proposalHistory,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -14,6 +16,12 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { getProposalsForPhase } from './getProposalsForPhase';
+import { aggregateVoteData, executePipeline } from './selectionPipeline';
+import type {
+  ExecutionContext,
+  SelectionPipeline,
+} from './selectionPipeline/types';
 import type {
   InstanceData,
   ProcessSchema,
@@ -220,8 +228,54 @@ export class TransitionEngine {
         });
       }
 
-      // Update the instance in a transaction
+      // Resolve selection pipeline for the departing phase
+      const selectionPipeline = this.resolveSelectionPipeline(
+        processSchema,
+        currentStateId,
+      );
+
+      // Run everything that determines surviving proposals inside the transaction
+      // so reads and writes are from a consistent snapshot.
       await db.transaction(async (trx) => {
+        // Fetch proposals visible in the current phase as the default surviving set.
+        // For the first transition this is all submitted proposals; for subsequent
+        // transitions it is only those that survived into the current phase.
+        const allProposals = await getProposalsForPhase({
+          instanceId: data.instanceId,
+          dbClient: trx,
+        });
+
+        let survivingProposalIds: string[] = allProposals.map((p) => p.id);
+
+        // If the departing phase has a selection pipeline, run it to narrow the surviving set
+        if (selectionPipeline) {
+          const voteData = await aggregateVoteData(allProposals, trx);
+          const context: ExecutionContext = {
+            proposals: allProposals,
+            voteData,
+            process: {
+              instanceId: data.instanceId,
+              processId: instance.processId,
+              currentStateId: instance.currentStateId,
+              instanceData,
+              processSchema,
+              processInstance: instance,
+            },
+            variables: {},
+            outputs: {},
+          };
+          const surviving = await executePipeline(selectionPipeline, context);
+          survivingProposalIds = surviving.map((p) => p.id);
+        }
+
+        if (survivingProposalIds.length === 0) {
+          console.warn('Phase transition produced zero surviving proposals', {
+            instanceId: data.instanceId,
+            fromStateId: currentStateId,
+            toStateId: data.toStateId,
+          });
+        }
+
         // Update process instance
         await trx
           .update(processInstances)
@@ -232,14 +286,60 @@ export class TransitionEngine {
           })
           .where(eq(processInstances.id, data.instanceId));
 
-        // Record transition history
-        await trx.insert(stateTransitionHistory).values({
-          processInstanceId: data.instanceId,
-          fromStateId: currentStateId,
-          toStateId: data.toStateId,
-          transitionData: data.transitionData || {},
-          triggeredByProfileId: dbUser.currentProfileId,
-        });
+        // Record transition history and get the inserted ID
+        const [insertedTransition] = await trx
+          .insert(stateTransitionHistory)
+          .values({
+            processInstanceId: data.instanceId,
+            fromStateId: currentStateId,
+            toStateId: data.toStateId,
+            transitionData: data.transitionData || {},
+            triggeredByProfileId: dbUser.currentProfileId,
+          })
+          .returning({ id: stateTransitionHistory.id });
+
+        // Persist surviving proposals into the join table
+        if (!insertedTransition) {
+          throw new Error(
+            `stateTransitionHistory insert returned no ID for instance ${data.instanceId}`,
+          );
+        }
+
+        if (survivingProposalIds.length > 0) {
+          // Get the latest history record for each surviving proposal.
+          // Submitted proposals are always guaranteed to have history.
+          const latestHistoryRows = await trx
+            .selectDistinctOn([proposalHistory.id], {
+              proposalId: proposalHistory.id,
+              historyId: proposalHistory.historyId,
+            })
+            .from(proposalHistory)
+            .where(
+              and(
+                eq(proposalHistory.processInstanceId, data.instanceId),
+                inArray(proposalHistory.id, survivingProposalIds),
+              ),
+            )
+            .orderBy(
+              proposalHistory.id,
+              desc(proposalHistory.historyCreatedAt),
+            );
+
+          if (latestHistoryRows.length !== survivingProposalIds.length) {
+            throw new Error(
+              `Proposals missing history records during transition for instance ${data.instanceId}: expected ${survivingProposalIds.length}, got ${latestHistoryRows.length}`,
+            );
+          }
+
+          await trx.insert(decisionTransitionProposals).values(
+            latestHistoryRows.map(({ proposalId, historyId }) => ({
+              processInstanceId: data.instanceId,
+              transitionHistoryId: insertedTransition.id,
+              proposalId,
+              proposalHistoryId: historyId,
+            })),
+          );
+        }
       });
 
       // Return updated instance
@@ -260,9 +360,24 @@ export class TransitionEngine {
       ) {
         throw error;
       }
-      console.error('Error executing transition:', error);
+      console.error('Error executing transition:', {
+        instanceId: data.instanceId,
+        toStateId: data.toStateId,
+        error,
+      });
       throw new CommonError('Failed to execute transition');
     }
+  }
+
+  /**
+   * Resolve the selection pipeline for the departing phase.
+   */
+  private static resolveSelectionPipeline(
+    processSchema: ProcessSchema,
+    fromStateId: string,
+  ): SelectionPipeline | undefined {
+    return processSchema.phases?.find((p) => p.id === fromStateId)
+      ?.selectionPipeline;
   }
 
   /**
