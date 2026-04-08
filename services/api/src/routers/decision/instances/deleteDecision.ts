@@ -1,4 +1,4 @@
-import { deleteDecision } from '@op/common';
+import { Channels, deleteDecision } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -17,5 +17,9 @@ export const deleteDecisionRouter = router({
         instanceId: input.instanceId,
         user: ctx.user,
       });
+
+      ctx.registerMutationChannels([
+        Channels.decisionInstance(input.instanceId),
+      ]);
     }),
 });

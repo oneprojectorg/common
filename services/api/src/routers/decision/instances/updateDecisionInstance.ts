@@ -1,4 +1,4 @@
-import { updateDecisionInstance } from '@op/common';
+import { Channels, updateDecisionInstance } from '@op/common';
 
 import {
   decisionProfileWithSchemaEncoder,
@@ -17,6 +17,10 @@ export const updateDecisionInstanceRouter = router({
         ...input,
         user,
       });
+
+      ctx.registerMutationChannels([
+        Channels.decisionInstance(input.instanceId),
+      ]);
 
       return decisionProfileWithSchemaEncoder.parse(profile);
     }),
