@@ -11,7 +11,7 @@ export const getReviewAssignmentRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      return getReviewAssignment({
+      return await getReviewAssignment({
         assignmentId: input.assignmentId,
         user: ctx.user,
       });
