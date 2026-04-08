@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
+import slugify from 'slugify';
 
 import { CommonError } from '../../utils';
 
@@ -43,10 +44,7 @@ export async function ensureProposalTaxonomy(
     }
 
     const categoryLabel = categoryName.trim();
-    const termUri = categoryLabel
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+    const termUri = slugify(categoryLabel, { lower: true, strict: true, trim: true });
 
     let existingTerm = await db._query.taxonomyTerms.findFirst({
       where: eq(taxonomyTerms.termUri, termUri),

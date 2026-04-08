@@ -107,10 +107,7 @@ export function ProposalPreview({
             {category && (
               <TagGroup className="max-w-full">
                 <Tag className="max-w-full sm:max-w-96 sm:rounded-md">
-                  <span
-                    className="truncate"
-                    dangerouslySetInnerHTML={{ __html: category }}
-                  />
+                  <span className="truncate">{category}</span>
                 </Tag>
               </TagGroup>
             )}
