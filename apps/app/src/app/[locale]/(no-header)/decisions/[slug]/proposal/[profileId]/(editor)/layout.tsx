@@ -67,24 +67,16 @@ export default function ProposalEditorLayout({
 
   // -- Data fetching ---------------------------------------------------------
 
-  const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
-    slug,
-  });
-
-  if (!decisionProfile?.processInstance) {
-    notFound();
-  }
-
-  const instanceId = decisionProfile.processInstance.id;
-
-  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
+  const [[decisionProfile, proposal]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getDecisionBySlug({ slug }),
     t.decision.getProposal({ profileId }),
-    t.decision.getInstance({ instanceId }),
   ]);
 
-  if (!proposal || !instance) {
+  if (!decisionProfile?.processInstance || !proposal) {
     notFound();
   }
+
+  const instance = decisionProfile.processInstance;
 
   const { user } = useUser();
 
