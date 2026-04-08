@@ -14,7 +14,7 @@ import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWi
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { getAuthorizedReviewAssignmentContext } from './reviewHelpers';
+import { assertReviewAssignmentContext } from './reviewHelpers';
 import {
   type ReviewAssignmentExtended,
   reviewAssignmentExtendedSchema,
@@ -28,41 +28,20 @@ export async function getReviewAssignment({
   assignmentId: string;
   user: User;
 }): Promise<ReviewAssignmentExtended> {
-  const context = await getAuthorizedReviewAssignmentContext({
-    assignmentId,
-    user,
-  });
+  const { assignment, instance, review, rubricTemplate } =
+    await assertReviewAssignmentContext({
+      assignmentId,
+      user,
+    });
 
-  const assignment = await db.query.proposalReviewAssignments.findFirst({
-    where: {
-      id: assignmentId,
-    },
-    with: {
-      assignedProposalHistory: {
-        with: {
-          submittedBy: {
-            with: {
-              avatarImage: true,
-            },
-          },
-          profile: true,
-        },
-      },
-      reviews: true,
-    },
-  });
-
-  if (!assignment?.assignedProposalHistory) {
+  if (!assignment.assignedProposalHistory) {
     throw new NotFoundError('Assigned proposal snapshot');
   }
 
   const snapshot = assignment.assignedProposalHistory;
   const proposalTemplate = await resolveProposalTemplate(
-    context.instance.instanceData &&
-      typeof context.instance.instanceData === 'object'
-      ? context.instance.instanceData
-      : null,
-    context.instance.process.id,
+    instance.instanceData,
+    instance.process.id,
   );
   const parsedProposalData = parseProposalData(snapshot.proposalData);
 
@@ -122,8 +101,8 @@ export async function getReviewAssignment({
         htmlContent,
       },
     },
-    rubricTemplate: context.rubricTemplate,
-    review: context.review ?? null,
+    rubricTemplate,
+    review,
   });
 }
 

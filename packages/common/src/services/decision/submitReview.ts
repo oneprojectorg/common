@@ -9,7 +9,7 @@ import type { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
-import { getAuthorizedReviewAssignmentContext } from './reviewHelpers';
+import { assertReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import {
   type ProposalReviewData,
@@ -28,7 +28,7 @@ export async function submitReview({
   overallComment?: string | null;
   user: User;
 }): Promise<ProposalReviewData> {
-  const context = await getAuthorizedReviewAssignmentContext({
+  const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
   });
