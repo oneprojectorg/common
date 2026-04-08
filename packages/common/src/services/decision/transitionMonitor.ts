@@ -1,20 +1,17 @@
-import { and, db, eq, isNull, lte, sql } from '@op/db/client';
+import { and, db, eq, inArray, isNull, lte } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
+  decisionProcesses,
   processInstances,
 } from '@op/db/schema';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
+import { advancePhase } from './advancePhase';
 import { processResults } from './processResults';
 import type { DecisionInstanceData } from './schemas/instanceData';
-
-/** Result of processing a single transition */
-interface ProcessedTransition {
-  toStateId: string;
-  isTransitioningToFinalState: boolean;
-}
+import type { ProcessSchema } from './types';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -27,8 +24,13 @@ export interface ProcessDecisionsTransitionsResult {
 }
 
 /**
- * Monitors and processes transitions that are due.
- * This function is called by an external service either scheduled or on a cron job.
+ * Monitors and processes transitions that are due. Called by an external
+ * scheduler / cron worker.
+ *
+ * Each due transition is delegated to the shared `advancePhase` core, so the
+ * cron path writes stateTransitionHistory rows, runs the departing phase's
+ * selection pipeline, and persists surviving proposals into
+ * decisionTransitionProposals — matching the manual transition path.
  */
 export async function processDecisionsTransitions(): Promise<ProcessDecisionsTransitionsResult> {
   const now = new Date().toISOString();
@@ -39,8 +41,6 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
   };
 
   try {
-    // Query due transitions with process instance data in a single query
-    // (avoids N+1 re-fetches per transition in processTransition)
     const dueTransitions = await db
       .select({
         id: decisionProcessTransitions.id,
@@ -49,7 +49,10 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
         toStateId: decisionProcessTransitions.toStateId,
         scheduledDate: decisionProcessTransitions.scheduledDate,
         completedAt: decisionProcessTransitions.completedAt,
-        instanceData: processInstances.instanceData,
+        instance: {
+          processId: processInstances.processId,
+          instanceData: processInstances.instanceData,
+        },
       })
       .from(decisionProcessTransitions)
       .innerJoin(
@@ -65,41 +68,120 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
       )
       .orderBy(decisionProcessTransitions.scheduledDate);
 
-    // Group transitions by processInstanceId to avoid race conditions
-    // within the same process instance
+    if (dueTransitions.length === 0) {
+      return result;
+    }
+
+    // Batch-fetch all process schemas in one query so the per-instance loop
+    // doesn't N+1 the decisionProcesses table.
+    const processIds = [
+      ...new Set(
+        dueTransitions
+          .map((t) => t.instance.processId)
+          .filter((id): id is string => id !== null),
+      ),
+    ];
+    const processRows = processIds.length
+      ? await db
+          .select({
+            id: decisionProcesses.id,
+            processSchema: decisionProcesses.processSchema,
+          })
+          .from(decisionProcesses)
+          .where(inArray(decisionProcesses.id, processIds))
+      : [];
+    const schemasByProcessId = new Map<string, ProcessSchema | undefined>(
+      processRows.map((row) => [
+        row.id,
+        row.processSchema as ProcessSchema | undefined,
+      ]),
+    );
+
+    // Group transitions by processInstanceId so each instance is processed
+    // sequentially. The optimistic lock inside advancePhase already prevents
+    // double-processing across workers; sequential per-instance ordering
+    // keeps phase progression correct within a single worker.
     const transitionsByProcess = new Map<string, typeof dueTransitions>();
 
     for (const transition of dueTransitions) {
-      const processTransitions = transitionsByProcess.get(
-        transition.processInstanceId,
-      );
-      if (processTransitions) {
-        processTransitions.push(transition);
+      const existing = transitionsByProcess.get(transition.processInstanceId);
+      if (existing) {
+        existing.push(transition);
       } else {
         transitionsByProcess.set(transition.processInstanceId, [transition]);
       }
     }
 
-    // Process each process instance's transitions in parallel (up to 5 processes at a time)
-    // but process transitions WITHIN each process sequentially to prevent race conditions per process
     await pMap(
       Array.from(transitionsByProcess.entries()),
       async ([processInstanceId, transitions]) => {
-        let lastSuccessfulTransition: ProcessedTransition | null = null;
+        // Per-instance setup wrapped in try/catch so malformed instanceData
+        // is recorded as a per-transition error rather than escaping pMap
+        // and bombing the whole batch.
+        let processSchema: ProcessSchema | undefined;
+        let lastPhaseId: string;
+        try {
+          const processId = transitions[0]!.instance.processId;
+          processSchema = processId
+            ? schemasByProcessId.get(processId)
+            : undefined;
 
-        // Process this process's transitions sequentially
+          const instanceData = transitions[0]!.instance
+            .instanceData as DecisionInstanceData;
+          const phases = instanceData.phases;
+          if (!phases || phases.length === 0) {
+            throw new CommonError(
+              `Process instance ${processInstanceId} has no phases defined in instanceData`,
+            );
+          }
+          lastPhaseId = phases[phases.length - 1]!.phaseId;
+        } catch (error) {
+          for (const transition of transitions) {
+            result.failed++;
+            result.errors.push({
+              transitionId: transition.id,
+              processInstanceId: transition.processInstanceId,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+          console.error(
+            `Failed to set up transitions for instance ${processInstanceId}:`,
+            error,
+          );
+          return;
+        }
+
+        let lastSuccessfulToStateId: string | null = null;
+
         for (const transition of transitions) {
           try {
-            // Process transition (marks completedAt, returns state info).
-            // Returns null if another worker already completed this transition.
-            const processed = await processTransition(transition);
-            if (processed) {
-              lastSuccessfulTransition = processed;
-              result.processed++;
+            const advanceResult = await db.transaction(async (tx) =>
+              advancePhase({
+                tx,
+                instance: {
+                  id: processInstanceId,
+                  processId: transition.instance.processId,
+                  instanceData: transition.instance.instanceData,
+                },
+                processSchema,
+                fromPhaseId: transition.fromStateId!,
+                toPhaseId: transition.toStateId,
+                triggeredByProfileId: null,
+                transitionData: {},
+                now,
+              }),
+            );
+
+            if (advanceResult.conflict) {
+              // Another worker beat us, or the instance left PUBLISHED.
+              // Stop advancing this instance.
+              break;
             }
+
+            lastSuccessfulToStateId = transition.toStateId;
+            result.processed++;
           } catch (error) {
             result.failed++;
-
             result.errors.push({
               transitionId: transition.id,
               processInstanceId: transition.processInstanceId,
@@ -116,46 +198,34 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           }
         }
 
-        // Update instance state to the last successfully processed transition.
-        // Note: This runs outside the per-transition completion updates, so if
-        // this fails after transitions are marked completed, the instance state
-        // will be out of sync. The sequential processing and break-on-error
-        // minimize this window, but operators should monitor for stuck instances.
-        if (lastSuccessfulTransition) {
-          await updateInstanceState(
-            processInstanceId,
-            lastSuccessfulTransition.toStateId,
-          );
+        if (lastSuccessfulToStateId === lastPhaseId) {
+          try {
+            console.log(
+              `Processing results for process instance ${processInstanceId}`,
+            );
 
-          // Trigger results processing if transitioning to final state
-          if (lastSuccessfulTransition.isTransitioningToFinalState) {
-            try {
-              console.log(
-                `Processing results for process instance ${processInstanceId}`,
-              );
+            const processingResult = await processResults({
+              processInstanceId,
+            });
 
-              const processingResult = await processResults({
-                processInstanceId,
-              });
-
-              if (!processingResult.success) {
-                console.error(
-                  `Results processing failed for process instance ${processInstanceId}:`,
-                  processingResult.error,
-                );
-              } else {
-                console.log(
-                  `Results processed successfully for process instance ${processInstanceId}. Selected ${processingResult.selectedProposalIds.length} proposals.`,
-                );
-              }
-            } catch (error) {
-              // Log the error but don't fail the transition
-              // The transition to the results phase has already been completed
+            if (!processingResult.success) {
               console.error(
-                `Error processing results for process instance ${processInstanceId}:`,
-                error,
+                `Results processing failed for process instance ${processInstanceId}:`,
+                processingResult.error,
+              );
+            } else {
+              console.log(
+                `Results processed successfully for process instance ${processInstanceId}. Selected ${processingResult.selectedProposalIds.length} proposals.`,
               );
             }
+          } catch (error) {
+            // The transition to the results phase has already been committed,
+            // so a results-processing failure is logged but does not fail the
+            // overall cron run.
+            console.error(
+              `Error processing results for process instance ${processInstanceId}:`,
+              error,
+            );
           }
         }
       },
@@ -169,86 +239,4 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
       error instanceof Error ? error.message : 'Unknown error';
     throw new CommonError(`Failed to process due transitions: ${errorMessage}`);
   }
-}
-
-/**
- * Processes a single transition using pre-fetched data.
- * Marks the transition as completed and returns info needed for state update.
- * The actual instance state update happens after all transitions are processed.
- *
- * Note: This function intentionally does not validate that the transition's
- * fromStateId matches the current instance state. This is because transitions
- * are processed sequentially within each process instance, and earlier
- * transitions in the queue may not yet have updated the instance state.
- * The sequential processing ensures correct state progression.
- */
-async function processTransition(transition: {
-  id: string;
-  processInstanceId: string;
-  toStateId: string;
-  instanceData: unknown;
-}): Promise<ProcessedTransition | null> {
-  // Determine if transitioning to final state using instanceData.phases
-  // In the new schema format, the last phase is always the final state
-  const instanceData = transition.instanceData as DecisionInstanceData;
-  const phases = instanceData.phases;
-
-  if (!phases || phases.length === 0) {
-    throw new CommonError(
-      `Process instance ${transition.processInstanceId} has no phases defined in instanceData`,
-    );
-  }
-
-  // Safe to assert non-null after the length check above
-  const lastPhaseId = phases[phases.length - 1]!.phaseId;
-  const isTransitioningToFinalState = transition.toStateId === lastPhaseId;
-
-  // Only mark the transition as completed (state update happens after all transitions).
-  // The WHERE completedAt IS NULL guard + returning() check prevent double-processing
-  // if a concurrent monitor run already handled this transition.
-  const updated = await db
-    .update(decisionProcessTransitions)
-    .set({
-      completedAt: new Date().toISOString(),
-    })
-    .where(
-      and(
-        eq(decisionProcessTransitions.id, transition.id),
-        isNull(decisionProcessTransitions.completedAt),
-      ),
-    )
-    .returning({ id: decisionProcessTransitions.id });
-
-  if (updated.length === 0) {
-    // Another worker already completed this transition — skip it
-    return null;
-  }
-
-  // Return info needed for state update
-  return {
-    toStateId: transition.toStateId,
-    isTransitioningToFinalState,
-  };
-}
-
-/**
- * Updates the process instance state to the specified state.
- * Called after all transitions for an instance have been processed.
- */
-async function updateInstanceState(
-  processInstanceId: string,
-  toStateId: string,
-): Promise<void> {
-  await db
-    .update(processInstances)
-    .set({
-      currentStateId: toStateId,
-      updatedAt: new Date().toISOString(),
-      instanceData: sql`jsonb_set(
-        ${processInstances.instanceData},
-        '{currentPhaseId}',
-        to_jsonb(${toStateId}::text)
-      )`,
-    })
-    .where(eq(processInstances.id, processInstanceId));
 }
