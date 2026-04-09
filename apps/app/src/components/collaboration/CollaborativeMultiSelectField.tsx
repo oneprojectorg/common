@@ -110,7 +110,7 @@ export function CollaborativeMultiSelectField({
   }
 
   return (
-    <div ref={fieldRef} className="flex flex-col gap-2">
+    <div ref={fieldRef} className="flex flex-col gap-1.5">
       {isEditing ? (
         <div className="w-full max-w-md">
           <MultiSelectComboBox

@@ -225,7 +225,7 @@ function renderField(
 
     if (isMultipleSelection) {
       return (
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           <CollaborativeMultiSelectField
             options={options}
             initialValue={draft.category}
@@ -431,7 +431,7 @@ export function ProposalFormRenderer({
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col items-start gap-2">
           {budgetField && render(budgetField)}
           {categoryField && render(categoryField)}
         </div>
