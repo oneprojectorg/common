@@ -3,6 +3,7 @@ import { useButton } from 'react-aria';
 import { LuCamera } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
+import { Header2 } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface ImageUploaderProps {
@@ -81,7 +82,7 @@ export const AvatarUploader = ({
       </div>
 
       <div className="text-center">
-        <h2 className="text-sm">{label}</h2>
+        <Header2 className="text-sm">{label}</Header2>
       </div>
     </div>
   );

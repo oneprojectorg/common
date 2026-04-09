@@ -2,6 +2,7 @@
 
 import { formatCurrency, formatDateRange } from '@/utils/formatting';
 import { type ProcessPhase } from '@op/api/encoders';
+import { Header3 } from '@op/ui/Header';
 import { useLocale } from 'next-intl';
 
 import { useTranslations } from '@/lib/i18n';
@@ -25,9 +26,9 @@ export function DecisionStats({
     <div className="space-y-6">
       {/* Current Phase */}
       <div>
-        <h3 className="text-xs font-semibold tracking-wider text-neutral-gray2 uppercase">
+        <Header3 className="text-xs font-semibold tracking-wider text-neutral-gray2 uppercase">
           {t('Current Phase')}
-        </h3>
+        </Header3>
         <p className="mt-1 text-lg font-medium text-neutral-charcoal">
           {currentPhase?.name || t('Proposal Submissions')}
         </p>

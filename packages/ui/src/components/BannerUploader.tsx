@@ -3,6 +3,7 @@ import { useButton } from 'react-aria';
 import { LuCamera } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
+import { Header2 } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
 
 export const BannerUploader = ({
@@ -75,7 +76,7 @@ export const BannerUploader = ({
       </div>
 
       <div className="text-center">
-        <h2 className="text-xs">{label}</h2>
+        <Header2 className="text-xs">{label}</Header2>
         {error && <p className="mt-2 text-functional-red">{error}</p>}
       </div>
     </div>

@@ -9,6 +9,7 @@ import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
+import { Header2, Header3 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -403,9 +404,9 @@ function RolesSectionContent({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-title-sm font-light text-neutral-black">
+        <Header2 className="font-serif text-title-sm font-light">
           {t('Roles & permissions')}
-        </h2>
+        </Header2>
         <Button
           color="ghost"
           className="text-primary-teal hover:text-primary-tealBlack"
@@ -573,9 +574,7 @@ function MobileRoleCard({
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-serif text-sm font-light text-neutral-black">
-          {role.name}
-        </h3>
+        <Header3 className="font-serif text-sm font-light">{role.name}</Header3>
         {(onDelete || onEdit) && (
           <OptionMenu variant="outline" className="rounded-lg">
             <Menu className="min-w-28 p-2">

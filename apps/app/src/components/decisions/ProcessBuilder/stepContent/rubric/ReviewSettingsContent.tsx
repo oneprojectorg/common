@@ -5,7 +5,7 @@ import { ProcessStatus } from '@op/api/encoders';
 import type { ReviewsPolicy } from '@op/common';
 import { useDebouncedCallback } from '@op/hooks';
 import { Chip } from '@op/ui/Chip';
-import { Header2 } from '@op/ui/Header';
+import { Header2, Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useEffect, useRef, useState } from 'react';
@@ -118,9 +118,7 @@ export function ReviewSettingsContent({
 
       {/* Coverage */}
       <section className="space-y-4">
-        <h3 className="font-serif text-title-sm text-neutral-black">
-          {t('Coverage')}
-        </h3>
+        <Header3 className="font-serif text-title-sm">{t('Coverage')}</Header3>
         <RadioGroup
           value={settings.reviewsPolicy}
           onChange={(value) =>
@@ -170,9 +168,7 @@ export function ReviewSettingsContent({
 
       {/* Revisions */}
       <section className="space-y-4">
-        <h3 className="font-serif text-title-sm text-neutral-black">
-          {t('Revisions')}
-        </h3>
+        <Header3 className="font-serif text-title-sm">{t('Revisions')}</Header3>
         <div className="space-y-2">
           <ToggleRow
             label={t('Reviewers can request revisions')}

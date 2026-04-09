@@ -1,6 +1,7 @@
 'use client';
 
 import type { RubricTemplateSchema } from '@op/common/client';
+import { Header2 } from '@op/ui/Header';
 import { useMemo } from 'react';
 import { LuEye } from 'react-icons/lu';
 
@@ -37,9 +38,9 @@ export function RubricParticipantPreview({
           <span>{t('Participant Preview')}</span>
         </div>
 
-        <h2 className="mb-6 font-serif text-title-lg text-neutral-charcoal">
+        <Header2 className="mb-6 font-serif text-neutral-charcoal">
           {t('Review Proposal')}
-        </h2>
+        </Header2>
 
         <RubricFormPreviewRenderer fields={fields} />
       </div>

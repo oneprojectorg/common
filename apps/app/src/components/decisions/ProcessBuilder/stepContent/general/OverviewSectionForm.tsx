@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
+import { Header2 } from '@op/ui/Header';
 import { SelectItem } from '@op/ui/Select';
 import { useEffect, useRef } from 'react';
 import { z } from 'zod';
@@ -217,9 +218,9 @@ export function OverviewSectionForm({
           <section className="space-y-6">
             <div>
               <div className="flex items-center justify-between">
-                <h2 className="font-serif text-title-sm">
+                <Header2 className="font-serif text-title-sm">
                   {t('Process Overview')}
-                </h2>
+                </Header2>
                 <SaveStatusIndicator
                   status={saveState.status}
                   savedAt={saveState.savedAt}
@@ -342,7 +343,9 @@ export function OverviewSectionForm({
 
           {/* Visibility Section */}
           <section className="space-y-6">
-            <h2 className="font-serif text-title-sm">{t('Visibility')}</h2>
+            <Header2 className="font-serif text-title-sm">
+              {t('Visibility')}
+            </Header2>
 
             <form.AppField
               name="isPrivate"

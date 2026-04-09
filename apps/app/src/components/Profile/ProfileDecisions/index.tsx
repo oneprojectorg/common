@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
+import { Header2 } from '@op/ui/Header';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -86,11 +87,11 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
         <LuLeaf className="size-6 text-neutral-gray4" />
       </div>
       <div className="flex max-w-md flex-col gap-2">
-        <h2 className="font-serif text-title-base text-neutral-black">
+        <Header2 className="font-serif text-title-base">
           {isProcessAdmin
             ? t('Set up your decision-making process')
             : t('There are no current decision-making processes')}
-        </h2>
+        </Header2>
         {isProcessAdmin && (
           <p className="text-base text-neutral-charcoal">
             {t(

@@ -2,6 +2,7 @@
 
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { Header2 } from '@op/ui/Header';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { cn } from '@op/ui/utils';
 import type { ReactNode } from 'react';
@@ -102,7 +103,7 @@ function ProposalEditorAsideHeader({
 }) {
   return (
     <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-neutral-gray1 px-6">
-      <h2 className="font-serif text-title-sm14 text-neutral-black">{title}</h2>
+      <Header2 className="font-serif text-title-sm14">{title}</Header2>
       <button
         onClick={onClose}
         className="cursor-pointer text-neutral-black hover:text-neutral-charcoal"
