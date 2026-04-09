@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
 
@@ -9,7 +9,10 @@ const StartLayout = ({ children }: { children: React.ReactNode }) => {
       <main className="relative flex size-full flex-col overflow-y-scroll p-4 md:p-8">
         <section className="sticky top-0 hidden lg:block">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="flex items-center gap-2 hover:no-underline"
+            >
               <CommonLogo />
             </Link>
           </div>
