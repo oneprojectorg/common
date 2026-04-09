@@ -124,7 +124,6 @@ export async function manualTransition({
       tx,
       instance: {
         id: instance.id,
-        processId: instance.processId,
         instanceData,
       },
       fromPhaseId,
