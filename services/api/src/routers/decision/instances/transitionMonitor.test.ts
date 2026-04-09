@@ -8,7 +8,9 @@ import {
   ProcessStatus,
   decisionProcessTransitions,
   decisionProcesses,
+  decisionTransitionProposals,
   processInstances,
+  stateTransitionHistory,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -245,6 +247,22 @@ describe('processDecisionsTransitions', () => {
     for (const transition of completedTransitions) {
       expect(transition.completedAt).not.toBeNull();
     }
+
+    // Verify stateTransitionHistory rows were written for each phase advance
+    const historyRows = await db
+      .select()
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
+
+    // 3 transitions (submission→review, review→voting, voting→results)
+    expect(historyRows.length).toBe(3);
+    const fromStates = historyRows.map((h) => h.fromStateId).sort();
+    expect(fromStates).toEqual(['review', 'submission', 'voting']);
+
+    // Verify stateData.enteredAt was written for the final phase
+    const stateData = (instanceData as unknown as Record<string, unknown>)
+      .stateData as Record<string, { enteredAt?: string }> | undefined;
+    expect(stateData?.results?.enteredAt).toBeDefined();
   });
 
   it('should NOT process transitions for DRAFT instances', async ({
@@ -410,6 +428,79 @@ describe('processDecisionsTransitions', () => {
     // The remaining 2 transitions should have been processed
     // (review→voting, voting→results)
     expect(result.processed).toBeGreaterThanOrEqual(2);
+  });
+
+  it('should persist surviving proposals into decisionTransitionProposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Use testMinimalSchema (2 phases, manual advancement, no proposalTemplate
+    // validation) so we can submit a simple proposal without schema constraints.
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    const instanceId = instance.instance.id;
+
+    // Create and submit a proposal (generates proposalHistory row via trigger)
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Surviving Proposal', description: 'test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.submitProposal({ proposalId: proposal.id });
+
+    // Publish the instance, then insert a scheduled transition and make it due.
+    // testMinimalSchema uses manual advancement (no auto-created transitions),
+    // so we insert one manually to simulate a date-based trigger.
+    await db
+      .update(processInstances)
+      .set({ status: ProcessStatus.PUBLISHED })
+      .where(eq(processInstances.id, instanceId));
+
+    const now = new Date();
+    await db.insert(decisionProcessTransitions).values({
+      processInstanceId: instanceId,
+      fromStateId: 'initial',
+      toStateId: 'final',
+      scheduledDate: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
+    });
+
+    const monitorResult = await processDecisionsTransitions();
+    expect(monitorResult.processed).toBeGreaterThanOrEqual(1);
+    expect(monitorResult.failed).toBe(0);
+
+    // Verify the proposal survived into the decisionTransitionProposals join table
+    const joinRows = await db
+      .select()
+      .from(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    expect(joinRows.length).toBe(1);
+    expect(joinRows[0]!.proposalId).toBe(proposal.id);
+
+    // Verify a history row was written for this transition
+    const history = await db
+      .select()
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
+
+    expect(history.length).toBe(1);
+    expect(history[0]!.fromStateId).toBe('initial');
+    expect(history[0]!.toStateId).toBe('final');
+    expect(history[0]!.triggeredByProfileId).toBeNull();
+
+    // The join table row should reference the history row
+    expect(joinRows[0]!.transitionHistoryId).toBe(history[0]!.id);
   });
 
   it('should stop processing instance on error and continue others', async ({

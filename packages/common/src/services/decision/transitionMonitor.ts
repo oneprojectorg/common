@@ -92,25 +92,25 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
     await pMap(
       Array.from(transitionsByProcess.entries()),
       async ([processInstanceId, transitions]) => {
-        const setup = resolveInstanceSetup(
+        const context = resolveTransitionContext(
           processInstanceId,
           transitions,
           schemasByProcessId,
           result,
         );
-        if (!setup) {
+        if (!context) {
           return;
         }
 
         const lastSuccessfulToStateId = await advanceInstanceTransitions({
           processInstanceId,
           transitions,
-          processSchema: setup.processSchema,
+          processSchema: context.processSchema,
           now,
           result,
         });
 
-        if (lastSuccessfulToStateId === setup.lastPhaseId) {
+        if (lastSuccessfulToStateId === context.lastPhaseId) {
           await runResultsProcessing(processInstanceId);
         }
       },
@@ -191,7 +191,7 @@ function groupTransitionsByInstance(
  * error on the result so the batch can continue with other instances, and
  * returns null to signal the caller to skip this instance.
  */
-function resolveInstanceSetup(
+function resolveTransitionContext(
   processInstanceId: string,
   transitions: DueTransition[],
   schemasByProcessId: Map<string, ProcessSchema | undefined>,
