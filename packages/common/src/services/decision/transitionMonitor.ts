@@ -89,14 +89,23 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
     await pMap(
       Array.from(transitionsByInstance.entries()),
       async ([processInstanceId, transitions]) => {
-        const context = resolveTransitionContext(
-          processInstanceId,
-          transitions,
-          result,
-        );
-        if (!context) {
+        const instanceData = transitions[0]!.instance
+          .instanceData as DecisionInstanceData;
+        const phases = instanceData.phases;
+
+        if (!phases || phases.length === 0) {
+          for (const transition of transitions) {
+            result.failed++;
+            result.errors.push({
+              transitionId: transition.id,
+              processInstanceId,
+              error: `Process instance ${processInstanceId} has no phases defined in instanceData`,
+            });
+          }
           return;
         }
+
+        const lastPhaseId = phases[phases.length - 1]!.phaseId;
 
         const lastSuccessfulToStateId = await advanceInstanceTransitions({
           processInstanceId,
@@ -105,7 +114,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           result,
         });
 
-        if (lastSuccessfulToStateId === context.lastPhaseId) {
+        if (lastSuccessfulToStateId === lastPhaseId) {
           await runResultsProcessing(processInstanceId);
         }
       },
@@ -142,47 +151,6 @@ function groupTransitionsByInstance(
   }
 
   return transitionsByInstance;
-}
-
-/**
- * Resolves the final phase for an instance so the caller knows when to
- * trigger results processing. Records any setup failure (malformed
- * instanceData, missing phases) as a per-transition error on the result
- * so the batch can continue with other instances, and returns null to
- * signal the caller to skip this instance.
- */
-function resolveTransitionContext(
-  processInstanceId: string,
-  transitions: DueTransition[],
-  result: ProcessDecisionsTransitionsResult,
-): { lastPhaseId: string } | null {
-  try {
-    const instanceData = transitions[0]!.instance
-      .instanceData as DecisionInstanceData;
-    const phases = instanceData.phases;
-    if (!phases || phases.length === 0) {
-      throw new CommonError(
-        `Process instance ${processInstanceId} has no phases defined in instanceData`,
-      );
-    }
-    const lastPhaseId = phases[phases.length - 1]!.phaseId;
-
-    return { lastPhaseId };
-  } catch (error) {
-    for (const transition of transitions) {
-      result.failed++;
-      result.errors.push({
-        transitionId: transition.id,
-        processInstanceId: transition.processInstanceId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-    console.error(
-      `Failed to set up transitions for instance ${processInstanceId}:`,
-      error,
-    );
-    return null;
-  }
 }
 
 /**
