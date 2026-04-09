@@ -23,20 +23,13 @@ export function ReviewExploreLayoutClient({
   const t = useTranslations();
   const reviewFlowEnabled = useFeatureFlag('review_flow');
 
-  const handleRequestRevision = () => {};
-  const handleSubmit = () => {};
-
   if (reviewFlowEnabled === false) {
     notFound();
   }
 
   return (
     <div className="flex h-dvh flex-col bg-white">
-      <ReviewExploreNavbar
-        slug={slug}
-        onRequestRevision={handleRequestRevision}
-        onSubmit={handleSubmit}
-      />
+      <ReviewExploreNavbar slug={slug} />
 
       <div className="hidden min-h-0 flex-1 sm:flex">
         <ReviewProposalPane className="border-r p-12" />

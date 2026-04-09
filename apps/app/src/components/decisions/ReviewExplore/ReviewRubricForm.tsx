@@ -6,7 +6,7 @@ import {
   parseSchemaOptions,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
-import { Header3, Header4 } from '@op/ui/Header';
+import { Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
@@ -78,14 +78,13 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
 
       {isFeedbackOpen ? (
         <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
-          <div className="flex flex-col gap-1">
-            <Header4>{t('Feedback to Author')}</Header4>
-            <p className="text-sm text-midGray">
-              {t(
-                'Feedback will be shared with the author after the review phase ends',
-              )}
-            </p>
-          </div>
+          <FieldHeader
+            title={t('Feedback to Author')}
+            description={t(
+              'Feedback will be shared with the author after the review phase ends',
+            )}
+            className="gap-1"
+          />
 
           <TextField
             aria-label={t('Feedback to Author')}
@@ -103,7 +102,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
           onPress={() => setIsFeedbackOpen(true)}
         >
           <LuPlus className="size-4" />
-          {t('Feedback to author')}
+          {t('Feedback to Author')}
         </Button>
       )}
 

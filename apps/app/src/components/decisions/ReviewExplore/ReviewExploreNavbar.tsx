@@ -5,15 +5,9 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 interface ReviewExploreNavbarProps {
   slug: string;
-  onRequestRevision: () => void;
-  onSubmit: () => void;
 }
 
-export function ReviewExploreNavbar({
-  slug,
-  onRequestRevision,
-  onSubmit,
-}: ReviewExploreNavbarProps) {
+export function ReviewExploreNavbar({ slug }: ReviewExploreNavbarProps) {
   const t = useTranslations();
 
   return (
@@ -26,10 +20,10 @@ export function ReviewExploreNavbar({
         {t('Back to proposals')}
       </Link>
       <div className="flex items-center gap-4">
-        <Button color="secondary" size="small" onPress={onRequestRevision}>
+        <Button color="secondary" size="small">
           {t('Request revision')}
         </Button>
-        <Button color="primary" size="small" onPress={onSubmit}>
+        <Button color="primary" size="small">
           <LuCheck className="size-4" />
           {t('Submit review')}
         </Button>
