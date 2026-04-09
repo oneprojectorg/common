@@ -31,7 +31,7 @@ export function ReviewExploreLayoutClient({
     <div className="flex h-dvh flex-col bg-white">
       <ReviewExploreNavbar slug={slug} />
 
-      <div className="hidden min-h-0 flex-1 sm:flex">
+      <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
         <ReviewProposalPane className="border-r p-12" />
         <ReviewRubricPane className="px-12 pt-12 pb-4" />
       </div>

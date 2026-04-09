@@ -59,7 +59,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   }, null);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div className="border-b border-neutral-gray1 pb-4">
         <Header3 className="font-serif !text-title-base font-light">
           {t('Review Proposal')}
@@ -108,7 +108,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
 
       <Surface
         variant="filled"
-        className="flex items-start justify-between border-neutral-gray1 p-4"
+        className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
       >
         <span className="text-base text-neutral-charcoal">
           {t('Total Score')}
@@ -144,15 +144,11 @@ function RubricCriterionSection({
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
       {criterionType === 'yes_no' ? (
         <>
-          <FieldHeader
-            title={field.schema.title}
-            badge={badgeLabel}
-            className="gap-1"
-          />
+          <FieldHeader title={field.schema.title} badge={badgeLabel} />
 
           <div className="flex items-center gap-3">
             {field.schema.description && (
-              <p className="flex-1 text-sm text-neutral-charcoal">
+              <p className="flex-1 text-base text-neutral-charcoal">
                 {field.schema.description}
               </p>
             )}
@@ -162,12 +158,13 @@ function RubricCriterionSection({
         </>
       ) : (
         <>
-          <FieldHeader
-            title={field.schema.title}
-            description={field.schema.description}
-            badge={badgeLabel}
-            className="gap-1"
-          />
+          <FieldHeader title={field.schema.title} badge={badgeLabel} />
+
+          {field.schema.description && (
+            <p className="text-base text-neutral-charcoal">
+              {field.schema.description}
+            </p>
+          )}
 
           <RubricFieldInput field={field} value={value} onChange={onChange} />
         </>
