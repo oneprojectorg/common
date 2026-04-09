@@ -6,6 +6,7 @@ import { ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalTemplateSchema,
+  normalizeProposalCategories,
   parseTranslatedMeta,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
@@ -25,7 +26,7 @@ import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { resolveProposalSystemFields } from './proposalContentUtils';
 
 export type ProposalTranslation = {
-  htmlContent: Record<string, string>;
+  htmlContent: Record<string, string | string[]>;
   sourceLanguageName: string;
   onViewOriginal: () => void;
 };
@@ -53,9 +54,20 @@ export function ProposalPreview({
     category: originalCategory,
   } = resolveProposalSystemFields(proposal);
 
-  const htmlContent = translation?.htmlContent ?? proposal.htmlContent;
-  const title = translation?.htmlContent.title ?? originalTitle;
-  const category = translation?.htmlContent.category ?? originalCategory;
+  const rawHtmlContent = translation?.htmlContent ?? proposal.htmlContent;
+  // Filter to only string values — array fields (e.g. category) are system
+  // fields handled separately and not passed to the content renderer.
+  const htmlContent = rawHtmlContent
+    ? Object.fromEntries(
+        Object.entries(rawHtmlContent).filter(
+          (entry): entry is [string, string] => typeof entry[1] === 'string',
+        ),
+      )
+    : null;
+  const title = (translation?.htmlContent.title as string) ?? originalTitle;
+  const categories = translation?.htmlContent.category
+    ? normalizeProposalCategories(translation.htmlContent.category)
+    : normalizeProposalCategories(originalCategory);
   const translatedMeta = translation
     ? parseTranslatedMeta(translation.htmlContent)
     : null;
@@ -104,11 +116,16 @@ export function ProposalPreview({
                 {formatCurrency(budget.amount, undefined, budget.currency)}
               </span>
             )}
-            {category && (
+            {categories.length > 0 && (
               <TagGroup className="max-w-full">
-                <Tag className="max-w-full sm:max-w-96 sm:rounded-md">
-                  <span className="truncate">{category}</span>
-                </Tag>
+                {categories.map((category) => (
+                  <Tag
+                    key={category}
+                    className="max-w-full sm:max-w-96 sm:rounded-md"
+                  >
+                    <span className="truncate">{category}</span>
+                  </Tag>
+                ))}
               </TagGroup>
             )}
           </div>

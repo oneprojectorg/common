@@ -2,11 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { formatCurrency } from '@/utils/formatting';
-import {
-  ProposalStatus,
-  Visibility,
-  type proposalEncoder,
-} from '@op/api/encoders';
+import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import {
   type ProposalTemplateSchema,
