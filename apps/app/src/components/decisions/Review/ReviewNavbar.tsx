@@ -3,11 +3,11 @@ import { LuArrowLeft, LuCheck } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-interface ReviewExploreNavbarProps {
+interface ReviewNavbarProps {
   slug: string;
 }
 
-export function ReviewExploreNavbar({ slug }: ReviewExploreNavbarProps) {
+export function ReviewNavbar({ slug }: ReviewNavbarProps) {
   const t = useTranslations();
 
   return (

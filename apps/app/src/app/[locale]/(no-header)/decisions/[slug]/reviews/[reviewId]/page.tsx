@@ -1,4 +1,4 @@
-import { ReviewExploreLayout } from '@/components/decisions/ReviewExplore/ReviewExploreLayout';
+import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
 
 export default async function ReviewProposalPage({
   params,
@@ -7,5 +7,5 @@ export default async function ReviewProposalPage({
 }) {
   const { slug, reviewId } = await params;
 
-  return <ReviewExploreLayout slug={slug} reviewId={reviewId} />;
+  return <ReviewLayout slug={slug} reviewId={reviewId} />;
 }
