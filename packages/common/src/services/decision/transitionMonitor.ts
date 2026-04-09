@@ -87,10 +87,10 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
     }
 
     const schemasByProcessId = await loadProcessSchemas(dueTransitions);
-    const transitionsByProcess = groupTransitionsByInstance(dueTransitions);
+    const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
 
     await pMap(
-      Array.from(transitionsByProcess.entries()),
+      Array.from(transitionsByInstance.entries()),
       async ([processInstanceId, transitions]) => {
         const context = resolveTransitionContext(
           processInstanceId,
@@ -171,18 +171,18 @@ async function loadProcessSchemas(
 function groupTransitionsByInstance(
   dueTransitions: DueTransition[],
 ): Map<string, DueTransition[]> {
-  const transitionsByProcess = new Map<string, DueTransition[]>();
+  const transitionsByInstance = new Map<string, DueTransition[]>();
 
   for (const transition of dueTransitions) {
-    const existing = transitionsByProcess.get(transition.processInstanceId);
+    const existing = transitionsByInstance.get(transition.processInstanceId);
     if (existing) {
       existing.push(transition);
     } else {
-      transitionsByProcess.set(transition.processInstanceId, [transition]);
+      transitionsByInstance.set(transition.processInstanceId, [transition]);
     }
   }
 
-  return transitionsByProcess;
+  return transitionsByInstance;
 }
 
 /**
