@@ -255,6 +255,12 @@ async function advanceInstanceTransitions({
 
   for (const transition of transitions) {
     try {
+      if (!transition.fromStateId) {
+        throw new CommonError(
+          `Transition ${transition.id} has no fromStateId`,
+        );
+      }
+
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
           tx,
@@ -264,7 +270,7 @@ async function advanceInstanceTransitions({
             instanceData: transition.instance.instanceData,
           },
           processSchema,
-          fromPhaseId: transition.fromStateId!,
+          fromPhaseId: transition.fromStateId,
           toPhaseId: transition.toStateId,
           triggeredByProfileId: null,
           transitionData: {},
