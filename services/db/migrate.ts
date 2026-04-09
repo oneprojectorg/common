@@ -1,4 +1,3 @@
-/* eslint-disable antfu/no-top-level-await */
 import { createServerClient } from '@supabase/ssr';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 

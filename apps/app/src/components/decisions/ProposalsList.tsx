@@ -714,7 +714,6 @@ export const ProposalsList = ({
       return;
     }
     updateURLParams({ filter: proposalFilter });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalFilter]);
 
   // Handle export

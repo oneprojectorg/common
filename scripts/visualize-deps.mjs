@@ -36,7 +36,7 @@ function parseDotGraph(dotString) {
   const taskMap = {}; // Stores node objects keyed by ID
   const internalDependencies = new Set(); // Keep track of nodes that are targeted by links
 
-  // Regular expression to match edge definitions (e.g., "@op/core" -> "@op/eslint-config";)
+  // Regular expression to match edge definitions (e.g., "@op/core" -> "@op/ui";)
   const edgeRegex = /^\s*"([^"]+)"\s*->\s*"([^"]+)"/;
   // Regex to match node definitions with labels (e.g., "ROOT" [label="ROOT"];)
   const nodeRegex = /^\s*"([^"]+)"\s*\[label="([^"]+)"\];$/;

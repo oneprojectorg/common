@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
 import { cn } from '@op/ui/utils';
 import { useTranslations as _useTranslations } from 'next-intl';
 import { createNavigation } from 'next-intl/navigation';

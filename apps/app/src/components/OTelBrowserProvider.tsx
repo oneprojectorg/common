@@ -77,7 +77,6 @@ function initOTelBrowser() {
       }
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.warn('[OTel] Failed to initialize browser tracing:', error);
   }
 }

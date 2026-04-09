@@ -5,7 +5,6 @@ try {
   const output = execSync('git diff --cached --name-status').toString();
 
   // Check for modifications or deletions of .sql files in the migrations directory
-  // eslint-disable-next-line regexp/no-unused-capturing-group
   if (/^(D|M)\s+services\/db\/migrations\/.*\.sql$/m.test(output)) {
     console.error(
       'Error: You cannot remove or modify SQL migration files in the "services/db/migrations" directory.',

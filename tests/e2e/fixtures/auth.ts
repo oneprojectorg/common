@@ -199,7 +199,6 @@ export async function authenticateAsUser(
  */
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   supabaseAdmin: [
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     async ({}, use) => {
       const client = createSupabaseAdminClient();
       await use(client);

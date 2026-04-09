@@ -69,7 +69,6 @@ export function TRPCProvider({
 
   return (
     <SSRCookiesContext.Provider value={ssrCookies}>
-      {/* eslint-disable-next-line react/no-context-provider */}
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <PersistQueryClientProvider
           client={queryClient}
