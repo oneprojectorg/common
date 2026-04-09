@@ -288,7 +288,7 @@ describe('translation.translateProposals', () => {
     }
 
     const proposal = await testData.createProposal({
-      callerEmail: setup.userEmail,
+      userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Batch Categories Proposal' },
     });
