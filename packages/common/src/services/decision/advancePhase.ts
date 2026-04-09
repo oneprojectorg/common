@@ -18,76 +18,43 @@ import { aggregateProposalMetrics, executePipeline } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
-  /** Open transaction the caller controls. All writes happen on this tx. */
   tx: DbClient;
-  /**
-   * Pre-loaded instance row. Caller is responsible for fetching this. The
-   * snapshot is used to read instanceData (for the pipeline context and
-   * to resolve the departing phase's selection pipeline); all writes go
-   * through WHERE-clause optimistic locks, so a stale snapshot here cannot
-   * cause split-brain — it can only cause the call to no-op.
-   */
+  /** Pre-loaded instance row. Stale snapshots are safe — writes use optimistic locks. */
   instance: {
     id: string;
     instanceData: DecisionInstanceData;
   };
-  /** Phase the instance must currently be on for the advance to apply. */
   fromPhaseId: string;
-  /** Phase to advance to. */
   toPhaseId: string;
-  /** Profile that triggered this transition. Null for cron / system. */
+  /** Null for cron / system-triggered transitions. */
   triggeredByProfileId: string | null;
-  /** Free-form metadata stored on the stateTransitionHistory row. */
   transitionData?: Record<string, unknown>;
-  /**
-   * Timestamp to use for updatedAt / completedAt / stateData.enteredAt.
-   * Caller controls the clock so batched callers (cron) can use a single
-   * timestamp across multiple writes if desired.
-   */
+  /** Shared timestamp for all writes. Defaults to now. */
   now?: string;
 }
 
 export interface AdvancePhaseResult {
-  /**
-   * True when the optimistic lock did not match — another writer already
-   * advanced the instance, or status is no longer PUBLISHED. The function
-   * has written nothing in this case. Caller decides whether to surface
-   * this as an error or skip silently.
-   */
+  /** True when the optimistic lock failed — another writer already advanced. Nothing was written. */
   conflict: boolean;
-  /** ID of the inserted stateTransitionHistory row. Undefined when conflict. */
   transitionHistoryId?: string;
-  /** Proposal IDs that survived the departing phase's selection pipeline. */
   survivingProposalIds: string[];
 }
 
 /**
- * Atomically advance a single decision instance from one phase to the next.
+ * Atomically advance a decision instance from one phase to the next.
  *
- * This function does NOT validate authorization, NOT decide which phase comes
- * next, and NOT invoke processResults. Callers handle those concerns.
+ * Does NOT validate authorization or decide which phase comes next — callers
+ * handle those concerns. All writes go through the provided transaction.
  *
- * The selection pipeline is resolved from the instance's own phase data
- * (instanceData.phases), not the process template. The instance is the
- * source of truth — it captures the pipeline that was active at publish time.
+ * Steps:
+ * 1. Run the departing phase's selection pipeline (if any) to filter proposals.
+ * 2. Update currentStateId and instanceData under an optimistic lock
+ *    (currentStateId = fromPhaseId AND status = PUBLISHED).
+ * 3. Mark any pending scheduled transition for the departing phase complete.
+ * 4. Insert a stateTransitionHistory row.
+ * 5. Persist surviving proposals into decisionTransitionProposals.
  *
- * Behavior (all writes on the provided transaction):
- * 1. Runs the departing phase's selection pipeline (if defined) to compute
- *    the surviving proposal set. Without a pipeline, all phase-visible
- *    proposals survive unchanged.
- * 2. Updates processInstances.currentStateId, instanceData.currentPhaseId,
- *    and instanceData.stateData[toPhaseId].enteredAt under an optimistic
- *    lock requiring (currentStateId = fromPhaseId AND status = PUBLISHED).
- * 3. Marks any pending scheduled transition for the departing phase complete.
- * 4. Inserts a stateTransitionHistory row with the provided transitionData
- *    and triggeredByProfileId.
- * 5. Persists surviving proposals into decisionTransitionProposals, scoped
- *    to the latest proposalHistory snapshot for this instance.
- *
- * Concurrency: if the optimistic lock fails (another writer beat us, or the
- * instance left PUBLISHED), returns { conflict: true } and writes nothing
- * else. Throws on data integrity violations (surviving proposals lacking
- * proposalHistory rows, missing returned transition ID).
+ * Returns { conflict: true } if the lock fails (concurrent advance or status change).
  */
 export async function advancePhase(
   input: AdvancePhaseInput,
@@ -105,16 +72,11 @@ export async function advancePhase(
   const instanceId = instance.id;
   const instanceData = instance.instanceData as DecisionInstanceData;
 
-  // Resolve the selection pipeline from the instance's own phase data,
-  // not the process template. The instance captures the pipeline that
-  // was active at publish time.
   const departingPhase = instanceData.phases?.find(
     (p: PhaseInstanceData) => p.phaseId === fromPhaseId,
   );
   const selectionPipeline = departingPhase?.selectionPipeline;
 
-  // Default surviving set is all proposals visible in the departing phase.
-  // The selection pipeline (if defined) narrows this set.
   const allProposals = await getProposalsForPhase({
     instanceId,
     dbClient: tx,
@@ -143,9 +105,7 @@ export async function advancePhase(
     survivingProposalIds = surviving.map((p) => p.id);
   }
 
-  // Optimistic lock on currentStateId AND status: another concurrent writer
-  // can only beat us, never split-brain. The triple jsonb_set ensures
-  // stateData[toPhaseId] is written even if stateData was previously absent.
+  // Optimistic lock: only succeeds if currentStateId still matches fromPhaseId.
   const updated = await tx
     .update(processInstances)
     .set({
@@ -207,8 +167,7 @@ export async function advancePhase(
   }
 
   if (survivingProposalIds.length > 0) {
-    // Scoped by processInstanceId to prevent cross-instance leakage:
-    // proposalHistory.id is the original proposal ID (from OLD.id), not unique.
+    // Get the latest history snapshot for each surviving proposal.
     const latestHistoryRows = await tx
       .selectDistinctOn([proposalHistory.id], {
         proposalId: proposalHistory.id,

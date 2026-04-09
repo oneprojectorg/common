@@ -21,7 +21,7 @@ export interface ProcessDecisionsTransitionsResult {
   }>;
 }
 
-/** Shape of the joined due-transition rows returned by the initial query. */
+/** Joined due-transition row shape. */
 type DueTransition = {
   id: string;
   processInstanceId: string;
@@ -35,13 +35,8 @@ type DueTransition = {
 };
 
 /**
- * Monitors and processes transitions that are due. Called by an external
- * scheduler / cron worker.
- *
- * Each due transition is delegated to the shared `advancePhase` core, so the
- * cron path writes stateTransitionHistory rows, runs the departing phase's
- * selection pipeline, and persists surviving proposals into
- * decisionTransitionProposals — matching the manual transition path.
+ * Process all due scheduled transitions. Called by cron.
+ * Delegates each transition to `advancePhase`.
  */
 export async function processDecisionsTransitions(): Promise<ProcessDecisionsTransitionsResult> {
   const now = new Date().toISOString();
@@ -128,12 +123,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
   }
 }
 
-/**
- * Groups due transitions by processInstanceId so each instance's transitions
- * can be processed sequentially. The optimistic lock inside advancePhase
- * prevents double-processing across workers; sequential per-instance ordering
- * keeps phase progression correct within a single worker.
- */
+/** Group transitions by instance so each instance's phases advance sequentially. */
 function groupTransitionsByInstance(
   dueTransitions: DueTransition[],
 ): Map<string, DueTransition[]> {
@@ -152,10 +142,7 @@ function groupTransitionsByInstance(
 }
 
 /**
- * Processes one instance's transitions sequentially via advancePhase, each
- * in its own transaction. Stops on conflict (another worker beat us) or
- * error, recording per-transition failures on the result.
- *
+ * Advance one instance's transitions sequentially. Stops on conflict or error.
  * Returns the last successfully reached phase ID, or null if nothing advanced.
  */
 async function advanceInstanceTransitions({
@@ -170,9 +157,6 @@ async function advanceInstanceTransitions({
   result: ProcessDecisionsTransitionsResult;
 }): Promise<string | null> {
   let lastSuccessfulToStateId: string | null = null;
-  // Start with the snapshot from the initial query. After each successful
-  // advance, re-fetch so the next iteration's pipeline sees the updated
-  // instanceData (currentPhaseId, phase data, etc.).
   let currentInstanceData = transitions[0]!.instance
     .instanceData as DecisionInstanceData;
 
@@ -205,8 +189,7 @@ async function advanceInstanceTransitions({
       lastSuccessfulToStateId = transition.toStateId;
       result.processed++;
 
-      // Re-fetch instanceData so the next transition's pipeline sees
-      // the committed state (updated currentPhaseId, phase data, etc.)
+      // Re-fetch so the next iteration sees the committed state.
       const refreshed = await db._query.processInstances.findFirst({
         where: eq(processInstances.id, processInstanceId),
       });
@@ -228,11 +211,7 @@ async function advanceInstanceTransitions({
   return lastSuccessfulToStateId;
 }
 
-/**
- * Runs the selection pipeline / results processing for an instance that has
- * reached its final phase. The phase transition has already committed, so
- * failures here are logged but do not fail the overall cron run.
- */
+/** Run results processing for an instance that reached its final phase. Failures are logged, not thrown. */
 async function runResultsProcessing(processInstanceId: string): Promise<void> {
   try {
     console.log(`Processing results for process instance ${processInstanceId}`);

@@ -232,22 +232,14 @@ export interface VariableExpression {
   variable: string; // e.g., "$threshold", "$categoryWeight"
 }
 
-/**
- * Execution context for pipeline evaluation
- */
+/** Runtime context passed to every pipeline block during evaluation. */
 export interface ExecutionContext {
-  // Input proposals
   proposals: Proposal[];
-
-  // Current proposal (when evaluating expressions on individual proposals)
+  /** Set when evaluating expressions on a single proposal. */
   proposal?: Proposal;
-
-  // Voting data aggregated per proposal
   voteData?: {
     [proposalId: string]: VoteAggregation;
   };
-
-  // Process instance data
   process: {
     instanceId: string;
     processId: string;
@@ -255,11 +247,7 @@ export interface ExecutionContext {
     instanceData: DecisionInstanceData;
     processInstance: ProcessInstance;
   };
-
-  // Variables from compute blocks and pipeline initialization
   variables: Record<string, any>;
-
-  // Intermediate block outputs
   outputs: Record<string, any>;
 }
 

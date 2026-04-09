@@ -197,8 +197,6 @@ export async function createInstanceWithSchema(
 
   const instanceId = instanceResult.processInstance.id;
 
-  // Build instanceData.phases from the processSchema.phases, copying
-  // selectionPipeline so advancePhase can resolve it from instance data.
   const schemaPhases =
     (processSchema as { phases?: Array<Record<string, unknown>> }).phases ?? [];
   const instancePhases = schemaPhases.map((p) => ({
@@ -229,10 +227,7 @@ export async function createInstanceWithSchema(
   };
 }
 
-/**
- * Test helper that wraps advancePhase with a simpler interface.
- * Loads the instance, then advances from `fromPhaseId` to `toPhaseId`.
- */
+/** Advance an instance from one phase to another. Loads the instance from the DB. */
 export async function executeTestTransition(opts: {
   instanceId: string;
   fromPhaseId: string;

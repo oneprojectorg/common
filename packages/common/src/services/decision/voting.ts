@@ -25,11 +25,7 @@ import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
-/**
- * Helper to find current phase and extract voting config.
- * Reads from instanceData.phases which now contains all template fields.
- * Returns undefined if the current phase is not found.
- */
+/** Extract proposal/voting permissions from the current phase. */
 function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
   | {
       allowProposals: boolean;

@@ -18,10 +18,7 @@ import {
 } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
 
-/**
- * Process results for a process instance by executing the selection pipeline
- * and storing the selected proposal IDs in the database
- */
+/** Execute the selection pipeline and store winning proposals. */
 export async function processResults({
   processInstanceId,
 }: {
@@ -33,7 +30,6 @@ export async function processResults({
   error?: string;
 }> {
   try {
-    // Get the process instance
     const processInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, processInstanceId),
       with: {
@@ -54,12 +50,10 @@ export async function processResults({
     const instanceData = processInstance.instanceData as DecisionInstanceData;
     const currentPhaseId = instanceData.currentPhaseId;
 
-    // Get proposals scoped to the current phase (respects prior transition filtering)
     const processProposals = await getProposalsForPhase({
       instanceId: processInstanceId,
     });
 
-    // Resolve pipeline from the instance's own phase data, not the template.
     const currentPhase = instanceData.phases?.find(
       (p) => p.phaseId === currentPhaseId,
     );
@@ -71,10 +65,7 @@ export async function processResults({
     let success = false;
 
     try {
-      // Aggregate voting data
       const proposalMetrics = await aggregateProposalMetrics(processProposals);
-
-      // Build execution context
       const context: ExecutionContext = {
         proposals: processProposals,
         voteData: proposalMetrics,
@@ -89,7 +80,6 @@ export async function processResults({
         outputs: {},
       };
 
-      // Execute the pipeline
       const selectedProposals = await executePipeline(pipeline, context);
       selectedProposalIds = selectedProposals.map((p) => p.id);
       success = true;
@@ -98,16 +88,13 @@ export async function processResults({
       error = err instanceof Error ? err.message : 'Unknown error';
     }
 
-    // Count the number of voters for this process instance
     const voterCountResult = await db
       .select({ count: count() })
       .from(decisionsVoteSubmissions)
       .where(eq(decisionsVoteSubmissions.processInstanceId, processInstanceId));
-
     const voterCount = voterCountResult[0]?.count || 0;
 
     const result = await db.transaction(async (tx) => {
-      // Store the results in the database
       const [resultRecord] = await tx
         .insert(decisionProcessResults)
         .values({
@@ -125,17 +112,15 @@ export async function processResults({
         throw new CommonError('Failed to create process result record');
       }
 
-      // Insert selected proposals into junction table
       if (selectedProposalIds.length > 0) {
         await tx.insert(decisionProcessResultSelections).values(
           selectedProposalIds.map((proposalId) => ({
             processResultId: resultRecord.id,
             proposalId,
-            selectionRank: 0, // Default to 0. This is used for things like ranked voting
+            selectionRank: 0,
           })),
         );
 
-        // Update proposal status to 'selected' for selected proposals
         await tx
           .update(proposals)
           .set({ status: ProposalStatus.SELECTED })
@@ -156,9 +141,7 @@ export async function processResults({
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
-    // Try to store the error in the database
     try {
-      // Count the number of voters for this process instance
       const voterCountResult = await db
         .select({ count: count() })
         .from(decisionsVoteSubmissions)
