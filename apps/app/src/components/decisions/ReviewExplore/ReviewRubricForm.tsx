@@ -201,7 +201,7 @@ function RubricFieldInput({
 
       const options = parseSchemaOptions(field.schema).map((option) => ({
         value: option.value,
-        label: option.title,
+        label: option.title || String(option.value),
       }));
       const selectedKey =
         typeof value === 'string' || typeof value === 'number'

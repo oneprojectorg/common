@@ -1,16 +1,19 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { Header1 } from '@op/ui/Header';
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { trpc } from '@op/api/client';
+import type { RubricTemplateSchema } from '@op/common/client';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ProposalPreview } from '../ProposalPreview';
 import { ReviewExploreNavbar } from './ReviewExploreNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
-import { REVIEW_RUBRIC_DUMMY_TEMPLATE } from './reviewRubricDummyTemplate';
 
 interface ReviewExploreLayoutClientProps {
   slug: string;
@@ -19,8 +22,8 @@ interface ReviewExploreLayoutClientProps {
 
 export function ReviewExploreLayoutClient({
   slug,
+  reviewId,
 }: ReviewExploreLayoutClientProps) {
-  const t = useTranslations();
   const reviewFlowEnabled = useFeatureFlag('review_flow');
 
   if (reviewFlowEnabled === false) {
@@ -28,12 +31,45 @@ export function ReviewExploreLayoutClient({
   }
 
   return (
+    <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
+      <Suspense fallback={<ReviewExploreSkeleton />}>
+        <ReviewExploreContent slug={slug} reviewId={reviewId} />
+      </Suspense>
+    </APIErrorBoundary>
+  );
+}
+
+function ReviewExploreContent({
+  slug,
+  reviewId,
+}: {
+  slug: string;
+  reviewId: string;
+}) {
+  const t = useTranslations();
+
+  const [data] = trpc.decision.getReviewAssignment.useSuspenseQuery({
+    assignmentId: reviewId,
+  });
+
+  const { assignment, rubricTemplate } = data;
+
+  const handleRequestRevision = () => {};
+  const handleSubmit = () => {};
+
+  return (
     <div className="flex h-dvh flex-col bg-white">
       <ReviewExploreNavbar slug={slug} />
 
       <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
-        <ReviewProposalPane className="border-r p-12" />
-        <ReviewRubricPane className="px-12 pt-12 pb-4" />
+        <ReviewProposalPane
+          proposal={assignment.proposal}
+          className="border-r p-12"
+        />
+        <ReviewRubricPane
+          rubricTemplate={rubricTemplate as RubricTemplateSchema | null}
+          className="px-12 pt-12 pb-4"
+        />
       </div>
 
       <Tabs
@@ -49,32 +85,81 @@ export function ReviewExploreLayoutClient({
           id="proposal"
           className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
         >
-          <ReviewProposalPane />
+          <ReviewProposalPane proposal={assignment.proposal} />
         </TabPanel>
 
         <TabPanel
           id="review"
           className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
         >
-          <ReviewRubricPane />
+          <ReviewRubricPane
+            rubricTemplate={rubricTemplate as RubricTemplateSchema | null}
+          />
         </TabPanel>
       </Tabs>
     </div>
   );
 }
 
-function ReviewProposalPane({ className }: { className?: string }) {
+function ReviewProposalPane({
+  proposal,
+  className,
+}: {
+  proposal: Parameters<typeof ProposalPreview>[0]['proposal'];
+  className?: string;
+}) {
   return (
-    <div className={cn('min-w-0 flex-1', className)}>
-      <Header1 className="font-sans">Community Garden Expansion</Header1>
+    <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
+      <ProposalPreview proposal={proposal} />
     </div>
   );
 }
 
-function ReviewRubricPane({ className }: { className?: string }) {
+function ReviewRubricPane({
+  rubricTemplate,
+  className,
+}: {
+  rubricTemplate: RubricTemplateSchema | null;
+  className?: string;
+}) {
+  if (!rubricTemplate) {
+    return null;
+  }
+
   return (
-    <div className={cn('min-w-0 flex-1', className)}>
-      <ReviewRubricForm template={REVIEW_RUBRIC_DUMMY_TEMPLATE} />
+    <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
+      <ReviewRubricForm template={rubricTemplate} />
+    </div>
+  );
+}
+
+function ReviewExploreSkeleton() {
+  return (
+    <div className="flex h-dvh flex-col bg-white">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b px-6 md:px-8">
+        <div className="h-5 w-36 animate-pulse rounded bg-gray-200" />
+        <div className="flex gap-4">
+          <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
+          <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
+        </div>
+      </div>
+      <div className="hidden flex-1 sm:flex">
+        <div className="flex-1 border-r p-12">
+          <div className="space-y-4">
+            <div className="h-10 w-3/4 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200" />
+          </div>
+        </div>
+        <div className="flex-1 px-12 pt-12">
+          <div className="space-y-6">
+            <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
+            <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
