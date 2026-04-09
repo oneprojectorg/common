@@ -48,11 +48,10 @@ function ReviewExploreContent({
 }) {
   const t = useTranslations();
 
-  const [data] = trpc.decision.getReviewAssignment.useSuspenseQuery({
-    assignmentId: reviewId,
-  });
-
-  const { assignment, rubricTemplate } = data;
+  const [{ assignment, rubricTemplate }] =
+    trpc.decision.getReviewAssignment.useSuspenseQuery({
+      assignmentId: reviewId,
+    });
 
   return (
     <div className="flex h-dvh flex-col bg-white">
@@ -64,7 +63,7 @@ function ReviewExploreContent({
           className="border-r p-12"
         />
         <ReviewRubricPane
-          rubricTemplate={rubricTemplate as RubricTemplateSchema | null}
+          rubricTemplate={rubricTemplate}
           className="px-12 pt-12 pb-4"
         />
       </div>
@@ -89,9 +88,7 @@ function ReviewExploreContent({
           id="review"
           className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
         >
-          <ReviewRubricPane
-            rubricTemplate={rubricTemplate as RubricTemplateSchema | null}
-          />
+          <ReviewRubricPane rubricTemplate={rubricTemplate} />
         </TabPanel>
       </Tabs>
     </div>
