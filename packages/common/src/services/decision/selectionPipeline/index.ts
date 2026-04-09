@@ -2,7 +2,7 @@
 export type * from './types';
 
 // Export main functions
-export { executePipeline } from './pipelineEngine';
+export { executeSelectionPipeline } from './pipelineEngine';
 export { aggregateProposalMetrics } from './proposalMetrics';
 export { evaluateExpression } from './expressionEvaluator';
 

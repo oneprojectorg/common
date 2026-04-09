@@ -14,7 +14,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import {
   aggregateProposalMetrics,
   defaultSelectionPipeline,
-  executePipeline,
+  executeSelectionPipeline,
 } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
 
@@ -80,7 +80,10 @@ export async function processResults({
         outputs: {},
       };
 
-      const selectedProposals = await executePipeline(pipeline, context);
+      const selectedProposals = await executeSelectionPipeline(
+        pipeline,
+        context,
+      );
       selectedProposalIds = selectedProposals.map((p) => p.id);
       success = true;
     } catch (err) {

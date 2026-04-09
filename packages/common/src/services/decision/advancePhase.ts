@@ -14,7 +14,10 @@ import type {
   DecisionInstanceData,
   PhaseInstanceData,
 } from './schemas/instanceData';
-import { aggregateProposalMetrics, executePipeline } from './selectionPipeline';
+import {
+  aggregateProposalMetrics,
+  executeSelectionPipeline,
+} from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
@@ -95,13 +98,16 @@ export async function advancePhase(
         currentPhaseId: fromPhaseId,
         instanceData,
         processInstance: instance as unknown as Parameters<
-          typeof executePipeline
+          typeof executeSelectionPipeline
         >[1]['process']['processInstance'],
       },
       variables: {},
       outputs: {},
     };
-    const surviving = await executePipeline(selectionPipeline, context);
+    const surviving = await executeSelectionPipeline(
+      selectionPipeline,
+      context,
+    );
     survivingProposalIds = surviving.map((p) => p.id);
   }
 
