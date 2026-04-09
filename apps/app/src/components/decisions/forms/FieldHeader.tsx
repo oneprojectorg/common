@@ -1,3 +1,5 @@
+import { Header4 } from '@op/ui/Header';
+
 /** Renders title + description header for a form field. */
 export function FieldHeader({
   title,
@@ -20,15 +22,11 @@ export function FieldHeader({
       {title &&
         (badge ? (
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-serif text-title-sm14 text-neutral-charcoal">
-              {title}
-            </span>
+            <Header4>{title}</Header4>
             <span className="shrink-0 text-xs text-neutral-gray4">{badge}</span>
           </div>
         ) : (
-          <span className="font-serif text-title-sm14 text-neutral-charcoal">
-            {title}
-          </span>
+          <Header4>{title}</Header4>
         ))}
       {description && (
         <p className="text-sm text-neutral-charcoal">{description}</p>

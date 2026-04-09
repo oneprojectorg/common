@@ -5,6 +5,7 @@ import {
   type XFormatPropertySchema,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Button } from '@op/ui/Button';
 import { Header3, Header4 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
@@ -12,6 +13,7 @@ import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -36,7 +38,8 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
   const [values, setValues] = useState<Record<string, unknown>>({});
-  const [overallNotes, setOverallNotes] = useState('');
+  const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleValueChange = (key: string, value: unknown) => {
     setValues((current) => ({
@@ -73,24 +76,36 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
         />
       ))}
 
-      <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-        <div className="flex items-center justify-between gap-4">
-          <Header4>{t('Overall Notes')}</Header4>
-        </div>
+      {isFeedbackOpen ? (
+        <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+          <div className="flex flex-col gap-1">
+            <Header4>{t('Feedback to Author')}</Header4>
+            <p className="text-sm text-midGray">
+              {t(
+                'Feedback will be shared with the author after the review phase ends',
+              )}
+            </p>
+          </div>
 
-        <TextField
-          aria-label={t('Overall Notes')}
-          value={overallNotes}
-          onChange={setOverallNotes}
-          useTextArea
-          textareaProps={{
-            placeholder: t(
-              'Add any additional notes or context for the group discussion...',
-            ),
-            rows: 3,
-          }}
-        />
-      </section>
+          <TextField
+            aria-label={t('Feedback to Author')}
+            value={feedbackToAuthor}
+            onChange={setFeedbackToAuthor}
+            useTextArea
+            textareaProps={{ rows: 3 }}
+          />
+        </section>
+      ) : (
+        <Button
+          color="secondary"
+          size="medium"
+          className="w-full"
+          onPress={() => setIsFeedbackOpen(true)}
+        >
+          <LuPlus className="size-4" />
+          {t('Feedback to author')}
+        </Button>
+      )}
 
       <Surface
         variant="filled"
