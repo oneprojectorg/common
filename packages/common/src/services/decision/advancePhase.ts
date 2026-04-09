@@ -11,6 +11,7 @@ import {
 
 import { getProposalsForPhase } from './getProposalsForPhase';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import { aggregateVoteData, executePipeline } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
 import type { InstanceData, ProcessSchema } from './types';
@@ -20,17 +21,16 @@ export interface AdvancePhaseInput {
   tx: DbClient;
   /**
    * Pre-loaded instance row. Caller is responsible for fetching this. The
-   * snapshot is used to read instanceData (for the pipeline context); all
-   * writes go through WHERE-clause optimistic locks, so a stale snapshot
-   * here cannot cause split-brain — it can only cause the call to no-op.
+   * snapshot is used to read instanceData (for the pipeline context and
+   * to resolve the departing phase's selection pipeline); all writes go
+   * through WHERE-clause optimistic locks, so a stale snapshot here cannot
+   * cause split-brain — it can only cause the call to no-op.
    */
   instance: {
     id: string;
     processId: string | null;
     instanceData: unknown;
   };
-  /** Pre-loaded process schema for resolving the departing phase's pipeline. */
-  processSchema: ProcessSchema | undefined;
   /** Phase the instance must currently be on for the advance to apply. */
   fromPhaseId: string;
   /** Phase to advance to. */
@@ -67,6 +67,10 @@ export interface AdvancePhaseResult {
  * This function does NOT validate authorization, NOT decide which phase comes
  * next, and NOT invoke processResults. Callers handle those concerns.
  *
+ * The selection pipeline is resolved from the instance's own phase data
+ * (instanceData.phases), not the process template. The instance is the
+ * source of truth — it captures the pipeline that was active at publish time.
+ *
  * Behavior (all writes on the provided transaction):
  * 1. Runs the departing phase's selection pipeline (if defined) to compute
  *    the surviving proposal set. Without a pipeline, all phase-visible
@@ -91,7 +95,6 @@ export async function advancePhase(
   const {
     tx,
     instance,
-    processSchema,
     fromPhaseId,
     toPhaseId,
     triggeredByProfileId,
@@ -100,10 +103,15 @@ export async function advancePhase(
   } = input;
 
   const instanceId = instance.id;
+  const instanceData = instance.instanceData as DecisionInstanceData;
 
-  const selectionPipeline = processSchema?.phases?.find(
-    (p) => p.id === fromPhaseId,
-  )?.selectionPipeline;
+  // Resolve the selection pipeline from the instance's own phase data,
+  // not the process template. The instance captures the pipeline that
+  // was active at publish time.
+  const departingPhase = instanceData.phases?.find(
+    (p: PhaseInstanceData) => p.phaseId === fromPhaseId,
+  );
+  const selectionPipeline = departingPhase?.selectionPipeline;
 
   // Default surviving set is all proposals visible in the departing phase.
   // The selection pipeline (if defined) narrows this set.
@@ -123,8 +131,17 @@ export async function advancePhase(
         instanceId,
         processId: instance.processId!,
         currentStateId: fromPhaseId,
-        instanceData: instance.instanceData as InstanceData,
-        processSchema: processSchema!,
+        instanceData: instanceData as unknown as InstanceData,
+        // The pipeline executor requires processSchema on the context type
+        // but no pipeline block actually reads it. Pass a minimal shape
+        // derived from the instance data so we don't need the template.
+        processSchema: {
+          phases: instanceData.phases?.map((p: PhaseInstanceData) => ({
+            id: p.phaseId,
+            name: p.name ?? p.phaseId,
+            selectionPipeline: p.selectionPipeline,
+          })),
+        } as ProcessSchema,
         processInstance: instance as unknown as Parameters<
           typeof executePipeline
         >[1]['process']['processInstance'],

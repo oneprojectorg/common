@@ -1,8 +1,7 @@
-import { and, db, eq, inArray, isNull, lte } from '@op/db/client';
+import { and, db, eq, isNull, lte } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
-  decisionProcesses,
   processInstances,
 } from '@op/db/schema';
 import pMap from 'p-map';
@@ -11,7 +10,6 @@ import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { processResults } from './processResults';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ProcessSchema } from './types';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -86,7 +84,6 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
       return result;
     }
 
-    const schemasByProcessId = await loadProcessSchemas(dueTransitions);
     const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
 
     await pMap(
@@ -95,7 +92,6 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
         const context = resolveTransitionContext(
           processInstanceId,
           transitions,
-          schemasByProcessId,
           result,
         );
         if (!context) {
@@ -105,7 +101,6 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
         const lastSuccessfulToStateId = await advanceInstanceTransitions({
           processInstanceId,
           transitions,
-          processSchema: context.processSchema,
           now,
           result,
         });
@@ -124,42 +119,6 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
       error instanceof Error ? error.message : 'Unknown error';
     throw new CommonError(`Failed to process due transitions: ${errorMessage}`);
   }
-}
-
-/**
- * Batch-fetches process schemas for all distinct processIds in the due
- * transitions, returning a Map for O(1) lookup in the per-instance loop.
- * Avoids N+1 queries against decisionProcesses.
- */
-async function loadProcessSchemas(
-  dueTransitions: DueTransition[],
-): Promise<Map<string, ProcessSchema | undefined>> {
-  const processIds = [
-    ...new Set(
-      dueTransitions
-        .map((t) => t.instance.processId)
-        .filter((id): id is string => id !== null),
-    ),
-  ];
-
-  if (processIds.length === 0) {
-    return new Map();
-  }
-
-  const processRows = await db
-    .select({
-      id: decisionProcesses.id,
-      processSchema: decisionProcesses.processSchema,
-    })
-    .from(decisionProcesses)
-    .where(inArray(decisionProcesses.id, processIds));
-
-  return new Map(
-    processRows.map((row) => [
-      row.id,
-      row.processSchema as ProcessSchema | undefined,
-    ]),
-  );
 }
 
 /**
@@ -186,23 +145,18 @@ function groupTransitionsByInstance(
 }
 
 /**
- * Resolves the process schema and final phase for an instance. Records any
- * setup failure (malformed instanceData, missing phases) as a per-transition
- * error on the result so the batch can continue with other instances, and
- * returns null to signal the caller to skip this instance.
+ * Resolves the final phase for an instance so the caller knows when to
+ * trigger results processing. Records any setup failure (malformed
+ * instanceData, missing phases) as a per-transition error on the result
+ * so the batch can continue with other instances, and returns null to
+ * signal the caller to skip this instance.
  */
 function resolveTransitionContext(
   processInstanceId: string,
   transitions: DueTransition[],
-  schemasByProcessId: Map<string, ProcessSchema | undefined>,
   result: ProcessDecisionsTransitionsResult,
-): { processSchema: ProcessSchema | undefined; lastPhaseId: string } | null {
+): { lastPhaseId: string } | null {
   try {
-    const processId = transitions[0]!.instance.processId;
-    const processSchema = processId
-      ? schemasByProcessId.get(processId)
-      : undefined;
-
     const instanceData = transitions[0]!.instance
       .instanceData as DecisionInstanceData;
     const phases = instanceData.phases;
@@ -213,7 +167,7 @@ function resolveTransitionContext(
     }
     const lastPhaseId = phases[phases.length - 1]!.phaseId;
 
-    return { processSchema, lastPhaseId };
+    return { lastPhaseId };
   } catch (error) {
     for (const transition of transitions) {
       result.failed++;
@@ -241,13 +195,11 @@ function resolveTransitionContext(
 async function advanceInstanceTransitions({
   processInstanceId,
   transitions,
-  processSchema,
   now,
   result,
 }: {
   processInstanceId: string;
   transitions: DueTransition[];
-  processSchema: ProcessSchema | undefined;
   now: string;
   result: ProcessDecisionsTransitionsResult;
 }): Promise<string | null> {
@@ -264,6 +216,7 @@ async function advanceInstanceTransitions({
           `Transition ${transition.id} has no fromStateId`,
         );
       }
+      const fromPhaseId = transition.fromStateId;
 
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
@@ -273,8 +226,7 @@ async function advanceInstanceTransitions({
             processId: transition.instance.processId,
             instanceData: currentInstanceData,
           },
-          processSchema,
-          fromPhaseId: transition.fromStateId,
+          fromPhaseId,
           toPhaseId: transition.toStateId,
           triggeredByProfileId: null,
           transitionData: {},

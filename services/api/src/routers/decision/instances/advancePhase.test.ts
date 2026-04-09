@@ -23,19 +23,14 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-type AdvancePhaseProcessSchema = Parameters<
-  typeof advancePhase
->[0]['processSchema'];
-
 interface LoadedInstance {
   setup: Awaited<ReturnType<TestDecisionsDataManager['createDecisionSetup']>>;
   dbInstance: NonNullable<
     Awaited<ReturnType<typeof db.query.processInstances.findFirst>>
   >;
-  processSchema: AdvancePhaseProcessSchema;
 }
 
-/** Loads a published instance from the DB along with its process schema. */
+/** Loads a published instance from the DB. */
 async function loadPublishedInstance(
   testData: TestDecisionsDataManager,
 ): Promise<LoadedInstance> {
@@ -52,17 +47,13 @@ async function loadPublishedInstance(
 
   const dbInstance = await db.query.processInstances.findFirst({
     where: { id: instance.instance.id },
-    with: { process: true },
   });
 
   if (!dbInstance) {
     throw new Error('Failed to reload instance');
   }
 
-  const processSchema = (dbInstance.process as { processSchema: unknown })
-    .processSchema as AdvancePhaseProcessSchema;
-
-  return { setup, dbInstance, processSchema };
+  return { setup, dbInstance };
 }
 
 /** Calls advancePhase with the loaded instance and given override fields. */
@@ -73,7 +64,7 @@ async function callAdvancePhase(
     toPhaseId: string;
   },
 ) {
-  const { dbInstance, processSchema } = loaded;
+  const { dbInstance } = loaded;
   return db.transaction(async (tx) =>
     advancePhase({
       tx,
@@ -82,7 +73,6 @@ async function callAdvancePhase(
         processId: dbInstance.processId,
         instanceData: dbInstance.instanceData,
       },
-      processSchema,
       triggeredByProfileId: null,
       ...overrides,
     }),
@@ -114,7 +104,10 @@ describe.concurrent('advancePhase', () => {
     expect(instanceData.currentPhaseId).toBe('final');
 
     const history = await db._query.stateTransitionHistory.findFirst({
-      where: eq(stateTransitionHistory.processInstanceId, loaded.dbInstance.id),
+      where: eq(
+        stateTransitionHistory.processInstanceId,
+        loaded.dbInstance.id,
+      ),
     });
     expect(history).toBeDefined();
     expect(history!.fromStateId).toBe('initial');
@@ -205,7 +198,10 @@ describe.concurrent('advancePhase', () => {
     });
 
     const history = await db._query.stateTransitionHistory.findFirst({
-      where: eq(stateTransitionHistory.processInstanceId, loaded.dbInstance.id),
+      where: eq(
+        stateTransitionHistory.processInstanceId,
+        loaded.dbInstance.id,
+      ),
     });
     expect(history!.transitionData).toEqual({ source: 'cron', batch: 42 });
   });
@@ -242,16 +238,13 @@ describe.concurrent('advancePhase', () => {
 
     const dbInstance = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
-      with: { process: true },
     });
     if (!dbInstance) {
       throw new Error('Failed to reload instance');
     }
-    const processSchema = (dbInstance.process as { processSchema: unknown })
-      .processSchema as AdvancePhaseProcessSchema;
 
     const result = await callAdvancePhase(
-      { setup, dbInstance, processSchema },
+      { setup, dbInstance },
       { fromPhaseId: 'initial', toPhaseId: 'final' },
     );
 
@@ -261,7 +254,9 @@ describe.concurrent('advancePhase', () => {
     const joinRows = await db
       .select()
       .from(decisionTransitionProposals)
-      .where(eq(decisionTransitionProposals.processInstanceId, dbInstance.id));
+      .where(
+        eq(decisionTransitionProposals.processInstanceId, dbInstance.id),
+      );
     expect(joinRows.length).toBe(1);
     expect(joinRows[0]!.proposalId).toBe(proposal.id);
     expect(joinRows[0]!.transitionHistoryId).toBe(result.transitionHistoryId);
