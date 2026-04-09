@@ -3,7 +3,7 @@ export type * from './types';
 
 // Export main functions
 export { executePipeline } from './pipelineEngine';
-export { aggregateVoteData } from './voteDataAggregator';
+export { aggregateProposalMetrics } from './voteDataAggregator';
 export { evaluateExpression } from './expressionEvaluator';
 
 // Export block executor registry function

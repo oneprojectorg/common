@@ -17,7 +17,7 @@ import {
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import { aggregateVoteData, executePipeline } from './selectionPipeline';
+import { aggregateProposalMetrics, executePipeline } from './selectionPipeline';
 import type {
   ExecutionContext,
   SelectionPipeline,
@@ -249,7 +249,7 @@ export class TransitionEngine {
 
         // If the departing phase has a selection pipeline, run it to narrow the surviving set
         if (selectionPipeline) {
-          const voteData = await aggregateVoteData(allProposals, trx);
+          const voteData = await aggregateProposalMetrics(allProposals, trx);
           const context: ExecutionContext = {
             proposals: allProposals,
             voteData,

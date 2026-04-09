@@ -12,7 +12,7 @@ import {
 import { getProposalsForPhase } from './getProposalsForPhase';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { PhaseInstanceData } from './schemas/instanceData';
-import { aggregateVoteData, executePipeline } from './selectionPipeline';
+import { aggregateProposalMetrics, executePipeline } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
 import type { InstanceData, ProcessSchema } from './types';
 
@@ -123,7 +123,7 @@ export async function advancePhase(
   let survivingProposalIds: string[] = allProposals.map((p) => p.id);
 
   if (selectionPipeline) {
-    const voteData = await aggregateVoteData(allProposals, tx);
+    const voteData = await aggregateProposalMetrics(allProposals, tx);
     const context: ExecutionContext = {
       proposals: allProposals,
       voteData,

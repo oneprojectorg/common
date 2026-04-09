@@ -12,7 +12,7 @@ import type { DecisionProcess } from '@op/db/schema';
 import { CommonError } from '../../utils';
 import { getProposalsForPhase } from './getProposalsForPhase';
 import {
-  aggregateVoteData,
+  aggregateProposalMetrics,
   defaultSelectionPipeline,
   executePipeline,
 } from './selectionPipeline';
@@ -82,7 +82,7 @@ export async function processResults({
 
     try {
       // Aggregate voting data
-      const voteData = await aggregateVoteData(processProposals);
+      const voteData = await aggregateProposalMetrics(processProposals);
 
       // Build execution context
       const context: ExecutionContext = {
