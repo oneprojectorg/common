@@ -5,7 +5,7 @@ import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
 const iconButtonStyle = tv({
-  base: 'flex cursor-pointer items-center justify-center outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary-tealBlack',
+  base: 'flex cursor-pointer items-center justify-center outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary-tealBlack',
   variants: {
     size: {
       small: 'h-6 w-6 rounded-full',

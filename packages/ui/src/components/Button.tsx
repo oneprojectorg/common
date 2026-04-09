@@ -53,7 +53,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-noned outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+        'appearance-noned outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue pressed:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]',
     },
 
     isDisabled: {

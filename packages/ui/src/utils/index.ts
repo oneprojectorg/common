@@ -7,10 +7,10 @@ export const focusRing = tv({
   base: 'outline-auto -outline-offset-8 outline-transparent focus-within:outline-offWhite focus-visible:outline-offWhite',
   variants: {
     isFocused: {
-      true: 'outline-lightGray',
+      true: 'outline-ring',
     },
     isFocusVisible: {
-      true: 'outline-lightGray',
+      true: 'outline-ring',
     },
   },
 });
