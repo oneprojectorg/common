@@ -645,6 +645,7 @@
   "Attachments": "Pièces jointes",
   "Attachments (optional)": "Pièces jointes (facultatif)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Soutenez votre proposition avec des documents pertinents comme des budgets ou des recherches de soutien.",
+  "Drag a file here or <browse>browse</browse>": "Glissez un fichier ici ou <browse>parcourir</browse>",
   "Accepts {types} and more up to {size}MB": "Accepte {types} et plus jusqu'à {size}Mo",
   "{count}/{max} attachments added": "{count}/{max} pièces jointes ajoutées",
   "Drag to reorder": "Glisser pour réorganiser",
