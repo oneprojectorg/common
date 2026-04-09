@@ -645,6 +645,7 @@
   "Attachments": "Attachments",
   "Attachments (optional)": "Attachments (optional)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Support your proposal with relevant documents like budgets or supporting research.",
+  "Drag a file here or <browse>browse</browse>": "Drag a file here or <browse>browse</browse>",
   "Accepts {types} and more up to {size}MB": "Accepts {types} and more up to {size}MB",
   "{count}/{max} attachments added": "{count}/{max} attachments added",
   "Drag to reorder": "Drag to reorder",

@@ -644,6 +644,7 @@
   "Attachments": "Adjuntos",
   "Attachments (optional)": "Archivos adjuntos (opcional)",
   "Support your proposal with relevant documents like budgets or supporting research.": "Apoye su propuesta con documentos relevantes como presupuestos o investigación de respaldo.",
+  "Drag a file here or <browse>browse</browse>": "Arrastra un archivo aquí o <browse>explorar</browse>",
   "Accepts {types} and more up to {size}MB": "Acepta {types} y más hasta {size}MB",
   "{count}/{max} attachments added": "{count}/{max} archivos adjuntos agregados",
   "Drag to reorder": "Arrastrar para reordenar",

@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { toast } from '@op/ui/Toast';
-import { startTransition, useOptimistic } from 'react';
+import { type ReactNode, startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -177,6 +177,13 @@ export function ProposalAttachments({
       <FileDropZone
         acceptedFileTypes={ACCEPTED_TYPES}
         onSelectFiles={handleSelectFiles}
+        label={t.rich('Drag a file here or <browse>browse</browse>', {
+          browse: (chunks: ReactNode) => (
+            <span className="text-primary-teal hover:text-primary-tealBlack hover:underline">
+              {chunks}
+            </span>
+          ),
+        })}
         description={t('Accepts {types} and more up to {size}MB', {
           types: 'PDF, DOCX, XLSX',
           size: MAX_SIZE_MB,

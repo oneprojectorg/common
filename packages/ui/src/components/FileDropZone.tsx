@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { DropEvent } from 'react-aria';
 import {
   Button,
@@ -21,8 +22,8 @@ export interface FileDropZoneProps {
   /** Callback when files are selected via drop or file picker. */
   onSelectFiles: (files: File[]) => void;
 
-  /** Main label text. */
-  label?: string;
+  /** Main label content. */
+  label?: ReactNode;
 
   /** Description text shown below the label (e.g., accepted formats, size limits). */
   description?: string;
