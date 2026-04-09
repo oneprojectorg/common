@@ -7,5 +7,5 @@ export default async function ReviewProposalPage({
 }) {
   const { slug, reviewId } = await params;
 
-  return <ReviewLayout slug={slug} reviewId={reviewId} />;
+  return <ReviewLayout decisionSlug={slug} reviewId={reviewId} />;
 }

@@ -5,18 +5,18 @@ import { Suspense } from 'react';
 import { ReviewContent } from './ReviewLayoutClient';
 
 interface ReviewLayoutProps {
-  slug: string;
+  decisionSlug: string;
   reviewId: string;
 }
 
 export function ReviewLayout({
-  slug,
+  decisionSlug,
   reviewId,
 }: ReviewLayoutProps) {
   return (
     <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
       <Suspense fallback={<ReviewSkeleton />}>
-        <ReviewContent slug={slug} reviewId={reviewId} />
+        <ReviewContent decisionSlug={decisionSlug} reviewId={reviewId} />
       </Suspense>
     </APIErrorBoundary>
   );

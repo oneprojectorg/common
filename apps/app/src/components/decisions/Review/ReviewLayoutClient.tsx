@@ -14,10 +14,10 @@ import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
 
 export function ReviewContent({
-  slug,
+  decisionSlug,
   reviewId,
 }: {
-  slug: string;
+  decisionSlug: string;
   reviewId: string;
 }) {
   const reviewFlowEnabled = useFeatureFlag('review_flow');
@@ -35,7 +35,7 @@ export function ReviewContent({
 
   return (
     <div className="flex h-dvh flex-col bg-white">
-      <ReviewNavbar slug={slug} />
+      <ReviewNavbar decisionSlug={decisionSlug} />
 
       <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
         <ReviewProposalPane
