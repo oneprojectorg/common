@@ -13,7 +13,7 @@ import type { ProposalDraftFields } from '../../../proposalEditor/useProposalDra
 
 const EMPTY_DRAFT: ProposalDraftFields = {
   title: '',
-  category: null,
+  category: [],
   budget: null,
 };
 

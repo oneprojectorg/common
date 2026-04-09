@@ -3,7 +3,11 @@
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Proposal, SupportedLocale } from '@op/common/client';
+import type {
+  Proposal,
+  ProposalTranslation,
+  SupportedLocale,
+} from '@op/common/client';
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
@@ -91,7 +95,7 @@ export function ProposalView({
 
   /** Holds the translated HTML content + source locale after a successful translation request */
   const [translatedHtmlContent, setTranslatedHtmlContent] = useState<{
-    translated: Record<string, string>;
+    translated: ProposalTranslation;
     sourceLocale: string;
   } | null>(null);
 

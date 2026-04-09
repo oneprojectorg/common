@@ -4,6 +4,7 @@ import {
   type Proposal,
   type ProposalDataInput,
   normalizeBudget,
+  normalizeProposalCategories,
   parseProposalData,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
@@ -17,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
  */
 export interface ProposalDraftFields extends Record<string, unknown> {
   title: string;
-  category: string | null;
+  category: string[];
   budget: BudgetData | null;
 }
 
@@ -45,7 +46,7 @@ export function useProposalDraft({
   const initialDraft = useMemo<ProposalDraftFields>(
     () => ({
       title: proposal.profile.name ?? '',
-      category: parsedProposalData?.category ?? null,
+      category: parsedProposalData?.category ?? [],
       budget: parsedProposalData?.budget ?? null,
     }),
     [
@@ -82,7 +83,8 @@ export function useProposalDraft({
       return {
         ...serverData,
         collaborationDocId,
-        category: nextDraft.category ?? undefined,
+        category:
+          nextDraft.category.length > 0 ? nextDraft.category : undefined,
         budget: nextDraft.budget ?? undefined,
       };
     },
@@ -125,7 +127,7 @@ export function useProposalDraft({
         if (key === 'title') {
           next.title = typeof value === 'string' ? value : '';
         } else if (key === 'category') {
-          next.category = typeof value === 'string' ? value : null;
+          next.category = normalizeProposalCategories(value);
         } else if (key === 'budget') {
           next.budget = normalizeBudget(value) ?? null;
         }

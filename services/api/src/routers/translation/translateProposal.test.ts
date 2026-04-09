@@ -1,6 +1,6 @@
 import { mockCollab } from '@op/collab/testing';
-import { db } from '@op/db/client';
-import { contentTranslations } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { contentTranslations, proposals } from '@op/db/schema';
 import { like } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -452,6 +452,75 @@ describe('translation.translateProposal', () => {
     expect(result.translated['title']).toBe('[ES] Template Fields Test');
     expect(result.sourceLocale).toBe('EN');
     expect(result.targetLocale).toBe('es');
+  });
+
+  it('should preserve multi-category structure when translating categories', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Multi Category Proposal',
+      },
+    });
+
+    const proposalData = proposal.proposalData as Record<string, unknown>;
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          ...proposalData,
+          category: ['Housing', 'Transit'],
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Body content' }],
+        },
+      ],
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposal.id}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result.translated.category).toEqual([
+      '[ES] Housing',
+      '[ES] Transit',
+    ]);
   });
 
   it('should use cached template field translations without calling DeepL', async ({

@@ -28,40 +28,54 @@ import { validateProposalAgainstTemplate } from './validateProposalAgainstTempla
 async function updateProposalCategoryLink(
   tx: TransactionType,
   proposalId: string,
-  newCategoryLabel?: string,
+  newCategoryLabels: string[],
 ): Promise<void> {
-  // Remove existing category links
   await tx
     .delete(proposalCategories)
     .where(eq(proposalCategories.proposalId, proposalId));
 
-  // Add new category link if provided
-  if (newCategoryLabel?.trim()) {
-    const proposalTaxonomy = await tx._query.taxonomies.findFirst({
-      where: eq(taxonomies.name, 'proposal'),
-    });
+  if (newCategoryLabels.length === 0) {
+    return;
+  }
 
-    if (!proposalTaxonomy) {
-      console.warn('No "proposal" taxonomy found, skipping category linking');
-      return;
+  const proposalTaxonomy = await tx._query.taxonomies.findFirst({
+    where: eq(taxonomies.name, 'proposal'),
+  });
+
+  if (!proposalTaxonomy) {
+    console.warn('No "proposal" taxonomy found, skipping category linking');
+    return;
+  }
+
+  const taxonomyTermIds: string[] = [];
+
+  for (const categoryLabel of newCategoryLabels) {
+    if (!categoryLabel.trim()) {
+      continue;
     }
 
     const taxonomyTerm = await tx._query.taxonomyTerms.findFirst({
       where: and(
-        eq(taxonomyTerms.label, newCategoryLabel.trim()),
+        eq(taxonomyTerms.label, categoryLabel.trim()),
         eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
       ),
     });
 
-    if (taxonomyTerm) {
-      // Create the new link
-      await tx.insert(proposalCategories).values({
-        proposalId,
-        taxonomyTermId: taxonomyTerm.id,
-      });
-    } else {
-      console.warn(`No taxonomy term found for category: ${newCategoryLabel}`);
+    if (!taxonomyTerm) {
+      console.warn(`No taxonomy term found for category: ${categoryLabel}`);
+      continue;
     }
+
+    taxonomyTermIds.push(taxonomyTerm.id);
+  }
+
+  if (taxonomyTermIds.length > 0) {
+    await tx.insert(proposalCategories).values(
+      taxonomyTermIds.map((taxonomyTermId) => ({
+        proposalId,
+        taxonomyTermId,
+      })),
+    );
   }
 }
 
@@ -189,12 +203,8 @@ export const updateProposal = async ({
 
       // Update category link if proposal data was updated
       if (data.proposalData) {
-        const newCategoryLabel = parseProposalData(data.proposalData).category;
-        await updateProposalCategoryLink(
-          tx,
-          proposalId,
-          newCategoryLabel ?? undefined,
-        );
+        const newCategoryLabels = parseProposalData(data.proposalData).category;
+        await updateProposalCategoryLink(tx, proposalId, newCategoryLabels);
       }
 
       const proposal = await tx.query.proposals.findFirst({

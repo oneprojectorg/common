@@ -38,10 +38,16 @@ export async function validateProposalAgainstTemplate(
       fragmentNames,
       { format: 'text' },
     );
-    const validationData = assembleProposalData(
-      proposalTemplate,
-      fragmentTexts,
-    );
+    const validationData = {
+      ...assembleProposalData(proposalTemplate, fragmentTexts),
+      ...(storedProposalData.category !== undefined
+        ? { category: storedProposalData.category }
+        : {}),
+      ...(storedProposalData.budget !== undefined
+        ? { budget: parsed.budget }
+        : {}),
+      ...(shouldInjectTitle ? { title } : {}),
+    };
 
     schemaValidator.assertProposalData(proposalTemplate, validationData);
   } else {

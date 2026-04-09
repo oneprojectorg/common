@@ -1,6 +1,11 @@
 'use client';
 
-import { parseSchemaOptions } from '@op/common/client';
+import {
+  formatProposalCategories,
+  parseCategoryFragmentValue,
+  parseSchemaOptions,
+  schemaAllowsMultipleSelection,
+} from '@op/common/client';
 import { cn } from '@op/ui/utils';
 import type { Editor, JSONContent } from '@tiptap/react';
 
@@ -10,6 +15,7 @@ import type { TranslateFn } from '@/lib/i18n';
 import {
   CollaborativeBudgetField,
   CollaborativeDropdownField,
+  CollaborativeMultiSelectField,
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
@@ -103,6 +109,22 @@ function getPreviewText({
   return draftValue ?? null;
 }
 
+function getPreviewCategories({
+  mode,
+  draftValue,
+  previewContent,
+}: {
+  mode: 'preview-version' | 'preview-template';
+  draftValue: string[];
+  previewContent: JSONContent | null | undefined;
+}): string[] {
+  if (mode === 'preview-version') {
+    return parseCategoryFragmentValue(getFragmentText(previewContent) ?? '');
+  }
+
+  return draftValue;
+}
+
 function getPreviewBudgetValue({
   mode,
   draftValue,
@@ -177,27 +199,48 @@ function renderField(
 
   if (key === 'category') {
     const options = extractOptions(schema);
+    const isMultipleSelection = schemaAllowsMultipleSelection(schema);
 
     if (isReadonlyMode) {
-      const selectedValue = getPreviewText({
+      const selectedValues = getPreviewCategories({
         mode,
         draftValue: draft.category,
         previewContent,
       });
-      const selectedOption = options.find((opt) => opt.value === selectedValue);
+      const selectedLabels = options
+        .filter((opt) => selectedValues.includes(opt.value))
+        .map((opt) => opt.label);
 
       return (
         <ReadonlyDropdownField
-          value={selectedOption?.label ?? null}
+          value={
+            selectedLabels.length > 0
+              ? formatProposalCategories(selectedLabels)
+              : null
+          }
           placeholder={t('Select category')}
         />
+      );
+    }
+
+    if (isMultipleSelection) {
+      return (
+        <div className="min-w-0">
+          <CollaborativeMultiSelectField
+            options={options}
+            initialValue={draft.category}
+            onChange={(value) => onFieldChange('category', value)}
+            fragmentName="category"
+            placeholder={t('Select category')}
+          />
+        </div>
       );
     }
 
     return (
       <CollaborativeDropdownField
         options={options}
-        initialValue={draft.category}
+        initialValue={draft.category[0] ?? null}
         onChange={(value) => onFieldChange('category', value)}
         fragmentName="category"
         placeholder={t('Select category')}
@@ -351,7 +394,7 @@ function renderField(
  *
  * Layout:
  * - Title at full width
- * - Category + Budget side-by-side
+ * - Budget stacked above category
  * - Dynamic template fields stacked below
  */
 export function ProposalFormRenderer({
@@ -388,9 +431,9 @@ export function ProposalFormRenderer({
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (
-        <div className="flex gap-6">
-          {categoryField && render(categoryField)}
+        <div className="flex flex-col items-start gap-2">
           {budgetField && render(budgetField)}
+          {categoryField && render(categoryField)}
         </div>
       )}
 

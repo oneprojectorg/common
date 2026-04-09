@@ -3,7 +3,10 @@ import StarterKit from '@tiptap/starter-kit';
 import { stringify } from 'csv-stringify/sync';
 
 import type { listProposals } from '../listProposals';
-import { parseProposalData } from '../proposalDataSchema';
+import {
+  formatProposalCategories,
+  parseProposalData,
+} from '../proposalDataSchema';
 
 // Infer the proposal type from the listProposals return value
 type ProposalFromList = Awaited<
@@ -47,7 +50,7 @@ export async function generateProposalsCsv(
       Description: getDocumentDescription(p),
       Budget: proposalData.budget?.amount ?? '',
       Currency: proposalData.budget?.currency ?? '',
-      Category: proposalData.category ?? '',
+      Categories: formatProposalCategories(proposalData.category),
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',
       'Submitter Email': p.submittedBy?.email || '',

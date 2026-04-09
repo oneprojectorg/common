@@ -15,6 +15,7 @@ import { getProfileAccessUser } from '../access';
 import { assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
+import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -136,9 +137,21 @@ export const updateDecisionInstance = async ({
 
     // Apply config updates (merge with existing config)
     if (hasConfigUpdate) {
+      const normalizedCategories = (config?.categories ?? []).map(
+        (category) => ({
+          ...category,
+          label: category.label.trim(),
+          description: category.description.trim(),
+        }),
+      );
+      const categories = normalizedCategories.map((category) => category.label);
+
+      await ensureProposalTaxonomyTerms(categories);
+
       updatedInstanceData.config = {
         ...existingInstanceData.config,
         ...config,
+        ...(config?.categories ? { categories: normalizedCategories } : {}),
       };
     }
 

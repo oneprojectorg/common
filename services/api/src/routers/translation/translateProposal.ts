@@ -8,7 +8,7 @@ import { commonAuthedProcedure, router } from '../../trpcFactory';
  * Returns a map of field names to translated text, plus locale metadata.
  */
 export const translateOutput = z.object({
-  translated: z.record(z.string(), z.string()),
+  translated: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
   sourceLocale: z.string(),
   targetLocale: z.enum(SUPPORTED_LOCALES),
 });

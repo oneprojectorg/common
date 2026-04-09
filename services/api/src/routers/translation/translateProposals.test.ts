@@ -1,6 +1,6 @@
 import { mockCollab } from '@op/collab/testing';
-import { db } from '@op/db/client';
-import { contentTranslations } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { contentTranslations, proposals } from '@op/db/schema';
 import { like } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -269,5 +269,73 @@ describe('translation.translateProposals', () => {
     expect(t).toBeDefined();
     expect(t?.title).toBe('[ES] Minimal Proposal');
     expect(t?.preview).toBeUndefined();
+  });
+
+  it('should preserve multi-category structure in batch translations', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Batch Categories Proposal' },
+    });
+
+    const proposalData = proposal.proposalData as Record<string, unknown>;
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          ...proposalData,
+          category: ['Housing', 'Transit'],
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Preview body' }],
+        },
+      ],
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `batch:${proposal.profileId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposals({
+      profileIds: [proposal.profileId],
+      targetLocale: 'es',
+    });
+
+    const translatedProposal = result.translations[proposal.profileId];
+    expect(translatedProposal?.category).toEqual([
+      '[ES] Housing',
+      '[ES] Transit',
+    ]);
   });
 });

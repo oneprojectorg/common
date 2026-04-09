@@ -9,7 +9,6 @@ import {
   proposalAttachments,
   proposalCategories,
   proposals,
-  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -25,7 +24,10 @@ import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
-import type { ProposalDataInput } from './proposalDataSchema';
+import {
+  type ProposalDataInput,
+  parseProposalData,
+} from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
 
@@ -94,32 +96,51 @@ export const createProposal = async ({
       );
     }
 
+    const parsedProposalData = parseProposalData(data.proposalData);
+
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
 
-    // Pre-fetch category term if specified to avoid lookup inside transaction
-    const categoryLabel = (data.proposalData as any)?.category;
-    let categoryTermId: string | null = null;
+    // Pre-fetch category terms if specified to avoid lookup inside transaction
+    const categoryLabels = [...new Set(parsedProposalData.category)];
+    let categoryTermIds: string[] = [];
 
-    if (categoryLabel?.trim()) {
+    if (categoryLabels.length > 0) {
       try {
-        const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-          where: eq(taxonomyTerms.label, categoryLabel.trim()),
-          with: {
-            taxonomy: true,
-          },
+        const proposalTaxonomy = await db.query.taxonomies.findFirst({
+          where: { name: 'proposal' },
+          with: { taxonomyTerms: true },
         });
 
-        if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
-          categoryTermId = taxonomyTerm.id;
-        } else {
-          console.warn(
-            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+        if (proposalTaxonomy) {
+          const labelSet = new Set(categoryLabels);
+          const matchedTerms = proposalTaxonomy.taxonomyTerms.filter(
+            (term: { label: string }) => labelSet.has(term.label),
           );
+
+          categoryTermIds = matchedTerms.map((term: { id: string }) => term.id);
+
+          const matchedLabels = new Set(
+            matchedTerms.map((term: { label: string }) => term.label),
+          );
+
+          for (const categoryLabel of categoryLabels) {
+            if (!matchedLabels.has(categoryLabel)) {
+              console.warn(
+                `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+              );
+            }
+          }
+        } else {
+          for (const categoryLabel of categoryLabels) {
+            console.warn(
+              `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+            );
+          }
         }
       } catch (error) {
         console.warn(
-          'Error fetching category term, proceeding without category:',
+          'Error fetching category terms, proceeding without category links:',
           error,
         );
       }
@@ -179,6 +200,10 @@ export const createProposal = async ({
           proposalData: {
             ...data.proposalData,
             collaborationDocId,
+            category:
+              parsedProposalData.category.length > 0
+                ? parsedProposalData.category
+                : undefined,
           },
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
@@ -190,12 +215,14 @@ export const createProposal = async ({
         throw new CommonError('Failed to create proposal');
       }
 
-      // Link to category within transaction if we have a valid term
-      if (categoryTermId) {
-        await tx.insert(proposalCategories).values({
-          proposalId: insertedProposal.id,
-          taxonomyTermId: categoryTermId,
-        });
+      // Link to categories within transaction if we have valid terms
+      if (categoryTermIds.length > 0) {
+        await tx.insert(proposalCategories).values(
+          categoryTermIds.map((taxonomyTermId) => ({
+            proposalId: insertedProposal.id,
+            taxonomyTermId,
+          })),
+        );
       }
 
       // Link attachments to proposal if provided

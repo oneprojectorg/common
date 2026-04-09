@@ -1,4 +1,9 @@
-import { extractBudgetValue, normalizeBudget } from './proposalDataSchema';
+import {
+  extractBudgetValue,
+  normalizeBudget,
+  parseCategoryFragmentValue,
+  schemaAllowsMultipleSelection,
+} from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
 /**
@@ -6,7 +11,7 @@ import type { ProposalTemplateSchema } from './types';
  * raw TipTap fragment text values.
  *
  * - Text fields (`short-text`, `long-text`, `title`): pass through as string
- * - Category fields: pass through as string
+ * - Category fields: pass through as string or parse JSON arrays for multi-select
  * - Money fields: `JSON.parse` the fragment (stored as `{"amount":N,"currency":"..."}`)
  * - Everything else with no `x-format`: attempt `JSON.parse`, fall back to string
  */
@@ -32,7 +37,11 @@ export function assembleProposalData(
       case 'short-text':
       case 'long-text':
       case 'dropdown':
-        data[key] = text;
+        if (schemaAllowsMultipleSelection(schema)) {
+          data[key] = parseCategoryFragmentValue(text);
+        } else {
+          data[key] = text;
+        }
         break;
       case 'money':
         try {

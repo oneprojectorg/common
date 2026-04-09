@@ -44,6 +44,11 @@ export {
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';
 export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta';
+export type { ProposalTranslation } from './services/translation/translateProposal';
+export type {
+  TranslatedFieldValue,
+  TranslatedFields,
+} from './services/translation/translatedFields';
 
 const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
 

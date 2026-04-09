@@ -148,7 +148,9 @@ export function CollaborativeBudgetField({
   return (
     <>
       <div
-        className={isEditing ? '' : 'pointer-events-none absolute opacity-0'}
+        className={
+          isEditing ? 'max-w-md' : 'pointer-events-none absolute opacity-0'
+        }
         style={sharedWidth > 0 ? { minWidth: sharedWidth } : undefined}
       >
         <NumberField
@@ -173,7 +175,6 @@ export function CollaborativeBudgetField({
           color="pill"
           onPress={handleStartEditing}
           className="justify-start text-left"
-          style={sharedWidth > 0 ? { minWidth: sharedWidth } : undefined}
         >
           {budgetAmount !== null
             ? budgetAmount.toLocaleString(undefined, {
