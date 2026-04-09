@@ -3,6 +3,7 @@
 import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
+import { Header2 } from '@op/ui/Header';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Pagination } from '@op/ui/Pagination';
@@ -92,9 +93,9 @@ export const UsersTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-md font-serif text-neutral-black">
+        <Header2 className="text-md font-serif">
           {t('platformAdmin_allUsers')}
-        </h2>
+        </Header2>
         <div className="flex items-center gap-2">
           <div className="w-64">
             <SearchField

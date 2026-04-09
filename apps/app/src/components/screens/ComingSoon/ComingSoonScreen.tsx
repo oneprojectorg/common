@@ -1,6 +1,7 @@
 'use client';
 
 import { ButtonLink } from '@op/ui/Button';
+import { Header2, Header3 } from '@op/ui/Header';
 import { LogoLoop } from '@op/ui/LogoLoop';
 import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
@@ -105,7 +106,7 @@ export const ComingSoonScreen = () => {
         </section>
         <FadeInWrapper>
           <section className="space-y-6">
-            <h3 className="text-base">{t('Trusted by')}</h3>
+            <Header3 className="text-base">{t('Trusted by')}</Header3>
             <LogoLoop
               logos={logos}
               speed={20}
@@ -121,9 +122,9 @@ export const ComingSoonScreen = () => {
         </FadeInWrapper>
         <FadeInWrapper>
           <section className="flex flex-col items-center gap-6 p-6">
-            <h2 className="font-serif text-title-md">
+            <Header2 className="font-serif text-title-md">
               {t('Get early access')}
-            </h2>
+            </Header2>
             <div className="sm:text-lg">
               <p>
                 {t(

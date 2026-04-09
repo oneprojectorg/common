@@ -7,6 +7,7 @@ import type { Proposal, ProposalTemplateSchema } from '@op/common/client';
 import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
+import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
@@ -134,7 +135,7 @@ export function ProposalCardTitle({
     );
   }
 
-  return <h3 className={titleClasses}>{titleText}</h3>;
+  return <Header3 className={titleClasses}>{titleText}</Header3>;
 }
 
 /**
