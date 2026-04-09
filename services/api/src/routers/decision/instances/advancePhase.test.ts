@@ -1,4 +1,4 @@
-import { advancePhase } from '@op/common';
+import { type DecisionInstanceData, advancePhase } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -70,7 +70,7 @@ async function callAdvancePhase(
       tx,
       instance: {
         id: dbInstance.id,
-        instanceData: dbInstance.instanceData,
+        instanceData: dbInstance.instanceData as DecisionInstanceData,
       },
       triggeredByProfileId: null,
       ...overrides,

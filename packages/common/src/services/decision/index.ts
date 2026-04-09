@@ -8,7 +8,6 @@ export * from './listProcesses';
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
-export * from './updateInstance';
 export * from './updateDecisionInstance';
 export * from './listInstances';
 export * from './listLegacyInstances';
@@ -20,8 +19,6 @@ export * from './getDecisionBySlug';
 export * from './advancePhase';
 
 // Transition management
-export { TransitionEngine } from './transitionEngine';
-export type { TransitionCheckResult } from './transitionEngine';
 export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';
 export * from './updateTransitionsForProcess';
