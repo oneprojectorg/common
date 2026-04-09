@@ -53,7 +53,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-noned outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+        'appearance-noned outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue pressed:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]',
     },
 
     isDisabled: {
@@ -99,8 +99,7 @@ type ButtonVariants = VariantProps<typeof buttonStyle>;
 // type ButtonProps = React.ComponentProps<typeof RACButton>;
 
 export interface ButtonProps
-  extends React.ComponentProps<typeof RACButton>,
-    ButtonVariants {
+  extends React.ComponentProps<typeof RACButton>, ButtonVariants {
   className?: string;
   isLoading?: boolean;
 }
@@ -152,7 +151,8 @@ type LowLevelPressHandlers =
   | 'onPressUp';
 
 export interface ButtonLinkProps
-  extends Omit<React.ComponentProps<typeof RACLink>, LowLevelPressHandlers>,
+  extends
+    Omit<React.ComponentProps<typeof RACLink>, LowLevelPressHandlers>,
     ButtonVariants {
   className?: string;
   isLoading?: boolean;
