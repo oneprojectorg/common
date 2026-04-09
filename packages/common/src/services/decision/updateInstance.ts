@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 import { buildCategorySchema } from './proposalDataSchema';
-import { ensureProposalTaxonomy } from './proposalTaxonomy';
+import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -81,7 +81,7 @@ export const updateInstance = async (data: UpdateInstanceInput) => {
       }
 
       // Ensure proposal taxonomy and terms exist for the categories
-      await ensureProposalTaxonomy(categories);
+      await ensureProposalTaxonomyTerms(categories);
 
       // Also update the process schema to keep categories in sync
       if (existingInstance.processId) {

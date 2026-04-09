@@ -8,15 +8,15 @@ import { CommonError } from '../../utils';
  * Ensures the proposal taxonomy exists and that each category label has a
  * matching taxonomy term.
  */
-export async function ensureProposalTaxonomy(
+export async function ensureProposalTaxonomyTerms(
   categories: string[],
 ): Promise<string[]> {
   if (!categories || categories.length === 0) {
     return [];
   }
 
-  let proposalTaxonomy = await db._query.taxonomies.findFirst({
-    where: eq(taxonomies.name, 'proposal'),
+  let proposalTaxonomy = await db.query.taxonomies.findFirst({
+    where: { name: 'proposal' },
   });
 
   if (!proposalTaxonomy) {
@@ -50,6 +50,7 @@ export async function ensureProposalTaxonomy(
       trim: true,
     });
 
+    // taxonomyTerms V2 types are broken due to self-referential parentId
     let existingTerm = await db._query.taxonomyTerms.findFirst({
       where: eq(taxonomyTerms.termUri, termUri),
     });

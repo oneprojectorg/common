@@ -15,7 +15,7 @@ import { getProfileAccessUser } from '../access';
 import { assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
-import { ensureProposalTaxonomy } from './proposalTaxonomy';
+import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -146,7 +146,7 @@ export const updateDecisionInstance = async ({
       );
       const categories = normalizedCategories.map((category) => category.label);
 
-      await ensureProposalTaxonomy(categories);
+      await ensureProposalTaxonomyTerms(categories);
 
       updatedInstanceData.config = {
         ...existingInstanceData.config,

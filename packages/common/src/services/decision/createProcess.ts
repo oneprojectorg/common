@@ -4,7 +4,7 @@ import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
-import { ensureProposalTaxonomy } from './proposalTaxonomy';
+import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import type { ProcessSchema } from './types';
 
 export interface CreateProcessInput {
@@ -40,7 +40,7 @@ export const createProcess = async ({
     }
 
     // Ensure proposal taxonomy and terms exist for the categories
-    await ensureProposalTaxonomy(categories);
+    await ensureProposalTaxonomyTerms(categories);
 
     const [process] = await db
       .insert(decisionProcesses)

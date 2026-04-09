@@ -1,4 +1,4 @@
-import { and, db, eq, inArray } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
@@ -9,8 +9,6 @@ import {
   proposalAttachments,
   proposalCategories,
   proposals,
-  taxonomies,
-  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -109,22 +107,21 @@ export const createProposal = async ({
 
     if (categoryLabels.length > 0) {
       try {
-        const proposalTaxonomy = await db._query.taxonomies.findFirst({
-          where: eq(taxonomies.name, 'proposal'),
+        const proposalTaxonomy = await db.query.taxonomies.findFirst({
+          where: { name: 'proposal' },
+          with: { taxonomyTerms: true },
         });
 
         if (proposalTaxonomy) {
-          const categoryTerms = await db._query.taxonomyTerms.findMany({
-            where: and(
-              eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
-              inArray(taxonomyTerms.label, categoryLabels),
-            ),
-          });
+          const labelSet = new Set(categoryLabels);
+          const matchedTerms = proposalTaxonomy.taxonomyTerms.filter(
+            (term: { label: string }) => labelSet.has(term.label),
+          );
 
-          categoryTermIds = categoryTerms.map((term) => term.id);
+          categoryTermIds = matchedTerms.map((term: { id: string }) => term.id);
 
           const matchedLabels = new Set(
-            categoryTerms.map((term) => term.label),
+            matchedTerms.map((term: { label: string }) => term.label),
           );
 
           for (const categoryLabel of categoryLabels) {
