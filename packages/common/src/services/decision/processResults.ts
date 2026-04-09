@@ -4,7 +4,6 @@ import {
   decisionProcessResultSelections,
   decisionProcessResults,
   decisionsVoteSubmissions,
-  processInstances,
   proposals,
 } from '@op/db/schema';
 
@@ -30,8 +29,8 @@ export async function processResults({
   error?: string;
 }> {
   try {
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, processInstanceId),
+    const processInstance = await db.query.processInstances.findFirst({
+      where: { id: processInstanceId },
       with: {
         process: true,
       },

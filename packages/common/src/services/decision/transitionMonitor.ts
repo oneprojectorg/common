@@ -167,6 +167,14 @@ async function advanceInstanceTransitions({
       }
       const fromPhaseId = transition.fromStateId;
 
+      // Only auto-advance phases with date-based advancement.
+      const departingPhase = currentInstanceData.phases?.find(
+        (p) => p.phaseId === fromPhaseId,
+      );
+      if (departingPhase?.rules?.advancement?.method !== 'date') {
+        continue;
+      }
+
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
           tx,
@@ -190,8 +198,8 @@ async function advanceInstanceTransitions({
       result.processed++;
 
       // Re-fetch so the next iteration sees the committed state.
-      const refreshed = await db._query.processInstances.findFirst({
-        where: eq(processInstances.id, processInstanceId),
+      const refreshed = await db.query.processInstances.findFirst({
+        where: { id: processInstanceId },
       });
       if (refreshed) {
         currentInstanceData = refreshed.instanceData as DecisionInstanceData;
