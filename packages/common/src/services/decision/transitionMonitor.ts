@@ -252,6 +252,10 @@ async function advanceInstanceTransitions({
   result: ProcessDecisionsTransitionsResult;
 }): Promise<string | null> {
   let lastSuccessfulToStateId: string | null = null;
+  // Start with the snapshot from the initial query. After each successful
+  // advance, re-fetch so the next iteration's pipeline sees the updated
+  // instanceData (currentPhaseId, stateData, etc.).
+  let currentInstanceData: unknown = transitions[0]!.instance.instanceData;
 
   for (const transition of transitions) {
     try {
@@ -267,7 +271,7 @@ async function advanceInstanceTransitions({
           instance: {
             id: processInstanceId,
             processId: transition.instance.processId,
-            instanceData: transition.instance.instanceData,
+            instanceData: currentInstanceData,
           },
           processSchema,
           fromPhaseId: transition.fromStateId,
@@ -279,12 +283,20 @@ async function advanceInstanceTransitions({
       );
 
       if (advanceResult.conflict) {
-        // Another worker beat us, or the instance left PUBLISHED.
         break;
       }
 
       lastSuccessfulToStateId = transition.toStateId;
       result.processed++;
+
+      // Re-fetch instanceData so the next transition's pipeline sees
+      // the committed state (updated currentPhaseId, stateData, etc.)
+      const refreshed = await db._query.processInstances.findFirst({
+        where: eq(processInstances.id, processInstanceId),
+      });
+      if (refreshed) {
+        currentInstanceData = refreshed.instanceData;
+      }
     } catch (error) {
       result.failed++;
       result.errors.push({
