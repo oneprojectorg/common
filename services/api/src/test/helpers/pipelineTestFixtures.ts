@@ -238,18 +238,18 @@ export async function executeTestTransition(opts: {
   fromPhaseId: string;
   toPhaseId: string;
 }) {
-  const instance = await db._query.processInstances.findFirst({
-    where: eq(processInstances.id, opts.instanceId),
+  const processInstance = await db.query.processInstances.findFirst({
+    where: { id: opts.instanceId },
   });
-  if (!instance) {
+  if (!processInstance) {
     throw new Error(`Instance ${opts.instanceId} not found`);
   }
   return db.transaction(async (tx) =>
     advancePhase({
       tx,
       instance: {
-        id: instance.id,
-        instanceData: instance.instanceData as DecisionInstanceData,
+        ...processInstance,
+        instanceData: processInstance.instanceData as DecisionInstanceData,
       },
       fromPhaseId: opts.fromPhaseId,
       toPhaseId: opts.toPhaseId,

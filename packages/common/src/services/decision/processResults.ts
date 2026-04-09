@@ -18,24 +18,20 @@ import {
 } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
 
-export interface ProcessResultsInput {
-  processInstanceId: string;
-}
-
-export interface ProcessResultsOutput {
-  success: boolean;
-  resultId: string;
-  selectedProposalIds: string[];
-  error?: string;
-}
-
 /**
  * Process results for a process instance by executing the selection pipeline
  * and storing the selected proposal IDs in the database
  */
 export async function processResults({
   processInstanceId,
-}: ProcessResultsInput): Promise<ProcessResultsOutput> {
+}: {
+  processInstanceId: string;
+}): Promise<{
+  success: boolean;
+  resultId: string;
+  selectedProposalIds: string[];
+  error?: string;
+}> {
   try {
     // Get the process instance
     const processInstance = await db._query.processInstances.findFirst({

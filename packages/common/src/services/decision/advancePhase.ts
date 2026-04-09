@@ -245,5 +245,3 @@ export async function advancePhase(
     survivingProposalIds,
   };
 }
-
-export type { DecisionInstanceData };
