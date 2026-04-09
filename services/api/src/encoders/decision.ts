@@ -261,6 +261,19 @@ const decisionAccessEncoder = z.object({
 });
 export type DecisionAccess = z.infer<typeof decisionAccessEncoder>;
 
+/** Source data encoder — the editable version used by the process builder */
+export const sourceDataEncoder = z
+  .object({
+    name: z.string().optional(),
+    description: z.string().nullish(),
+    stewardProfileId: z.string().uuid().optional(),
+    config: processConfigEncoder.optional(),
+    phases: z.array(instancePhaseDataEncoder).optional(),
+    proposalTemplate: jsonSchemaEncoder.optional(),
+    rubricTemplate: rubricTemplateEncoder.optional(),
+  })
+  .passthrough();
+
 /** Process instance encoder  */
 export const processInstanceWithSchemaEncoder = createSelectSchema(
   processInstances,
@@ -278,6 +291,7 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
   })
   .extend({
     instanceData: instanceDataWithSchemaEncoder,
+    sourceData: sourceDataEncoder.nullish(),
     process: decisionProcessWithSchemaEncoder.optional(),
     owner: baseProfileEncoder.optional(),
     steward: baseProfileEncoder.nullish(),

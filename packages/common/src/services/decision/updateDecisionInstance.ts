@@ -191,6 +191,40 @@ export const updateDecisionInstance = async ({
     updateData.instanceData = updatedInstanceData;
   }
 
+  // Dual-write: also update sourceData so it stays in sync.
+  // sourceData stores the editor-controlled subset of fields (name,
+  // description, stewardProfileId, phases, templates, config) used by
+  // the process builder. This prepares for the source/live model where
+  // the process builder will read/write only sourceData.
+  const existingSourceData =
+    (existingInstance.sourceData as Record<string, unknown>) ?? {};
+  const sourceDataUpdate: Record<string, unknown> = { ...existingSourceData };
+  if (name !== undefined) {
+    sourceDataUpdate.name = name;
+  }
+  if (description !== undefined) {
+    sourceDataUpdate.description = description;
+  }
+  if (stewardProfileId !== undefined) {
+    sourceDataUpdate.stewardProfileId = stewardProfileId;
+  }
+  if (config !== undefined) {
+    sourceDataUpdate.config = {
+      ...(existingSourceData.config as Record<string, unknown>),
+      ...config,
+    };
+  }
+  if (phases && phases.length > 0) {
+    sourceDataUpdate.phases = phases;
+  }
+  if (proposalTemplate !== undefined) {
+    sourceDataUpdate.proposalTemplate = proposalTemplate;
+  }
+  if (rubricTemplate !== undefined) {
+    sourceDataUpdate.rubricTemplate = rubricTemplate;
+  }
+  updateData.sourceData = sourceDataUpdate;
+
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {
     // Nothing to update, just return the existing profile

@@ -67,6 +67,15 @@ export const createDecisionInstance = async ({
         name,
         description,
         instanceData,
+        sourceData: {
+          name,
+          description,
+          stewardProfileId,
+          phases: instanceData.phases,
+          proposalTemplate: instanceData.proposalTemplate,
+          rubricTemplate: instanceData.rubricTemplate,
+          config: instanceData.config,
+        },
         currentStateId: instanceData.currentPhaseId, // DB column is currentStateId but stores phaseId
         ownerProfileId,
         stewardProfileId,

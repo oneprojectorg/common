@@ -10,6 +10,7 @@ export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
 export * from './updateInstance';
 export * from './updateDecisionInstance';
+export * from './promoteSourceToLive';
 export * from './listInstances';
 export * from './listLegacyInstances';
 export * from './getInstance';

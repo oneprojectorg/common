@@ -84,13 +84,14 @@ export const duplicateInstance = async ({
 
   assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
-  const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
-  if (!sourceData) {
+  const sourceInstanceData =
+    sourceInstance.instanceData as DecisionInstanceData | null;
+  if (!sourceInstanceData) {
     throw new CommonError('Source instance has no instance data');
   }
 
   // Build new instance data based on include flags
-  const newInstanceData = buildInstanceData(sourceData, include);
+  const newInstanceData = buildInstanceData(sourceInstanceData, include);
 
   // Delegate core creation (profile, instance, default roles, profile user)
   const profile = await createDecisionInstance({
