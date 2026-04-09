@@ -1,4 +1,3 @@
-/* eslint-disable ts/no-empty-object-type */
 import type { ChannelName } from '@op/common/realtime';
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';

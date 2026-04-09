@@ -1,6 +1,5 @@
 'use client';
 
-/* eslint-disable react/no-unknown-property */
 import { Loader } from '@react-three/drei';
 import { Canvas, RootState, useFrame, useThree } from '@react-three/fiber';
 import React, {

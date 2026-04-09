@@ -159,7 +159,6 @@ function buildInstanceData(
     const config: ProcessConfig = {};
     for (const key of CATEGORY_KEYS) {
       if (source.config[key] !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (config as any)[key] = source.config[key];
       }
     }

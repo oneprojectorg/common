@@ -89,7 +89,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            // eslint-disable-next-line ts/no-unsafe-argument
             supabaseResponse.cookies.set(name, value, options),
           );
         },

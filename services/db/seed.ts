@@ -1,4 +1,3 @@
-/* eslint-disable antfu/no-top-level-await */
 import { adminEmails } from '@op/core';
 import { createServerClient } from '@supabase/ssr';
 import type { User } from '@supabase/supabase-js';

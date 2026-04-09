@@ -32,7 +32,6 @@ function getPostHogDistinctId(): string | null {
 
   try {
     // Dynamic import to avoid server-side issues with posthog-js
-    // eslint-disable-next-line ts/no-require-imports
     const posthog = require('posthog-js').default;
     if (posthog?.__loaded) {
       return posthog.get_distinct_id();

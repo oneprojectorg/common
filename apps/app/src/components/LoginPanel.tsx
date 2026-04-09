@@ -280,7 +280,6 @@ export const LoginPanel = () => {
                             placeholder: 'admin@yourorganization.org',
                             spellCheck: false,
                           }}
-                          // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
                           defaultValue={undefined}
                           isDisabled={
@@ -318,7 +317,6 @@ export const LoginPanel = () => {
                             spellCheck: false,
                           }}
                           fieldClassName="h-auto"
-                          // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
                           defaultValue={undefined}
                           isDisabled={login.isFetching || !!combinedError}

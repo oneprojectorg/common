@@ -14,8 +14,6 @@ export function PostHogClient() {
   };
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 export async function trackEvent(_event: AnalyticsEvent): Promise<void> {}
 
 export async function trackEventWithContext(

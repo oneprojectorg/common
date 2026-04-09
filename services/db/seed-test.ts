@@ -1,4 +1,3 @@
-/* eslint-disable antfu/no-top-level-await */
 import { createServerClient } from '@supabase/ssr';
 import dotenv from 'dotenv';
 import { reset } from 'drizzle-seed';

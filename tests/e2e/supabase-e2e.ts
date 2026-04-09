@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-template-curly-in-string */
-/* eslint-disable prefer-template */
 /**
  * Script to manage the e2e Supabase instance
  * This instance runs on port 56xxx, completely isolated from dev (54xxx) and test (55xxx)
