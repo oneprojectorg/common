@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
-import type { DecisionProcess } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -16,7 +15,6 @@ import { assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
 import { processResults } from './processResults';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ProcessSchema } from './types';
 
 export interface ManualTransitionInput {
   instanceId: string;
@@ -56,7 +54,6 @@ export async function manualTransition({
     assertUserByAuthId(user.id),
     db.query.processInstances.findFirst({
       where: { id: instanceId },
-      with: { process: true },
     }),
   ]);
 
@@ -122,9 +119,6 @@ export async function manualTransition({
   const isTransitioningToFinalPhase =
     currentPhaseIndex + 1 === phases.length - 1;
 
-  const process = instance.process as DecisionProcess;
-  const processSchema = process?.processSchema as ProcessSchema | undefined;
-
   await db.transaction(async (tx) => {
     const result = await advancePhase({
       tx,
@@ -133,7 +127,6 @@ export async function manualTransition({
         processId: instance.processId,
         instanceData,
       },
-      processSchema,
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: dbUser.currentProfileId,
