@@ -54,9 +54,6 @@ function ReviewExploreContent({
 
   const { assignment, rubricTemplate } = data;
 
-  const handleRequestRevision = () => {};
-  const handleSubmit = () => {};
-
   return (
     <div className="flex h-dvh flex-col bg-white">
       <ReviewExploreNavbar slug={slug} />
