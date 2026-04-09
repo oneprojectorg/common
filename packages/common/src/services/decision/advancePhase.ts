@@ -28,7 +28,6 @@ export interface AdvancePhaseInput {
    */
   instance: {
     id: string;
-    processId: string | null;
     instanceData: unknown;
   };
   /** Phase the instance must currently be on for the advance to apply. */
@@ -129,7 +128,7 @@ export async function advancePhase(
       voteData,
       process: {
         instanceId,
-        processId: instance.processId!,
+        processId: instanceId,
         currentStateId: fromPhaseId,
         instanceData: instanceData as unknown as InstanceData,
         // The pipeline executor requires processSchema on the context type

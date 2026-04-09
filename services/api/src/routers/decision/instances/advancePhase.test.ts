@@ -70,7 +70,6 @@ async function callAdvancePhase(
       tx,
       instance: {
         id: dbInstance.id,
-        processId: dbInstance.processId,
         instanceData: dbInstance.instanceData,
       },
       triggeredByProfileId: null,

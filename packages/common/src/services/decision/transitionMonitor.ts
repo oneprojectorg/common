@@ -30,7 +30,6 @@ type DueTransition = {
   scheduledDate: string;
   completedAt: string | null;
   instance: {
-    processId: string | null;
     instanceData: unknown;
   };
 };
@@ -62,7 +61,6 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
         scheduledDate: decisionProcessTransitions.scheduledDate,
         completedAt: decisionProcessTransitions.completedAt,
         instance: {
-          processId: processInstances.processId,
           instanceData: processInstances.instanceData,
         },
       })
@@ -191,7 +189,6 @@ async function advanceInstanceTransitions({
           tx,
           instance: {
             id: processInstanceId,
-            processId: transition.instance.processId,
             instanceData: currentInstanceData,
           },
           fromPhaseId,
