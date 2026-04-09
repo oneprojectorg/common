@@ -14,7 +14,10 @@ export const FullScreenSplitMain = ({
       <section className="sticky top-0 hidden lg:block">
         <div className="flex items-center gap-2">
           {logo ? (
-            <Link href="/" className="flex items-center gap-2 hover:no-underline">
+            <Link
+              href="/"
+              className="flex items-center gap-2 hover:no-underline"
+            >
               <CommonLogo />
             </Link>
           ) : null}
