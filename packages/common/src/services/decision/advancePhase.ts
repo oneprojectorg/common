@@ -14,7 +14,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import { aggregateProposalMetrics, executePipeline } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
-import type { InstanceData, ProcessSchema } from './types';
+import type { ProcessSchema } from './types';
 
 export interface AdvancePhaseInput {
   /** Open transaction the caller controls. All writes happen on this tx. */
@@ -28,7 +28,7 @@ export interface AdvancePhaseInput {
    */
   instance: {
     id: string;
-    instanceData: unknown;
+    instanceData: DecisionInstanceData;
   };
   /** Phase the instance must currently be on for the advance to apply. */
   fromPhaseId: string;
@@ -122,15 +122,15 @@ export async function advancePhase(
   let survivingProposalIds: string[] = allProposals.map((p) => p.id);
 
   if (selectionPipeline) {
-    const voteData = await aggregateProposalMetrics(allProposals, tx);
+    const proposalMetrics = await aggregateProposalMetrics(allProposals, tx);
     const context: ExecutionContext = {
       proposals: allProposals,
-      voteData,
+      voteData: proposalMetrics,
       process: {
         instanceId,
         processId: instanceId,
         currentStateId: fromPhaseId,
-        instanceData: instanceData as unknown as InstanceData,
+        instanceData,
         // The pipeline executor requires processSchema on the context type
         // but no pipeline block actually reads it. Pass a minimal shape
         // derived from the instance data so we don't need the template.

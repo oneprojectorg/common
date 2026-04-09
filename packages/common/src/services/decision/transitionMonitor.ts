@@ -178,9 +178,7 @@ async function advanceInstanceTransitions({
   for (const transition of transitions) {
     try {
       if (!transition.fromStateId) {
-        throw new CommonError(
-          `Transition ${transition.id} has no fromStateId`,
-        );
+        throw new CommonError(`Transition ${transition.id} has no fromStateId`);
       }
       const fromPhaseId = transition.fromStateId;
 
@@ -236,9 +234,7 @@ async function advanceInstanceTransitions({
  */
 async function runResultsProcessing(processInstanceId: string): Promise<void> {
   try {
-    console.log(
-      `Processing results for process instance ${processInstanceId}`,
-    );
+    console.log(`Processing results for process instance ${processInstanceId}`);
 
     const processingResult = await processResults({ processInstanceId });
 

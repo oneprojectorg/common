@@ -82,12 +82,12 @@ export async function processResults({
 
     try {
       // Aggregate voting data
-      const voteData = await aggregateProposalMetrics(processProposals);
+      const proposalMetrics = await aggregateProposalMetrics(processProposals);
 
       // Build execution context
       const context: ExecutionContext = {
         proposals: processProposals,
-        voteData,
+        voteData: proposalMetrics,
         process: {
           instanceId: processInstance.id,
           processId: processInstance.processId,

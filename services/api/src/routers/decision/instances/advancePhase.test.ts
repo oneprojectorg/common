@@ -103,10 +103,7 @@ describe.concurrent('advancePhase', () => {
     expect(instanceData.currentPhaseId).toBe('final');
 
     const history = await db._query.stateTransitionHistory.findFirst({
-      where: eq(
-        stateTransitionHistory.processInstanceId,
-        loaded.dbInstance.id,
-      ),
+      where: eq(stateTransitionHistory.processInstanceId, loaded.dbInstance.id),
     });
     expect(history).toBeDefined();
     expect(history!.fromStateId).toBe('initial');
@@ -197,10 +194,7 @@ describe.concurrent('advancePhase', () => {
     });
 
     const history = await db._query.stateTransitionHistory.findFirst({
-      where: eq(
-        stateTransitionHistory.processInstanceId,
-        loaded.dbInstance.id,
-      ),
+      where: eq(stateTransitionHistory.processInstanceId, loaded.dbInstance.id),
     });
     expect(history!.transitionData).toEqual({ source: 'cron', batch: 42 });
   });
@@ -253,9 +247,7 @@ describe.concurrent('advancePhase', () => {
     const joinRows = await db
       .select()
       .from(decisionTransitionProposals)
-      .where(
-        eq(decisionTransitionProposals.processInstanceId, dbInstance.id),
-      );
+      .where(eq(decisionTransitionProposals.processInstanceId, dbInstance.id));
     expect(joinRows.length).toBe(1);
     expect(joinRows[0]!.proposalId).toBe(proposal.id);
     expect(joinRows[0]!.transitionHistoryId).toBe(result.transitionHistoryId);
