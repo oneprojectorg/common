@@ -196,34 +196,47 @@ export const updateDecisionInstance = async ({
   // description, stewardProfileId, phases, templates, config) used by
   // the process builder. This prepares for the source/live model where
   // the process builder will read/write only sourceData.
-  const existingSourceData =
-    (existingInstance.sourceData as Record<string, unknown>) ?? {};
-  const sourceDataUpdate: Record<string, unknown> = { ...existingSourceData };
-  if (name !== undefined) {
-    sourceDataUpdate.name = name;
-  }
-  if (description !== undefined) {
-    sourceDataUpdate.description = description;
-  }
-  if (stewardProfileId !== undefined) {
-    sourceDataUpdate.stewardProfileId = stewardProfileId;
-  }
-  if (config !== undefined) {
-    sourceDataUpdate.config = {
-      ...(existingSourceData.config as Record<string, unknown>),
-      ...config,
+  const hasSourceChanges =
+    name !== undefined ||
+    description !== undefined ||
+    stewardProfileId !== undefined ||
+    config !== undefined ||
+    (phases && phases.length > 0) ||
+    proposalTemplate !== undefined ||
+    rubricTemplate !== undefined;
+
+  if (hasSourceChanges) {
+    const existingSourceData =
+      (existingInstance.sourceData as Record<string, unknown>) ?? {};
+    const sourceDataUpdate: Record<string, unknown> = {
+      ...existingSourceData,
     };
+    if (name !== undefined) {
+      sourceDataUpdate.name = name;
+    }
+    if (description !== undefined) {
+      sourceDataUpdate.description = description;
+    }
+    if (stewardProfileId !== undefined) {
+      sourceDataUpdate.stewardProfileId = stewardProfileId;
+    }
+    if (config !== undefined) {
+      sourceDataUpdate.config = {
+        ...(existingSourceData.config as Record<string, unknown>),
+        ...config,
+      };
+    }
+    if (phases && phases.length > 0) {
+      sourceDataUpdate.phases = phases;
+    }
+    if (proposalTemplate !== undefined) {
+      sourceDataUpdate.proposalTemplate = proposalTemplate;
+    }
+    if (rubricTemplate !== undefined) {
+      sourceDataUpdate.rubricTemplate = rubricTemplate;
+    }
+    updateData.sourceData = sourceDataUpdate;
   }
-  if (phases && phases.length > 0) {
-    sourceDataUpdate.phases = phases;
-  }
-  if (proposalTemplate !== undefined) {
-    sourceDataUpdate.proposalTemplate = proposalTemplate;
-  }
-  if (rubricTemplate !== undefined) {
-    sourceDataUpdate.rubricTemplate = rubricTemplate;
-  }
-  updateData.sourceData = sourceDataUpdate;
 
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {

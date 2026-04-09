@@ -103,7 +103,7 @@ export const promoteSourceToLive = async ({
 
   if (source.phases && source.phases.length > 0) {
     const existingPhaseMap = new Map(
-      existingInstanceData.phases.map((p) => [p.phaseId, p]),
+      (existingInstanceData.phases ?? []).map((p) => [p.phaseId, p]),
     );
 
     updatedInstanceData.phases = source.phases.map((phase) => {
