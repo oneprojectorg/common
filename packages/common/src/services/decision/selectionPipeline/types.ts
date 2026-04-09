@@ -1,6 +1,6 @@
 import type { ProcessInstance, Proposal } from '@op/db/schema';
 
-import type { InstanceData, ProcessSchema } from '../types';
+import type { DecisionInstanceData } from '../schemas/instanceData';
 
 /**
  * Top-level selection pipeline definition
@@ -251,9 +251,8 @@ export interface ExecutionContext {
   process: {
     instanceId: string;
     processId: string;
-    currentStateId: string | null;
-    instanceData: InstanceData;
-    processSchema: ProcessSchema;
+    currentPhaseId: string;
+    instanceData: DecisionInstanceData;
     processInstance: ProcessInstance;
   };
 

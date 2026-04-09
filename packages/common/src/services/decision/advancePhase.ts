@@ -10,11 +10,12 @@ import {
 } from '@op/db/schema';
 
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type { DecisionInstanceData } from './schemas/instanceData';
-import type { PhaseInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import { aggregateProposalMetrics, executePipeline } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
-import type { ProcessSchema } from './types';
 
 export interface AdvancePhaseInput {
   /** Open transaction the caller controls. All writes happen on this tx. */
@@ -129,18 +130,8 @@ export async function advancePhase(
       process: {
         instanceId,
         processId: instanceId,
-        currentStateId: fromPhaseId,
+        currentPhaseId: fromPhaseId,
         instanceData,
-        // The pipeline executor requires processSchema on the context type
-        // but no pipeline block actually reads it. Pass a minimal shape
-        // derived from the instance data so we don't need the template.
-        processSchema: {
-          phases: instanceData.phases?.map((p: PhaseInstanceData) => ({
-            id: p.phaseId,
-            name: p.name ?? p.phaseId,
-            selectionPipeline: p.selectionPipeline,
-          })),
-        } as ProcessSchema,
         processInstance: instance as unknown as Parameters<
           typeof executePipeline
         >[1]['process']['processInstance'],

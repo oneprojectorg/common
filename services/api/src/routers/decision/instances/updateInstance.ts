@@ -1,4 +1,9 @@
-import { NotFoundError, UnauthorizedError, updateInstance } from '@op/common';
+import {
+  type DecisionInstanceData,
+  NotFoundError,
+  UnauthorizedError,
+  updateInstance,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 
 import {
@@ -28,7 +33,7 @@ export const updateInstanceRouter = router({
           authUserId: user.id,
           name: input.name,
           description: input.description,
-          instanceData: input.instanceData,
+          instanceData: input.instanceData as unknown as DecisionInstanceData,
           status: input.status,
         });
 

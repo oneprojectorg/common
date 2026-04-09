@@ -7,17 +7,16 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
-import type { DecisionProcess } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
 import { getProposalsForPhase } from './getProposalsForPhase';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import {
   aggregateProposalMetrics,
   defaultSelectionPipeline,
   executePipeline,
 } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
-import type { InstanceData, ProcessSchema } from './types';
 
 export interface ProcessResultsInput {
   processInstanceId: string;
@@ -56,25 +55,20 @@ export async function processResults({
       );
     }
 
-    // Get the process schema
-    const process = processInstance.process as DecisionProcess;
-    const processSchema = process.processSchema as ProcessSchema;
-    const instanceData = processInstance.instanceData as InstanceData;
+    const instanceData = processInstance.instanceData as DecisionInstanceData;
+    const currentPhaseId = instanceData.currentPhaseId;
 
     // Get proposals scoped to the current phase (respects prior transition filtering)
     const processProposals = await getProposalsForPhase({
       instanceId: processInstanceId,
     });
 
-    // Resolve pipeline from the current phase, falling back to top-level or default
-    const currentPhaseId = processInstance.currentStateId;
-    const phasePipeline = processSchema.phases?.find(
-      (p) => p.id === currentPhaseId,
-    )?.selectionPipeline;
+    // Resolve pipeline from the instance's own phase data, not the template.
+    const currentPhase = instanceData.phases?.find(
+      (p) => p.phaseId === currentPhaseId,
+    );
     const pipeline =
-      phasePipeline ||
-      processSchema.selectionPipeline ||
-      defaultSelectionPipeline;
+      currentPhase?.selectionPipeline ?? defaultSelectionPipeline;
 
     let selectedProposalIds: string[] = [];
     let error: string | undefined;
@@ -91,9 +85,8 @@ export async function processResults({
         process: {
           instanceId: processInstance.id,
           processId: processInstance.processId,
-          currentStateId: processInstance.currentStateId,
+          currentPhaseId,
           instanceData,
-          processSchema,
           processInstance,
         },
         variables: {},

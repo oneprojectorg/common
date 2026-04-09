@@ -38,11 +38,7 @@ function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
   | undefined {
   const instanceData = processInstance.instanceData as DecisionInstanceData;
 
-  if (
-    !instanceData?.currentPhaseId &&
-    // @ts-expect-error - supporting legacy datatypes here that will be removed
-    !instanceData?.currentStateId
-  ) {
+  if (!instanceData?.currentPhaseId) {
     return undefined;
   }
 
@@ -50,27 +46,14 @@ function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
     (p) => p.phaseId === instanceData.currentPhaseId,
   );
 
-  if (currentPhase) {
-    return {
-      allowProposals: currentPhase.rules?.proposals?.submit ?? false,
-      allowDecisions: currentPhase.rules?.voting?.submit ?? false,
-    };
-  } else {
-    // Supports old data types before migration
-    const currentState = instanceData.phases.find(
-      // @ts-expect-error - supporting legacy datatypes here that will be removed
-      (p) => p.stateId! === instanceData.currentStateId,
-    );
-
-    if (currentState) {
-      return {
-        allowProposals: currentState.rules?.proposals?.submit ?? false,
-        allowDecisions: currentState.rules?.voting?.submit ?? false,
-      };
-    }
+  if (!currentPhase) {
+    return undefined;
   }
 
-  return;
+  return {
+    allowProposals: currentPhase.rules?.proposals?.submit ?? false,
+    allowDecisions: currentPhase.rules?.voting?.submit ?? false,
+  };
 }
 
 export type CustomData = Record<string, unknown>;

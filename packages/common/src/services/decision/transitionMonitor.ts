@@ -172,8 +172,9 @@ async function advanceInstanceTransitions({
   let lastSuccessfulToStateId: string | null = null;
   // Start with the snapshot from the initial query. After each successful
   // advance, re-fetch so the next iteration's pipeline sees the updated
-  // instanceData (currentPhaseId, stateData, etc.).
-  let currentInstanceData: unknown = transitions[0]!.instance.instanceData;
+  // instanceData (currentPhaseId, phase data, etc.).
+  let currentInstanceData = transitions[0]!.instance
+    .instanceData as DecisionInstanceData;
 
   for (const transition of transitions) {
     try {
@@ -205,12 +206,12 @@ async function advanceInstanceTransitions({
       result.processed++;
 
       // Re-fetch instanceData so the next transition's pipeline sees
-      // the committed state (updated currentPhaseId, stateData, etc.)
+      // the committed state (updated currentPhaseId, phase data, etc.)
       const refreshed = await db._query.processInstances.findFirst({
         where: eq(processInstances.id, processInstanceId),
       });
       if (refreshed) {
-        currentInstanceData = refreshed.instanceData;
+        currentInstanceData = refreshed.instanceData as DecisionInstanceData;
       }
     } catch (error) {
       result.failed++;

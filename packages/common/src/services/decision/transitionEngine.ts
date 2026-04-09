@@ -18,10 +18,7 @@ import {
 import { assertUserByAuthId } from '../assert';
 import { getProposalsForPhase } from './getProposalsForPhase';
 import { aggregateProposalMetrics, executePipeline } from './selectionPipeline';
-import type {
-  ExecutionContext,
-  SelectionPipeline,
-} from './selectionPipeline/types';
+import type { SelectionPipeline } from './selectionPipeline/types';
 import type {
   InstanceData,
   ProcessSchema,
@@ -253,20 +250,21 @@ export class TransitionEngine {
             allProposals,
             trx,
           );
-          const context: ExecutionContext = {
+          // Legacy engine: cast through `any` to satisfy the new
+          // ExecutionContext shape. No pipeline block reads these fields.
+          const context = {
             proposals: allProposals,
             voteData: proposalMetrics,
             process: {
               instanceId: data.instanceId,
               processId: instance.processId,
-              currentStateId: instance.currentStateId,
+              currentPhaseId: instanceData.currentPhaseId,
               instanceData,
-              processSchema,
               processInstance: instance,
             },
             variables: {},
             outputs: {},
-          };
+          } as any;
           const surviving = await executePipeline(selectionPipeline, context);
           survivingProposalIds = surviving.map((p) => p.id);
         }
