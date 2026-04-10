@@ -13,6 +13,7 @@ import { Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionListItem } from '../DecisionListItem';
 
@@ -56,6 +57,7 @@ const DecisionsListSuspense = ({
   status: ProcessStatus[];
   ownerProfileId?: string;
 }) => {
+  const t = useTranslations();
   const {
     data: paginatedData,
     fetchNextPage,
@@ -85,7 +87,7 @@ const DecisionsListSuspense = ({
   if (paginatedItems.length === 0) {
     return (
       <div className="py-8 text-center text-neutral-gray4">
-        No processes found
+        {t('No processes found')}
       </div>
     );
   }
@@ -135,7 +137,7 @@ const AllDecisionsTabs = () => {
     >
       <TabList variant="pill" className="gap-4 border-none">
         <Tab id="active" variant="pill">
-          Your active processes
+          {t('Your active processes')}
         </Tab>
         {hasDrafts && (
           <Tab id="drafts" variant="pill">
@@ -143,7 +145,7 @@ const AllDecisionsTabs = () => {
           </Tab>
         )}
         <Tab id="other" variant="pill">
-          Other processes
+          {t('Other processes')}
         </Tab>
       </TabList>
       <TabPanel id="active" className="p-0 sm:p-0">
@@ -174,7 +176,13 @@ export const AllDecisions = () => {
   const { user } = useUser();
 
   return (
-    <ErrorBoundary fallback={<div>Could not load decisions</div>}>
+    <ErrorBoundary
+      fallback={
+        <div>
+          <TranslatedText text="Could not load decisions" />
+        </div>
+      }
+    >
       <Suspense fallback={<DecisionsListSkeleton />}>
         <AllDecisionsTabs key={user.currentProfile?.id} />
       </Suspense>
