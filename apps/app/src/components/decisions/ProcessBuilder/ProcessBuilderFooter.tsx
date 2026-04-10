@@ -62,7 +62,7 @@ export const ProcessBuilderFooter = ({
 
   const utils = trpc.useUtils();
 
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+  const publishInstance = trpc.decision.publishDecisionInstance.useMutation({
     onSuccess: async (data) => {
       toast.success({ message: t('Changes saved successfully') });
       await utils.decision.getDecisionBySlug.invalidate({ slug });
@@ -83,16 +83,9 @@ export const ProcessBuilderFooter = ({
     if (isDraft) {
       setIsLaunchModalOpen(true);
     } else {
-      updateInstance.mutate({
-        instanceId,
-        name: storeData?.name || undefined,
-        description: storeData?.description || undefined,
-        stewardProfileId: storeData?.stewardProfileId || undefined,
-        phases: storeData?.phases,
-        proposalTemplate: storeData?.proposalTemplate,
-        rubricTemplate: storeData?.rubricTemplate,
-        config: storeData?.config,
-      });
+      // Promote draftInstanceData to live — no payload needed,
+      // the server reads from the draft column.
+      publishInstance.mutate({ instanceId });
     }
   };
 
@@ -148,7 +141,7 @@ export const ProcessBuilderFooter = ({
                 (validation.isReadyToLaunch && !isTerminalStatus)) && (
                 <Button
                   onPress={handleLaunchOrSave}
-                  isDisabled={updateInstance.isPending}
+                  isDisabled={publishInstance.isPending}
                 >
                   {isDraft ? t('Launch Process') : t('Update Process')}
                 </Button>
@@ -174,7 +167,7 @@ export const ProcessBuilderFooter = ({
               <Button
                 className="h-8 rounded-lg"
                 onPress={handleLaunchOrSave}
-                isDisabled={updateInstance.isPending}
+                isDisabled={publishInstance.isPending}
               >
                 {isDraft ? t('Launch') : t('Update')}
               </Button>
