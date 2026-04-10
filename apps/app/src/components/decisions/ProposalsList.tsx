@@ -386,7 +386,7 @@ const ViewProposalsList = ({
       {proposals.map((proposal) => {
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);
-        const showMenu = canManageProposals || isEditable;
+        const showMenu = canManageProposals;
         // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
         const editHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
