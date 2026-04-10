@@ -6,10 +6,12 @@ import {
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalStatus,
   decisionProcessTransitions,
   decisionProcesses,
   decisionTransitionProposals,
   processInstances,
+  proposals,
   stateTransitionHistory,
   users,
 } from '@op/db/schema';
@@ -258,11 +260,6 @@ describe('processDecisionsTransitions', () => {
     expect(historyRows.length).toBe(3);
     const fromStates = historyRows.map((h) => h.fromStateId).sort();
     expect(fromStates).toEqual(['review', 'submission', 'voting']);
-
-    // Verify stateData.enteredAt was written for the final phase
-    const stateData = (instanceData as unknown as Record<string, unknown>)
-      .stateData as Record<string, { enteredAt?: string }> | undefined;
-    expect(stateData?.results?.enteredAt).toBeDefined();
   });
 
   it('should NOT process transitions for DRAFT instances', async ({
@@ -436,44 +433,45 @@ describe('processDecisionsTransitions', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // Use testMinimalSchema (2 phases, manual advancement, no proposalTemplate
-    // validation) so we can submit a simple proposal without schema constraints.
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
+    // Use the simpleVoting template (date-based advancement) so the monitor
+    // will actually process the transitions. Only make the first transition due
+    // so we get a single advance (submission → review) to verify against.
+    const { instanceId, userEmail } =
+      await createPublishedInstanceWithDueTransitions(testData, task.id, {
+        makeDue: false,
+      });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-    const instanceId = instance.instance.id;
-
-    // Create and submit a proposal (generates proposalHistory row via trigger)
+    // Create a proposal and mark it SUBMITTED directly (bypasses TipTap
+    // validation which requires a real collaboration server).
+    // The status update triggers a proposalHistory row via DB trigger.
     const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
+      userEmail,
       processInstanceId: instanceId,
-      proposalData: { title: 'Surviving Proposal', description: 'test' },
+      proposalData: { title: 'Surviving Proposal' },
     });
 
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    await caller.decision.submitProposal({ proposalId: proposal.id });
-
-    // Publish the instance, then insert a scheduled transition and make it due.
-    // testMinimalSchema uses manual advancement (no auto-created transitions),
-    // so we insert one manually to simulate a date-based trigger.
     await db
-      .update(processInstances)
-      .set({ status: ProcessStatus.PUBLISHED })
-      .where(eq(processInstances.id, instanceId));
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
-    const now = new Date();
-    await db.insert(decisionProcessTransitions).values({
-      processInstanceId: instanceId,
-      fromStateId: 'initial',
-      toStateId: 'final',
-      scheduledDate: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
+    // Make only the first transition (submission → review) due
+    const transitions = await db._query.decisionProcessTransitions.findMany({
+      where: eq(decisionProcessTransitions.processInstanceId, instanceId),
     });
+    transitions.sort(
+      (a, b) =>
+        new Date(a.scheduledDate).getTime() -
+        new Date(b.scheduledDate).getTime(),
+    );
+    const firstTransition = transitions[0]!;
+    const now = new Date();
+    await db
+      .update(decisionProcessTransitions)
+      .set({
+        scheduledDate: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
+      })
+      .where(eq(decisionProcessTransitions.id, firstTransition.id));
 
     const monitorResult = await processDecisionsTransitions();
     expect(monitorResult.processed).toBeGreaterThanOrEqual(1);
@@ -495,8 +493,8 @@ describe('processDecisionsTransitions', () => {
       .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     expect(history.length).toBe(1);
-    expect(history[0]!.fromStateId).toBe('initial');
-    expect(history[0]!.toStateId).toBe('final');
+    expect(history[0]!.fromStateId).toBe(firstTransition.fromStateId);
+    expect(history[0]!.toStateId).toBe(firstTransition.toStateId);
     expect(history[0]!.triggeredByProfileId).toBeNull();
 
     // The join table row should reference the history row

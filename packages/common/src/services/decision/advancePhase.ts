@@ -117,17 +117,9 @@ export async function advancePhase(
       currentStateId: toPhaseId,
       updatedAt: now,
       instanceData: sql`jsonb_set(
-        jsonb_set(
-          jsonb_set(
-            coalesce(${processInstances.instanceData}, '{}'::jsonb),
-            '{currentPhaseId}',
-            to_jsonb(${toPhaseId}::text)
-          ),
-          '{stateData}',
-          coalesce(${processInstances.instanceData}->'stateData', '{}'::jsonb)
-        ),
-        array['stateData', ${toPhaseId}]::text[],
-        ${JSON.stringify({ enteredAt: now, metadata: transitionData })}::jsonb
+        coalesce(${processInstances.instanceData}, '{}'::jsonb),
+        '{currentPhaseId}',
+        to_jsonb(${toPhaseId}::text)
       )`,
     })
     .where(

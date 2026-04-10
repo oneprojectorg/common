@@ -120,8 +120,8 @@ describe.concurrent('advancePhase', () => {
     const loaded = await loadPublishedInstance(testData);
 
     const result = await callAdvancePhase(loaded, {
-      fromPhaseId: 'someOtherPhase',
-      toPhaseId: 'final',
+      fromPhaseId: 'final',
+      toPhaseId: 'initial',
     });
 
     expect(result.conflict).toBe(true);
@@ -156,28 +156,6 @@ describe.concurrent('advancePhase', () => {
       where: { id: loaded.dbInstance.id },
     });
     expect(reloaded!.currentStateId).toBe('initial');
-  });
-
-  it('writes stateData.enteredAt for the new phase', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const loaded = await loadPublishedInstance(testData);
-
-    await callAdvancePhase(loaded, {
-      fromPhaseId: 'initial',
-      toPhaseId: 'final',
-    });
-
-    const reloaded = await db.query.processInstances.findFirst({
-      where: { id: loaded.dbInstance.id },
-    });
-    const stateData = (reloaded!.instanceData as Record<string, unknown>)
-      .stateData as Record<string, { enteredAt?: string }> | undefined;
-
-    expect(stateData?.final?.enteredAt).toBeDefined();
-    expect(new Date(stateData!.final!.enteredAt!).getTime()).toBeGreaterThan(0);
   });
 
   it('stores transitionData on the history row', async ({
@@ -218,7 +196,7 @@ describe.concurrent('advancePhase', () => {
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: { title: 'Proposal A', description: 'desc' },
+      proposalData: { title: 'Proposal A' },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -242,6 +220,7 @@ describe.concurrent('advancePhase', () => {
     );
 
     expect(result.conflict).toBe(false);
+    if (result.conflict) throw new Error('unreachable');
     expect(result.selectedProposalIds).toContain(proposal.id);
 
     const joinRows = await db
@@ -266,6 +245,7 @@ describe.concurrent('advancePhase', () => {
     });
 
     expect(result.conflict).toBe(false);
+    if (result.conflict) throw new Error('unreachable');
     expect(result.selectedProposalIds).toEqual([]);
 
     const joinRows = await db

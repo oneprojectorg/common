@@ -136,15 +136,6 @@ const legacyInstanceDataEncoder = z.preprocess(
     hideBudget: z.boolean().optional(),
     fieldValues: z.record(z.string(), z.unknown()).optional(),
     currentPhaseId: z.string(),
-    stateData: z
-      .record(
-        z.string(),
-        z.object({
-          enteredAt: z.string().optional(),
-          metadata: z.record(z.string(), z.unknown()).optional(),
-        }),
-      )
-      .optional(),
     phases: z
       .array(
         z.object({
