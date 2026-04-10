@@ -2,6 +2,7 @@
 
 import { posthogUIHost } from '@op/core';
 import { Button } from '@op/ui/Button';
+import { Header1 } from '@op/ui/Header';
 import { LuArrowUpRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,9 +14,9 @@ export const PlatformAdminHeader = () => {
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
-        <h1 className="font-serif text-title-md text-neutral-black">
-          {t('platformAdmin_title')}
-        </h1>
+        <Header1 className="text-title-md text-neutral-black">
+          {t('Platform admin')}
+        </Header1>
       </div>
       <Button
         onPress={() => {
@@ -26,7 +27,7 @@ export const PlatformAdminHeader = () => {
         className="gap-2"
       >
         <LuArrowUpRight className="size-4" />
-        {t('platformAdmin_viewAllAnalytics')}
+        {t('View all analytics')}
       </Button>
     </div>
   );

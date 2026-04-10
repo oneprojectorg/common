@@ -1,6 +1,5 @@
 'use client';
 
-import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/ui/Header';
@@ -27,9 +26,6 @@ import { UsersRow } from './UsersRow';
 const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
 const USERS_TABLE_GRID =
   'grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_minmax(80px,0.5fr)_80px] gap-4';
-
-// Infer input type for listAllUsers query
-type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 
 /**
  * Exports user data to CSV and triggers download
@@ -82,10 +78,10 @@ export const UsersTable = () => {
         }));
 
         exportUsersToCSV(allUsers);
-        toast.success({ message: t('platformAdmin_exportSuccess') });
+        toast.success({ message: t('Users exported successfully') });
       } catch (error) {
         console.error('Export failed:', error);
-        toast.error({ message: t('platformAdmin_exportError') });
+        toast.error({ message: t('Failed to export users') });
       }
     });
   }, [utils, t]);
@@ -99,8 +95,8 @@ export const UsersTable = () => {
         <div className="flex items-center gap-2">
           <div className="w-64">
             <SearchField
-              aria-label={t('platformAdmin_searchUsersPlaceholder')}
-              placeholder={t('platformAdmin_searchUsersPlaceholder')}
+              aria-label={t('Search users by name or email')}
+              placeholder={t('Search users by name or email')}
               value={searchQuery}
               onChange={setSearchQuery}
             />
@@ -112,7 +108,7 @@ export const UsersTable = () => {
                 isDisabled={isExporting}
               >
                 <LuDownload className="size-4" />
-                {t('platformAdmin_exportAllUsers')}
+                {t('Export all users')}
               </MenuItem>
             </Menu>
           </OptionMenu>
@@ -135,13 +131,13 @@ const UsersTableHeader = () => {
   const t = useTranslations();
 
   const columnHeadings = [
-    t('platformAdmin_columnName'),
-    t('platformAdmin_columnEmail'),
-    t('platformAdmin_columnRole'),
-    t('platformAdmin_columnOrganization'),
-    t('platformAdmin_columnCreated'),
-    t('platformAdmin_columnLastSignIn'),
-    t('platformAdmin_columnActions'),
+    t('Name'),
+    t('Email'),
+    t('Role'),
+    t('Organization'),
+    t('Created'),
+    t('Last sign in'),
+    t('Actions'),
   ];
 
   return (
@@ -172,14 +168,14 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     handlePrevious,
     canGoPrevious,
     reset,
-  } = useCursorPagination(10);
+  } = useCursorPagination(5);
 
   // Reset pagination when search query changes
   useEffect(() => {
     reset();
   }, [searchQuery]);
 
-  const queryInput: ListAllUsersInput = {
+  const queryInput = {
     cursor,
     limit,
     query: searchQuery || undefined,
@@ -208,7 +204,7 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
             totalItems: total,
             itemsPerPage: limit,
             page: currentPage,
-            label: t('platformAdmin_paginationUsers'),
+            label: t('users'),
           }}
           next={hasMore ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}

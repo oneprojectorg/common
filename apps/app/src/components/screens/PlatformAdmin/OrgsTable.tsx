@@ -1,0 +1,150 @@
+'use client';
+
+import { trpc } from '@op/api/client';
+import { useCursorPagination, useDebounce } from '@op/hooks';
+import { Pagination } from '@op/ui/Pagination';
+import { SearchField } from '@op/ui/SearchField';
+import { Skeleton } from '@op/ui/Skeleton';
+import { cn } from '@op/ui/utils';
+import { Suspense, useEffect, useState } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
+
+import { OrgsRow } from './OrgsRow';
+import {
+  ORGS_TABLE_GRID,
+  ORGS_TABLE_MIN_WIDTH,
+  ORGS_TABLE_ROW,
+} from './tableStyles';
+
+/** Main organizations table component with suspense boundary */
+export const OrgsTable = () => {
+  const t = useTranslations();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery] = useDebounce(searchQuery, 200);
+
+  return (
+    <div className="mt-8">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-md font-serif text-neutral-black">
+          {t('All Organizations')}
+        </h2>
+        <div className="w-64">
+          <SearchField
+            aria-label={t('Search organizations by name')}
+            placeholder={t('Search organizations by name')}
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <div className={ORGS_TABLE_MIN_WIDTH}>
+          <OrgsTableHeader />
+          <Suspense fallback={<OrgsTableContentSkeleton />}>
+            <OrgsTableContent searchQuery={debouncedQuery} />
+          </Suspense>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/** Table header component */
+const OrgsTableHeader = () => {
+  const t = useTranslations();
+
+  const columnHeadings = [
+    t('Name'),
+    t('Domain'),
+    t('Members'),
+    t('Created'),
+    t('Actions'),
+  ];
+
+  return (
+    <div className={cn('bg-neutral-gray0 border-b py-3', ORGS_TABLE_GRID)}>
+      {columnHeadings.map((heading) => (
+        <div
+          key={heading}
+          className="text-sm font-normal text-neutral-charcoal"
+        >
+          {heading}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/** Renders organizations table with live data */
+const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
+  const t = useTranslations();
+  const {
+    cursor,
+    currentPage,
+    limit,
+    handleNext,
+    handlePrevious,
+    canGoPrevious,
+    reset,
+  } = useCursorPagination(5);
+
+  // Reset pagination when search query changes
+  useEffect(() => {
+    reset();
+  }, [searchQuery]);
+
+  const queryInput = {
+    cursor,
+    limit,
+    query: searchQuery || undefined,
+  };
+
+  const [data] =
+    trpc.platform.admin.listAllOrganizations.useSuspenseQuery(queryInput);
+
+  const { items: orgs, next, total } = data;
+
+  const onNext = () => {
+    if (next) {
+      handleNext(next);
+    }
+  };
+
+  return (
+    <>
+      <div className="divide-y divide-neutral-gray1">
+        {orgs.map((org) => (
+          <OrgsRow key={org.id} org={org} />
+        ))}
+      </div>
+      <div className="mt-4">
+        <Pagination
+          range={{
+            totalItems: total,
+            itemsPerPage: limit,
+            page: currentPage,
+            label: t('organizations'),
+          }}
+          next={next ? onNext : undefined}
+          previous={canGoPrevious ? handlePrevious : undefined}
+        />
+      </div>
+    </>
+  );
+};
+
+/** Loading skeleton for table content only */
+const OrgsTableContentSkeleton = () => {
+  return (
+    <div className="divide-y divide-neutral-gray1">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className={cn(ORGS_TABLE_ROW, ORGS_TABLE_GRID)}>
+          {[...Array(5)].map((_, j) => (
+            <Skeleton key={j} className="h-4 w-full" />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};

@@ -384,6 +384,8 @@ export const relations = defineRelations(schema, (r) => ({
 
   /**
    * Organization relations
+   *
+   * profileId is NOT NULL.
    */
   organizations: {
     profile: r.one.profiles({
@@ -391,9 +393,50 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       optional: false,
     }),
+    organizationUsers: r.many.organizationUsers({
+      from: r.organizations.id,
+      to: r.organizationUsers.organizationId,
+    }),
     whereWeWork: r.many.organizationsWhereWeWork({
       from: r.organizations.id,
       to: r.organizationsWhereWeWork.organizationId,
+    }),
+  },
+
+  /**
+   * Organization user relations
+   *
+   * organizationId is NOT NULL. authUserId links to the service user.
+   */
+  organizationUsers: {
+    organization: r.one.organizations({
+      from: r.organizationUsers.organizationId,
+      to: r.organizations.id,
+      optional: false,
+    }),
+    serviceUser: r.one.users({
+      from: r.organizationUsers.authUserId,
+      to: r.users.authUserId,
+    }),
+    roles: r.many.organizationUserToAccessRoles({
+      from: r.organizationUsers.id,
+      to: r.organizationUserToAccessRoles.organizationUserId,
+    }),
+  },
+
+  /**
+   * Organization user to access roles relations (join table)
+   */
+  organizationUserToAccessRoles: {
+    organizationUser: r.one.organizationUsers({
+      from: r.organizationUserToAccessRoles.organizationUserId,
+      to: r.organizationUsers.id,
+      optional: false,
+    }),
+    accessRole: r.one.accessRoles({
+      from: r.organizationUserToAccessRoles.accessRoleId,
+      to: r.accessRoles.id,
+      optional: false,
     }),
   },
 
@@ -438,6 +481,18 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       alias: 'joinProfileRequest_targetProfile',
       optional: false,
+    }),
+  },
+
+  /**
+   * User relations
+   *
+   * profileId is nullable.
+   */
+  users: {
+    profile: r.one.profiles({
+      from: r.users.profileId,
+      to: r.profiles.id,
     }),
   },
 
