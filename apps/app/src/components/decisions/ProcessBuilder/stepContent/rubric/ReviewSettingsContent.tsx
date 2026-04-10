@@ -1,23 +1,20 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
 import type { ReviewsPolicy } from '@op/common';
-import { useDebouncedCallback } from '@op/hooks';
 import { Chip } from '@op/ui/Chip';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
-
-const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewSettings {
   reviewsPolicy: ReviewsPolicy;
@@ -30,25 +27,14 @@ export function ReviewSettingsContent({
   decisionProfileId,
 }: SectionProps) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === ProcessStatus.DRAFT;
   const config = instance.instanceData?.config;
 
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
-  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const saveState = useProcessBuilderStore((s) =>
-    s.getSaveState(decisionProfileId),
-  );
-  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
-  const markSaved = useProcessBuilderStore((s) => s.markSaved);
-
-  useEffect(() => {
-    setSaveStatus(decisionProfileId, 'idle');
-  }, [decisionProfileId, setSaveStatus]);
+  const { saveChanges, saveState } = useProcessBuilderAutosave();
 
   const [settings, setSettings] = useState<ReviewSettings>({
     reviewsPolicy:
@@ -65,43 +51,10 @@ export function ReviewSettingsContent({
       false,
   });
 
-  const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: () => setSaveStatus(decisionProfileId, 'error'),
-    onSettled: () => {
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
-
-  const debouncedSave = useDebouncedCallback((updated: ReviewSettings) => {
-    setSaveStatus(decisionProfileId, 'saving');
-
-    setInstanceData(decisionProfileId, {
-      config: {
-        ...instanceData?.config,
-        ...updated,
-      },
-    });
-
-    if (isDraft) {
-      updateInstance.mutate({
-        instanceId,
-        config: updated,
-      });
-    } else {
-      markSaved(decisionProfileId);
-    }
-  }, AUTOSAVE_DEBOUNCE_MS);
-  debouncedSaveRef.current = () => debouncedSave.isPending();
-
   const updateSettings = (updates: Partial<ReviewSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...updates };
-      debouncedSave(updated);
+      saveChanges({ config: updated });
       return updated;
     });
   };

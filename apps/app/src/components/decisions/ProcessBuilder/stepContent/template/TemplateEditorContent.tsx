@@ -1,13 +1,12 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
 import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import type {
   ProposalTemplateSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
-import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
+import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
@@ -21,6 +20,7 @@ import { LuAlignLeft, LuChevronDown, LuHash } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
+import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import {
@@ -55,8 +55,6 @@ import {
 } from './TemplateEditorSidebar';
 import { getFieldLabelKey } from './fieldRegistry';
 
-const AUTOSAVE_DEBOUNCE_MS = 1000;
-
 export function TemplateEditorContent({
   decisionProfileId,
   instanceId,
@@ -67,8 +65,6 @@ export function TemplateEditorContent({
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === ProcessStatus.DRAFT;
-  const utils = trpc.useUtils();
   const instanceData = instance.instanceData;
 
   const storeData = useProcessBuilderStore(
@@ -112,7 +108,6 @@ export function TemplateEditorContent({
 
   const [template, setTemplate] =
     useState<ProposalTemplateSchema>(initialTemplate);
-  const isInitialLoadRef = useRef(true);
 
   // Track which fields are expanded — multiple can be open simultaneously
   const [expandedFieldIds, setExpandedFieldIds] = useState<Set<string>>(
@@ -155,26 +150,7 @@ export function TemplateEditorContent({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
-  const setProposalTemplateSchema = useProcessBuilderStore(
-    (s) => s.setProposalTemplateSchema,
-  );
-  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
-  const markSaved = useProcessBuilderStore((s) => s.markSaved);
-
-  const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: () => setSaveStatus(decisionProfileId, 'error'),
-    onSettled: () => {
-      // Skip invalidation if another debounced save is pending — that save's
-      // onSettled will reconcile. This prevents a stale refetch from overwriting
-      // optimistic cache updates made between the two saves.
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
+  const { saveChanges } = useProcessBuilderAutosave();
 
   // Derive field views from the template, excluding locked system fields
   // that are always rendered separately above the sortable list.
@@ -216,44 +192,25 @@ export function TemplateEditorContent({
     ];
   }, [fields, hasCategories]);
 
-  // Debounced auto-save: draft persists to API, non-draft only buffers locally.
+  // Save template changes via the shared autosave context.
   // Runs ensureLockedFields before persisting so that x-field-order and
-  // required are always consistent — individual mutators only need to
-  // touch properties.
-  const debouncedSave = useDebouncedCallback(
-    (updatedTemplate: ProposalTemplateSchema) => {
-      const normalized = ensureLockedFields(updatedTemplate, {
-        titleLabel: t('Proposal title'),
-        categoryLabel: t('Category'),
-        categories,
-        allowMultipleCategories,
-        requireCategorySelection,
-      });
-      setProposalTemplateSchema(decisionProfileId, normalized);
-
-      if (isDraft) {
-        updateInstance.mutate({
-          instanceId,
-          proposalTemplate: normalized,
-        });
-      } else {
-        markSaved(decisionProfileId);
-      }
-    },
-    AUTOSAVE_DEBOUNCE_MS,
-  );
-  debouncedSaveRef.current = () => debouncedSave.isPending();
-
-  // Trigger debounced save when template changes (skip initial load)
+  // required are always consistent.
+  const isInitialLoadRef = useRef(true);
   useEffect(() => {
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       return;
     }
 
-    setSaveStatus(decisionProfileId, 'saving');
-    debouncedSave(template);
-  }, [template, decisionProfileId, setSaveStatus, debouncedSave]);
+    const normalized = ensureLockedFields(template, {
+      titleLabel: t('Proposal title'),
+      categoryLabel: t('Category'),
+      categories,
+      allowMultipleCategories,
+      requireCategorySelection,
+    });
+    saveChanges({ proposalTemplate: normalized });
+  }, [template]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddField = useCallback(
     (type: FieldType) => {

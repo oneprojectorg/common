@@ -3,7 +3,6 @@
 import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
-import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Header2 } from '@op/ui/Header';
@@ -18,13 +17,12 @@ import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
 
+import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ToggleRow } from '../../components/ToggleRow';
 import type { SectionProps } from '../../contentRegistry';
 import { isPhaseSection, sectionIdToPhaseId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
-
-const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 export function PhaseDetailPage({
   instanceId,
@@ -68,17 +66,11 @@ function PhaseDetailForm({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
-  const isDraft = instance.status === 'draft';
 
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
   );
-  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
-  const markSaved = useProcessBuilderStore((s) => s.markSaved);
-  const saveState = useProcessBuilderStore((s) =>
-    s.getSaveState(decisionProfileId),
-  );
+  const { saveChanges, saveState } = useProcessBuilderAutosave();
 
   // Resolve the initial phase data (same priority as PhasesSectionContent)
   const allPhases: PhaseDefinition[] = (() => {
@@ -108,49 +100,17 @@ function PhaseDetailForm({
   const allPhasesRef = useRef(allPhases);
   allPhasesRef.current = allPhases;
 
-  const utils = trpc.useUtils();
-  const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: () => setSaveStatus(decisionProfileId, 'error'),
-    onSettled: () => {
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
-
-  const debouncedSave = useDebouncedCallback(
-    (updatedPhase: PhaseDefinition) => {
-      setSaveStatus(decisionProfileId, 'saving');
-
-      // Build the full phases array with this phase updated
-      const phasesPayload = allPhasesRef.current.map((p) => {
-        const source = p.id === phaseId ? updatedPhase : p;
-        return {
-          phaseId: source.id,
-          name: source.name,
-          description: source.description,
-          headline: source.headline,
-          additionalInfo: source.additionalInfo,
-          startDate: source.startDate,
-          endDate: source.endDate,
-          rules: source.rules,
-        };
-      });
-
-      setInstanceData(decisionProfileId, { phases: phasesPayload });
-
-      if (isDraft) {
-        updateInstance.mutate({ instanceId, phases: phasesPayload });
-      } else {
-        markSaved(decisionProfileId);
-      }
-    },
-    AUTOSAVE_DEBOUNCE_MS,
-  );
-  debouncedSaveRef.current = () => debouncedSave.isPending();
+  const toPayload = (phases: PhaseDefinition[]) =>
+    phases.map((p) => ({
+      phaseId: p.id,
+      name: p.name,
+      description: p.description,
+      headline: p.headline,
+      additionalInfo: p.additionalInfo,
+      startDate: p.startDate,
+      endDate: p.endDate,
+      rules: p.rules,
+    }));
 
   const updatePhase = (updates: Partial<PhaseDefinition>) => {
     setPhase((prev) => {
@@ -158,7 +118,10 @@ function PhaseDetailForm({
         return prev;
       }
       const updated = { ...prev, ...updates };
-      debouncedSave(updated);
+      const phasesPayload = toPayload(
+        allPhasesRef.current.map((p) => (p.id === phaseId ? updated : p)),
+      );
+      saveChanges({ phases: phasesPayload });
       return updated;
     });
   };
@@ -169,56 +132,14 @@ function PhaseDetailForm({
     }
     const newRules = { ...phase.rules, ...updates };
     updatePhase({ rules: newRules });
-
-    // Optimistically update getInstance cache so useNavigationConfig reacts
-    utils.decision.getInstance.setData({ instanceId }, (old) => {
-      if (!old?.instanceData?.phases) {
-        return old;
-      }
-      return {
-        ...old,
-        instanceData: {
-          ...old.instanceData,
-          phases: old.instanceData.phases.map((p) =>
-            p.phaseId === phaseId ? { ...p, rules: newRules } : p,
-          ),
-        },
-      };
-    });
   };
 
   // Delete phase
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const confirmDelete = () => {
-    setSaveStatus(decisionProfileId, 'saving');
-    const remainingPhases = allPhases
-      .filter((p) => p.id !== phaseId)
-      .map((p) => ({
-        phaseId: p.id,
-        name: p.name,
-        description: p.description,
-        headline: p.headline,
-        additionalInfo: p.additionalInfo,
-        startDate: p.startDate,
-        endDate: p.endDate,
-        rules: p.rules,
-      }));
-
-    setInstanceData(decisionProfileId, { phases: remainingPhases });
-
-    if (isDraft) {
-      updateInstance.mutate(
-        { instanceId, phases: remainingPhases },
-        {
-          onSuccess: () => {
-            onDelete();
-          },
-        },
-      );
-    } else {
-      markSaved(decisionProfileId);
-      onDelete();
-    }
+    const remainingPhases = allPhases.filter((p) => p.id !== phaseId);
+    saveChanges({ phases: toPayload(remainingPhases) });
+    onDelete();
   };
 
   // Validation

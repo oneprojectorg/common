@@ -1,8 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { type PhaseDefinition, ProcessStatus } from '@op/api/encoders';
-import { useDebouncedCallback } from '@op/hooks';
+import type { PhaseDefinition } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
@@ -10,17 +9,16 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { LuCheck, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
+import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { phaseToSectionId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
-
-const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 export function PhasesSectionContent({
   instanceId,
@@ -29,21 +27,14 @@ export function PhasesSectionContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
-  const isDraft = instance.status === ProcessStatus.DRAFT;
 
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
   );
-  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
-  const markSaved = useProcessBuilderStore((s) => s.markSaved);
-  const saveState = useProcessBuilderStore((s) =>
-    s.getSaveState(decisionProfileId),
-  );
+  const { saveChanges, saveState } = useProcessBuilderAutosave();
 
   const initialPhases: PhaseDefinition[] = (() => {
-    const source =
-      !isDraft && storePhases?.length ? storePhases : instancePhases;
+    const source = storePhases?.length ? storePhases : instancePhases;
     return (
       source?.map((p) => ({
         id: p.phaseId,
@@ -64,19 +55,6 @@ export function PhasesSectionContent({
   const [, setSectionParam] = useQueryState('section', { history: 'push' });
   const setSection = (sectionId: string) => setSectionParam(sectionId);
 
-  const utils = trpc.useUtils();
-  const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: () => setSaveStatus(decisionProfileId, 'error'),
-    onSettled: () => {
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
-
   const toPayload = (data: PhaseDefinition[]) =>
     data.map((phase) => ({
       phaseId: phase.id,
@@ -89,19 +67,9 @@ export function PhasesSectionContent({
       rules: phase.rules,
     }));
 
-  const debouncedSave = useDebouncedCallback((data: PhaseDefinition[]) => {
-    setSaveStatus(decisionProfileId, 'saving');
-
-    const phasesPayload = toPayload(data);
-    setInstanceData(decisionProfileId, { phases: phasesPayload });
-
-    if (isDraft) {
-      updateInstance.mutate({ instanceId, phases: phasesPayload });
-    } else {
-      markSaved(decisionProfileId);
-    }
-  }, AUTOSAVE_DEBOUNCE_MS);
-  debouncedSaveRef.current = () => debouncedSave.isPending();
+  const savePhasesPayload = (data: PhaseDefinition[]) => {
+    saveChanges({ phases: toPayload(data) });
+  };
 
   const updatePhases = (
     updater:
@@ -110,7 +78,7 @@ export function PhasesSectionContent({
   ) => {
     setPhases((prev) => {
       const updated = typeof updater === 'function' ? updater(prev) : updater;
-      debouncedSave(updated);
+      savePhasesPayload(updated);
       return updated;
     });
   };
@@ -123,9 +91,7 @@ export function PhasesSectionContent({
     };
     const updated = [...phases, newPhase];
     setPhases(updated);
-    // Immediately update store so navigation sees the new phase
-    setInstanceData(decisionProfileId, { phases: toPayload(updated) });
-    debouncedSave(updated);
+    savePhasesPayload(updated);
     setSection(phaseToSectionId(newPhase.id));
   };
 
@@ -137,9 +103,7 @@ export function PhasesSectionContent({
     }
     const updated = phases.filter((p) => p.id !== phaseToDelete);
     setPhases(updated);
-    // Immediately update store so navigation reflects the removal
-    setInstanceData(decisionProfileId, { phases: toPayload(updated) });
-    debouncedSave(updated);
+    savePhasesPayload(updated);
     setPhaseToDelete(null);
   };
 
