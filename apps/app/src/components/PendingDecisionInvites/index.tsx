@@ -7,7 +7,6 @@ import { getTextPreview } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
 import {
   NotificationPanel,
   NotificationPanelActions,
@@ -16,6 +15,7 @@ import {
   NotificationPanelList,
 } from '@op/ui/NotificationPanel';
 import { ProfileItem } from '@op/ui/ProfileItem';
+import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
