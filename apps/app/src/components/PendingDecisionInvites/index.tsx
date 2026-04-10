@@ -7,6 +7,7 @@ import { getTextPreview } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { toast } from '@op/ui/Toast';
 import {
   NotificationPanel,
   NotificationPanelActions,
@@ -88,9 +89,17 @@ const PendingDecisionInvitesSuspense = () => {
                     acceptInvite
                       .mutateAsync({ inviteId: invite.id })
                       .then(() => {
+                        toast.success({
+                          message: t('Invitation accepted'),
+                        });
                         if (profile.slug) {
                           router.push(`/decisions/${profile.slug}`);
                         }
+                      })
+                      .catch(() => {
+                        toast.error({
+                          message: t('Failed to accept invitation'),
+                        });
                       })
                   }
                   isDisabled={acceptInvite.isPending}
