@@ -68,13 +68,6 @@ export async function processResults({
       const context: ExecutionContext = {
         proposals: processProposals,
         voteData: proposalMetrics,
-        process: {
-          instanceId: processInstance.id,
-          processId: processInstance.processId,
-          currentPhaseId,
-          instanceData,
-          processInstance,
-        },
         variables: {},
         outputs: {},
       };

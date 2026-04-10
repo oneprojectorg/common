@@ -92,15 +92,6 @@ export async function advancePhase(
     const context: ExecutionContext = {
       proposals: allProposals,
       voteData: proposalMetrics,
-      process: {
-        instanceId,
-        processId: instanceId,
-        currentPhaseId: fromPhaseId,
-        instanceData,
-        processInstance: instance as unknown as Parameters<
-          typeof executeSelectionPipeline
-        >[1]['process']['processInstance'],
-      },
       variables: {},
       outputs: {},
     };
