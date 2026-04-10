@@ -38,7 +38,7 @@ export function StandardDecisionPage({
   ]);
 
   const phases = instance.instanceData?.phases ?? [];
-  const currentPhaseId = instance.instanceData?.currentPhaseId;
+  const currentPhaseId = instance.currentStateId;
   const currentPhase = phases.find(
     (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
   );

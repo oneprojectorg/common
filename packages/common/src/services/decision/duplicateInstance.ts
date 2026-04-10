@@ -134,7 +134,6 @@ function buildInstanceData(
 ): DecisionInstanceData {
   // Always copy template reference metadata
   const base: DecisionInstanceData = {
-    currentPhaseId: '',
     templateId: source.templateId,
     templateVersion: source.templateVersion,
     templateName: source.templateName,
@@ -188,20 +187,15 @@ function buildInstanceData(
 
       return copied;
     });
-    base.currentPhaseId = base.phases[0]!.phaseId;
-  } else {
-    // Even without phases, we need at least a reference from source
-    // to have a valid currentPhaseId
-    if (source.phases.length > 0) {
-      base.phases = source.phases.map(
-        (phase): PhaseInstanceData => ({
-          phaseId: phase.phaseId,
-          name: phase.name,
-          // Minimal phase - just identity
-        }),
-      );
-      base.currentPhaseId = base.phases[0]!.phaseId;
-    }
+  } else if (source.phases.length > 0) {
+    // Even without phase details, we need at least minimal phase references
+    base.phases = source.phases.map(
+      (phase): PhaseInstanceData => ({
+        phaseId: phase.phaseId,
+        name: phase.name,
+        // Minimal phase - just identity
+      }),
+    );
   }
 
   // Proposal template

@@ -41,6 +41,7 @@ export async function translateDecision({
     .select({
       description: processInstances.description,
       instanceData: processInstances.instanceData,
+      currentStateId: processInstances.currentStateId,
       profileId: processInstances.profileId,
       ownerProfileId: processInstances.ownerProfileId,
     })
@@ -76,6 +77,7 @@ export async function translateDecision({
   const entries = buildEntries(
     decisionProfileId,
     instanceData,
+    processInstance.currentStateId,
     processInstance.description,
   );
 
@@ -110,14 +112,14 @@ function renderTipTapToHtml(content: string): string {
 function buildEntries(
   decisionProfileId: string,
   instanceData: DecisionInstanceData | null,
+  currentStateId: string | null,
   processDescription: string | null,
 ): TranslatableEntry[] {
   const prefix = `decision:${decisionProfileId}`;
   const entries: TranslatableEntry[] = [];
 
-  const currentPhaseId = instanceData?.currentPhaseId;
-  const currentPhase = currentPhaseId
-    ? instanceData?.phases?.find((p) => p.phaseId === currentPhaseId)
+  const currentPhase = currentStateId
+    ? instanceData?.phases?.find((p) => p.phaseId === currentStateId)
     : undefined;
 
   if (currentPhase?.headline) {

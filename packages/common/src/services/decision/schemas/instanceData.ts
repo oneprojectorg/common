@@ -33,7 +33,6 @@ export interface PhaseInstanceData {
  * This structure must match instanceDataNewEncoder in the API encoders.
  */
 export interface DecisionInstanceData {
-  currentPhaseId: string;
   config?: ProcessConfig;
   fieldValues?: Record<string, unknown>;
   templateId?: string;
@@ -80,7 +79,6 @@ export function createInstanceDataFromTemplate(input: {
   );
 
   return {
-    currentPhaseId: firstPhase.id,
     config: template.config,
     templateId: template.id,
     templateVersion: template.version,

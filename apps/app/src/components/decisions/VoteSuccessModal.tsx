@@ -46,7 +46,7 @@ const VoteSuccessModalSuspense = ({
 
   const nextSteps = getNextSteps(
     phasesForNextSteps,
-    processInstance.instanceData,
+    processInstance.currentStateId,
   );
 
   const processTitle = processInstance.name;

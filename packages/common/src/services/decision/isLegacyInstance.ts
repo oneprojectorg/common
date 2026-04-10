@@ -3,29 +3,19 @@ import type { DbClient } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 
 /**
- * Shape of the legacy/new fields inside `processInstances.instanceData`.
- * Legacy instances store `currentStateId`; new instances store `currentPhaseId`.
- */
-type InstanceDataLegacyFields = {
-  currentPhaseId?: string;
-  currentStateId?: string;
-};
-
-/**
  * Pure predicate over an `instanceData` JSON value.
  *
- * A process instance is "legacy" if its `instanceData` JSON has `currentStateId`
- * but no `currentPhaseId`. New instances always write `currentPhaseId`; old
- * instances (predating the join-table-backed phase scoping) only have
- * `currentStateId`. Use this when you already have the JSON in hand.
+ * A process instance is "legacy" if its `instanceData` JSON does not have a
+ * `phases` array. New instances (created from DecisionSchemaDefinition
+ * templates) always store `phases`; old instances predate that structure.
  */
 export function isLegacyInstanceData(instanceData: unknown): boolean {
   if (instanceData == null || typeof instanceData !== 'object') {
     return false;
   }
 
-  const data = instanceData as InstanceDataLegacyFields;
-  return data.currentPhaseId == null && data.currentStateId != null;
+  const data = instanceData as { phases?: unknown[] };
+  return !Array.isArray(data.phases);
 }
 
 /**

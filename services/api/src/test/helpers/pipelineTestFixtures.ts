@@ -212,7 +212,6 @@ export async function createInstanceWithSchema(
       currentStateId: 'submission',
       status: ProcessStatus.PUBLISHED,
       instanceData: {
-        currentPhaseId: 'submission',
         phases: instancePhases,
       },
     })

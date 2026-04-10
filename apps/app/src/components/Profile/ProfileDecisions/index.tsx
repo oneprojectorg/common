@@ -52,7 +52,7 @@ const LegacyDecisionProcessList = ({ profileId }: { profileId: string }) => {
           (s) => s.id === instance.currentStateId,
         );
         const currentPhase = instance.instanceData?.phases?.find(
-          (p) => p.phaseId === instance.instanceData?.currentPhaseId,
+          (p) => p.phaseId === instance.currentStateId,
         );
 
         return (

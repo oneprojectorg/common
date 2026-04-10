@@ -113,23 +113,10 @@ describe.concurrent('submitProposal', () => {
 
     // Advance instance to the 'final' phase which has proposals.submit = false
     // (testMinimalSchema: initial = submit:true, final = submit:false)
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
-    });
-
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
     await db
       .update(processInstances)
       .set({
         currentStateId: 'final',
-        instanceData: {
-          ...instanceData,
-          currentPhaseId: 'final',
-        },
       })
       .where(eq(processInstances.id, instance.instance.id));
 

@@ -74,8 +74,8 @@ async function createProcessAndInstance({
       profileId: profile.id,
       instanceData,
       currentStateId:
-        (instanceData as { currentPhaseId?: string }).currentPhaseId ??
-        'proposalSubmission',
+        (instanceData as { phases?: { phaseId: string }[] }).phases?.[0]
+          ?.phaseId ?? 'proposalSubmission',
       status: ProcessStatus.PUBLISHED,
       ownerProfileId: org.organizationProfile.id,
     })
@@ -182,7 +182,6 @@ test.describe('Proposal Listing', () => {
 
     // instanceData includes the proposalTemplate (new-schema path)
     const newInstanceData = {
-      currentPhaseId: 'proposalSubmission',
       budget: 50000,
       hideBudget: false,
       proposalTemplate: newProcessSchema.proposalTemplate,
@@ -337,7 +336,6 @@ test.describe('Proposal Listing', () => {
 
     // COWOP-style instanceData — no proposalTemplate, has fieldValues
     const cowopInstanceData = {
-      currentPhaseId: 'ideaCollection',
       budget: 100000,
       hideBudget: false,
       phases: [

@@ -108,7 +108,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const instanceData = instance!.instanceData as DecisionInstanceData;
     expect(instanceData.phases).toBeDefined();
     expect(instanceData.phases.length).toBeGreaterThan(0);
-    expect(instanceData.currentPhaseId).toBe('submission');
+    expect(instance!.currentStateId).toBe('submission');
   });
 
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({

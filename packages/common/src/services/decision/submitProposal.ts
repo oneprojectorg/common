@@ -67,7 +67,7 @@ export const submitProposal = async ({
   );
 
   const instanceData = instance.instanceData as DecisionInstanceData;
-  const currentPhaseId = instanceData.currentPhaseId;
+  const currentPhaseId = instance.currentStateId;
 
   if (!currentPhaseId) {
     throw new ValidationError('Invalid phase in process instance');

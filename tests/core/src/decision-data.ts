@@ -267,7 +267,6 @@ export async function createDecisionInstance(
     templateVersion: schema.version,
     templateName: schema.name,
     templateDescription: schema.description,
-    currentPhaseId: firstPhaseId,
     phases: schema.phases.map((phase, index) => ({
       phaseId: phase.id,
       name: phase.name,

@@ -1,4 +1,4 @@
-import type { InstanceData, StateDefinition } from '@op/common';
+import type { StateDefinition } from '@op/common';
 
 export interface NextStep {
   id: string;
@@ -10,9 +10,8 @@ export interface NextStep {
 
 export function getNextSteps(
   states: StateDefinition[],
-  instanceData: InstanceData,
+  currentStateId: string | null,
 ): NextStep[] {
-  const currentStateId = instanceData.currentPhaseId;
 
   // Find current state index
   const currentStateIndex = states.findIndex(
