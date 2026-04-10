@@ -1043,5 +1043,6 @@
   "Terms of Service": "Términos de servicio",
   "Join Common": "Unirse a Common",
   "Phase {index} of {total}": "Fase {index} de {total}",
-  "Short name": "Nombre corto"
+  "Short name": "Nombre corto",
+  "platformAdmin_allUsers": "All users"
 }

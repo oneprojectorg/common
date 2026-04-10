@@ -1043,5 +1043,6 @@
   "Terms of Service": "Conditions d'utilisation",
   "Join Common": "Rejoindre Common",
   "Phase {index} of {total}": "Phase {index} sur {total}",
-  "Short name": "Nom court"
+  "Short name": "Nom court",
+  "platformAdmin_allUsers": "All users"
 }

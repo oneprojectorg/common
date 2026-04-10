@@ -1073,5 +1073,6 @@
   "Search users by name or email": "Search users by name or email",
   "Export all users": "Export all users",
   "Last sign in": "Last sign in",
-  "users": "users"
+  "users": "users",
+  "platformAdmin_allUsers": "All users"
 }
