@@ -3372,7 +3372,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "source_data",
+      "name": "draft_instance_data",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_process_instances"

@@ -52,10 +52,10 @@ export const processInstances = pgTable(
     // Instance configuration with filled values (live/published version)
     instanceData: jsonb('instance_data').notNull(),
 
-    // Editable source version — the process builder always writes here.
-    // On publish or "Update Process", sourceData is promoted to the live
-    // columns (instanceData, name, description, stewardProfileId).
-    sourceData: jsonb('source_data'),
+    // Editable draft version — the process builder always writes here.
+    // On publish or "Update Process", draftInstanceData is promoted to the
+    // live columns (instanceData, name, description, stewardProfileId).
+    draftInstanceData: jsonb('draft_instance_data'),
 
     // Current state tracking
     currentStateId: varchar({ length: 256 }),
