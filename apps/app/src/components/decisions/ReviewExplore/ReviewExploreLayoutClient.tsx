@@ -1,39 +1,51 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { Header1 } from '@op/ui/Header';
+import { trpc } from '@op/api/client';
+import type { RubricTemplateSchema } from '@op/common/client';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ProposalPreview } from '../ProposalPreview';
 import { ReviewExploreNavbar } from './ReviewExploreNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
-import { REVIEW_RUBRIC_DUMMY_TEMPLATE } from './reviewRubricDummyTemplate';
 
-interface ReviewExploreLayoutClientProps {
+export function ReviewExploreContent({
+  slug,
+  reviewId,
+}: {
   slug: string;
   reviewId: string;
-}
-
-export function ReviewExploreLayoutClient({
-  slug,
-}: ReviewExploreLayoutClientProps) {
-  const t = useTranslations();
+}) {
   const reviewFlowEnabled = useFeatureFlag('review_flow');
 
   if (reviewFlowEnabled === false) {
     notFound();
   }
 
+  const t = useTranslations();
+
+  const [{ assignment, rubricTemplate }] =
+    trpc.decision.getReviewAssignment.useSuspenseQuery({
+      assignmentId: reviewId,
+    });
+
   return (
     <div className="flex h-dvh flex-col bg-white">
       <ReviewExploreNavbar slug={slug} />
 
       <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
-        <ReviewProposalPane className="border-r p-12" />
-        <ReviewRubricPane className="px-12 pt-12 pb-4" />
+        <ReviewProposalPane
+          proposal={assignment.proposal}
+          className="border-r p-12"
+        />
+        <ReviewRubricPane
+          rubricTemplate={rubricTemplate}
+          className="px-12 pt-12 pb-4"
+        />
       </div>
 
       <Tabs
@@ -49,32 +61,48 @@ export function ReviewExploreLayoutClient({
           id="proposal"
           className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
         >
-          <ReviewProposalPane />
+          <ReviewProposalPane proposal={assignment.proposal} />
         </TabPanel>
 
         <TabPanel
           id="review"
           className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
         >
-          <ReviewRubricPane />
+          <ReviewRubricPane rubricTemplate={rubricTemplate} />
         </TabPanel>
       </Tabs>
     </div>
   );
 }
 
-function ReviewProposalPane({ className }: { className?: string }) {
+function ReviewProposalPane({
+  proposal,
+  className,
+}: {
+  proposal: Parameters<typeof ProposalPreview>[0]['proposal'];
+  className?: string;
+}) {
   return (
-    <div className={cn('min-w-0 flex-1', className)}>
-      <Header1 className="font-sans">Community Garden Expansion</Header1>
+    <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
+      <ProposalPreview proposal={proposal} />
     </div>
   );
 }
 
-function ReviewRubricPane({ className }: { className?: string }) {
+function ReviewRubricPane({
+  rubricTemplate,
+  className,
+}: {
+  rubricTemplate: RubricTemplateSchema | null;
+  className?: string;
+}) {
+  if (!rubricTemplate) {
+    return null;
+  }
+
   return (
-    <div className={cn('min-w-0 flex-1', className)}>
-      <ReviewRubricForm template={REVIEW_RUBRIC_DUMMY_TEMPLATE} />
+    <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
+      <ReviewRubricForm template={rubricTemplate} />
     </div>
   );
 }
