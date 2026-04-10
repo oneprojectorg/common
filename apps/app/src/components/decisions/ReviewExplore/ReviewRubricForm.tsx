@@ -5,13 +5,15 @@ import {
   type XFormatPropertySchema,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Header3, Header4 } from '@op/ui/Header';
+import { Button } from '@op/ui/Button';
+import { Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -36,7 +38,8 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
   const [values, setValues] = useState<Record<string, unknown>>({});
-  const [overallNotes, setOverallNotes] = useState('');
+  const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleValueChange = (key: string, value: unknown) => {
     setValues((current) => ({
@@ -56,12 +59,10 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   }, null);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
-          {t('Review Proposal')}
-        </Header3>
-      </div>
+    <div className="flex flex-col gap-6">
+      <Header3 className="border-b border-neutral-gray1 pb-4 font-serif !text-title-base font-light">
+        {t('Review Proposal')}
+      </Header3>
 
       {fields.map((field) => (
         <RubricCriterionSection
@@ -73,28 +74,39 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
         />
       ))}
 
-      <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-        <div className="flex items-center justify-between gap-4">
-          <Header4>{t('Overall Notes')}</Header4>
-        </div>
+      {isFeedbackOpen ? (
+        <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+          <FieldHeader
+            title={t('Feedback to Author')}
+            description={t(
+              'Feedback will be shared with the author after the review phase ends',
+            )}
+            className="gap-1"
+          />
 
-        <TextField
-          aria-label={t('Overall Notes')}
-          value={overallNotes}
-          onChange={setOverallNotes}
-          useTextArea
-          textareaProps={{
-            placeholder: t(
-              'Add any additional notes or context for the group discussion...',
-            ),
-            rows: 3,
-          }}
-        />
-      </section>
+          <TextField
+            aria-label={t('Feedback to Author')}
+            value={feedbackToAuthor}
+            onChange={setFeedbackToAuthor}
+            useTextArea
+            textareaProps={{ rows: 3 }}
+          />
+        </section>
+      ) : (
+        <Button
+          color="secondary"
+          size="medium"
+          className="w-full"
+          onPress={() => setIsFeedbackOpen(true)}
+        >
+          <LuPlus className="size-4" />
+          {t('Feedback to Author')}
+        </Button>
+      )}
 
       <Surface
         variant="filled"
-        className="flex items-start justify-between border-neutral-gray1 p-4"
+        className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
       >
         <span className="text-base text-neutral-charcoal">
           {t('Total Score')}
@@ -130,15 +142,11 @@ function RubricCriterionSection({
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
       {criterionType === 'yes_no' ? (
         <>
-          <FieldHeader
-            title={field.schema.title}
-            badge={badgeLabel}
-            className="gap-1"
-          />
+          <FieldHeader title={field.schema.title} badge={badgeLabel} />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             {field.schema.description && (
-              <p className="flex-1 text-sm text-neutral-charcoal">
+              <p className="flex-1 text-base text-neutral-charcoal">
                 {field.schema.description}
               </p>
             )}
@@ -148,12 +156,13 @@ function RubricCriterionSection({
         </>
       ) : (
         <>
-          <FieldHeader
-            title={field.schema.title}
-            description={field.schema.description}
-            badge={badgeLabel}
-            className="gap-1"
-          />
+          <FieldHeader title={field.schema.title} badge={badgeLabel} />
+
+          {field.schema.description && (
+            <p className="text-base text-neutral-charcoal">
+              {field.schema.description}
+            </p>
+          )}
 
           <RubricFieldInput field={field} value={value} onChange={onChange} />
         </>
@@ -202,7 +211,7 @@ function RubricFieldInput({
       return (
         <Select
           aria-label={field.schema.title}
-          placeholder={t('Select option')}
+          placeholder={t('Select an option')}
           selectedKey={selectedKey}
           onSelectionChange={(key) => {
             onChange(parseSelectedValue(key, field.schema));
