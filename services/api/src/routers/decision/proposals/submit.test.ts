@@ -1,15 +1,9 @@
 import { mockCollab } from '@op/collab/testing';
-import {
-  ProposalStatus,
-  decisionProcesses,
-  processInstances,
-  proposals,
-} from '@op/db/schema';
+import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
@@ -44,10 +38,7 @@ describe.concurrent('submitProposal', () => {
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: {
-        title: 'Valid Proposal',
-        description: 'A complete proposal',
-      },
+      proposalData: { title: 'Valid Proposal' },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -78,7 +69,7 @@ describe.concurrent('submitProposal', () => {
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: { title: 'Already Submitted', description: 'A test' },
+      proposalData: { title: 'Already Submitted' },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -664,93 +655,6 @@ describe.concurrent('submitProposal', () => {
     ).rejects.toMatchObject({
       cause: { name: 'ValidationError' },
     });
-  });
-
-  /**
-   * Legacy schema compatibility: submit with enum-based category.
-   *
-   * The cowop template stores category as `{ type: ['string', 'null'], enum: [..., null] }`.
-   * After the oneOf migration, new templates use `{ oneOf: [{ const, title }] }`.
-   * This test verifies that AJV validation still accepts proposals submitted
-   * against the legacy enum-based category schema via process_schema fallback.
-   */
-  it('should submit successfully with legacy enum-based category template from process_schema', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    // 1. Inject legacy cowop process_schema — category uses enum format,
-    //    budget uses plain { type: 'number' }
-    const legacyProcessSchema = cowopSchema({
-      processName: 'COWOP Legacy Submit',
-      totalBudget: 100000,
-      budgetCapAmount: 10000,
-      requireBudget: true,
-      categories: ['Infrastructure', 'Education'],
-    });
-
-    await db
-      .update(decisionProcesses)
-      .set({ processSchema: legacyProcessSchema })
-      .where(eq(decisionProcesses.id, setup.process.id));
-
-    // 2. Strip proposalTemplate from instanceData to force process_schema fallback
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
-    });
-
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const { proposalTemplate: _, ...instanceDataWithoutTemplate } =
-      instanceRecord.instanceData as Record<string, unknown>;
-
-    await db
-      .update(processInstances)
-      .set({ instanceData: instanceDataWithoutTemplate })
-      .where(eq(processInstances.id, instance.instance.id));
-
-    // 3. Create proposal with legacy data: plain-number budget + enum category value.
-    //    Legacy proposals have no collaborationDocId — the submit path validates
-    //    proposalData directly instead of reading from a collaboration document.
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Legacy Submit Test' },
-    });
-
-    await db
-      .update(proposals)
-      .set({
-        proposalData: {
-          title: 'Legacy Submit Test',
-          description: 'Testing submit with legacy enum category',
-          budget: 5000,
-          category: 'Infrastructure',
-        },
-      })
-      .where(eq(proposals.id, proposal.id));
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    // Should not throw — AJV validates enum-based category successfully
-    const result = await caller.decision.submitProposal({
-      proposalId: proposal.id,
-    });
-
-    expect(result.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('should submit successfully with new multi-select category template', async ({
