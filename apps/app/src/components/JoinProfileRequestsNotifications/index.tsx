@@ -76,7 +76,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
     updateRequestMutation.mutate({ requestId, status });
   };
 
-  const count = requests.length;
+  const count = requests?.length ?? 0;
 
   if (count === 0) {
     return null;

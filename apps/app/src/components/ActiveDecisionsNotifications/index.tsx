@@ -29,7 +29,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
       limit: 10,
     });
 
-  const count = decisions.length;
+  const count = decisions?.length ?? 0;
 
   if (count === 0) {
     return null;
