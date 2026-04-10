@@ -8,7 +8,7 @@ import {
 import type { User } from '@op/supabase/lib';
 import { count as countFn } from 'drizzle-orm';
 
-import { NotFoundError, ValidationError } from '../../utils';
+import { ValidationError } from '../../utils';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
@@ -34,52 +34,55 @@ export async function getReviewAssignment({
       user,
     });
 
-  if (!assignment.assignedProposalHistory) {
-    throw new NotFoundError('Assigned proposal snapshot');
-  }
+  const proposalHistory = assignment.assignedProposalHistory;
+  const proposalSnapshot = proposalHistory ?? assignment.proposal;
 
-  const snapshot = assignment.assignedProposalHistory;
+  const proposalId = proposalSnapshot.id;
+  const contentId = proposalHistory
+    ? proposalHistory.historyId
+    : proposalSnapshot.id;
+
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.process.id,
   );
-  const parsedProposalData = parseProposalData(snapshot.proposalData);
+  const parsedProposalData = parseProposalData(proposalSnapshot.proposalData);
 
   if (!parsedProposalData.collaborationDocId) {
     throw new ValidationError(
-      `Assigned proposal snapshot ${snapshot.historyId} is missing collaborationDocId`,
+      `Proposal ${contentId} is missing collaborationDocId`,
     );
   }
 
   if (parsedProposalData.collaborationDocVersionId == null) {
     console.warn(
-      `[getReviewAssignment] Assigned proposal snapshot ${snapshot.historyId} is missing collaborationDocVersionId`,
+      `[getReviewAssignment] Proposal ${contentId} is missing collaborationDocVersionId`,
     );
   }
 
   const [relationshipInfo, documentContentMap, proposalAttachments] =
     await Promise.all([
       getProposalRelationshipInfo({
-        profileId: snapshot.profileId,
+        profileId: proposalSnapshot.profileId,
         viewerProfileId: assignment.reviewerProfileId,
       }),
       getProposalDocumentsContent([
         {
-          id: snapshot.historyId,
-          proposalData: snapshot.proposalData,
+          id: contentId,
+          proposalData: proposalSnapshot.proposalData,
           proposalTemplate,
           collaborationDocVersionId:
             parsedProposalData.collaborationDocVersionId,
         },
       ]),
-      getProposalAttachmentsWithSignedUrls(snapshot.id),
+      getProposalAttachmentsWithSignedUrls(proposalId),
     ]);
 
-  const documentContent = documentContentMap.get(snapshot.historyId);
+  const documentContent = documentContentMap.get(contentId);
 
   if (!documentContent) {
     throw new ValidationError(
-      `Could not resolve document content for proposal snapshot ${snapshot.historyId}`,
+      `Could not resolve document content for proposal ${contentId}`,
     );
   }
 
@@ -92,7 +95,7 @@ export async function getReviewAssignment({
     assignment: {
       ...assignment,
       proposal: {
-        ...snapshot,
+        ...proposalSnapshot,
         proposalData: parsedProposalData,
         ...relationshipInfo,
         attachments: proposalAttachments,

@@ -1,4 +1,5 @@
 import {
+  Channels,
   getReviewAssignment,
   reviewAssignmentExtendedSchema,
 } from '@op/common';
@@ -15,6 +16,10 @@ export const getReviewAssignmentRouter = router({
     )
     .output(reviewAssignmentExtendedSchema)
     .query(async ({ ctx, input }) => {
+      ctx.registerQueryChannels([
+        Channels.reviewAssignment(input.assignmentId),
+      ]);
+
       return await getReviewAssignment({
         assignmentId: input.assignmentId,
         user: ctx.user,

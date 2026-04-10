@@ -1,11 +1,11 @@
-import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
+import { ReviewLayoutClient } from '@/components/decisions/Review/ReviewLayoutClient';
 
 export default async function ReviewProposalPage({
   params,
 }: {
   params: Promise<{ slug: string; reviewId: string }>;
 }) {
-  const { slug, reviewId } = await params;
+  const { slug, reviewId: assignmentId } = await params;
 
-  return <ReviewLayout decisionSlug={slug} reviewId={reviewId} />;
+  return <ReviewLayoutClient decisionSlug={slug} assignmentId={assignmentId} />;
 }

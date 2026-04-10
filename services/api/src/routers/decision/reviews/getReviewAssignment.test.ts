@@ -59,6 +59,39 @@ function seedMockCollab(collaborationDocId: string) {
 }
 
 describe.concurrent('getReviewAssignment', () => {
+  it('returns the assignment using the live proposal when no history snapshot exists', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Live Proposal Review',
+      withHistory: false,
+    });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.getReviewAssignment({
+      assignmentId: created.assignment.id,
+    });
+
+    expect(result).toMatchObject({
+      assignment: {
+        id: created.assignment.id,
+        proposal: {
+          id: created.proposal.id,
+        },
+      },
+      review: null,
+    });
+  });
+
   it('returns the reviewer assignment with rubric and saved draft', async ({
     task,
     onTestFinished,

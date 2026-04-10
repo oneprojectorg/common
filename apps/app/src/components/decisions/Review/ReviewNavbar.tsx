@@ -1,7 +1,10 @@
 import { Button } from '@op/ui/Button';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { LuArrowLeft, LuCheck } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
+
+import { useReviewForm } from './ReviewFormContext';
 
 interface ReviewNavbarProps {
   decisionSlug: string;
@@ -9,6 +12,8 @@ interface ReviewNavbarProps {
 
 export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
   const t = useTranslations();
+  const { canSubmit, isSubmitting, isSubmitted, handleSubmit } =
+    useReviewForm();
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white px-6 md:px-8">
@@ -20,11 +25,20 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
         {t('Back to proposals')}
       </Link>
       <div className="flex items-center gap-4">
-        <Button color="secondary" size="small">
+        <Button color="secondary" size="small" isDisabled={isSubmitted}>
           {t('Request revision')}
         </Button>
-        <Button color="primary" size="small">
-          <LuCheck className="size-4" />
+        <Button
+          color="primary"
+          size="small"
+          onPress={handleSubmit}
+          isDisabled={!canSubmit || isSubmitting}
+        >
+          {isSubmitting ? (
+            <LoadingSpinner className="size-4" />
+          ) : (
+            <LuCheck className="size-4" />
+          )}
           {t('Submit review')}
         </Button>
       </div>
