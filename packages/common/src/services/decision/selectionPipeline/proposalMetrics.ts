@@ -15,7 +15,7 @@ import type { VoteAggregation } from './types';
  * Accepts an optional dbClient so this can be called within a transaction
  * for a consistent snapshot.
  */
-export async function aggregateVoteData(
+export async function aggregateProposalMetrics(
   phaseProposals: Proposal[],
   dbClient: DbClient = db,
 ): Promise<Record<string, VoteAggregation>> {

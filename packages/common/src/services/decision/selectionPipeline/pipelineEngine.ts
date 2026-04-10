@@ -8,7 +8,7 @@ import type { BranchBlock, ExecutionContext, SelectionPipeline } from './types';
 /**
  * Execute a selection pipeline
  */
-export async function executePipeline(
+export async function executeSelectionPipeline(
   pipeline: SelectionPipeline,
   context: ExecutionContext,
 ): Promise<Proposal[]> {
@@ -107,7 +107,7 @@ async function executeBranchBlock(
         blocks: branch.blocks,
       };
 
-      const branchResults = await executePipeline(branchPipeline, {
+      const branchResults = await executeSelectionPipeline(branchPipeline, {
         ...blockContext,
         outputs: { ...blockContext.outputs },
         variables: { ...blockContext.variables },
@@ -129,7 +129,7 @@ async function executeBranchBlock(
       blocks: block.default.blocks,
     };
 
-    const defaultResults = await executePipeline(defaultPipeline, {
+    const defaultResults = await executeSelectionPipeline(defaultPipeline, {
       ...blockContext,
       outputs: { ...blockContext.outputs },
       variables: { ...blockContext.variables },

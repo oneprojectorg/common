@@ -1,12 +1,15 @@
-import { simpleVoting } from '@op/common';
-import { db } from '@op/db/client';
+import {
+  type DecisionInstanceData,
+  advancePhase,
+  simpleVoting,
+} from '@op/common';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcesses,
   processInstances,
   users,
 } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
 
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
@@ -44,7 +47,7 @@ export async function createAndSubmitProposal(
 
 /**
  * Process schema with a limit(2) selectionPipeline on the departing 'submission' phase.
- * Used to test that transitions persist only surviving proposals.
+ * Used to test that transitions persist only selected proposals.
  */
 export const schemaWithPipeline = {
   name: 'Pipeline Process',
@@ -194,6 +197,14 @@ export async function createInstanceWithSchema(
 
   const instanceId = instanceResult.processInstance.id;
 
+  const schemaPhases =
+    (processSchema as { phases?: Array<Record<string, unknown>> }).phases ?? [];
+  const instancePhases = schemaPhases.map((p) => ({
+    phaseId: p.id as string,
+    name: p.name as string,
+    ...(p.selectionPipeline ? { selectionPipeline: p.selectionPipeline } : {}),
+  }));
+
   await db
     .update(processInstances)
     .set({
@@ -202,10 +213,7 @@ export async function createInstanceWithSchema(
       status: ProcessStatus.PUBLISHED,
       instanceData: {
         currentPhaseId: 'submission',
-        phases: [
-          { phaseId: 'submission', name: 'Submission' },
-          { phaseId: 'review', name: 'Review' },
-        ],
+        phases: instancePhases,
       },
     })
     .where(eq(processInstances.id, instanceId));
@@ -217,4 +225,30 @@ export async function createInstanceWithSchema(
     caller,
     testData,
   };
+}
+
+/** Advance an instance from one phase to another. Loads the instance from the DB. */
+export async function executeTestTransition(opts: {
+  instanceId: string;
+  fromPhaseId: string;
+  toPhaseId: string;
+}) {
+  const processInstance = await db.query.processInstances.findFirst({
+    where: { id: opts.instanceId },
+  });
+  if (!processInstance) {
+    throw new Error(`Instance ${opts.instanceId} not found`);
+  }
+  return db.transaction(async (tx) =>
+    advancePhase({
+      tx,
+      instance: {
+        ...processInstance,
+        instanceData: processInstance.instanceData as DecisionInstanceData,
+      },
+      fromPhaseId: opts.fromPhaseId,
+      toPhaseId: opts.toPhaseId,
+      triggeredByProfileId: null,
+    }),
+  );
 }

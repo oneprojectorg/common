@@ -1,25 +1,27 @@
-import { TransitionEngine } from '@op/common';
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import { proposals } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createAndSubmitProposal,
   createInstanceWithSchema,
+  executeTestTransition,
   schemaWithPipeline,
   schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
 
 describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
-  it('returns only surviving proposals after a transition with a limiting pipeline', async ({
+  it('returns only selected proposals after a transition with a limiting pipeline', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, user, userEmail, caller } =
-      await createInstanceWithSchema(testData, task.id, schemaWithPipeline);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithPipeline,
+    );
 
     // Create and submit 3 proposals; the pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
@@ -30,9 +32,10 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       });
     }
 
-    await TransitionEngine.executeTransition({
-      data: { instanceId, toStateId: 'review' },
-      user,
+    await executeTestTransition({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
     const result = await caller.decision.listProposals({
@@ -48,8 +51,11 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, user, userEmail, caller } =
-      await createInstanceWithSchema(testData, task.id, schemaWithoutPipeline);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithoutPipeline,
+    );
 
     for (let i = 1; i <= 3; i++) {
       await createAndSubmitProposal(testData, caller, {
@@ -59,9 +65,10 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       });
     }
 
-    await TransitionEngine.executeTransition({
-      data: { instanceId, toStateId: 'review' },
-      user,
+    await executeTestTransition({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
     const result = await caller.decision.listProposals({
@@ -77,8 +84,11 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, user, userEmail, caller } =
-      await createInstanceWithSchema(testData, task.id, schemaWithoutPipeline);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithoutPipeline,
+    );
 
     const [p1, p2] = await Promise.all([
       createAndSubmitProposal(testData, caller, {
@@ -99,9 +109,10 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       .set({ deletedAt: new Date().toISOString() })
       .where(eq(proposals.id, p2.id));
 
-    await TransitionEngine.executeTransition({
-      data: { instanceId, toStateId: 'review' },
-      user,
+    await executeTestTransition({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
     const result = await caller.decision.listProposals({
@@ -118,8 +129,11 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, user, userEmail, caller } =
-      await createInstanceWithSchema(testData, task.id, schemaWithoutPipeline);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithoutPipeline,
+    );
 
     const [p1, p2] = await Promise.all([
       createAndSubmitProposal(testData, caller, {
@@ -135,9 +149,10 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     ]);
 
     // Transition first (both proposals make it into the join table)
-    await TransitionEngine.executeTransition({
-      data: { instanceId, toStateId: 'review' },
-      user,
+    await executeTestTransition({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
     // Soft-delete after transition

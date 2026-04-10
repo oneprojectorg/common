@@ -9,13 +9,11 @@ import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listInstancesRouter } from './listInstances';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
-import { updateInstanceRouter } from './updateInstance';
 
 export const instancesRouter = mergeRouters(
   createInstanceFromTemplateRouter,
   deleteDecisionRouter,
   duplicateInstanceRouter,
-  updateInstanceRouter,
   updateDecisionInstanceRouter,
   listInstancesRouter,
   listLegacyInstancesRouter,

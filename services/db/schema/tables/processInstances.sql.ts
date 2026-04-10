@@ -57,7 +57,6 @@ export const processInstances = pgTable(
         "fieldValues": { ...based on process fields schema },
         "phases": [ ...configured phases with dates ],
         "currentStateId": string,
-        "stateData": { ...state-specific data }
       }
     */
 
