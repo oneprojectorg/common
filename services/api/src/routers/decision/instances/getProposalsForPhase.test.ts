@@ -270,12 +270,12 @@ describe.concurrent('getProposalsForPhase', () => {
       }),
     ]);
 
-    // Mutate instanceData to look like a legacy instance: remove the phases
-    // array. This is the signal getProposalsForPhase keys off of.
+    // Mutate instanceData to look like a legacy instance: add currentStateId
+    // to the JSON blob. Legacy instances stored state in the JSON; new ones don't.
     await db
       .update(processInstances)
       .set({
-        instanceData: sql`${processInstances.instanceData} - 'phases'`,
+        instanceData: sql`${processInstances.instanceData} || jsonb_build_object('currentStateId', 'review')`,
       })
       .where(eq(processInstances.id, instanceId));
 

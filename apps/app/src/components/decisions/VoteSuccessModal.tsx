@@ -31,23 +31,9 @@ const VoteSuccessModalSuspense = ({
     instanceId,
   });
 
-  // Read phases directly from instanceData
-  const instancePhases = processInstance.instanceData?.phases ?? [];
+  const phases = processInstance.instanceData?.phases ?? [];
 
-  // Transform to format expected by getNextSteps
-  const phasesForNextSteps = instancePhases.map((phase) => ({
-    id: phase.phaseId,
-    name: phase.name ?? '',
-    description: phase.description,
-    phase: phase.startDate
-      ? { startDate: phase.startDate, endDate: phase.endDate }
-      : undefined,
-  }));
-
-  const nextSteps = getNextSteps(
-    phasesForNextSteps,
-    processInstance.currentStateId,
-  );
+  const nextSteps = getNextSteps(phases, processInstance.currentStateId);
 
   const processTitle = processInstance.name;
 

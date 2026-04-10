@@ -5,17 +5,17 @@ import { processInstances } from '@op/db/schema';
 /**
  * Pure predicate over an `instanceData` JSON value.
  *
- * A process instance is "legacy" if its `instanceData` JSON does not have a
- * `phases` array. New instances (created from DecisionSchemaDefinition
- * templates) always store `phases`; old instances predate that structure.
+ * A process instance is "legacy" if its `instanceData` JSON contains a
+ * `currentStateId` field. Legacy instances stored current state in the JSON
+ * blob; new instances never write it there (they use the row column instead).
  */
 export function isLegacyInstanceData(instanceData: unknown): boolean {
   if (instanceData == null || typeof instanceData !== 'object') {
     return false;
   }
 
-  const data = instanceData as { phases?: unknown[] };
-  return !Array.isArray(data.phases);
+  const data = instanceData as { currentStateId?: string };
+  return data.currentStateId != null;
 }
 
 /**

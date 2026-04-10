@@ -1,5 +1,3 @@
-import type { StateDefinition } from '@op/common';
-
 export interface NextStep {
   id: string;
   name: string;
@@ -8,32 +6,40 @@ export interface NextStep {
   endDate?: string;
 }
 
+interface PhaseWithDates {
+  phaseId: string;
+  name?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export function getNextSteps(
-  states: StateDefinition[],
+  phases: PhaseWithDates[],
   currentStateId: string | null,
 ): NextStep[] {
-  // Find current state index
-  const currentStateIndex = states.findIndex(
-    (state) => state.id === currentStateId,
+  // Find current phase index
+  const currentPhaseIndex = phases.findIndex(
+    (phase) => phase.phaseId === currentStateId,
   );
 
-  if (currentStateIndex === -1) {
+  if (currentPhaseIndex === -1) {
     return [];
   }
 
-  // Get upcoming states (states after current one)
-  const upcomingStates = states
-    .slice(currentStateIndex + 1)
-    .filter((state) => state.phase?.startDate) // Only include states with dates
-    .map((state) => ({
-      id: state.id,
-      name: state.name,
-      description: state.description,
-      startDate: state.phase?.startDate,
-      endDate: state.phase?.endDate,
+  // Get upcoming phases (phases after current one)
+  const upcomingPhases = phases
+    .slice(currentPhaseIndex + 1)
+    .filter((phase) => phase.startDate) // Only include phases with dates
+    .map((phase) => ({
+      id: phase.phaseId,
+      name: phase.name ?? '',
+      description: phase.description,
+      startDate: phase.startDate,
+      endDate: phase.endDate,
     }));
 
-  return upcomingStates;
+  return upcomingPhases;
 }
 
 export function formatStepForDisplay(step: NextStep): string {
