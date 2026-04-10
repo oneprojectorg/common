@@ -1,3 +1,4 @@
+import { getTipTapClient } from '@op/collab';
 import { type TransactionType, and, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
@@ -79,11 +80,16 @@ async function updateProposalCategoryLink(
   }
 }
 
+export type ProposalCheckpoint =
+  | { type: 'update' }
+  | { type: 'reviewRevision'; reviewRequestId: string };
+
 export interface UpdateProposalInput {
   title?: string;
   proposalData?: ProposalDataInput;
   status?: ProposalStatus;
   visibility?: Visibility;
+  checkpoint?: ProposalCheckpoint;
 }
 
 export const updateProposal = async ({
@@ -174,13 +180,63 @@ export const updateProposal = async ({
       }
     }
 
-    const { title: nextTitle, ...proposalFields } = data;
+    // Create a named version snapshot when explicitly checkpointing.
+    // Best-effort — failures logged, never block.
+    let collaborationDocVersionId: number | null = null;
+    if (data.checkpoint && existingProposal.status !== ProposalStatus.DRAFT) {
+      const parsed = parseProposalData(existingProposal.proposalData);
+
+      if (parsed.collaborationDocId) {
+        const versionName =
+          data.checkpoint.type === 'reviewRevision' ? 'Revision' : 'Updated';
+
+        const latestVersion = await getTipTapClient()
+          .createVersion(parsed.collaborationDocId, versionName)
+          .then((v) => v.version)
+          .catch((error: unknown) => {
+            console.error(
+              `[updateProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
+              error,
+            );
+            return null;
+          });
+
+        if (
+          latestVersion != null &&
+          latestVersion !== parsed.collaborationDocVersionId
+        ) {
+          collaborationDocVersionId = latestVersion;
+        }
+      }
+    }
+
+    const {
+      title: nextTitle,
+      checkpoint: _checkpoint,
+      ...proposalFields
+    } = data;
 
     const updatedProposal = await db.transaction(async (tx) => {
+      const proposalDataWithVersion =
+        collaborationDocVersionId != null && proposalFields.proposalData
+          ? {
+              ...proposalFields.proposalData,
+              collaborationDocVersionId,
+            }
+          : collaborationDocVersionId != null
+            ? {
+                ...(existingProposal.proposalData as Record<string, unknown>),
+                collaborationDocVersionId,
+              }
+            : proposalFields.proposalData;
+
       const [updatedProposalRow] = await tx
         .update(proposals)
         .set({
           ...proposalFields,
+          ...(proposalDataWithVersion
+            ? { proposalData: proposalDataWithVersion }
+            : {}),
           lastEditedByProfileId: dbUser.currentProfileId,
           updatedAt: new Date().toISOString(),
         })
