@@ -12,7 +12,6 @@ export function getNextSteps(
   states: StateDefinition[],
   currentStateId: string | null,
 ): NextStep[] {
-
   // Find current state index
   const currentStateIndex = states.findIndex(
     (state) => state.id === currentStateId,

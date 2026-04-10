@@ -120,8 +120,7 @@ describe('buildExpectedTransitions', () => {
   });
 
   it('should throw when phases is undefined', () => {
-    const instance = stubInstance({
-    });
+    const instance = stubInstance({});
 
     expect(() => buildExpectedTransitions(instance)).toThrow(
       'Process instance must have at least one phase configured',
