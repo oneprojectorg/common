@@ -34,7 +34,8 @@ function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
   | undefined {
   const instanceData = processInstance.instanceData as DecisionInstanceData;
 
-  if (!instanceData?.currentPhaseId) {
+  // @ts-expect-error  Remove instanceData,currentStateId in a migration before undoing
+  if (!instanceData?.currentPhaseId && !instanceData?.currentStateId) {
     return undefined;
   }
 
