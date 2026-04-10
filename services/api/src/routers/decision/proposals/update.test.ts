@@ -155,13 +155,13 @@ describe.concurrent('updateProposal visibility', () => {
     const visibleProposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: { title: 'Visible Proposal', description: 'A test' },
+      proposalData: { title: 'Visible Proposal' },
     });
 
     const hiddenProposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: { title: 'Hidden Proposal', description: 'A test' },
+      proposalData: { title: 'Hidden Proposal' },
     });
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);

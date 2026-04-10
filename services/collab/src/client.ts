@@ -170,5 +170,23 @@ export function createTipTapClient(config: TipTapClientConfig) {
 
       return Math.max(...versions.map((v) => v.version));
     },
+
+    /**
+     * Create a new named version snapshot for a document.
+     * POST /api/documents/{docName}/versions
+     */
+    createVersion: async (
+      docName: string,
+      name?: string,
+    ): Promise<TipTapVersion> => {
+      return api
+        .post<TipTapVersion>(
+          `documents/${encodeURIComponent(docName)}/versions`,
+          {
+            json: name ? { name } : undefined,
+          },
+        )
+        .json();
+    },
   };
 }

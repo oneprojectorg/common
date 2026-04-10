@@ -95,28 +95,29 @@ export const submitProposal = async ({
   // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
 
-  // Validation and version fetch are independent — run them in parallel.
-  // The version fetch is best-effort; failures are logged but never block.
-  const [, collaborationDocVersionId] = await Promise.all([
-    proposalTemplate
-      ? validateProposalAgainstTemplate(
-          proposalTemplate,
-          existingProposal.proposalData,
-          existingProposal.profile.name,
-        )
-      : undefined,
-    parsed.collaborationDocId
-      ? getTipTapClient()
-          .getLatestVersionId(parsed.collaborationDocId)
-          .catch((error: unknown) => {
-            console.error(
-              `[submitProposal] Failed to fetch TipTap version for ${parsed.collaborationDocId}:`,
-              error,
-            );
-            return null;
-          })
-      : null,
-  ]);
+  if (proposalTemplate) {
+    await validateProposalAgainstTemplate(
+      proposalTemplate,
+      existingProposal.proposalData,
+      existingProposal.profile.name,
+    );
+  }
+
+  // Create a named version snapshot. Best-effort — failures logged, never block.
+  if (!parsed.collaborationDocId) {
+    throw new ValidationError('Proposal is missing a collaboration document');
+  }
+
+  const collaborationDocVersionId = await getTipTapClient()
+    .createVersion(parsed.collaborationDocId, 'Submitted')
+    .then((v) => v.version)
+    .catch((error: unknown) => {
+      console.error(
+        `[submitProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
+        error,
+      );
+      return null;
+    });
 
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
