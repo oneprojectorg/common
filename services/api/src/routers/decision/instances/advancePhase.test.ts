@@ -242,7 +242,7 @@ describe.concurrent('advancePhase', () => {
     );
 
     expect(result.conflict).toBe(false);
-    expect(result.survivingProposalIds).toContain(proposal.id);
+    expect(result.selectedProposalIds).toContain(proposal.id);
 
     const joinRows = await db
       .select()
@@ -253,7 +253,7 @@ describe.concurrent('advancePhase', () => {
     expect(joinRows[0]!.transitionHistoryId).toBe(result.transitionHistoryId);
   });
 
-  it('does not write join rows when there are no surviving proposals', async ({
+  it('does not write join rows when there are no selected proposals', async ({
     task,
     onTestFinished,
   }) => {
@@ -266,7 +266,7 @@ describe.concurrent('advancePhase', () => {
     });
 
     expect(result.conflict).toBe(false);
-    expect(result.survivingProposalIds).toEqual([]);
+    expect(result.selectedProposalIds).toEqual([]);
 
     const joinRows = await db
       .select()

@@ -430,7 +430,7 @@ describe('processDecisionsTransitions', () => {
     expect(result.processed).toBeGreaterThanOrEqual(2);
   });
 
-  it('should persist surviving proposals into decisionTransitionProposals', async ({
+  it('should persist selected proposals into decisionTransitionProposals', async ({
     task,
     onTestFinished,
   }) => {

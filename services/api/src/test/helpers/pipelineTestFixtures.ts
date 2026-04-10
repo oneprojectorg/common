@@ -47,7 +47,7 @@ export async function createAndSubmitProposal(
 
 /**
  * Process schema with a limit(2) selectionPipeline on the departing 'submission' phase.
- * Used to test that transitions persist only surviving proposals.
+ * Used to test that transitions persist only selected proposals.
  */
 export const schemaWithPipeline = {
   name: 'Pipeline Process',

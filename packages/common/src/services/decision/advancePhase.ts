@@ -44,7 +44,7 @@ export type AdvancePhaseResult =
   | {
       conflict: false;
       transitionHistoryId: string;
-      survivingProposalIds: string[];
+      selectedProposalIds: string[];
     };
 
 /**
@@ -59,7 +59,7 @@ export type AdvancePhaseResult =
  *    (currentStateId = fromPhaseId AND status = PUBLISHED).
  * 3. Mark any pending scheduled transition for the departing phase complete.
  * 4. Insert a stateTransitionHistory row.
- * 5. Persist surviving proposals into decisionTransitionProposals.
+ * 5. Persist selected proposals into decisionTransitionProposals.
  *
  * Returns { conflict: true } if the lock fails (concurrent advance or status change).
  */
@@ -96,7 +96,7 @@ export async function advancePhase(
     dbClient: tx,
   });
 
-  let survivingProposalIds: string[] = allProposals.map((p) => p.id);
+  let selectedProposalIds: string[] = allProposals.map((p) => p.id);
 
   if (selectionPipeline) {
     const proposalMetrics = await aggregateProposalMetrics(allProposals, tx);
@@ -106,11 +106,8 @@ export async function advancePhase(
       variables: {},
       outputs: {},
     };
-    const surviving = await executeSelectionPipeline(
-      selectionPipeline,
-      context,
-    );
-    survivingProposalIds = surviving.map((p) => p.id);
+    const selected = await executeSelectionPipeline(selectionPipeline, context);
+    selectedProposalIds = selected.map((p) => p.id);
   }
 
   // Optimistic lock: only succeeds if currentStateId still matches fromPhaseId.
@@ -174,8 +171,8 @@ export async function advancePhase(
     );
   }
 
-  if (survivingProposalIds.length > 0) {
-    // Get the latest history snapshot for each surviving proposal.
+  if (selectedProposalIds.length > 0) {
+    // Get the latest history snapshot for each selected proposal.
     const latestHistoryRows = await tx
       .selectDistinctOn([proposalHistory.id], {
         proposalId: proposalHistory.id,
@@ -185,14 +182,14 @@ export async function advancePhase(
       .where(
         and(
           eq(proposalHistory.processInstanceId, instanceId),
-          inArray(proposalHistory.id, survivingProposalIds),
+          inArray(proposalHistory.id, selectedProposalIds),
         ),
       )
       .orderBy(proposalHistory.id, desc(proposalHistory.historyCreatedAt));
 
-    if (latestHistoryRows.length !== survivingProposalIds.length) {
+    if (latestHistoryRows.length !== selectedProposalIds.length) {
       throw new Error(
-        `Proposals missing history records during phase advance for instance ${instanceId}: expected ${survivingProposalIds.length}, got ${latestHistoryRows.length}`,
+        `Proposals missing history records during phase advance for instance ${instanceId}: expected ${selectedProposalIds.length}, got ${latestHistoryRows.length}`,
       );
     }
 
@@ -209,6 +206,6 @@ export async function advancePhase(
   return {
     conflict: false,
     transitionHistoryId: insertedTransition.id,
-    survivingProposalIds,
+    selectedProposalIds,
   };
 }

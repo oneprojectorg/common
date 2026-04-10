@@ -12,7 +12,7 @@ import {
 } from '../../../test/helpers/pipelineTestFixtures';
 
 describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
-  it('returns only surviving proposals after a transition with a limiting pipeline', async ({
+  it('returns only selected proposals after a transition with a limiting pipeline', async ({
     task,
     onTestFinished,
   }) => {
