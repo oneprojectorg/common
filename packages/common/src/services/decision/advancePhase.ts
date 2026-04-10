@@ -36,12 +36,16 @@ export interface AdvancePhaseInput {
   now?: string;
 }
 
-export interface AdvancePhaseResult {
-  /** True when the optimistic lock failed — another writer already advanced. Nothing was written. */
-  conflict: boolean;
-  transitionHistoryId?: string;
-  survivingProposalIds: string[];
-}
+export type AdvancePhaseResult =
+  | {
+      /** The optimistic lock failed — another writer already advanced. Nothing was written. */
+      conflict: true;
+    }
+  | {
+      conflict: false;
+      transitionHistoryId: string;
+      survivingProposalIds: string[];
+    };
 
 /**
  * Atomically advance a decision instance from one phase to the next.
@@ -78,7 +82,14 @@ export async function advancePhase(
   const departingPhase = instanceData.phases?.find(
     (p: PhaseInstanceData) => p.phaseId === fromPhaseId,
   );
-  const selectionPipeline = departingPhase?.selectionPipeline;
+
+  if (!departingPhase) {
+    throw new Error(
+      `Phase ${fromPhaseId} not found in instanceData for instance ${instanceId}`,
+    );
+  }
+
+  const selectionPipeline = departingPhase.selectionPipeline;
 
   const allProposals = await getProposalsForPhase({
     instanceId,
@@ -132,7 +143,7 @@ export async function advancePhase(
     .returning({ id: processInstances.id });
 
   if (updated.length === 0) {
-    return { conflict: true, survivingProposalIds: [] };
+    return { conflict: true };
   }
 
   await tx

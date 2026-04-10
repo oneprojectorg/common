@@ -92,6 +92,7 @@ describe.concurrent('advancePhase', () => {
     });
 
     expect(result.conflict).toBe(false);
+    if (result.conflict) throw new Error('unreachable');
     expect(result.transitionHistoryId).toBeDefined();
 
     const reloaded = await db.query.processInstances.findFirst({
@@ -124,7 +125,6 @@ describe.concurrent('advancePhase', () => {
     });
 
     expect(result.conflict).toBe(true);
-    expect(result.transitionHistoryId).toBeUndefined();
 
     const reloaded = await db.query.processInstances.findFirst({
       where: { id: loaded.dbInstance.id },
