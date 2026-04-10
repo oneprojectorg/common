@@ -34,13 +34,9 @@ const PendingDecisionInvitesSuspense = () => {
   });
 
   const acceptInvite = trpc.profile.acceptInvite.useMutation({
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       utils.account.listUserInvites.invalidate();
       utils.decision.listDecisionProfiles.invalidate();
-      const accepted = invites.find((i) => i.id === variables.inviteId);
-      if (accepted?.profile?.slug) {
-        router.push(`/decisions/${accepted.profile.slug}`);
-      }
     },
   });
 
@@ -88,7 +84,15 @@ const PendingDecisionInvitesSuspense = () => {
                 <Button
                   size="small"
                   className="w-full sm:w-auto"
-                  onPress={() => acceptInvite.mutate({ inviteId: invite.id })}
+                  onPress={() =>
+                    acceptInvite
+                      .mutateAsync({ inviteId: invite.id })
+                      .then(() => {
+                        if (profile.slug) {
+                          router.push(`/decisions/${profile.slug}`);
+                        }
+                      })
+                  }
                   isDisabled={acceptInvite.isPending}
                 >
                   {isAccepting ? <LoadingSpinner /> : t('Accept')}
