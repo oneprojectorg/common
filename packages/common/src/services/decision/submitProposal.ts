@@ -95,7 +95,6 @@ export const submitProposal = async ({
   // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
 
-  // Step 1: Validate — must pass before we create a version snapshot.
   if (proposalTemplate) {
     await validateProposalAgainstTemplate(
       proposalTemplate,
@@ -104,19 +103,21 @@ export const submitProposal = async ({
     );
   }
 
-  // Step 2: Create a named version snapshot. Best-effort — failures logged, never block.
-  const collaborationDocVersionId = parsed.collaborationDocId
-    ? await getTipTapClient()
-        .createVersion(parsed.collaborationDocId, 'Submitted')
-        .then((v) => v.version)
-        .catch((error: unknown) => {
-          console.error(
-            `[submitProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
-            error,
-          );
-          return null;
-        })
-    : null;
+  // Create a named version snapshot. Best-effort — failures logged, never block.
+  if (!parsed.collaborationDocId) {
+    throw new ValidationError('Proposal is missing a collaboration document');
+  }
+
+  const collaborationDocVersionId = await getTipTapClient()
+    .createVersion(parsed.collaborationDocId, 'Submitted')
+    .then((v) => v.version)
+    .catch((error: unknown) => {
+      console.error(
+        `[submitProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
+        error,
+      );
+      return null;
+    });
 
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
