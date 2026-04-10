@@ -1,8 +1,6 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
-import { useDebouncedCallback } from '@op/hooks';
 import { Header2 } from '@op/ui/Header';
 import { SelectItem } from '@op/ui/Select';
 import { useEffect, useRef } from 'react';
@@ -11,13 +9,12 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
 
+import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
-
-const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 const createOverviewValidator = (t: TranslateFn) =>
   z.object({
@@ -74,42 +71,13 @@ export function OverviewSectionForm({
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === ProcessStatus.DRAFT;
 
-  // Store: used as a localStorage buffer for non-draft edits only
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
-  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const saveState = useProcessBuilderStore((s) =>
-    s.getSaveState(decisionProfileId),
-  );
-  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
-  const markSaved = useProcessBuilderStore((s) => s.markSaved);
-
-  // Reset stale save status from previous sessions
-  useEffect(() => {
-    setSaveStatus(decisionProfileId, 'idle');
-  }, [decisionProfileId, setSaveStatus]);
-
-  // tRPC mutation with cache invalidation (matches phase editor pattern)
-  const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: () => setSaveStatus(decisionProfileId, 'error'),
-    onSettled: () => {
-      // Skip invalidation if another debounced save is pending — that save's
-      // onSettled will reconcile. This prevents a stale refetch from overwriting
-      // optimistic cache updates made between the two saves.
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
+  const { saveChanges, saveState } = useProcessBuilderAutosave();
 
   // Fetch the current user's profiles (individual + organizations)
   const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
@@ -134,42 +102,20 @@ export function OverviewSectionForm({
   // Only the process owner can change the steward
   const isProcessOwner = userProfiles?.some((p) => p.id === instance.owner?.id);
 
-  // Debounced save: draft persists to API; non-draft only buffers locally.
-  const debouncedSave = useDebouncedCallback((values: OverviewFormData) => {
-    setSaveStatus(decisionProfileId, 'saving');
-
-    // Always buffer in the store so the UI reflects the latest values.
-    // For non-draft this also persists to localStorage as an offline buffer.
-    setInstanceData(decisionProfileId, {
+  const handleValuesChange = (values: OverviewFormData) => {
+    saveChanges({
       name: values.name,
       description: values.description,
-      stewardProfileId: values.stewardProfileId,
+      stewardProfileId: isProcessOwner
+        ? values.stewardProfileId || undefined
+        : undefined,
       config: {
         organizeByCategories: values.organizeByCategories,
         requireCollaborativeProposals: values.requireCollaborativeProposals,
         isPrivate: values.isPrivate,
       },
     });
-
-    if (isDraft) {
-      updateInstance.mutate({
-        instanceId,
-        name: values.name,
-        description: values.description,
-        stewardProfileId: isProcessOwner
-          ? values.stewardProfileId || undefined
-          : undefined,
-        config: {
-          organizeByCategories: values.organizeByCategories,
-          requireCollaborativeProposals: values.requireCollaborativeProposals,
-          isPrivate: values.isPrivate,
-        },
-      });
-    } else {
-      markSaved(decisionProfileId);
-    }
-  }, AUTOSAVE_DEBOUNCE_MS);
-  debouncedSaveRef.current = () => debouncedSave.isPending();
+  };
 
   // Prefer store (localStorage buffer) over API data — the store is written
   // synchronously on every save, so it's always the freshest source.
@@ -208,7 +154,7 @@ export function OverviewSectionForm({
           children={(values) => (
             <FormValueWatcher
               values={values as OverviewFormData}
-              onValuesChange={debouncedSave}
+              onValuesChange={handleValuesChange}
             />
           )}
         />

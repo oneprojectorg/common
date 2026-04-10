@@ -1,6 +1,8 @@
+import { ProcessStatus } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 import { forbidden, notFound } from 'next/navigation';
 
+import { ProcessBuilderAutosaveProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
 import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
@@ -45,34 +47,42 @@ const EditDecisionPage = async ({
     config: instanceData.config,
   };
 
+  const isDraft = processInstance.status === ProcessStatus.DRAFT;
+
   return (
     <ProcessBuilderShell>
-      <div className="bg-background relative flex h-dvh w-full flex-1 flex-col overflow-y-hidden">
-        <ProcessBuilderStoreInitializer
-          decisionProfileId={decisionProfile.id}
-          serverData={serverData}
-          isDraft={processInstance.status === 'draft'}
-        />
-        <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
-        <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
-          <ProcessBuilderSidebar
+      <ProcessBuilderAutosaveProvider
+        decisionProfileId={decisionProfile.id}
+        instanceId={instanceId}
+        isDraft={isDraft}
+      >
+        <div className="bg-background relative flex h-dvh w-full flex-1 flex-col overflow-y-hidden">
+          <ProcessBuilderStoreInitializer
+            decisionProfileId={decisionProfile.id}
+            serverData={serverData}
+            isDraft={isDraft}
+          />
+          <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
+          <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
+            <ProcessBuilderSidebar
+              instanceId={instanceId}
+              decisionProfileId={decisionProfile.id}
+            />
+            <main className="h-full grow overflow-y-auto">
+              <ProcessBuilderContent
+                decisionProfileId={decisionProfile.id}
+                instanceId={instanceId}
+                decisionName={decisionProfile.name}
+              />
+            </main>
+          </div>
+          <ProcessBuilderFooter
             instanceId={instanceId}
+            slug={slug}
             decisionProfileId={decisionProfile.id}
           />
-          <main className="h-full grow overflow-y-auto">
-            <ProcessBuilderContent
-              decisionProfileId={decisionProfile.id}
-              instanceId={instanceId}
-              decisionName={decisionProfile.name}
-            />
-          </main>
         </div>
-        <ProcessBuilderFooter
-          instanceId={instanceId}
-          slug={slug}
-          decisionProfileId={decisionProfile.id}
-        />
-      </div>
+      </ProcessBuilderAutosaveProvider>
     </ProcessBuilderShell>
   );
 };
