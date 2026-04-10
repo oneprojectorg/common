@@ -49,6 +49,7 @@ export * from './getProposal';
 export * from './listProposalVersions';
 export * from './listProposals';
 export * from './getReviewAssignment';
+export * from './listReviewAssignments';
 export * from './submitReview';
 export * from './deleteProposal';
 export * from './deleteDecision';
