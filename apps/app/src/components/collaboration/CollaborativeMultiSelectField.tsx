@@ -56,7 +56,7 @@ export function CollaborativeMultiSelectField({
   );
 
   const onChangeRef = useRef(onChange);
-  const lastEmittedValueRef = useRef<string | undefined>(undefined);
+  const lastEmittedValueRef = useRef(JSON.stringify(selectedValues));
   const fieldRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
 

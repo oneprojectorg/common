@@ -52,6 +52,7 @@ export function CollaborativeTextField({
   onEditorBlur,
 }: CollaborativeTextFieldProps) {
   const [charCount, setCharCount] = useState(0);
+  const lastEmittedHtmlRef = useRef<string | null>(null);
 
   const extensions = useMemo(
     () => [
@@ -77,10 +78,19 @@ export function CollaborativeTextField({
 
   const handleEditorReady = useCallback((editor: Editor) => {
     setCharCount(editor.getText().length);
+    lastEmittedHtmlRef.current = editor.getHTML();
 
     editor.on('update', () => {
+      const html = editor.getHTML();
+
       setCharCount(editor.getText().length);
-      onChangeRef.current?.(editor.getHTML());
+
+      if (lastEmittedHtmlRef.current === html) {
+        return;
+      }
+
+      lastEmittedHtmlRef.current = html;
+      onChangeRef.current?.(html);
     });
     editor.on('focus', () => {
       onEditorFocusRef.current?.(editor);

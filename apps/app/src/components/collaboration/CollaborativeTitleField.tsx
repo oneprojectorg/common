@@ -8,7 +8,7 @@ import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
 import Text from '@tiptap/extension-text';
 import { EditorContent, useEditor } from '@tiptap/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
@@ -25,6 +25,7 @@ export function CollaborativeTitleField({
   onChange,
 }: CollaborativeTitleFieldProps) {
   const { ydoc, provider, user } = useCollaborativeDoc();
+  const lastEmittedTextRef = useRef<string | null>(null);
 
   // Build collaborative extensions for the title field
   const extensions = useMemo(
@@ -71,8 +72,16 @@ export function CollaborativeTitleField({
       return;
     }
 
+    lastEmittedTextRef.current = editor.getText().trim();
+
     const handleUpdate = () => {
       const plainText = editor.getText().trim();
+
+      if (lastEmittedTextRef.current === plainText) {
+        return;
+      }
+
+      lastEmittedTextRef.current = plainText;
       onChange(plainText);
     };
 
