@@ -67,6 +67,12 @@ export const createDecisionInstance = async ({
         name,
         description,
         instanceData,
+        draftInstanceData: {
+          ...instanceData,
+          name,
+          description,
+          stewardProfileId,
+        },
         currentStateId: instanceData.phases[0]?.phaseId ?? null,
         ownerProfileId,
         stewardProfileId,
