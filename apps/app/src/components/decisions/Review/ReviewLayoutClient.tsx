@@ -10,14 +10,14 @@ import { notFound } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalPreview } from '../ProposalPreview';
-import { ReviewExploreNavbar } from './ReviewExploreNavbar';
+import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
 
-export function ReviewExploreContent({
-  slug,
+export function ReviewContent({
+  decisionSlug,
   reviewId,
 }: {
-  slug: string;
+  decisionSlug: string;
   reviewId: string;
 }) {
   const reviewFlowEnabled = useFeatureFlag('review_flow');
@@ -35,7 +35,7 @@ export function ReviewExploreContent({
 
   return (
     <div className="flex h-dvh flex-col bg-white">
-      <ReviewExploreNavbar slug={slug} />
+      <ReviewNavbar decisionSlug={decisionSlug} />
 
       <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
         <ReviewProposalPane

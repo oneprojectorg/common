@@ -2,27 +2,24 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { ReviewExploreContent } from './ReviewExploreLayoutClient';
+import { ReviewContent } from './ReviewLayoutClient';
 
-interface ReviewExploreLayoutProps {
-  slug: string;
+interface ReviewLayoutProps {
+  decisionSlug: string;
   reviewId: string;
 }
 
-export function ReviewExploreLayout({
-  slug,
-  reviewId,
-}: ReviewExploreLayoutProps) {
+export function ReviewLayout({ decisionSlug, reviewId }: ReviewLayoutProps) {
   return (
     <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
-      <Suspense fallback={<ReviewExploreSkeleton />}>
-        <ReviewExploreContent slug={slug} reviewId={reviewId} />
+      <Suspense fallback={<ReviewSkeleton />}>
+        <ReviewContent decisionSlug={decisionSlug} reviewId={reviewId} />
       </Suspense>
     </APIErrorBoundary>
   );
 }
 
-function ReviewExploreSkeleton() {
+function ReviewSkeleton() {
   return (
     <div className="flex h-dvh flex-col bg-white">
       <div className="flex h-14 shrink-0 items-center justify-between border-b px-6 md:px-8">

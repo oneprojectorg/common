@@ -3,17 +3,17 @@ import { LuArrowLeft, LuCheck } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-interface ReviewExploreNavbarProps {
-  slug: string;
+interface ReviewNavbarProps {
+  decisionSlug: string;
 }
 
-export function ReviewExploreNavbar({ slug }: ReviewExploreNavbarProps) {
+export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
   const t = useTranslations();
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white px-6 md:px-8">
       <Link
-        href={`/decisions/${slug}`}
+        href={`/decisions/${decisionSlug}`}
         className="flex items-center gap-2 text-base text-primary-teal"
       >
         <LuArrowLeft className="size-4" />
