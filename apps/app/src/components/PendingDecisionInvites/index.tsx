@@ -16,6 +16,7 @@ import {
 } from '@op/ui/NotificationPanel';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -25,6 +26,7 @@ import ErrorBoundary from '../ErrorBoundary';
 const PendingDecisionInvitesSuspense = () => {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const router = useRouter();
 
   const [invites] = trpc.account.listUserInvites.useSuspenseQuery({
     entityType: EntityType.DECISION,
@@ -32,9 +34,13 @@ const PendingDecisionInvitesSuspense = () => {
   });
 
   const acceptInvite = trpc.profile.acceptInvite.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       utils.account.listUserInvites.invalidate();
       utils.decision.listDecisionProfiles.invalidate();
+      const accepted = invites.find((i) => i.id === variables.inviteId);
+      if (accepted?.profile?.slug) {
+        router.push(`/decisions/${accepted.profile.slug}`);
+      }
     },
   });
 

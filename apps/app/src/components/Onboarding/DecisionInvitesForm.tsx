@@ -18,7 +18,7 @@ import { FormContainer } from '../form/FormContainer';
 import { DecisionInvitesSkeleton } from './DecisionInvitesSkeleton';
 
 type DecisionInvitesFormProps = {
-  onComplete: () => void;
+  onComplete: (acceptedSlug?: string) => void;
   className?: string;
 };
 
@@ -87,7 +87,8 @@ export const DecisionInvitesForm = ({
       );
       // Invalidate account data to refresh org memberships
       await utils.account.getMyAccount.invalidate();
-      onComplete();
+      const firstSlug = invites[0]?.profile?.slug;
+      onComplete(firstSlug ?? undefined);
     } catch (error) {
       setIsLoading(false);
       toast.error({

@@ -273,7 +273,25 @@ export const OnboardingFlow = () => {
   if (!invitesComplete) {
     return (
       <DecisionInvitesFormSuspense
-        onComplete={() => setInvitesComplete(true)}
+        onComplete={async (slug) => {
+          if (slug) {
+            setIsSubmitting(true);
+            try {
+              await completeOnboarding.mutateAsync({
+                tos: true,
+                privacy: true,
+              });
+              await trpcUtils.account.getMyAccount.invalidate();
+              await trpcUtils.account.getMyAccount.refetch();
+              router.push(`/decisions/${slug}`);
+            } catch {
+              setIsSubmitting(false);
+              setInvitesComplete(true);
+            }
+            return;
+          }
+          setInvitesComplete(true);
+        }}
       />
     );
   }
