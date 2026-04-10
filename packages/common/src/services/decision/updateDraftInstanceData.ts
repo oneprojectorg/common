@@ -82,13 +82,23 @@ export const updateDraftInstanceData = async ({
     await assertProfileAdmin(user, existingInstance.ownerProfileId);
   }
 
-  // Merge incoming fields into existing draft data
+  // Merge incoming fields into existing draft data.
+  // Fall back to {} only when the column is null (pre-migration instance).
+  // If the column has data but fails parsing, that's corruption — don't
+  // silently discard the existing draft.
   const parsed = draftInstanceDataSchema.safeParse(
     existingInstance.draftInstanceData,
   );
-  const existingDraft = parsed.success
-    ? (parsed.data as Record<string, unknown>)
-    : {};
+  let existingDraft: Record<string, unknown>;
+  if (parsed.success) {
+    existingDraft = parsed.data as Record<string, unknown>;
+  } else if (existingInstance.draftInstanceData != null) {
+    throw new CommonError(
+      'Existing draft data is malformed and cannot be updated safely',
+    );
+  } else {
+    existingDraft = {};
+  }
   const updatedDraft: Record<string, unknown> = { ...existingDraft };
 
   if (name !== undefined) {

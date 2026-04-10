@@ -39,7 +39,7 @@ describe.concurrent('publishDecisionInstance', () => {
 
     const newName = `Promoted Name ${task.id}`;
     const newDescription = `Promoted Description ${task.id}`;
-    await caller.decision.updateDecisionInstance({
+    await caller.decision.updateDraftInstanceData({
       instanceId: instance.instance.id,
       name: newName,
       description: newDescription,
@@ -82,7 +82,7 @@ describe.concurrent('publishDecisionInstance', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const newName = `My Process ${task.id}`;
-    await caller.decision.updateDecisionInstance({
+    await caller.decision.updateDraftInstanceData({
       instanceId: instance.instance.id,
       name: newName,
     });
@@ -125,7 +125,7 @@ describe.concurrent('publishDecisionInstance', () => {
 
     // Update draftInstanceData with a new name
     const newName = `Renamed After Publish ${task.id}`;
-    await caller.decision.updateDecisionInstance({
+    await caller.decision.updateDraftInstanceData({
       instanceId: instance.instance.id,
       name: newName,
     });
@@ -167,7 +167,7 @@ describe.concurrent('publishDecisionInstance', () => {
     const dataBefore = dbBefore!.instanceData as DecisionInstanceData;
 
     // Save some changes to draftInstanceData
-    await caller.decision.updateDecisionInstance({
+    await caller.decision.updateDraftInstanceData({
       instanceId: instance.instance.id,
       name: `Runtime Test ${task.id}`,
       config: { hideBudget: true },
@@ -230,7 +230,49 @@ describe.concurrent('publishDecisionInstance', () => {
       caller.decision.publishDecisionInstance({
         instanceId: instance.instance.id,
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(
+      'Cannot promote draft instance data for a completed or cancelled process',
+    );
+  });
+
+  it('should reject promotion for cancelled instances', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Publish the instance first
+    await caller.decision.publishDecisionInstance({
+      instanceId: instance.instance.id,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    // Set status to CANCELLED
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      status: ProcessStatus.CANCELLED,
+    });
+
+    // Attempting to promote a cancelled instance should fail
+    await expect(
+      caller.decision.publishDecisionInstance({
+        instanceId: instance.instance.id,
+      }),
+    ).rejects.toThrow(
+      'Cannot promote draft instance data for a completed or cancelled process',
+    );
   });
 
   it('should not allow non-admin to promote', async ({

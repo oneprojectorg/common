@@ -20,10 +20,8 @@ import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 /**
  * Promotes draftInstanceData to the live columns.
  *
- * Copies editor-controlled fields from `draftInstanceData` to the live columns
- * (`instanceData`, `name`, `description`, `stewardProfileId`) while
- * preserving runtime fields in `instanceData` (currentPhaseId, stateData,
- * fieldValues, etc.).
+ * Copies `draftInstanceData` wholesale to `instanceData` and extracts
+ * `name`, `description`, `stewardProfileId` to their own columns.
  *
  * When `status` is set to PUBLISHED (and was previously DRAFT), runs the
  * full publish workflow: slug generation, transition creation, invite
@@ -178,45 +176,51 @@ export const publishDecisionInstance = async ({
   }
 
   // When publishing a draft, send queued invite emails for this
-  // process instance's profile
+  // process instance's profile. Wrapped in try-catch because the core
+  // publish transaction already committed — a failure here should not
+  // surface as a publish error to the user.
   if (isBeingPublished) {
-    const queuedInvites = await db.query.profileInvites.findMany({
-      where: {
-        profileId,
-        notifiedAt: { isNull: true },
-      },
-      with: {
-        profile: true,
-        inviter: true,
-      },
-    });
+    try {
+      const queuedInvites = await db.query.profileInvites.findMany({
+        where: {
+          profileId,
+          notifiedAt: { isNull: true },
+        },
+        with: {
+          profile: true,
+          inviter: true,
+        },
+      });
 
-    if (queuedInvites.length > 0) {
-      const baseUrl = OPURLConfig('APP').ENV_URL;
+      if (queuedInvites.length > 0) {
+        const baseUrl = OPURLConfig('APP').ENV_URL;
 
-      const invitations = queuedInvites.map((invite) => ({
-        email: invite.email,
-        inviterName: invite.inviter?.name || 'A team member',
-        profileName: invite.profile.name,
-        inviteUrl: profile.slug
-          ? `${baseUrl}/decisions/${profile.slug}/invite`
-          : baseUrl,
-        personalMessage: invite.message ?? undefined,
-      }));
+        const invitations = queuedInvites.map((invite) => ({
+          email: invite.email,
+          inviterName: invite.inviter?.name || 'A team member',
+          profileName: invite.profile.name,
+          inviteUrl: profile.slug
+            ? `${baseUrl}/decisions/${profile.slug}/invite`
+            : baseUrl,
+          personalMessage: invite.message ?? undefined,
+        }));
 
-      // Use the first invite's inviter as the sender
-      const firstInvite = queuedInvites[0];
-      if (firstInvite) {
-        await event.send({
-          name: Events.profileInviteSent.name,
-          data: {
-            senderProfileId: firstInvite.invitedBy,
-            inviteIds: queuedInvites.map((inv) => inv.id),
-            invitations,
-          },
-        });
+        // Use the first invite's inviter as the sender
+        const firstInvite = queuedInvites[0];
+        if (firstInvite) {
+          await event.send({
+            name: Events.profileInviteSent.name,
+            data: {
+              senderProfileId: firstInvite.invitedBy,
+              inviteIds: queuedInvites.map((inv) => inv.id),
+              invitations,
+            },
+          });
+        }
+        // notifiedAt is set by the Inngest workflow after successful email delivery
       }
-      // notifiedAt is set by the Inngest workflow after successful email delivery
+    } catch (error) {
+      console.error('Failed to dispatch invite emails after publish:', error);
     }
   }
 
