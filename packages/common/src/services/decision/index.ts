@@ -9,6 +9,8 @@ export * from './listProcesses';
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';
+export * from './updateDraftInstanceData';
+export * from './publishDecisionInstance';
 export * from './listInstances';
 export * from './listLegacyInstances';
 export * from './getInstance';
@@ -89,7 +91,11 @@ export type {
   PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
-export { createInstanceDataFromTemplate } from './schemas/instanceData';
+export {
+  createInstanceDataFromTemplate,
+  draftInstanceDataSchema,
+  instanceDataSchema,
+} from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,
