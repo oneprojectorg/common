@@ -38,7 +38,7 @@ const PendingDecisionInvitesSuspense = () => {
     },
   });
 
-  if (!invites?.length) {
+  if (invites.length === 0) {
     return null;
   }
 
