@@ -23,7 +23,7 @@ export function FieldHeader({
         (badge ? (
           <div className="flex items-baseline justify-between gap-2">
             <Header4>{title}</Header4>
-            <span className="shrink-0 text-xs text-neutral-gray4">{badge}</span>
+            <span className="shrink-0 text-sm text-neutral-gray4">{badge}</span>
           </div>
         ) : (
           <Header4>{title}</Header4>

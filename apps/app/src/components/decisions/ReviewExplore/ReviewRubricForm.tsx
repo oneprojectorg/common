@@ -60,11 +60,9 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
-          {t('Review Proposal')}
-        </Header3>
-      </div>
+      <Header3 className="border-b border-neutral-gray1 pb-4 font-serif !text-title-base font-light">
+        {t('Review Proposal')}
+      </Header3>
 
       {fields.map((field) => (
         <RubricCriterionSection
@@ -146,7 +144,7 @@ function RubricCriterionSection({
         <>
           <FieldHeader title={field.schema.title} badge={badgeLabel} />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             {field.schema.description && (
               <p className="flex-1 text-base text-neutral-charcoal">
                 {field.schema.description}
@@ -213,7 +211,7 @@ function RubricFieldInput({
       return (
         <Select
           aria-label={field.schema.title}
-          placeholder={t('Select option')}
+          placeholder={t('Select an option')}
           selectedKey={selectedKey}
           onSelectionChange={(key) => {
             onChange(parseSelectedValue(key, field.schema));
