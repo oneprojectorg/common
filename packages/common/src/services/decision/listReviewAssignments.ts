@@ -1,13 +1,6 @@
-import { and, db, eq, inArray } from '@op/db/client';
-import {
-  ProfileRelationshipType,
-  ProposalReviewAssignmentStatus,
-  posts,
-  postsToProfiles,
-  profileRelationships,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
+import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
@@ -72,8 +65,6 @@ export async function listReviewAssignments({
   );
   const rubricTemplate = instance.instanceData.rubricTemplate ?? null;
 
-  // Collect profile IDs and snapshot IDs for batched queries
-  const snapshotProfileIds: string[] = [];
   const snapshotProposalIds: string[] = [];
   const docContentInputs: Array<{
     id: string;
@@ -88,7 +79,6 @@ export async function listReviewAssignments({
       continue;
     }
 
-    snapshotProfileIds.push(snapshot.profileId);
     snapshotProposalIds.push(snapshot.id);
 
     const parsedData = parseProposalData(snapshot.proposalData);
@@ -113,19 +103,15 @@ export async function listReviewAssignments({
     });
   }
 
-  const [relationshipData, documentContentMap, attachmentsByProposal] =
-    await Promise.all([
-      snapshotProfileIds.length > 0
-        ? getBatchedRelationshipInfo(snapshotProfileIds, dbUser.profileId)
-        : new Map<string, RelationshipInfo>(),
-      getProposalDocumentsContent(docContentInputs),
-      snapshotProposalIds.length > 0
-        ? getBatchedAttachments(snapshotProposalIds)
-        : new Map<
-            string,
-            Awaited<ReturnType<typeof getProposalAttachmentsWithSignedUrls>>
-          >(),
-    ]);
+  const [documentContentMap, attachmentsByProposal] = await Promise.all([
+    getProposalDocumentsContent(docContentInputs),
+    snapshotProposalIds.length > 0
+      ? getBatchedAttachments(snapshotProposalIds)
+      : new Map<
+          string,
+          Awaited<ReturnType<typeof getProposalAttachmentsWithSignedUrls>>
+        >(),
+  ]);
 
   const assignmentList = assignments.map((assignment) => {
     const snapshot = assignment.assignedProposalHistory;
@@ -134,7 +120,6 @@ export async function listReviewAssignments({
     }
 
     const parsedProposalData = parseProposalData(snapshot.proposalData);
-    const relationshipInfo = relationshipData.get(snapshot.profileId);
     const documentContent = documentContentMap.get(snapshot.historyId);
     const proposalAttachments = attachmentsByProposal.get(snapshot.id) ?? [];
 
@@ -151,11 +136,6 @@ export async function listReviewAssignments({
         proposal: {
           ...snapshot,
           proposalData: parsedProposalData,
-          likesCount: relationshipInfo?.likesCount ?? 0,
-          followersCount: relationshipInfo?.followersCount ?? 0,
-          commentsCount: relationshipInfo?.commentsCount ?? 0,
-          isLikedByUser: relationshipInfo?.isLikedByUser ?? false,
-          isFollowedByUser: relationshipInfo?.isFollowedByUser ?? false,
           attachments: proposalAttachments,
           proposalTemplate,
           documentContent,
@@ -174,93 +154,6 @@ export async function listReviewAssignments({
       (a) => a.assignment.status === ProposalReviewAssignmentStatus.COMPLETED,
     ).length,
   });
-}
-
-interface RelationshipInfo {
-  likesCount: number;
-  followersCount: number;
-  isLikedByUser: boolean;
-  isFollowedByUser: boolean;
-  commentsCount: number;
-}
-
-/** Fetches relationship counts and viewer-specific flags for a batch of profile IDs. */
-async function getBatchedRelationshipInfo(
-  profileIds: string[],
-  viewerProfileId: string,
-): Promise<Map<string, RelationshipInfo>> {
-  const [relationshipCounts, userRelationships, commentCounts] =
-    await Promise.all([
-      db
-        .select({
-          targetProfileId: profileRelationships.targetProfileId,
-          relationshipType: profileRelationships.relationshipType,
-          count: countFn(),
-        })
-        .from(profileRelationships)
-        .where(inArray(profileRelationships.targetProfileId, profileIds))
-        .groupBy(
-          profileRelationships.targetProfileId,
-          profileRelationships.relationshipType,
-        ),
-      db
-        .select({
-          targetProfileId: profileRelationships.targetProfileId,
-          relationshipType: profileRelationships.relationshipType,
-        })
-        .from(profileRelationships)
-        .where(
-          and(
-            eq(profileRelationships.sourceProfileId, viewerProfileId),
-            inArray(profileRelationships.targetProfileId, profileIds),
-          ),
-        ),
-      db
-        .select({
-          profileId: postsToProfiles.profileId,
-          count: countFn(),
-        })
-        .from(posts)
-        .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-        .where(inArray(postsToProfiles.profileId, profileIds))
-        .groupBy(postsToProfiles.profileId),
-    ]);
-
-  const result = new Map<string, RelationshipInfo>();
-
-  for (const profileId of profileIds) {
-    result.set(profileId, {
-      likesCount: Number(
-        relationshipCounts.find(
-          (row) =>
-            row.targetProfileId === profileId &&
-            row.relationshipType === ProfileRelationshipType.LIKES,
-        )?.count ?? 0,
-      ),
-      followersCount: Number(
-        relationshipCounts.find(
-          (row) =>
-            row.targetProfileId === profileId &&
-            row.relationshipType === ProfileRelationshipType.FOLLOWING,
-        )?.count ?? 0,
-      ),
-      isLikedByUser: userRelationships.some(
-        (row) =>
-          row.targetProfileId === profileId &&
-          row.relationshipType === ProfileRelationshipType.LIKES,
-      ),
-      isFollowedByUser: userRelationships.some(
-        (row) =>
-          row.targetProfileId === profileId &&
-          row.relationshipType === ProfileRelationshipType.FOLLOWING,
-      ),
-      commentsCount: Number(
-        commentCounts.find((row) => row.profileId === profileId)?.count ?? 0,
-      ),
-    });
-  }
-
-  return result;
 }
 
 /** Fetches attachments with signed URLs for a batch of proposal IDs. */

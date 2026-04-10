@@ -139,9 +139,6 @@ describe.concurrent('listReviewAssignments', () => {
         status: ProposalReviewAssignmentStatus.PENDING,
         proposal: {
           id: created.proposal.id,
-          likesCount: 0,
-          followersCount: 0,
-          commentsCount: 0,
         },
       },
       rubricTemplate,
