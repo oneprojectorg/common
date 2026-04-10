@@ -20,7 +20,10 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import type { ProposalDataInput } from './proposalDataSchema';
+import type {
+  CheckpointVersion,
+  ProposalDataInput,
+} from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -80,16 +83,12 @@ async function updateProposalCategoryLink(
   }
 }
 
-export type ProposalCheckpoint =
-  | { type: 'update' }
-  | { type: 'reviewRevision'; reviewRequestId: string };
-
 export interface UpdateProposalInput {
   title?: string;
   proposalData?: ProposalDataInput;
   status?: ProposalStatus;
   visibility?: Visibility;
-  checkpoint?: ProposalCheckpoint;
+  checkpointVersion?: CheckpointVersion;
 }
 
 export const updateProposal = async ({
@@ -183,12 +182,14 @@ export const updateProposal = async ({
     // Create a named version snapshot when explicitly checkpointing.
     // Best-effort — failures logged, never block.
     let collaborationDocVersionId: number | null = null;
-    if (data.checkpoint && existingProposal.status !== ProposalStatus.DRAFT) {
+    if (
+      data.checkpointVersion &&
+      existingProposal.status !== ProposalStatus.DRAFT
+    ) {
       const parsed = parseProposalData(existingProposal.proposalData);
 
       if (parsed.collaborationDocId) {
-        const versionName =
-          data.checkpoint.type === 'reviewRevision' ? 'Revision' : 'Updated';
+        const versionName = 'Updated';
 
         const latestVersion = await getTipTapClient()
           .createVersion(parsed.collaborationDocId, versionName)
@@ -212,7 +213,7 @@ export const updateProposal = async ({
 
     const {
       title: nextTitle,
-      checkpoint: _checkpoint,
+      checkpointVersion: _checkpointVersion,
       ...proposalFields
     } = data;
 

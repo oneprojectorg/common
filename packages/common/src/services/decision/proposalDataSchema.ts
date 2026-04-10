@@ -68,6 +68,13 @@ export type ProposalData = z.infer<typeof proposalDataSchema>;
 /** Input type for proposal data (before parsing/defaults) */
 export type ProposalDataInput = z.input<typeof proposalDataSchema>;
 
+/** Discriminated union for explicit proposal version checkpoints. */
+export const checkpointVersionSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('update') }),
+]);
+
+export type CheckpointVersion = z.infer<typeof checkpointVersionSchema>;
+
 export function normalizeProposalCategories(raw: unknown): string[] {
   if (typeof raw === 'string') {
     try {

@@ -1,4 +1,8 @@
-import { REVIEWS_POLICIES, proposalSchema } from '@op/common/client';
+import {
+  REVIEWS_POLICIES,
+  checkpointVersionSchema,
+  proposalSchema,
+} from '@op/common/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -582,15 +586,7 @@ export const updateProposalInputSchema = createProposalInputSchema
       ])
       .optional(),
     /** Stamps a TipTap version snapshot for the collaboration document. */
-    checkpoint: z
-      .discriminatedUnion('type', [
-        z.object({ type: z.literal('update') }),
-        z.object({
-          type: z.literal('reviewRevision'),
-          reviewRequestId: z.uuid(),
-        }),
-      ])
-      .optional(),
+    checkpointVersion: checkpointVersionSchema.optional(),
   });
 
 export const submitDecisionInputSchema = z.object({

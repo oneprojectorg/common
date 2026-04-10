@@ -628,8 +628,8 @@ describe.concurrent('updateProposal validation', () => {
   });
 });
 
-describe.concurrent('updateProposal checkpoint', () => {
-  it('should stamp collaborationDocVersionId when checkpoint is true on a submitted proposal', async ({
+describe.concurrent('updateProposal checkpointVersion', () => {
+  it('should stamp collaborationDocVersionId when checkpointVersion is provided on a submitted proposal', async ({
     task,
     onTestFinished,
   }) => {
@@ -672,7 +672,7 @@ describe.concurrent('updateProposal checkpoint', () => {
       proposalId: proposal.id,
       data: {
         proposalData: { title: 'Updated Proposal' },
-        checkpoint: { type: 'update' },
+        checkpointVersion: { type: 'update' },
       },
     });
 
@@ -682,7 +682,7 @@ describe.concurrent('updateProposal checkpoint', () => {
     ).toBe(1);
   });
 
-  it('should not stamp collaborationDocVersionId when checkpoint is omitted', async ({
+  it('should not stamp collaborationDocVersionId when checkpointVersion is omitted', async ({
     task,
     onTestFinished,
   }) => {
@@ -733,7 +733,7 @@ describe.concurrent('updateProposal checkpoint', () => {
     ).toBeUndefined();
   });
 
-  it('should not stamp collaborationDocVersionId on a draft even with checkpoint true', async ({
+  it('should not stamp collaborationDocVersionId on a draft even with checkpointVersion', async ({
     task,
     onTestFinished,
   }) => {
@@ -762,7 +762,7 @@ describe.concurrent('updateProposal checkpoint', () => {
       proposalId: proposal.id,
       data: {
         proposalData: { title: 'Updated Draft' },
-        checkpoint: { type: 'update' },
+        checkpointVersion: { type: 'update' },
       },
     });
 
