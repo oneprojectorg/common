@@ -1,8 +1,9 @@
 /**
- * Instance data creation helpers for DecisionSchemaDefinition templates.
+ * Instance data schemas and types for decision process instances.
  */
 import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
+import { z } from 'zod';
 
 import { CommonError, ValidationError } from '../../../utils';
 import { schemaValidator } from '../schemaValidator';
@@ -57,6 +58,40 @@ export interface PhaseOverride {
   endDate?: string;
   settings?: Record<string, unknown>;
 }
+
+// ============ Zod Schemas ============
+
+/** Zod schema for the `instanceData` JSONB column (loose — tolerates extra fields). */
+export const instanceDataSchema = z.looseObject({
+  currentPhaseId: z.string(),
+  config: z.record(z.string(), z.unknown()).nullish(),
+  fieldValues: z.record(z.string(), z.unknown()).nullish(),
+  templateId: z.string().nullish(),
+  templateVersion: z.string().nullish(),
+  templateName: z.string().nullish(),
+  templateDescription: z.string().nullish(),
+  phases: z.array(z.record(z.string(), z.unknown())).nullish(),
+  proposalTemplate: z.record(z.string(), z.unknown()).nullish(),
+  rubricTemplate: z.record(z.string(), z.unknown()).nullish(),
+  stateData: z.record(z.string(), z.unknown()).nullish(),
+});
+
+// ============ Draft Instance Data ============
+
+/**
+ * Zod schema for the `draftInstanceData` JSONB column.
+ *
+ * Same shape as instanceData plus instance-column fields (name, description,
+ * stewardProfileId) that are extracted to their own columns on publish.
+ * On publish, the entire blob is copied to `instanceData` as-is.
+ */
+export const draftInstanceDataSchema = instanceDataSchema.extend({
+  name: z.string().nullish(),
+  description: z.string().nullish(),
+  stewardProfileId: z.string().nullish(),
+});
+
+// ============ Instance Data Creation ============
 
 /**
  * Creates instance data from a DecisionSchemaDefinition template.

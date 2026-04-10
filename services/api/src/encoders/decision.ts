@@ -228,18 +228,37 @@ export const instancePhaseDataEncoder = z.object({
   settings: z.record(z.string(), z.unknown()).optional(),
 });
 
+/** Editor-controlled fields shared between instanceData and draftInstanceData */
+const editableInstanceFields = {
+  config: processConfigEncoder.optional(),
+  phases: z.array(instancePhaseDataEncoder).optional(),
+  proposalTemplate: jsonSchemaEncoder.optional(),
+  rubricTemplate: rubricTemplateEncoder.optional(),
+};
+
 /** Instance data encoder for new schema format */
 const instanceDataWithSchemaEncoder = z.object({
-  config: processConfigEncoder.optional(),
+  ...editableInstanceFields,
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   templateId: z.string().optional(),
   templateVersion: z.string().optional(),
   templateName: z.string().optional(),
   templateDescription: z.string().optional(),
-  phases: z.array(instancePhaseDataEncoder).optional(),
-  proposalTemplate: jsonSchemaEncoder.optional(),
-  rubricTemplate: rubricTemplateEncoder.optional(),
 });
+
+/** Draft instance data encoder — the editable version used by the process builder.
+ *  Extends the shared editor fields with instance-column fields (name, etc.)
+ *  that are also editable in the process builder.
+ *  Uses passthrough() because the backfill copies the full instanceData blob,
+ *  which may include extra fields the encoder doesn't define. */
+export const draftInstanceDataEncoder = z
+  .object({
+    ...editableInstanceFields,
+    name: z.string().nullish(),
+    description: z.string().nullish(),
+    stewardProfileId: z.string().uuid().nullish(),
+  })
+  .passthrough();
 
 /** Decision access permissions encoder */
 const decisionAccessEncoder = z.object({
@@ -272,6 +291,7 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
   })
   .extend({
     instanceData: instanceDataWithSchemaEncoder,
+    draftInstanceData: draftInstanceDataEncoder.nullish(),
     process: decisionProcessWithSchemaEncoder.optional(),
     owner: baseProfileEncoder.optional(),
     steward: baseProfileEncoder.nullish(),
