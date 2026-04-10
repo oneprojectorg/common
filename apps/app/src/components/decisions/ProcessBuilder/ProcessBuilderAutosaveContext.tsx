@@ -12,6 +12,8 @@ import {
   useRef,
 } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import {
   type ProcessBuilderInstanceData,
   type SaveStatus,
@@ -22,9 +24,9 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface AutosaveActions {
   saveChanges: (data: Partial<ProcessBuilderInstanceData>) => void;
-  /** Flushes any pending debounced save. Returns a promise that resolves
-   *  when the in-flight mutation completes (or immediately if nothing pending). */
-  flushPendingChanges: () => Promise<void>;
+  /** Flushes any pending debounced save. Returns true if all pending saves
+   *  completed successfully, false if a save failed (error already toasted). */
+  flushPendingChanges: () => Promise<boolean>;
 }
 
 interface AutosaveStatus {
@@ -59,6 +61,7 @@ export function ProcessBuilderAutosaveProvider({
   isDraft: boolean;
   children: React.ReactNode;
 }) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const setProposalTemplateSchema = useProcessBuilderStore(
@@ -88,7 +91,7 @@ export function ProcessBuilderAutosaveProvider({
     onError: (error) => {
       setSaveStatus(decisionProfileId, 'error');
       toast.error({
-        title: 'Failed to save changes',
+        title: t('Failed to save changes'),
         message: error.message,
       });
     },
@@ -112,18 +115,19 @@ export function ProcessBuilderAutosaveProvider({
     if (isDraft) {
       setSaveStatus(decisionProfileId, 'saving');
 
-      // Suppress unhandled rejection — errors are handled by the mutation's
-      // onError callback. The promise is stored so flushPendingChanges can await it.
-      inflightRef.current = updateInstance
-        .mutateAsync({
-          instanceId,
-          ...payload,
-        })
-        .catch(() => {});
+      // Store the raw promise so flushPendingChanges can detect failure.
+      // Suppress unhandled rejection separately — errors are surfaced by
+      // the mutation's onError callback (toast + status).
+      const promise = updateInstance.mutateAsync({
+        instanceId,
+        ...payload,
+      });
+      inflightRef.current = promise;
+      promise.catch(() => {});
     } else {
-      // Published: data is already in the store (written immediately by
-      // saveChanges). Mark as saved for the UI indicator.
-      markSaved(decisionProfileId);
+      // Published: data is only in the store (localStorage) until the user
+      // clicks "Update Process". Don't show a save indicator — it would be
+      // misleading since nothing has been persisted to the server yet.
     }
   }, AUTOSAVE_DEBOUNCE_MS);
   debouncedSaveRef.current = () => debouncedSave.isPending();
@@ -165,15 +169,17 @@ export function ProcessBuilderAutosaveProvider({
     ],
   );
 
-  const flushPendingChanges = useCallback(async () => {
+  const flushPendingChanges = useCallback(async (): Promise<boolean> => {
     debouncedSave.flush();
     if (inflightRef.current) {
       try {
         await inflightRef.current;
       } catch {
-        // Error already handled by onError callback
+        // Error already surfaced via onError toast — tell caller it failed
+        return false;
       }
     }
+    return true;
   }, [debouncedSave]);
 
   const actions = useMemo<AutosaveActions>(

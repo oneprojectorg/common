@@ -126,12 +126,30 @@ function PhaseDetailForm({
     });
   };
 
+  const utils = trpc.useUtils();
   const updateRules = (updates: Partial<PhaseRules>) => {
     if (!phase) {
       return;
     }
     const newRules = { ...phase.rules, ...updates };
     updatePhase({ rules: newRules });
+
+    // Optimistically update getInstance cache so useNavigationConfig
+    // reacts immediately (e.g., showing/hiding the Reviews sidebar section).
+    utils.decision.getInstance.setData({ instanceId }, (old) => {
+      if (!old?.instanceData?.phases) {
+        return old;
+      }
+      return {
+        ...old,
+        instanceData: {
+          ...old.instanceData,
+          phases: old.instanceData.phases.map((p) =>
+            p.phaseId === phaseId ? { ...p, rules: newRules } : p,
+          ),
+        },
+      };
+    });
   };
 
   // Delete phase

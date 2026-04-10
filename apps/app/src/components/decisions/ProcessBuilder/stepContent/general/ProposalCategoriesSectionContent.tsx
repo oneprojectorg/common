@@ -14,6 +14,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { ensureLockedFields } from '@/components/decisions/proposalTemplate';
 
@@ -61,27 +62,25 @@ export function ProposalCategoriesSectionContent({
   // Also syncs the proposalTemplate so that the category field and required
   // array stay consistent with the config.
   const updateConfig = (update: Partial<CategoryConfig>) => {
-    setConfig((prev) => {
-      const updated = { ...prev, ...update };
+    const updated = { ...config, ...update };
+    setConfig(updated);
 
-      const existingTemplate =
-        storeData?.proposalTemplate ?? instance.instanceData.proposalTemplate;
+    const existingTemplate =
+      storeData?.proposalTemplate ?? instance.instanceData.proposalTemplate;
 
-      const payload: Record<string, unknown> = { config: updated };
+    const payload: Partial<ProcessBuilderInstanceData> = { config: updated };
 
-      if (existingTemplate) {
-        payload.proposalTemplate = ensureLockedFields(existingTemplate, {
-          titleLabel: t('Proposal title'),
-          categoryLabel: t('Category'),
-          categories: updated.categories,
-          allowMultipleCategories: updated.allowMultipleCategories,
-          requireCategorySelection: updated.requireCategorySelection,
-        });
-      }
+    if (existingTemplate) {
+      payload.proposalTemplate = ensureLockedFields(existingTemplate, {
+        titleLabel: t('Proposal title'),
+        categoryLabel: t('Category'),
+        categories: updated.categories,
+        allowMultipleCategories: updated.allowMultipleCategories,
+        requireCategorySelection: updated.requireCategorySelection,
+      });
+    }
 
-      saveChanges(payload);
-      return updated;
-    });
+    saveChanges(payload);
   };
 
   // Ephemeral form UI state

@@ -85,11 +85,16 @@ export const ProcessBuilderFooter = ({
   });
 
   const handleLaunchOrSave = async () => {
+    // Flush any pending autosave so the latest edits are persisted
+    // before either launching or updating.
+    const flushed = await flushPendingChanges();
+    if (!flushed) {
+      return;
+    }
+
     if (isDraft) {
       setIsLaunchModalOpen(true);
     } else {
-      // Flush any pending autosave before publishing
-      await flushPendingChanges();
       updateInstance.mutate({
         instanceId,
         name: storeData?.name || undefined,
