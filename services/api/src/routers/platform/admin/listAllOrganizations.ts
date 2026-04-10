@@ -1,9 +1,5 @@
-import {
-  decodeCursor,
-  encodeCursor,
-  getGenericCursorCondition,
-} from '@op/common';
-import { and, count, db, ilike, inArray } from '@op/db/client';
+import { decodeCursor, encodeCursor } from '@op/common';
+import { count, db, ilike, inArray } from '@op/db/client';
 import { organizations, profiles } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -50,39 +46,43 @@ export const listAllOrganizationsRouter = router({
     )
     .query(async ({ input }) => {
       const { cursor, dir = 'desc', query, limit } = input ?? {};
-
-      // Cursor-based pagination using createdAt timestamp
-      const cursorCondition = cursor
-        ? getGenericCursorCondition({
-            columns: {
-              id: organizations.id,
-              date: organizations.createdAt,
-            },
-            cursor: decodeCursor(cursor),
-          })
+      const cursorValue = cursor
+        ? decodeCursor<{ date: string; id: string }>(cursor)
         : undefined;
 
-      // For search, use a subquery to find profiles matching the name
-      const profileSubquery =
+      // For search, fetch matching profile IDs
+      const matchingProfileIds =
         query && query.length >= 2
-          ? db
-              .select({ id: profiles.id })
-              .from(profiles)
-              .where(ilike(profiles.name, `%${query}%`))
+          ? (
+              await db
+                .select({ id: profiles.id })
+                .from(profiles)
+                .where(ilike(profiles.name, `%${query}%`))
+            ).map((p) => p.id)
           : null;
 
-      const searchCondition = profileSubquery
-        ? inArray(organizations.profileId, profileSubquery)
+      // Build V2 relational query filters
+      const cursorFilter = cursorValue
+        ? {
+            OR: [
+              { createdAt: { lt: cursorValue.date } },
+              { createdAt: cursorValue.date, id: { lt: cursorValue.id } },
+            ],
+          }
         : undefined;
 
-      const whereCondition =
-        searchCondition && cursorCondition
-          ? and(cursorCondition, searchCondition)
-          : searchCondition || cursorCondition;
+      const searchFilter = matchingProfileIds
+        ? { profileId: { in: matchingProfileIds } }
+        : undefined;
+
+      const whereFilter =
+        cursorFilter && searchFilter
+          ? { AND: [cursorFilter, searchFilter] }
+          : cursorFilter || searchFilter;
 
       const [allOrgs, totalCount] = await Promise.all([
-        db._query.organizations.findMany({
-          where: whereCondition,
+        db.query.organizations.findMany({
+          where: whereFilter,
           with: {
             profile: {
               columns: {
@@ -116,6 +116,7 @@ export const listAllOrganizationsRouter = router({
                       columns: {
                         id: true,
                         name: true,
+                        description: true,
                       },
                     },
                   },
@@ -123,16 +124,17 @@ export const listAllOrganizationsRouter = router({
               },
             },
           },
-          orderBy: (_, { asc, desc }) =>
-            dir === 'asc'
-              ? asc(organizations.createdAt)
-              : desc(organizations.createdAt),
+          orderBy: { createdAt: dir === 'asc' ? 'asc' : 'desc' },
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
         db
           .select({ value: count() })
           .from(organizations)
-          .where(searchCondition)
+          .where(
+            matchingProfileIds
+              ? inArray(organizations.profileId, matchingProfileIds)
+              : undefined,
+          )
           .then(([result]) => result?.value ?? 0),
       ]);
 

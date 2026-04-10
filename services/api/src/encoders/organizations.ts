@@ -2,6 +2,7 @@ import { organizationUsers, organizations, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { accessRoleMinimalEncoder } from './access';
 import { baseProfileEncoder } from './baseProfile';
 import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
@@ -37,10 +38,7 @@ export const organizationsWithProfileEncoder = organizationsEncoder.extend({
 });
 
 const adminOrgMemberRoleEncoder = z.object({
-  accessRole: z.object({
-    id: z.string(),
-    name: z.string(),
-  }),
+  accessRole: accessRoleMinimalEncoder,
 });
 
 const adminOrgMemberEncoder = z.object({
