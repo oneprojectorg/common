@@ -190,7 +190,7 @@ describe.concurrent('manualTransition', () => {
     ).rejects.toThrow();
   });
 
-  it('should reject when currentPhaseId does not match actual phase', async ({
+  it('should reject when fromPhaseId does not match actual phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -203,7 +203,7 @@ describe.concurrent('manualTransition', () => {
     await expect(
       caller.decision.manualTransition({
         instanceId: instance.instance.id,
-        currentPhaseId: 'someOldPhase',
+        fromPhaseId: 'someOldPhase',
       }),
     ).rejects.toThrow(/Instance is on phase 'initial'/);
 
@@ -214,7 +214,7 @@ describe.concurrent('manualTransition', () => {
     expect(dbInstance!.currentStateId).toBe('initial');
   });
 
-  it('should advance when currentPhaseId matches actual phase', async ({
+  it('should advance when fromPhaseId matches actual phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -225,14 +225,14 @@ describe.concurrent('manualTransition', () => {
 
     const result = await caller.decision.manualTransition({
       instanceId: instance.instance.id,
-      currentPhaseId: 'initial',
+      fromPhaseId: 'initial',
     });
 
     expect(result.previousPhaseId).toBe('initial');
     expect(result.currentPhaseId).toBe('final');
   });
 
-  it('should be idempotent when same currentPhaseId is sent twice', async ({
+  it('should be idempotent when same fromPhaseId is sent twice', async ({
     task,
     onTestFinished,
   }) => {
@@ -244,15 +244,15 @@ describe.concurrent('manualTransition', () => {
     // First call advances initial → final
     await caller.decision.manualTransition({
       instanceId: instance.instance.id,
-      currentPhaseId: 'initial',
+      fromPhaseId: 'initial',
     });
 
-    // Second call with the same currentPhaseId should be rejected as a conflict —
+    // Second call with the same fromPhaseId should be rejected as a conflict —
     // the instance has moved on, so the caller's view is stale.
     await expect(
       caller.decision.manualTransition({
         instanceId: instance.instance.id,
-        currentPhaseId: 'initial',
+        fromPhaseId: 'initial',
       }),
     ).rejects.toThrow(/Instance is on phase 'final'/);
   });

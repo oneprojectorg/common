@@ -25,7 +25,7 @@ export interface ManualTransitionInput {
    * already moved on (e.g. concurrent admin click, retry of a stale request),
    * a ConflictError is thrown so the caller can refetch and re-decide.
    */
-  currentPhaseId?: string;
+  fromPhaseId?: string;
 }
 
 export interface ManualTransitionResult {
@@ -45,7 +45,7 @@ export interface ManualTransitionResult {
 export async function manualTransition({
   instanceId,
   user,
-  currentPhaseId: expectedFromPhaseId,
+  fromPhaseId: expectedFromPhaseId,
 }: ManualTransitionInput): Promise<ManualTransitionResult> {
   // assertUserByAuthId and the instance fetch are independent — run in parallel
   // to save one round trip. getProfileAccessUser below still needs to wait on
