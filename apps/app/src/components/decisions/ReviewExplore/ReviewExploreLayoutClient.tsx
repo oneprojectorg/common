@@ -1,13 +1,11 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -15,37 +13,19 @@ import { ProposalPreview } from '../ProposalPreview';
 import { ReviewExploreNavbar } from './ReviewExploreNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
 
-interface ReviewExploreLayoutClientProps {
-  slug: string;
-  reviewId: string;
-}
-
-export function ReviewExploreLayoutClient({
-  slug,
-  reviewId,
-}: ReviewExploreLayoutClientProps) {
-  const reviewFlowEnabled = useFeatureFlag('review_flow');
-
-  if (reviewFlowEnabled === false) {
-    notFound();
-  }
-
-  return (
-    <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
-      <Suspense fallback={<ReviewExploreSkeleton />}>
-        <ReviewExploreContent slug={slug} reviewId={reviewId} />
-      </Suspense>
-    </APIErrorBoundary>
-  );
-}
-
-function ReviewExploreContent({
+export function ReviewExploreContent({
   slug,
   reviewId,
 }: {
   slug: string;
   reviewId: string;
 }) {
+  const reviewFlowEnabled = useFeatureFlag('review_flow');
+
+  if (reviewFlowEnabled === false) {
+    notFound();
+  }
+
   const t = useTranslations();
 
   const [{ assignment, rubricTemplate }] =
@@ -123,37 +103,6 @@ function ReviewRubricPane({
   return (
     <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
       <ReviewRubricForm template={rubricTemplate} />
-    </div>
-  );
-}
-
-function ReviewExploreSkeleton() {
-  return (
-    <div className="flex h-dvh flex-col bg-white">
-      <div className="flex h-14 shrink-0 items-center justify-between border-b px-6 md:px-8">
-        <div className="h-5 w-36 animate-pulse rounded bg-gray-200" />
-        <div className="flex gap-4">
-          <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-          <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-        </div>
-      </div>
-      <div className="hidden flex-1 sm:flex">
-        <div className="flex-1 border-r p-12">
-          <div className="space-y-4">
-            <div className="h-10 w-3/4 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200" />
-          </div>
-        </div>
-        <div className="flex-1 px-12 pt-12">
-          <div className="space-y-6">
-            <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
-            <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
