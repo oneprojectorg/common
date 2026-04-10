@@ -90,8 +90,6 @@ describe.concurrent('listReviewAssignments', () => {
       processInstanceId: first.context.instance.instance.id,
     });
 
-    expect(result.total).toBe(2);
-    expect(result.completed).toBe(0);
     expect(result.assignments).toHaveLength(2);
     expect(result.assignments.map((a) => a.assignment.id)).toEqual(
       expect.arrayContaining([first.assignment.id, second.assignment.id]),
@@ -154,40 +152,6 @@ describe.concurrent('listReviewAssignments', () => {
     });
   });
 
-  it('tracks completed count correctly', async ({ task, onTestFinished }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const first = await testData.createReviewAssignment({
-      title: 'Completed Proposal',
-      status: ProposalReviewAssignmentStatus.COMPLETED,
-    });
-
-    const second = await testData.createReviewAssignment({
-      context: first.context,
-      reviewer: first.reviewer,
-      title: 'Pending Proposal',
-      status: ProposalReviewAssignmentStatus.PENDING,
-    });
-
-    const { collaborationDocId: docId1 } = first.proposal.proposalData as {
-      collaborationDocId: string;
-    };
-    const { collaborationDocId: docId2 } = second.proposal.proposalData as {
-      collaborationDocId: string;
-    };
-    seedMockCollab(docId1);
-    seedMockCollab(docId2);
-
-    const reviewerCaller = await createAuthenticatedCaller(
-      first.reviewer.email,
-    );
-    const result = await reviewerCaller.decision.listReviewAssignments({
-      processInstanceId: first.context.instance.instance.id,
-    });
-
-    expect(result.total).toBe(2);
-    expect(result.completed).toBe(1);
-  });
-
   it('returns empty list when reviewer has no assignments', async ({
     task,
     onTestFinished,
@@ -201,8 +165,6 @@ describe.concurrent('listReviewAssignments', () => {
       processInstanceId: created.context.instance.instance.id,
     });
 
-    expect(result.total).toBe(0);
-    expect(result.completed).toBe(0);
     expect(result.assignments).toHaveLength(0);
   });
 

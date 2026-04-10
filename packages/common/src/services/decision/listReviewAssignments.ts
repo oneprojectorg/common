@@ -1,5 +1,4 @@
 import { db } from '@op/db/client';
-import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError, ValidationError } from '../../utils';
@@ -149,10 +148,6 @@ export async function listReviewAssignments({
 
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
-    total: assignmentList.length,
-    completed: assignmentList.filter(
-      (a) => a.assignment.status === ProposalReviewAssignmentStatus.COMPLETED,
-    ).length,
   });
 }
 

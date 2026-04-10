@@ -44,8 +44,6 @@ export const reviewAssignmentExtendedSchema = z.object({
 
 export const reviewAssignmentListSchema = z.object({
   assignments: z.array(reviewAssignmentExtendedSchema),
-  total: z.number(),
-  completed: z.number(),
 });
 
 // ── Types ───────────────────────────────────────────────────────────────
