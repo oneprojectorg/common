@@ -235,6 +235,9 @@
   --color-functional-redWhite: hsl(var(--op-red-50));
   --color-functional-green: hsl(var(--op-green-500));
   --color-functional-greenWhite: hsl(var(--op-green-50));
+  --color-functional-yellowWhite: hsl(var(--op-yellow-50));
+  --color-status-green: hsl(var(--op-status-green));
+  --color-status-greenBg: hsl(var(--op-status-green-bg));
 
   /* ============================================
    * Colors - Data Visualization

@@ -16,9 +16,13 @@ import {
 /** Returns all authorized review assignments for the current reviewer in a process instance. */
 export async function listReviewAssignments({
   processInstanceId,
+  status,
+  dir = 'asc',
   user,
 }: {
   processInstanceId: string;
+  status?: string;
+  dir?: 'asc' | 'desc';
   user: User;
 }): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([
@@ -38,6 +42,7 @@ export async function listReviewAssignments({
     where: {
       processInstanceId,
       reviewerProfileId: dbUser.profileId,
+      ...(status && { status }),
     },
     with: {
       assignedProposalHistory: {
@@ -63,7 +68,7 @@ export async function listReviewAssignments({
       reviews: true,
     },
     orderBy: {
-      assignedAt: 'asc',
+      assignedAt: dir,
     },
   });
 

@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { match } from '@op/core';
 
 import { ResultsPage } from './pages/ResultsPage';
+import { ReviewPage } from './pages/ReviewPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
@@ -48,6 +49,9 @@ function DecisionStateRouterNew({
         decisionSlug={decisionSlug}
       />
     ),
+    review: () => (
+      <ReviewPage instance={instance} decisionSlug={decisionSlug} />
+    ),
     _: () => (
       <StandardDecisionPage
         instanceId={instanceId}
@@ -56,6 +60,8 @@ function DecisionStateRouterNew({
         decisionProfileId={decisionProfileId}
       />
     ),
+
+    _: () => <ReviewPage instance={instance} decisionSlug={decisionSlug} />,
   });
 }
 
@@ -63,7 +69,7 @@ export function DecisionStateRouter({
   instanceId,
   slug,
   decisionSlug,
-  decisionProfileId,
+  decisionProfileId: _decisionProfileId,
   useLegacy = false,
 }: {
   instanceId: string;
@@ -83,7 +89,7 @@ export function DecisionStateRouter({
       instanceId={instanceId}
       slug={slug}
       decisionSlug={decisionSlug}
-      decisionProfileId={decisionProfileId}
+      decisionProfileId={_decisionProfileId}
     />
   );
 }
