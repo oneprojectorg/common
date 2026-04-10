@@ -399,6 +399,24 @@ export function createTipTapClient(_config?: unknown) {
       }
       return Math.max(...versions.map((v) => v.version));
     },
+
+    createVersion: async (
+      docName: string,
+      name?: string,
+    ): Promise<TipTapVersion> => {
+      const existing = docVersions.get(docName) ?? [];
+      const nextVersion =
+        existing.length > 0
+          ? Math.max(...existing.map((v) => v.version)) + 1
+          : 1;
+      const newVersion: TipTapVersion = {
+        version: nextVersion,
+        createdAt: new Date().toISOString(),
+        ...(name ? { name } : {}),
+      };
+      docVersions.set(docName, [...existing, newVersion]);
+      return newVersion;
+    },
   };
 }
 
