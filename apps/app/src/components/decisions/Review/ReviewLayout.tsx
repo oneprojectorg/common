@@ -9,10 +9,7 @@ interface ReviewLayoutProps {
   reviewId: string;
 }
 
-export function ReviewLayout({
-  decisionSlug,
-  reviewId,
-}: ReviewLayoutProps) {
+export function ReviewLayout({ decisionSlug, reviewId }: ReviewLayoutProps) {
   return (
     <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
       <Suspense fallback={<ReviewSkeleton />}>
