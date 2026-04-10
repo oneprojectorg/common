@@ -281,7 +281,7 @@ describe.concurrent('submitProposal', () => {
 
     // Verify the latest version ID was stamped into proposalData
     const resultData = result.proposalData as Record<string, unknown>;
-    expect(resultData.collaborationDocVersionId).toBe(3);
+    expect(resultData.collaborationDocVersionId).toBe(4);
   });
 
   it('should reject submission when required fields are missing from proposal data', async ({
