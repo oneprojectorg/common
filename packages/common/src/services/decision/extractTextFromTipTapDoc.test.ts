@@ -71,4 +71,11 @@ describe('extractTextFromTipTapDoc', () => {
     };
     expect(extractTextFromTipTapDoc(doc)).toBe('');
   });
+
+  it('returns empty string for iframely with no attrs', () => {
+    const doc = {
+      content: [{ type: 'iframely' }],
+    };
+    expect(extractTextFromTipTapDoc(doc)).toBe('');
+  });
 });

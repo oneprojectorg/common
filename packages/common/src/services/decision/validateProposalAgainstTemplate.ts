@@ -43,7 +43,7 @@ export async function validateProposalAgainstTemplate(
     );
     const fragmentTexts: Record<string, string> = {};
     for (const [name, doc] of Object.entries(fragmentDocs)) {
-      const text = extractTextFromTipTapDoc(doc as { content?: unknown[] });
+      const text = extractTextFromTipTapDoc(doc);
       if (text) {
         fragmentTexts[name] = text;
       }

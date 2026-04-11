@@ -17,7 +17,8 @@ type TipTapNode = {
 export function extractTextFromTipTapDoc(doc: { content?: unknown[] }): string {
   function nodeText(node: TipTapNode): string {
     if (node.type === 'iframely') {
-      return (node.attrs?.src as string | undefined) ?? '';
+      const src = node.attrs?.src;
+      return typeof src === 'string' ? src : '';
     }
     if (node.type === 'text') {
       return node.text ?? '';
