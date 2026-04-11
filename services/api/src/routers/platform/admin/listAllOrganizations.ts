@@ -1,5 +1,9 @@
-import { decodeCursor, encodeCursor } from '@op/common';
-import { count, db, ilike, inArray } from '@op/db/client';
+import {
+  decodeCursor,
+  encodeCursor,
+  getGenericCursorCondition,
+} from '@op/common';
+import { and, count, db, ilike, inArray, sql } from '@op/db/client';
 import { organizations, profiles } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -61,28 +65,32 @@ export const listAllOrganizationsRouter = router({
             ).map((p) => p.id)
           : null;
 
-      // Build V2 relational query filters
-      const cursorFilter = cursorValue
-        ? {
-            OR: [
-              { createdAt: { lt: cursorValue.date } },
-              { createdAt: cursorValue.date, id: { lt: cursorValue.id } },
-            ],
-          }
+      const searchCondition = matchingProfileIds
+        ? inArray(organizations.profileId, matchingProfileIds)
         : undefined;
-
-      const searchFilter = matchingProfileIds
-        ? { profileId: { in: matchingProfileIds } }
-        : undefined;
-
-      const whereFilter =
-        cursorFilter && searchFilter
-          ? { AND: [cursorFilter, searchFilter] }
-          : cursorFilter || searchFilter;
 
       const [allOrgs, totalCount] = await Promise.all([
         db.query.organizations.findMany({
-          where: whereFilter,
+          // Use RAW callback so column references use the aliased table
+          // (Drizzle v2 relational queries alias tables as d0, d1…)
+          where: {
+            RAW: (table) => {
+              const cursorCond = cursorValue
+                ? getGenericCursorCondition({
+                    columns: { id: table.id, date: table.createdAt },
+                    cursor: {
+                      date: new Date(cursorValue.date),
+                      id: cursorValue.id,
+                    },
+                  })
+                : undefined;
+
+              if (cursorCond && searchCondition) {
+                return and(cursorCond, searchCondition)!;
+              }
+              return cursorCond ?? searchCondition ?? sql`true`;
+            },
+          },
           with: {
             profile: {
               columns: {
@@ -130,11 +138,7 @@ export const listAllOrganizationsRouter = router({
         db
           .select({ value: count() })
           .from(organizations)
-          .where(
-            matchingProfileIds
-              ? inArray(organizations.profileId, matchingProfileIds)
-              : undefined,
-          )
+          .where(searchCondition)
           .then(([result]) => result?.value ?? 0),
       ]);
 

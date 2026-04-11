@@ -9,7 +9,14 @@ import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+} from '@op/ui/ui/table';
 import {
   Suspense,
   useCallback,
@@ -21,11 +28,7 @@ import { LuDownload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { UsersRow } from './UsersRow';
-
-const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
-const USERS_TABLE_GRID =
-  'grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_minmax(80px,0.5fr)_80px] gap-4';
+import { UsersRowCells } from './UsersRow';
 
 /**
  * Exports user data to CSV and triggers download
@@ -114,45 +117,9 @@ export const UsersTable = () => {
           </OptionMenu>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <div className={USER_TABLE_MIN_WIDTH}>
-          <UsersTableHeader />
-          <Suspense fallback={<UsersTableContentSkeleton />}>
-            <UsersTableContent searchQuery={debouncedQuery} />
-          </Suspense>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/** Table header component */
-const UsersTableHeader = () => {
-  const t = useTranslations();
-
-  const columnHeadings = [
-    t('Name'),
-    t('Email'),
-    t('Role'),
-    t('Organization'),
-    t('Created'),
-    t('Last sign in'),
-    t('Actions'),
-  ];
-
-  return (
-    <div className={cn('bg-neutral-gray0 border-b py-3', USERS_TABLE_GRID)}>
-      {columnHeadings.map((heading, idx) => (
-        <div
-          key={heading}
-          className={cn(
-            'text-sm font-normal text-neutral-charcoal',
-            idx === columnHeadings.length - 1 && 'text-right',
-          )}
-        >
-          {heading}
-        </div>
-      ))}
+      <Suspense fallback={<UsersTableSkeleton />}>
+        <UsersTableContent searchQuery={debouncedQuery} />
+      </Suspense>
     </div>
   );
 };
@@ -193,11 +160,24 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <div className="divide-y divide-neutral-gray1">
-        {users.map((user) => (
-          <UsersRow key={user.id} user={user} />
-        ))}
-      </div>
+      <Table aria-label={t('platformAdmin_allUsers')}>
+        <TableHeader>
+          <TableColumn isRowHeader>{t('Name')}</TableColumn>
+          <TableColumn>{t('Email')}</TableColumn>
+          <TableColumn>{t('Role')}</TableColumn>
+          <TableColumn>{t('Organization')}</TableColumn>
+          <TableColumn>{t('Created')}</TableColumn>
+          <TableColumn>{t('Last sign in')}</TableColumn>
+          <TableColumn className="text-right">{t('Actions')}</TableColumn>
+        </TableHeader>
+        <TableBody items={users} renderEmptyState={() => null}>
+          {(user) => (
+            <TableRow key={user.id} id={user.id}>
+              <UsersRowCells user={user} />
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
       <div className="mt-4">
         <Pagination
           range={{
@@ -214,17 +194,44 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
   );
 };
 
-/** Loading skeleton for table content only */
-const UsersTableContentSkeleton = () => {
+/** Loading skeleton */
+const UsersTableSkeleton = () => {
   return (
-    <div className="divide-y divide-neutral-gray1">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className={cn('py-4', USERS_TABLE_GRID)}>
-          {[...Array(7)].map((_, j) => (
-            <Skeleton key={j} className="h-4 w-full" />
-          ))}
-        </div>
-      ))}
-    </div>
+    <Table aria-label="Loading users">
+      <TableHeader>
+        <TableColumn isRowHeader>
+          <Skeleton className="h-4 w-16" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-16" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-12" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-20" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-14" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-14" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-14" />
+        </TableColumn>
+      </TableHeader>
+      <TableBody>
+        {[...Array(5)].map((_, i) => (
+          <TableRow key={i} id={`skeleton-${i}`}>
+            {[...Array(7)].map((_, j) => (
+              <TableCell key={j}>
+                <Skeleton className="h-4 w-full" />
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 };
