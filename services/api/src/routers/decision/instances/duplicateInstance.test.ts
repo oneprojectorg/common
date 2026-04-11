@@ -322,15 +322,10 @@ describe.concurrent('duplicateInstance', () => {
       task.id,
     );
 
-    // Set description on source (writes to draftInstanceData)
+    // Set description on source
     await caller.decision.updateDecisionInstance({
       instanceId: source.processInstance.id,
       description: 'Test description to copy',
-    });
-
-    // Promote source to live so the description is on the live column
-    await caller.decision.publishDecisionInstance({
-      instanceId: source.processInstance.id,
     });
 
     const duplicate = await caller.decision.duplicateInstance({
