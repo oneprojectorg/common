@@ -85,7 +85,10 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <Table aria-label={t('All Organizations')}>
+      <Table
+        aria-label={t('All Organizations')}
+        key={orgs.map((o) => o.id).join(',')}
+      >
         <TableHeader>
           <TableColumn isRowHeader>{t('Name')}</TableColumn>
           <TableColumn>{t('Domain')}</TableColumn>
@@ -93,12 +96,12 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Created')}</TableColumn>
           <TableColumn className="text-right">{t('Actions')}</TableColumn>
         </TableHeader>
-        <TableBody items={orgs} dependencies={[searchQuery]}>
-          {(org) => (
-            <TableRow id={org.id}>
+        <TableBody>
+          {orgs.map((org) => (
+            <TableRow key={org.id} id={org.id}>
               <OrgsRowCells org={org} />
             </TableRow>
-          )}
+          ))}
         </TableBody>
       </Table>
       <div className="mt-4">

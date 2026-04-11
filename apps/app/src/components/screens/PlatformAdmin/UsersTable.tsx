@@ -160,7 +160,10 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <Table aria-label={t('platformAdmin_allUsers')}>
+      <Table
+        aria-label={t('platformAdmin_allUsers')}
+        key={users.map((u) => u.id).join(',')}
+      >
         <TableHeader>
           <TableColumn isRowHeader>{t('Name')}</TableColumn>
           <TableColumn>{t('Email')}</TableColumn>
@@ -170,12 +173,12 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Last sign in')}</TableColumn>
           <TableColumn className="text-right">{t('Actions')}</TableColumn>
         </TableHeader>
-        <TableBody items={users} dependencies={[searchQuery]}>
-          {(user) => (
-            <TableRow id={user.id}>
+        <TableBody>
+          {users.map((user) => (
+            <TableRow key={user.id} id={user.id}>
               <UsersRowCells user={user} />
             </TableRow>
-          )}
+          ))}
         </TableBody>
       </Table>
       <div className="mt-4">
