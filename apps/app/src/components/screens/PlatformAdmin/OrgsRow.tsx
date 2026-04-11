@@ -46,18 +46,20 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
           '—'
         )}
       </TableCell>
-      <TableCell className="text-right text-sm text-neutral-charcoal">
-        <OptionMenu variant="outline" size="medium">
-          <Menu className="min-w-48 p-2">
-            <MenuItem
-              key="view-members"
-              onAction={() => setIsMembersModalOpen(true)}
-              className="px-3 py-1"
-            >
-              {t('View members')}
-            </MenuItem>
-          </Menu>
-        </OptionMenu>
+      <TableCell className="text-sm text-neutral-charcoal">
+        <div className="flex justify-end">
+          <OptionMenu variant="outline" size="medium">
+            <Menu className="min-w-48 p-2">
+              <MenuItem
+                key="view-members"
+                onAction={() => setIsMembersModalOpen(true)}
+                className="px-3 py-1"
+              >
+                {t('View members')}
+              </MenuItem>
+            </Menu>
+          </OptionMenu>
+        </div>
         <OrgMembersModal
           org={org}
           isOpen={isMembersModalOpen}

@@ -79,51 +79,53 @@ export const UsersRowCells = ({ user }: { user: User }) => {
           '—'
         )}
       </TableCell>
-      <TableCell className="text-right text-sm text-neutral-charcoal">
-        <OptionMenu variant="outline" size="medium">
-          <Menu className="min-w-48 p-2">
-            <MenuItem
-              key="view-analytics"
-              onAction={() => {
-                window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-              }}
-              className="px-3 py-1"
-            >
-              {t('View analytics')}
-            </MenuItem>
-            <MenuItem
-              key="edit-profile"
-              onAction={() => {
-                if (user.profile) {
-                  setIsEditModalOpen(true);
-                }
-              }}
-              className="px-3 py-1"
-              isDisabled={!user.profile}
-            >
-              {t('Edit profile')}
-            </MenuItem>
-            <MenuItem
-              key="add-to-org"
-              onAction={() => {
-                setIsAddToOrgModalOpen(true);
-              }}
-              className="px-3 py-1"
-            >
-              Add to Organization
-            </MenuItem>
-            <MenuSeparator />
-            <MenuItem
-              key="remove-user"
-              onAction={() => {
-                alert('coming soon');
-              }}
-              className="px-3 py-1"
-            >
-              <span className="text-functional-red">{t('Remove user')}</span>
-            </MenuItem>
-          </Menu>
-        </OptionMenu>
+      <TableCell className="text-sm text-neutral-charcoal">
+        <div className="flex justify-end">
+          <OptionMenu variant="outline" size="medium">
+            <Menu className="min-w-48 p-2">
+              <MenuItem
+                key="view-analytics"
+                onAction={() => {
+                  window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+                }}
+                className="px-3 py-1"
+              >
+                {t('View analytics')}
+              </MenuItem>
+              <MenuItem
+                key="edit-profile"
+                onAction={() => {
+                  if (user.profile) {
+                    setIsEditModalOpen(true);
+                  }
+                }}
+                className="px-3 py-1"
+                isDisabled={!user.profile}
+              >
+                {t('Edit profile')}
+              </MenuItem>
+              <MenuItem
+                key="add-to-org"
+                onAction={() => {
+                  setIsAddToOrgModalOpen(true);
+                }}
+                className="px-3 py-1"
+              >
+                Add to Organization
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem
+                key="remove-user"
+                onAction={() => {
+                  alert('coming soon');
+                }}
+                className="px-3 py-1"
+              >
+                <span className="text-functional-red">{t('Remove user')}</span>
+              </MenuItem>
+            </Menu>
+          </OptionMenu>
+        </div>
         {user.profile ? (
           <UpdateProfileModal
             authUserId={user.authUserId}
