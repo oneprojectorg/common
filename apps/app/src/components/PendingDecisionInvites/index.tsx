@@ -15,7 +15,9 @@ import {
   NotificationPanelList,
 } from '@op/ui/NotificationPanel';
 import { ProfileItem } from '@op/ui/ProfileItem';
+import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -25,6 +27,7 @@ import ErrorBoundary from '../ErrorBoundary';
 const PendingDecisionInvitesSuspense = () => {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const router = useRouter();
 
   const [invites] = trpc.account.listUserInvites.useSuspenseQuery({
     entityType: EntityType.DECISION,
@@ -82,7 +85,23 @@ const PendingDecisionInvitesSuspense = () => {
                 <Button
                   size="small"
                   className="w-full sm:w-auto"
-                  onPress={() => acceptInvite.mutate({ inviteId: invite.id })}
+                  onPress={() =>
+                    acceptInvite
+                      .mutateAsync({ inviteId: invite.id })
+                      .then(() => {
+                        toast.success({
+                          message: t('Invitation accepted'),
+                        });
+                        if (profile.slug) {
+                          router.push(`/decisions/${profile.slug}`);
+                        }
+                      })
+                      .catch(() => {
+                        toast.error({
+                          message: t('Failed to accept invitation'),
+                        });
+                      })
+                  }
                   isDisabled={acceptInvite.isPending}
                 >
                   {isAccepting ? <LoadingSpinner /> : t('Accept')}

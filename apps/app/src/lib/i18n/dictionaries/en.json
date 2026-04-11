@@ -663,6 +663,8 @@
   "You've been invited to join the following decision-making processes": "You've been invited to join the following decision-making processes",
   "I don't want to participate": "I don't want to participate",
   "Failed to accept invitations": "Failed to accept invitations",
+  "Invitation accepted": "Invitation accepted",
+  "Failed to accept invitation": "Failed to accept invitation",
   "Failed to decline invitation": "Failed to decline invitation",
   "Translate to {language}": "Translate to {language}",
   "Translated from {language}": "Translated from {language}",
