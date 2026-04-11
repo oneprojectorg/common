@@ -168,6 +168,7 @@ const processConfigEncoder = z.object({
   organizeByCategories: z.boolean().optional(),
   requireCollaborativeProposals: z.boolean().optional(),
   isPrivate: z.boolean().optional(),
+  proposalsHiddenByDefault: z.boolean().optional(),
   reviewsPolicy: reviewsPolicyEncoder.optional(),
   reviewsAllowRevisions: z.boolean().optional(),
   reviewsAnonymousFeedback: z.boolean().optional(),

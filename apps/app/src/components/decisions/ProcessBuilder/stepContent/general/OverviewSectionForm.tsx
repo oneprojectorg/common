@@ -31,6 +31,7 @@ const createOverviewValidator = (t: TranslateFn) =>
     organizeByCategories: z.boolean(),
     requireCollaborativeProposals: z.boolean(),
     isPrivate: z.boolean(),
+    proposalsHiddenByDefault: z.boolean(),
   });
 
 // Form data type
@@ -148,6 +149,7 @@ export function OverviewSectionForm({
         organizeByCategories: values.organizeByCategories,
         requireCollaborativeProposals: values.requireCollaborativeProposals,
         isPrivate: values.isPrivate,
+        proposalsHiddenByDefault: values.proposalsHiddenByDefault,
       },
     });
 
@@ -163,6 +165,7 @@ export function OverviewSectionForm({
           organizeByCategories: values.organizeByCategories,
           requireCollaborativeProposals: values.requireCollaborativeProposals,
           isPrivate: values.isPrivate,
+          proposalsHiddenByDefault: values.proposalsHiddenByDefault,
         },
       });
     } else {
@@ -188,6 +191,8 @@ export function OverviewSectionForm({
       requireCollaborativeProposals:
         instanceData?.config?.requireCollaborativeProposals ?? false,
       isPrivate: instanceData?.config?.isPrivate ?? false,
+      proposalsHiddenByDefault:
+        instanceData?.config?.proposalsHiddenByDefault ?? false,
     },
     validators: {
       onBlur: createOverviewValidator(t),
@@ -367,6 +372,24 @@ export function OverviewSectionForm({
                   <field.ToggleButton
                     isSelected={!field.state.value}
                     onChange={(value) => field.handleChange(!value)}
+                    size="small"
+                  />
+                </ToggleRow>
+              )}
+            />
+
+            <form.AppField
+              name="proposalsHiddenByDefault"
+              children={(field) => (
+                <ToggleRow
+                  label={t('Hide proposals by default')}
+                  description={t(
+                    'New proposals will be hidden from other participants. Admins can make individual proposals visible at any time.',
+                  )}
+                >
+                  <field.ToggleButton
+                    isSelected={field.state.value}
+                    onChange={field.handleChange}
                     size="small"
                   />
                 </ToggleRow>

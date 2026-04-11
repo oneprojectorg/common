@@ -2,6 +2,7 @@ import { db, eq } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
+  Visibility,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
@@ -192,6 +193,10 @@ export const createProposal = async ({
       const proposalId = crypto.randomUUID();
       const collaborationDocId = `proposal-${proposalId}`;
 
+      const proposalVisibility = instanceData.config?.proposalsHiddenByDefault
+        ? Visibility.HIDDEN
+        : Visibility.VISIBLE;
+
       const [insertedProposal] = await tx
         .insert(proposals)
         .values({
@@ -208,6 +213,7 @@ export const createProposal = async ({
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
           status: ProposalStatus.DRAFT,
+          visibility: proposalVisibility,
         })
         .returning();
 
