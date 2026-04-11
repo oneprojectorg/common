@@ -65,10 +65,6 @@ export const listAllOrganizationsRouter = router({
             ).map((p) => p.id)
           : null;
 
-      const searchCondition = matchingProfileIds
-        ? inArray(organizations.profileId, matchingProfileIds)
-        : undefined;
-
       const [allOrgs, totalCount] = await Promise.all([
         db.query.organizations.findMany({
           // Use RAW callback so column references use the aliased table
@@ -85,10 +81,14 @@ export const listAllOrganizationsRouter = router({
                   })
                 : undefined;
 
-              if (cursorCond && searchCondition) {
-                return and(cursorCond, searchCondition)!;
+              const searchCond = matchingProfileIds
+                ? inArray(table.profileId, matchingProfileIds)
+                : undefined;
+
+              if (cursorCond && searchCond) {
+                return and(cursorCond, searchCond)!;
               }
-              return cursorCond ?? searchCondition ?? sql`true`;
+              return cursorCond ?? searchCond ?? sql`true`;
             },
           },
           with: {
@@ -138,7 +138,11 @@ export const listAllOrganizationsRouter = router({
         db
           .select({ value: count() })
           .from(organizations)
-          .where(searchCondition)
+          .where(
+            matchingProfileIds
+              ? inArray(organizations.profileId, matchingProfileIds)
+              : undefined,
+          )
           .then(([result]) => result?.value ?? 0),
       ]);
 
