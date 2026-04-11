@@ -38,6 +38,8 @@ interface CreateDecisionSetupOptions {
   processDescription?: string;
   instanceCount?: number;
   grantAccess?: boolean;
+  /** Status to assign to created instances. Defaults to DRAFT. */
+  status?: ProcessStatus;
   /** JSON Schema to validate proposal data against on submit/update */
   proposalTemplate?: Record<string, unknown>;
 }
@@ -158,6 +160,7 @@ export class TestDecisionsDataManager {
       processDescription = 'A test decision process',
       instanceCount = 0,
       grantAccess = false,
+      status,
       proposalTemplate,
     } = opts || {};
 
@@ -259,6 +262,7 @@ export class TestDecisionsDataManager {
         user,
         name: `Instance ${i + 1}`,
         budget: 50000 * (i + 1),
+        status,
       });
 
       instances.push(instance);

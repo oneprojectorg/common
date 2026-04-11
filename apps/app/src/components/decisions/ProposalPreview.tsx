@@ -1,6 +1,5 @@
 'use client';
 
-import { getPublicUrl } from '@/utils';
 import { formatCurrency, formatDate } from '@/utils/formatting';
 import { ProposalStatus } from '@op/api/encoders';
 import {
@@ -10,15 +9,15 @@ import {
   parseTranslatedMeta,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
-import { Avatar } from '@op/ui/Avatar';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import Image from 'next/image';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { Link as NavLink } from '@/lib/i18n/routing';
 
+import { ProfileAvatar } from '../ProfileAvatar';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
@@ -134,34 +133,17 @@ export function ProposalPreview({
           <div className="flex items-center gap-2">
             {proposal.submittedBy && (
               <>
-                <Avatar
-                  placeholder={
-                    proposal.submittedBy.name ||
-                    proposal.submittedBy.slug ||
-                    'U'
-                  }
+                <ProfileAvatar
+                  profile={proposal.submittedBy}
                   className="size-8"
-                >
-                  {proposal.submittedBy.avatarImage?.name ? (
-                    <Image
-                      src={
-                        getPublicUrl(proposal.submittedBy.avatarImage.name) ??
-                        ''
-                      }
-                      alt={
-                        proposal.submittedBy.name ||
-                        proposal.submittedBy.slug ||
-                        ''
-                      }
-                      fill
-                      className="aspect-square object-cover"
-                    />
-                  ) : null}
-                </Avatar>
+                />
                 <div className="flex flex-col">
-                  <span className="text-base text-neutral-black">
+                  <NavLink
+                    href={`/profile/${proposal.submittedBy.slug}`}
+                    className="text-base text-neutral-black hover:no-underline"
+                  >
                     {proposal.submittedBy.name || proposal.submittedBy.slug}
-                  </span>
+                  </NavLink>
                   {!isDraft && (
                     <span className="text-sm text-neutral-charcoal">
                       {t('Submitted on')} {formatDate(proposal.createdAt)}

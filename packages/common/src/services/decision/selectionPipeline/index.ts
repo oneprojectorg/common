@@ -2,8 +2,8 @@
 export type * from './types';
 
 // Export main functions
-export { executePipeline } from './pipelineEngine';
-export { aggregateVoteData } from './voteDataAggregator';
+export { executeSelectionPipeline } from './pipelineEngine';
+export { aggregateProposalMetrics } from './proposalMetrics';
 export { evaluateExpression } from './expressionEvaluator';
 
 // Export block executor registry function

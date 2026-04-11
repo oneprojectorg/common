@@ -1,6 +1,4 @@
-import type { ProcessInstance, Proposal } from '@op/db/schema';
-
-import type { InstanceData, ProcessSchema } from '../types';
+import type { Proposal } from '@op/db/schema';
 
 /**
  * Top-level selection pipeline definition
@@ -232,35 +230,15 @@ export interface VariableExpression {
   variable: string; // e.g., "$threshold", "$categoryWeight"
 }
 
-/**
- * Execution context for pipeline evaluation
- */
+/** Runtime context passed to every pipeline block during evaluation. */
 export interface ExecutionContext {
-  // Input proposals
   proposals: Proposal[];
-
-  // Current proposal (when evaluating expressions on individual proposals)
+  /** Set when evaluating expressions on a single proposal. */
   proposal?: Proposal;
-
-  // Voting data aggregated per proposal
   voteData?: {
     [proposalId: string]: VoteAggregation;
   };
-
-  // Process instance data
-  process: {
-    instanceId: string;
-    processId: string;
-    currentStateId: string | null;
-    instanceData: InstanceData;
-    processSchema: ProcessSchema;
-    processInstance: ProcessInstance;
-  };
-
-  // Variables from compute blocks and pipeline initialization
   variables: Record<string, any>;
-
-  // Intermediate block outputs
   outputs: Record<string, any>;
 }
 

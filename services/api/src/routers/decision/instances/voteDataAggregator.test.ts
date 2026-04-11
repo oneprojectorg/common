@@ -1,4 +1,4 @@
-import { aggregateVoteData } from '@op/common';
+import { aggregateProposalMetrics } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -10,9 +10,9 @@ import {
   schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
 
-describe.concurrent('aggregateVoteData', () => {
+describe.concurrent('aggregateProposalMetrics', () => {
   it('returns empty object for an empty proposals array', async () => {
-    const result = await aggregateVoteData([]);
+    const result = await aggregateProposalMetrics([]);
     expect(result).toEqual({});
   });
 
@@ -39,7 +39,7 @@ describe.concurrent('aggregateVoteData', () => {
       .from(proposals)
       .where(eq(proposals.id, proposal.id));
 
-    const result = await aggregateVoteData([fullProposal!]);
+    const result = await aggregateProposalMetrics([fullProposal!]);
 
     expect(result[proposal.id]).toBeDefined();
     expect(result[proposal.id]!.voteCount).toBe(0);

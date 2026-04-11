@@ -4,9 +4,14 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
+import type { RubricTemplateSchema } from '../types';
 import { proposalSchema } from './proposal';
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
+
+const rubricTemplateSchema = jsonObjectSchema.transform(
+  (data): RubricTemplateSchema => data as RubricTemplateSchema,
+);
 
 // ── Review assignment schemas ───────────────────────────────────────────
 
@@ -33,7 +38,7 @@ export const proposalReviewSchema = z.object({
 
 export const reviewAssignmentExtendedSchema = z.object({
   assignment: proposalReviewAssignmentSchema,
-  rubricTemplate: jsonObjectSchema.nullable(),
+  rubricTemplate: rubricTemplateSchema.nullable(),
   review: proposalReviewSchema.nullable(),
 });
 

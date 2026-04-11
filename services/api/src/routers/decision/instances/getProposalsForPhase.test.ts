@@ -1,17 +1,17 @@
-import { TransitionEngine, getProposalsForPhase } from '@op/common';
-import { db, sql } from '@op/db/client';
+import { getProposalsForPhase } from '@op/common';
+import { db, eq, sql } from '@op/db/client';
 import {
   processInstances,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createAndSubmitProposal,
   createInstanceWithSchema,
+  executeTestTransition,
   schemaWithPipeline,
   schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
@@ -57,8 +57,11 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, user, userEmail, caller } =
-      await createInstanceWithSchema(testData, task.id, schemaWithPipeline);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithPipeline,
+    );
 
     // Create and submit 3 proposals; pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
@@ -69,9 +72,10 @@ describe.concurrent('getProposalsForPhase', () => {
       });
     }
 
-    await TransitionEngine.executeTransition({
-      data: { instanceId, toStateId: 'review' },
-      user,
+    await executeTestTransition({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
     const result = await getProposalsForPhase({ instanceId });
@@ -120,8 +124,11 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, user, userEmail, caller } =
-      await createInstanceWithSchema(testData, task.id, schemaWithPipeline);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithPipeline,
+    );
 
     // Create and submit 3 proposals; pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
@@ -132,9 +139,10 @@ describe.concurrent('getProposalsForPhase', () => {
       });
     }
 
-    await TransitionEngine.executeTransition({
-      data: { instanceId, toStateId: 'review' },
-      user,
+    await executeTestTransition({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
     // phaseId = 'review' means "proposals that survived the transition into review"
@@ -170,8 +178,11 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, user, userEmail, caller } =
-      await createInstanceWithSchema(testData, task.id, schemaWithoutPipeline);
+    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+      testData,
+      task.id,
+      schemaWithoutPipeline,
+    );
 
     const [p1, p2] = await Promise.all([
       createAndSubmitProposal(testData, caller, {
@@ -187,9 +198,10 @@ describe.concurrent('getProposalsForPhase', () => {
     ]);
 
     // Both proposals survive the transition (no pipeline)
-    await TransitionEngine.executeTransition({
-      data: { instanceId, toStateId: 'review' },
-      user,
+    await executeTestTransition({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
     });
 
     // Soft-delete after transition — should still be excluded from results

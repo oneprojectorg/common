@@ -33,7 +33,7 @@ export const ProcessBuilderFooter = ({
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
 
   const validation = useProcessBuilderValidation(decisionProfileId);
-  const navigationConfig = useNavigationConfig(instanceId);
+  const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
 
   const phases = useProcessPhases(instanceId, decisionProfileId);
 

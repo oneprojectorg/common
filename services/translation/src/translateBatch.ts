@@ -1,6 +1,7 @@
 import { and, db, eq, or, sql } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
 import type { DeepLClient, TargetLanguageCode } from 'deepl-node';
+import he from 'he';
 
 import { hashContent } from './hashContent';
 
@@ -136,7 +137,7 @@ async function translateCacheMisses(
       contentHash: miss.hash,
       sourceLocale: result.detectedSourceLang.toUpperCase(),
       targetLocale,
-      translatedText: result.text,
+      translatedText: he.decode(result.text),
     };
   });
 }

@@ -155,10 +155,7 @@ describe.concurrent('getInstance', () => {
     const submittedProposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: {
-        title: 'Submitted proposal',
-        description: 'Ready to review',
-      },
+      proposalData: { title: 'Submitted proposal' },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);

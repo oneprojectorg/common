@@ -6,9 +6,13 @@ import {
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalStatus,
   decisionProcessTransitions,
   decisionProcesses,
+  decisionTransitionProposals,
   processInstances,
+  proposals,
+  stateTransitionHistory,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -245,6 +249,17 @@ describe('processDecisionsTransitions', () => {
     for (const transition of completedTransitions) {
       expect(transition.completedAt).not.toBeNull();
     }
+
+    // Verify stateTransitionHistory rows were written for each phase advance
+    const historyRows = await db
+      .select()
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
+
+    // 3 transitions (submission→review, review→voting, voting→results)
+    expect(historyRows.length).toBe(3);
+    const fromStates = historyRows.map((h) => h.fromStateId).sort();
+    expect(fromStates).toEqual(['review', 'submission', 'voting']);
   });
 
   it('should NOT process transitions for DRAFT instances', async ({
@@ -410,6 +425,80 @@ describe('processDecisionsTransitions', () => {
     // The remaining 2 transitions should have been processed
     // (review→voting, voting→results)
     expect(result.processed).toBeGreaterThanOrEqual(2);
+  });
+
+  it('should persist selected proposals into decisionTransitionProposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Use the simpleVoting template (date-based advancement) so the monitor
+    // will actually process the transitions. Only make the first transition due
+    // so we get a single advance (submission → review) to verify against.
+    const { instanceId, userEmail } =
+      await createPublishedInstanceWithDueTransitions(testData, task.id, {
+        makeDue: false,
+      });
+
+    // Create a proposal and mark it SUBMITTED directly (bypasses TipTap
+    // validation which requires a real collaboration server).
+    // The status update triggers a proposalHistory row via DB trigger.
+    const proposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Surviving Proposal' },
+    });
+
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    // Make only the first transition (submission → review) due
+    const transitions = await db._query.decisionProcessTransitions.findMany({
+      where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+    });
+    transitions.sort(
+      (a, b) =>
+        new Date(a.scheduledDate).getTime() -
+        new Date(b.scheduledDate).getTime(),
+    );
+    const firstTransition = transitions[0]!;
+    const now = new Date();
+    await db
+      .update(decisionProcessTransitions)
+      .set({
+        scheduledDate: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
+      })
+      .where(eq(decisionProcessTransitions.id, firstTransition.id));
+
+    const monitorResult = await processDecisionsTransitions();
+    expect(monitorResult.processed).toBeGreaterThanOrEqual(1);
+    expect(monitorResult.failed).toBe(0);
+
+    // Verify the proposal survived into the decisionTransitionProposals join table
+    const joinRows = await db
+      .select()
+      .from(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    expect(joinRows.length).toBe(1);
+    expect(joinRows[0]!.proposalId).toBe(proposal.id);
+
+    // Verify a history row was written for this transition
+    const history = await db
+      .select()
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
+
+    expect(history.length).toBe(1);
+    expect(history[0]!.fromStateId).toBe(firstTransition.fromStateId);
+    expect(history[0]!.toStateId).toBe(firstTransition.toStateId);
+    expect(history[0]!.triggeredByProfileId).toBeNull();
+
+    // The join table row should reference the history row
+    expect(joinRows[0]!.transitionHistoryId).toBe(history[0]!.id);
   });
 
   it('should stop processing instance on error and continue others', async ({

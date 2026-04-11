@@ -8,6 +8,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuCalendar } from 'react-icons/lu';
 
@@ -19,9 +20,9 @@ import { TranslatedText } from '../TranslatedText';
 import { DecisionCardHeader } from './DecisionCardHeader';
 import { DuplicateProcessModal } from './DuplicateProcessModal';
 
-const formatDateShort = (dateString: string) => {
+const formatDateShort = (dateString: string, locale: string) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -61,7 +62,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const currentPhase = processInstance.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
-  const currentPhaseName = isDraft ? 'Draft' : currentPhase?.name;
+  const currentPhaseName = isDraft ? t('Draft') : currentPhase?.name;
   const closingDate = isDraft ? undefined : currentPhase?.endDate;
 
   // For drafts show owner; for published prefer steward, fall back to owner
@@ -314,6 +315,7 @@ const DecisionStat = ({
 );
 
 const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
+  const locale = useLocale();
   return (
     <div className="flex items-center gap-1">
       <LuCalendar
@@ -327,7 +329,7 @@ const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
           'text-sm',
         )}
       >
-        <TranslatedText text="Closes" /> {formatDateShort(closingDate)}
+        <TranslatedText text="Closes" /> {formatDateShort(closingDate, locale)}
       </span>
     </div>
   );

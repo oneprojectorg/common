@@ -213,12 +213,12 @@ describe.concurrent('listProposals', () => {
         testData.createProposal({
           userEmail: setup.userEmail,
           processInstanceId: instance.instance.id,
-          proposalData: { title: 'Visible Proposal', description: 'A test' },
+          proposalData: { title: 'Visible Proposal' },
         }),
         testData.createProposal({
           userEmail: setup.userEmail,
           processInstanceId: instance.instance.id,
-          proposalData: { title: 'Hidden Proposal', description: 'A test' },
+          proposalData: { title: 'Hidden Proposal' },
         }),
         createAuthenticatedCaller(setup.userEmail),
         testData.createMemberUser({
@@ -281,12 +281,12 @@ describe.concurrent('listProposals', () => {
       testData.createProposal({
         userEmail: memberUser.email,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'Visible Proposal', description: 'A test' },
+        proposalData: { title: 'Visible Proposal' },
       }),
       testData.createProposal({
         userEmail: memberUser.email,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'Hidden Proposal', description: 'A test' },
+        proposalData: { title: 'Hidden Proposal' },
       }),
       createAuthenticatedCaller(setup.userEmail),
     ]);

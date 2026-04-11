@@ -233,15 +233,6 @@ const instanceDataWithSchemaEncoder = z.object({
   templateVersion: z.string().optional(),
   templateName: z.string().optional(),
   templateDescription: z.string().optional(),
-  stateData: z
-    .record(
-      z.string(),
-      z.object({
-        enteredAt: z.string().optional(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
-    .optional(),
   phases: z.array(instancePhaseDataEncoder).optional(),
   proposalTemplate: jsonSchemaEncoder.optional(),
   rubricTemplate: rubricTemplateEncoder.optional(),
@@ -387,15 +378,6 @@ const instanceDataEncoder = z.preprocess(
     hideBudget: z.boolean().optional(),
     fieldValues: z.record(z.string(), z.unknown()).optional(),
     currentPhaseId: z.string(),
-    stateData: z
-      .record(
-        z.string(),
-        z.object({
-          enteredAt: z.string().optional(),
-          metadata: z.record(z.string(), z.unknown()).optional(),
-        }),
-      )
-      .optional(),
     phases: z
       .array(
         z.object({

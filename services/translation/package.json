@@ -14,10 +14,12 @@
   "dependencies": {
     "@op/db": "workspace:*",
     "deepl-node": "^1.24.0",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "he": "^1.2.0"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
+    "@types/he": "^1.2.3",
     "typescript": "5.7.3"
   }
 }

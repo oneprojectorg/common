@@ -25,11 +25,7 @@ import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
-/**
- * Helper to find current phase and extract voting config.
- * Reads from instanceData.phases which now contains all template fields.
- * Returns undefined if the current phase is not found.
- */
+/** Extract proposal/voting permissions from the current phase. */
 function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
   | {
       allowProposals: boolean;
@@ -38,39 +34,26 @@ function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
   | undefined {
   const instanceData = processInstance.instanceData as DecisionInstanceData;
 
-  if (
-    !instanceData?.currentPhaseId &&
-    // @ts-expect-error - supporting legacy datatypes here that will be removed
-    !instanceData?.currentStateId
-  ) {
+  // @ts-expect-error  Remove instanceData,currentStateId in a migration before undoing
+  if (!instanceData?.currentPhaseId && !instanceData?.currentStateId) {
     return undefined;
   }
 
   const currentPhase = instanceData.phases.find(
-    (p) => p.phaseId === instanceData.currentPhaseId,
+    (p) =>
+      p.phaseId === instanceData.currentPhaseId ||
+      // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId
+      p.stateId === instanceData.currentStateId,
   );
 
-  if (currentPhase) {
-    return {
-      allowProposals: currentPhase.rules?.proposals?.submit ?? false,
-      allowDecisions: currentPhase.rules?.voting?.submit ?? false,
-    };
-  } else {
-    // Supports old data types before migration
-    const currentState = instanceData.phases.find(
-      // @ts-expect-error - supporting legacy datatypes here that will be removed
-      (p) => p.stateId! === instanceData.currentStateId,
-    );
-
-    if (currentState) {
-      return {
-        allowProposals: currentState.rules?.proposals?.submit ?? false,
-        allowDecisions: currentState.rules?.voting?.submit ?? false,
-      };
-    }
+  if (!currentPhase) {
+    return undefined;
   }
 
-  return;
+  return {
+    allowProposals: currentPhase.rules?.proposals?.submit ?? false,
+    allowDecisions: currentPhase.rules?.voting?.submit ?? false,
+  };
 }
 
 export type CustomData = Record<string, unknown>;
