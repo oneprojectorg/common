@@ -14,9 +14,7 @@ type TipTapNode = {
  * Handles iframely atom nodes by returning their src URL so required-field
  * validation treats them as non-empty.
  */
-export function extractTextFromTipTapDoc(doc: {
-  content?: unknown[];
-}): string {
+export function extractTextFromTipTapDoc(doc: { content?: unknown[] }): string {
   function nodeText(node: TipTapNode): string {
     if (node.type === 'iframely') {
       return (node.attrs?.src as string | undefined) ?? '';
