@@ -1,6 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 
 import { assembleProposalData } from './assembleProposalData';
+import { extractTextFromTipTapDoc } from './extractTextFromTipTapDoc';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
@@ -33,11 +34,20 @@ export async function validateProposalAgainstTemplate(
     const client = getTipTapClient();
 
     const fragmentNames = getProposalFragmentNames(proposalTemplate);
-    const fragmentTexts = await client.getDocumentFragments(
+    // Use format=json so we can handle atom nodes (e.g. iframely) that produce
+    // empty string with format=text but carry content in their attrs.
+    const fragmentDocs = await client.getDocumentFragments(
       parsed.collaborationDocId,
       fragmentNames,
-      { format: 'text' },
+      { format: 'json' },
     );
+    const fragmentTexts: Record<string, string> = {};
+    for (const [name, doc] of Object.entries(fragmentDocs)) {
+      const text = extractTextFromTipTapDoc(doc as { content?: unknown[] });
+      if (text) {
+        fragmentTexts[name] = text;
+      }
+    }
     const validationData = {
       ...assembleProposalData(proposalTemplate, fragmentTexts),
       ...(storedProposalData.category !== undefined

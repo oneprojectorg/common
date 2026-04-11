@@ -14,6 +14,12 @@ import type { Doc } from 'yjs';
  * concatenating all nested XmlText children (ignoring markup).
  */
 function getBlockText(element: Y.XmlElement): string {
+  // Atom nodes (e.g. iframely) carry content in attributes, not text children.
+  // Return the src URL so the field is treated as non-empty by the validator.
+  if (element.nodeName === 'iframely') {
+    return element.getAttribute('src') ?? '';
+  }
+
   const parts: string[] = [];
   element.forEach((child) => {
     if (child instanceof Y.XmlText) {
