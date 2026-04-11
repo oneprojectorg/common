@@ -41,10 +41,8 @@ export const LaunchProcessModal = ({
     invites?.filter((i) => !i.notifiedAt).length ?? 0;
 
   const phasesCount = instanceData?.phases?.length ?? 0;
-  const organizeByCategories =
-    instanceData?.config?.organizeByCategories ?? true;
   const categoriesCount = instanceData?.config?.categories?.length ?? 0;
-  const showNoCategoriesWarning = organizeByCategories && categoriesCount === 0;
+  const showNoCategoriesWarning = categoriesCount === 0;
 
   const utils = trpc.useUtils();
 
@@ -100,14 +98,12 @@ export const LaunchProcessModal = ({
             <span className="text-neutral-gray4">{t('Phases')}</span>
             <span className="text-neutral-charcoal">{phasesCount}</span>
           </div>
-          {organizeByCategories && (
-            <div className="flex items-center justify-between">
-              <span className="text-neutral-gray4">{t('Categories')}</span>
-              <span className="text-neutral-charcoal">
-                {categoriesCount === 0 ? t('None') : categoriesCount}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            <span className="text-neutral-gray4">{t('Categories')}</span>
+            <span className="text-neutral-charcoal">
+              {categoriesCount === 0 ? t('None') : categoriesCount}
+            </span>
+          </div>
         </div>
 
         <p className="text-sm text-neutral-charcoal">

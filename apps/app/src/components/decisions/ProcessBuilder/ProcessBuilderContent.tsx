@@ -16,7 +16,7 @@ export function ProcessBuilderContent({
   decisionName,
 }: SectionProps) {
   const t = useTranslations();
-  const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
+  const navigationConfig = useNavigationConfig(instanceId);
 
   const phases = useProcessPhases(instanceId, decisionProfileId);
 

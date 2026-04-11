@@ -17,7 +17,7 @@ export const ProcessBuilderSidebar = ({
   decisionProfileId?: string;
 }) => {
   const t = useTranslations();
-  const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
+  const navigationConfig = useNavigationConfig(instanceId);
   const { sections: validationSections } =
     useProcessBuilderValidation(decisionProfileId);
   const phases = useProcessPhases(instanceId, decisionProfileId);

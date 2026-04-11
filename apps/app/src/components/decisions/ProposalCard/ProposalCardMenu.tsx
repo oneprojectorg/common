@@ -245,8 +245,8 @@ export function ProposalCardMenu({
       });
     }
 
-    // Delete action for own proposals — skip when canManage is true because the card footer already shows delete
-    if (proposal.isEditable && !canManage) {
+    // Delete action for own proposals (including drafts)
+    if (proposal.isEditable) {
       items.push({
         key: 'delete',
         icon: <LuTrash2 className="size-5" />,
@@ -263,15 +263,8 @@ export function ProposalCardMenu({
     return items;
   };
 
-  const menuItems = getMenuItems();
-
-  // Don't render the menu at all if there are no items
-  if (menuItems.length === 0) {
-    return null;
-  }
-
   const renderMenuItems = (forMobile: boolean) => {
-    const items = menuItems;
+    const items = getMenuItems();
 
     if (forMobile) {
       return items.map((item, index) => (

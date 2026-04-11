@@ -314,15 +314,7 @@ export function OverviewSectionForm({
                   >
                     <field.ToggleButton
                       isSelected={field.state.value}
-                      onChange={(value) => {
-                        field.handleChange(value);
-                        // Write to Zustand store immediately so the sidebar
-                        // hides/shows "Proposal Categories" without waiting
-                        // for the debounced save.
-                        setInstanceData(decisionProfileId, {
-                          config: { organizeByCategories: value },
-                        });
-                      }}
+                      onChange={field.handleChange}
                       size="small"
                     />
                   </ToggleRow>
