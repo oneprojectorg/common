@@ -170,12 +170,12 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Last sign in')}</TableColumn>
           <TableColumn className="text-right">{t('Actions')}</TableColumn>
         </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id} id={user.id}>
+        <TableBody items={users} dependencies={[searchQuery]}>
+          {(user) => (
+            <TableRow id={user.id}>
               <UsersRowCells user={user} />
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
       <div className="mt-4">
