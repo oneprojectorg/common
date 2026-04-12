@@ -228,6 +228,7 @@ function RubricFieldInput({
     }
 
     case 'long-text':
+    case 'text':
       return (
         <TextField
           aria-label={field.schema.title}

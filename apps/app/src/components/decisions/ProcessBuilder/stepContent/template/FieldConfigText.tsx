@@ -17,14 +17,10 @@ export function FieldConfigText({
   onUpdateJsonSchema,
 }: FieldConfigProps) {
   const t = useTranslations();
-  const defaultMaxLength =
-    field.fieldType === 'long_text'
-      ? DEFAULT_TEXT_FIELD_MAX_LENGTH.long_text
-      : DEFAULT_TEXT_FIELD_MAX_LENGTH.short_text;
   const value =
     typeof fieldSchema.maxLength === 'number'
       ? fieldSchema.maxLength
-      : defaultMaxLength;
+      : DEFAULT_TEXT_FIELD_MAX_LENGTH;
 
   return (
     <NumberField

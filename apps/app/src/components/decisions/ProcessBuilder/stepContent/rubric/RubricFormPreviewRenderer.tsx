@@ -113,7 +113,8 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     }
 
     case 'short-text':
-    case 'long-text': {
+    case 'long-text':
+    case 'text': {
       return (
         <div className="flex flex-col gap-3">
           <FieldHeader
@@ -122,7 +123,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             className="gap-1"
           />
           <div
-            className={`${format === 'long-text' ? 'min-h-32' : 'min-h-8'} text-neutral-gray3`}
+            className={`${format !== 'short-text' ? 'min-h-32' : 'min-h-8'} text-neutral-gray3`}
           >
             {t('Start typing...')}
           </div>

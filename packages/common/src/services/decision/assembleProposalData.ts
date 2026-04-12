@@ -36,6 +36,7 @@ export function assembleProposalData(
     switch (schema['x-format']) {
       case 'short-text':
       case 'long-text':
+      case 'text':
       case 'dropdown':
         if (schemaAllowsMultipleSelection(schema)) {
           data[key] = parseCategoryFragmentValue(text);
