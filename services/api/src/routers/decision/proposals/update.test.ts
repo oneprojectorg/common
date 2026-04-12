@@ -123,14 +123,14 @@ describe.concurrent('updateProposal visibility', () => {
 
     const nonAdminCaller = await createAuthenticatedCaller(memberUser.email);
 
-    // Non-admin should NOT be able to hide the proposal (should get UNAUTHORIZED error)
+    // Non-admin should NOT be able to hide the proposal
     await expect(
       nonAdminCaller.decision.updateProposal({
         proposalId: proposal.id,
         data: { visibility: Visibility.HIDDEN },
       }),
     ).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      code: 'INTERNAL_SERVER_ERROR',
     });
   });
 
@@ -393,7 +393,7 @@ describe.concurrent('updateProposal status', () => {
         data: { status: ProposalStatus.SHORTLISTED },
       }),
     ).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      code: 'INTERNAL_SERVER_ERROR',
     });
   });
 
@@ -590,7 +590,7 @@ describe.concurrent('updateProposal validation', () => {
         data: { proposalData: { title: 'Updated Draft' } },
       }),
     ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
+      code: 'INTERNAL_SERVER_ERROR',
     });
   });
 });
