@@ -34,15 +34,11 @@ export function useRestoreProposalVersion({
 }: UseRestoreProposalVersionOptions) {
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
-  const utils = trpc.useUtils();
-
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: () => {
       toast.success({
         message: t('Proposal version restored'),
       });
-      utils.decision.getProposal.invalidate();
-      utils.decision.listProposals.invalidate();
     },
     onError: (error) => {
       toast.error({

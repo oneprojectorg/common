@@ -92,14 +92,6 @@ export function ProposalCardMenu({
         toast.success({ message: statusMessage });
       }
     },
-    onSettled: () => {
-      // Always refetch after error or success
-      if (proposal.processInstanceId) {
-        utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstanceId,
-        });
-      }
-    },
   });
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
@@ -112,14 +104,6 @@ export function ProposalCardMenu({
       toast.success({
         message: t('Proposal deleted successfully'),
       });
-    },
-    onSettled: () => {
-      // Always refetch after error or success
-      if (proposal.processInstanceId) {
-        utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstanceId,
-        });
-      }
     },
   });
 
@@ -138,13 +122,6 @@ export function ProposalCardMenu({
           [Visibility.VISIBLE]: `${proposalTitle} ${t('is now visible in active proposals.')}`,
         });
         toast.success({ message });
-      }
-    },
-    onSettled: () => {
-      if (proposal.processInstanceId) {
-        utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstanceId,
-        });
       }
     },
   });

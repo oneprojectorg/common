@@ -85,7 +85,6 @@ export function ProposalCardOwnerActions({
   editHref: string;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
@@ -96,13 +95,6 @@ export function ProposalCardOwnerActions({
     },
     onSuccess: () => {
       toast.success({ message: t('Proposal deleted successfully') });
-    },
-    onSettled: () => {
-      if (proposal.processInstanceId) {
-        utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstanceId,
-        });
-      }
     },
   });
 
