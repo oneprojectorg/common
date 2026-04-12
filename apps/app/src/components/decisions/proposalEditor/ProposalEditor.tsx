@@ -337,14 +337,6 @@ function ProposalEditorInner({
         });
       }
 
-      await Promise.all([
-        utils.decision.getProposal.invalidate({
-          profileId: proposal.profileId,
-        }),
-        utils.decision.listProposals.invalidate({
-          processInstanceId: instance.id,
-        }),
-      ]);
       router.push(backHref);
     } catch (error) {
       console.error('Failed to update proposal:', error);
