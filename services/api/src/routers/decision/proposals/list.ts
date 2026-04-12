@@ -1,4 +1,4 @@
-import { listProposals } from '@op/common';
+import { Channels, listProposals } from '@op/common';
 import { proposalListSchema } from '@op/common/client';
 
 import { proposalFilterSchema } from '../../../encoders/decision';
@@ -15,6 +15,10 @@ export const listProposalsRouter = router({
         input: { ...input, authUserId: user.id },
         user,
       });
+
+      ctx.registerQueryChannels([
+        Channels.decisionProposals(input.processInstanceId),
+      ]);
 
       return proposalListSchema.parse(result);
     }),

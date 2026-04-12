@@ -1,4 +1,4 @@
-import { createProposal } from '@op/common';
+import { Channels, createProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 
 import { createProposalInputSchema } from '../../../encoders/decision';
@@ -16,6 +16,10 @@ export const createProposalRouter = router({
         data: input,
         user,
       });
+
+      ctx.registerMutationChannels([
+        Channels.decisionProposals(input.processInstanceId),
+      ]);
 
       return proposalSchema.parse(proposal);
     }),

@@ -1,4 +1,5 @@
 import {
+  Channels,
   NotFoundError,
   UnauthorizedError,
   ValidationError,
@@ -32,6 +33,11 @@ export const deleteProposalRouter = router({
           proposalId: input.proposalId,
           user,
         });
+
+        ctx.registerMutationChannels([
+          Channels.decisionProposals(result.processInstanceId),
+          Channels.decisionProposal(result.processInstanceId, input.proposalId),
+        ]);
 
         logger.info('Proposal deleted', {
           userId: user.id,

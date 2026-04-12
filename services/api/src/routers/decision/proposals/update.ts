@@ -1,5 +1,5 @@
 import { invalidate } from '@op/cache';
-import { updateProposal } from '@op/common';
+import { Channels, updateProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -31,6 +31,14 @@ export const updateProposalRouter = router({
         type: 'profile',
         params: [proposal.profileId],
       });
+
+      ctx.registerMutationChannels([
+        Channels.decisionProposals(proposal.processInstanceId),
+        Channels.decisionProposal(
+          proposal.processInstanceId,
+          input.proposalId,
+        ),
+      ]);
 
       return proposalSchema.parse(proposal);
     }),

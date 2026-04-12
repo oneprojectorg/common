@@ -1,4 +1,4 @@
-import { submitProposal } from '@op/common';
+import { Channels, submitProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
@@ -22,6 +22,11 @@ export const submitProposalRouter = router({
         data: input,
         authUserId: user.id,
       });
+
+      ctx.registerMutationChannels([
+        Channels.decisionProposals(proposal.processInstanceId),
+        Channels.decisionProposal(proposal.processInstanceId, proposal.id),
+      ]);
 
       // Fire analytics after successful submission
       waitUntil(

@@ -28,6 +28,12 @@ export const Channels = {
 
   decisionInstance: (instanceId: string) =>
     `decisionInstance:${instanceId}` as const,
+
+  decisionProposals: (instanceId: string) =>
+    `decisionProposals:${instanceId}` as const,
+
+  decisionProposal: (instanceId: string, proposalId: string) =>
+    `decisionProposal:${instanceId}:${proposalId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -42,6 +48,12 @@ export type OrgRelationshipRequestChannel = ReturnType<
 export type DecisionInstanceChannel = ReturnType<
   typeof Channels.decisionInstance
 >;
+export type DecisionProposalsChannel = ReturnType<
+  typeof Channels.decisionProposals
+>;
+export type DecisionProposalChannel = ReturnType<
+  typeof Channels.decisionProposal
+>;
 
 /**
  * Union of all valid channel types
@@ -52,4 +64,6 @@ export type ChannelName =
   | UserChannel
   | ProfileJoinRequestChannel
   | OrgRelationshipRequestChannel
-  | DecisionInstanceChannel;
+  | DecisionInstanceChannel
+  | DecisionProposalsChannel
+  | DecisionProposalChannel;
