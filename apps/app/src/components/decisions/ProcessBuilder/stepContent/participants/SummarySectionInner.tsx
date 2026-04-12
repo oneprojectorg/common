@@ -6,22 +6,12 @@ import { Header2 } from '@op/ui/Header';
 import { useQueryState } from 'nuqs';
 import React from 'react';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { useProcessBuilderValidation } from '../../validation/useProcessBuilderValidation';
-
-const CHECKLIST_SECTION_MAP: Record<string, string> = {
-  processNameDescription: 'overview',
-  atLeastOnePhase: 'phases',
-  phaseDetails: 'phases',
-  proposalTemplate: 'templateEditor',
-  proposalTemplateErrors: 'templateEditor',
-  rubricCriteria: 'criteria',
-  rubricCriteriaErrors: 'criteria',
-  inviteMembers: 'participants',
-};
 
 export function SummarySectionInner({
   decisionProfileId,
@@ -50,6 +40,19 @@ export function SummarySectionInner({
     useProcessBuilderValidation(decisionProfileId);
 
   const [, setSectionParam] = useQueryState('section', { history: 'push' });
+
+  const reviewFlowEnabled = useFeatureFlag('review_flow');
+  const rubricSection = reviewFlowEnabled ? 'reviewRubric' : 'criteria';
+  const checklistSectionMap: Record<string, string> = {
+    processNameDescription: 'overview',
+    atLeastOnePhase: 'phases',
+    phaseDetails: 'phases',
+    proposalTemplate: 'templateEditor',
+    proposalTemplateErrors: 'templateEditor',
+    rubricCriteria: rubricSection,
+    rubricCriteriaErrors: rubricSection,
+    inviteMembers: 'participants',
+  };
 
   const isDraft = instance.status === 'draft';
   const instancePhases = instance.instanceData?.phases;
@@ -109,7 +112,7 @@ export function SummarySectionInner({
                   color="secondary"
                   className="shrink-0"
                   onPress={() => {
-                    const sectionId = CHECKLIST_SECTION_MAP[item.id];
+                    const sectionId = checklistSectionMap[item.id];
                     if (sectionId) {
                       void setSectionParam(sectionId);
                     }
