@@ -1,6 +1,5 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import { ProposalStatus, Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -163,30 +162,6 @@ describe.concurrent('updateProposal visibility', () => {
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Hidden Proposal' },
     });
-
-    // Set collaborationDocId on both proposals so submit succeeds
-    const visibleDocId = `proposal-${visibleProposal.id}`;
-    const hiddenDocId = `proposal-${hiddenProposal.id}`;
-    await Promise.all([
-      db
-        .update(proposals)
-        .set({
-          proposalData: {
-            title: 'Visible Proposal',
-            collaborationDocId: visibleDocId,
-          },
-        })
-        .where(eq(proposals.id, visibleProposal.id)),
-      db
-        .update(proposals)
-        .set({
-          proposalData: {
-            title: 'Hidden Proposal',
-            collaborationDocId: hiddenDocId,
-          },
-        })
-        .where(eq(proposals.id, hiddenProposal.id)),
-    ]);
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -597,18 +572,10 @@ describe.concurrent('updateProposal validation', () => {
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Draft' },
+      status: ProposalStatus.SUBMITTED,
     });
 
     const collaborationDocId = `proposal-${proposal.id}`;
-
-    // Move proposal out of draft and set up collaboration doc
-    await db
-      .update(proposals)
-      .set({
-        status: ProposalStatus.SUBMITTED,
-        proposalData: { title: 'Draft', collaborationDocId },
-      })
-      .where(eq(proposals.id, proposal.id));
 
     // Seed title but omit the required summary field
     mockCollab.setDocFragments(collaborationDocId, {
@@ -648,19 +615,11 @@ describe.concurrent('updateProposal checkpointVersion', () => {
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: { title: 'Test Proposal', description: 'A test' },
+      proposalData: { title: 'Test Proposal' },
+      status: ProposalStatus.SUBMITTED,
     });
 
     const collaborationDocId = `proposal-${proposal.id}`;
-
-    // Move proposal to submitted and set up collaboration doc
-    await db
-      .update(proposals)
-      .set({
-        status: ProposalStatus.SUBMITTED,
-        proposalData: { title: 'Test Proposal', collaborationDocId },
-      })
-      .where(eq(proposals.id, proposal.id));
 
     mockCollab.setDocFragments(collaborationDocId, {
       title: 'Test Proposal',
@@ -701,18 +660,11 @@ describe.concurrent('updateProposal checkpointVersion', () => {
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
-      proposalData: { title: 'Test Proposal', description: 'A test' },
+      proposalData: { title: 'Test Proposal' },
+      status: ProposalStatus.SUBMITTED,
     });
 
     const collaborationDocId = `proposal-${proposal.id}`;
-
-    await db
-      .update(proposals)
-      .set({
-        status: ProposalStatus.SUBMITTED,
-        proposalData: { title: 'Test Proposal', collaborationDocId },
-      })
-      .where(eq(proposals.id, proposal.id));
 
     mockCollab.setDocFragments(collaborationDocId, {
       title: 'Test Proposal',

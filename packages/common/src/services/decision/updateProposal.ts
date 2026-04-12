@@ -179,37 +179,10 @@ export const updateProposal = async ({
       }
     }
 
-    // Create a named version snapshot when explicitly checkpointing.
-    // Best-effort — failures logged, never block.
-    let collaborationDocVersionId: number | null = null;
-    if (
-      data.checkpointVersion &&
-      existingProposal.status !== ProposalStatus.DRAFT
-    ) {
-      const parsed = parseProposalData(existingProposal.proposalData);
-
-      if (parsed.collaborationDocId) {
-        const versionName = 'Updated';
-
-        const latestVersion = await getTipTapClient()
-          .createVersion(parsed.collaborationDocId, versionName)
-          .then((v) => v.version)
-          .catch((error: unknown) => {
-            console.error(
-              `[updateProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
-              error,
-            );
-            return null;
-          });
-
-        if (
-          latestVersion != null &&
-          latestVersion !== parsed.collaborationDocVersionId
-        ) {
-          collaborationDocVersionId = latestVersion;
-        }
-      }
-    }
+    const collaborationDocVersionId =
+      data.checkpointVersion && existingProposal.status !== ProposalStatus.DRAFT
+        ? await createCheckpointVersion(existingProposal.proposalData)
+        : null;
 
     const {
       title: nextTitle,
@@ -290,3 +263,33 @@ export const updateProposal = async ({
     throw new CommonError('Failed to update proposal');
   }
 };
+
+async function createCheckpointVersion(
+  proposalData: unknown,
+): Promise<number | null> {
+  const parsed = parseProposalData(proposalData);
+
+  if (!parsed.collaborationDocId) {
+    throw new ValidationError('Proposal is missing a collaboration document');
+  }
+
+  const latestVersion = await getTipTapClient()
+    .createVersion(parsed.collaborationDocId, 'Updated')
+    .then((v) => v.version)
+    .catch((error: unknown) => {
+      console.error(
+        `[updateProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
+        error,
+      );
+      return null;
+    });
+
+  if (
+    latestVersion != null &&
+    latestVersion !== parsed.collaborationDocVersionId
+  ) {
+    return latestVersion;
+  }
+
+  return null;
+}
