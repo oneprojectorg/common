@@ -1,12 +1,12 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { useQueryState } from 'nuqs';
 import React from 'react';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
