@@ -258,6 +258,7 @@ async function createCheckpointVersion(
 
   const latestVersion = await getTipTapClient()
     .createVersion(parsed.collaborationDocId, 'Updated')
+    .then((v) => v?.version ?? null)
     .catch((error: unknown) => {
       console.error(
         `[updateProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
