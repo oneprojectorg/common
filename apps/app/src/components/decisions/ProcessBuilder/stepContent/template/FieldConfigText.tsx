@@ -12,7 +12,6 @@ import type { FieldConfigProps } from './fieldRegistry';
  * Stores the character limit directly on the field schema as `maxLength`.
  */
 export function FieldConfigText({
-  field,
   fieldSchema,
   onUpdateJsonSchema,
 }: FieldConfigProps) {
