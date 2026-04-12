@@ -327,6 +327,7 @@ function ProposalEditorInner({
         data: {
           title: currentDraft.title,
           proposalData,
+          ...(!isDraft ? { checkpointVersion: { type: 'update' } } : {}),
         },
       });
 
