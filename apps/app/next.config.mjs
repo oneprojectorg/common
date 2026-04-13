@@ -40,6 +40,10 @@ const PREVIEW_BRANCH_URL = process.env.VERCEL_BRANCH_URL;
 
 /** @type {import('next').NextConfig} */
 const config = {
+  // Enable `use cache` directive and cacheTag/cacheLife APIs (Next.js 16+).
+  // Server components and functions remain dynamic by default; opt in to
+  // caching per-function with `"use cache"`.
+  cacheComponents: true,
   // Expose deployment info to client-side for preview URL detection
   env: {
     NEXT_PUBLIC_DEPLOY_ENV: DEPLOY_ENV,

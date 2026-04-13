@@ -1,3 +1,4 @@
+import { revalidateNextjsCacheTags } from '@op/cache';
 import type { ChannelName } from '@op/common/realtime';
 import { realtime } from '@op/realtime/server';
 import { waitUntil } from '@vercel/functions';
@@ -9,7 +10,8 @@ import type { MiddlewareBuilderBase } from '../types';
  * Wraps procedure responses to include channel metadata in the response body.
  *
  * Creates procedure-scoped channel storage to isolate channels per procedure call.
- * For mutations, also publishes invalidation events to realtime channels.
+ * For mutations, also publishes invalidation events to realtime channels and
+ * revalidates the corresponding Next.js cache tags.
  *
  * The client-side link extracts channels and unwraps the data before it reaches the application.
  */
@@ -35,6 +37,10 @@ const withChannelMeta: MiddlewareBuilderBase = async ({ ctx, next }) => {
                 }),
               );
             }
+
+            // Revalidate Next.js cache tags so server-side cached data
+            // (via `use cache` + `cacheTag`) is also invalidated.
+            waitUntil(revalidateNextjsCacheTags(channels));
           },
         },
       });

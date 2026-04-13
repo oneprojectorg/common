@@ -123,6 +123,80 @@ export const createClient = cache(async () => {
 });
 
 /**
+ * Create a server-side tRPC client from an explicit cookie header string.
+ *
+ * Unlike `createClient()`, this does NOT call `cookies()` / `headers()`
+ * internally, so it is safe to use inside Next.js `use cache` functions.
+ *
+ * Read the cookie header in the server component (outside the cache
+ * boundary) and pass it in:
+ *
+ * @example
+ * ```tsx
+ * import { cacheTag, cacheLife } from 'next/cache';
+ * import { getCookieHeader } from '@/utils/cachedServerQuery';
+ * import { createClientFromCookies } from '@op/api/serverClient';
+ *
+ * export default async function Page({ params }) {
+ *   const cookieHeader = await getCookieHeader();
+ *   const data = await getCachedData(cookieHeader, params.slug);
+ *   // ...
+ * }
+ *
+ * async function getCachedData(cookieHeader: string, slug: string) {
+ *   'use cache';
+ *   cacheTag(`decisionInstance:${slug}`);
+ *   cacheLife('hours');
+ *
+ *   const client = await createClientFromCookies(cookieHeader);
+ *   return client.decision.getDecisionBySlug({ slug });
+ * }
+ * ```
+ */
+export const createClientFromCookies = async (cookieHeader: string) => {
+  const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
+
+  const requestId = [
+    nanoid().slice(0, 4),
+    nanoid().slice(4, 12),
+    nanoid().slice(12, 20),
+    nanoid().slice(20, 24),
+  ].join('-');
+
+  const parsedCookies = Object.fromEntries(
+    cookieHeader.split('; ').map((pair) => {
+      const idx = pair.indexOf('=');
+      return idx === -1 ? [pair, ''] : [pair.slice(0, idx), pair.slice(idx + 1)];
+    }),
+  );
+
+  const mockReq = new Request(envURL.TRPC_URL, {
+    headers: { cookie: cookieHeader },
+  });
+
+  const context: TContext = {
+    getCookies: () => parsedCookies,
+    getCookie: (name: string) => parsedCookies[name],
+    setCookie: () => {
+      throw new Error(
+        'Cannot set cookies in cached caller context.',
+      );
+    },
+    registerMutationChannels: () => {},
+    registerQueryChannels: () => {},
+    requestId,
+    time: Date.now(),
+    ip: null,
+    reqUrl: mockReq.url,
+    req: mockReq,
+    isServerSideCall: true,
+  };
+
+  const callerFactory = createCallerFactory(appRouter);
+  return callerFactory(context);
+};
+
+/**
  * @deprecated Use `createClient()` from '@op/api/serverClient' instead for better performance
  */
 export const trpcVanilla = createTRPCVanillaClient();
