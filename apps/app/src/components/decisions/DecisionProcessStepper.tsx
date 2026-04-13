@@ -59,7 +59,7 @@ export function DecisionProcessStepper({
   }));
 
   const handleTransition = (phaseId: string) => {
-    if (!instanceId) {
+    if (!instanceId || transitionMutation.isPending) {
       return;
     }
     transitionMutation.mutate({
