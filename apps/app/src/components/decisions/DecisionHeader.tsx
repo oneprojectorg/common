@@ -62,6 +62,9 @@ export async function DecisionHeader({
         startDate: p.startDate,
         endDate: p.endDate,
       },
+      advancementMethod:
+        p.rules?.advancement?.method ??
+        templateState?.rules?.advancement?.method,
     };
   });
 
