@@ -58,57 +58,63 @@ export function DecisionProcessStepper({
     },
   });
 
-  // Find the next phase after the current one (the phase we'd transition into)
-  const sortedByOrder = useMemo(
+  const {
+    nextPhaseId,
+    currentPhaseName,
+    nextPhaseName,
+    currentPhaseAdvancement,
+  } = useMemo(() => {
+    const sorted = [...phases].sort(
+      (a, b) => (a.phase?.sortOrder ?? 0) - (b.phase?.sortOrder ?? 0),
+    );
+    const idx = sorted.findIndex((p) => p.id === currentStateId);
+    const nextId =
+      idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1]!.id : undefined;
+    return {
+      nextPhaseId: nextId,
+      currentPhaseName:
+        idx >= 0
+          ? (translatedPhaseNames?.get(sorted[idx]!.id) ?? sorted[idx]!.name)
+          : '',
+      nextPhaseName: nextId
+        ? (translatedPhaseNames?.get(nextId) ?? sorted[idx + 1]!.name)
+        : '',
+      currentPhaseAdvancement:
+        idx >= 0 ? sorted[idx]!.advancementMethod : undefined,
+    };
+  }, [phases, currentStateId, translatedPhaseNames]);
+
+  const transformedPhases: Phase[] = useMemo(
     () =>
-      [...phases].sort(
-        (a, b) => (a.phase?.sortOrder ?? 0) - (b.phase?.sortOrder ?? 0),
-      ),
-    [phases],
+      phases.map((phase) => {
+        const isNextActionable = isAdmin && phase.id === nextPhaseId;
+        return {
+          id: phase.id,
+          name: translatedPhaseNames?.get(phase.id) ?? phase.name,
+          description: phase.description,
+          startDate: phase.phase?.startDate,
+          endDate: phase.phase?.endDate,
+          sortOrder: phase.phase?.sortOrder,
+          interactive: isNextActionable,
+          showOnHoverOnly: isNextActionable
+            ? currentPhaseAdvancement !== 'manual'
+            : undefined,
+          ariaLabel: isNextActionable
+            ? t('Start {phaseName}', {
+                phaseName: translatedPhaseNames?.get(phase.id) ?? phase.name,
+              })
+            : undefined,
+        };
+      }),
+    [
+      phases,
+      translatedPhaseNames,
+      isAdmin,
+      nextPhaseId,
+      currentPhaseAdvancement,
+      t,
+    ],
   );
-  const currentIndex = sortedByOrder.findIndex((p) => p.id === currentStateId);
-  const nextPhaseId =
-    currentIndex >= 0 && currentIndex < sortedByOrder.length - 1
-      ? sortedByOrder[currentIndex + 1]!.id
-      : undefined;
-
-  const currentPhaseName =
-    currentIndex >= 0
-      ? (translatedPhaseNames?.get(sortedByOrder[currentIndex]!.id) ??
-        sortedByOrder[currentIndex]!.name)
-      : '';
-  const nextPhaseName = nextPhaseId
-    ? (translatedPhaseNames?.get(nextPhaseId) ??
-      sortedByOrder[currentIndex + 1]!.name)
-    : '';
-
-  // The current phase's advancement method determines play button visibility:
-  // 'manual' = always visible, 'date' = only on hover (admin override)
-  const currentPhaseAdvancement =
-    currentIndex >= 0
-      ? sortedByOrder[currentIndex]!.advancementMethod
-      : undefined;
-
-  // Transform ProcessPhase to Phase format for PhaseStepper
-  const transformedPhases: Phase[] = phases.map((phase) => ({
-    id: phase.id,
-    name: translatedPhaseNames?.get(phase.id) ?? phase.name,
-    description: phase.description,
-    startDate: phase.phase?.startDate,
-    endDate: phase.phase?.endDate,
-    sortOrder: phase.phase?.sortOrder,
-    interactive: isAdmin && phase.id === nextPhaseId,
-    showOnHoverOnly:
-      isAdmin && phase.id === nextPhaseId
-        ? currentPhaseAdvancement !== 'manual'
-        : undefined,
-    ariaLabel:
-      isAdmin && phase.id === nextPhaseId
-        ? t('Start {phaseName}', {
-            phaseName: translatedPhaseNames?.get(phase.id) ?? phase.name,
-          })
-        : undefined,
-  }));
 
   const handleAdvancePhase = () => {
     if (!instanceId || transitionMutation.isPending) {
@@ -119,6 +125,18 @@ export function DecisionProcessStepper({
       fromPhaseId: currentStateId,
     });
   };
+
+  const handleDismiss = (open: boolean) => {
+    if (!open && !transitionMutation.isPending) {
+      setShowConfirmModal(false);
+    }
+  };
+
+  const title = t('Advance to {phaseName}?', { phaseName: nextPhaseName });
+  const body = t(
+    'This will end the {currentPhase} phase and move to {nextPhase}.',
+    { currentPhase: currentPhaseName, nextPhase: nextPhaseName },
+  );
 
   return (
     <>
@@ -133,27 +151,13 @@ export function DecisionProcessStepper({
       {isMobile ? (
         <Sheet
           isOpen={showConfirmModal}
-          onOpenChange={(open) => {
-            if (!open && !transitionMutation.isPending) {
-              setShowConfirmModal(false);
-            }
-          }}
+          onOpenChange={handleDismiss}
           isDismissable={!transitionMutation.isPending}
           side="bottom"
         >
           <SheetBody className="flex flex-col gap-4 p-4 text-left">
-            <div className="font-serif text-title-sm">
-              {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
-            </div>
-            <p className="text-sm text-neutral-charcoal">
-              {t(
-                'This will end the {currentPhase} phase and move to {nextPhase}.',
-                {
-                  currentPhase: currentPhaseName,
-                  nextPhase: nextPhaseName,
-                },
-              )}
-            </p>
+            <div className="font-serif text-title-sm">{title}</div>
+            <p className="text-sm text-neutral-charcoal">{body}</p>
             <div className="flex flex-col gap-4">
               <Button
                 color="primary"
@@ -177,27 +181,13 @@ export function DecisionProcessStepper({
       ) : (
         <Modal
           isOpen={showConfirmModal}
-          onOpenChange={(open) => {
-            if (!open && !transitionMutation.isPending) {
-              setShowConfirmModal(false);
-            }
-          }}
+          onOpenChange={handleDismiss}
           isDismissable={false}
           surface="flat"
         >
-          <ModalHeader className="px-6 pb-6 text-left">
-            {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
-          </ModalHeader>
+          <ModalHeader className="px-6 pb-6 text-left">{title}</ModalHeader>
           <ModalBody className="px-6 py-6">
-            <p className="text-sm text-neutral-charcoal">
-              {t(
-                'This will end the {currentPhase} phase and move to {nextPhase}.',
-                {
-                  currentPhase: currentPhaseName,
-                  nextPhase: nextPhaseName,
-                },
-              )}
-            </p>
+            <p className="text-sm text-neutral-charcoal">{body}</p>
           </ModalBody>
           <ModalFooter className="px-6 py-6">
             <Button

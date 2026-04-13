@@ -112,7 +112,18 @@ const StepIndicator = ({
           <Tooltip>{label}</Tooltip>
         </TooltipTrigger>
       ) : (
-        <div className={cn(baseStyles, 'cursor-pointer')}>{content}</div>
+        <TooltipTrigger>
+          <IconButton
+            aria-label={label}
+            onPress={() => onTransition?.(phase.id)}
+            size="small"
+            variant="ghost"
+            className={baseStyles}
+          >
+            {content}
+          </IconButton>
+          <Tooltip>{label}</Tooltip>
+        </TooltipTrigger>
       )}
     </div>
   );
