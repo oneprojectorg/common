@@ -1,6 +1,6 @@
 export * from './PlatformStats';
 export * from './PlatformAdminHeader';
 export * from './OrgsTable';
-export * from './OrgsRow';
+export { OrgsRowCells } from './OrgsRow';
 export * from './UsersTable';
-export * from './UsersRow';
+export { UsersRowCells } from './UsersRow';

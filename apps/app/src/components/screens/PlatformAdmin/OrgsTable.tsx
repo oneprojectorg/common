@@ -2,20 +2,23 @@
 
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
+import { Header2 } from '@op/ui/Header';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+} from '@op/ui/ui/table';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { OrgsRow } from './OrgsRow';
-import {
-  ORGS_TABLE_GRID,
-  ORGS_TABLE_MIN_WIDTH,
-  ORGS_TABLE_ROW,
-} from './tableStyles';
+import { OrgsRowCells } from './OrgsRow';
 
 /** Main organizations table component with suspense boundary */
 export const OrgsTable = () => {
@@ -26,9 +29,9 @@ export const OrgsTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-md font-serif text-neutral-black">
+        <Header2 className="text-md font-serif">
           {t('All Organizations')}
-        </h2>
+        </Header2>
         <div className="w-64">
           <SearchField
             aria-label={t('Search organizations by name')}
@@ -38,40 +41,9 @@ export const OrgsTable = () => {
           />
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <div className={ORGS_TABLE_MIN_WIDTH}>
-          <OrgsTableHeader />
-          <Suspense fallback={<OrgsTableContentSkeleton />}>
-            <OrgsTableContent searchQuery={debouncedQuery} />
-          </Suspense>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/** Table header component */
-const OrgsTableHeader = () => {
-  const t = useTranslations();
-
-  const columnHeadings = [
-    t('Name'),
-    t('Domain'),
-    t('Members'),
-    t('Created'),
-    t('Actions'),
-  ];
-
-  return (
-    <div className={cn('bg-neutral-gray0 border-b py-3', ORGS_TABLE_GRID)}>
-      {columnHeadings.map((heading) => (
-        <div
-          key={heading}
-          className="text-sm font-normal text-neutral-charcoal"
-        >
-          {heading}
-        </div>
-      ))}
+      <Suspense fallback={<OrgsTableSkeleton />}>
+        <OrgsTableContent searchQuery={debouncedQuery} />
+      </Suspense>
     </div>
   );
 };
@@ -113,11 +85,25 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <div className="divide-y divide-neutral-gray1">
-        {orgs.map((org) => (
-          <OrgsRow key={org.id} org={org} />
-        ))}
-      </div>
+      <Table
+        aria-label={t('All Organizations')}
+        key={orgs.map((o) => o.id).join(',')}
+      >
+        <TableHeader>
+          <TableColumn isRowHeader>{t('Name')}</TableColumn>
+          <TableColumn>{t('Domain')}</TableColumn>
+          <TableColumn>{t('Members')}</TableColumn>
+          <TableColumn>{t('Created')}</TableColumn>
+          <TableColumn className="text-right">{t('Actions')}</TableColumn>
+        </TableHeader>
+        <TableBody>
+          {orgs.map((org) => (
+            <TableRow key={org.id} id={org.id}>
+              <OrgsRowCells org={org} />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
       <div className="mt-4">
         <Pagination
           range={{
@@ -134,17 +120,38 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
   );
 };
 
-/** Loading skeleton for table content only */
-const OrgsTableContentSkeleton = () => {
+/** Loading skeleton */
+const OrgsTableSkeleton = () => {
   return (
-    <div className="divide-y divide-neutral-gray1">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className={cn(ORGS_TABLE_ROW, ORGS_TABLE_GRID)}>
-          {[...Array(5)].map((_, j) => (
-            <Skeleton key={j} className="h-4 w-full" />
-          ))}
-        </div>
-      ))}
-    </div>
+    <Table aria-label="Loading organizations">
+      <TableHeader>
+        <TableColumn isRowHeader>
+          <Skeleton className="h-4 w-16" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-16" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-14" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-14" />
+        </TableColumn>
+        <TableColumn>
+          <Skeleton className="h-4 w-14" />
+        </TableColumn>
+      </TableHeader>
+      <TableBody>
+        {[...Array(5)].map((_, i) => (
+          <TableRow key={i} id={`skeleton-${i}`}>
+            {[...Array(5)].map((_, j) => (
+              <TableCell key={j}>
+                <Skeleton className="h-4 w-full" />
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 };

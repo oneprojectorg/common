@@ -9,7 +9,7 @@ import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { cn } from '@op/ui/utils';
+import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
@@ -19,15 +19,13 @@ import { useTranslations } from '@/lib/i18n';
 import { AddUserToOrgModal } from './AddUserToOrgModal';
 import { UpdateProfileModal } from './UpdateProfile';
 
-const USERS_TABLE_GRID =
-  'grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_minmax(80px,0.5fr)_80px] gap-4';
-
 // Infer types from tRPC router output
 type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
 type User = ListAllUsersOutput['items'][number];
 type OrganizationUsers = User['organizationUsers'];
 
-export const UsersRow = ({ user }: { user: User }) => {
+/** Renders table cells for a user row - must be used inside a <TableRow> */
+export const UsersRowCells = ({ user }: { user: User }) => {
   const format = useFormatter();
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -44,50 +42,45 @@ export const UsersRow = ({ user }: { user: User }) => {
 
   return (
     <>
-      <div
-        className={cn(
-          'hover:bg-neutral-gray0 py-4 transition-colors',
-          USERS_TABLE_GRID,
+      <TableCell className="text-sm font-normal text-neutral-black">
+        {user.profile?.name ?? user.name ?? '—'}
+      </TableCell>
+      <TableCell className="text-sm font-normal text-neutral-black">
+        {user.email}
+      </TableCell>
+      <UserRolesAndOrganizationCells
+        organizationUsers={user.organizationUsers ?? []}
+      />
+      <TableCell className="text-sm font-normal text-neutral-charcoal">
+        {createdAt ? (
+          <TooltipTrigger>
+            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
+              {relativeCreatedAt}
+            </Button>
+            <Tooltip>
+              {format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
+            </Tooltip>
+          </TooltipTrigger>
+        ) : (
+          '—'
         )}
-      >
-        <div className="flex items-center text-sm font-normal text-neutral-black">
-          {user.profile?.name ?? user.name ?? '—'}
-        </div>
-        <div className="flex items-center text-sm font-normal text-neutral-black">
-          {user.email}
-        </div>
-        <UserRolesAndOrganizations
-          organizationUsers={user.organizationUsers ?? []}
-        />
-        <div className="flex items-center text-sm font-normal text-neutral-charcoal">
-          {createdAt ? (
-            <TooltipTrigger>
-              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
-                {relativeCreatedAt}
-              </Button>
-              <Tooltip>
-                {format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
-              </Tooltip>
-            </TooltipTrigger>
-          ) : (
-            '—'
-          )}
-        </div>
-        <div className="flex items-center text-sm font-normal text-neutral-charcoal">
-          {lastSignInAt ? (
-            <TooltipTrigger>
-              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
-                {relativeLastSignIn}
-              </Button>
-              <Tooltip>
-                {format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
-              </Tooltip>
-            </TooltipTrigger>
-          ) : (
-            '—'
-          )}
-        </div>
-        <div className="flex items-center justify-end pr-1 text-sm text-neutral-charcoal">
+      </TableCell>
+      <TableCell className="text-sm font-normal text-neutral-charcoal">
+        {lastSignInAt ? (
+          <TooltipTrigger>
+            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
+              {relativeLastSignIn}
+            </Button>
+            <Tooltip>
+              {format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
+            </Tooltip>
+          </TooltipTrigger>
+        ) : (
+          '—'
+        )}
+      </TableCell>
+      <TableCell className="text-sm text-neutral-charcoal">
+        <div className="flex justify-end">
           <OptionMenu variant="outline" size="medium">
             <Menu className="min-w-48 p-2">
               <MenuItem
@@ -133,28 +126,28 @@ export const UsersRow = ({ user }: { user: User }) => {
             </Menu>
           </OptionMenu>
         </div>
-      </div>
-      {user.profile ? (
-        <UpdateProfileModal
-          authUserId={user.authUserId}
-          profile={user.profile}
-          isOpen={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSuccess={() => {
-            utils.platform.admin.listAllUsers.invalidate();
-          }}
+        {user.profile ? (
+          <UpdateProfileModal
+            authUserId={user.authUserId}
+            profile={user.profile}
+            isOpen={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            onSuccess={() => {
+              utils.platform.admin.listAllUsers.invalidate();
+            }}
+          />
+        ) : null}
+        <AddUserToOrgModal
+          user={user}
+          isOpen={isAddToOrgModalOpen}
+          onOpenChange={setIsAddToOrgModalOpen}
         />
-      ) : null}
-      <AddUserToOrgModal
-        user={user}
-        isOpen={isAddToOrgModalOpen}
-        onOpenChange={setIsAddToOrgModalOpen}
-      />
+      </TableCell>
     </>
   );
 };
 
-const UserRolesAndOrganizations = ({
+const UserRolesAndOrganizationCells = ({
   organizationUsers,
 }: {
   organizationUsers: OrganizationUsers;
@@ -166,8 +159,8 @@ const UserRolesAndOrganizations = ({
   if (!organizationUsers || organizationUsers.length === 0) {
     return (
       <>
-        <div className="flex items-center text-sm text-neutral-charcoal">-</div>
-        <div className="flex items-center text-sm text-neutral-charcoal">-</div>
+        <TableCell className="text-sm text-neutral-charcoal">-</TableCell>
+        <TableCell className="text-sm text-neutral-charcoal">-</TableCell>
       </>
     );
   }
@@ -176,17 +169,15 @@ const UserRolesAndOrganizations = ({
     ({ id: orgUserId }) => orgUserId === selectedOrgUserId,
   );
 
-  // Something was wrong with the data/api. We should never reach here but I left it so that we can investigate if needed.
-  // Eventually we should assertDefined(selectedOrgUser).
   if (!selectedOrgUser) {
     return (
       <>
-        <div className="flex items-center text-sm text-neutral-charcoal">
+        <TableCell className="text-sm text-neutral-charcoal">
           Something went wrong
-        </div>
-        <div className="flex items-center text-sm text-neutral-charcoal">
+        </TableCell>
+        <TableCell className="text-sm text-neutral-charcoal">
           Something went wrong
-        </div>
+        </TableCell>
       </>
     );
   }
@@ -199,10 +190,10 @@ const UserRolesAndOrganizations = ({
 
   return (
     <>
-      <div className="flex items-center text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-neutral-black">
         {roleNames}
-      </div>
-      <div className="flex items-center text-sm font-normal text-neutral-black">
+      </TableCell>
+      <TableCell className="text-sm font-normal text-neutral-black">
         <Select
           className="w-full"
           defaultSelectedKey={selectedOrgUserId}
@@ -214,7 +205,7 @@ const UserRolesAndOrganizations = ({
             </SelectItem>
           ))}
         </Select>
-      </div>
+      </TableCell>
     </>
   );
 };
