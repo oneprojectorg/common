@@ -40,7 +40,9 @@ async function ReviewPageContent({
     throw error;
   }
 
-  if (!data.rubricTemplate) {
+  const { rubricTemplate } = data;
+
+  if (!rubricTemplate) {
     notFound();
   }
 
@@ -48,9 +50,7 @@ async function ReviewPageContent({
     <ReviewLayoutClient
       decisionSlug={decisionSlug}
       assignmentId={assignmentId}
-      assignment={data.assignment}
-      rubricTemplate={data.rubricTemplate}
-      review={data.review}
+      reviewAssignment={{ ...data, rubricTemplate }}
     />
   );
 }

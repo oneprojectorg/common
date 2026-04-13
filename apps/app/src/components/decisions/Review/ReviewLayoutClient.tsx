@@ -1,10 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import type {
-  ProposalReview,
-  RubricTemplateSchema,
-} from '@op/common/client';
+import type { ReviewAssignmentExtended } from '@op/common/client';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
@@ -19,17 +16,15 @@ import { ReviewRubricForm } from './ReviewRubricForm';
 interface ReviewLayoutClientProps {
   decisionSlug: string;
   assignmentId: string;
-  assignment: { proposal: Parameters<typeof ProposalPreview>[0]['proposal'] };
-  rubricTemplate: RubricTemplateSchema;
-  review: ProposalReview | null;
+  reviewAssignment: ReviewAssignmentExtended & {
+    rubricTemplate: NonNullable<ReviewAssignmentExtended['rubricTemplate']>;
+  };
 }
 
 export function ReviewLayoutClient({
   decisionSlug,
   assignmentId,
-  assignment,
-  rubricTemplate,
-  review,
+  reviewAssignment,
 }: ReviewLayoutClientProps) {
   const t = useTranslations();
   const reviewFlowEnabled = useFeatureFlag('review_flow');
@@ -37,6 +32,8 @@ export function ReviewLayoutClient({
   if (reviewFlowEnabled === false) {
     notFound();
   }
+
+  const { assignment, rubricTemplate, review } = reviewAssignment;
 
   return (
     <ReviewFormProvider
