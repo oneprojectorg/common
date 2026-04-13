@@ -226,12 +226,14 @@ const VotingProposalsList = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
-          const isApproved = proposal.status === ProposalStatus.APPROVED;
+          const isVotingEligible =
+            proposal.status !== ProposalStatus.DRAFT &&
+            proposal.status !== ProposalStatus.REJECTED &&
+            proposal.status !== ProposalStatus.DUPLICATE;
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          // Render VotingProposalCard for approved proposals, regular ProposalCard for others
-          if (isApproved) {
+          if (isVotingEligible) {
             return (
               <VotingProposalCard
                 key={proposal.id}

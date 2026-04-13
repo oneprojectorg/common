@@ -231,20 +231,23 @@ export const submitVote = async ({
       where: eq(proposals.processInstanceId, data.processInstanceId),
     });
 
-    // Filter to only approved proposals for voting
-    const approvedProposals = availableProposals.filter(
-      (p) => p.status === ProposalStatus.APPROVED,
+    // Filter to eligible proposals for voting (exclude draft, rejected, duplicate)
+    const eligibleProposals = availableProposals.filter(
+      (p) =>
+        p.status !== ProposalStatus.DRAFT &&
+        p.status !== ProposalStatus.REJECTED &&
+        p.status !== ProposalStatus.DUPLICATE,
     );
-    const approvedProposalIds = approvedProposals.map((p) => p.id);
+    const eligibleProposalIds = eligibleProposals.map((p) => p.id);
 
-    // Check if all selected proposals are approved
-    const hasNonApprovedSelections = data.selectedProposalIds.some(
-      (id) => !approvedProposalIds.includes(id),
+    // Check if all selected proposals are eligible
+    const hasIneligibleSelections = data.selectedProposalIds.some(
+      (id) => !eligibleProposalIds.includes(id),
     );
 
-    if (hasNonApprovedSelections) {
+    if (hasIneligibleSelections) {
       throw new ValidationError(
-        'You can only vote for approved proposals. Some of your selections are not eligible for voting.',
+        'Some of your selections are not eligible for voting.',
       );
     }
 
@@ -252,7 +255,7 @@ export const submitVote = async ({
     const validation = validateVoteSelection(
       data.selectedProposalIds,
       votingConfig.maxVotesPerMember,
-      approvedProposalIds,
+      eligibleProposalIds,
     );
 
     if (!validation.isValid) {
