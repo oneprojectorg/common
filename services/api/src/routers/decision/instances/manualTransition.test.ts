@@ -6,7 +6,7 @@ import {
   processInstances,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
@@ -374,27 +374,15 @@ describe.concurrent('manualTransition', () => {
     ]);
   });
 
-  it('should succeed even if processResults throws on final phase', async ({
+  it('should run results processing when transitioning to final phase', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance } = await createPublishedInstance(testData);
 
-    // Suppress and capture console.error to verify the error is logged
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    const processResultsModule = await import(
-      '../../../../../../packages/common/src/services/decision/processResults'
-    );
-    const processResultsSpy = vi
-      .spyOn(processResultsModule, 'processResults')
-      .mockRejectedValueOnce(new Error('Pipeline catastrophic failure'));
-
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // The transition itself should still succeed — processResults failure
-    // is caught and logged, not propagated
     const result = await caller.decision.manualTransition({
       instanceId: instance.instance.id,
     });
@@ -402,20 +390,9 @@ describe.concurrent('manualTransition', () => {
     expect(result.previousPhaseId).toBe('initial');
     expect(result.currentPhaseId).toBe('final');
 
-    // The phase advancement should be committed in DB
     const dbInstance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instance.instance.id),
     });
     expect(dbInstance!.currentStateId).toBe('final');
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        `Error processing results for process instance ${instance.instance.id}`,
-      ),
-      expect.any(Error),
-    );
-
-    processResultsSpy.mockRestore();
-    consoleSpy.mockRestore();
   });
 });

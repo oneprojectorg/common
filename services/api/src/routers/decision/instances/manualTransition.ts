@@ -1,4 +1,4 @@
-import { manualTransition } from '@op/common';
+import { Channels, manualTransition } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -19,10 +19,16 @@ export const manualTransitionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return manualTransition({
+      const result = await manualTransition({
         instanceId: input.instanceId,
         fromPhaseId: input.fromPhaseId,
         user: ctx.user,
       });
+
+      ctx.registerMutationChannels([
+        Channels.decisionInstance(input.instanceId),
+      ]);
+
+      return result;
     }),
 });
