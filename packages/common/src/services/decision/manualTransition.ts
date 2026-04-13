@@ -13,7 +13,7 @@ import {
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
-import { processResults } from './processResults';
+import { runResultsProcessing } from './runResultsProcessing';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface ManualTransitionInput {
@@ -47,9 +47,6 @@ export async function manualTransition({
   user,
   fromPhaseId: expectedFromPhaseId,
 }: ManualTransitionInput): Promise<ManualTransitionResult> {
-  // assertUserByAuthId and the instance fetch are independent — run in parallel
-  // to save one round trip. getProfileAccessUser below still needs to wait on
-  // the instance fetch for profileId.
   const [dbUser, instance] = await Promise.all([
     assertUserByAuthId(user.id),
     db.query.processInstances.findFirst({
@@ -95,10 +92,6 @@ export async function manualTransition({
     throw new CommonError('Instance has no current phase set');
   }
 
-  // Optimistic concurrency check: if the caller declared which phase they
-  // observed, refuse to advance unless the instance is still on that phase.
-  // This prevents double-clicks and stale retries from advancing through
-  // multiple phases unintentionally.
   if (expectedFromPhaseId && expectedFromPhaseId !== fromPhaseId) {
     throw new ConflictError(
       `Instance is on phase '${fromPhaseId}', not '${expectedFromPhaseId}'`,
@@ -115,8 +108,7 @@ export async function manualTransition({
     throw new ValidationError('Already on final phase');
   }
 
-  const nextPhase = phases[currentPhaseIndex + 1]!;
-  const toPhaseId = nextPhase.phaseId;
+  const toPhaseId = phases[currentPhaseIndex + 1]!.phaseId;
   const isTransitioningToFinalPhase =
     currentPhaseIndex + 1 === phases.length - 1;
 
@@ -144,22 +136,7 @@ export async function manualTransition({
   // writes inside advancePhase are per-transition, while processResults
   // populates decisionProcessResults + selections + proposal statuses.
   if (isTransitioningToFinalPhase) {
-    try {
-      const processingResult = await processResults({
-        processInstanceId: instanceId,
-      });
-      if (!processingResult.success) {
-        console.error(
-          `processResults returned failure for instance ${instanceId} after manual transition to final phase:`,
-          processingResult.error,
-        );
-      }
-    } catch (err) {
-      console.error(
-        `processResults threw for instance ${instanceId} after manual transition to final phase:`,
-        err,
-      );
-    }
+    await runResultsProcessing(instanceId);
   }
 
   return {

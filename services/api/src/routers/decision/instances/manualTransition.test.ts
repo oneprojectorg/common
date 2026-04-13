@@ -410,7 +410,7 @@ describe.concurrent('manualTransition', () => {
 
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        `processResults threw for instance ${instance.instance.id}`,
+        `Error processing results for process instance ${instance.instance.id}`,
       ),
       expect.any(Error),
     );
