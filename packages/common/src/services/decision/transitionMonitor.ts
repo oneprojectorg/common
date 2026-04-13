@@ -4,6 +4,7 @@ import {
   decisionProcessTransitions,
   processInstances,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
@@ -196,6 +197,23 @@ async function advanceInstanceTransitions({
 
       lastSuccessfulToStateId = transition.toStateId;
       result.processed++;
+
+      // Notify participants about the phase transition
+      event
+        .send({
+          name: Events.phaseTransitioned.name,
+          data: {
+            processInstanceId,
+            fromPhaseId,
+            toPhaseId: transition.toStateId,
+          },
+        })
+        .catch((err) => {
+          console.error(
+            `Failed to send phase transition notification for instance ${processInstanceId}:`,
+            err,
+          );
+        });
 
       // Re-fetch so the next iteration sees the committed state.
       const refreshed = await db.query.processInstances.findFirst({
