@@ -150,6 +150,8 @@ interface ProposalsProps {
   permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
+  /** When true, the current phase has voting enabled — always show voting UI */
+  isVotingPhase?: boolean;
 }
 
 const VotingProposalsList = ({
@@ -445,15 +447,17 @@ const ViewProposalsList = ({
 };
 
 const Proposals = (props: ProposalsProps) => {
-  const { isLoading, instanceId } = props;
+  const { isLoading, instanceId, isVotingPhase } = props;
 
   // Get voting status for this user and process
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
     processInstanceId: instanceId,
   });
 
-  // Determine voting state from phase capability
-  const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
+  // Use the phase capability passed from the router, falling back to the
+  // voting status endpoint for backwards compatibility
+  const isVotingEnabled =
+    isVotingPhase || !!voteStatus?.votingConfiguration?.allowDecisions;
 
   if (isLoading) {
     return <ProposalListSkeletonGrid />;
@@ -474,6 +478,7 @@ export const ProposalsList = ({
   permissions,
   initialFilter,
   phase,
+  isVotingPhase,
 }: {
   slug: string;
   instanceId: string;
@@ -487,6 +492,8 @@ export const ProposalsList = ({
   initialFilter?: ProposalFilter;
   /** When set to 'results', all proposals are returned as non-editable */
   phase?: 'results';
+  /** When true, the current phase has voting enabled — always show voting UI */
+  isVotingPhase?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -848,6 +855,7 @@ export const ProposalsList = ({
           permissions={permissions}
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
+          isVotingPhase={isVotingPhase}
         />
       </ProposalTranslationProvider>
 
