@@ -125,9 +125,7 @@ export async function triggerPhaseAdvancement({
     });
 
     if (result.conflict) {
-      throw new ConflictError(
-        'Phase was already advanced, or instance is no longer published',
-      );
+      throw new ConflictError('Phase transition conflict');
     }
   });
 
