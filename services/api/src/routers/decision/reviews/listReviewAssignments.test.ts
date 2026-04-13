@@ -59,6 +59,39 @@ function seedMockCollab(collaborationDocId: string) {
 }
 
 describe.concurrent('listReviewAssignments', () => {
+  it('returns the assignment using the live proposal when no history snapshot exists', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Live Proposal Review',
+      withHistory: false,
+    });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: created.context.instance.instance.id,
+    });
+
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]).toMatchObject({
+      assignment: {
+        id: created.assignment.id,
+        proposal: {
+          id: created.proposal.id,
+        },
+      },
+    });
+  });
+
   it('returns all assignments for the reviewer in the instance', async ({
     task,
     onTestFinished,

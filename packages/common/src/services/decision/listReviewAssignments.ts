@@ -51,6 +51,16 @@ export async function listReviewAssignments({
           profile: true,
         },
       },
+      proposal: {
+        with: {
+          submittedBy: {
+            with: {
+              avatarImage: true,
+            },
+          },
+          profile: true,
+        },
+      },
       reviews: true,
     },
     orderBy: {
@@ -64,7 +74,7 @@ export async function listReviewAssignments({
   );
   const rubricTemplate = instance.instanceData.rubricTemplate ?? null;
 
-  const snapshotProposalIds: string[] = [];
+  const proposalIds: string[] = [];
   const docContentInputs: Array<{
     id: string;
     proposalData: unknown;
@@ -73,30 +83,33 @@ export async function listReviewAssignments({
   }> = [];
 
   for (const assignment of assignments) {
-    const snapshot = assignment.assignedProposalHistory;
-    if (!snapshot) {
-      continue;
-    }
+    const proposalHistory = assignment.assignedProposalHistory;
+    const proposalSnapshot = proposalHistory ?? assignment.proposal;
 
-    snapshotProposalIds.push(snapshot.id);
+    const proposalId = proposalSnapshot.id;
+    const contentId = proposalHistory
+      ? proposalHistory.historyId
+      : proposalSnapshot.id;
 
-    const parsedData = parseProposalData(snapshot.proposalData);
+    proposalIds.push(proposalId);
+
+    const parsedData = parseProposalData(proposalSnapshot.proposalData);
 
     if (!parsedData.collaborationDocId) {
       throw new ValidationError(
-        `Assigned proposal snapshot ${snapshot.historyId} is missing collaborationDocId`,
+        `Proposal ${contentId} is missing collaborationDocId`,
       );
     }
 
     if (parsedData.collaborationDocVersionId == null) {
       console.warn(
-        `[listReviewAssignments] Assigned proposal snapshot ${snapshot.historyId} is missing collaborationDocVersionId`,
+        `[listReviewAssignments] Proposal ${contentId} is missing collaborationDocVersionId`,
       );
     }
 
     docContentInputs.push({
-      id: snapshot.historyId,
-      proposalData: snapshot.proposalData,
+      id: contentId,
+      proposalData: proposalSnapshot.proposalData,
       proposalTemplate,
       collaborationDocVersionId: parsedData.collaborationDocVersionId,
     });
@@ -104,8 +117,8 @@ export async function listReviewAssignments({
 
   const [documentContentMap, attachmentsByProposal] = await Promise.all([
     getProposalDocumentsContent(docContentInputs),
-    snapshotProposalIds.length > 0
-      ? getBatchedAttachments(snapshotProposalIds)
+    proposalIds.length > 0
+      ? getBatchedAttachments(proposalIds)
       : new Map<
           string,
           Awaited<ReturnType<typeof getProposalAttachmentsWithSignedUrls>>
@@ -113,14 +126,17 @@ export async function listReviewAssignments({
   ]);
 
   const assignmentList = assignments.map((assignment) => {
-    const snapshot = assignment.assignedProposalHistory;
-    if (!snapshot) {
-      throw new ValidationError('Assigned proposal snapshot not found');
-    }
+    const proposalHistory = assignment.assignedProposalHistory;
+    const proposalSnapshot = proposalHistory ?? assignment.proposal;
 
-    const parsedProposalData = parseProposalData(snapshot.proposalData);
-    const documentContent = documentContentMap.get(snapshot.historyId);
-    const proposalAttachments = attachmentsByProposal.get(snapshot.id) ?? [];
+    const proposalId = proposalSnapshot.id;
+    const contentId = proposalHistory
+      ? proposalHistory.historyId
+      : proposalSnapshot.id;
+
+    const parsedProposalData = parseProposalData(proposalSnapshot.proposalData);
+    const documentContent = documentContentMap.get(contentId);
+    const proposalAttachments = attachmentsByProposal.get(proposalId) ?? [];
 
     let htmlContent: Record<string, string> | undefined;
     if (documentContent?.type === 'json') {
@@ -133,7 +149,7 @@ export async function listReviewAssignments({
       assignment: {
         ...assignment,
         proposal: {
-          ...snapshot,
+          ...proposalSnapshot,
           proposalData: parsedProposalData,
           attachments: proposalAttachments,
           proposalTemplate,
