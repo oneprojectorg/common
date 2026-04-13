@@ -7,6 +7,7 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
+import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -130,7 +131,7 @@ export function DecisionProcessStepper({
       />
 
       {isMobile ? (
-        <Modal
+        <Sheet
           isOpen={showConfirmModal}
           onOpenChange={(open) => {
             if (!open && !transitionMutation.isPending) {
@@ -138,10 +139,9 @@ export function DecisionProcessStepper({
             }
           }}
           isDismissable={!transitionMutation.isPending}
-          overlayClassName="p-0 items-end justify-center"
-          className="m-0 h-auto w-screen max-w-none rounded-t-lg rounded-b-none border-0 outline-0"
+          side="bottom"
         >
-          <div className="flex flex-col gap-4 p-4 text-left">
+          <SheetBody className="flex flex-col gap-4 p-4 text-left">
             <div className="font-serif text-title-sm">
               {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
             </div>
@@ -172,8 +172,8 @@ export function DecisionProcessStepper({
                 {t('Cancel')}
               </Button>
             </div>
-          </div>
-        </Modal>
+          </SheetBody>
+        </Sheet>
       ) : (
         <Modal
           isOpen={showConfirmModal}
@@ -182,7 +182,7 @@ export function DecisionProcessStepper({
               setShowConfirmModal(false);
             }
           }}
-          isDismissable={!transitionMutation.isPending}
+          isDismissable={false}
           surface="flat"
         >
           <ModalHeader className="px-6 pb-6 text-left">
