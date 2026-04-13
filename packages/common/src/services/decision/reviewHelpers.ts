@@ -29,6 +29,16 @@ export async function assertReviewAssignmentContext({
             profile: true,
           },
         },
+        proposal: {
+          with: {
+            submittedBy: {
+              with: {
+                avatarImage: true,
+              },
+            },
+            profile: true,
+          },
+        },
         reviews: true,
       },
     }),

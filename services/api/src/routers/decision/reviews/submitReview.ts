@@ -1,4 +1,4 @@
-import { submitReview } from '@op/common';
+import { Channels, submitReview } from '@op/common';
 import { proposalReviewSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -15,6 +15,10 @@ export const submitReviewRouter = router({
     .input(reviewInputSchema)
     .output(proposalReviewSchema)
     .mutation(async ({ ctx, input }) => {
+      ctx.registerMutationChannels([
+        Channels.reviewAssignment(input.assignmentId),
+      ]);
+
       return proposalReviewSchema.parse(
         await submitReview({
           assignmentId: input.assignmentId,

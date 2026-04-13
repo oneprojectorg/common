@@ -25,27 +25,26 @@ import {
   getCriterionMaxPoints,
   inferCriterionType,
 } from '../rubricTemplate';
+import { useReviewForm } from './ReviewFormContext';
 
 interface ReviewRubricFormProps {
   template: RubricTemplateSchema;
 }
 
 /**
- * Local-only schema-driven review rubric form renderer.
+ * Schema-driven review rubric form renderer.
  */
 export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   const t = useTranslations();
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
-  const [values, setValues] = useState<Record<string, unknown>>({});
+  const { values, handleValueChange } = useReviewForm();
   const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
-  const handleValueChange = (key: string, value: unknown) => {
-    setValues((current) => ({
-      ...current,
-      [key]: value,
-    }));
+  const handleFeedbackChange = (value: string) => {
+    // TODO: wire feedback to author into review submission
+    setFeedbackToAuthor(value);
   };
 
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
@@ -60,9 +59,11 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Header3 className="border-b border-neutral-gray1 pb-4 font-serif !text-title-base font-light">
-        {t('Review Proposal')}
-      </Header3>
+      <div className="border-b border-neutral-gray1 pb-4">
+        <Header3 className="font-serif !text-title-base font-light">
+          {t('Review Proposal')}
+        </Header3>
+      </div>
 
       {fields.map((field) => (
         <RubricCriterionSection
@@ -87,7 +88,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
           <TextField
             aria-label={t('Feedback to Author')}
             value={feedbackToAuthor}
-            onChange={setFeedbackToAuthor}
+            onChange={handleFeedbackChange}
             useTextArea
             textareaProps={{ rows: 3 }}
           />

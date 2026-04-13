@@ -44,6 +44,8 @@ interface CreateReviewAssignmentOptions {
   title?: string;
   description?: string;
   status?: ProposalReviewAssignmentStatus;
+  /** When false, skips creating a proposal history snapshot. Defaults to true. */
+  withHistory?: boolean;
 }
 
 /** Creates review-focused test fixtures on top of the decision test setup. */
@@ -180,15 +182,16 @@ export class TestReviewsDataManager {
 
     this.decisions.trackProfileForCleanup(proposal.profileId);
 
-    const proposalHistory = await createProposalHistorySnapshot({
-      proposalId: proposal.id,
-    });
+    const withHistory = opts.withHistory ?? true;
+    const proposalHistory = withHistory
+      ? await createProposalHistorySnapshot({ proposalId: proposal.id })
+      : null;
 
     const assignment = await createReviewAssignmentRecord({
       processInstanceId: context.instance.instance.id,
       proposalId: proposal.id,
       reviewerProfileId: reviewer.profileId,
-      assignedProposalHistoryId: proposalHistory.historyId,
+      assignedProposalHistoryId: proposalHistory?.historyId ?? null,
       status: opts.status ?? ProposalReviewAssignmentStatus.PENDING,
     });
 
