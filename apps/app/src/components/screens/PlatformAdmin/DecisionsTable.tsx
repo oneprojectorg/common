@@ -88,12 +88,13 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
       >
         <TableHeader>
           <TableColumn isRowHeader>{t('Name')}</TableColumn>
-          <TableColumn>{t('Decision Process')}</TableColumn>
+          <TableColumn>{t('Current Phase')}</TableColumn>
+          <TableColumn>{t('Steward')}</TableColumn>
           <TableColumn>{t('Proposals')}</TableColumn>
           <TableColumn>{t('Voters')}</TableColumn>
+          <TableColumn>{t('Participants')}</TableColumn>
           <TableColumn>{t('Status')}</TableColumn>
           <TableColumn>{t('Created')}</TableColumn>
-          <TableColumn>{t('Updated')}</TableColumn>
           <TableColumn className="text-right">{t('Actions')}</TableColumn>
         </TableHeader>
         <TableBody>
@@ -128,18 +129,19 @@ const DecisionsTableSkeleton = () => {
     <Table aria-label="Loading decisions">
       <TableHeader>
         <TableColumn isRowHeader>{t('Name')}</TableColumn>
-        <TableColumn>{t('Decision Process')}</TableColumn>
+        <TableColumn>{t('Current Phase')}</TableColumn>
+        <TableColumn>{t('Steward')}</TableColumn>
         <TableColumn>{t('Proposals')}</TableColumn>
         <TableColumn>{t('Voters')}</TableColumn>
+        <TableColumn>{t('Participants')}</TableColumn>
         <TableColumn>{t('Status')}</TableColumn>
         <TableColumn>{t('Created')}</TableColumn>
-        <TableColumn>{t('Updated')}</TableColumn>
         <TableColumn className="text-right">{t('Actions')}</TableColumn>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
           <TableRow key={i} id={`skeleton-${i}`}>
-            {[...Array(8)].map((_, j) => (
+            {[...Array(9)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />
               </TableCell>

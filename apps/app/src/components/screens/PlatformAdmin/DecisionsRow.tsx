@@ -2,12 +2,16 @@
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { RouterOutput } from '@op/api/client';
-import { Menu } from '@op/ui/Menu';
+import { Menu, MenuItem } from '@op/ui/Menu';
+import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
+import { useState } from 'react';
 import { Button } from 'react-aria-components';
+
+import { useTranslations } from '@/lib/i18n';
 
 type ListAllDecisionInstancesOutput =
   RouterOutput['platform']['admin']['listAllDecisionInstances'];
@@ -27,8 +31,9 @@ export const DecisionsRowCells = ({
   decision: DecisionInstance;
 }) => {
   const format = useFormatter();
+  const t = useTranslations();
   const createdAt = decision.createdAt ? new Date(decision.createdAt) : null;
-  const updatedAt = decision.updatedAt ? new Date(decision.updatedAt) : null;
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
 
   return (
     <>
@@ -36,13 +41,19 @@ export const DecisionsRowCells = ({
         {decision.name}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">
-        {decision.processName}
+        {decision.currentStateId ?? '—'}
+      </TableCell>
+      <TableCell className="text-sm font-normal text-neutral-charcoal">
+        {decision.stewardName ?? '—'}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">
         {decision.proposalCount}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">
         {decision.voterCount}
+      </TableCell>
+      <TableCell className="text-sm font-normal text-neutral-charcoal">
+        {decision.participantCount}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">
         {decision.status
@@ -63,27 +74,52 @@ export const DecisionsRowCells = ({
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
-        {updatedAt ? (
-          <TooltipTrigger>
-            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
-              {format.dateTime(updatedAt, { dateStyle: 'medium' })}
-            </Button>
-            <Tooltip>
-              {format.dateTime(updatedAt, DATE_TIME_UTC_FORMAT)}
-            </Tooltip>
-          </TooltipTrigger>
-        ) : (
-          '—'
-        )}
-      </TableCell>
       <TableCell className="text-sm text-neutral-charcoal">
         <div className="flex justify-end">
           <OptionMenu variant="outline" size="medium">
-            <Menu className="min-w-48 p-2" />
+            <Menu className="min-w-48 p-2">
+              <MenuItem
+                key="view-instance-data"
+                onAction={() => setIsDataModalOpen(true)}
+                className="px-3 py-1"
+              >
+                {t('View instance data')}
+              </MenuItem>
+            </Menu>
           </OptionMenu>
         </div>
+        <InstanceDataModal
+          name={decision.name}
+          instanceData={decision.instanceData}
+          isOpen={isDataModalOpen}
+          onOpenChange={setIsDataModalOpen}
+        />
       </TableCell>
     </>
+  );
+};
+
+const InstanceDataModal = ({
+  name,
+  instanceData,
+  isOpen,
+  onOpenChange,
+}: {
+  name: string;
+  instanceData: unknown;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
+      <ModalHeader>{t('Instance data for {name}', { name })}</ModalHeader>
+      <ModalBody className="pb-6">
+        <pre className="bg-neutral-gray0 max-h-[60vh] overflow-auto rounded-lg p-4 text-xs">
+          {JSON.stringify(instanceData, null, 2)}
+        </pre>
+      </ModalBody>
+    </Modal>
   );
 };

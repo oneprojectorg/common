@@ -21,12 +21,14 @@ import { dbFilter } from '../../../utils';
 const adminDecisionInstanceEncoder = z.object({
   id: z.string(),
   name: z.string(),
-  processName: z.string(),
+  currentStateId: z.string().nullable(),
+  stewardName: z.string().nullable(),
   status: z.string().nullable(),
   proposalCount: z.number(),
   voterCount: z.number(),
+  participantCount: z.number(),
   createdAt: z.string().nullable(),
-  updatedAt: z.string().nullable(),
+  instanceData: z.unknown(),
 });
 
 export const listAllDecisionInstancesRouter = router({
@@ -76,7 +78,7 @@ export const listAllDecisionInstancesRouter = router({
         db._query.processInstances.findMany({
           where: whereCondition,
           with: {
-            process: {
+            steward: {
               columns: { name: true },
             },
           },
@@ -119,7 +121,7 @@ export const listAllDecisionInstancesRouter = router({
       // Batch count proposals and voters for the current page of instances
       const instanceIds = items.map((i) => i.id);
 
-      const [proposalCounts, voterCounts] =
+      const [proposalCounts, voterCounts, participantCounts] =
         instanceIds.length > 0
           ? await Promise.all([
               db
@@ -143,8 +145,25 @@ export const listAllDecisionInstancesRouter = router({
                   ),
                 )
                 .groupBy(decisionsVoteSubmissions.processInstanceId),
+              // Count unique participants (union of proposal submitters and voters)
+              db.execute<{
+                process_instance_id: string;
+                count: number;
+              }>(sql`
+                SELECT process_instance_id, count(*)::int
+                FROM (
+                  SELECT process_instance_id, submitted_by_profile_id AS profile_id
+                  FROM decision_proposals
+                  WHERE process_instance_id = ANY(${instanceIds})
+                  UNION
+                  SELECT process_instance_id, submitted_by_profile_id AS profile_id
+                  FROM decisions_vote_submissions
+                  WHERE process_instance_id = ANY(${instanceIds})
+                ) AS combined
+                GROUP BY process_instance_id
+              `),
             ])
-          : [[], []];
+          : [[], [], []];
 
       const proposalCountMap = new Map(
         proposalCounts.map((r) => [r.processInstanceId, r.count]),
@@ -152,20 +171,25 @@ export const listAllDecisionInstancesRouter = router({
       const voterCountMap = new Map(
         voterCounts.map((r) => [r.processInstanceId, r.count]),
       );
+      const participantCountMap = new Map(
+        participantCounts.map((r) => [r.process_instance_id, r.count]),
+      );
 
       return {
         items: items.map((instance) =>
           adminDecisionInstanceEncoder.parse({
             id: instance.id,
             name: instance.name,
-            processName: Array.isArray(instance.process)
-              ? (instance.process[0]?.name ?? '—')
-              : (instance.process?.name ?? '—'),
+            currentStateId: instance.currentStateId,
+            stewardName: Array.isArray(instance.steward)
+              ? (instance.steward[0]?.name ?? null)
+              : (instance.steward?.name ?? null),
             status: instance.status,
             proposalCount: proposalCountMap.get(instance.id) ?? 0,
             voterCount: voterCountMap.get(instance.id) ?? 0,
+            participantCount: participantCountMap.get(instance.id) ?? 0,
             createdAt: instance.createdAt,
-            updatedAt: instance.updatedAt,
+            instanceData: instance.instanceData,
           }),
         ),
         next: nextCursor,
