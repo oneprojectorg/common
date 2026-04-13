@@ -384,11 +384,11 @@ describe.concurrent('manualTransition', () => {
     // Suppress and capture console.error to verify the error is logged
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    // Mock processResults to throw — simulates a catastrophic failure
-    // in the results pipeline after the phase transition has committed
-    const common = await import('@op/common');
+    const processResultsModule = await import(
+      '../../../../../../packages/common/src/services/decision/processResults'
+    );
     const processResultsSpy = vi
-      .spyOn(common, 'processResults')
+      .spyOn(processResultsModule, 'processResults')
       .mockRejectedValueOnce(new Error('Pipeline catastrophic failure'));
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
