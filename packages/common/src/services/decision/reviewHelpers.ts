@@ -4,7 +4,7 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
-import { parseProposalData } from './proposalDataSchema';
+import { type ProposalData, parseProposalData } from './proposalDataSchema';
 
 /** Loads and authorizes access to a single review assignment for the current reviewer. */
 export async function assertReviewAssignmentContext({
@@ -79,38 +79,38 @@ export async function assertReviewAssignmentContext({
 }
 
 /**
- * Resolves the effective proposal snapshot from a review assignment,
- * parses and validates proposal data, and returns the content ID
- * used for document lookups.
+ * Resolves the effective proposal snapshot from a review assignment
+ * and parses/validates its proposal data.
  */
 export function resolveAssignmentProposal(assignment: {
   assignedProposalHistory: {
-    historyId: string;
     proposalData: unknown;
   } | null;
   proposal: {
     id: string;
     proposalData: unknown;
   };
-}) {
-  const proposalHistory = assignment.assignedProposalHistory;
-  const proposalSnapshot = proposalHistory ?? assignment.proposal;
+}): {
+  proposalSnapshot: { proposalData: ProposalData };
+  proposalId: string;
+} {
+  const snapshot = assignment.assignedProposalHistory ?? assignment.proposal;
+  const proposalId = assignment.proposal.id;
 
-  const contentId = proposalHistory
-    ? proposalHistory.historyId
-    : assignment.proposal.id;
+  const proposalData = parseProposalData(snapshot.proposalData);
 
-  const parsedData = parseProposalData(proposalSnapshot.proposalData);
-
-  if (!parsedData.collaborationDocId) {
+  if (!proposalData.collaborationDocId) {
     throw new ValidationError(
-      `Proposal ${contentId} is missing collaborationDocId`,
+      `Proposal ${proposalId} is missing collaborationDocId`,
     );
   }
 
-  if (parsedData.collaborationDocVersionId == null) {
-    console.warn(`Proposal ${contentId} is missing collaborationDocVersionId`);
+  if (proposalData.collaborationDocVersionId == null) {
+    console.warn(`Proposal ${proposalId} is missing collaborationDocVersionId`);
   }
 
-  return { proposalSnapshot, contentId, parsedData };
+  return {
+    proposalSnapshot: { ...snapshot, proposalData },
+    proposalId,
+  };
 }

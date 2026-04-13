@@ -81,14 +81,15 @@ export async function listReviewAssignments({
   }> = [];
 
   for (const assignment of assignments) {
-    const { contentId, parsedData, proposalSnapshot } =
+    const { proposalId, proposalSnapshot } =
       resolveAssignmentProposal(assignment);
 
     docContentInputs.push({
-      id: contentId,
+      id: proposalId,
       proposalData: proposalSnapshot.proposalData,
       proposalTemplate,
-      collaborationDocVersionId: parsedData.collaborationDocVersionId,
+      collaborationDocVersionId:
+        proposalSnapshot.proposalData.collaborationDocVersionId,
     });
   }
 
@@ -96,10 +97,10 @@ export async function listReviewAssignments({
     await getProposalDocumentsContent(docContentInputs);
 
   const assignmentList = assignments.map((assignment) => {
-    const { contentId, parsedData, proposalSnapshot } =
+    const { proposalId, proposalSnapshot } =
       resolveAssignmentProposal(assignment);
 
-    const documentContent = documentContentMap.get(contentId);
+    const documentContent = documentContentMap.get(proposalId);
 
     let htmlContent: Record<string, string> | undefined;
     if (documentContent?.type === 'json') {
@@ -113,7 +114,6 @@ export async function listReviewAssignments({
         ...assignment,
         proposal: {
           ...proposalSnapshot,
-          proposalData: parsedData,
           proposalTemplate,
           documentContent,
           htmlContent,
