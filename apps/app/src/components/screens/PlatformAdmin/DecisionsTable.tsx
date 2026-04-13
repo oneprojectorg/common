@@ -120,35 +120,21 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
   );
 };
 
-/** Loading skeleton */
+/** Loading skeleton - real header labels with skeleton rows */
 const DecisionsTableSkeleton = () => {
+  const t = useTranslations();
+
   return (
     <Table aria-label="Loading decisions">
       <TableHeader>
-        <TableColumn isRowHeader>
-          <Skeleton className="h-4 w-16" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-20" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-12" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
+        <TableColumn isRowHeader>{t('Name')}</TableColumn>
+        <TableColumn>{t('Decision Process')}</TableColumn>
+        <TableColumn>{t('Proposals')}</TableColumn>
+        <TableColumn>{t('Voters')}</TableColumn>
+        <TableColumn>{t('Status')}</TableColumn>
+        <TableColumn>{t('Created')}</TableColumn>
+        <TableColumn>{t('Updated')}</TableColumn>
+        <TableColumn className="text-right">{t('Actions')}</TableColumn>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
