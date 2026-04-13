@@ -45,7 +45,7 @@ export function DecisionProcessStepper({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
-  const transitionMutation = trpc.decision.manualTransition.useMutation({
+  const transitionMutation = trpc.decision.transitionFromPhase.useMutation({
     onSuccess: () => {
       setShowConfirmModal(false);
       toast.success({ message: t('Phase advanced successfully') });
