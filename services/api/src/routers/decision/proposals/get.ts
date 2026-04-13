@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { getPermissionsOnProposal, getProposal } from '@op/common';
+import { Channels, getPermissionsOnProposal, getProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { ProposalStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -58,6 +58,10 @@ export const getProposalRouter = router({
           trackProposalViewed(ctx, proposal.processInstance.id, proposal.id),
         );
       }
+
+      ctx.registerQueryChannels([
+        Channels.decisionProposal(proposal.processInstanceId, proposal.id),
+      ]);
 
       return proposalSchema.parse({
         ...proposal,
