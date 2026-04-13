@@ -1,10 +1,10 @@
-import { Channels, manualTransition } from '@op/common';
+import { Channels, triggerPhaseAdvancement } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-export const manualTransitionRouter = router({
-  manualTransition: commonAuthedProcedure()
+export const transitionFromPhaseRouter = router({
+  transitionFromPhase: commonAuthedProcedure()
     .input(
       z.object({
         instanceId: z.uuid(),
@@ -13,13 +13,12 @@ export const manualTransitionRouter = router({
     )
     .output(
       z.object({
-        instanceId: z.string(),
         currentPhaseId: z.string(),
         previousPhaseId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const result = await manualTransition({
+      const result = await triggerPhaseAdvancement({
         instanceId: input.instanceId,
         fromPhaseId: input.fromPhaseId,
         user: ctx.user,

@@ -16,7 +16,7 @@ import { advancePhase } from './advancePhase';
 import { runResultsProcessing } from './runResultsProcessing';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
-export interface ManualTransitionInput {
+export interface TriggerPhaseAdvancementInput {
   instanceId: string;
   user: User;
   /**
@@ -28,8 +28,7 @@ export interface ManualTransitionInput {
   fromPhaseId?: string;
 }
 
-export interface ManualTransitionResult {
-  instanceId: string;
+export interface TriggerPhaseAdvancementResult {
   currentPhaseId: string;
   previousPhaseId: string;
 }
@@ -42,11 +41,11 @@ export interface ManualTransitionResult {
  * When transitioning to the final phase: additionally runs processResults to
  * store final selections in the results tables and update proposal statuses.
  */
-export async function manualTransition({
+export async function triggerPhaseAdvancement({
   instanceId,
   user,
   fromPhaseId: expectedFromPhaseId,
-}: ManualTransitionInput): Promise<ManualTransitionResult> {
+}: TriggerPhaseAdvancementInput): Promise<TriggerPhaseAdvancementResult> {
   const [dbUser, instance] = await Promise.all([
     assertUserByAuthId(user.id),
     db.query.processInstances.findFirst({
@@ -54,7 +53,7 @@ export async function manualTransition({
     }),
   ]);
 
-  if (!dbUser.currentProfileId) {
+  if (!dbUser.profileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 
@@ -121,7 +120,7 @@ export async function manualTransition({
       },
       fromPhaseId,
       toPhaseId,
-      triggeredByProfileId: dbUser.currentProfileId,
+      triggeredByProfileId: dbUser.profileId,
       transitionData: { manual: true },
     });
 
@@ -140,7 +139,6 @@ export async function manualTransition({
   }
 
   return {
-    instanceId,
     currentPhaseId: toPhaseId,
     previousPhaseId: fromPhaseId,
   };

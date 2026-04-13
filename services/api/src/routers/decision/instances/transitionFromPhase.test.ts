@@ -42,7 +42,7 @@ async function createPublishedInstance(testData: TestDecisionsDataManager) {
   return { setup, instance };
 }
 
-describe.concurrent('manualTransition', () => {
+describe.concurrent('transitionFromPhase', () => {
   it('should advance from initial to final phase', async ({
     task,
     onTestFinished,
@@ -52,7 +52,7 @@ describe.concurrent('manualTransition', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.manualTransition({
+    const result = await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
     });
 
@@ -60,8 +60,8 @@ describe.concurrent('manualTransition', () => {
     expect(result.currentPhaseId).toBe('final');
 
     // Verify DB state
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     expect(dbInstance!.currentStateId).toBe('final');
@@ -76,12 +76,12 @@ describe.concurrent('manualTransition', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    await caller.decision.manualTransition({
+    await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
     });
 
-    const history = await db._query.stateTransitionHistory.findFirst({
-      where: eq(stateTransitionHistory.processInstanceId, instance.instance.id),
+    const history = await db.query.stateTransitionHistory.findFirst({
+      where: { processInstanceId: instance.instance.id },
     });
 
     expect(history).toBeDefined();
@@ -111,7 +111,7 @@ describe.concurrent('manualTransition', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     await expect(
-      caller.decision.manualTransition({
+      caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
       }),
     ).rejects.toThrow('Instance must be published');
@@ -127,13 +127,13 @@ describe.concurrent('manualTransition', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // Advance to final
-    await caller.decision.manualTransition({
+    await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
     });
 
     // Try again — should fail
     await expect(
-      caller.decision.manualTransition({
+      caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
       }),
     ).rejects.toThrow('Already on final phase');
@@ -156,7 +156,7 @@ describe.concurrent('manualTransition', () => {
     );
 
     await expect(
-      unauthorizedCaller.decision.manualTransition({
+      unauthorizedCaller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
       }),
     ).rejects.toThrow();
@@ -173,15 +173,15 @@ describe.concurrent('manualTransition', () => {
 
     // Caller passes a stale phase ID — instance is on 'initial', not 'someOldPhase'
     await expect(
-      caller.decision.manualTransition({
+      caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
         fromPhaseId: 'someOldPhase',
       }),
     ).rejects.toThrow(/Instance is on phase 'initial'/);
 
     // Verify the instance was NOT advanced
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     expect(dbInstance!.currentStateId).toBe('initial');
   });
@@ -195,7 +195,7 @@ describe.concurrent('manualTransition', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.manualTransition({
+    const result = await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
       fromPhaseId: 'initial',
     });
@@ -214,7 +214,7 @@ describe.concurrent('manualTransition', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // First call advances initial → final
-    await caller.decision.manualTransition({
+    await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
       fromPhaseId: 'initial',
     });
@@ -222,7 +222,7 @@ describe.concurrent('manualTransition', () => {
     // Second call with the same fromPhaseId should be rejected as a conflict —
     // the instance has moved on, so the caller's view is stale.
     await expect(
-      caller.decision.manualTransition({
+      caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
         fromPhaseId: 'initial',
       }),
@@ -240,10 +240,10 @@ describe.concurrent('manualTransition', () => {
 
     // Fire two transitions concurrently — one should succeed, one should fail
     const results = await Promise.allSettled([
-      caller.decision.manualTransition({
+      caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
       }),
-      caller.decision.manualTransition({
+      caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
       }),
     ]);
@@ -299,8 +299,8 @@ describe.concurrent('manualTransition', () => {
       ],
     };
 
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
 
@@ -340,14 +340,14 @@ describe.concurrent('manualTransition', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // First transition: phase1 → phase2 (not final, should NOT trigger processResults)
-    const result1 = await caller.decision.manualTransition({
+    const result1 = await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
     });
     expect(result1.previousPhaseId).toBe('phase1');
     expect(result1.currentPhaseId).toBe('phase2');
 
     // Second transition: phase2 → phase3 (final phase)
-    const result2 = await caller.decision.manualTransition({
+    const result2 = await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
     });
     expect(result2.previousPhaseId).toBe('phase2');
@@ -355,7 +355,7 @@ describe.concurrent('manualTransition', () => {
 
     // Third transition should fail — already on final
     await expect(
-      caller.decision.manualTransition({
+      caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
       }),
     ).rejects.toThrow('Already on final phase');
@@ -383,15 +383,15 @@ describe.concurrent('manualTransition', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.manualTransition({
+    const result = await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
     });
 
     expect(result.previousPhaseId).toBe('initial');
     expect(result.currentPhaseId).toBe('final');
 
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     expect(dbInstance!.currentStateId).toBe('final');
   });
