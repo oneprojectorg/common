@@ -5,7 +5,6 @@ import { UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
-import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -74,7 +73,6 @@ export async function listReviewAssignments({
   );
   const rubricTemplate = instance.instanceData.rubricTemplate ?? null;
 
-  const proposalIds: string[] = [];
   const docContentInputs: Array<{
     id: string;
     proposalData: unknown;
@@ -86,12 +84,9 @@ export async function listReviewAssignments({
     const proposalHistory = assignment.assignedProposalHistory;
     const proposalSnapshot = proposalHistory ?? assignment.proposal;
 
-    const proposalId = proposalSnapshot.id;
     const contentId = proposalHistory
       ? proposalHistory.historyId
       : proposalSnapshot.id;
-
-    proposalIds.push(proposalId);
 
     const parsedData = parseProposalData(proposalSnapshot.proposalData);
 
@@ -115,28 +110,19 @@ export async function listReviewAssignments({
     });
   }
 
-  const [documentContentMap, attachmentsByProposal] = await Promise.all([
-    getProposalDocumentsContent(docContentInputs),
-    proposalIds.length > 0
-      ? getBatchedAttachments(proposalIds)
-      : new Map<
-          string,
-          Awaited<ReturnType<typeof getProposalAttachmentsWithSignedUrls>>
-        >(),
-  ]);
+  const documentContentMap =
+    await getProposalDocumentsContent(docContentInputs);
 
   const assignmentList = assignments.map((assignment) => {
     const proposalHistory = assignment.assignedProposalHistory;
     const proposalSnapshot = proposalHistory ?? assignment.proposal;
 
-    const proposalId = proposalSnapshot.id;
     const contentId = proposalHistory
       ? proposalHistory.historyId
       : proposalSnapshot.id;
 
     const parsedProposalData = parseProposalData(proposalSnapshot.proposalData);
     const documentContent = documentContentMap.get(contentId);
-    const proposalAttachments = attachmentsByProposal.get(proposalId) ?? [];
 
     let htmlContent: Record<string, string> | undefined;
     if (documentContent?.type === 'json') {
@@ -151,7 +137,6 @@ export async function listReviewAssignments({
         proposal: {
           ...proposalSnapshot,
           proposalData: parsedProposalData,
-          attachments: proposalAttachments,
           proposalTemplate,
           documentContent,
           htmlContent,
@@ -165,23 +150,4 @@ export async function listReviewAssignments({
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
   });
-}
-
-/** Fetches attachments with signed URLs for a batch of proposal IDs. */
-async function getBatchedAttachments(proposalIds: string[]) {
-  const results = await Promise.all(
-    proposalIds.map(async (proposalId) => ({
-      proposalId,
-      attachments: await getProposalAttachmentsWithSignedUrls(proposalId),
-    })),
-  );
-
-  const map = new Map<
-    string,
-    Awaited<ReturnType<typeof getProposalAttachmentsWithSignedUrls>>
-  >();
-  for (const { proposalId, attachments } of results) {
-    map.set(proposalId, attachments);
-  }
-  return map;
 }
