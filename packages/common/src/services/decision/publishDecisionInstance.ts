@@ -14,7 +14,7 @@ import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
-import { draftInstanceDataSchema } from './schemas/instanceData';
+import type { DraftInstanceData } from './schemas/instanceData';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
@@ -58,13 +58,10 @@ export const publishDecisionInstance = async ({
 
   assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
-  const parsed = draftInstanceDataSchema.safeParse(
-    existingInstance.draftInstanceData,
-  );
-  if (!parsed.success) {
+  const source = existingInstance.draftInstanceData as DraftInstanceData | null;
+  if (!source) {
     throw new CommonError('No draft instance data to publish');
   }
-  const source = parsed.data as Record<string, unknown>;
 
   const currentStatus = existingInstance.status as ProcessStatus;
   if (
@@ -122,7 +119,7 @@ export const publishDecisionInstance = async ({
     const profileUpdate: Record<string, string> = {};
 
     // Keep the profile name in sync with the instance name.
-    if (typeof name === 'string') {
+    if (name) {
       profileUpdate.name = name;
     }
 
@@ -130,8 +127,7 @@ export const publishDecisionInstance = async ({
     // Draft instances keep their original UUID slug so the URL stays stable
     // while editing. Once published the slug is locked.
     if (isBeingPublished) {
-      const instanceName =
-        typeof name === 'string' ? name : existingInstance.name;
+      const instanceName = name ?? existingInstance.name;
       profileUpdate.slug = await generateUniqueProfileSlug({
         name: `decision-${instanceName}`,
         db: tx,

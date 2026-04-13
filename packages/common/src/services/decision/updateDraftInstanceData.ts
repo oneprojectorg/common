@@ -7,10 +7,7 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertProfileAdmin } from '../assert';
 import { schemaValidator } from './schemaValidator';
-import {
-  type PhaseOverride,
-  draftInstanceDataSchema,
-} from './schemas/instanceData';
+import type { DraftInstanceData, PhaseOverride } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 
 /**
@@ -83,23 +80,11 @@ export const updateDraftInstanceData = async ({
   }
 
   // Merge incoming fields into existing draft data.
-  // Fall back to {} only when the column is null (pre-migration instance).
-  // If the column has data but fails parsing, that's corruption — don't
-  // silently discard the existing draft.
-  const parsed = draftInstanceDataSchema.safeParse(
-    existingInstance.draftInstanceData,
-  );
-  let existingDraft: Record<string, unknown>;
-  if (parsed.success) {
-    existingDraft = parsed.data as Record<string, unknown>;
-  } else if (existingInstance.draftInstanceData != null) {
-    throw new CommonError(
-      'Existing draft data is malformed and cannot be updated safely',
-    );
-  } else {
-    existingDraft = {};
-  }
-  const updatedDraft: Record<string, unknown> = { ...existingDraft };
+  // Fall back to {} when the column is null (pre-migration instance).
+  const existingDraft =
+    (existingInstance.draftInstanceData as Partial<DraftInstanceData> | null) ??
+    {};
+  const updatedDraft: Partial<DraftInstanceData> = { ...existingDraft };
 
   if (name !== undefined) {
     updatedDraft.name = name;

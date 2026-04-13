@@ -88,14 +88,11 @@ export { schemaValidator } from './schemaValidator';
 export * from './types';
 export type {
   DecisionInstanceData,
+  DraftInstanceData,
   PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
-export {
-  createInstanceDataFromTemplate,
-  draftInstanceDataSchema,
-  instanceDataSchema,
-} from './schemas/instanceData';
+export { createInstanceDataFromTemplate } from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,
