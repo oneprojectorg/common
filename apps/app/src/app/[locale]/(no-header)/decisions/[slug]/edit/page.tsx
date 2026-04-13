@@ -32,17 +32,19 @@ const EditDecisionPage = async ({
 
   const { processInstance } = decisionProfile;
   const instanceId = processInstance.id;
-  const instanceData = processInstance.instanceData;
+  const { instanceData } = processInstance;
 
-  // Seed the store with server data so validation works immediately.
+  // Seed the store from draftInstanceData (the editable version).
+  // Falls back to instanceData for instances that predate the migration.
+  const draft = processInstance.draftInstanceData;
   const serverData: ProcessBuilderInstanceData = {
-    name: decisionProfile.name ?? undefined,
-    description: processInstance.description ?? undefined,
-    stewardProfileId: processInstance.steward?.id,
-    phases: instanceData.phases,
-    proposalTemplate:
-      instanceData.proposalTemplate as ProcessBuilderInstanceData['proposalTemplate'],
-    config: instanceData.config,
+    name: draft?.name ?? decisionProfile.name ?? undefined,
+    description: draft?.description ?? processInstance.description ?? undefined,
+    stewardProfileId: draft?.stewardProfileId ?? processInstance.steward?.id,
+    phases: draft?.phases ?? instanceData.phases,
+    proposalTemplate: (draft?.proposalTemplate ??
+      instanceData.proposalTemplate) as ProcessBuilderInstanceData['proposalTemplate'],
+    config: draft?.config ?? instanceData.config,
   };
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { DecisionProfile } from '@op/api/encoders';
+import { type DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -59,8 +59,20 @@ const DuplicateFormContent = ({
   const router = useRouter();
   const utils = trpc.useUtils();
 
+  // For drafts, draftInstanceData has the latest name (live column may be stale)
+  const draftName =
+    item.processInstance.status === ProcessStatus.DRAFT
+      ? ((
+          item.processInstance.draftInstanceData as Record<
+            string,
+            unknown
+          > | null
+        )?.name as string | undefined)
+      : undefined;
   const [name, setName] = useState(
-    t('Duplicate of {name}', { name: item.name || item.processInstance.name }),
+    t('Duplicate of {name}', {
+      name: draftName || item.name || item.processInstance.name,
+    }),
   );
   const [stewardProfileId, setStewardProfileId] = useState('');
 

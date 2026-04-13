@@ -38,10 +38,26 @@ const isClosingSoon = (dateString: string) => {
   return daysUntilClose >= 0 && daysUntilClose <= 7;
 };
 
+/** For drafts, draftInstanceData has the latest edits (instanceData may be
+ *  stale since autosave writes to draftInstanceData only). For published
+ *  instances, instanceData is the promoted live version. */
+function getDisplayName(item: DecisionProfile): string {
+  const { processInstance } = item;
+  const isDraft = processInstance.status === ProcessStatus.DRAFT;
+  if (isDraft && processInstance.draftInstanceData) {
+    const draft = processInstance.draftInstanceData as Record<string, unknown>;
+    if (typeof draft.name === 'string' && draft.name) {
+      return draft.name;
+    }
+  }
+  return processInstance.name || item.name;
+}
+
 export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const { processInstance } = item;
+  const displayName = getDisplayName(item);
   const isDraft = processInstance.status === ProcessStatus.DRAFT;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -83,7 +99,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
         >
           <DecisionCardHeader
-            name={processInstance.name || item.name}
+            name={displayName}
             currentState={currentPhaseName}
             stewardName={displayProfile?.name}
             stewardAvatarPath={displayProfile?.avatarImage?.name}
@@ -167,7 +183,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           {isDraft
             ? t('Delete draft?')
             : t('Delete {name}?', {
-                name: processInstance.name || item.name,
+                name: displayName,
               })}
         </ModalHeader>
         <ModalBody>
@@ -210,6 +226,7 @@ export const ProfileDecisionListItem = ({
   className?: string;
 }) => {
   const { processInstance } = item;
+  const displayName = getDisplayName(item);
 
   // Get current phase from instanceData phases
   const currentPhase = processInstance.instanceData?.phases?.find(
@@ -223,10 +240,7 @@ export const ProfileDecisionListItem = ({
       href={`/decisions/${item.slug}`}
       className={cn('flex flex-col gap-4 pb-4 hover:no-underline', className)}
     >
-      <DecisionCardHeader
-        name={processInstance.name || item.name}
-        currentState={currentPhaseName}
-      >
+      <DecisionCardHeader name={displayName} currentState={currentPhaseName}>
         <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
           {closingDate && <DecisionClosingDate closingDate={closingDate} />}
           <div className="flex items-end gap-4 text-neutral-black">

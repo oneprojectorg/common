@@ -48,7 +48,7 @@ export const LaunchProcessModal = ({
 
   const utils = trpc.useUtils();
 
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+  const publishInstance = trpc.decision.publishDecisionInstance.useMutation({
     onSuccess: async (data) => {
       onOpenChange(false);
       await utils.decision.getDecisionBySlug.invalidate();
@@ -63,7 +63,7 @@ export const LaunchProcessModal = ({
   });
 
   const handleLaunch = () => {
-    updateInstance.mutate({
+    publishInstance.mutate({
       instanceId,
       status: ProcessStatus.PUBLISHED,
     });
@@ -132,8 +132,8 @@ export const LaunchProcessModal = ({
         </Button>
         <Button
           onPress={handleLaunch}
-          isPending={updateInstance.isPending}
-          isDisabled={updateInstance.isPending}
+          isPending={publishInstance.isPending}
+          isDisabled={publishInstance.isPending}
           className="w-full sm:w-auto"
         >
           {t('Launch Process')}
