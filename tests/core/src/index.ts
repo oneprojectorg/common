@@ -34,10 +34,12 @@ export {
   createProposalHistorySnapshot,
   createProposalReview,
   createReviewAssignment,
+  createRevisionRequest,
   defaultReviewSettings,
   getLatestProposalHistoryId,
   type CreateProposalReviewOptions,
   type CreateReviewAssignmentOptions,
+  type CreateRevisionRequestOptions,
   type ReviewSettings,
 } from './review-data';
 

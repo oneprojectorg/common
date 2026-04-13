@@ -2,9 +2,10 @@ import { mockCollab } from '@op/collab/testing';
 import type { RubricTemplateSchema } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
   ProposalReviewState,
 } from '@op/db/schema';
-import { createProposalReview } from '@op/test';
+import { createProposalReview, createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -89,6 +90,7 @@ describe.concurrent('getReviewAssignment', () => {
         },
       },
       review: null,
+      revisionRequest: null,
     });
   });
 
@@ -190,6 +192,49 @@ describe.concurrent('getReviewAssignment', () => {
         },
       },
       review: null,
+      revisionRequest: null,
+    });
+  });
+
+  it('returns the revision request when one exists', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Proposal Needing Revision',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add more budget detail.',
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.getReviewAssignment({
+      assignmentId: created.assignment.id,
+    });
+
+    expect(result).toMatchObject({
+      assignment: {
+        id: created.assignment.id,
+        status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+      },
+      review: null,
+      revisionRequest: {
+        id: revisionRequest.id,
+        assignmentId: created.assignment.id,
+        state: ProposalReviewRequestState.REQUESTED,
+        requestComment: 'Please add more budget detail.',
+      },
     });
   });
 

@@ -61,6 +61,7 @@ export async function listReviewAssignments({
         },
       },
       reviews: true,
+      requests: true,
     },
     orderBy: {
       assignedAt: 'asc',
@@ -118,7 +119,9 @@ export async function listReviewAssignments({
         },
       },
       rubricTemplate,
+      // NOTE: We currently support only one review/revision cycle per assignment.
       review: assignment.reviews[0] ?? null,
+      revisionRequest: assignment.requests[0] ?? null,
     };
   });
 
