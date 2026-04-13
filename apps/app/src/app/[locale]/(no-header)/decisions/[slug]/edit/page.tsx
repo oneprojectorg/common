@@ -44,6 +44,8 @@ const EditDecisionPage = async ({
     phases: instanceData.phases,
     proposalTemplate:
       instanceData.proposalTemplate as ProcessBuilderInstanceData['proposalTemplate'],
+    rubricTemplate:
+      instanceData.rubricTemplate as ProcessBuilderInstanceData['rubricTemplate'],
     config: instanceData.config,
   };
 

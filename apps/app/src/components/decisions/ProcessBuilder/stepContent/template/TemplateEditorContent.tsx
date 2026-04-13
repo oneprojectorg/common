@@ -84,7 +84,7 @@ export function TemplateEditorContent({
   const hasCategories = categories.length > 0;
 
   const initialTemplate = useMemo(() => {
-    const saved = instanceData?.proposalTemplate;
+    const saved = storeData?.proposalTemplate ?? instanceData?.proposalTemplate;
 
     const base =
       saved && Object.keys(saved.properties ?? {}).length > 0

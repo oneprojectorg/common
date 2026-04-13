@@ -19,6 +19,7 @@ import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import type {
   CriterionView,
   RubricCriterionType,
@@ -47,20 +48,27 @@ import {
 } from './RubricCriterionCard';
 import { RubricParticipantPreview } from './RubricParticipantPreview';
 
-export function RubricEditorContent({ instanceId }: SectionProps) {
+export function RubricEditorContent({
+  instanceId,
+  decisionProfileId,
+}: SectionProps) {
   const t = useTranslations();
+
+  const storeRubricTemplate = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId]?.rubricTemplate,
+  );
 
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instanceData = instance.instanceData;
 
   const initialTemplate = useMemo(() => {
-    const saved = instanceData?.rubricTemplate;
+    const saved = storeRubricTemplate ?? instanceData?.rubricTemplate;
     if (saved && Object.keys(saved.properties ?? {}).length > 0) {
       return saved as RubricTemplateSchema;
     }
     return createEmptyRubricTemplate();
-  }, [instanceData?.rubricTemplate]);
+  }, [storeRubricTemplate, instanceData?.rubricTemplate]);
 
   const [template, setTemplate] =
     useState<RubricTemplateSchema>(initialTemplate);
