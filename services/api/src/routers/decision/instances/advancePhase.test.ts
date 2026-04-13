@@ -100,8 +100,7 @@ describe.concurrent('advancePhase', () => {
     });
     expect(reloaded!.currentStateId).toBe('final');
 
-    const instanceData = reloaded!.instanceData as { currentPhaseId?: string };
-    expect(instanceData.currentPhaseId).toBe('final');
+    expect(reloaded!.currentStateId).toBe('final');
 
     const history = await db._query.stateTransitionHistory.findFirst({
       where: eq(stateTransitionHistory.processInstanceId, loaded.dbInstance.id),

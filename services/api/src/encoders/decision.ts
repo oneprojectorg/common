@@ -232,7 +232,6 @@ export const instancePhaseDataEncoder = z.object({
 const instanceDataWithSchemaEncoder = z.object({
   config: processConfigEncoder.optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
-  currentPhaseId: z.string(),
   templateId: z.string().optional(),
   templateVersion: z.string().optional(),
   templateName: z.string().optional(),
@@ -373,7 +372,6 @@ const instanceDataEncoder = z.preprocess(
       : obj.phases;
     return {
       ...obj,
-      currentPhaseId: obj.currentPhaseId ?? obj.currentStateId,
       phases,
     };
   },
@@ -381,7 +379,6 @@ const instanceDataEncoder = z.preprocess(
     budget: z.number().optional(),
     hideBudget: z.boolean().optional(),
     fieldValues: z.record(z.string(), z.unknown()).optional(),
-    currentPhaseId: z.string(),
     phases: z
       .array(
         z.object({

@@ -500,9 +500,7 @@ test.describe('Proposal View', () => {
     }
 
     // COWOP-style instanceData — no proposalTemplate, has fieldValues.
-    // Must include currentPhaseId for the instanceDataWithSchemaEncoder.
     const cowopInstanceData = {
-      currentPhaseId: 'ideaCollection',
       budget: 100000,
       hideBudget: false,
       phases: [

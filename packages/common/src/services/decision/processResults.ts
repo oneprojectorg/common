@@ -47,7 +47,7 @@ export async function processResults({
     }
 
     const instanceData = processInstance.instanceData as DecisionInstanceData;
-    const currentPhaseId = instanceData.currentPhaseId;
+    const currentPhaseId = processInstance.currentStateId;
 
     const processProposals = await getProposalsForPhase({
       instanceId: processInstanceId,

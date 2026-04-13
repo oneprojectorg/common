@@ -16,7 +16,6 @@ function stubInstance(
 describe('buildExpectedTransitions', () => {
   it('should create transitions for date-based phases', () => {
     const instance = stubInstance({
-      currentPhaseId: 'phase-a',
       phases: [
         {
           phaseId: 'phase-a',
@@ -53,7 +52,6 @@ describe('buildExpectedTransitions', () => {
 
   it('should skip phases without date-based advancement', () => {
     const instance = stubInstance({
-      currentPhaseId: 'phase-a',
       phases: [
         {
           phaseId: 'phase-a',
@@ -81,7 +79,6 @@ describe('buildExpectedTransitions', () => {
 
   it('should return empty array when no phases use date advancement', () => {
     const instance = stubInstance({
-      currentPhaseId: 'phase-a',
       phases: [
         {
           phaseId: 'phase-a',
@@ -99,7 +96,6 @@ describe('buildExpectedTransitions', () => {
 
   it('should return empty array for single phase (no next phase to transition to)', () => {
     const instance = stubInstance({
-      currentPhaseId: 'only-phase',
       phases: [
         {
           phaseId: 'only-phase',
@@ -115,7 +111,6 @@ describe('buildExpectedTransitions', () => {
 
   it('should throw when phases array is empty', () => {
     const instance = stubInstance({
-      currentPhaseId: 'x',
       phases: [],
     });
 
@@ -125,9 +120,7 @@ describe('buildExpectedTransitions', () => {
   });
 
   it('should throw when phases is undefined', () => {
-    const instance = stubInstance({
-      currentPhaseId: 'x',
-    });
+    const instance = stubInstance({});
 
     expect(() => buildExpectedTransitions(instance)).toThrow(
       'Process instance must have at least one phase configured',
@@ -137,7 +130,6 @@ describe('buildExpectedTransitions', () => {
   it('should throw when date-based phase has no endDate', () => {
     const instance = stubInstance(
       {
-        currentPhaseId: 'phase-a',
         phases: [
           {
             phaseId: 'phase-a',

@@ -71,9 +71,12 @@ function allActiveProposals(instanceId: string, dbClient: DbClient) {
 async function getInstanceContext(
   instanceId: string,
   dbClient: DbClient,
-): Promise<{ isLegacy: boolean; currentPhaseId?: string } | null> {
+): Promise<{ isLegacy: boolean; currentPhaseId?: string | null } | null> {
   const [row] = await dbClient
-    .select({ instanceData: processInstances.instanceData })
+    .select({
+      instanceData: processInstances.instanceData,
+      currentStateId: processInstances.currentStateId,
+    })
     .from(processInstances)
     .where(eq(processInstances.id, instanceId))
     .limit(1);
@@ -82,11 +85,9 @@ async function getInstanceContext(
     return null;
   }
 
-  const data = row.instanceData as { currentPhaseId?: string } | null;
-
   return {
     isLegacy: isLegacyInstanceData(row.instanceData),
-    currentPhaseId: data?.currentPhaseId,
+    currentPhaseId: row.currentStateId,
   };
 }
 
@@ -94,7 +95,7 @@ async function getInstanceContext(
  * Returns IDs of proposals visible in the given phase. Lean variant for
  * callers that only need IDs (e.g. to pass as a filter to listProposals).
  *
- * - Legacy instances (instanceData.currentStateId without currentPhaseId): always returns
+ * - Legacy instances (no phases array in instanceData): always returns
  *   all non-draft, non-deleted proposals — phase scoping does not apply.
  * - If a transition into the requested phase exists: returns the proposals that survived
  *   that transition (empty means empty — no fallback).
@@ -157,7 +158,7 @@ export async function getProposalIdsForPhase({
 /**
  * Returns the proposals visible in the given phase.
  *
- * - Legacy instances (instanceData.currentStateId without currentPhaseId): always returns
+ * - Legacy instances (no phases array in instanceData): always returns
  *   all non-draft, non-deleted proposals — phase scoping does not apply.
  * - If a transition into the requested phase exists: returns the proposals that survived
  *   that transition (empty means empty — no fallback).

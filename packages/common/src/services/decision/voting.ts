@@ -26,24 +26,27 @@ import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 /** Extract proposal/voting permissions from the current phase. */
-function getCurrentPhaseConfig(processInstance: { instanceData: unknown }):
+function getCurrentPhaseConfig(processInstance: {
+  instanceData: unknown;
+  currentStateId: string | null;
+}):
   | {
       allowProposals: boolean;
       allowDecisions: boolean;
     }
   | undefined {
   const instanceData = processInstance.instanceData as DecisionInstanceData;
+  const currentPhaseId = processInstance.currentStateId;
 
-  // @ts-expect-error  Remove instanceData,currentStateId in a migration before undoing
-  if (!instanceData?.currentPhaseId && !instanceData?.currentStateId) {
+  if (!currentPhaseId) {
     return undefined;
   }
 
   const currentPhase = instanceData.phases.find(
     (p) =>
-      p.phaseId === instanceData.currentPhaseId ||
+      p.phaseId === currentPhaseId ||
       // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId
-      p.stateId === instanceData.currentStateId,
+      p.stateId === currentPhaseId,
   );
 
   if (!currentPhase) {
@@ -153,6 +156,7 @@ export const submitVote = async ({
         profileId: true,
         ownerProfileId: true,
         instanceData: true,
+        currentStateId: true,
       },
     });
 
@@ -349,6 +353,7 @@ export const getVotingStatus = async ({
         profileId: true,
         ownerProfileId: true,
         instanceData: true,
+        currentStateId: true,
       },
     });
 

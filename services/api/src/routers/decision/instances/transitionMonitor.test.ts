@@ -1,8 +1,4 @@
-import {
-  type DecisionInstanceData,
-  processDecisionsTransitions,
-  simpleVoting,
-} from '@op/common';
+import { processDecisionsTransitions, simpleVoting } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -230,8 +226,6 @@ describe('processDecisionsTransitions', () => {
 
     // All 3 transitions (submission→review, review→voting, voting→results) were due
     // so the instance should have advanced to the final state
-    const instanceData = instance!.instanceData as DecisionInstanceData;
-    expect(instanceData.currentPhaseId).toBe('results');
     expect(instance!.currentStateId).toBe('results');
 
     // Verify updatedAt was set by the monitor
@@ -341,8 +335,7 @@ describe('processDecisionsTransitions', () => {
       where: eq(processInstances.id, instanceId),
     });
 
-    const instanceData = instance!.instanceData as DecisionInstanceData;
-    expect(instanceData.currentPhaseId).toBe('submission');
+    expect(instance!.currentStateId).toBe('submission');
   });
 
   it('should process multiple due transitions sequentially for same instance', async ({
@@ -368,8 +361,6 @@ describe('processDecisionsTransitions', () => {
       where: eq(processInstances.id, instanceId),
     });
 
-    const instanceData = instance!.instanceData as DecisionInstanceData;
-    expect(instanceData.currentPhaseId).toBe('results');
     expect(instance!.currentStateId).toBe('results');
 
     // All transitions should be completed
@@ -593,7 +584,7 @@ describe('processDecisionsTransitions', () => {
     await db
       .update(processInstances)
       .set({
-        instanceData: { currentPhaseId: 'submission', phases: [] },
+        instanceData: { phases: [] },
       })
       .where(eq(processInstances.id, badInstanceId));
 
@@ -640,8 +631,6 @@ describe('processDecisionsTransitions', () => {
     const instance = await db._query.processInstances.findFirst({
       where: eq(processInstances.id, instanceId),
     });
-    const instanceData = instance!.instanceData as DecisionInstanceData;
-    expect(instanceData.currentPhaseId).toBe('results');
     expect(instance!.currentStateId).toBe('results');
 
     // Each transition should have completedAt set exactly once

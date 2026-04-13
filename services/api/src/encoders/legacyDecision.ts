@@ -127,7 +127,6 @@ const legacyInstanceDataEncoder = z.preprocess(
       : obj.phases;
     return {
       ...obj,
-      currentPhaseId: obj.currentPhaseId ?? obj.currentStateId,
       phases,
     };
   },
@@ -135,7 +134,6 @@ const legacyInstanceDataEncoder = z.preprocess(
     budget: z.number().optional(),
     hideBudget: z.boolean().optional(),
     fieldValues: z.record(z.string(), z.unknown()).optional(),
-    currentPhaseId: z.string(),
     phases: z
       .array(
         z.object({

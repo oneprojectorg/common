@@ -67,7 +67,6 @@ const legacyProcessSchema = {
 
 /** Legacy instance data matching the encoder's expected shape */
 const legacyInstanceData = {
-  currentPhaseId: 'submission',
   phases: [
     {
       phaseId: 'submission',

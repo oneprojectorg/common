@@ -67,7 +67,7 @@ export const createDecisionInstance = async ({
         name,
         description,
         instanceData,
-        currentStateId: instanceData.currentPhaseId, // DB column is currentStateId but stores phaseId
+        currentStateId: instanceData.phases[0]?.phaseId ?? null,
         ownerProfileId,
         stewardProfileId,
         profileId: instanceProfile.id,

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from '@op/db/client';
+import { and, desc, eq, inArray, isNull } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 import {
   ProcessStatus,
@@ -116,11 +116,6 @@ export async function advancePhase(
     .set({
       currentStateId: toPhaseId,
       updatedAt: now,
-      instanceData: sql`jsonb_set(
-        coalesce(${processInstances.instanceData}, '{}'::jsonb),
-        '{currentPhaseId}',
-        to_jsonb(${toPhaseId}::text)
-      )`,
     })
     .where(
       and(
