@@ -32,20 +32,6 @@ export enum ProposalStatus {
   SELECTED = 'selected',
 }
 
-/** Proposal statuses that are not eligible for voting. */
-export const VOTING_INELIGIBLE_STATUSES: readonly string[] = [
-  ProposalStatus.DRAFT,
-  ProposalStatus.REJECTED,
-  ProposalStatus.DUPLICATE,
-];
-
-export function isVotingEligible(status: string | null | undefined): boolean {
-  if (!status) {
-    return false;
-  }
-  return !VOTING_INELIGIBLE_STATUSES.includes(status);
-}
-
 export const proposalStatusEnum = pgEnum(
   'decision_proposal_status',
   enumToPgEnum(ProposalStatus),

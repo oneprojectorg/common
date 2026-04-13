@@ -24,7 +24,5 @@ export {
   ProcessStatus,
   ProfileRelationshipType,
   ProposalStatus,
-  VOTING_INELIGIBLE_STATUSES,
-  isVotingEligible,
   Visibility,
 } from '@op/db/schema';

@@ -6,13 +6,13 @@ import {
   type DecisionAccess,
   ProposalFilter,
   ProposalStatus,
-  isVotingEligible,
 } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalTranslation,
   SUPPORTED_LOCALES,
   type SupportedLocale,
+  isVotingEligible,
 } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';

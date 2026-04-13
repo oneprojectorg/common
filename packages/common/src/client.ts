@@ -37,6 +37,10 @@ export {
 } from './services/decision/getRubricScoringInfo';
 export { REVIEWS_POLICIES } from './services/decision/schemas/types';
 export { isLastPhase } from './services/decision/schemas/instanceData';
+export {
+  VOTING_INELIGIBLE_STATUSES,
+  isVotingEligible,
+} from './services/decision/votingEligibility';
 
 // Translation constants (no server dependencies)
 export {

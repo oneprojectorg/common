@@ -3,7 +3,6 @@ import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  isVotingEligible,
   processInstances,
   proposals,
 } from '@op/db/schema';
@@ -24,6 +23,7 @@ import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { isVotingEligible } from './votingEligibility';
 
 /** Extract proposal/voting permissions from the current phase. */
 function getCurrentPhaseConfig(processInstance: {

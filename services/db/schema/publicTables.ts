@@ -126,8 +126,6 @@ export {
   proposals,
   proposalsRelations,
   ProposalStatus,
-  VOTING_INELIGIBLE_STATUSES,
-  isVotingEligible,
   proposalStatusEnum,
 } from './tables/proposals.sql';
 export type { Proposal, ProposalCategory } from './tables/proposals.sql';
