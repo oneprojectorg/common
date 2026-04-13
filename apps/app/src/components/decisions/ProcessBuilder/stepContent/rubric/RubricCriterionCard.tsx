@@ -1,19 +1,18 @@
 'use client';
 
-import {
-  AccordionContent,
-  AccordionHeader,
-  AccordionIndicator,
-  AccordionTrigger,
-} from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
+import {
+  CollapsibleConfigCard,
+  CollapsibleConfigCardDragPreview,
+} from '@op/ui/CollapsibleConfigCard';
 import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { DragHandle } from '@op/ui/Sortable';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
-import { useState } from 'react';
-import { LuChevronRight, LuGripVertical, LuTrash2 } from 'react-icons/lu';
+import { ToggleButton } from '@op/ui/ToggleButton';
+import { cn } from '@op/ui/utils';
+import { useRef, useState } from 'react';
+import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -34,11 +33,12 @@ import {
 
 interface RubricCriterionCardProps {
   criterion: CriterionView;
-  /** 1-based display index for the header (e.g. "Criterion 1") */
-  index: number;
   errors?: TranslationKey[];
   controls?: SortableItemControls;
+  isExpanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
   onRemove?: (criterionId: string) => void;
+  onBlur?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;
   onUpdateDescription?: (criterionId: string, description: string) => void;
   onChangeType?: (criterionId: string, newType: RubricCriterionType) => void;
@@ -48,6 +48,9 @@ interface RubricCriterionCardProps {
     scoreValue: number,
     label: string,
   ) => void;
+  onUpdateRequired?: (criterionId: string, required: boolean) => void;
+  isNew?: boolean;
+  onNewComplete?: (criterionId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,93 +58,94 @@ interface RubricCriterionCardProps {
 // ---------------------------------------------------------------------------
 
 /**
- * A collapsible accordion card for a single rubric criterion.
+ * A collapsible card for a single rubric criterion.
  *
- * Built directly with Accordion primitives (not FieldConfigCard) to match
- * the mockup: static "Criterion N" header, separate name/description fields
- * in the body, and a criterion type radio selector.
- *
- * Must be rendered inside an `<AccordionItem>` which is inside an `<Accordion>`.
+ * Uses CollapsibleConfigCard to match the proposal template FieldCard pattern:
+ * drag handle + label in header, content with field name, description,
+ * criterion type selector, and a footer with required toggle + delete.
  */
 export function RubricCriterionCard({
   criterion,
-  index,
   errors = [],
   controls,
+  isExpanded,
+  onExpandedChange,
   onRemove,
+  onBlur,
   onUpdateLabel,
   onUpdateDescription,
   onChangeType,
   onUpdateMaxPoints,
   onUpdateScoreLabel,
+  onUpdateRequired,
+  isNew,
+  onNewComplete,
 }: RubricCriterionCardProps) {
   const t = useTranslations();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const fieldNameRef = useRef<HTMLInputElement>(null);
+
+  const displayLabel = criterion.label || t('Untitled field');
+
+  const badgeLabel =
+    criterion.criterionType === 'scored' && criterion.maxPoints
+      ? `${criterion.maxPoints}${t('pts')}`
+      : t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey);
+
+  // Only trigger validation when focus leaves the card entirely
+  const handleBlur = (e: React.FocusEvent) => {
+    if (cardRef.current && !cardRef.current.contains(e.relatedTarget as Node)) {
+      onBlur?.(criterion.id);
+    }
+  };
 
   return (
-    <>
-      {/* Header: drag handle + chevron + "Criterion N" + delete button */}
-      <AccordionHeader className="flex items-center gap-2 px-3 py-2">
-        {controls && (
-          <DragHandle
-            {...controls.dragHandleProps}
-            aria-label={t('Drag to reorder criterion')}
-          />
+    <div
+      ref={cardRef}
+      onBlur={handleBlur}
+      onAnimationEnd={() => onNewComplete?.(criterion.id)}
+      className="scroll-m-6"
+    >
+      <CollapsibleConfigCard
+        label={displayLabel}
+        badgeLabel={badgeLabel}
+        badgeClassName="group-data-[expanded]/accordion-item:hidden"
+        isCollapsible
+        isExpanded={isExpanded}
+        onExpandedChange={onExpandedChange}
+        controls={controls}
+        dragHandleAriaLabel={t('Drag to reorder criterion')}
+        className={cn(
+          'data-[expanded]:bg-neutral-offWhite',
+          isNew && 'animate-border-highlight',
+          errors.length > 0 && 'border-functional-red',
         )}
-        <AccordionTrigger className="flex flex-1 cursor-pointer items-center gap-2 overflow-hidden">
-          <AccordionIndicator />
-          <span className="shrink-0 text-left font-serif text-neutral-charcoal">
-            {t('Criterion {number}', { number: index })}
-          </span>
-          <span className="truncate text-left text-neutral-gray4">
-            {criterion.label || t('New criterion')}
-          </span>
-          <CriterionBadges criterion={criterion} />
-        </AccordionTrigger>
-        {onRemove && (
-          <Button
-            color="ghost"
-            size="small"
-            aria-label={t('Remove criterion')}
-            onPress={() => onRemove(criterion.id)}
-            className="p-2 text-neutral-gray4 hover:text-functional-red"
-          >
-            <LuTrash2 className="size-4" />
-          </Button>
-        )}
-      </AccordionHeader>
-
-      {/* Collapsible body */}
-      <AccordionContent>
-        <hr className="border-neutral-gray1" />
-        <div className="space-y-4 p-4">
-          {/* Criterion name */}
+      >
+        <div className="space-y-4 px-8">
+          {/* Field name */}
           <TextField
-            label={t('Criterion name')}
+            ref={fieldNameRef}
+            label={t('Field name')}
             isRequired
             value={criterion.label}
             onChange={(value) => onUpdateLabel?.(criterion.id, value)}
+            maxLength={50}
             inputProps={{
-              placeholder: t('e.g., Goal Alignment'),
+              className: 'bg-white',
             }}
-            description={t(
-              'Add a short, clear name for this evaluation criterion',
-            )}
+            className="min-w-0 flex-1"
           />
 
           {/* Description */}
           <TextField
             label={t('Description')}
-            isRequired
             useTextArea
             value={criterion.description ?? ''}
             onChange={(value) => onUpdateDescription?.(criterion.id, value)}
             textareaProps={{
-              placeholder: t(
-                "What should reviewers evaluate? Be specific about what you're looking for.",
-              ),
-              className: 'min-h-24 resize-none',
+              placeholder: t('Provide additional guidance for participants...'),
+              className: 'min-h-24 resize-none bg-white',
             }}
-            description={t('Help reviewers understand what to assess')}
           />
 
           <hr />
@@ -178,9 +182,36 @@ export function RubricCriterionCard({
               ))}
             </div>
           )}
+
+          {/* Footer: Required toggle + Delete button */}
+          <div className="flex items-center justify-between border-t pt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-neutral-charcoal">{t('Required?')}</span>
+              <ToggleButton
+                size="small"
+                isSelected={criterion.required}
+                onChange={(isSelected) =>
+                  onUpdateRequired?.(criterion.id, isSelected)
+                }
+                aria-label={t('Required')}
+              />
+            </div>
+            {onRemove && (
+              <Button
+                color="ghost"
+                size="small"
+                onPress={() => onRemove(criterion.id)}
+                aria-label={t('Delete')}
+                className="text-neutral-gray4 hover:text-functional-red"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </Button>
+            )}
+          </div>
         </div>
-      </AccordionContent>
-    </>
+      </CollapsibleConfigCard>
+    </div>
   );
 }
 
@@ -243,8 +274,6 @@ function ScoredCriterionConfig({
   const max = criterion.maxPoints ?? 5;
 
   // Cache descriptions that would be lost when maxPoints decreases.
-  // Key is 1-based score value, value is the description text.
-  // Cache persists until user navigates away from this criterion card.
   const [cachedDescriptions, setCachedDescriptions] = useState<
     Record<number, string>
   >({});
@@ -257,17 +286,15 @@ function ScoredCriterionConfig({
     const newMax = value;
 
     if (newMax < max) {
-      // Decreasing - cache descriptions that will be removed
       const toCache: Record<number, string> = { ...cachedDescriptions };
       for (let i = newMax + 1; i <= max; i++) {
-        const label = criterion.scoreLabels[i - 1]; // scoreLabels is 0-indexed
+        const label = criterion.scoreLabels[i - 1];
         if (label) {
           toCache[i] = label;
         }
       }
       setCachedDescriptions(toCache);
     } else if (newMax > max) {
-      // Increasing - restore cached descriptions after update
       const labelsToRestore: Array<{ score: number; label: string }> = [];
       for (let i = max + 1; i <= newMax; i++) {
         const cached = cachedDescriptions[i];
@@ -276,13 +303,11 @@ function ScoredCriterionConfig({
         }
       }
 
-      // Clear restored items from cache
       if (labelsToRestore.length > 0) {
         const newCache = { ...cachedDescriptions };
         labelsToRestore.forEach(({ score }) => delete newCache[score]);
         setCachedDescriptions(newCache);
 
-        // Restore labels after state update
         setTimeout(() => {
           labelsToRestore.forEach(({ score, label }) => {
             onUpdateScoreLabel(score, label);
@@ -344,59 +369,22 @@ function ScoredCriterionConfig({
 }
 
 // ---------------------------------------------------------------------------
-// Shared criterion badges (type + points)
-// ---------------------------------------------------------------------------
-
-function CriterionBadges({ criterion }: { criterion: CriterionView }) {
-  const t = useTranslations();
-  return (
-    <span className="ml-auto flex shrink-0 items-center gap-1.5">
-      <span className="rounded-md bg-neutral-gray1 px-1.5 py-0.5 text-xs text-neutral-charcoal">
-        {t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)}
-      </span>
-      {criterion.criterionType === 'scored' && criterion.maxPoints && (
-        <span className="bg-primary-mint/20 text-primary-tealDark rounded-md px-1.5 py-0.5 text-xs">
-          {criterion.maxPoints} {t('pts')}
-        </span>
-      )}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Drag preview
 // ---------------------------------------------------------------------------
 
 export function RubricCriterionDragPreview({
   criterion,
-  index,
 }: {
   criterion: CriterionView;
-  index: number;
 }) {
   const t = useTranslations();
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-white p-3 shadow-lg">
-      <div className="grid size-6 place-items-center rounded bg-neutral-offWhite">
-        <LuGripVertical className="size-4 shrink-0 text-neutral-gray4" />
-      </div>
-      <LuChevronRight className="size-4 shrink-0 text-neutral-gray4" />
-      <span className="shrink-0 font-serif text-neutral-charcoal">
-        {t('Criterion {number}', { number: index })}
-      </span>
-      <span className="truncate text-neutral-gray4">
-        {criterion.label || t('New criterion')}
-      </span>
-      <CriterionBadges criterion={criterion} />
-      <div className="grid w-8 place-items-center rounded">
-        <LuTrash2 className="size-4 shrink-0 text-neutral-gray3" />
-      </div>
-    </div>
+    <CollapsibleConfigCardDragPreview
+      label={criterion.label || t('Untitled field')}
+    />
   );
 }
 
 export function RubricCriterionDropIndicator() {
-  return (
-    <div className="flex h-12 items-center gap-2 rounded-lg border bg-neutral-offWhite" />
-  );
+  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
 }

@@ -2,13 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
-import { Accordion, AccordionItem } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
-import type { Key } from '@op/ui/RAC';
 import { Sortable } from '@op/ui/Sortable';
-import { cn } from '@op/ui/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
@@ -34,6 +31,7 @@ import {
   getCriterionType,
   removeCriterion,
   reorderCriteria,
+  setCriterionRequired,
   updateCriterionDescription,
   updateCriterionJsonSchema,
   updateCriterionLabel,
@@ -79,8 +77,15 @@ export function RubricEditorContent({
     Map<string, TranslationKey[]>
   >(new Map());
 
-  // Accordion expansion state
-  const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
+  // Track which criteria are expanded — multiple can be open simultaneously
+  const [expandedCriterionIds, setExpandedCriterionIds] = useState<Set<string>>(
+    new Set(),
+  );
+
+  // Track newly added criteria for highlight animation
+  const [newCriterionIds, setNewCriterionIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Delete confirmation modal
   const [criterionToDelete, setCriterionToDelete] = useState<string | null>(
@@ -96,10 +101,6 @@ export function RubricEditorContent({
 
   // Derive criterion views from the template
   const criteria = useMemo(() => getCriteria(template), [template]);
-  const criteriaIndexMap = useMemo(
-    () => new Map(criteria.map((c, i) => [c.id, i])),
-    [criteria],
-  );
 
   // Save rubric changes via the shared autosave context (skip initial load)
   useEffect(() => {
@@ -114,9 +115,10 @@ export function RubricEditorContent({
 
   const handleAddCriterion = useCallback(() => {
     const criterionId = crypto.randomUUID().slice(0, 8);
-    const label = t('New criterion');
+    const label = t('Untitled field');
     setTemplate((prev) => addCriterion(prev, criterionId, 'scored', label));
-    setExpandedKeys((prev) => new Set([...prev, criterionId]));
+    setExpandedCriterionIds((prev) => new Set(prev).add(criterionId));
+    setNewCriterionIds((prev) => new Set(prev).add(criterionId));
   }, [t]);
 
   const handleRemoveCriterion = useCallback((criterionId: string) => {
@@ -130,6 +132,16 @@ export function RubricEditorContent({
     setTemplate((prev) => removeCriterion(prev, criterionToDelete));
     setCriterionErrors((prev) => {
       const next = new Map(prev);
+      next.delete(criterionToDelete);
+      return next;
+    });
+    setExpandedCriterionIds((prev) => {
+      const next = new Set(prev);
+      next.delete(criterionToDelete);
+      return next;
+    });
+    setNewCriterionIds((prev) => {
+      const next = new Set(prev);
       next.delete(criterionToDelete);
       return next;
     });
@@ -221,6 +233,33 @@ export function RubricEditorContent({
     [],
   );
 
+  const handleUpdateRequired = useCallback(
+    (criterionId: string, required: boolean) => {
+      setTemplate((prev) => setCriterionRequired(prev, criterionId, required));
+    },
+    [],
+  );
+
+  const handleCriterionBlur = useCallback(
+    (criterionId: string) => {
+      const criterion = criteria.find((c) => c.id === criterionId);
+      if (criterion) {
+        setCriterionErrors((prev) =>
+          new Map(prev).set(criterionId, getCriterionErrors(criterion)),
+        );
+      }
+    },
+    [criteria],
+  );
+
+  const handleNewComplete = useCallback((criterionId: string) => {
+    setNewCriterionIds((prev) => {
+      const next = new Set(prev);
+      next.delete(criterionId);
+      return next;
+    });
+  }, []);
+
   return (
     <div className="flex h-full flex-col md:flex-row">
       <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
@@ -260,68 +299,61 @@ export function RubricEditorContent({
             </div>
           ) : (
             <>
-              <Accordion
-                allowsMultipleExpanded
-                expandedKeys={expandedKeys}
-                onExpandedChange={setExpandedKeys}
+              <Sortable
+                items={criteria}
+                onChange={handleReorderCriteria}
+                dragTrigger="handle"
+                getItemLabel={(criterion) => criterion.label}
+                className="gap-3"
+                renderDragPreview={(items) => {
+                  const item = items[0];
+                  if (!item) {
+                    return null;
+                  }
+                  return <RubricCriterionDragPreview criterion={item} />;
+                }}
+                renderDropIndicator={RubricCriterionDropIndicator}
+                aria-label={t('Rubric criteria')}
               >
-                <Sortable
-                  items={criteria}
-                  onChange={handleReorderCriteria}
-                  dragTrigger="handle"
-                  getItemLabel={(criterion) => criterion.label}
-                  className="gap-3"
-                  renderDragPreview={(items) => {
-                    const item = items[0];
-                    if (!item) {
-                      return null;
-                    }
-                    const idx = criteriaIndexMap.get(item.id) ?? 0;
-                    return (
-                      <RubricCriterionDragPreview
-                        criterion={item}
-                        index={idx + 1}
-                      />
-                    );
-                  }}
-                  renderDropIndicator={RubricCriterionDropIndicator}
-                  aria-label={t('Rubric criteria')}
-                >
-                  {(criterion, controls) => {
-                    const idx = criteriaIndexMap.get(criterion.id) ?? 0;
-                    const snapshotErrors =
-                      criterionErrors.get(criterion.id) ?? [];
-                    const liveErrors = getCriterionErrors(criterion);
-                    const displayedErrors = snapshotErrors.filter((e) =>
-                      liveErrors.includes(e),
-                    );
+                {(criterion, controls) => {
+                  const snapshotErrors =
+                    criterionErrors.get(criterion.id) ?? [];
+                  const liveErrors = getCriterionErrors(criterion);
+                  const displayedErrors = snapshotErrors.filter((e) =>
+                    liveErrors.includes(e),
+                  );
 
-                    return (
-                      <AccordionItem
-                        id={criterion.id}
-                        variant="unstyled"
-                        className={cn(
-                          'rounded-lg border bg-white',
-                          controls.isDragging && 'opacity-50',
-                        )}
-                      >
-                        <RubricCriterionCard
-                          criterion={criterion}
-                          index={idx + 1}
-                          errors={displayedErrors}
-                          controls={controls}
-                          onRemove={handleRemoveCriterion}
-                          onUpdateLabel={handleUpdateLabel}
-                          onUpdateDescription={handleUpdateDescription}
-                          onChangeType={handleChangeType}
-                          onUpdateMaxPoints={handleUpdateMaxPoints}
-                          onUpdateScoreLabel={handleUpdateScoreLabel}
-                        />
-                      </AccordionItem>
-                    );
-                  }}
-                </Sortable>
-              </Accordion>
+                  return (
+                    <RubricCriterionCard
+                      criterion={criterion}
+                      errors={displayedErrors}
+                      controls={controls}
+                      isExpanded={expandedCriterionIds.has(criterion.id)}
+                      onExpandedChange={(expanded) =>
+                        setExpandedCriterionIds((prev) => {
+                          const next = new Set(prev);
+                          if (expanded) {
+                            next.add(criterion.id);
+                          } else {
+                            next.delete(criterion.id);
+                          }
+                          return next;
+                        })
+                      }
+                      isNew={newCriterionIds.has(criterion.id)}
+                      onNewComplete={handleNewComplete}
+                      onRemove={handleRemoveCriterion}
+                      onBlur={handleCriterionBlur}
+                      onUpdateLabel={handleUpdateLabel}
+                      onUpdateDescription={handleUpdateDescription}
+                      onUpdateRequired={handleUpdateRequired}
+                      onChangeType={handleChangeType}
+                      onUpdateMaxPoints={handleUpdateMaxPoints}
+                      onUpdateScoreLabel={handleUpdateScoreLabel}
+                    />
+                  );
+                }}
+              </Sortable>
 
               <Button
                 color="secondary"
