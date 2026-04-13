@@ -9,6 +9,8 @@ export * from './listProcesses';
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';
+export * from './updateDraftInstanceData';
+export * from './publishDecisionInstance';
 export * from './listInstances';
 export * from './listLegacyInstances';
 export * from './getInstance';
@@ -86,6 +88,7 @@ export { schemaValidator } from './schemaValidator';
 export * from './types';
 export type {
   DecisionInstanceData,
+  DraftInstanceData,
   PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';

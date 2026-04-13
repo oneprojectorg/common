@@ -1,5 +1,5 @@
 /**
- * Instance data creation helpers for DecisionSchemaDefinition templates.
+ * Instance data schemas and types for decision process instances.
  */
 import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
@@ -46,6 +46,17 @@ export interface DecisionInstanceData {
   rubricTemplate?: RubricTemplateSchema;
 }
 
+/**
+ * Data stored in the `draftInstanceData` JSONB column.
+ * Same shape as DecisionInstanceData plus instance-column fields that are
+ * extracted to their own columns on publish.
+ */
+export type DraftInstanceData = DecisionInstanceData & {
+  name?: string;
+  description?: string;
+  stewardProfileId?: string;
+};
+
 export interface PhaseOverride {
   phaseId: string;
   name?: string;
@@ -57,6 +68,8 @@ export interface PhaseOverride {
   endDate?: string;
   settings?: Record<string, unknown>;
 }
+
+// ============ Instance Data Creation ============
 
 /**
  * Creates instance data from a DecisionSchemaDefinition template.

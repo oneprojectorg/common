@@ -8,14 +8,18 @@ import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listInstancesRouter } from './listInstances';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
+import { publishDecisionInstanceRouter } from './publishDecisionInstance';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
+import { updateDraftInstanceDataRouter } from './updateDraftInstanceData';
 
 export const instancesRouter = mergeRouters(
   createInstanceFromTemplateRouter,
   deleteDecisionRouter,
   duplicateInstanceRouter,
   updateDecisionInstanceRouter,
+  updateDraftInstanceDataRouter,
+  publishDecisionInstanceRouter,
   transitionFromPhaseRouter,
   listInstancesRouter,
   listLegacyInstancesRouter,
