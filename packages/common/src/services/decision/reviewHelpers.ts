@@ -91,26 +91,23 @@ export function resolveAssignmentProposal(assignment: {
     proposalData: unknown;
   };
 }): {
-  proposalSnapshot: { proposalData: ProposalData };
-  proposalId: string;
+  id: string;
+  proposalData: ProposalData;
 } {
   const snapshot = assignment.assignedProposalHistory ?? assignment.proposal;
-  const proposalId = assignment.proposal.id;
+  const id = assignment.proposal.id;
 
   const proposalData = parseProposalData(snapshot.proposalData);
 
   if (!proposalData.collaborationDocId) {
     throw new ValidationError(
-      `Proposal ${proposalId} is missing collaborationDocId`,
+      `Proposal ${id} is missing collaborationDocId`,
     );
   }
 
   if (proposalData.collaborationDocVersionId == null) {
-    console.warn(`Proposal ${proposalId} is missing collaborationDocVersionId`);
+    console.warn(`Proposal ${id} is missing collaborationDocVersionId`);
   }
 
-  return {
-    proposalSnapshot: { ...snapshot, proposalData },
-    proposalId,
-  };
+  return { ...snapshot, id, proposalData };
 }

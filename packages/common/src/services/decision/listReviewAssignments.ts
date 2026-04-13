@@ -81,11 +81,10 @@ export async function listReviewAssignments({
   }> = [];
 
   for (const assignment of assignments) {
-    const { proposalId, proposalSnapshot } =
-      resolveAssignmentProposal(assignment);
+    const proposalSnapshot = resolveAssignmentProposal(assignment);
 
     docContentInputs.push({
-      id: proposalId,
+      id: proposalSnapshot.id,
       proposalData: proposalSnapshot.proposalData,
       proposalTemplate,
       collaborationDocVersionId:
@@ -97,10 +96,9 @@ export async function listReviewAssignments({
     await getProposalDocumentsContent(docContentInputs);
 
   const assignmentList = assignments.map((assignment) => {
-    const { proposalId, proposalSnapshot } =
-      resolveAssignmentProposal(assignment);
+    const proposalSnapshot = resolveAssignmentProposal(assignment);
 
-    const documentContent = documentContentMap.get(proposalId);
+    const documentContent = documentContentMap.get(proposalSnapshot.id);
 
     let htmlContent: Record<string, string> | undefined;
     if (documentContent?.type === 'json') {

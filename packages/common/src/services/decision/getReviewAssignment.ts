@@ -36,8 +36,7 @@ export async function getReviewAssignment({
       user,
     });
 
-  const { proposalId, proposalSnapshot } =
-    resolveAssignmentProposal(assignment);
+  const proposalSnapshot = resolveAssignmentProposal(assignment);
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
@@ -52,21 +51,21 @@ export async function getReviewAssignment({
       }),
       getProposalDocumentsContent([
         {
-          id: proposalId,
+          id: proposalSnapshot.id,
           proposalData: proposalSnapshot.proposalData,
           proposalTemplate,
           collaborationDocVersionId:
             proposalSnapshot.proposalData.collaborationDocVersionId,
         },
       ]),
-      getProposalAttachmentsWithSignedUrls(assignment.proposal.id),
+      getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
     ]);
 
-  const documentContent = documentContentMap.get(proposalId);
+  const documentContent = documentContentMap.get(proposalSnapshot.id);
 
   if (!documentContent) {
     throw new ValidationError(
-      `Could not resolve document content for proposal ${proposalId}`,
+      `Could not resolve document content for proposal ${proposalSnapshot.id}`,
     );
   }
 
