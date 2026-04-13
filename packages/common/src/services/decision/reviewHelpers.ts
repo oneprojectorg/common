@@ -100,9 +100,7 @@ export function resolveAssignmentProposal(assignment: {
   const proposalData = parseProposalData(snapshot.proposalData);
 
   if (!proposalData.collaborationDocId) {
-    throw new ValidationError(
-      `Proposal ${id} is missing collaborationDocId`,
-    );
+    throw new ValidationError(`Proposal ${id} is missing collaborationDocId`);
   }
 
   if (proposalData.collaborationDocVersionId == null) {
