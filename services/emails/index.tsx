@@ -116,3 +116,4 @@ export * from './emails/OPRelationshipRequestEmail';
 export * from './emails/CommentNotificationEmail';
 export * from './emails/ReactionNotificationEmail';
 export * from './emails/ProposalSubmittedEmail';
+export * from './emails/PhaseTransitionEmail';

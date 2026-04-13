@@ -197,6 +197,7 @@ async function advanceInstanceTransitions({
 
       await onPhaseAdvanced({
         instanceId: processInstanceId,
+        fromPhaseId,
         toPhaseId: transition.toStateId,
         phases,
         advanceResult,

@@ -126,7 +126,7 @@ export async function triggerPhaseAdvancement({
     return result;
   });
 
-  await onPhaseAdvanced({ instanceId, toPhaseId, phases, advanceResult });
+  await onPhaseAdvanced({ instanceId, fromPhaseId, toPhaseId, phases, advanceResult });
 
   return {
     currentPhaseId: toPhaseId,
