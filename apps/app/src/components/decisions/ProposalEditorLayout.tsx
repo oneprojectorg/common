@@ -79,8 +79,8 @@ export function ProposalEditorLayout({
           <span className="hidden sm:block">{t('Back')}</span>
         </button>
 
-        <div className="hidden justify-center sm:flex">
-          <Header4 className="hidden sm:block">
+        <div className="hidden min-w-0 justify-center sm:flex">
+          <Header4 className="hidden truncate sm:block">
             {title ? title : t('Untitled Proposal')}
           </Header4>
         </div>
