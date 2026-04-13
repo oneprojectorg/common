@@ -1,13 +1,13 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
-import { UnauthorizedError, ValidationError } from '../../utils';
+import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { resolveAssignmentProposal } from './reviewHelpers';
 import {
   type ReviewAssignmentList,
   reviewAssignmentListSchema,
@@ -81,26 +81,8 @@ export async function listReviewAssignments({
   }> = [];
 
   for (const assignment of assignments) {
-    const proposalHistory = assignment.assignedProposalHistory;
-    const proposalSnapshot = proposalHistory ?? assignment.proposal;
-
-    const contentId = proposalHistory
-      ? proposalHistory.historyId
-      : proposalSnapshot.id;
-
-    const parsedData = parseProposalData(proposalSnapshot.proposalData);
-
-    if (!parsedData.collaborationDocId) {
-      throw new ValidationError(
-        `Proposal ${contentId} is missing collaborationDocId`,
-      );
-    }
-
-    if (parsedData.collaborationDocVersionId == null) {
-      console.warn(
-        `[listReviewAssignments] Proposal ${contentId} is missing collaborationDocVersionId`,
-      );
-    }
+    const { contentId, parsedData, proposalSnapshot } =
+      resolveAssignmentProposal(assignment);
 
     docContentInputs.push({
       id: contentId,
@@ -114,14 +96,9 @@ export async function listReviewAssignments({
     await getProposalDocumentsContent(docContentInputs);
 
   const assignmentList = assignments.map((assignment) => {
-    const proposalHistory = assignment.assignedProposalHistory;
-    const proposalSnapshot = proposalHistory ?? assignment.proposal;
+    const { contentId, parsedData, proposalSnapshot } =
+      resolveAssignmentProposal(assignment);
 
-    const contentId = proposalHistory
-      ? proposalHistory.historyId
-      : proposalSnapshot.id;
-
-    const parsedProposalData = parseProposalData(proposalSnapshot.proposalData);
     const documentContent = documentContentMap.get(contentId);
 
     let htmlContent: Record<string, string> | undefined;
@@ -136,7 +113,7 @@ export async function listReviewAssignments({
         ...assignment,
         proposal: {
           ...proposalSnapshot,
-          proposalData: parsedProposalData,
+          proposalData: parsedData,
           proposalTemplate,
           documentContent,
           htmlContent,

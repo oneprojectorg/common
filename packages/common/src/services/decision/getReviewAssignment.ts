@@ -12,9 +12,11 @@ import { ValidationError } from '../../utils';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  resolveAssignmentProposal,
+} from './reviewHelpers';
 import {
   type ReviewAssignmentExtended,
   reviewAssignmentExtendedSchema,
@@ -34,36 +36,18 @@ export async function getReviewAssignment({
       user,
     });
 
-  const proposalHistory = assignment.assignedProposalHistory;
-  const proposalSnapshot = proposalHistory ?? assignment.proposal;
-
-  const proposalId = proposalSnapshot.id;
-  const contentId = proposalHistory
-    ? proposalHistory.historyId
-    : proposalSnapshot.id;
+  const { contentId, parsedData, proposalSnapshot } =
+    resolveAssignmentProposal(assignment);
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.process.id,
   );
-  const parsedProposalData = parseProposalData(proposalSnapshot.proposalData);
-
-  if (!parsedProposalData.collaborationDocId) {
-    throw new ValidationError(
-      `Proposal ${contentId} is missing collaborationDocId`,
-    );
-  }
-
-  if (parsedProposalData.collaborationDocVersionId == null) {
-    console.warn(
-      `[getReviewAssignment] Proposal ${contentId} is missing collaborationDocVersionId`,
-    );
-  }
 
   const [relationshipInfo, documentContentMap, proposalAttachments] =
     await Promise.all([
       getProposalRelationshipInfo({
-        profileId: proposalSnapshot.profileId,
+        profileId: assignment.proposal.profileId,
         viewerProfileId: assignment.reviewerProfileId,
       }),
       getProposalDocumentsContent([
@@ -71,11 +55,10 @@ export async function getReviewAssignment({
           id: contentId,
           proposalData: proposalSnapshot.proposalData,
           proposalTemplate,
-          collaborationDocVersionId:
-            parsedProposalData.collaborationDocVersionId,
+          collaborationDocVersionId: parsedData.collaborationDocVersionId,
         },
       ]),
-      getProposalAttachmentsWithSignedUrls(proposalId),
+      getProposalAttachmentsWithSignedUrls(assignment.proposal.id),
     ]);
 
   const documentContent = documentContentMap.get(contentId);
@@ -96,7 +79,7 @@ export async function getReviewAssignment({
       ...assignment,
       proposal: {
         ...proposalSnapshot,
-        proposalData: parsedProposalData,
+        proposalData: parsedData,
         ...relationshipInfo,
         attachments: proposalAttachments,
         proposalTemplate,

@@ -1,9 +1,10 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
+import { parseProposalData } from './proposalDataSchema';
 
 /** Loads and authorizes access to a single review assignment for the current reviewer. */
 export async function assertReviewAssignmentContext({
@@ -75,4 +76,41 @@ export async function assertReviewAssignmentContext({
     review: assignment.reviews[0] ?? null,
     rubricTemplate: instance.instanceData.rubricTemplate ?? null,
   };
+}
+
+/**
+ * Resolves the effective proposal snapshot from a review assignment,
+ * parses and validates proposal data, and returns the content ID
+ * used for document lookups.
+ */
+export function resolveAssignmentProposal(assignment: {
+  assignedProposalHistory: {
+    historyId: string;
+    proposalData: unknown;
+  } | null;
+  proposal: {
+    id: string;
+    proposalData: unknown;
+  };
+}) {
+  const proposalHistory = assignment.assignedProposalHistory;
+  const proposalSnapshot = proposalHistory ?? assignment.proposal;
+
+  const contentId = proposalHistory
+    ? proposalHistory.historyId
+    : assignment.proposal.id;
+
+  const parsedData = parseProposalData(proposalSnapshot.proposalData);
+
+  if (!parsedData.collaborationDocId) {
+    throw new ValidationError(
+      `Proposal ${contentId} is missing collaborationDocId`,
+    );
+  }
+
+  if (parsedData.collaborationDocVersionId == null) {
+    console.warn(`Proposal ${contentId} is missing collaborationDocVersionId`);
+  }
+
+  return { proposalSnapshot, contentId, parsedData };
 }
