@@ -301,6 +301,7 @@
   "Deleting...": "Suppression...",
   "Failed to delete proposal": "Échec de la suppression de la proposition",
   "Phase advanced successfully": "Phase avancée avec succès",
+  "Start {phaseName}": "Démarrer {phaseName}",
   "Failed to advance phase": "Échec de l'avancement de la phase",
   "Failed to create proposal": "Échec de la création de la proposition",
   "Failed to update proposal": "Échec de la mise à jour de la proposition",

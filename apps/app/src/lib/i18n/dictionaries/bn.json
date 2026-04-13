@@ -300,6 +300,7 @@
   "Deleting...": "মুছে ফেলা হচ্ছে...",
   "Failed to delete proposal": "প্রস্তাব মুছতে ব্যর্থ",
   "Phase advanced successfully": "পর্যায় সফলভাবে এগিয়ে গেছে",
+  "Start {phaseName}": "{phaseName} শুরু করুন",
   "Failed to advance phase": "পর্যায় এগিয়ে নিতে ব্যর্থ",
   "Failed to create proposal": "প্রস্তাব তৈরি করতে ব্যর্থ",
   "Failed to update proposal": "প্রস্তাব আপডেট করতে ব্যর্থ",

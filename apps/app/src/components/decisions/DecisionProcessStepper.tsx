@@ -47,6 +47,20 @@ export function DecisionProcessStepper({
     },
   });
 
+  // Find the next phase after the current one (the phase we'd transition into)
+  const sortedByOrder = useMemo(
+    () =>
+      [...phases].sort(
+        (a, b) => (a.phase?.sortOrder ?? 0) - (b.phase?.sortOrder ?? 0),
+      ),
+    [phases],
+  );
+  const currentIndex = sortedByOrder.findIndex((p) => p.id === currentStateId);
+  const nextPhaseId =
+    currentIndex >= 0 && currentIndex < sortedByOrder.length - 1
+      ? sortedByOrder[currentIndex + 1]!.id
+      : undefined;
+
   // Transform ProcessPhase to Phase format for PhaseStepper
   const transformedPhases: Phase[] = phases.map((phase) => ({
     id: phase.id,
@@ -55,16 +69,22 @@ export function DecisionProcessStepper({
     startDate: phase.phase?.startDate,
     endDate: phase.phase?.endDate,
     sortOrder: phase.phase?.sortOrder,
-    interactive: isAdmin && phase.id === currentStateId,
+    interactive: isAdmin && phase.id === nextPhaseId,
+    ariaLabel:
+      isAdmin && phase.id === nextPhaseId
+        ? t('Start {phaseName}', {
+            phaseName: translatedPhaseNames?.get(phase.id) ?? phase.name,
+          })
+        : undefined,
   }));
 
-  const handleTransition = (phaseId: string) => {
+  const handleTransition = () => {
     if (!instanceId || transitionMutation.isPending) {
       return;
     }
     transitionMutation.mutate({
       instanceId,
-      fromPhaseId: phaseId,
+      fromPhaseId: currentStateId,
     });
   };
 

@@ -15,6 +15,7 @@ export interface Phase {
   endDate?: string;
   sortOrder?: number;
   interactive?: boolean;
+  ariaLabel?: string;
 }
 
 type StepState = 'completed' | 'current' | 'upcoming';
@@ -85,7 +86,7 @@ const StepIndicator = ({
     >
       <RippleRings visible={isHovered} />
       <IconButton
-        aria-label={`Advance to ${phase.name}`}
+        aria-label={phase.ariaLabel ?? `Start ${phase.name}`}
         onPress={() => onTransition?.(phase.id)}
         size="small"
         variant="ghost"
