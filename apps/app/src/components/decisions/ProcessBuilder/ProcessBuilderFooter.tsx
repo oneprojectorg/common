@@ -89,6 +89,10 @@ export const ProcessBuilderFooter = ({
     // before either launching or updating.
     const flushed = await flushPendingChanges();
     if (!flushed) {
+      toast.error({
+        title: t('Failed to save changes'),
+        message: t('Please try again in a moment'),
+      });
       return;
     }
 
