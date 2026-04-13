@@ -36,6 +36,7 @@ export {
   isRationaleField,
 } from './services/decision/getRubricScoringInfo';
 export { REVIEWS_POLICIES } from './services/decision/schemas/types';
+export { isLastPhase } from './services/decision/schemas/instanceData';
 
 // Translation constants (no server dependencies)
 export {

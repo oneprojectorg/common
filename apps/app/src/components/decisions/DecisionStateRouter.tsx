@@ -2,6 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
+import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
 import { ResultsPage } from './pages/ResultsPage';
@@ -57,7 +58,7 @@ function DecisionStateRouterNew({
     );
   }
 
-  if (currentStateId === 'results') {
+  if (isLastPhase(currentStateId, phases)) {
     return (
       <ResultsPage
         instanceId={instanceId}
