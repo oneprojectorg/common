@@ -21,12 +21,10 @@ import { useTranslations } from '@/lib/i18n';
 
 interface ReviewFormState {
   values: Record<string, unknown>;
-  feedbackToAuthor: string;
   canSubmit: boolean;
   isSubmitting: boolean;
   isSubmitted: boolean;
   handleValueChange: (key: string, value: unknown) => void;
-  setFeedbackToAuthor: (value: string) => void;
   handleSubmit: () => void;
 }
 
@@ -58,9 +56,6 @@ export function ReviewFormProvider({
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData ?? {},
   );
-  const [feedbackToAuthor, setFeedbackToAuthor] = useState(
-    review?.overallComment ?? '',
-  );
 
   const isSubmitted = review?.state === 'submitted';
 
@@ -86,27 +81,24 @@ export function ReviewFormProvider({
   }, []);
 
   const handleSubmit = useCallback(() => {
+    // TODO: include overallComment (feedback to author) in submission
     submitReview.mutate({
       assignmentId,
       reviewData: values,
-      overallComment: feedbackToAuthor || null,
     });
-  }, [assignmentId, values, feedbackToAuthor, submitReview]);
+  }, [assignmentId, values, submitReview]);
 
   const state = useMemo<ReviewFormState>(
     () => ({
       values,
-      feedbackToAuthor,
       canSubmit: canSubmit && !isSubmitted,
       isSubmitting: submitReview.isPending,
       isSubmitted,
       handleValueChange,
-      setFeedbackToAuthor,
       handleSubmit,
     }),
     [
       values,
-      feedbackToAuthor,
       canSubmit,
       isSubmitted,
       submitReview.isPending,

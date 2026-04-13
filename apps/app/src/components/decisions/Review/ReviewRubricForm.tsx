@@ -38,9 +38,14 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   const t = useTranslations();
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
-  const { values, feedbackToAuthor, handleValueChange, setFeedbackToAuthor } =
-    useReviewForm();
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(!!feedbackToAuthor);
+  const { values, handleValueChange } = useReviewForm();
+  const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  const handleFeedbackChange = (value: string) => {
+    // TODO: wire feedback to author into review submission
+    setFeedbackToAuthor(value);
+  };
 
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
     const value = values[criterion.id];
@@ -83,7 +88,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
           <TextField
             aria-label={t('Feedback to Author')}
             value={feedbackToAuthor}
-            onChange={setFeedbackToAuthor}
+            onChange={handleFeedbackChange}
             useTextArea
             textareaProps={{ rows: 3 }}
           />
