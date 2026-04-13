@@ -56,6 +56,7 @@ export function ResultsPage({
   profileSlug,
   decisionSlug,
   useLegacy = false,
+  instance: instanceProp,
 }: {
   instanceId: string;
   /** Owner profile slug (e.g. "people-powered") — used for org-specific hero content and legacy URL fallbacks */
@@ -64,19 +65,27 @@ export function ResultsPage({
   decisionSlug?: string;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
+  /** Pre-fetched instance data — passed from the server to avoid redundant client-side fetching */
+  instance?: ResultsPageInstance;
 }) {
   if (useLegacy) {
     return (
       <ResultsPageLegacy instanceId={instanceId} profileSlug={profileSlug} />
     );
   }
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+
+  if (!instanceProp) {
+    throw new Error(
+      'ResultsPage requires instance prop when not in legacy mode',
+    );
+  }
+
   return (
     <ResultsPageContent
       instanceId={instanceId}
       profileSlug={profileSlug}
       decisionSlug={decisionSlug}
-      instance={instance}
+      instance={instanceProp}
     />
   );
 }
