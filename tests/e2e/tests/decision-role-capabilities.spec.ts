@@ -61,7 +61,7 @@ const reviewPhaseSchema: DecisionSchemaDefinition = {
 
 /**
  * Schema that starts in the voting phase.
- * currentStateId will be 'voting', routing to VotingPage which shows MyBallot.
+ * currentStateId will be 'voting', routing to VotingPage via rules.voting.submit capability.
  */
 const votingPhaseSchema: DecisionSchemaDefinition = {
   id: 'test-voting',
@@ -207,14 +207,14 @@ test.describe('Decision Role Capabilities', () => {
       memberPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // The ballot section is rendered only when instance.access.vote === true.
-    // "You did not vote in this process." confirms MyBallot fully loaded (no votes cast yet).
+    // The voting submit footer is rendered only when instance.access.vote === true
+    // and the user hasn't voted yet. "Submit my votes" confirms the voting UI loaded.
     await expect(
-      memberPage.getByText('You did not vote in this process.'),
+      memberPage.getByRole('button', { name: 'Submit my votes' }),
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test('ballot section is not shown outside the voting phase', async ({
+  test('voting submit footer is not shown outside the voting phase', async ({
     authenticatedPage,
     org,
   }) => {
@@ -236,7 +236,9 @@ test.describe('Decision Role Capabilities', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // MyBallot is only rendered on VotingPage (currentStateId === 'voting')
-    await expect(authenticatedPage.getByTestId('my-ballot')).not.toBeVisible();
+    // Voting submit footer only renders on VotingPage
+    await expect(
+      authenticatedPage.getByRole('button', { name: 'Submit my votes' }),
+    ).not.toBeVisible();
   });
 });

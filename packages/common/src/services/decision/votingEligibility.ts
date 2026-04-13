@@ -10,9 +10,7 @@ export const VOTING_INELIGIBLE_STATUSES: readonly string[] = [
   'duplicate',
 ];
 
-export function isVotingEligible(
-  status: string | null | undefined,
-): boolean {
+export function isVotingEligible(status: string | null | undefined): boolean {
   if (!status) {
     return false;
   }
