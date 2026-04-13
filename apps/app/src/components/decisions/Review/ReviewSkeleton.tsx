@@ -8,7 +8,7 @@ export function ReviewSkeleton() {
           <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
         </div>
       </div>
-      <div className="mx-auto hidden w-full min-h-0 max-w-5xl flex-1 sm:flex">
+      <div className="mx-auto hidden min-h-0 w-full max-w-5xl flex-1 sm:flex">
         <div className="flex-1 border-r p-12">
           <div className="space-y-4">
             <div className="h-10 w-3/4 animate-pulse rounded bg-gray-200" />
