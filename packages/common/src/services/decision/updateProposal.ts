@@ -1,3 +1,4 @@
+import { getTipTapClient } from '@op/collab';
 import { type TransactionType, and, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
@@ -19,7 +20,10 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import type { ProposalDataInput } from './proposalDataSchema';
+import type {
+  CheckpointVersion,
+  ProposalDataInput,
+} from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -84,6 +88,7 @@ export interface UpdateProposalInput {
   proposalData?: ProposalDataInput;
   status?: ProposalStatus;
   visibility?: Visibility;
+  checkpointVersion?: CheckpointVersion;
 }
 
 export const updateProposal = async ({
@@ -95,141 +100,179 @@ export const updateProposal = async ({
   data: UpdateProposalInput;
   user: User;
 }) => {
-  try {
-    const dbUser = await assertUserByAuthId(user.id);
+  const dbUser = await assertUserByAuthId(user.id);
 
-    if (!dbUser.currentProfileId) {
-      throw new UnauthorizedError('User must have an active profile');
-    }
+  if (!dbUser.profileId) {
+    throw new UnauthorizedError('User must have an active profile');
+  }
 
-    // Check if proposal exists and user has permission to update it
-    const existingProposal = await db.query.proposals.findFirst({
-      where: { id: proposalId },
-      with: {
-        processInstance: true,
-        profile: true,
-      },
+  // Check if proposal exists and user has permission to update it
+  const existingProposal = await db.query.proposals.findFirst({
+    where: { id: proposalId },
+    with: {
+      processInstance: true,
+      profile: true,
+    },
+  });
+
+  if (!existingProposal) {
+    throw new NotFoundError('Proposal');
+  }
+
+  const processInstance = existingProposal.processInstance;
+
+  // Reject updates when the instance is in the results phase
+  if (processInstance.currentStateId === 'results') {
+    throw new ValidationError(
+      'Proposals cannot be edited during the results phase',
+    );
+  }
+
+  // Status and visibility changes only require instance-level decisions: ADMIN
+  if (data.status || data.visibility) {
+    await assertInstanceProfileAccess({
+      user: { id: user.id },
+      instance: processInstance,
+      profilePermissions: { decisions: permission.ADMIN },
+      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
+    });
+  } else {
+    // Data updates require profile-level update permission on the proposal's profile
+    const proposalProfileUser = await getProfileAccessUser({
+      user: { id: user.id },
+      profileId: existingProposal.profileId,
     });
 
-    if (!existingProposal) {
-      throw new NotFoundError('Proposal');
-    }
+    const hasProposalUpdate = checkPermission(
+      { profile: permission.UPDATE },
+      proposalProfileUser?.roles ?? [],
+    );
 
-    const processInstance = existingProposal.processInstance;
-
-    // Reject updates when the instance is in the results phase
-    if (processInstance.currentStateId === 'results') {
-      throw new ValidationError(
-        'Proposals cannot be edited during the results phase',
-      );
-    }
-
-    // Status and visibility changes only require instance-level decisions: ADMIN
-    if (data.status || data.visibility) {
+    if (!hasProposalUpdate) {
       await assertInstanceProfileAccess({
         user: { id: user.id },
         instance: processInstance,
-        profilePermissions: { decisions: permission.ADMIN },
+        profilePermissions: { decisions: permission.UPDATE },
         orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
-    } else {
-      // Data updates require profile-level update permission on the proposal's profile
-      const proposalProfileUser = await getProfileAccessUser({
-        user: { id: user.id },
-        profileId: existingProposal.profileId,
-      });
+    }
+  }
 
-      const hasProposalUpdate = checkPermission(
-        { profile: permission.UPDATE },
-        proposalProfileUser?.roles ?? [],
+  // Validate proposal data against template schema when updating non-draft proposals.
+  // Drafts are inherently incomplete — validation is enforced on submission.
+  if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
+    const instanceData =
+      processInstance.instanceData as DecisionInstanceData | null;
+
+    const proposalTemplate = await resolveProposalTemplate(
+      instanceData,
+      processInstance.processId,
+    );
+
+    if (proposalTemplate) {
+      await validateProposalAgainstTemplate(
+        proposalTemplate,
+        data.proposalData,
+        data.title ?? existingProposal.profile.name,
       );
+    }
+  }
 
-      if (!hasProposalUpdate) {
-        await assertInstanceProfileAccess({
-          user: { id: user.id },
-          instance: processInstance,
-          profilePermissions: { decisions: permission.UPDATE },
-          orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-        });
-      }
+  const collaborationDocVersionId =
+    data.checkpointVersion && existingProposal.status !== ProposalStatus.DRAFT
+      ? await createCheckpointVersion(existingProposal.proposalData)
+      : null;
+
+  const {
+    title: nextTitle,
+    checkpointVersion: _checkpointVersion,
+    ...proposalFields
+  } = data;
+
+  const updatedProposal = await db.transaction(async (tx) => {
+    const proposalDataWithVersion =
+      collaborationDocVersionId !== null
+        ? {
+            ...(proposalFields.proposalData ??
+              (existingProposal.proposalData as Record<string, unknown>)),
+            collaborationDocVersionId,
+          }
+        : proposalFields.proposalData;
+
+    const [updatedProposalRow] = await tx
+      .update(proposals)
+      .set({
+        ...proposalFields,
+        ...(proposalDataWithVersion
+          ? { proposalData: proposalDataWithVersion }
+          : {}),
+        lastEditedByProfileId: dbUser.profileId,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(proposals.id, proposalId))
+      .returning();
+
+    if (!updatedProposalRow) {
+      throw new CommonError('Failed to update proposal');
     }
 
-    // Validate proposal data against template schema when updating non-draft proposals.
-    // Drafts are inherently incomplete — validation is enforced on submission.
-    if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
-      const instanceData =
-        processInstance.instanceData as DecisionInstanceData | null;
-
-      const proposalTemplate = await resolveProposalTemplate(
-        instanceData,
-        processInstance.processId,
-      );
-
-      if (proposalTemplate) {
-        await validateProposalAgainstTemplate(
-          proposalTemplate,
-          data.proposalData,
-          data.title ?? existingProposal.profile.name,
-        );
-      }
-    }
-
-    const { title: nextTitle, ...proposalFields } = data;
-
-    const updatedProposal = await db.transaction(async (tx) => {
-      const [updatedProposalRow] = await tx
-        .update(proposals)
+    if (nextTitle !== undefined) {
+      await tx
+        .update(profiles)
         .set({
-          ...proposalFields,
-          lastEditedByProfileId: dbUser.currentProfileId,
+          name: nextTitle,
           updatedAt: new Date().toISOString(),
         })
-        .where(eq(proposals.id, proposalId))
-        .returning();
+        .where(eq(profiles.id, existingProposal.profileId));
+    }
 
-      if (!updatedProposalRow) {
-        throw new CommonError('Failed to update proposal');
-      }
+    // Update category link if proposal data was updated
+    if (data.proposalData) {
+      const newCategoryLabels = parseProposalData(data.proposalData).category;
+      await updateProposalCategoryLink(tx, proposalId, newCategoryLabels);
+    }
 
-      if (nextTitle !== undefined) {
-        await tx
-          .update(profiles)
-          .set({
-            name: nextTitle,
-            updatedAt: new Date().toISOString(),
-          })
-          .where(eq(profiles.id, existingProposal.profileId));
-      }
-
-      // Update category link if proposal data was updated
-      if (data.proposalData) {
-        const newCategoryLabels = parseProposalData(data.proposalData).category;
-        await updateProposalCategoryLink(tx, proposalId, newCategoryLabels);
-      }
-
-      const proposal = await tx.query.proposals.findFirst({
-        where: { id: updatedProposalRow.id },
-        with: { profile: true },
-      });
-
-      if (!proposal) {
-        throw new CommonError('Failed to update proposal');
-      }
-
-      return proposal;
+    const proposal = await tx.query.proposals.findFirst({
+      where: { id: updatedProposalRow.id },
+      with: { profile: true },
     });
 
-    return updatedProposal;
-  } catch (error) {
-    if (
-      error instanceof UnauthorizedError ||
-      error instanceof NotFoundError ||
-      error instanceof ValidationError ||
-      error instanceof CommonError
-    ) {
-      throw error;
+    if (!proposal) {
+      throw new CommonError('Failed to update proposal');
     }
-    console.error('Error updating proposal:', error);
-    throw new CommonError('Failed to update proposal');
-  }
+
+    return proposal;
+  });
+
+  return updatedProposal;
 };
+
+async function createCheckpointVersion(
+  proposalData: unknown,
+): Promise<number | null> {
+  const parsed = parseProposalData(proposalData);
+
+  if (!parsed.collaborationDocId) {
+    throw new ValidationError('Proposal is missing a collaboration document');
+  }
+
+  const latestVersion = await getTipTapClient()
+    .createVersion(parsed.collaborationDocId, 'Updated')
+    .then((v) => v?.version ?? null)
+    .catch((error: unknown) => {
+      console.error(
+        `[updateProposal] Failed to create TipTap version for ${parsed.collaborationDocId}:`,
+        error,
+      );
+      return null;
+    });
+
+  if (
+    latestVersion != null &&
+    latestVersion !== parsed.collaborationDocVersionId
+  ) {
+    return latestVersion;
+  }
+
+  return null;
+}

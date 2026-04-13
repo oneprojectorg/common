@@ -403,7 +403,7 @@ export function createTipTapClient(_config?: unknown) {
     createVersion: async (
       docName: string,
       name?: string,
-    ): Promise<TipTapVersion> => {
+    ): Promise<TipTapVersion | null> => {
       const existing = docVersions.get(docName) ?? [];
       const nextVersion =
         existing.length > 0

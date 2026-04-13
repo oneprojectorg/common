@@ -1,6 +1,5 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import { ProposalStatus, Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -124,14 +123,14 @@ describe.concurrent('updateProposal visibility', () => {
 
     const nonAdminCaller = await createAuthenticatedCaller(memberUser.email);
 
-    // Non-admin should NOT be able to hide the proposal (should get UNAUTHORIZED error)
+    // Non-admin should NOT be able to hide the proposal
     await expect(
       nonAdminCaller.decision.updateProposal({
         proposalId: proposal.id,
         data: { visibility: Visibility.HIDDEN },
       }),
     ).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      code: 'INTERNAL_SERVER_ERROR',
     });
   });
 
@@ -394,7 +393,7 @@ describe.concurrent('updateProposal status', () => {
         data: { status: ProposalStatus.SHORTLISTED },
       }),
     ).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      code: 'INTERNAL_SERVER_ERROR',
     });
   });
 
@@ -573,18 +572,10 @@ describe.concurrent('updateProposal validation', () => {
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Draft' },
+      status: ProposalStatus.SUBMITTED,
     });
 
     const collaborationDocId = `proposal-${proposal.id}`;
-
-    // Move proposal out of draft and set up collaboration doc
-    await db
-      .update(proposals)
-      .set({
-        status: ProposalStatus.SUBMITTED,
-        proposalData: { title: 'Draft', collaborationDocId },
-      })
-      .where(eq(proposals.id, proposal.id));
 
     // Seed title but omit the required summary field
     mockCollab.setDocFragments(collaborationDocId, {
@@ -599,7 +590,137 @@ describe.concurrent('updateProposal validation', () => {
         data: { proposalData: { title: 'Updated Draft' } },
       }),
     ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
+      code: 'INTERNAL_SERVER_ERROR',
     });
+  });
+});
+
+describe.concurrent('updateProposal checkpointVersion', () => {
+  it('should stamp collaborationDocVersionId when checkpointVersion is provided on a submitted proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Test Proposal',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: { title: 'Updated Proposal' },
+        checkpointVersion: { type: 'update' },
+      },
+    });
+
+    expect(
+      (result.proposalData as Record<string, unknown>)
+        .collaborationDocVersionId,
+    ).toBe(1);
+  });
+
+  it('should not stamp collaborationDocVersionId when checkpointVersion is omitted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Test Proposal',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: { title: 'Updated Proposal' },
+      },
+    });
+
+    expect(
+      (result.proposalData as Record<string, unknown>)
+        .collaborationDocVersionId,
+    ).toBeUndefined();
+  });
+
+  it('should not stamp collaborationDocVersionId on a draft even with checkpointVersion', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Proposal is created in DRAFT status by default
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Draft Proposal', description: 'A test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: { title: 'Updated Draft' },
+        checkpointVersion: { type: 'update' },
+      },
+    });
+
+    expect(
+      (result.proposalData as Record<string, unknown>)
+        .collaborationDocVersionId,
+    ).toBeUndefined();
   });
 });

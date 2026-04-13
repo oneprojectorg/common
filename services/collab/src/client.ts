@@ -173,20 +173,31 @@ export function createTipTapClient(config: TipTapClientConfig) {
 
     /**
      * Create a new named version snapshot for a document.
+     * The TipTap REST API returns an empty body on create, so we
+     * follow up with a version list to resolve the created version.
      * POST /api/documents/{docName}/versions
      */
     createVersion: async (
       docName: string,
       name?: string,
-    ): Promise<TipTapVersion> => {
-      return api
-        .post<TipTapVersion>(
-          `documents/${encodeURIComponent(docName)}/versions`,
-          {
-            json: name ? { name } : undefined,
-          },
-        )
+    ): Promise<TipTapVersion | null> => {
+      await api.post(`documents/${encodeURIComponent(docName)}/versions`, {
+        json: name ? { name } : undefined,
+      });
+
+      const versions = await api
+        .get<
+          TipTapVersion[]
+        >(`documents/${encodeURIComponent(docName)}/versions`)
         .json();
+
+      if (versions.length === 0) {
+        return null;
+      }
+
+      return versions.reduce((latest, v) =>
+        v.version > latest.version ? v : latest,
+      );
     },
   };
 }

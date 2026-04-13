@@ -9,6 +9,7 @@ import {
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
+  ProposalStatus,
   decisionProcesses,
   processInstances,
   profiles,
@@ -523,6 +524,7 @@ export class TestDecisionsDataManager {
     userEmail,
     processInstanceId,
     proposalData,
+    status,
   }: {
     userEmail: string;
     processInstanceId: string;
@@ -531,6 +533,7 @@ export class TestDecisionsDataManager {
       description?: string;
       collaborationDocId?: string;
     };
+    status?: ProposalStatus;
   }) {
     this.ensureCleanupRegistered();
 
@@ -548,16 +551,31 @@ export class TestDecisionsDataManager {
       this.createdProfileIds.push(proposal.profileId);
     }
 
+    const nonDefaultStatus =
+      status && status !== ProposalStatus.DRAFT ? status : undefined;
+
     // Simulate legacy proposal by removing collaborationDocId when description is provided
-    if (proposalData.description) {
-      const { collaborationDocId: _, ...legacyProposalData } =
-        proposal.proposalData as Record<string, unknown>;
-      const updatedProposalData = { ...legacyProposalData, ...proposalData };
+    const legacyProposalData = proposalData.description
+      ? (() => {
+          const { collaborationDocId: _, ...rest } =
+            proposal.proposalData as Record<string, unknown>;
+          return { ...rest, ...proposalData };
+        })()
+      : undefined;
+
+    if (nonDefaultStatus || legacyProposalData) {
       await db
         .update(proposals)
-        .set({ proposalData: updatedProposalData })
+        .set({
+          ...(nonDefaultStatus ? { status: nonDefaultStatus } : {}),
+          ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
+        })
         .where(eq(proposals.id, proposal.id));
-      return { ...proposal, proposalData: updatedProposalData };
+      return {
+        ...proposal,
+        ...(nonDefaultStatus ? { status: nonDefaultStatus } : {}),
+        ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
+      };
     }
 
     return proposal;

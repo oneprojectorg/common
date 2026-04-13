@@ -1,12 +1,6 @@
 import { invalidate } from '@op/cache';
-import {
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-  updateProposal,
-} from '@op/common';
+import { updateProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { updateProposalInputSchema } from '../../../encoders/decision';
@@ -24,57 +18,20 @@ export const updateProposalRouter = router({
     )
     .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {
-      const { user, logger } = ctx;
+      const { user } = ctx;
       const { proposalId } = input;
 
-      try {
-        const proposal = await updateProposal({
-          proposalId,
-          data: input.data,
-          user,
-        });
+      const proposal = await updateProposal({
+        proposalId,
+        data: input.data,
+        user,
+      });
 
-        await invalidate({
-          type: 'profile',
-          params: [proposal.profileId],
-        });
+      await invalidate({
+        type: 'profile',
+        params: [proposal.profileId],
+      });
 
-        return proposalSchema.parse(proposal);
-      } catch (error: unknown) {
-        logger.error('Failed to update proposal', {
-          userId: user.id,
-          proposalId,
-          error,
-        });
-
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'NOT_FOUND',
-          });
-        }
-
-        if (error instanceof ValidationError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'BAD_REQUEST',
-            cause: {
-              fieldErrors: error.fieldErrors,
-            },
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Failed to update proposal',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return proposalSchema.parse(proposal);
     }),
 });
