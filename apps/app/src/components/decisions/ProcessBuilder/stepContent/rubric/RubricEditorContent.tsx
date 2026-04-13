@@ -12,7 +12,6 @@ import { LuLeaf, LuPlus } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
 
-import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
@@ -29,9 +28,7 @@ import {
   getCriterionErrors,
   getCriterionSchema,
   getCriterionType,
-  removeCriterion,
   reorderCriteria,
-  setCriterionRequired,
   updateCriterionDescription,
   updateCriterionJsonSchema,
   updateCriterionLabel,
@@ -87,11 +84,6 @@ export function RubricEditorContent({
     new Set(),
   );
 
-  // Delete confirmation modal
-  const [criterionToDelete, setCriterionToDelete] = useState<string | null>(
-    null,
-  );
-
   // Cache scored config so switching type and back doesn't lose score labels
   const scoredConfigCacheRef = useRef<
     Map<string, { maximum: number; oneOf: { const: number; title: string }[] }>
@@ -120,34 +112,6 @@ export function RubricEditorContent({
     setExpandedCriterionIds((prev) => new Set(prev).add(criterionId));
     setNewCriterionIds((prev) => new Set(prev).add(criterionId));
   }, [t]);
-
-  const handleRemoveCriterion = useCallback((criterionId: string) => {
-    setCriterionToDelete(criterionId);
-  }, []);
-
-  const confirmRemoveCriterion = useCallback(() => {
-    if (!criterionToDelete) {
-      return;
-    }
-    setTemplate((prev) => removeCriterion(prev, criterionToDelete));
-    setCriterionErrors((prev) => {
-      const next = new Map(prev);
-      next.delete(criterionToDelete);
-      return next;
-    });
-    setExpandedCriterionIds((prev) => {
-      const next = new Set(prev);
-      next.delete(criterionToDelete);
-      return next;
-    });
-    setNewCriterionIds((prev) => {
-      const next = new Set(prev);
-      next.delete(criterionToDelete);
-      return next;
-    });
-    scoredConfigCacheRef.current.delete(criterionToDelete);
-    setCriterionToDelete(null);
-  }, [criterionToDelete]);
 
   const handleReorderCriteria = useCallback((newItems: CriterionView[]) => {
     setTemplate((prev) =>
@@ -229,13 +193,6 @@ export function RubricEditorContent({
       setTemplate((prev) =>
         updateScoreLabel(prev, criterionId, scoreValue, label),
       );
-    },
-    [],
-  );
-
-  const handleUpdateRequired = useCallback(
-    (criterionId: string, required: boolean) => {
-      setTemplate((prev) => setCriterionRequired(prev, criterionId, required));
     },
     [],
   );
@@ -342,11 +299,9 @@ export function RubricEditorContent({
                       }
                       isNew={newCriterionIds.has(criterion.id)}
                       onNewComplete={handleNewComplete}
-                      onRemove={handleRemoveCriterion}
                       onBlur={handleCriterionBlur}
                       onUpdateLabel={handleUpdateLabel}
                       onUpdateDescription={handleUpdateDescription}
-                      onUpdateRequired={handleUpdateRequired}
                       onChangeType={handleChangeType}
                       onUpdateMaxPoints={handleUpdateMaxPoints}
                       onUpdateScoreLabel={handleUpdateScoreLabel}
@@ -369,16 +324,6 @@ export function RubricEditorContent({
       </main>
 
       <RubricParticipantPreview template={template} />
-
-      <ConfirmDeleteModal
-        isOpen={criterionToDelete !== null}
-        title={t('Delete criterion')}
-        message={t(
-          'Are you sure you want to delete this criterion? This action cannot be undone.',
-        )}
-        onConfirm={confirmRemoveCriterion}
-        onCancel={() => setCriterionToDelete(null)}
-      />
     </div>
   );
 }

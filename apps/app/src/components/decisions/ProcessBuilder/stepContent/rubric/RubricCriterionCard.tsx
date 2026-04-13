@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
@@ -9,10 +8,8 @@ import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { useRef, useState } from 'react';
-import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -37,7 +34,6 @@ interface RubricCriterionCardProps {
   controls?: SortableItemControls;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
-  onRemove?: (criterionId: string) => void;
   onBlur?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;
   onUpdateDescription?: (criterionId: string, description: string) => void;
@@ -48,7 +44,6 @@ interface RubricCriterionCardProps {
     scoreValue: number,
     label: string,
   ) => void;
-  onUpdateRequired?: (criterionId: string, required: boolean) => void;
   isNew?: boolean;
   onNewComplete?: (criterionId: string) => void;
 }
@@ -70,14 +65,12 @@ export function RubricCriterionCard({
   controls,
   isExpanded,
   onExpandedChange,
-  onRemove,
   onBlur,
   onUpdateLabel,
   onUpdateDescription,
   onChangeType,
   onUpdateMaxPoints,
   onUpdateScoreLabel,
-  onUpdateRequired,
   isNew,
   onNewComplete,
 }: RubricCriterionCardProps) {
@@ -182,33 +175,6 @@ export function RubricCriterionCard({
               ))}
             </div>
           )}
-
-          {/* Footer: Required toggle + Delete button */}
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
-                isSelected={criterion.required}
-                onChange={(isSelected) =>
-                  onUpdateRequired?.(criterion.id, isSelected)
-                }
-                aria-label={t('Required')}
-              />
-            </div>
-            {onRemove && (
-              <Button
-                color="ghost"
-                size="small"
-                onPress={() => onRemove(criterion.id)}
-                aria-label={t('Delete')}
-                className="text-neutral-gray4 hover:text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </Button>
-            )}
-          </div>
         </div>
       </CollapsibleConfigCard>
     </div>
