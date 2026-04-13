@@ -10,7 +10,6 @@ import { useTranslations } from '@/lib/i18n/routing';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
-import { MyBallot } from '../MyBallot';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
 export function VotingPage({
@@ -86,14 +85,6 @@ export function VotingPage({
           </div>
         </div>
       </div>
-
-      {instance.access?.vote && (
-        <div data-testid="my-ballot">
-          <Suspense fallback={null}>
-            <MyBallot slug={slug} instanceId={instanceId} />
-          </Suspense>
-        </div>
-      )}
     </div>
   );
 }
