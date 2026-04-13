@@ -21,6 +21,9 @@ export * from './advancePhase';
 // Manual transition
 export * from './triggerPhaseAdvancement';
 
+// Preview transition (dry run for confirmation UI)
+export * from './previewPhaseTransition';
+
 // Transition management
 export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';

@@ -8,6 +8,7 @@ import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listInstancesRouter } from './listInstances';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
+import { previewPhaseTransitionRouter } from './previewPhaseTransition';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
 
@@ -16,6 +17,7 @@ export const instancesRouter = mergeRouters(
   deleteDecisionRouter,
   duplicateInstanceRouter,
   updateDecisionInstanceRouter,
+  previewPhaseTransitionRouter,
   transitionFromPhaseRouter,
   listInstancesRouter,
   listLegacyInstancesRouter,

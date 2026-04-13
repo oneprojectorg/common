@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
+import { AdvancePhaseButton } from '../AdvancePhaseButton';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
@@ -76,6 +77,18 @@ export function StandardDecisionPage({
           markup={!!translation?.additionalInfo}
           showSubmitButton={allowProposals && canSubmitProposal}
         />
+
+        {instance.access?.admin &&
+          phases.findIndex((p) => p.phaseId === currentPhaseId) <
+            phases.length - 1 && (
+            <div className="flex justify-center">
+              <AdvancePhaseButton
+                instanceId={instanceId}
+                proposals={proposals}
+                budget={currentPhase?.settings?.budget as number | undefined}
+              />
+            </div>
+          )}
       </div>
 
       <div className="mt-8 flex w-full justify-center border-t bg-white">
