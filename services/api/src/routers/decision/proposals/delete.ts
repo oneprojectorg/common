@@ -22,7 +22,6 @@ export const deleteProposalRouter = router({
     .output(
       z.object({
         deletedId: z.string(),
-        processInstanceId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -44,7 +43,7 @@ export const deleteProposalRouter = router({
           proposalId: input.proposalId,
         });
 
-        return result;
+        return { deletedId: result.deletedId };
       } catch (error: unknown) {
         logger.error('Failed to delete proposal', {
           userId: user.id,
