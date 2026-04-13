@@ -1,9 +1,9 @@
 import { and, db, eq } from '@op/db/client';
 import {
-  ProposalStatus,
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
+  isVotingEligible,
   processInstances,
   proposals,
 } from '@op/db/schema';
@@ -231,12 +231,9 @@ export const submitVote = async ({
       where: eq(proposals.processInstanceId, data.processInstanceId),
     });
 
-    // Filter to eligible proposals for voting (exclude draft, rejected, duplicate)
-    const eligibleProposals = availableProposals.filter(
-      (p) =>
-        p.status !== ProposalStatus.DRAFT &&
-        p.status !== ProposalStatus.REJECTED &&
-        p.status !== ProposalStatus.DUPLICATE,
+    // Filter to eligible proposals for voting
+    const eligibleProposals = availableProposals.filter((p) =>
+      isVotingEligible(p.status),
     );
     const eligibleProposalIds = eligibleProposals.map((p) => p.id);
 

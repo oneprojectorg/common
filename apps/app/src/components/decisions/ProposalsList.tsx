@@ -6,6 +6,7 @@ import {
   type DecisionAccess,
   ProposalFilter,
   ProposalStatus,
+  isVotingEligible,
 } from '@op/api/encoders';
 import {
   type Proposal,
@@ -226,14 +227,11 @@ const VotingProposalsList = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
-          const isVotingEligible =
-            proposal.status !== ProposalStatus.DRAFT &&
-            proposal.status !== ProposalStatus.REJECTED &&
-            proposal.status !== ProposalStatus.DUPLICATE;
+          const isEligible = isVotingEligible(proposal.status);
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          if (isVotingEligible) {
+          if (isEligible) {
             return (
               <VotingProposalCard
                 key={proposal.id}
