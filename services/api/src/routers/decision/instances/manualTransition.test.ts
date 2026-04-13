@@ -232,7 +232,7 @@ describe.concurrent('manualTransition', () => {
     expect(result.currentPhaseId).toBe('final');
   });
 
-  it('should be idempotent when same fromPhaseId is sent twice', async ({
+  it('should reject a stale fromPhaseId after the phase has already advanced', async ({
     task,
     onTestFinished,
   }) => {
@@ -410,7 +410,7 @@ describe.concurrent('manualTransition', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance } = await createPublishedInstance(testData);
 
-    // Spy on console.error to verify the error is logged
+    // Suppress and capture console.error to verify the error is logged
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Mock processResults to throw — simulates a catastrophic failure
@@ -436,6 +436,13 @@ describe.concurrent('manualTransition', () => {
       where: eq(processInstances.id, instance.instance.id),
     });
     expect(dbInstance!.currentStateId).toBe('final');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `processResults threw for instance ${instance.instance.id}`,
+      ),
+      expect.any(Error),
+    );
 
     processResultsSpy.mockRestore();
     consoleSpy.mockRestore();

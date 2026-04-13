@@ -39,8 +39,8 @@ export interface ManualTransitionResult {
  * Validates admin access and instance eligibility, then delegates the actual
  * phase advance to the shared `advancePhase` core function.
  *
- * On the final phase: additionally runs processResults to store final selections
- * in the results tables and update proposal statuses.
+ * When transitioning to the final phase: additionally runs processResults to
+ * store final selections in the results tables and update proposal statuses.
  */
 export async function manualTransition({
   instanceId,
@@ -95,9 +95,10 @@ export async function manualTransition({
     throw new CommonError('Instance has no current phase set');
   }
 
-  // Strict idempotency check: if the caller told us which phase they observed,
-  // refuse to advance unless the instance is still on that phase. This prevents
-  // double-clicks and stale retries from advancing through multiple phases.
+  // Optimistic concurrency check: if the caller declared which phase they
+  // observed, refuse to advance unless the instance is still on that phase.
+  // This prevents double-clicks and stale retries from advancing through
+  // multiple phases unintentionally.
   if (expectedFromPhaseId && expectedFromPhaseId !== fromPhaseId) {
     throw new ConflictError(
       `Instance is on phase '${fromPhaseId}', not '${expectedFromPhaseId}'`,
@@ -133,7 +134,7 @@ export async function manualTransition({
     });
 
     if (result.conflict) {
-      throw new CommonError(
+      throw new ConflictError(
         'Phase was already advanced, or instance is no longer published',
       );
     }
@@ -144,10 +145,18 @@ export async function manualTransition({
   // populates decisionProcessResults + selections + proposal statuses.
   if (isTransitioningToFinalPhase) {
     try {
-      await processResults({ processInstanceId: instanceId });
+      const processingResult = await processResults({
+        processInstanceId: instanceId,
+      });
+      if (!processingResult.success) {
+        console.error(
+          `processResults returned failure for instance ${instanceId} after manual transition to final phase:`,
+          processingResult.error,
+        );
+      }
     } catch (err) {
       console.error(
-        `processResults failed for instance ${instanceId} after manual transition to final phase:`,
+        `processResults threw for instance ${instanceId} after manual transition to final phase:`,
         err,
       );
     }
