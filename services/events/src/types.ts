@@ -49,4 +49,13 @@ export const Events = {
       proposalId: z.string().uuid(),
     }),
   },
+  phaseTransitioned: {
+    name: 'process/phase-transitioned' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      fromPhaseId: z.string(),
+      toPhaseId: z.string(),
+      triggeredByProfileId: z.string().nullable(),
+    }),
+  },
 } as const;

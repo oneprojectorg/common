@@ -84,6 +84,7 @@ export const processPhaseSchema = z.object({
       allowProposals: z.boolean().optional(),
     })
     .optional(),
+  advancementMethod: z.enum(['date', 'manual']).optional(),
 });
 
 export type ProcessPhase = z.infer<typeof processPhaseSchema>;

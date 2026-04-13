@@ -62,6 +62,9 @@ export async function DecisionHeader({
         startDate: p.startDate,
         endDate: p.endDate,
       },
+      advancementMethod:
+        p.rules?.advancement?.method ??
+        templateState?.rules?.advancement?.method,
     };
   });
 
@@ -95,6 +98,8 @@ export async function DecisionHeader({
             <DecisionProcessStepper
               phases={phases}
               currentStateId={instance.currentStateId || ''}
+              instanceId={instanceId}
+              isAdmin={isAdmin}
               className="mx-auto"
             />
           </div>

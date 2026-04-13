@@ -4,11 +4,12 @@ import {
   decisionProcessTransitions,
   processInstances,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
-import { processResults } from './processResults';
+import { runResultsProcessing } from './runResultsProcessing';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface ProcessDecisionsTransitionsResult {
@@ -197,6 +198,28 @@ async function advanceInstanceTransitions({
       lastSuccessfulToStateId = transition.toStateId;
       result.processed++;
 
+      // Enqueue the phase-transition event after the transaction commits
+      // so the notification is only sent on a successful advance.
+      // Non-fatal: the phase advance already committed; a notification failure
+      // should not abort further transitions for this instance.
+      try {
+        await event.send({
+          name: Events.phaseTransitioned.name,
+          data: {
+            processInstanceId,
+            fromPhaseId,
+            toPhaseId: transition.toStateId,
+            triggeredByProfileId: null,
+          },
+        });
+      } catch (notifyError) {
+        console.error(
+          `Failed to send phase transition event for transition ${transition.id}:`,
+          notifyError,
+        );
+        // Continue processing further transitions — the phase advance succeeded.
+      }
+
       // Re-fetch so the next iteration sees the committed state.
       const refreshed = await db.query.processInstances.findFirst({
         where: { id: processInstanceId },
@@ -217,29 +240,4 @@ async function advanceInstanceTransitions({
   }
 
   return lastSuccessfulToStateId;
-}
-
-/** Run results processing for an instance that reached its final phase. Failures are logged, not thrown. */
-async function runResultsProcessing(processInstanceId: string): Promise<void> {
-  try {
-    console.log(`Processing results for process instance ${processInstanceId}`);
-
-    const processingResult = await processResults({ processInstanceId });
-
-    if (!processingResult.success) {
-      console.error(
-        `Results processing failed for process instance ${processInstanceId}:`,
-        processingResult.error,
-      );
-    } else {
-      console.log(
-        `Results processed successfully for process instance ${processInstanceId}. Selected ${processingResult.selectedProposalIds.length} proposals.`,
-      );
-    }
-  } catch (error) {
-    console.error(
-      `Error processing results for process instance ${processInstanceId}:`,
-      error,
-    );
-  }
 }

@@ -1,22 +1,38 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
+import { Button } from '@op/ui/Button';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
+import { Sheet, SheetBody, SheetHeader } from '@op/ui/Sheet';
+import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
-import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { useDecisionTranslation } from './DecisionTranslationContext';
 
 export function DecisionProcessStepper({
   phases,
   currentStateId,
+  instanceId,
+  isAdmin,
   className = '',
 }: {
   phases: ProcessPhase[];
   currentStateId: string;
+  instanceId?: string;
+  isAdmin?: boolean;
   className?: string;
 }) {
   const locale = useLocale();
+  const router = useRouter();
+  const t = useTranslations();
   const translation = useDecisionTranslation();
   const translatedPhaseNames = useMemo(
     () =>
@@ -26,6 +42,67 @@ export function DecisionProcessStepper({
     [translation],
   );
 
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
+
+  const transitionMutation = trpc.decision.manualTransition.useMutation({
+    onSuccess: () => {
+      setShowConfirmModal(false);
+      toast.success({ message: t('Phase advanced successfully') });
+      router.refresh();
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to advance phase'),
+      });
+    },
+  });
+
+  // Find the next phase after the current one (the phase we'd transition into)
+  const sortedByOrder = useMemo(
+    () =>
+      [...phases].sort(
+        (a, b) => (a.phase?.sortOrder ?? 0) - (b.phase?.sortOrder ?? 0),
+      ),
+    [phases],
+  );
+
+  const {
+    nextPhaseId,
+    currentPhaseName,
+    nextPhaseName,
+    currentPhaseAdvancement,
+  } = useMemo(() => {
+    const currentIndex = sortedByOrder.findIndex(
+      (p) => p.id === currentStateId,
+    );
+    const nextPhaseId =
+      currentIndex >= 0 && currentIndex < sortedByOrder.length - 1
+        ? sortedByOrder[currentIndex + 1]!.id
+        : undefined;
+    const currentPhaseName =
+      currentIndex >= 0
+        ? (translatedPhaseNames?.get(sortedByOrder[currentIndex]!.id) ??
+          sortedByOrder[currentIndex]!.name)
+        : '';
+    const nextPhaseName = nextPhaseId
+      ? (translatedPhaseNames?.get(nextPhaseId) ??
+        sortedByOrder[currentIndex + 1]!.name)
+      : '';
+    // The current phase's advancement method determines play button visibility:
+    // 'manual' = always visible, 'date' = only on hover (admin override)
+    const currentPhaseAdvancement =
+      currentIndex >= 0
+        ? sortedByOrder[currentIndex]!.advancementMethod
+        : undefined;
+    return {
+      nextPhaseId,
+      currentPhaseName,
+      nextPhaseName,
+      currentPhaseAdvancement,
+    };
+  }, [sortedByOrder, currentStateId, translatedPhaseNames]);
+
   // Transform ProcessPhase to Phase format for PhaseStepper
   const transformedPhases: Phase[] = phases.map((phase) => ({
     id: phase.id,
@@ -34,14 +111,126 @@ export function DecisionProcessStepper({
     startDate: phase.phase?.startDate,
     endDate: phase.phase?.endDate,
     sortOrder: phase.phase?.sortOrder,
+    interactive: isAdmin && phase.id === nextPhaseId,
+    showOnHoverOnly:
+      isAdmin && phase.id === nextPhaseId
+        ? currentPhaseAdvancement !== 'manual'
+        : undefined,
+    ariaLabel:
+      isAdmin && phase.id === nextPhaseId
+        ? t('Start {phaseName}', {
+            phaseName: translatedPhaseNames?.get(phase.id) ?? phase.name,
+          })
+        : undefined,
   }));
 
+  const handleAdvancePhase = () => {
+    if (!instanceId || transitionMutation.isPending) {
+      return;
+    }
+    transitionMutation.mutate({
+      instanceId,
+      fromPhaseId: currentStateId,
+    });
+  };
+
   return (
-    <PhaseStepper
-      phases={transformedPhases}
-      currentPhaseId={currentStateId}
-      className={className}
-      locale={locale}
-    />
+    <>
+      <PhaseStepper
+        phases={transformedPhases}
+        currentPhaseId={currentStateId}
+        className={className}
+        locale={locale}
+        onTransition={isAdmin ? () => setShowConfirmModal(true) : undefined}
+      />
+
+      {isMobile ? (
+        <Sheet
+          isOpen={showConfirmModal}
+          onOpenChange={(open) => {
+            if (!open && !transitionMutation.isPending) {
+              setShowConfirmModal(false);
+            }
+          }}
+          isDismissable={!transitionMutation.isPending}
+          side="bottom"
+        >
+          <SheetBody className="flex flex-col gap-4 p-4 text-left">
+            <SheetHeader>
+              {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
+            </SheetHeader>
+            <p className="text-sm text-neutral-charcoal">
+              {t(
+                'This will end the {currentPhase} phase and move to {nextPhase}.',
+                {
+                  currentPhase: currentPhaseName,
+                  nextPhase: nextPhaseName,
+                },
+              )}
+            </p>
+            <div className="flex flex-col gap-4">
+              <Button
+                color="primary"
+                isLoading={transitionMutation.isPending}
+                onPress={handleAdvancePhase}
+                className="w-full"
+              >
+                {t('Advance Phase')}
+              </Button>
+              <Button
+                color="secondary"
+                isDisabled={transitionMutation.isPending}
+                onPress={() => setShowConfirmModal(false)}
+                className="w-full"
+              >
+                {t('Cancel')}
+              </Button>
+            </div>
+          </SheetBody>
+        </Sheet>
+      ) : (
+        <Modal
+          isOpen={showConfirmModal}
+          onOpenChange={(open) => {
+            if (!open && !transitionMutation.isPending) {
+              setShowConfirmModal(false);
+            }
+          }}
+          isDismissable={!transitionMutation.isPending}
+          surface="flat"
+        >
+          <ModalHeader className="px-6 pb-6 text-left">
+            {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
+          </ModalHeader>
+          <ModalBody className="px-6 py-6">
+            <p className="text-sm text-neutral-charcoal">
+              {t(
+                'This will end the {currentPhase} phase and move to {nextPhase}.',
+                {
+                  currentPhase: currentPhaseName,
+                  nextPhase: nextPhaseName,
+                },
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter className="px-6 py-6">
+            <Button
+              color="secondary"
+              isDisabled={transitionMutation.isPending}
+              onPress={() => setShowConfirmModal(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="primary"
+              isLoading={transitionMutation.isPending}
+              onPress={handleAdvancePhase}
+            >
+              {t('Advance Phase')}
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
+    </>
   );
 }

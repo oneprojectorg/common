@@ -11,7 +11,8 @@ import {
   stateTransitionHistory,
   users,
 } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { event } from '@op/events';
+import { describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
@@ -600,6 +601,34 @@ describe('processDecisionsTransitions', () => {
       where: eq(processInstances.id, goodInstanceId),
     });
     expect(goodInstance!.currentStateId).toBe('results');
+  });
+
+  it('should emit phaseTransitioned event for each processed transition', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const { instanceId } = await createPublishedInstanceWithDueTransitions(
+      testData,
+      task.id,
+    );
+
+    const sendSpy = vi.spyOn(event, 'send').mockResolvedValue({ ids: [] });
+
+    await processDecisionsTransitions();
+
+    expect(sendSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'process/phase-transitioned',
+        data: expect.objectContaining({
+          processInstanceId: instanceId,
+          triggeredByProfileId: null,
+        }),
+      }),
+    );
+
+    sendSpy.mockRestore();
   });
 
   it('should handle concurrent workers without double-processing', async ({
