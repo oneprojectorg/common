@@ -46,9 +46,9 @@ test.describe('Edit Published Process', () => {
     await reviewPhaseButton.click();
 
     // Wait for phase detail to load
-    await expect(
-      authenticatedPage.getByText('Proposal review'),
-    ).toBeVisible({ timeout: 12_000 });
+    await expect(authenticatedPage.getByText('Proposal review')).toBeVisible({
+      timeout: 12_000,
+    });
 
     // Toggle "Proposal review" on
     const reviewToggle = authenticatedPage
