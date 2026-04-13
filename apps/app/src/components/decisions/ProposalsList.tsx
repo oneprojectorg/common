@@ -13,7 +13,6 @@ import {
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from '@op/common/client';
-import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
@@ -453,22 +452,18 @@ const Proposals = (props: ProposalsProps) => {
     processInstanceId: instanceId,
   });
 
-  // Determine voting state
+  // Determine voting state from phase capability
   const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
 
   if (isLoading) {
     return <ProposalListSkeletonGrid />;
   }
 
-  const isPastPP = new Date() > new Date('2025-11-15T08:00:00.000Z');
-  if (isPastPP && props.slug === 'people-powered') {
-    return <ViewProposalsList {...props} />;
+  if (isVotingEnabled) {
+    return <VotingProposalsList {...props} />;
   }
 
-  return match(isVotingEnabled, {
-    true: () => <VotingProposalsList {...props} />,
-    false: () => <ViewProposalsList {...props} />,
-  });
+  return <ViewProposalsList {...props} />;
 };
 
 export const ProposalsList = ({
