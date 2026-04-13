@@ -81,8 +81,8 @@ export function ProcessBuilderAutosaveProvider({
 
   // Accumulates only the fields that changed since the last debounce fired.
   // This ensures saves are scoped — editing phases only sends phases, not
-  // the full snapshot — so concurrent editors on different sections don't
-  // overwrite each other.
+  // the full snapshot — so edits in one section don't overwrite changes
+  // the user made in another section.
   const dirtyFieldsRef = useRef<Partial<ProcessBuilderInstanceData>>({});
 
   const debouncedSaveRef = useRef<() => boolean>(null);
@@ -97,6 +97,8 @@ export function ProcessBuilderAutosaveProvider({
     },
     onSettled: () => {
       inflightRef.current = null;
+      // Another save is queued — let its onSettled invalidate instead,
+      // avoiding a stale refetch that could overwrite optimistic updates.
       if (debouncedSaveRef.current?.()) {
         return;
       }
@@ -155,8 +157,16 @@ export function ProcessBuilderAutosaveProvider({
         setRubricTemplateSchema(decisionProfileId, rubricTemplate);
       }
 
-      // Accumulate dirty fields for the next debounced save
-      dirtyFieldsRef.current = { ...dirtyFieldsRef.current, ...data };
+      // Accumulate dirty fields for the next debounced save.
+      // Deep-merge config so rapid cross-section edits don't overwrite
+      // each other's config sub-fields within the debounce window.
+      dirtyFieldsRef.current = {
+        ...dirtyFieldsRef.current,
+        ...data,
+        config: data.config
+          ? { ...dirtyFieldsRef.current.config, ...data.config }
+          : dirtyFieldsRef.current.config,
+      };
 
       debouncedSave();
     },

@@ -161,6 +161,10 @@ function PhaseDetailForm({
     const flushed = await flushPendingChanges();
     if (flushed) {
       onDelete();
+    } else {
+      // Revert the optimistic removal so store matches server
+      saveChanges({ phases: toPayload(allPhases) });
+      setShowDeleteModal(false);
     }
   };
 

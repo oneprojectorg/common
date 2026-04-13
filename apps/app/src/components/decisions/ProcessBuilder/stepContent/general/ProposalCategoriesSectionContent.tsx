@@ -13,6 +13,7 @@ import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
@@ -39,7 +40,7 @@ export function ProposalCategoriesSectionContent({
   const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
-  const { saveChanges } = useProcessBuilderAutosave();
+  const { saveChanges, saveState } = useProcessBuilderAutosave();
 
   // Local state — immediate source of truth for UI
   // Seed from store (localStorage) first, then fall back to server data
@@ -156,9 +157,15 @@ export function ProposalCategoriesSectionContent({
   return (
     <div className="mx-auto w-full space-y-6 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="space-y-2">
-        <Header2 className="font-serif text-title-sm">
-          {t('Proposal Categories')}
-        </Header2>
+        <div className="flex items-center justify-between">
+          <Header2 className="font-serif text-title-sm">
+            {t('Proposal Categories')}
+          </Header2>
+          <SaveStatusIndicator
+            status={saveState.status}
+            savedAt={saveState.savedAt}
+          />
+        </div>
         <p className="text-neutral-gray4">
           {t(
             'Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.',

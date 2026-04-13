@@ -85,14 +85,12 @@ export const ProcessBuilderFooter = ({
   });
 
   const handleLaunchOrSave = async () => {
-    // Flush any pending autosave so the latest edits are persisted
-    // before either launching or updating.
+    // Flush any pending autosave so in-flight draft saves complete
+    // before launching or updating. For non-draft, this is a no-op
+    // but ensures a clean state.
     const flushed = await flushPendingChanges();
     if (!flushed) {
-      toast.error({
-        title: t('Failed to save changes'),
-        message: t('Please try again in a moment'),
-      });
+      // Error already toasted by the autosave context's onError callback.
       return;
     }
 
