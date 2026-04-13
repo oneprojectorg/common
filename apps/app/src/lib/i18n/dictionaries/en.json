@@ -300,6 +300,8 @@
   "Duplicating...": "Duplicating...",
   "Deleting...": "Deleting...",
   "Failed to delete proposal": "Failed to delete proposal",
+  "Phase advanced successfully": "Phase advanced successfully",
+  "Failed to advance phase": "Failed to advance phase",
   "Failed to create proposal": "Failed to create proposal",
   "Failed to update proposal": "Failed to update proposal",
   "Failed to submit proposal": "Failed to submit proposal",

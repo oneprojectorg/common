@@ -95,6 +95,8 @@ export async function DecisionHeader({
             <DecisionProcessStepper
               phases={phases}
               currentStateId={instance.currentStateId || ''}
+              instanceId={instanceId}
+              isAdmin={isAdmin}
               className="mx-auto"
             />
           </div>

@@ -300,6 +300,8 @@
   "Duplicating...": "Duplicando...",
   "Deleting...": "Excluindo...",
   "Failed to delete proposal": "Falha ao excluir a proposta",
+  "Phase advanced successfully": "Fase avançada com sucesso",
+  "Failed to advance phase": "Falha ao avançar a fase",
   "Failed to create proposal": "Falha ao criar a proposta",
   "Failed to update proposal": "Falha ao atualizar a proposta",
   "Failed to submit proposal": "Falha ao enviar a proposta",
