@@ -37,6 +37,9 @@ export const Channels = {
 
   reviewAssignment: (assignmentId: string) =>
     `reviewAssignment:${assignmentId}` as const,
+
+  reviewAssignments: (instanceId: string) =>
+    `reviewAssignments:${instanceId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -60,6 +63,9 @@ export type DecisionProposalChannel = ReturnType<
 export type ReviewAssignmentChannel = ReturnType<
   typeof Channels.reviewAssignment
 >;
+export type ReviewAssignmentsChannel = ReturnType<
+  typeof Channels.reviewAssignments
+>;
 
 /**
  * Union of all valid channel types
@@ -73,4 +79,5 @@ export type ChannelName =
   | DecisionInstanceChannel
   | DecisionProposalsChannel
   | DecisionProposalChannel
-  | ReviewAssignmentChannel;
+  | ReviewAssignmentChannel
+  | ReviewAssignmentsChannel;

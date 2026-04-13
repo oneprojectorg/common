@@ -12,9 +12,11 @@ import { ValidationError } from '../../utils';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  resolveAssignmentProposal,
+} from './reviewHelpers';
 import {
   type ReviewAssignmentExtended,
   reviewAssignmentExtendedSchema,
@@ -34,55 +36,36 @@ export async function getReviewAssignment({
       user,
     });
 
-  const proposalHistory = assignment.assignedProposalHistory;
-  const proposalSnapshot = proposalHistory ?? assignment.proposal;
-
-  const proposalId = proposalSnapshot.id;
-  const contentId = proposalHistory
-    ? proposalHistory.historyId
-    : proposalSnapshot.id;
+  const proposalSnapshot = resolveAssignmentProposal(assignment);
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.process.id,
   );
-  const parsedProposalData = parseProposalData(proposalSnapshot.proposalData);
-
-  if (!parsedProposalData.collaborationDocId) {
-    throw new ValidationError(
-      `Proposal ${contentId} is missing collaborationDocId`,
-    );
-  }
-
-  if (parsedProposalData.collaborationDocVersionId == null) {
-    console.warn(
-      `[getReviewAssignment] Proposal ${contentId} is missing collaborationDocVersionId`,
-    );
-  }
 
   const [relationshipInfo, documentContentMap, proposalAttachments] =
     await Promise.all([
       getProposalRelationshipInfo({
-        profileId: proposalSnapshot.profileId,
+        profileId: assignment.proposal.profileId,
         viewerProfileId: assignment.reviewerProfileId,
       }),
       getProposalDocumentsContent([
         {
-          id: contentId,
+          id: proposalSnapshot.id,
           proposalData: proposalSnapshot.proposalData,
           proposalTemplate,
           collaborationDocVersionId:
-            parsedProposalData.collaborationDocVersionId,
+            proposalSnapshot.proposalData.collaborationDocVersionId,
         },
       ]),
-      getProposalAttachmentsWithSignedUrls(proposalId),
+      getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
     ]);
 
-  const documentContent = documentContentMap.get(contentId);
+  const documentContent = documentContentMap.get(proposalSnapshot.id);
 
   if (!documentContent) {
     throw new ValidationError(
-      `Could not resolve document content for proposal ${contentId}`,
+      `Could not resolve document content for proposal ${proposalSnapshot.id}`,
     );
   }
 
@@ -96,7 +79,6 @@ export async function getReviewAssignment({
       ...assignment,
       proposal: {
         ...proposalSnapshot,
-        proposalData: parsedProposalData,
         ...relationshipInfo,
         attachments: proposalAttachments,
         proposalTemplate,

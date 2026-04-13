@@ -42,6 +42,10 @@ export const reviewAssignmentExtendedSchema = z.object({
   review: proposalReviewSchema.nullable(),
 });
 
+export const reviewAssignmentListSchema = z.object({
+  assignments: z.array(reviewAssignmentExtendedSchema),
+});
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type ProposalReviewAssignment = z.infer<
@@ -51,3 +55,4 @@ export type ProposalReview = z.infer<typeof proposalReviewSchema>;
 export type ReviewAssignmentExtended = z.infer<
   typeof reviewAssignmentExtendedSchema
 >;
+export type ReviewAssignmentList = z.infer<typeof reviewAssignmentListSchema>;
