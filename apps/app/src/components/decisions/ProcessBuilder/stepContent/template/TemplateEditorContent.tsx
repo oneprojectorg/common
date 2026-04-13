@@ -21,6 +21,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import {
@@ -100,6 +101,7 @@ export function TemplateEditorContent({
       requireCategorySelection,
     });
   }, [
+    storeData?.proposalTemplate,
     instanceData?.proposalTemplate,
     categories,
     allowMultipleCategories,
@@ -150,7 +152,7 @@ export function TemplateEditorContent({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
-  const { saveChanges } = useProcessBuilderAutosave();
+  const { saveChanges, saveState } = useProcessBuilderAutosave();
 
   // Derive field views from the template, excluding locked system fields
   // that are always rendered separately above the sortable list.
@@ -387,9 +389,15 @@ export function TemplateEditorContent({
 
         <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
           <div className="mx-auto max-w-160 space-y-4">
-            <Header2 className="hidden font-serif text-title-sm md:block">
-              {t('Proposal template')}
-            </Header2>
+            <div className="hidden items-center justify-between md:flex">
+              <Header2 className="font-serif text-title-sm">
+                {t('Proposal template')}
+              </Header2>
+              <SaveStatusIndicator
+                status={saveState.status}
+                savedAt={saveState.savedAt}
+              />
+            </div>
             <p className="text-neutral-charcoal">
               <span className="hidden md:inline">
                 {t('Build your proposal using the tools on the left')}
