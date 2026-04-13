@@ -42,6 +42,4 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
   }
 
   await db.delete(posts).where(eq(posts.id, postId));
-
-  return { success: true };
 };

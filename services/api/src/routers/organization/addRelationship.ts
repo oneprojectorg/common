@@ -23,7 +23,6 @@ const inputSchema = z.object({
 export const addRelationshipRouter = router({
   addRelationship: commonAuthedProcedure()
     .input(inputSchema)
-    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
       const { to, relationships } = input;
@@ -61,8 +60,6 @@ export const addRelationshipRouter = router({
             }),
           ]),
         );
-
-        return { success: true };
       } catch (error: unknown) {
         console.log('ERROR', error);
         if (error instanceof UnauthorizedError) {

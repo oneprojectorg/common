@@ -76,7 +76,6 @@ const relationshipProcedure = commonAuthedProcedure({
 export const profileRelationshipRouter = router({
   addRelationship: relationshipProcedure
     .input(relationshipInputSchema)
-    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType, pending } = input;
 
@@ -111,8 +110,6 @@ export const profileRelationshipRouter = router({
             }
           })(),
         );
-
-        return { success: true };
       } catch (error) {
         if (error instanceof ValidationError) {
           throw new TRPCError({
@@ -135,7 +132,6 @@ export const profileRelationshipRouter = router({
 
   removeRelationship: relationshipProcedure
     .input(removeRelationshipInputSchema)
-    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
@@ -145,7 +141,6 @@ export const profileRelationshipRouter = router({
           relationshipType,
           authUserId: ctx.user.id,
         });
-        return { success: true };
       } catch (error) {
         logger.error('Error removing relationship', { error, targetProfileId });
         throw new TRPCError({

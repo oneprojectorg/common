@@ -27,7 +27,6 @@ export const processTransitions = inngest.createFunction(
     }
 
     return {
-      success: true,
       processed: result.processed,
       failed: result.failed,
       errors: result.errors,

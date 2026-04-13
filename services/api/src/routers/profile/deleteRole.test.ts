@@ -37,9 +37,7 @@ describe.concurrent('profile.deleteRole', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.deleteRole({ roleId: customRole!.id });
-
-    expect(result.success).toBe(true);
+    await caller.deleteRole({ roleId: customRole!.id });
 
     // Verify role was deleted
     const deletedRole = await db.query.accessRoles.findFirst({

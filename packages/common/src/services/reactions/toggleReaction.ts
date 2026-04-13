@@ -17,15 +17,15 @@ export const toggleReaction = async (options: ToggleReactionOptions) => {
     // If user has the same reaction type, remove it
     if (existingReaction.reactionType === reactionType) {
       await removeReaction({ postId, profileId });
-      return { success: true, action: 'removed' as const };
+      return { action: 'removed' as const };
     } else {
       // If user has a different reaction type, replace it
       await addReaction({ postId, profileId, reactionType });
-      return { success: true, action: 'replaced' as const };
+      return { action: 'replaced' as const };
     }
   } else {
     // No existing reaction, add new one
     await addReaction({ postId, profileId, reactionType });
-    return { success: true, action: 'added' as const };
+    return { action: 'added' as const };
   }
 };

@@ -21,8 +21,8 @@ export const deleteProposalRouter = router({
     )
     .output(
       z.object({
-        success: z.boolean(),
         deletedId: z.string(),
+        processInstanceId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
