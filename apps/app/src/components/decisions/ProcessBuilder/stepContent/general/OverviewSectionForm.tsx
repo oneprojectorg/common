@@ -262,10 +262,10 @@ export function OverviewSectionForm({
                       isSelected={field.state.value}
                       onChange={(value) => {
                         field.handleChange(value);
-                        // Write to Zustand store immediately so the sidebar
+                        // Write to store immediately so the sidebar
                         // hides/shows "Proposal Categories" without waiting
                         // for the debounced save.
-                        setInstanceData(decisionProfileId, {
+                        saveChanges({
                           config: { organizeByCategories: value },
                         });
                       }}
