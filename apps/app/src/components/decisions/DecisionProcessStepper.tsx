@@ -141,7 +141,7 @@ export function DecisionProcessStepper({
           overlayClassName="p-0 items-end justify-center"
           className="m-0 h-auto w-screen max-w-none rounded-t-lg rounded-b-none border-0 outline-0"
         >
-          <div className="flex flex-col gap-4 p-4">
+          <div className="flex flex-col gap-4 p-4 text-left">
             <div className="font-serif text-title-sm">
               {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
             </div>
@@ -185,7 +185,7 @@ export function DecisionProcessStepper({
           isDismissable={!transitionMutation.isPending}
           surface="flat"
         >
-          <ModalHeader className="px-6 pt-6 text-left">
+          <ModalHeader className="px-6 pb-6 text-left">
             {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
           </ModalHeader>
           <ModalBody className="px-6 py-6">
