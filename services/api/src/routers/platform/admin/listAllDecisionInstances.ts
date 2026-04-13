@@ -121,7 +121,7 @@ export const listAllDecisionInstancesRouter = router({
       // Batch count proposals and voters for the current page of instances
       const instanceIds = items.map((i) => i.id);
 
-      const [proposalCounts, voterCounts, participantCounts] =
+      const [proposalCounts, voterCounts, submitterProfiles, voterProfiles] =
         instanceIds.length > 0
           ? await Promise.all([
               db
@@ -145,25 +145,37 @@ export const listAllDecisionInstancesRouter = router({
                   ),
                 )
                 .groupBy(decisionsVoteSubmissions.processInstanceId),
-              // Count unique participants (union of proposal submitters and voters)
-              db.execute<{
-                process_instance_id: string;
-                count: number;
-              }>(sql`
-                SELECT process_instance_id, count(*)::int
-                FROM (
-                  SELECT process_instance_id, submitted_by_profile_id AS profile_id
-                  FROM decision_proposals
-                  WHERE process_instance_id = ANY(${instanceIds})
-                  UNION
-                  SELECT process_instance_id, submitted_by_profile_id AS profile_id
-                  FROM decisions_vote_submissions
-                  WHERE process_instance_id = ANY(${instanceIds})
-                ) AS combined
-                GROUP BY process_instance_id
-              `),
+              // Fetch distinct proposal submitter profile IDs per instance
+              db
+                .select({
+                  processInstanceId: proposals.processInstanceId,
+                  profileId: proposals.submittedByProfileId,
+                })
+                .from(proposals)
+                .where(inArray(proposals.processInstanceId, instanceIds))
+                .groupBy(
+                  proposals.processInstanceId,
+                  proposals.submittedByProfileId,
+                ),
+              // Fetch distinct voter profile IDs per instance
+              db
+                .select({
+                  processInstanceId: decisionsVoteSubmissions.processInstanceId,
+                  profileId: decisionsVoteSubmissions.submittedByProfileId,
+                })
+                .from(decisionsVoteSubmissions)
+                .where(
+                  inArray(
+                    decisionsVoteSubmissions.processInstanceId,
+                    instanceIds,
+                  ),
+                )
+                .groupBy(
+                  decisionsVoteSubmissions.processInstanceId,
+                  decisionsVoteSubmissions.submittedByProfileId,
+                ),
             ])
-          : [[], [], []];
+          : [[], [], [], []];
 
       const proposalCountMap = new Map(
         proposalCounts.map((r) => [r.processInstanceId, r.count]),
@@ -171,8 +183,21 @@ export const listAllDecisionInstancesRouter = router({
       const voterCountMap = new Map(
         voterCounts.map((r) => [r.processInstanceId, r.count]),
       );
+
+      // Merge unique participant profiles per instance
+      const participantSets = new Map<string, Set<string>>();
+      for (const r of submitterProfiles) {
+        const set = participantSets.get(r.processInstanceId) ?? new Set();
+        set.add(r.profileId);
+        participantSets.set(r.processInstanceId, set);
+      }
+      for (const r of voterProfiles) {
+        const set = participantSets.get(r.processInstanceId) ?? new Set();
+        set.add(r.profileId);
+        participantSets.set(r.processInstanceId, set);
+      }
       const participantCountMap = new Map(
-        participantCounts.map((r) => [r.process_instance_id, r.count]),
+        [...participantSets.entries()].map(([id, set]) => [id, set.size]),
       );
 
       return {
