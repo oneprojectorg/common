@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.object({
-  success: z.boolean(),
   deletedId: z.string().uuid(),
 });
 

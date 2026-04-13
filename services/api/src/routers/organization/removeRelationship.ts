@@ -13,7 +13,6 @@ const inputSchema = z.object({
 export const removeRelationshipRouter = router({
   removeRelationship: commonAuthedProcedure()
     .input(inputSchema)
-    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const { id } = input;
 
@@ -35,8 +34,6 @@ export const removeRelationshipRouter = router({
             orgId: targetOrgId,
           }),
         ]);
-
-        return { success: true };
       } catch (error: unknown) {
         console.log('ERROR', error);
         if (error instanceof UnauthorizedError) {

@@ -33,7 +33,6 @@ export const reactionsRouter = router({
       try {
         const profileId = await getCurrentProfileId(user.id);
         await addReaction({ postId, profileId, reactionType });
-        return { success: true };
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -54,8 +53,6 @@ export const reactionsRouter = router({
 
       const profileId = await getCurrentProfileId(user.id);
       await removeReaction({ postId, profileId });
-
-      return { success: true };
     }),
 
   toggleReaction: reactionProcedure

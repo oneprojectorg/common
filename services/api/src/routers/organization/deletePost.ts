@@ -22,7 +22,6 @@ export const deletePost = router({
           .describe('The ID of the profile the post belongs to'),
       }),
     )
-    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { id, profileId } = input;
 
@@ -52,7 +51,7 @@ export const deletePost = router({
       }
 
       try {
-        return await deletePostById({ postId: id, organizationId });
+        await deletePostById({ postId: id, organizationId });
       } catch (error) {
         if (
           error instanceof Error &&

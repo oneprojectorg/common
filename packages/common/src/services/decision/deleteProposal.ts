@@ -96,7 +96,6 @@ export const deleteProposal = async ({
     console.log('DELETED PROPOSAL', deletedProposal.id, user.id);
 
     return {
-      success: true,
       deletedId: proposalId,
       processInstanceId: deletedProposal.processInstanceId,
     };

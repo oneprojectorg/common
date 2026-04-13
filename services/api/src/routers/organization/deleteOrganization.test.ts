@@ -36,7 +36,6 @@ describe.concurrent('organization.deleteOrganization', () => {
 
     // Verify the response contains expected profile fields
     expect(result).toBeDefined();
-    expect(result.success).toBe(true);
     expect(result.deletedId).toBe(organizationProfile.id);
 
     // Verify the organization was actually deleted from the database

@@ -21,7 +21,6 @@ export const deleteProposalRouter = router({
     )
     .output(
       z.object({
-        success: z.boolean(),
         deletedId: z.string(),
       }),
     )
@@ -44,7 +43,7 @@ export const deleteProposalRouter = router({
           proposalId: input.proposalId,
         });
 
-        return result;
+        return { deletedId: result.deletedId };
       } catch (error: unknown) {
         logger.error('Failed to delete proposal', {
           userId: user.id,
