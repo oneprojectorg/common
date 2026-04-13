@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
@@ -62,9 +61,6 @@ export default function ProposalEditorLayout({
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
-  const isVersionHistoryEnabled =
-    useFeatureFlag('proposal_version_history') === true;
-
   // -- Data fetching ---------------------------------------------------------
 
   const [[decisionProfile, proposal]] = trpc.useSuspenseQueries((t) => [
@@ -88,11 +84,9 @@ export default function ProposalEditorLayout({
   );
 
   const versionHistoryLabel = t('Version history');
-  const asideState = isVersionHistoryEnabled
-    ? getProposalEditorAsideState(
-        normalizeProposalEditorAsideQueryState({ aside, versionId }),
-      )
-    : { aside: null };
+  const asideState = getProposalEditorAsideState(
+    normalizeProposalEditorAsideQueryState({ aside, versionId }),
+  );
 
   const setAsideState = (nextState: ProposalEditorAsideState) => {
     void setQueryState(getProposalEditorAsideQuery(nextState), {
@@ -112,7 +106,6 @@ export default function ProposalEditorLayout({
   const asideHeaderIcons = useProposalEditorAsideHeaderIcons({
     aside: asideState.aside,
     onToggleAside: toggleAside,
-    isVersionHistoryEnabled,
     versionHistoryLabel,
   });
 
@@ -234,53 +227,44 @@ function ProposalEditorContent({
 function useProposalEditorAsideHeaderIcons({
   aside,
   onToggleAside,
-  isVersionHistoryEnabled,
   versionHistoryLabel,
 }: {
   aside: ProposalEditorAside | null;
   onToggleAside: (aside: ProposalEditorAside) => void;
-  isVersionHistoryEnabled: boolean;
   versionHistoryLabel: string;
 }) {
   const asideDefinitions = {
     versions: {
       icon: LuHistory,
       label: versionHistoryLabel,
-      isEnabled: isVersionHistoryEnabled,
     },
   } satisfies Record<
     ProposalEditorAside,
     {
       icon: typeof LuHistory;
       label: string;
-      isEnabled: boolean;
     }
   >;
 
-  const activeAsideDefinition = aside ? asideDefinitions[aside] : null;
-  const activeAside = activeAsideDefinition?.isEnabled ? aside : null;
+  return proposalEditorAsideValues.map((asideKey) => {
+    const definition = asideDefinitions[asideKey];
+    const Icon = definition.icon;
 
-  return proposalEditorAsideValues
-    .filter((asideKey) => asideDefinitions[asideKey].isEnabled)
-    .map((asideKey) => {
-      const definition = asideDefinitions[asideKey];
-      const Icon = definition.icon;
-
-      return (
-        <TooltipTrigger key={asideKey}>
-          <Button
-            color="secondary"
-            variant="icon"
-            size="small"
-            onPress={() => onToggleAside(asideKey)}
-            aria-label={definition.label}
-            aria-pressed={activeAside === asideKey}
-            className="size-8 min-w-8 rounded-sm p-0"
-          >
-            <Icon className="size-4" />
-          </Button>
-          <Tooltip>{definition.label}</Tooltip>
-        </TooltipTrigger>
-      );
-    });
+    return (
+      <TooltipTrigger key={asideKey}>
+        <Button
+          color="secondary"
+          variant="icon"
+          size="small"
+          onPress={() => onToggleAside(asideKey)}
+          aria-label={definition.label}
+          aria-pressed={aside === asideKey}
+          className="size-8 min-w-8 rounded-sm p-0"
+        >
+          <Icon className="size-4" />
+        </Button>
+        <Tooltip>{definition.label}</Tooltip>
+      </TooltipTrigger>
+    );
+  });
 }
