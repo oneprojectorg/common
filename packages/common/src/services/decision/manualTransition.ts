@@ -89,7 +89,7 @@ export async function manualTransition({
     throw new CommonError('Instance has no phases defined');
   }
 
-  const fromPhaseId = instanceData.currentPhaseId;
+  const fromPhaseId = instance.currentStateId;
 
   if (!fromPhaseId) {
     throw new CommonError('Instance has no current phase set');

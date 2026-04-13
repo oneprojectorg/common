@@ -8,7 +8,7 @@ export const manualTransitionRouter = router({
     .input(
       z.object({
         instanceId: z.uuid(),
-        fromPhaseId: z.string().optional(),
+        fromPhaseId: z.string().min(1).optional(),
       }),
     )
     .output(

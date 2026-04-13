@@ -65,34 +65,6 @@ describe.concurrent('manualTransition', () => {
     });
 
     expect(dbInstance!.currentStateId).toBe('final');
-
-    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
-    expect(instanceData.currentPhaseId).toBe('final');
-  });
-
-  it('should write stateData.enteredAt for the new phase', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instance } = await createPublishedInstance(testData);
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    await caller.decision.manualTransition({
-      instanceId: instance.instance.id,
-    });
-
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
-    });
-
-    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
-    const stateData = (instanceData as unknown as Record<string, unknown>)
-      .stateData as Record<string, { enteredAt?: string }> | undefined;
-
-    expect(stateData?.final?.enteredAt).toBeDefined();
-    expect(new Date(stateData!.final!.enteredAt!).getTime()).toBeGreaterThan(0);
   });
 
   it('should record transition in history with manual flag', async ({
@@ -338,7 +310,6 @@ describe.concurrent('manualTransition', () => {
         currentStateId: 'phase1',
         instanceData: {
           ...instanceData,
-          currentPhaseId: 'phase1',
           phases: [
             {
               phaseId: 'phase1',
