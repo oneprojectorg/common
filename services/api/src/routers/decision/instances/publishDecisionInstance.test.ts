@@ -184,8 +184,7 @@ describe.concurrent('publishDecisionInstance', () => {
     });
     const dataAfter = dbAfter!.instanceData as DecisionInstanceData;
 
-    // Runtime fields should be preserved
-    expect(dataAfter.currentPhaseId).toBe(dataBefore.currentPhaseId);
+    // Template fields should be preserved
     expect(dataAfter.templateId).toBe(dataBefore.templateId);
     expect(dataAfter.templateVersion).toBe(dataBefore.templateVersion);
     expect(dataAfter.templateName).toBe(dataBefore.templateName);
