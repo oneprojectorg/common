@@ -2,6 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
+import { useMediaQuery } from '@op/hooks';
+import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
@@ -40,6 +42,7 @@ export function DecisionProcessStepper({
   );
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   const transitionMutation = trpc.decision.manualTransition.useMutation({
     onSuccess: () => {
@@ -126,46 +129,94 @@ export function DecisionProcessStepper({
         onTransition={isAdmin ? () => setShowConfirmModal(true) : undefined}
       />
 
-      <Modal
-        isOpen={showConfirmModal}
-        onOpenChange={(open) => {
-          if (!open && !transitionMutation.isPending) {
-            setShowConfirmModal(false);
-          }
-        }}
-        surface="flat"
-      >
-        <ModalHeader className="pl-6 text-left">
-          {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
-        </ModalHeader>
-        <ModalBody>
-          <p className="text-neutral-charcoal">
-            {t(
-              'This will end the {currentPhase} phase and move to {nextPhase}.',
-              {
-                currentPhase: currentPhaseName,
-                nextPhase: nextPhaseName,
-              },
-            )}
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            color="secondary"
-            isDisabled={transitionMutation.isPending}
-            onPress={() => setShowConfirmModal(false)}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="primary"
-            isLoading={transitionMutation.isPending}
-            onPress={handleAdvancePhase}
-          >
-            {t('Advance Phase')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+      {isMobile ? (
+        <Modal
+          isOpen={showConfirmModal}
+          onOpenChange={(open) => {
+            if (!open && !transitionMutation.isPending) {
+              setShowConfirmModal(false);
+            }
+          }}
+          isDismissable={!transitionMutation.isPending}
+          overlayClassName="p-0 items-end justify-center"
+          className="m-0 h-auto w-screen max-w-none rounded-t-lg rounded-b-none border-0 outline-0"
+        >
+          <div className="flex flex-col gap-4 p-4">
+            <div className="font-serif text-title-sm">
+              {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
+            </div>
+            <p className="text-sm text-neutral-charcoal">
+              {t(
+                'This will end the {currentPhase} phase and move to {nextPhase}.',
+                {
+                  currentPhase: currentPhaseName,
+                  nextPhase: nextPhaseName,
+                },
+              )}
+            </p>
+            <div className="flex flex-col gap-4">
+              <Button
+                color="primary"
+                isLoading={transitionMutation.isPending}
+                onPress={handleAdvancePhase}
+                className="w-full"
+              >
+                {t('Advance Phase')}
+              </Button>
+              <Button
+                color="secondary"
+                isDisabled={transitionMutation.isPending}
+                onPress={() => setShowConfirmModal(false)}
+                className="w-full"
+              >
+                {t('Cancel')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      ) : (
+        <Modal
+          isOpen={showConfirmModal}
+          onOpenChange={(open) => {
+            if (!open && !transitionMutation.isPending) {
+              setShowConfirmModal(false);
+            }
+          }}
+          isDismissable={!transitionMutation.isPending}
+          surface="flat"
+        >
+          <ModalHeader className="px-6 pt-6 text-left">
+            {t('Advance to {phaseName}?', { phaseName: nextPhaseName })}
+          </ModalHeader>
+          <ModalBody className="px-6 py-6">
+            <p className="text-sm text-neutral-charcoal">
+              {t(
+                'This will end the {currentPhase} phase and move to {nextPhase}.',
+                {
+                  currentPhase: currentPhaseName,
+                  nextPhase: nextPhaseName,
+                },
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter className="px-6 py-6">
+            <Button
+              color="secondary"
+              isDisabled={transitionMutation.isPending}
+              onPress={() => setShowConfirmModal(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="primary"
+              isLoading={transitionMutation.isPending}
+              onPress={handleAdvancePhase}
+            >
+              {t('Advance Phase')}
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
     </>
   );
 }
