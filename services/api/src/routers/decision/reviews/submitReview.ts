@@ -15,17 +15,18 @@ export const submitReviewRouter = router({
     .input(reviewInputSchema)
     .output(proposalReviewSchema)
     .mutation(async ({ ctx, input }) => {
+      const result = await submitReview({
+        assignmentId: input.assignmentId,
+        reviewData: input.reviewData,
+        overallComment: input.overallComment,
+        user: ctx.user,
+      });
+
       ctx.registerMutationChannels([
         Channels.reviewAssignment(input.assignmentId),
+        Channels.reviewAssignments(result.processInstanceId),
       ]);
 
-      return proposalReviewSchema.parse(
-        await submitReview({
-          assignmentId: input.assignmentId,
-          reviewData: input.reviewData,
-          overallComment: input.overallComment,
-          user: ctx.user,
-        }),
-      );
+      return proposalReviewSchema.parse(result);
     }),
 });

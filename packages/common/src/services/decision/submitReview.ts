@@ -24,7 +24,7 @@ export async function submitReview({
   reviewData: Record<string, unknown>;
   overallComment?: string | null;
   user: User;
-}): Promise<ProposalReview> {
+}): Promise<ProposalReview & { processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -81,14 +81,17 @@ export async function submitReview({
     return submittedReview;
   });
 
-  return proposalReviewSchema.parse({
-    id: review.id,
-    assignmentId: review.assignmentId,
-    state: review.state,
-    reviewData: review.reviewData,
-    overallComment: review.overallComment ?? null,
-    submittedAt: review.submittedAt ?? null,
-    createdAt: review.createdAt ?? null,
-    updatedAt: review.updatedAt ?? null,
-  });
+  return {
+    ...proposalReviewSchema.parse({
+      id: review.id,
+      assignmentId: review.assignmentId,
+      state: review.state,
+      reviewData: review.reviewData,
+      overallComment: review.overallComment ?? null,
+      submittedAt: review.submittedAt ?? null,
+      createdAt: review.createdAt ?? null,
+      updatedAt: review.updatedAt ?? null,
+    }),
+    processInstanceId: context.assignment.processInstanceId,
+  };
 }
