@@ -34,10 +34,7 @@ export const updateProposalRouter = router({
 
       ctx.registerMutationChannels([
         Channels.decisionProposals(proposal.processInstanceId),
-        Channels.decisionProposal(
-          proposal.processInstanceId,
-          input.proposalId,
-        ),
+        Channels.decisionProposal(proposal.processInstanceId, input.proposalId),
       ]);
 
       return proposalSchema.parse(proposal);
