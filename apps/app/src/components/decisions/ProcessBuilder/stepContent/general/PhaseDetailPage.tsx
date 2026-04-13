@@ -70,7 +70,8 @@ function PhaseDetailForm({
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
   );
-  const { saveChanges, saveState } = useProcessBuilderAutosave();
+  const { saveChanges, saveState, flushPendingChanges } =
+    useProcessBuilderAutosave();
 
   // Resolve the initial phase data (same priority as PhasesSectionContent)
   const allPhases: PhaseDefinition[] = (() => {
@@ -154,10 +155,13 @@ function PhaseDetailForm({
 
   // Delete phase
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const remainingPhases = allPhases.filter((p) => p.id !== phaseId);
     saveChanges({ phases: toPayload(remainingPhases) });
-    onDelete();
+    const flushed = await flushPendingChanges();
+    if (flushed) {
+      onDelete();
+    }
   };
 
   // Validation
