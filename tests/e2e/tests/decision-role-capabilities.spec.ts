@@ -212,9 +212,6 @@ test.describe('Decision Role Capabilities', () => {
     await expect(
       memberPage.getByRole('button', { name: 'Submit my votes' }),
     ).toBeVisible({ timeout: 10000 });
-
-    // MyBallot only appears after voting — should not be visible before a vote is cast
-    await expect(memberPage.getByTestId('my-ballot')).not.toBeVisible();
   });
 
   test('voting submit footer is not shown outside the voting phase', async ({

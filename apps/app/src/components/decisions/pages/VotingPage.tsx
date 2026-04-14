@@ -10,7 +10,6 @@ import { useTranslations } from '@/lib/i18n/routing';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
-import { MyBallot } from '../MyBallot';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
 export function VotingPage({
@@ -40,9 +39,19 @@ export function VotingPage({
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
-  const currentPhase = phases.find(
-    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  const currentPhaseIndex = phases.findIndex(
+    (p) => p.phaseId === currentPhaseId,
   );
+  const currentPhase =
+    currentPhaseIndex >= 0
+      ? (phases[currentPhaseIndex] as InstancePhaseData)
+      : undefined;
+  const nextPhase =
+    currentPhaseIndex >= 0
+      ? (phases[currentPhaseIndex + 1] as InstancePhaseData | undefined)
+      : undefined;
+
+  const hasVoted = voteStatus.hasVoted;
 
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
@@ -51,13 +60,32 @@ export function VotingPage({
       undefined);
   const aboutIsMarkup = !!instance?.description?.match('PPDESCRIPTION');
 
+  const resultsDate = nextPhase?.startDate
+    ? new Date(nextPhase.startDate).toLocaleDateString(undefined, {
+        month: 'long',
+        day: 'numeric',
+      })
+    : undefined;
+
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={currentPhase?.headline ?? t('SHARE YOUR IDEAS.')}
+          title={
+            hasVoted
+              ? t('YOUR BALLOT IS IN.')
+              : (currentPhase?.headline ?? t('SHARE YOUR IDEAS.'))
+          }
           description={
-            currentPhase?.description ? (
+            hasVoted ? (
+              resultsDate ? (
+                <p>
+                  {t('Results will be shared on {date}.', {
+                    date: resultsDate,
+                  })}
+                </p>
+              ) : undefined
+            ) : currentPhase?.description ? (
               <p>{currentPhase.description}</p>
             ) : undefined
           }
@@ -89,14 +117,6 @@ export function VotingPage({
           </div>
         </div>
       </div>
-
-      {voteStatus.hasVoted && instance.access?.vote && (
-        <div data-testid="my-ballot">
-          <Suspense fallback={null}>
-            <MyBallot slug={slug} instanceId={instanceId} />
-          </Suspense>
-        </div>
-      )}
     </div>
   );
 }
