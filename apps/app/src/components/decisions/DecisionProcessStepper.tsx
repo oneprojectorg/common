@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
@@ -33,6 +34,7 @@ export function DecisionProcessStepper({
   const locale = useLocale();
   const router = useRouter();
   const t = useTranslations();
+  const manualTransitionsEnabled = useFeatureFlag('manual_transitions');
   const translation = useDecisionTranslation();
   const translatedPhaseNames = useMemo(
     () =>
@@ -84,7 +86,8 @@ export function DecisionProcessStepper({
   const transformedPhases: Phase[] = useMemo(
     () =>
       phases.map((phase) => {
-        const isNextActionable = isAdmin && phase.id === nextPhaseId;
+        const isNextActionable =
+          manualTransitionsEnabled && isAdmin && phase.id === nextPhaseId;
         return {
           id: phase.id,
           name: translatedPhaseNames?.get(phase.id) ?? phase.name,
@@ -105,6 +108,7 @@ export function DecisionProcessStepper({
     [
       phases,
       translatedPhaseNames,
+      manualTransitionsEnabled,
       isAdmin,
       nextPhaseId,
       currentPhaseAdvancement,
@@ -141,7 +145,11 @@ export function DecisionProcessStepper({
         currentPhaseId={currentStateId}
         className={className}
         locale={locale}
-        onTransition={isAdmin ? () => setShowConfirmModal(true) : undefined}
+        onTransition={
+          manualTransitionsEnabled && isAdmin
+            ? () => setShowConfirmModal(true)
+            : undefined
+        }
       />
 
       {isMobile ? (
