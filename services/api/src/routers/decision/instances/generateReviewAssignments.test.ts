@@ -1,6 +1,7 @@
 import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
+  type ReviewsPolicy,
   advancePhase,
   createDecisionRole,
   generateReviewAssignments,
@@ -8,25 +9,13 @@ import {
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalStatus,
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
-import { createCallerFactory } from '../../../trpcFactory';
-
-const createCaller = createCallerFactory(appRouter);
-
-async function createAuthenticatedCaller(email: string) {
-  const { session } = await createIsolatedSession(email);
-  return createCaller(await createTestContextWithSession(session));
-}
 
 /**
  * Schema with a review-capable middle phase.
@@ -77,7 +66,7 @@ const decisionSchemaWithReview = {
  */
 async function createReviewInstance(
   testData: TestDecisionsDataManager,
-  { reviewsPolicy = 'full_coverage' as const } = {},
+  { reviewsPolicy = 'full_coverage' }: { reviewsPolicy?: ReviewsPolicy } = {},
 ) {
   const setup = await testData.createDecisionSetup({
     instanceCount: 1,
@@ -159,7 +148,6 @@ async function advanceToReviewPhase(instanceId: string) {
   return result;
 }
 
-
 describe.concurrent('generateReviewAssignments', () => {
   it('full_coverage assigns only members with REVIEW capability, excluding self-review', async ({
     task,
@@ -201,28 +189,20 @@ describe.concurrent('generateReviewAssignments', () => {
       ),
     ]);
 
-    // Create and submit proposals so they have history rows
+    // Create submitted proposals (DB trigger creates history rows on status change)
     const [proposalByA, proposalByC] = await Promise.all([
       testData.createProposal({
         userEmail: reviewerA.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal by Reviewer A' },
+        status: ProposalStatus.SUBMITTED,
       }),
       testData.createProposal({
         userEmail: memberC.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal by Member C' },
+        status: ProposalStatus.SUBMITTED,
       }),
-    ]);
-
-    const [callerA, callerC] = await Promise.all([
-      createAuthenticatedCaller(reviewerA.email),
-      createAuthenticatedCaller(memberC.email),
-    ]);
-
-    await Promise.all([
-      callerA.decision.submitProposal({ proposalId: proposalByA.id }),
-      callerC.decision.submitProposal({ proposalId: proposalByC.id }),
     ]);
 
     // Advance submission → review to get transitionHistoryId + transition proposal rows
@@ -351,14 +331,12 @@ describe.concurrent('generateReviewAssignments', () => {
       reviewerRole.id,
     );
 
-    const proposal = await testData.createProposal({
+    await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Idempotency proposal' },
+      status: ProposalStatus.SUBMITTED,
     });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    await caller.decision.submitProposal({ proposalId: proposal.id });
 
     const advanceResult = await advanceToReviewPhase(instance.instance.id);
 
