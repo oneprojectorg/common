@@ -28,6 +28,7 @@ type Instance = RouterOutput['decision']['getInstance'];
 
 // Common instance fields used by ResultsPageContent
 interface ResultsPageInstance {
+  id: string;
   name: string;
   description: string | null;
   process?: {
@@ -45,13 +46,7 @@ function ResultsPageLegacy({
   const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
     instanceId,
   });
-  return (
-    <ResultsPageContent
-      instanceId={instanceId}
-      profileSlug={profileSlug}
-      instance={instance}
-    />
-  );
+  return <ResultsPageContent profileSlug={profileSlug} instance={instance} />;
 }
 
 type ResultsPageProps = {
@@ -75,7 +70,6 @@ export function ResultsPage(props: ResultsPageProps) {
   }
   return (
     <ResultsPageContent
-      instanceId={props.instance.id}
       profileSlug={props.profileSlug}
       decisionSlug={props.decisionSlug}
       instance={props.instance}
@@ -84,16 +78,15 @@ export function ResultsPage(props: ResultsPageProps) {
 }
 
 function ResultsPageContent({
-  instanceId,
   profileSlug,
   decisionSlug,
   instance,
 }: {
-  instanceId: string;
   profileSlug: string;
   decisionSlug?: string;
   instance: ResultsPageInstance;
 }) {
+  const instanceId = instance.id;
   const t = useTranslations();
 
   // Organization-specific content
