@@ -1,13 +1,13 @@
 /**
- * Voting eligibility rules — client-safe (no server-only dependencies).
- * Shared between frontend and backend to keep the definition consistent.
+ * Voting eligibility rules — shared between frontend and backend.
  */
+import { ProposalStatus } from '@op/db/schema';
 
 /** Proposal statuses that are not eligible for voting. */
 export const VOTING_INELIGIBLE_STATUSES: readonly string[] = [
-  'draft',
-  'rejected',
-  'duplicate',
+  ProposalStatus.DRAFT,
+  ProposalStatus.REJECTED,
+  ProposalStatus.DUPLICATE,
 ];
 
 export function isVotingEligible(status: string | null | undefined): boolean {
