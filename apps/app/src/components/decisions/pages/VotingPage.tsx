@@ -9,6 +9,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
@@ -23,6 +24,7 @@ export function VotingPage({
   decisionSlug?: string;
 }) {
   const t = useTranslations();
+  const translation = useDecisionTranslation();
 
   const [[{ proposals }, instance, voteStatus]] = trpc.useSuspenseQueries(
     (t) => [
@@ -53,12 +55,14 @@ export function VotingPage({
 
   const hasVoted = voteStatus.hasVoted;
 
-  const description = instance?.description?.match('PPDESCRIPTION')
-    ? t('PPDESCRIPTION')
-    : (instance.description ??
-      instance.instanceData?.templateDescription ??
-      undefined);
-  const aboutIsMarkup = !!instance?.description?.match('PPDESCRIPTION');
+  const description =
+    instance.description ?? instance.instanceData?.templateDescription;
+
+  const heroTitle = hasVoted
+    ? t('YOUR BALLOT IS IN.')
+    : (translation?.headline ??
+      currentPhase?.headline ??
+      t('SHARE YOUR IDEAS.'));
 
   const resultsDate = nextPhase?.startDate
     ? new Date(nextPhase.startDate).toLocaleDateString(undefined, {
@@ -67,28 +71,24 @@ export function VotingPage({
       })
     : undefined;
 
+  const heroDescription = hasVoted
+    ? resultsDate
+      ? t('Results will be shared on {date}.', { date: resultsDate })
+      : undefined
+    : (translation?.phaseDescription ?? currentPhase?.description);
+
+  const actionBarDescription =
+    translation?.additionalInfo ??
+    currentPhase?.additionalInfo ??
+    translation?.description ??
+    description;
+
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={
-            hasVoted
-              ? t('YOUR BALLOT IS IN.')
-              : (currentPhase?.headline ?? t('SHARE YOUR IDEAS.'))
-          }
-          description={
-            hasVoted ? (
-              resultsDate ? (
-                <p>
-                  {t('Results will be shared on {date}.', {
-                    date: resultsDate,
-                  })}
-                </p>
-              ) : undefined
-            ) : currentPhase?.description ? (
-              <p>{currentPhase.description}</p>
-            ) : undefined
-          }
+          title={heroTitle}
+          description={heroDescription ? <p>{heroDescription}</p> : undefined}
           variant="standard"
         />
 
@@ -96,8 +96,8 @@ export function VotingPage({
 
         <DecisionActionBar
           instanceId={instanceId}
-          markup={currentPhase?.additionalInfo ? false : aboutIsMarkup}
-          description={currentPhase?.additionalInfo ?? description}
+          markup={!!translation?.additionalInfo}
+          description={actionBarDescription}
           showSubmitButton={false}
         />
       </div>
