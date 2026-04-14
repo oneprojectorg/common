@@ -8,9 +8,7 @@ import {
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
-  decisionProcesses,
   processInstances,
-  profileUserToAccessRoles,
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
@@ -35,7 +33,7 @@ async function createAuthenticatedCaller(email: string) {
  * Schema with a review-capable middle phase.
  * submission → review (proposals.review: true) → results
  */
-const reviewSchema = {
+const decisionSchemaWithReview = {
   id: 'review-test-schema',
   version: '1.0.0',
   name: 'Review Test Schema',
@@ -79,31 +77,22 @@ const reviewSchema = {
  * Returns the instance, its profileId, and the creating user's personal profileId.
  */
 async function createReviewInstance(testData: TestDecisionsDataManager) {
-  const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+  const setup = await testData.createDecisionSetup({
+    instanceCount: 1,
+    processSchema: decisionSchemaWithReview,
+    status: ProcessStatus.PUBLISHED,
+  });
 
   const [userRecord] = await db
     .select({ profileId: users.profileId })
     .from(users)
     .where(eq(users.authUserId, setup.user.id));
 
-  const [processRecord] = await db
-    .insert(decisionProcesses)
-    .values({
-      name: `Review Process ${setup.userEmail}`,
-      description: 'Test review process',
-      processSchema: reviewSchema,
-      createdByProfileId: userRecord!.profileId!,
-    })
-    .returning();
-
-  const created = await testData.createInstanceForProcess({
-    processId: processRecord!.id,
-    user: setup.user,
-    name: 'Review Instance',
-    status: ProcessStatus.PUBLISHED,
-  });
-
-  return { setup, instance: created, creatorProfileId: userRecord!.profileId! };
+  return {
+    setup,
+    instance: setup.instances[0]!,
+    creatorProfileId: userRecord!.profileId!,
+  };
 }
 
 /**
@@ -129,33 +118,6 @@ async function createReviewerRole(instanceProfileId: string) {
         },
       },
     },
-  });
-}
-
-/**
- * Assigns an additional role to a user on a specific decision profile.
- */
-async function assignRole(
-  authUserId: string,
-  instanceProfileId: string,
-  roleId: string,
-) {
-  const profileUser = await db.query.profileUsers.findFirst({
-    where: {
-      authUserId,
-      profileId: instanceProfileId,
-    },
-  });
-
-  if (!profileUser) {
-    throw new Error(
-      `No profileUser found for authUserId=${authUserId} on profile=${instanceProfileId}`,
-    );
-  }
-
-  await db.insert(profileUserToAccessRoles).values({
-    profileUserId: profileUser.id,
-    accessRoleId: roleId,
   });
 }
 
@@ -238,8 +200,16 @@ describe.concurrent('generateReviewAssignments', () => {
 
     // Give reviewerA and reviewerB the Reviewer role
     await Promise.all([
-      assignRole(reviewerA.authUserId, instance.profileId, reviewerRole.id),
-      assignRole(reviewerB.authUserId, instance.profileId, reviewerRole.id),
+      testData.assignRole(
+        reviewerA.authUserId,
+        instance.profileId,
+        reviewerRole.id,
+      ),
+      testData.assignRole(
+        reviewerB.authUserId,
+        instance.profileId,
+        reviewerRole.id,
+      ),
     ]);
 
     // Create and submit proposals so they have history rows
@@ -386,7 +356,11 @@ describe.concurrent('generateReviewAssignments', () => {
       organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
-    await assignRole(reviewer.authUserId, instance.profileId, reviewerRole.id);
+    await testData.assignRole(
+      reviewer.authUserId,
+      instance.profileId,
+      reviewerRole.id,
+    );
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
