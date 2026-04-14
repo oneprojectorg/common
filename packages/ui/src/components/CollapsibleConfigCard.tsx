@@ -192,20 +192,22 @@ export function CollapsibleConfigCardDragPreview({
 
   return (
     <div className={cn('rounded-lg border bg-white p-4 shadow-lg', className)}>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center text-neutral-gray4">
+      <div className="flex items-center gap-2 pr-1">
+        <div className="mr-1 flex items-center justify-center text-neutral-gray4">
           <LuGripVertical className="size-4" />
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          {Icon ? (
-            <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
+        {Icon ? (
+          <div className="w-full grow">
+            <div className="flex w-fit shrink items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
               <Icon className="size-4 text-neutral-gray4" />
               <span className="truncate text-neutral-charcoal">{label}</span>
             </div>
-          ) : (
-            <span className="truncate text-neutral-charcoal">{label}</span>
-          )}
-        </div>
+          </div>
+        ) : (
+          <span className="w-full grow truncate text-neutral-charcoal">
+            {label}
+          </span>
+        )}
         {badgeLabel && (
           <Chip className="shrink-0 text-neutral-gray4">{badgeLabel}</Chip>
         )}
