@@ -32,8 +32,11 @@ function getBlockText(element: Y.XmlElement): string {
 }
 
 /**
- * Extracts plain text from a Yjs XmlFragment, matching the output of
- * TipTap Cloud REST API with `format=text`.
+ * Extracts plain text from a Yjs XmlFragment.
+ *
+ * This is the client-side counterpart to `extractTextFromTipTapDoc`
+ * (which operates on the REST API JSON format). Both produce equivalent
+ * plain-text output, including handling of atom nodes like iframely.
  *
  * All fragment content (both TipTap editor fields and scalar values from
  * `useCollaborativeFragment`) is stored as paragraph-wrapped `XmlElement`

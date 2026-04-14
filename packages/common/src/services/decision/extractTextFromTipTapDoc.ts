@@ -6,6 +6,15 @@ type TipTapNode = {
   content?: TipTapNode[];
 };
 
+function isTipTapNode(value: unknown): value is TipTapNode {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    typeof value.type === 'string'
+  );
+}
+
 /**
  * Extracts plain text from a TipTap JSON document (format=json),
  * mirroring `getBlockText` in useProposalValidation but operating on
@@ -26,7 +35,7 @@ export function extractTextFromTipTapDoc(doc: { content?: unknown[] }): string {
     return (node.content ?? []).map(nodeText).join('');
   }
 
-  const blocks = (doc.content ?? []) as TipTapNode[];
+  const blocks = (doc.content ?? []).filter(isTipTapNode);
   return blocks
     .map((block) => nodeText(block))
     .join('\n')

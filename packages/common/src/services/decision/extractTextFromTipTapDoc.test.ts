@@ -78,4 +78,22 @@ describe('extractTextFromTipTapDoc', () => {
     };
     expect(extractTextFromTipTapDoc(doc)).toBe('');
   });
+
+  it('returns empty string for iframely with non-string src', () => {
+    const doc = {
+      content: [{ type: 'iframely', attrs: { src: 123 } }],
+    };
+    expect(extractTextFromTipTapDoc(doc)).toBe('');
+  });
+
+  it('skips non-object entries in content array', () => {
+    const doc = {
+      content: [
+        'not a node',
+        null,
+        { type: 'paragraph', content: [{ type: 'text', text: 'valid' }] },
+      ],
+    };
+    expect(extractTextFromTipTapDoc(doc)).toBe('valid');
+  });
 });
