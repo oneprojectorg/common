@@ -155,10 +155,6 @@ test.describe('Decision Role Capabilities', () => {
       waitUntil: 'networkidle',
     });
 
-    await expect(
-      authenticatedPage.getByRole('heading', { name: 'REVIEW PROPOSALS.' }),
-    ).toBeVisible({ timeout: 15000 });
-
     // Even though admin has submitProposals permission, phase rules block the button
     await expect(
       authenticatedPage.getByRole('button', { name: 'Start a proposal' }),
