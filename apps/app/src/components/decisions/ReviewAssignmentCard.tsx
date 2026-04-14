@@ -33,7 +33,7 @@ interface ReviewAssignmentCardProps {
 }
 
 export function ReviewAssignmentCard({
-  assignment: { assignment, review: _review },
+  assignment: { assignment },
   viewHref,
 }: ReviewAssignmentCardProps) {
   const t = useTranslations();

@@ -27,7 +27,7 @@ export function ReviewAssignmentsList({
   decisionSlug,
 }: {
   processInstanceId: string;
-  decisionSlug?: string;
+  decisionSlug: string;
 }) {
   const t = useTranslations();
 
@@ -118,11 +118,7 @@ export function ReviewAssignmentsList({
             <ReviewAssignmentCard
               key={item.assignment.id}
               assignment={item}
-              viewHref={
-                decisionSlug
-                  ? `/decisions/${decisionSlug}/reviews/${item.assignment.id}`
-                  : undefined
-              }
+              viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
             />
           ))}
         </div>
@@ -160,22 +156,5 @@ const ReviewAssignmentListSkeletonGrid = () => (
     {Array.from({ length: 6 }).map((_, index) => (
       <ReviewAssignmentCardSkeleton key={index} />
     ))}
-  </div>
-);
-
-export const ReviewAssignmentListSkeleton = () => (
-  <div className="flex flex-col gap-6">
-    {/* Filter bar skeleton */}
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-6 w-40" />
-      </div>
-      <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-        <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-10 w-32" />
-      </div>
-    </div>
-
-    <ReviewAssignmentListSkeletonGrid />
   </div>
 );

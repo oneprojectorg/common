@@ -1,15 +1,11 @@
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { ButtonLink } from '@op/ui/Button';
-import { Suspense } from 'react';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionHero } from '../DecisionHero';
-import {
-  ReviewAssignmentListSkeleton,
-  ReviewAssignmentsList,
-} from '../ReviewAssignmentsList';
+import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
@@ -18,7 +14,7 @@ export function ReviewPage({
   decisionSlug,
 }: {
   instance: Instance;
-  decisionSlug?: string;
+  decisionSlug: string;
 }) {
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -54,12 +50,10 @@ export function ReviewPage({
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
-          <Suspense fallback={<ReviewAssignmentListSkeleton />}>
-            <ReviewAssignmentsList
-              processInstanceId={instance.id}
-              decisionSlug={decisionSlug}
-            />
-          </Suspense>
+          <ReviewAssignmentsList
+            processInstanceId={instance.id}
+            decisionSlug={decisionSlug}
+          />
         </div>
       </div>
     </div>

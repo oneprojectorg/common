@@ -53,7 +53,7 @@ function DecisionStateRouterNew({
       />
     ),
     review: () => {
-      if (!reviewFlowEnabled) {
+      if (!reviewFlowEnabled || !decisionSlug) {
         notFound();
       }
       return <ReviewPage instance={instance} decisionSlug={decisionSlug} />;
