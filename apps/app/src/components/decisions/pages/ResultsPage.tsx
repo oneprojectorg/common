@@ -1,6 +1,8 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { RouterOutput } from '@op/api';
+import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
@@ -22,7 +24,9 @@ import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
 
-// Common instance fields used by ResultsPage
+type Instance = RouterOutput['decision']['getInstance'];
+
+// Common instance fields used by ResultsPageContent
 interface ResultsPageInstance {
   id: string;
   name: string;
@@ -32,17 +36,38 @@ interface ResultsPageInstance {
   } | null;
 }
 
+function ResultsPageLegacy({
+  instance,
+  profileSlug,
+}: {
+  instance: Instance;
+  profileSlug: string;
+}) {
+  const [legacyInstance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
+    instanceId: instance.id,
+  });
+  return (
+    <ResultsPageContent profileSlug={profileSlug} instance={legacyInstance} />
+  );
+}
+
 export function ResultsPage({
   instance,
   profileSlug,
   decisionSlug,
+  useLegacy = false,
 }: {
-  instance: ResultsPageInstance;
+  instance: Instance;
   /** Owner profile slug (e.g. "people-powered") — used for org-specific hero content and legacy URL fallbacks */
   profileSlug: string;
   /** Decision profile slug (e.g. "pp-decides-season-5") — used for building proposal links in the new route structure */
   decisionSlug?: string;
+  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
+  useLegacy?: boolean;
 }) {
+  if (useLegacy) {
+    return <ResultsPageLegacy instance={instance} profileSlug={profileSlug} />;
+  }
   return (
     <ResultsPageContent
       profileSlug={profileSlug}

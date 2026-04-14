@@ -15,10 +15,8 @@ function DecisionStateRouterLegacy({
   slug: string;
 }) {
   // Legacy instances are always in results phase
-  const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
-    instanceId,
-  });
-  return <ResultsPage instance={instance} profileSlug={slug} />;
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  return <ResultsPage instance={instance} profileSlug={slug} useLegacy />;
 }
 
 function DecisionStateRouterNew({
