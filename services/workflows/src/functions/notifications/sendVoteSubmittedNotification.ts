@@ -13,6 +13,36 @@ import { alias } from 'drizzle-orm/pg-core';
 
 const { voteSubmitted } = Events;
 
+interface PhaseData {
+  phaseId: string;
+  name?: string;
+  startDate?: string;
+}
+
+function getNextSteps(
+  phases: PhaseData[],
+  currentStateId: string | null,
+): { name: string; date?: string }[] {
+  const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
+  if (currentIndex === -1) {
+    return [];
+  }
+
+  return phases
+    .slice(currentIndex + 1)
+    .filter((phase) => phase.startDate)
+    .map((phase) => ({
+      name: phase.name ?? '',
+      date: phase.startDate
+        ? new Date(phase.startDate).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
+        : undefined,
+    }));
+}
+
 export const sendVoteSubmittedNotification = inngest.createFunction(
   {
     id: 'sendVoteSubmittedNotification',
@@ -30,13 +60,15 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
 
     const processProfile = alias(profiles, 'process_profile');
 
-    // Step 1: Get voter profile and process instance details
+    // Step 1: Get voter profile, process instance details, and phase data
     const voteData = await step.run('get-vote-data', async () => {
       const result = await db
         .select({
           voterProfileId: decisionsVoteSubmissions.submittedByProfileId,
           processProfileName: processProfile.name,
           processProfileSlug: processProfile.slug,
+          instanceData: processInstances.instanceData,
+          currentStateId: processInstances.currentStateId,
         })
         .from(decisionsVoteSubmissions)
         .innerJoin(
@@ -78,6 +110,12 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
 
     const decisionUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${voteData.processProfileSlug}`;
 
+    const instanceData = voteData.instanceData as {
+      phases?: PhaseData[];
+    } | null;
+    const phases = instanceData?.phases ?? [];
+    const nextSteps = getNextSteps(phases, voteData.currentStateId);
+
     // Step 3: Send notification email
     await step.run('send-email', async () => {
       try {
@@ -88,6 +126,7 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
             VoteSubmittedEmail({
               processTitle: voteData.processProfileName,
               decisionUrl,
+              nextSteps,
             }),
         });
       } catch (error) {

@@ -2,36 +2,51 @@ import { Button, Heading, Section, Text } from '@react-email/components';
 
 import EmailTemplate from '../components/EmailTemplate';
 
+interface NextStep {
+  name: string;
+  date?: string;
+}
+
 export const VoteSubmittedEmail = ({
   processTitle,
   decisionUrl = 'https://common.oneproject.org/',
+  nextSteps = [],
 }: {
   processTitle?: string | null;
   decisionUrl: string;
+  nextSteps?: NextStep[];
 }) => {
   return (
     <EmailTemplate
       previewText={
         processTitle
-          ? `Your vote has been submitted for ${processTitle}`
-          : 'Your vote has been submitted'
+          ? `Your ballot is in! Thank you for participating in ${processTitle}.`
+          : 'Your ballot is in!'
       }
     >
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Vote Submitted
+      <Heading className="mx-0 !my-0 p-0 text-center font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+        Your ballot is in!
       </Heading>
-      <Text className="my-8 text-lg">
-        Your vote has been submitted
-        {processTitle ? (
-          <>
-            {' '}
-            for <strong>{processTitle}</strong>
-          </>
-        ) : null}
-        .
+      <Text className="my-6 text-center text-base">
+        {processTitle
+          ? `Thank you for participating in ${processTitle}. Your voice helps shape how we invest in our community.`
+          : 'Thank you for participating. Your voice helps shape how we invest in our community.'}
       </Text>
 
-      <Section className="pb-0">
+      {nextSteps.length > 0 && (
+        <Section className="mt-4 mb-4">
+          <Text className="mb-2 text-base font-semibold">
+            Here&apos;s what will happen next:
+          </Text>
+          {nextSteps.map((step) => (
+            <Text key={step.name} className="my-1 text-base">
+              &bull; {step.date ? `${step.name} on ${step.date}` : step.name}
+            </Text>
+          ))}
+        </Section>
+      )}
+
+      <Section className="pt-4 pb-0">
         <Button
           href={decisionUrl}
           className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
@@ -41,7 +56,7 @@ export const VoteSubmittedEmail = ({
             textDecoration: 'none',
           }}
         >
-          View decision
+          View all proposals
         </Button>
       </Section>
     </EmailTemplate>
@@ -50,9 +65,9 @@ export const VoteSubmittedEmail = ({
 
 VoteSubmittedEmail.subject = (processTitle?: string | null) => {
   if (processTitle) {
-    return `Your vote has been submitted for ${processTitle}`;
+    return `Your ballot is in! — ${processTitle}`;
   }
-  return 'Your vote has been submitted';
+  return 'Your ballot is in!';
 };
 
 export default VoteSubmittedEmail;
