@@ -60,8 +60,6 @@ function DecisionStateRouterNew({
         decisionProfileId={decisionProfileId}
       />
     ),
-
-    _: () => <ReviewPage instance={instance} decisionSlug={decisionSlug} />,
   });
 }
 
