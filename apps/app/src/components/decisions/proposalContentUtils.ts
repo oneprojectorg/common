@@ -15,6 +15,14 @@ type DocumentContent = NonNullable<Proposal['documentContent']>;
 /** `x-format` values that represent rich-text editor content suitable for preview. */
 const TEXT_FORMATS = new Set<XFormat>(['short-text', 'long-text']);
 
+/** Recursively checks whether a TipTap JSON tree contains an iframely embed node. */
+function containsIframelyNode(node: JSONContent): boolean {
+  if (node.type === 'iframely') {
+    return true;
+  }
+  return (node.content ?? []).some(containsIframelyNode);
+}
+
 /**
  * Extracts a plain-text preview from proposal document content.
  *
@@ -69,11 +77,21 @@ export function getProposalContentPreview(
     const content = { type: 'doc', content: allContent } as JSONContent;
 
     try {
-      const text = generateText(content, serverExtensions);
-      return text.trim() || null;
+      const text = generateText(content, serverExtensions).trim();
+      if (text) {
+        return text;
+      }
     } catch {
-      return null;
+      // fall through — still check for embeds below
     }
+
+    // Content produced no text but may contain non-text nodes (e.g. iframely
+    // embeds). Show a short placeholder so the card doesn't render an error.
+    if (containsIframelyNode(content)) {
+      return '(link)';
+    }
+
+    return null;
   }
 
   return (
