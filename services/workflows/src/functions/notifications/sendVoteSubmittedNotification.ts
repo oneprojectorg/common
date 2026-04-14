@@ -6,7 +6,7 @@ import {
   profileUsers,
   profiles,
 } from '@op/db/schema';
-import { OPBatchSend, VoteSubmittedEmail } from '@op/emails';
+import { OPNodemailer, VoteSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -58,50 +58,40 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // Step 2: Get voter's email(s)
-    const voterEmails = await step.run('get-voter-emails', async () => {
-      return db
+    // Step 2: Get voter's email
+    const voterEmail = await step.run('get-voter-email', async () => {
+      const result = await db
         .select({
           email: profileUsers.email,
         })
         .from(profileUsers)
-        .where(eq(profileUsers.profileId, voteData.voterProfileId));
+        .where(eq(profileUsers.profileId, voteData.voterProfileId))
+        .limit(1);
+
+      return result[0]?.email ?? null;
     });
 
-    if (voterEmails.length === 0) {
-      console.log(
-        'No emails found for voter profile:',
-        voteData.voterProfileId,
-      );
+    if (!voterEmail) {
+      console.log('No email found for voter profile:', voteData.voterProfileId);
       return;
     }
 
     const decisionUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${voteData.processProfileSlug}`;
 
-    // Step 3: Send notification emails
-    const result = await step.run('send-emails', async () => {
+    // Step 3: Send notification email
+    await step.run('send-email', async () => {
       try {
-        const emails = voterEmails.map(({ email }) => ({
-          to: email,
+        await OPNodemailer({
+          to: voterEmail,
           subject: VoteSubmittedEmail.subject(voteData.processProfileName),
           component: () =>
             VoteSubmittedEmail({
               processTitle: voteData.processProfileName,
               decisionUrl,
             }),
-        }));
-
-        const { data, errors } = await OPBatchSend(emails);
-
-        if (errors.length > 0) {
-          throw Error(`Email batch failed: ${JSON.stringify(errors)}`);
-        }
-
-        return {
-          sent: data.length,
-        };
+        });
       } catch (error) {
-        console.error('Failed to send vote submitted notifications:', {
+        console.error('Failed to send vote submitted notification:', {
           error,
           voteSubmissionId,
           processInstanceId,
@@ -111,7 +101,7 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     });
 
     return {
-      message: `${result.sent} vote submitted notification(s) sent`,
+      message: 'Vote submitted notification sent',
     };
   },
 );
