@@ -1,6 +1,5 @@
 'use client';
 
-import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { Suspense } from 'react';
@@ -29,12 +28,9 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
+  const [[instance, { submitters }]] = trpc.useSuspenseQueries((t) => [
     t.decision.getInstance({ instanceId }),
+    t.decision.getProposalSubmitters({ processInstanceId: instanceId }),
   ]);
 
   const phases = instance.instanceData?.phases ?? [];
@@ -46,8 +42,6 @@ export function StandardDecisionPage({
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
-
-  const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   const heroTitle =
     translation?.headline ?? currentPhase?.headline ?? t('SHARE YOUR IDEAS.');
@@ -68,7 +62,7 @@ export function StandardDecisionPage({
           variant="standard"
         />
 
-        <MemberParticipationFacePile submitters={uniqueSubmitters} />
+        <MemberParticipationFacePile submitters={submitters} />
 
         <DecisionActionBar
           instanceId={instanceId}

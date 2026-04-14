@@ -1,6 +1,5 @@
 'use client';
 
-import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { useLocale } from 'next-intl';
@@ -28,18 +27,13 @@ export function VotingPage({
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const [[{ proposals }, instance, voteStatus]] = trpc.useSuspenseQueries(
+  const [[instance, voteStatus, { submitters }]] = trpc.useSuspenseQueries(
     (t) => [
-      t.decision.listProposals({
-        processInstanceId: instanceId,
-        limit: 20,
-      }),
       t.decision.getInstance({ instanceId }),
       t.decision.getVotingStatus({ processInstanceId: instanceId }),
+      t.decision.getProposalSubmitters({ processInstanceId: instanceId }),
     ],
   );
-
-  const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -92,7 +86,7 @@ export function VotingPage({
           variant="standard"
         />
 
-        <MemberParticipationFacePile submitters={uniqueSubmitters} />
+        <MemberParticipationFacePile submitters={submitters} />
 
         <DecisionActionBar
           instanceId={instanceId}
