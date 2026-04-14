@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@op/ui/Button';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
@@ -10,6 +11,7 @@ import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 import { useRef, useState } from 'react';
+import { LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -34,6 +36,7 @@ interface RubricCriterionCardProps {
   controls?: SortableItemControls;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
+  onRemove?: (criterionId: string) => void;
   onBlur?: (criterionId: string) => void;
   onUpdateLabel?: (criterionId: string, label: string) => void;
   onUpdateDescription?: (criterionId: string, description: string) => void;
@@ -65,6 +68,7 @@ export function RubricCriterionCard({
   controls,
   isExpanded,
   onExpandedChange,
+  onRemove,
   onBlur,
   onUpdateLabel,
   onUpdateDescription,
@@ -175,6 +179,22 @@ export function RubricCriterionCard({
                   {t(error)}
                 </p>
               ))}
+            </div>
+          )}
+
+          {/* Footer */}
+          {onRemove && (
+            <div className="flex items-center justify-end border-t pt-4">
+              <Button
+                color="ghost"
+                size="small"
+                onPress={() => onRemove(criterion.id)}
+                aria-label={t('Delete')}
+                className="text-neutral-gray4 hover:text-functional-red"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </Button>
             </div>
           )}
         </div>
