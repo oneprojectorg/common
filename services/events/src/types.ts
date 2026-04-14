@@ -53,8 +53,8 @@ export const Events = {
     name: 'decision/phase-transitioned' as const,
     schema: z.object({
       processInstanceId: z.string().uuid(),
-      fromPhaseId: z.string(),
-      toPhaseId: z.string(),
+      fromPhaseId: z.string().min(1),
+      toPhaseId: z.string().min(1),
     }),
   },
 } as const;

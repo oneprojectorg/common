@@ -6,7 +6,8 @@ import {
   processInstances,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { event } from '@op/events';
+import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
@@ -52,6 +53,9 @@ describe.concurrent('transitionFromPhase', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
+    const mockSend = event.send as MockInstance;
+    mockSend.mockClear();
+
     const result = await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
     });
@@ -65,6 +69,18 @@ describe.concurrent('transitionFromPhase', () => {
     });
 
     expect(dbInstance!.currentStateId).toBe('final');
+
+    // Verify phase transition event was dispatched
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'decision/phase-transitioned',
+        data: {
+          processInstanceId: instance.instance.id,
+          fromPhaseId: 'initial',
+          toPhaseId: 'final',
+        },
+      }),
+    );
   });
 
   it('should record transition in history with manual flag', async ({
@@ -110,11 +126,17 @@ describe.concurrent('transitionFromPhase', () => {
     // Instance is DRAFT by default — do not publish
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
+    const mockSend = event.send as MockInstance;
+    mockSend.mockClear();
+
     await expect(
       caller.decision.transitionFromPhase({
         instanceId: instance.instance.id,
       }),
     ).rejects.toThrow('Instance must be published');
+
+    // No phase transition event should have been dispatched
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it('should reject transition when already on final phase', async ({

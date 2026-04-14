@@ -11,7 +11,8 @@ import {
   stateTransitionHistory,
   users,
 } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { event } from '@op/events';
+import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
@@ -212,6 +213,9 @@ describe('processDecisionsTransitions', () => {
     });
     const updatedAtBefore = beforeInstance!.updatedAt;
 
+    const mockSend = event.send as MockInstance;
+    mockSend.mockClear();
+
     const result = await processDecisionsTransitions();
 
     expect(result.processed).toBeGreaterThanOrEqual(1);
@@ -254,6 +258,15 @@ describe('processDecisionsTransitions', () => {
     expect(historyRows.length).toBe(3);
     const fromStates = historyRows.map((h) => h.fromStateId).sort();
     expect(fromStates).toEqual(['review', 'submission', 'voting']);
+
+    // Verify phase transition events were dispatched for each advance
+    expect(mockSend).toHaveBeenCalledTimes(3);
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'decision/phase-transitioned',
+        data: expect.objectContaining({ processInstanceId: instanceId }),
+      }),
+    );
   });
 
   it('should NOT process transitions for DRAFT instances', async ({
@@ -288,6 +301,9 @@ describe('processDecisionsTransitions', () => {
       scheduledDate: pastDate.toISOString(),
     });
 
+    const mockSend = event.send as MockInstance;
+    mockSend.mockClear();
+
     await processDecisionsTransitions();
 
     // The transition should NOT have been processed because the instance is DRAFT
@@ -301,6 +317,9 @@ describe('processDecisionsTransitions', () => {
     for (const transition of transitions) {
       expect(transition.completedAt).toBeNull();
     }
+
+    // No phase transition events should have been dispatched
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it('should NOT process future-dated transitions', async ({
