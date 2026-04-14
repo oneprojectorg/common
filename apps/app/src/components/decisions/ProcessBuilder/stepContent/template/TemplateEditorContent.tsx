@@ -226,6 +226,21 @@ export function TemplateEditorContent({
     [t],
   );
 
+  const handleExpandedChange = useCallback(
+    (fieldId: string, expanded: boolean) => {
+      setExpandedFieldIds((prev) => {
+        const next = new Set(prev);
+        if (expanded) {
+          next.add(fieldId);
+        } else {
+          next.delete(fieldId);
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
   const handleNewComplete = useCallback((fieldId: string) => {
     setNewFieldIds((prev) => {
       const next = new Set(prev);
@@ -348,15 +363,7 @@ export function TemplateEditorContent({
         controls={controls}
         isExpanded={expandedFieldIds.has(field.id)}
         onExpandedChange={(expanded) =>
-          setExpandedFieldIds((prev) => {
-            const next = new Set(prev);
-            if (expanded) {
-              next.add(field.id);
-            } else {
-              next.delete(field.id);
-            }
-            return next;
-          })
+          handleExpandedChange(field.id, expanded)
         }
         isNew={newFieldIds.has(field.id)}
         onNewComplete={handleNewComplete}

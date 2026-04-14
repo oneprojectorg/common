@@ -209,6 +209,21 @@ export function RubricEditorContent({
     [criteria],
   );
 
+  const handleExpandedChange = useCallback(
+    (criterionId: string, expanded: boolean) => {
+      setExpandedCriterionIds((prev) => {
+        const next = new Set(prev);
+        if (expanded) {
+          next.add(criterionId);
+        } else {
+          next.delete(criterionId);
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
   const handleNewComplete = useCallback((criterionId: string) => {
     setNewCriterionIds((prev) => {
       const next = new Set(prev);
@@ -287,15 +302,7 @@ export function RubricEditorContent({
                       controls={controls}
                       isExpanded={expandedCriterionIds.has(criterion.id)}
                       onExpandedChange={(expanded) =>
-                        setExpandedCriterionIds((prev) => {
-                          const next = new Set(prev);
-                          if (expanded) {
-                            next.add(criterion.id);
-                          } else {
-                            next.delete(criterion.id);
-                          }
-                          return next;
-                        })
+                        handleExpandedChange(criterion.id, expanded)
                       }
                       isNew={newCriterionIds.has(criterion.id)}
                       onNewComplete={handleNewComplete}
