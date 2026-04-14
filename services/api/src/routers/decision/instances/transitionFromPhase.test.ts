@@ -54,7 +54,6 @@ describe.concurrent('transitionFromPhase', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const mockSend = event.send as unknown as MockInstance;
-    mockSend.mockClear();
 
     const result = await caller.decision.transitionFromPhase({
       instanceId: instance.instance.id,
@@ -70,17 +69,24 @@ describe.concurrent('transitionFromPhase', () => {
 
     expect(dbInstance!.currentStateId).toBe('final');
 
-    // Verify phase transition event was dispatched
-    expect(mockSend).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'decision/phase-transitioned',
-        data: {
-          processInstanceId: instance.instance.id,
-          fromPhaseId: 'initial',
-          toPhaseId: 'final',
-        },
-      }),
+    // Verify phase transition event was dispatched (filter by this instance
+    // to avoid interference from concurrent tests sharing the mock)
+    const transitionCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/phase-transitioned' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instance.instance.id,
     );
+    expect(transitionCalls).toHaveLength(1);
+    expect(transitionCalls[0][0]).toMatchObject({
+      name: 'decision/phase-transitioned',
+      data: {
+        processInstanceId: instance.instance.id,
+        fromPhaseId: 'initial',
+        toPhaseId: 'final',
+      },
+    });
   });
 
   it('should record transition in history with manual flag', async ({
@@ -127,7 +133,6 @@ describe.concurrent('transitionFromPhase', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const mockSend = event.send as unknown as MockInstance;
-    mockSend.mockClear();
 
     await expect(
       caller.decision.transitionFromPhase({
@@ -135,8 +140,16 @@ describe.concurrent('transitionFromPhase', () => {
       }),
     ).rejects.toThrow('Instance must be published');
 
-    // No phase transition event should have been dispatched
-    expect(mockSend).not.toHaveBeenCalled();
+    // No phase transition event should have been dispatched for this instance
+    // (filter by instanceId to avoid interference from concurrent tests)
+    const transitionCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/phase-transitioned' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instance.instance.id,
+    );
+    expect(transitionCalls).toHaveLength(0);
   });
 
   it('should reject transition when already on final phase', async ({
