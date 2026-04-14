@@ -75,7 +75,6 @@ export const processPhaseSchema = z.object({
     .object({
       startDate: z.string().optional(),
       endDate: z.string().optional(),
-      sortOrder: z.number().optional(),
     })
     .optional(),
   type: z.enum(['initial', 'intermediate', 'final']).optional(),

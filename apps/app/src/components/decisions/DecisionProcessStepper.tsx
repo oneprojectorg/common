@@ -64,23 +64,20 @@ export function DecisionProcessStepper({
     nextPhaseName,
     currentPhaseAdvancement,
   } = useMemo(() => {
-    const sorted = [...phases].sort(
-      (a, b) => (a.phase?.sortOrder ?? 0) - (b.phase?.sortOrder ?? 0),
-    );
-    const idx = sorted.findIndex((p) => p.id === currentStateId);
+    const idx = phases.findIndex((p) => p.id === currentStateId);
     const nextId =
-      idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1]!.id : undefined;
+      idx >= 0 && idx < phases.length - 1 ? phases[idx + 1]!.id : undefined;
     return {
       nextPhaseId: nextId,
       currentPhaseName:
         idx >= 0
-          ? (translatedPhaseNames?.get(sorted[idx]!.id) ?? sorted[idx]!.name)
+          ? (translatedPhaseNames?.get(phases[idx]!.id) ?? phases[idx]!.name)
           : '',
       nextPhaseName: nextId
-        ? (translatedPhaseNames?.get(nextId) ?? sorted[idx + 1]!.name)
+        ? (translatedPhaseNames?.get(nextId) ?? phases[idx + 1]!.name)
         : '',
       currentPhaseAdvancement:
-        idx >= 0 ? sorted[idx]!.advancementMethod : undefined,
+        idx >= 0 ? phases[idx]!.advancementMethod : undefined,
     };
   }, [phases, currentStateId, translatedPhaseNames]);
 
@@ -94,7 +91,6 @@ export function DecisionProcessStepper({
           description: phase.description,
           startDate: phase.phase?.startDate,
           endDate: phase.phase?.endDate,
-          sortOrder: phase.phase?.sortOrder,
           interactive: isNextActionable,
           showOnHoverOnly: isNextActionable
             ? currentPhaseAdvancement !== 'manual'
