@@ -475,9 +475,12 @@ export class TestDecisionsDataManager {
   async createMemberUser({
     organization,
     instanceProfileIds = [],
+    roleIds = {},
   }: {
     organization: { id: string };
     instanceProfileIds?: string[];
+    /** Map of profileId → roleId to assign after granting profile access. */
+    roleIds?: Record<string, string>;
   }): Promise<MemberUserOutput> {
     this.ensureCleanupRegistered();
 
@@ -528,6 +531,11 @@ export class TestDecisionsDataManager {
     // Grant access to instance profiles if provided (member role, not admin)
     for (const profileId of instanceProfileIds) {
       await this.grantProfileAccess(profileId, authUser.id, email, false);
+    }
+
+    // Assign additional roles on specific profiles
+    for (const [profileId, roleId] of Object.entries(roleIds)) {
+      await this.assignRole(authUser.id, profileId, roleId);
     }
 
     const user: User = {

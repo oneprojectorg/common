@@ -164,29 +164,17 @@ describe.concurrent('generateReviewAssignments', () => {
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+        roleIds: { [instance.profileId]: reviewerRole.id },
       }),
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [instance.profileId],
       }),
-      testData.createMemberUser({
-        organization: setup.organization,
-        instanceProfileIds: [instance.profileId],
-      }),
-    ]);
-
-    // Give reviewerA and reviewerB the Reviewer role
-    await Promise.all([
-      testData.assignRole(
-        reviewerA.authUserId,
-        instance.profileId,
-        reviewerRole.id,
-      ),
-      testData.assignRole(
-        reviewerB.authUserId,
-        instance.profileId,
-        reviewerRole.id,
-      ),
     ]);
 
     // Create submitted proposals (DB trigger creates history rows on status change)
@@ -321,15 +309,11 @@ describe.concurrent('generateReviewAssignments', () => {
     const { setup, instance } = await createReviewInstance(testData);
 
     const reviewerRole = await createReviewerRole(instance.profileId);
-    const reviewer = await testData.createMemberUser({
+    await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [instance.profileId],
+      roleIds: { [instance.profileId]: reviewerRole.id },
     });
-    await testData.assignRole(
-      reviewer.authUserId,
-      instance.profileId,
-      reviewerRole.id,
-    );
 
     await testData.createProposal({
       userEmail: setup.userEmail,
