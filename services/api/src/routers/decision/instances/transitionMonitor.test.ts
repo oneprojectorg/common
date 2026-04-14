@@ -213,7 +213,7 @@ describe('processDecisionsTransitions', () => {
     });
     const updatedAtBefore = beforeInstance!.updatedAt;
 
-    const mockSend = event.send as MockInstance;
+    const mockSend = event.send as unknown as MockInstance;
     mockSend.mockClear();
 
     const result = await processDecisionsTransitions();
@@ -301,7 +301,7 @@ describe('processDecisionsTransitions', () => {
       scheduledDate: pastDate.toISOString(),
     });
 
-    const mockSend = event.send as MockInstance;
+    const mockSend = event.send as unknown as MockInstance;
     mockSend.mockClear();
 
     await processDecisionsTransitions();

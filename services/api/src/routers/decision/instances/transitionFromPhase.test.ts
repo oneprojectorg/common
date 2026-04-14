@@ -53,7 +53,7 @@ describe.concurrent('transitionFromPhase', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const mockSend = event.send as MockInstance;
+    const mockSend = event.send as unknown as MockInstance;
     mockSend.mockClear();
 
     const result = await caller.decision.transitionFromPhase({
@@ -126,7 +126,7 @@ describe.concurrent('transitionFromPhase', () => {
     // Instance is DRAFT by default — do not publish
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const mockSend = event.send as MockInstance;
+    const mockSend = event.send as unknown as MockInstance;
     mockSend.mockClear();
 
     await expect(
