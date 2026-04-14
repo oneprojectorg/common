@@ -6,6 +6,7 @@ import { LuCheck, LuPlay } from 'react-icons/lu';
 import { cn } from '../lib/utils';
 import { formatDateRange } from '../utils/formatting';
 import { IconButton } from './IconButton';
+import { Tooltip, TooltipTrigger } from './Tooltip';
 
 export interface Phase {
   id: string;
@@ -13,8 +14,10 @@ export interface Phase {
   description?: string;
   startDate?: string;
   endDate?: string;
-  sortOrder?: number;
   interactive?: boolean;
+  ariaLabel?: string;
+  /** When true, the play button only appears on hover. When false, it's always visible. */
+  showOnHoverOnly?: boolean;
 }
 
 type StepState = 'completed' | 'current' | 'upcoming';
@@ -77,6 +80,9 @@ const StepIndicator = ({
     return <div className={baseStyles}>{content}</div>;
   }
 
+  const label = phase.ariaLabel ?? `Start ${phase.name}`;
+  const showPlayButton = phase.showOnHoverOnly ? isHovered : true;
+
   return (
     <div
       className="relative flex size-8 items-center justify-center"
@@ -84,22 +90,40 @@ const StepIndicator = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <RippleRings visible={isHovered} />
-      <IconButton
-        aria-label={`Advance to ${phase.name}`}
-        onPress={() => onTransition?.(phase.id)}
-        size="small"
-        variant="ghost"
-        className={cn(
-          baseStyles,
-          'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal pressed:bg-primary-teal',
-        )}
-      >
-        {stepState === 'completed' ? (
-          <LuCheck className="size-4" />
-        ) : (
-          <LuPlay className="size-3 fill-current" />
-        )}
-      </IconButton>
+      {showPlayButton ? (
+        <TooltipTrigger>
+          <IconButton
+            aria-label={label}
+            onPress={() => onTransition?.(phase.id)}
+            size="small"
+            variant="ghost"
+            className={cn(
+              baseStyles,
+              'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal pressed:bg-primary-teal',
+            )}
+          >
+            {stepState === 'completed' ? (
+              <LuCheck className="size-4" />
+            ) : (
+              <LuPlay className="size-3 fill-current" />
+            )}
+          </IconButton>
+          <Tooltip>{label}</Tooltip>
+        </TooltipTrigger>
+      ) : (
+        <TooltipTrigger>
+          <IconButton
+            aria-label={label}
+            onPress={() => onTransition?.(phase.id)}
+            size="small"
+            variant="ghost"
+            className={baseStyles}
+          >
+            {content}
+          </IconButton>
+          <Tooltip>{label}</Tooltip>
+        </TooltipTrigger>
+      )}
     </div>
   );
 };
@@ -144,11 +168,7 @@ export function PhaseStepper({
   locale,
   onTransition,
 }: PhaseStepperProps) {
-  const sortedPhases = phases
-    .slice()
-    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-
-  const currentPhaseIndex = sortedPhases.findIndex(
+  const currentPhaseIndex = phases.findIndex(
     (phase) => phase.id === currentPhaseId,
   );
 
@@ -167,7 +187,7 @@ export function PhaseStepper({
         }
       `}</style>
       <div className="flex justify-center gap-2">
-        {sortedPhases.map((phase, index) => {
+        {phases.map((phase, index) => {
           const stepState = getStepState(index);
 
           return (
@@ -180,7 +200,7 @@ export function PhaseStepper({
                 onTransition={onTransition}
               />
               {/* divider line */}
-              {index < sortedPhases.length - 1 && (
+              {index < phases.length - 1 && (
                 <div className="flex flex-col items-center">
                   <div className="flex h-6 items-center">
                     <div className="h-[1px] w-28 bg-neutral-gray2" />

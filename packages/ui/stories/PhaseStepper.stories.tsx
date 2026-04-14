@@ -24,26 +24,10 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     phases: [
-      {
-        id: 'phase-1',
-        name: 'Planning',
-        sortOrder: 1,
-      },
-      {
-        id: 'phase-2',
-        name: 'Design',
-        sortOrder: 2,
-      },
-      {
-        id: 'phase-3',
-        name: 'Development',
-        sortOrder: 3,
-      },
-      {
-        id: 'phase-4',
-        name: 'Testing',
-        sortOrder: 4,
-      },
+      { id: 'phase-1', name: 'Planning' },
+      { id: 'phase-2', name: 'Design' },
+      { id: 'phase-3', name: 'Development' },
+      { id: 'phase-4', name: 'Testing' },
     ],
     currentPhaseId: 'phase-3',
   },
@@ -65,28 +49,24 @@ export const WithDates: Story = {
         name: 'Discovery',
         startDate: '2024-01-15',
         endDate: '2024-01-31',
-        sortOrder: 1,
       },
       {
         id: 'phase-2',
         name: 'Research',
         startDate: '2024-02-01',
         endDate: '2024-02-15',
-        sortOrder: 2,
       },
       {
         id: 'phase-3',
         name: 'Analysis',
         startDate: '2024-02-16',
         endDate: '2024-03-01',
-        sortOrder: 3,
       },
       {
         id: 'phase-4',
         name: 'Decision',
         startDate: '2024-03-02',
         endDate: '2024-03-15',
-        sortOrder: 4,
       },
     ],
     currentPhaseId: 'phase-3',
@@ -102,7 +82,6 @@ export const DecisionProcess: Story = {
         description: 'Initial proposal submission',
         startDate: '2024-01-01',
         endDate: '2024-01-15',
-        sortOrder: 1,
       },
       {
         id: 'review',
@@ -110,7 +89,6 @@ export const DecisionProcess: Story = {
         description: 'Community review period',
         startDate: '2024-01-16',
         endDate: '2024-01-31',
-        sortOrder: 2,
       },
       {
         id: 'discussion',
@@ -118,7 +96,6 @@ export const DecisionProcess: Story = {
         description: 'Open discussion phase',
         startDate: '2024-02-01',
         endDate: '2024-02-14',
-        sortOrder: 3,
       },
       {
         id: 'voting',
@@ -126,14 +103,12 @@ export const DecisionProcess: Story = {
         description: 'Voting period',
         startDate: '2024-02-15',
         endDate: '2024-02-22',
-        sortOrder: 4,
       },
       {
         id: 'implementation',
         name: 'Implementation',
         description: 'Implementation phase',
         startDate: '2024-02-23',
-        sortOrder: 5,
       },
     ],
     currentPhaseId: 'discussion',
@@ -143,21 +118,9 @@ export const DecisionProcess: Story = {
 export const FirstPhase: Story = {
   args: {
     phases: [
-      {
-        id: 'step-1',
-        name: 'Current Step',
-        sortOrder: 1,
-      },
-      {
-        id: 'step-2',
-        name: 'Upcoming',
-        sortOrder: 2,
-      },
-      {
-        id: 'step-3',
-        name: 'Future',
-        sortOrder: 3,
-      },
+      { id: 'step-1', name: 'Current Step' },
+      { id: 'step-2', name: 'Upcoming' },
+      { id: 'step-3', name: 'Future' },
     ],
     currentPhaseId: 'step-1',
   },
@@ -174,21 +137,9 @@ export const FirstPhase: Story = {
 export const LastPhase: Story = {
   args: {
     phases: [
-      {
-        id: 'step-1',
-        name: 'Completed',
-        sortOrder: 1,
-      },
-      {
-        id: 'step-2',
-        name: 'Completed',
-        sortOrder: 2,
-      },
-      {
-        id: 'step-3',
-        name: 'Final Step',
-        sortOrder: 3,
-      },
+      { id: 'step-1', name: 'Completed' },
+      { id: 'step-2', name: 'Completed' },
+      { id: 'step-3', name: 'Final Step' },
     ],
     currentPhaseId: 'step-3',
   },
@@ -205,31 +156,11 @@ export const LastPhase: Story = {
 export const AllStates: Story = {
   args: {
     phases: [
-      {
-        id: 'completed-1',
-        name: 'Completed',
-        sortOrder: 1,
-      },
-      {
-        id: 'completed-2',
-        name: 'Done',
-        sortOrder: 2,
-      },
-      {
-        id: 'current',
-        name: 'In Progress',
-        sortOrder: 3,
-      },
-      {
-        id: 'upcoming-1',
-        name: 'Next',
-        sortOrder: 4,
-      },
-      {
-        id: 'upcoming-2',
-        name: 'Future',
-        sortOrder: 5,
-      },
+      { id: 'completed-1', name: 'Completed' },
+      { id: 'completed-2', name: 'Done' },
+      { id: 'current', name: 'In Progress' },
+      { id: 'upcoming-1', name: 'Next' },
+      { id: 'upcoming-2', name: 'Future' },
     ],
     currentPhaseId: 'current',
   },
@@ -246,74 +177,24 @@ export const AllStates: Story = {
 export const ManyPhases: Story = {
   args: {
     phases: [
-      { id: '1', name: 'Phase 1', sortOrder: 1 },
-      { id: '2', name: 'Phase 2', sortOrder: 2 },
-      { id: '3', name: 'Phase 3', sortOrder: 3 },
-      { id: '4', name: 'Phase 4', sortOrder: 4 },
-      { id: '5', name: 'Phase 5', sortOrder: 5 },
-      { id: '6', name: 'Phase 6', sortOrder: 6 },
-      { id: '7', name: 'Phase 7', sortOrder: 7 },
+      { id: '1', name: 'Phase 1' },
+      { id: '2', name: 'Phase 2' },
+      { id: '3', name: 'Phase 3' },
+      { id: '4', name: 'Phase 4' },
+      { id: '5', name: 'Phase 5' },
+      { id: '6', name: 'Phase 6' },
+      { id: '7', name: 'Phase 7' },
     ],
     currentPhaseId: '4',
-  },
-};
-
-export const UnsortedPhases: Story = {
-  args: {
-    phases: [
-      {
-        id: 'third',
-        name: 'Third Phase',
-        sortOrder: 3,
-      },
-      {
-        id: 'first',
-        name: 'First Phase',
-        sortOrder: 1,
-      },
-      {
-        id: 'second',
-        name: 'Second Phase',
-        sortOrder: 2,
-      },
-      {
-        id: 'fourth',
-        name: 'Fourth Phase',
-        sortOrder: 4,
-      },
-    ],
-    currentPhaseId: 'second',
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Phases are automatically sorted by sortOrder, regardless of array order',
-      },
-    },
   },
 };
 
 export const PartialDates: Story = {
   args: {
     phases: [
-      {
-        id: 'phase-1',
-        name: 'Starting',
-        startDate: '2024-01-01',
-        sortOrder: 1,
-      },
-      {
-        id: 'phase-2',
-        name: 'Ongoing',
-        sortOrder: 2,
-      },
-      {
-        id: 'phase-3',
-        name: 'Deadline',
-        endDate: '2024-03-31',
-        sortOrder: 3,
-      },
+      { id: 'phase-1', name: 'Starting', startDate: '2024-01-01' },
+      { id: 'phase-2', name: 'Ongoing' },
+      { id: 'phase-3', name: 'Deadline', endDate: '2024-03-31' },
     ],
     currentPhaseId: 'phase-2',
   },
@@ -329,10 +210,10 @@ export const PartialDates: Story = {
 export const InteractivePhases: Story = {
   args: {
     phases: [
-      { id: 'phase-1', name: 'Proposal', sortOrder: 1, interactive: true },
-      { id: 'phase-2', name: 'Review', sortOrder: 2, interactive: true },
-      { id: 'phase-3', name: 'Voting', sortOrder: 3, interactive: true },
-      { id: 'phase-4', name: 'Results', sortOrder: 4 },
+      { id: 'phase-1', name: 'Proposal', interactive: true },
+      { id: 'phase-2', name: 'Review', interactive: true },
+      { id: 'phase-3', name: 'Voting', interactive: true },
+      { id: 'phase-4', name: 'Results' },
     ],
     currentPhaseId: 'phase-2',
   },
@@ -349,10 +230,10 @@ export const InteractivePhases: Story = {
 export const MixedInteractivity: Story = {
   args: {
     phases: [
-      { id: 'phase-1', name: 'Planning', sortOrder: 1 },
-      { id: 'phase-2', name: 'Development', sortOrder: 2, interactive: true },
-      { id: 'phase-3', name: 'Testing', sortOrder: 3 },
-      { id: 'phase-4', name: 'Release', sortOrder: 4, interactive: true },
+      { id: 'phase-1', name: 'Planning' },
+      { id: 'phase-2', name: 'Development', interactive: true },
+      { id: 'phase-3', name: 'Testing' },
+      { id: 'phase-4', name: 'Release', interactive: true },
     ],
     currentPhaseId: 'phase-1',
   },
