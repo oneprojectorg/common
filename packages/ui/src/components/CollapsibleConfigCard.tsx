@@ -88,26 +88,24 @@ export function CollapsibleConfigCard({
       ) : Icon ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-            <Icon className="size-4 shrink-0 text-neutral-gray4" />
-            <span className="truncate text-neutral-charcoal">{label}</span>
+            <Icon className="size-4 shrink-0 text-neutral-charcoal" />
+            <span className="truncate text-neutral-black">{label}</span>
           </div>
         </div>
       ) : (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate text-neutral-charcoal">{label}</span>
+          <span className="truncate text-neutral-black">{label}</span>
         </div>
       )}
 
       {/* Badge chip */}
       {badgeLabel && (
-        <Chip className={cn('shrink-0 text-neutral-gray4', badgeClassName)}>
-          {badgeLabel}
-        </Chip>
+        <Chip className={cn('shrink-0', badgeClassName)}>{badgeLabel}</Chip>
       )}
 
       {/* Chevron (only when collapsible) */}
       {isCollapsible && (
-        <LuChevronDown className="size-4 shrink-0 text-neutral-gray4 transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-180" />
+        <LuChevronDown className="size-4 shrink-0 text-neutral-charcoal transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-180" />
       )}
     </>
   );

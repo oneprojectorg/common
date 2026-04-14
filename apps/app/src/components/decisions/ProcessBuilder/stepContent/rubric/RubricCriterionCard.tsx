@@ -121,7 +121,7 @@ export function RubricCriterionCard({
           errors.length > 0 && 'border-functional-red',
         )}
       >
-        <div className="space-y-4 px-8">
+        <div className="space-y-2.5 px-8">
           {/* Field name */}
           <TextField
             label={t('Field name')}
@@ -190,7 +190,7 @@ export function RubricCriterionCard({
                 size="small"
                 onPress={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
-                className="text-neutral-gray4 hover:text-functional-red"
+                className="text-neutral-charcoal hover:text-functional-red"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
