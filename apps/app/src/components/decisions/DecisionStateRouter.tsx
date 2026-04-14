@@ -67,7 +67,7 @@ export function DecisionStateRouter({
   instanceId,
   slug,
   decisionSlug,
-  decisionProfileId: _decisionProfileId,
+  decisionProfileId,
   useLegacy = false,
 }: {
   instanceId: string;
@@ -87,7 +87,7 @@ export function DecisionStateRouter({
       instanceId={instanceId}
       slug={slug}
       decisionSlug={decisionSlug}
-      decisionProfileId={_decisionProfileId}
+      decisionProfileId={decisionProfileId}
     />
   );
 }
