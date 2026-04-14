@@ -62,9 +62,7 @@ export function VotingPage({
 
   const heroTitle = hasVoted
     ? t('YOUR BALLOT IS IN.')
-    : (translation?.headline ??
-      currentPhase?.headline ??
-      t('SHARE YOUR IDEAS.'));
+    : (translation?.headline ?? currentPhase?.headline ?? t('TIME TO VOTE.'));
 
   const resultsDate = nextPhase?.startDate
     ? new Date(nextPhase.startDate).toLocaleDateString(locale, {

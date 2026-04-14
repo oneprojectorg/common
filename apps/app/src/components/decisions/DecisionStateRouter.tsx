@@ -58,8 +58,7 @@ function DecisionStateRouterNew({
     );
   }
 
-  const hasActiveCapabilities =
-    isVotingEnabled || currentPhase?.rules?.proposals?.submit === true;
+  const hasActiveCapabilities = currentPhase?.rules?.proposals?.submit === true;
 
   if (isLastPhase(currentStateId, phases) && !hasActiveCapabilities) {
     return (
