@@ -1,6 +1,7 @@
 'use client';
 
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { Suspense } from 'react';
@@ -13,13 +14,15 @@ import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
+type Instance = RouterOutput['decision']['getInstance'];
+
 export function StandardDecisionPage({
-  instanceId,
+  instance,
   slug,
   decisionSlug,
   decisionProfileId,
 }: {
-  instanceId: string;
+  instance: Instance;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
@@ -29,13 +32,10 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instance.id,
+    limit: 20,
+  });
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -71,7 +71,7 @@ export function StandardDecisionPage({
         <MemberParticipationFacePile submitters={uniqueSubmitters} />
 
         <DecisionActionBar
-          instanceId={instanceId}
+          instanceId={instance.id}
           description={actionBarDescription}
           markup={!!translation?.additionalInfo}
           showSubmitButton={allowProposals && canSubmitProposal}
@@ -84,7 +84,7 @@ export function StandardDecisionPage({
             <Suspense fallback={<ProposalListSkeleton />}>
               <ProposalsList
                 slug={slug}
-                instanceId={instanceId}
+                instanceId={instance.id}
                 decisionSlug={decisionSlug}
                 decisionProfileId={decisionProfileId}
                 permissions={instance.access}

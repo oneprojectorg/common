@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { match } from '@op/core';
@@ -23,7 +24,9 @@ import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
 
-// Common instance fields used by ResultsPage
+type Instance = RouterOutput['decision']['getInstance'];
+
+// Common instance fields used by ResultsPageContent
 interface ResultsPageInstance {
   name: string;
   description: string | null;
@@ -51,32 +54,31 @@ function ResultsPageLegacy({
   );
 }
 
-export function ResultsPage({
-  instanceId,
-  profileSlug,
-  decisionSlug,
-  useLegacy = false,
-}: {
-  instanceId: string;
+type ResultsPageProps = {
   /** Owner profile slug (e.g. "people-powered") — used for org-specific hero content and legacy URL fallbacks */
   profileSlug: string;
   /** Decision profile slug (e.g. "pp-decides-season-5") — used for building proposal links in the new route structure */
   decisionSlug?: string;
-  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
-  useLegacy?: boolean;
-}) {
-  if (useLegacy) {
+} & (
+  | { useLegacy: true; instanceId: string; instance?: never }
+  | { useLegacy?: false; instance: Instance; instanceId?: never }
+);
+
+export function ResultsPage(props: ResultsPageProps) {
+  if (props.useLegacy) {
     return (
-      <ResultsPageLegacy instanceId={instanceId} profileSlug={profileSlug} />
+      <ResultsPageLegacy
+        instanceId={props.instanceId}
+        profileSlug={props.profileSlug}
+      />
     );
   }
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   return (
     <ResultsPageContent
-      instanceId={instanceId}
-      profileSlug={profileSlug}
-      decisionSlug={decisionSlug}
-      instance={instance}
+      instanceId={props.instance.id}
+      profileSlug={props.profileSlug}
+      decisionSlug={props.decisionSlug}
+      instance={props.instance}
     />
   );
 }

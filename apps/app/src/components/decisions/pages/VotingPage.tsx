@@ -1,6 +1,7 @@
 'use client';
 
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { Suspense } from 'react';
@@ -13,25 +14,24 @@ import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { MyBallot } from '../MyBallot';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
+type Instance = RouterOutput['decision']['getInstance'];
+
 export function VotingPage({
-  instanceId,
+  instance,
   slug,
   decisionSlug,
 }: {
-  instanceId: string;
+  instance: Instance;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
 }) {
   const t = useTranslations();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instance.id,
+    limit: 20,
+  });
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
@@ -64,7 +64,7 @@ export function VotingPage({
         <MemberParticipationFacePile submitters={uniqueSubmitters} />
 
         <DecisionActionBar
-          instanceId={instanceId}
+          instanceId={instance.id}
           markup={currentPhase?.additionalInfo ? false : aboutIsMarkup}
           description={currentPhase?.additionalInfo ?? description}
           showSubmitButton={false}
@@ -77,7 +77,7 @@ export function VotingPage({
             <Suspense fallback={<ProposalListSkeleton />}>
               <ProposalsList
                 slug={slug}
-                instanceId={instanceId}
+                instanceId={instance.id}
                 decisionSlug={decisionSlug}
                 permissions={instance.access}
               />
@@ -89,7 +89,7 @@ export function VotingPage({
       {instance.access?.vote && (
         <div data-testid="my-ballot">
           <Suspense fallback={null}>
-            <MyBallot slug={slug} instanceId={instanceId} />
+            <MyBallot slug={slug} instanceId={instance.id} />
           </Suspense>
         </div>
       )}
