@@ -1,11 +1,15 @@
-import { db, eq, inArray } from '@op/db/client';
+import { and, db, eq, inArray, sql } from '@op/db/client';
 import {
+  accessRolePermissionsOnAccessZones,
+  profileUserToAccessRoles,
   profileUsers,
   proposalReviewAssignments,
   proposals,
   users,
 } from '@op/db/schema';
 
+import { CommonError } from '../../utils';
+import { decisionPermission } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { ReviewsPolicy } from './schemas/types';
 
@@ -18,12 +22,11 @@ export interface GenerateReviewAssignmentsInput {
 /**
  * Generate review assignment rows for proposals entering a review-capable phase.
  *
- * Assignment strategy depends on the instance's `reviewsPolicy`:
- * - `full_coverage` — every eligible reviewer is assigned every proposal.
- * - `self_selection` — no upfront assignments; reviewers claim proposals themselves.
- * - `random_assignment` — a random subset of reviewers is assigned per proposal (TODO).
+ * Only members with the REVIEW capability on the `decisions` access zone are
+ * eligible. Reviewers are never assigned their own proposals.
  *
- * Reviewers are never assigned their own proposals.
+ * Currently supports the `full_coverage` policy (every eligible reviewer is
+ * assigned every proposal). Throws for unsupported policies.
  */
 export async function generateReviewAssignments({
   instanceId,
@@ -46,11 +49,13 @@ export async function generateReviewAssignments({
   }
 
   const instanceData = instance.instanceData as DecisionInstanceData;
-  const reviewsPolicy: ReviewsPolicy =
-    instanceData.config?.reviewsPolicy ?? 'full_coverage';
+  const reviewsPolicy: ReviewsPolicy | undefined =
+    instanceData.config?.reviewsPolicy;
 
-  if (reviewsPolicy === 'self_selection') {
-    return;
+  if (reviewsPolicy && reviewsPolicy !== 'full_coverage') {
+    throw new CommonError(
+      `Review assignment policy '${reviewsPolicy}' is not implemented`,
+    );
   }
 
   const decisionProfileId = instance.profileId;
@@ -62,7 +67,18 @@ export async function generateReviewAssignments({
     return;
   }
 
-  const [selectedProposals, memberPersonalProfileIds] = await Promise.all([
+  const decisionsZone = await db.query.accessZones.findFirst({
+    where: { name: 'decisions' },
+  });
+
+  if (!decisionsZone) {
+    console.error(
+      'generateReviewAssignments: decisions access zone not found',
+    );
+    return;
+  }
+
+  const [selectedProposals, reviewerProfileIds] = await Promise.all([
     db
       .select({
         id: proposals.id,
@@ -71,40 +87,62 @@ export async function generateReviewAssignments({
       .from(proposals)
       .where(inArray(proposals.id, selectedProposalIds)),
 
-    // profileUsers (decision membership) → users (via authUserId) → users.profileId (personal profile)
+    // profileUsers (decision membership)
+    //   → profileUserToAccessRoles (role assignments)
+    //   → accessRolePermissionsOnAccessZones (zone permissions)
+    //   → users (personal profileId)
+    // Filtered to members with the REVIEW bit on the decisions zone.
     db
       .selectDistinct({ profileId: users.profileId })
       .from(profileUsers)
       .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
-      .where(eq(profileUsers.profileId, decisionProfileId))
+      .innerJoin(
+        profileUserToAccessRoles,
+        eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
+      )
+      .innerJoin(
+        accessRolePermissionsOnAccessZones,
+        and(
+          eq(
+            profileUserToAccessRoles.accessRoleId,
+            accessRolePermissionsOnAccessZones.accessRoleId,
+          ),
+          eq(
+            accessRolePermissionsOnAccessZones.accessZoneId,
+            decisionsZone.id,
+          ),
+        ),
+      )
+      .where(
+        and(
+          eq(profileUsers.profileId, decisionProfileId),
+          sql`(${accessRolePermissionsOnAccessZones.permission} & ${decisionPermission.REVIEW}) != 0`,
+        ),
+      )
       .then((rows) =>
         rows.map((r) => r.profileId).filter((id): id is string => id != null),
       ),
   ]);
 
-  if (memberPersonalProfileIds.length === 0 || selectedProposals.length === 0) {
+  if (reviewerProfileIds.length === 0 || selectedProposals.length === 0) {
     return;
   }
 
-  if (reviewsPolicy === 'full_coverage') {
-    const assignmentValues = selectedProposals.flatMap((proposal) =>
-      memberPersonalProfileIds
-        .filter((profileId) => profileId !== proposal.submittedByProfileId)
-        .map((profileId) => ({
-          processInstanceId: instanceId,
-          proposalId: proposal.id,
-          reviewerProfileId: profileId,
-          phaseId,
-        })),
-    );
+  const assignmentValues = selectedProposals.flatMap((proposal) =>
+    reviewerProfileIds
+      .filter((profileId) => profileId !== proposal.submittedByProfileId)
+      .map((profileId) => ({
+        processInstanceId: instanceId,
+        proposalId: proposal.id,
+        reviewerProfileId: profileId,
+        phaseId,
+      })),
+  );
 
-    if (assignmentValues.length > 0) {
-      await db
-        .insert(proposalReviewAssignments)
-        .values(assignmentValues)
-        .onConflictDoNothing();
-    }
+  if (assignmentValues.length > 0) {
+    await db
+      .insert(proposalReviewAssignments)
+      .values(assignmentValues)
+      .onConflictDoNothing();
   }
-
-  // TODO: random_assignment strategy
 }
