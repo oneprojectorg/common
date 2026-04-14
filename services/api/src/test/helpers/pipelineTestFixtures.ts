@@ -1,3 +1,4 @@
+import { mockCollab } from '@op/collab/testing';
 import {
   type DecisionInstanceData,
   advancePhase,
@@ -41,6 +42,11 @@ export async function createAndSubmitProposal(
   },
 ) {
   const proposal = await testData.createProposal(options);
+
+  // Seed empty fragment responses so validation's format=json request
+  // doesn't 404 on the mock. These tests don't care about collab content.
+  mockCollab.setDocFragmentResponses(`proposal-${proposal.id}`, {});
+
   await caller.decision.submitProposal({ proposalId: proposal.id });
   return proposal;
 }
