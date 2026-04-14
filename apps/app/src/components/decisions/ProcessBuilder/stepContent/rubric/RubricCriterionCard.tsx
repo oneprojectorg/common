@@ -349,6 +349,11 @@ export function RubricCriterionDragPreview({
   return (
     <CollapsibleConfigCardDragPreview
       label={criterion.label || t('Untitled field')}
+      badgeLabel={
+        criterion.criterionType === 'scored' && criterion.maxPoints
+          ? `${criterion.maxPoints} ${t('pts')}`
+          : t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)
+      }
     />
   );
 }
