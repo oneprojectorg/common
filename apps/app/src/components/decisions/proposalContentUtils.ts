@@ -86,9 +86,9 @@ export function getProposalContentPreview(
     }
 
     // Content produced no text but may contain non-text nodes (e.g. iframely
-    // embeds). Show a short placeholder so the card doesn't render an error.
+    // embeds). Return empty so the card renders nothing instead of an error.
     if (containsIframelyNode(content)) {
-      return '(link)';
+      return '';
     }
 
     return null;
