@@ -41,6 +41,7 @@ export async function assertReviewAssignmentContext({
           },
         },
         reviews: true,
+        requests: true,
       },
     }),
     assertUserByAuthId(user.id),
@@ -73,7 +74,9 @@ export async function assertReviewAssignmentContext({
   return {
     assignment,
     instance,
+    // NOTE: We currently support only one review/revision cycle per assignment.
     review: assignment.reviews[0] ?? null,
+    revisionRequest: assignment.requests[0] ?? null,
     rubricTemplate: instance.instanceData.rubricTemplate ?? null,
   };
 }

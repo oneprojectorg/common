@@ -2,9 +2,10 @@ import { mockCollab } from '@op/collab/testing';
 import type { RubricTemplateSchema } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
   ProposalReviewState,
 } from '@op/db/schema';
-import { createProposalReview } from '@op/test';
+import { createProposalReview, createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -181,6 +182,49 @@ describe.concurrent('listReviewAssignments', () => {
           impact__rationale: 'Strong fit',
         },
         overallComment: 'Promising proposal',
+      },
+      revisionRequest: null,
+    });
+  });
+
+  it('includes revision request when one exists for an assignment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Needs Revision',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Missing budget breakdown.',
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: created.context.instance.instance.id,
+    });
+
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]).toMatchObject({
+      assignment: {
+        id: created.assignment.id,
+        status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+      },
+      revisionRequest: {
+        id: revisionRequest.id,
+        assignmentId: created.assignment.id,
+        state: ProposalReviewRequestState.REQUESTED,
+        requestComment: 'Missing budget breakdown.',
       },
     });
   });

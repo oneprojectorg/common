@@ -1,9 +1,11 @@
 import {
   ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
   ProposalReviewState,
   decisionProcesses,
   proposalHistory,
   proposalReviewAssignments,
+  proposalReviewRequests,
   proposalReviews,
 } from '@op/db/schema';
 import { db, eq, sql } from '@op/db/test';
@@ -135,6 +137,14 @@ export interface CreateProposalReviewOptions {
   submittedAt?: string | null;
 }
 
+export interface CreateRevisionRequestOptions {
+  assignmentId: string;
+  state?: ProposalReviewRequestState;
+  requestComment?: string;
+  requestedProposalHistoryId?: string | null;
+  respondedProposalHistoryId?: string | null;
+}
+
 /** Creates a review assignment row for a proposal within a review phase. */
 export async function createReviewAssignment(
   opts: CreateReviewAssignmentOptions,
@@ -199,4 +209,36 @@ export async function createProposalReview(
   }
 
   return review;
+}
+
+/** Creates a revision request row for a review assignment. */
+export async function createRevisionRequest(
+  opts: CreateRevisionRequestOptions,
+): Promise<typeof proposalReviewRequests.$inferSelect> {
+  const {
+    assignmentId,
+    state = ProposalReviewRequestState.REQUESTED,
+    requestComment = 'Please revise your proposal.',
+    requestedProposalHistoryId = null,
+    respondedProposalHistoryId = null,
+  } = opts;
+
+  const [request] = await db
+    .insert(proposalReviewRequests)
+    .values({
+      assignmentId,
+      state,
+      requestComment,
+      requestedProposalHistoryId,
+      respondedProposalHistoryId,
+    })
+    .returning();
+
+  if (!request) {
+    throw new Error(
+      `Failed to create revision request for assignment: ${assignmentId}`,
+    );
+  }
+
+  return request;
 }

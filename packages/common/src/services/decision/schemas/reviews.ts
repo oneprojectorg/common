@@ -1,5 +1,6 @@
 import {
   ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
   ProposalReviewState,
 } from '@op/db/schema';
 import { z } from 'zod';
@@ -25,6 +26,20 @@ export const proposalReviewAssignmentSchema = z.object({
   proposal: proposalSchema,
 });
 
+// ── Revision request schemas ───────────────────────────────────────────
+
+export const proposalReviewRequestSchema = z.object({
+  id: z.uuid(),
+  assignmentId: z.uuid(),
+  state: z.enum(ProposalReviewRequestState),
+  requestComment: z.string(),
+  requestedAt: z.string().nullable(),
+  respondedAt: z.string().nullable(),
+  resolvedAt: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+
 // ── Review schemas ──────────────────────────────────────────────────────
 
 export const proposalReviewSchema = z.object({
@@ -42,6 +57,7 @@ export const reviewAssignmentExtendedSchema = z.object({
   assignment: proposalReviewAssignmentSchema,
   rubricTemplate: rubricTemplateSchema.nullable(),
   review: proposalReviewSchema.nullable(),
+  revisionRequest: proposalReviewRequestSchema.nullable(),
 });
 
 export const reviewAssignmentListSchema = z.object({
@@ -53,6 +69,7 @@ export const reviewAssignmentListSchema = z.object({
 export type ProposalReviewAssignment = z.infer<
   typeof proposalReviewAssignmentSchema
 >;
+export type ProposalReviewRequest = z.infer<typeof proposalReviewRequestSchema>;
 export type ProposalReview = z.infer<typeof proposalReviewSchema>;
 export type ReviewAssignmentExtended = z.infer<
   typeof reviewAssignmentExtendedSchema

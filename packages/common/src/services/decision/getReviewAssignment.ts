@@ -30,7 +30,7 @@ export async function getReviewAssignment({
   assignmentId: string;
   user: User;
 }): Promise<ReviewAssignmentExtended> {
-  const { assignment, instance, review, rubricTemplate } =
+  const { assignment, instance, review, revisionRequest, rubricTemplate } =
     await assertReviewAssignmentContext({
       assignmentId,
       user,
@@ -88,6 +88,7 @@ export async function getReviewAssignment({
     },
     rubricTemplate,
     review,
+    revisionRequest,
   });
 }
 
