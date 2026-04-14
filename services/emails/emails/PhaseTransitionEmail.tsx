@@ -1,26 +1,25 @@
-import { Button, Heading, Section, Text } from '@react-email/components';
+import { Button, Section, Text } from '@react-email/components';
 
 import EmailTemplate from '../components/EmailTemplate';
 
 export const PhaseTransitionEmail = ({
   processTitle,
-  fromPhaseName,
   toPhaseName,
+  phaseNumber,
+  totalPhases,
   processUrl = 'https://common.oneproject.org/',
 }: {
   processTitle: string;
-  fromPhaseName: string;
   toPhaseName: string;
+  phaseNumber: number;
+  totalPhases: number;
   processUrl: string;
 }) => {
   return (
-    <EmailTemplate previewText={`${processTitle} has moved to ${toPhaseName}`}>
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Phase Update
-      </Heading>
+    <EmailTemplate previewText={`${processTitle} — now in ${toPhaseName}`}>
       <Text className="my-8 text-lg">
-        <strong>{processTitle}</strong> has moved from{' '}
-        <strong>{fromPhaseName}</strong> to <strong>{toPhaseName}</strong>.
+        <strong>{processTitle}</strong> has moved to phase {phaseNumber} of{' '}
+        {totalPhases}: <strong>{toPhaseName}</strong>.
       </Text>
 
       <Section className="pb-0">
@@ -36,11 +35,15 @@ export const PhaseTransitionEmail = ({
           View process
         </Button>
       </Section>
+
+      <Text className="mt-8 mb-0 text-xs text-neutral-gray4">
+        You're receiving this because you're a participant in {processTitle}.
+      </Text>
     </EmailTemplate>
   );
 };
 
 PhaseTransitionEmail.subject = (processTitle: string, toPhaseName: string) =>
-  `Phase update: ${processTitle} has moved to ${toPhaseName}`;
+  `${processTitle} — now in ${toPhaseName}`;
 
 export default PhaseTransitionEmail;

@@ -19,8 +19,9 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
   },
   { event: phaseTransitioned.name },
   async ({ event, step }) => {
-    const { processInstanceId, fromPhaseId, toPhaseId } =
-      phaseTransitioned.schema.parse(event.data);
+    const { processInstanceId, toPhaseId } = phaseTransitioned.schema.parse(
+      event.data,
+    );
 
     const processData = await step.run('get-process-data', async () => {
       const instance = await db
@@ -51,13 +52,13 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       return;
     }
 
-    // Resolve phase names from instance data
+    // Resolve phase name and position from instance data
     const instanceData = processData.instanceData as DecisionInstanceData;
     const phases = instanceData?.phases ?? [];
-    const fromPhaseName =
-      phases.find((p) => p.phaseId === fromPhaseId)?.name ?? fromPhaseId;
-    const toPhaseName =
-      phases.find((p) => p.phaseId === toPhaseId)?.name ?? toPhaseId;
+    const toPhaseIndex = phases.findIndex((p) => p.phaseId === toPhaseId);
+    const toPhaseName = phases[toPhaseIndex]?.name ?? toPhaseId;
+    const phaseNumber = toPhaseIndex !== -1 ? toPhaseIndex + 1 : 1;
+    const totalPhases = phases.length;
 
     const participants = await step.run('get-participants', async () => {
       return db
@@ -88,8 +89,9 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           component: () =>
             PhaseTransitionEmail({
               processTitle: processData.name,
-              fromPhaseName,
               toPhaseName,
+              phaseNumber,
+              totalPhases,
               processUrl,
             }),
         }));
