@@ -231,6 +231,42 @@ const VotingProposalsList = ({
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
+          const proposalHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+
+          // Ballot view: after voting, show a simpler card with clickable title
+          if (isEligible && isReadOnly) {
+            return (
+              <VotingProposalCard
+                key={proposal.id}
+                proposalId={proposal.id}
+                isSelected={isVotedFor}
+                isVotedFor={isVotedFor}
+              >
+                <ProposalCardContent>
+                  <ProposalCardHeader
+                    proposal={proposal}
+                    viewHref={proposalHref}
+                    menu={
+                      isVotedFor ? (
+                        <Checkbox
+                          isSelected={true}
+                          shape="circle"
+                          borderColor="light"
+                          className="[&[data-disabled]_svg]:!text-white"
+                          aria-label={t('Selected proposal')}
+                          isDisabled
+                        />
+                      ) : undefined
+                    }
+                  />
+                  <ProposalCardMeta proposal={proposal} />
+                  <ProposalCardPreview proposal={proposal} />
+                </ProposalCardContent>
+              </VotingProposalCard>
+            );
+          }
+
+          // Active voting view: interactive cards with selection
           if (isEligible) {
             return (
               <VotingProposalCard
@@ -259,21 +295,16 @@ const VotingProposalsList = ({
                           {showCheckbox && (
                             <div onClick={(e) => e.stopPropagation()}>
                               <Checkbox
-                                isSelected={
-                                  isReadOnly ? isVotedFor : isSelected
-                                }
+                                isSelected={isSelected}
                                 onChange={() => {
                                   toggleProposal(proposal.id);
                                 }}
-                                isDisabled={isReadOnly}
                                 shape="circle"
                                 borderColor="light"
-                                // Override disabled icon color to keep checkmark white (using design token)
-                                className="[&[data-disabled]_svg]:!text-white"
                                 aria-label={
                                   isSelected
-                                    ? 'Deselect proposal'
-                                    : 'Select proposal'
+                                    ? t('Deselect proposal')
+                                    : t('Select proposal')
                                 }
                               />
                             </div>
@@ -287,7 +318,7 @@ const VotingProposalsList = ({
                 </ProposalCardContent>
                 <ProposalCardFooter>
                   <ButtonLink
-                    href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                    href={proposalHref}
                     color="secondary"
                     className="w-full"
                   >
