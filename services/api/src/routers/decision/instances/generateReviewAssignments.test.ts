@@ -8,7 +8,6 @@ import {
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
-  processInstances,
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
@@ -76,10 +75,16 @@ const decisionSchemaWithReview = {
  * Creates a published decision instance from the review schema.
  * Returns the instance, its profileId, and the creating user's personal profileId.
  */
-async function createReviewInstance(testData: TestDecisionsDataManager) {
+async function createReviewInstance(
+  testData: TestDecisionsDataManager,
+  { reviewsPolicy = 'full_coverage' as const } = {},
+) {
   const setup = await testData.createDecisionSetup({
     instanceCount: 1,
-    processSchema: decisionSchemaWithReview,
+    processSchema: {
+      ...decisionSchemaWithReview,
+      config: { ...decisionSchemaWithReview.config, reviewsPolicy },
+    },
     status: ProcessStatus.PUBLISHED,
   });
 
@@ -154,22 +159,6 @@ async function advanceToReviewPhase(instanceId: string) {
   return result;
 }
 
-/** Patches the reviewsPolicy on an existing instance's instanceData. */
-async function setReviewsPolicy(instanceId: string, reviewsPolicy: string) {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-  });
-  const instanceData = instance!.instanceData as Record<string, unknown>;
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...instanceData,
-        config: { ...(instanceData.config as object), reviewsPolicy },
-      },
-    })
-    .where(eq(processInstances.id, instanceId));
-}
 
 describe.concurrent('generateReviewAssignments', () => {
   it('full_coverage assigns only members with REVIEW capability, excluding self-review', async ({
@@ -330,9 +319,9 @@ describe.concurrent('generateReviewAssignments', () => {
 
   it('throws for self_selection policy', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await createReviewInstance(testData);
-
-    await setReviewsPolicy(instance.instance.id, 'self_selection');
+    const { instance } = await createReviewInstance(testData, {
+      reviewsPolicy: 'self_selection',
+    });
 
     await expect(
       generateReviewAssignments({
@@ -402,9 +391,9 @@ describe.concurrent('generateReviewAssignments', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await createReviewInstance(testData);
-
-    await setReviewsPolicy(instance.instance.id, 'random_assignment');
+    const { instance } = await createReviewInstance(testData, {
+      reviewsPolicy: 'random_assignment',
+    });
 
     await expect(
       generateReviewAssignments({
