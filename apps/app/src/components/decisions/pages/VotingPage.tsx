@@ -3,6 +3,7 @@
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
+import { useLocale } from 'next-intl';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -24,6 +25,7 @@ export function VotingPage({
   decisionSlug?: string;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
   const translation = useDecisionTranslation();
 
   const [[{ proposals }, instance, voteStatus]] = trpc.useSuspenseQueries(
@@ -65,7 +67,7 @@ export function VotingPage({
       t('SHARE YOUR IDEAS.'));
 
   const resultsDate = nextPhase?.startDate
-    ? new Date(nextPhase.startDate).toLocaleDateString(undefined, {
+    ? new Date(nextPhase.startDate).toLocaleDateString(locale, {
         month: 'long',
         day: 'numeric',
       })

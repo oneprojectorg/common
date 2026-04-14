@@ -180,7 +180,7 @@ const VotingProposalsList = ({
 
   // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
-  const isReadOnly = hasVoted;
+  const isReadOnly = hasVoted || !canVote;
   const maxVotesPerMember =
     voteStatus?.votingConfiguration?.maxVotesPerMember || 0;
 
@@ -227,14 +227,14 @@ const VotingProposalsList = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
-          const isEligible = isVotingEligible(proposal.status);
+          const isEligibleForVote = isVotingEligible(proposal.status);
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
           const proposalHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
 
           // Ballot view: after voting, show a simpler card with clickable title
-          if (isEligible && isReadOnly) {
+          if (isEligibleForVote && isReadOnly) {
             return (
               <VotingProposalCard
                 key={proposal.id}
@@ -267,7 +267,7 @@ const VotingProposalsList = ({
           }
 
           // Active voting view: interactive cards with selection
-          if (isEligible) {
+          if (isEligibleForVote) {
             return (
               <VotingProposalCard
                 key={proposal.id}
