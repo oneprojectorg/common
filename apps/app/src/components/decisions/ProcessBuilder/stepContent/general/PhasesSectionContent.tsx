@@ -31,7 +31,7 @@ export function PhasesSectionContent({
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
   );
-  const { saveChanges, saveState } = useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   const initialPhases: PhaseDefinition[] = (() => {
     const source = storePhases?.length ? storePhases : instancePhases;
@@ -122,8 +122,8 @@ export function PhasesSectionContent({
       <div className="flex items-center justify-between">
         <Header2 className="font-serif text-title-sm">{t('Phases')}</Header2>
         <SaveStatusIndicator
-          status={saveState.status}
-          savedAt={saveState.savedAt}
+          status={autosaveStatus.status}
+          savedAt={autosaveStatus.savedAt}
         />
       </div>
       <p className="text-neutral-charcoal">

@@ -92,7 +92,7 @@ export function RubricEditorContent({
     Map<string, { maximum: number; oneOf: { const: number; title: string }[] }>
   >(new Map());
 
-  const { saveChanges, saveState } = useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Derive criterion views from the template
   const criteria = useMemo(() => getCriteria(template), [template]);
@@ -108,7 +108,7 @@ export function RubricEditorContent({
       return;
     }
     saveChanges({ rubricTemplate: template });
-  }, [template]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [template]);
 
   // --- Handlers ---
 
@@ -230,8 +230,8 @@ export function RubricEditorContent({
               {t('Review Criteria')}
             </Header2>
             <SaveStatusIndicator
-              status={saveState.status}
-              savedAt={saveState.savedAt}
+              status={autosaveStatus.status}
+              savedAt={autosaveStatus.savedAt}
             />
           </div>
 

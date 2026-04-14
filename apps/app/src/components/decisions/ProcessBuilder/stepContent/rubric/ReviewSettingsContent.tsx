@@ -34,7 +34,7 @@ export function ReviewSettingsContent({
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
-  const { saveChanges, saveState } = useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   const [settings, setSettings] = useState<ReviewSettings>({
     reviewsPolicy:
@@ -64,8 +64,8 @@ export function ReviewSettingsContent({
       <div className="flex items-center justify-between">
         <Header2 className="font-serif text-title-base">{t('Reviews')}</Header2>
         <SaveStatusIndicator
-          status={saveState.status}
-          savedAt={saveState.savedAt}
+          status={autosaveStatus.status}
+          savedAt={autosaveStatus.savedAt}
         />
       </div>
 

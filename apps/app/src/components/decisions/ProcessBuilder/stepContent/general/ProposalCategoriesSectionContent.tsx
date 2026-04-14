@@ -40,7 +40,7 @@ export function ProposalCategoriesSectionContent({
   const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
-  const { saveChanges, saveState } = useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Local state — immediate source of truth for UI
   // Seed from store (localStorage) first, then fall back to server data
@@ -162,8 +162,8 @@ export function ProposalCategoriesSectionContent({
             {t('Proposal Categories')}
           </Header2>
           <SaveStatusIndicator
-            status={saveState.status}
-            savedAt={saveState.savedAt}
+            status={autosaveStatus.status}
+            savedAt={autosaveStatus.savedAt}
           />
         </div>
         <p className="text-neutral-gray4">

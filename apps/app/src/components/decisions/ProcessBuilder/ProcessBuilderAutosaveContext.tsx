@@ -38,7 +38,7 @@ const ActionsContext = createContext<AutosaveActions | null>(null);
 const StatusContext = createContext<AutosaveStatus>({ status: 'idle' });
 
 export function useProcessBuilderAutosave(): AutosaveActions & {
-  saveState: AutosaveStatus;
+  autosaveStatus: AutosaveStatus;
 } {
   const actions = useContext(ActionsContext);
   if (!actions) {
@@ -46,8 +46,8 @@ export function useProcessBuilderAutosave(): AutosaveActions & {
       'useProcessBuilderAutosave must be used within ProcessBuilderAutosaveProvider',
     );
   }
-  const saveState = useContext(StatusContext);
-  return { ...actions, saveState };
+  const autosaveStatus = useContext(StatusContext);
+  return { ...actions, autosaveStatus };
 }
 
 export function ProcessBuilderAutosaveProvider({
@@ -72,7 +72,7 @@ export function ProcessBuilderAutosaveProvider({
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
-  const saveState = useProcessBuilderStore((s) =>
+  const currentStatus = useProcessBuilderStore((s) =>
     s.getSaveState(decisionProfileId),
   );
 
@@ -125,7 +125,10 @@ export function ProcessBuilderAutosaveProvider({
         ...payload,
       });
       inflightRef.current = promise;
-      promise.catch(() => {});
+      promise.catch(() => {
+        // Handled by the mutation's onError callback (toast + status).
+        // This catch only prevents unhandled promise rejection warnings.
+      });
     } else {
       // Published: data is only in the store (localStorage) until the user
       // clicks "Update Process". Don't show a save indicator — it would be
@@ -199,7 +202,7 @@ export function ProcessBuilderAutosaveProvider({
 
   return (
     <ActionsContext.Provider value={actions}>
-      <StatusContext.Provider value={saveState}>
+      <StatusContext.Provider value={currentStatus}>
         {children}
       </StatusContext.Provider>
     </ActionsContext.Provider>

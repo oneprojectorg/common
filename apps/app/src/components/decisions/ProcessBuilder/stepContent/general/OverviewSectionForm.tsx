@@ -77,7 +77,7 @@ export function OverviewSectionForm({
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
-  const { saveChanges, saveState } = useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Fetch the current user's profiles (individual + organizations)
   const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
@@ -168,8 +168,8 @@ export function OverviewSectionForm({
                   {t('Process Overview')}
                 </Header2>
                 <SaveStatusIndicator
-                  status={saveState.status}
-                  savedAt={saveState.savedAt}
+                  status={autosaveStatus.status}
+                  savedAt={autosaveStatus.savedAt}
                 />
               </div>
               <p className="mt-2 text-neutral-gray4">

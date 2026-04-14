@@ -152,7 +152,7 @@ export function TemplateEditorContent({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarOpen = isMobile ? mobileSidebarOpen : true;
 
-  const { saveChanges, saveState } = useProcessBuilderAutosave();
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Derive field views from the template, excluding locked system fields
   // that are always rendered separately above the sortable list.
@@ -212,7 +212,7 @@ export function TemplateEditorContent({
       requireCategorySelection,
     });
     saveChanges({ proposalTemplate: normalized });
-  }, [template]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [template]);
 
   const handleAddField = useCallback(
     (type: FieldType) => {
@@ -394,8 +394,8 @@ export function TemplateEditorContent({
                 {t('Proposal template')}
               </Header2>
               <SaveStatusIndicator
-                status={saveState.status}
-                savedAt={saveState.savedAt}
+                status={autosaveStatus.status}
+                savedAt={autosaveStatus.savedAt}
               />
             </div>
             <p className="text-neutral-charcoal">

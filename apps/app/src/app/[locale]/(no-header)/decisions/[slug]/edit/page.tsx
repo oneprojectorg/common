@@ -34,7 +34,8 @@ const EditDecisionPage = async ({
 
   const { processInstance } = decisionProfile;
   const instanceId = processInstance.id;
-  const instanceData = processInstance.instanceData;
+  const instanceData =
+    processInstance.instanceData as ProcessBuilderInstanceData;
 
   // Seed the store with server data so validation works immediately.
   const serverData: ProcessBuilderInstanceData = {
@@ -42,10 +43,8 @@ const EditDecisionPage = async ({
     description: processInstance.description ?? undefined,
     stewardProfileId: processInstance.steward?.id,
     phases: instanceData.phases,
-    proposalTemplate:
-      instanceData.proposalTemplate as ProcessBuilderInstanceData['proposalTemplate'],
-    rubricTemplate:
-      instanceData.rubricTemplate as ProcessBuilderInstanceData['rubricTemplate'],
+    proposalTemplate: instanceData.proposalTemplate,
+    rubricTemplate: instanceData.rubricTemplate,
     config: instanceData.config,
   };
 

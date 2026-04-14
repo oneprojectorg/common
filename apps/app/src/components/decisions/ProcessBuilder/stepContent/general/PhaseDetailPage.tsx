@@ -51,6 +51,18 @@ export function PhaseDetailPage({
   );
 }
 
+const toPayload = (phases: PhaseDefinition[]) =>
+  phases.map((p) => ({
+    phaseId: p.id,
+    name: p.name,
+    description: p.description,
+    headline: p.headline,
+    additionalInfo: p.additionalInfo,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    rules: p.rules,
+  }));
+
 function PhaseDetailForm({
   instanceId,
   decisionProfileId,
@@ -70,7 +82,7 @@ function PhaseDetailForm({
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
   );
-  const { saveChanges, saveState, flushPendingChanges } =
+  const { saveChanges, autosaveStatus, flushPendingChanges } =
     useProcessBuilderAutosave();
 
   // Resolve the initial phase data (same priority as PhasesSectionContent)
@@ -100,18 +112,6 @@ function PhaseDetailForm({
 
   const allPhasesRef = useRef(allPhases);
   allPhasesRef.current = allPhases;
-
-  const toPayload = (phases: PhaseDefinition[]) =>
-    phases.map((p) => ({
-      phaseId: p.id,
-      name: p.name,
-      description: p.description,
-      headline: p.headline,
-      additionalInfo: p.additionalInfo,
-      startDate: p.startDate,
-      endDate: p.endDate,
-      rules: p.rules,
-    }));
 
   const updatePhase = (updates: Partial<PhaseDefinition>) => {
     setPhase((prev) => {
@@ -243,8 +243,8 @@ function PhaseDetailForm({
           </Header2>
         </div>
         <SaveStatusIndicator
-          status={saveState.status}
-          savedAt={saveState.savedAt}
+          status={autosaveStatus.status}
+          savedAt={autosaveStatus.savedAt}
         />
       </div>
 
