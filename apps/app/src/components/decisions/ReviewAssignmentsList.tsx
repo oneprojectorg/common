@@ -7,7 +7,6 @@ import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { useMemo } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,19 +40,13 @@ export function ReviewAssignmentsList({
     parseAsStringLiteral(SORT_DIRS).withDefault('desc'),
   );
 
-  const queryParams = useMemo(
-    () => ({
-      processInstanceId,
-      ...(statusFilter && {
-        status: statusFilter as ProposalReviewAssignmentStatus,
-      }),
-      dir,
+  const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
+    processInstanceId,
+    ...(statusFilter && {
+      status: statusFilter as ProposalReviewAssignmentStatus,
     }),
-    [processInstanceId, statusFilter, dir],
-  );
-
-  const { data, isLoading } =
-    trpc.decision.listReviewAssignments.useQuery(queryParams);
+    dir,
+  });
 
   const assignments = data?.assignments ?? [];
 

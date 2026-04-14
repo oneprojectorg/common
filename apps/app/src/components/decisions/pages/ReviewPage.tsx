@@ -35,9 +35,7 @@ export function ReviewPage({
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
         <DecisionHero
           title={
-            currentPhase.headline ?? (
-              <TranslatedText text="REVIEW PROPOSALS." />
-            )
+            currentPhase.headline ?? <TranslatedText text="REVIEW PROPOSALS." />
           }
           description={
             currentPhase.description ? (
