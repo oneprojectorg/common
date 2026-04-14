@@ -12,7 +12,6 @@ import {
 import { CommonError } from '../../utils';
 import { decisionPermission } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { ReviewsPolicy } from './schemas/types';
 
 export interface GenerateReviewAssignmentsInput {
   instanceId: string;
@@ -40,20 +39,19 @@ export async function generateReviewAssignments({
     return;
   }
 
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-  });
+  const [instance, decisionsZone] = await Promise.all([
+    db.query.processInstances.findFirst({ where: { id: instanceId } }),
+    db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
+  ]);
 
   if (!instance) {
-    console.error(
+    throw new CommonError(
       `generateReviewAssignments: instance ${instanceId} not found`,
     );
-    return;
   }
 
   const instanceData = instance.instanceData as DecisionInstanceData;
-  const reviewsPolicy: ReviewsPolicy | undefined =
-    instanceData.config?.reviewsPolicy;
+  const reviewsPolicy = instanceData.config?.reviewsPolicy;
 
   if (reviewsPolicy && reviewsPolicy !== 'full_coverage') {
     throw new CommonError(
@@ -69,10 +67,6 @@ export async function generateReviewAssignments({
     );
     return;
   }
-
-  const decisionsZone = await db.query.accessZones.findFirst({
-    where: { name: 'decisions' },
-  });
 
   if (!decisionsZone) {
     console.error('generateReviewAssignments: decisions access zone not found');
@@ -156,6 +150,7 @@ export async function generateReviewAssignments({
 
   const assignmentValues = selectedProposals.flatMap((proposal) =>
     reviewerProfileIds
+      // NOTE: we should revisit this logic when we have multiple authors per proposal
       .filter((profileId) => profileId !== proposal.submittedByProfileId)
       .map((profileId) => ({
         processInstanceId: instanceId,
