@@ -1,12 +1,9 @@
-'use client';
-
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { ButtonLink } from '@op/ui/Button';
 import { Suspense } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionHero } from '../DecisionHero';
 import {
@@ -23,26 +20,27 @@ export function ReviewPage({
   instance: Instance;
   decisionSlug?: string;
 }) {
-  const t = useTranslations();
-  const reviewFlowEnabled = useFeatureFlag('review_flow');
-
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
   const currentPhase = phases.find(
     (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
   );
 
-  if (!reviewFlowEnabled) {
-    return null;
+  if (!currentPhase) {
+    throw new Error(`Phase "${currentPhaseId}" not found in instance phases`);
   }
 
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
         <DecisionHero
-          title={currentPhase?.headline ?? t('SHARE YOUR IDEAS.')}
+          title={
+            currentPhase.headline ?? (
+              <TranslatedText text="REVIEW PROPOSALS." />
+            )
+          }
           description={
-            currentPhase?.description ? (
+            currentPhase.description ? (
               <p>{currentPhase.description}</p>
             ) : undefined
           }
@@ -50,7 +48,7 @@ export function ReviewPage({
         >
           <div className="flex justify-center pt-2">
             <ButtonLink color="secondary" size="medium" href="#">
-              {t('Learn more')}
+              <TranslatedText text="Learn more" />
             </ButtonLink>
           </div>
         </DecisionHero>
