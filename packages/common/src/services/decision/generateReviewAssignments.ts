@@ -1,6 +1,7 @@
 import { and, db, eq, inArray, sql } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
+  decisionTransitionProposals,
   profileUserToAccessRoles,
   profileUsers,
   proposalReviewAssignments,
@@ -17,6 +18,7 @@ export interface GenerateReviewAssignmentsInput {
   instanceId: string;
   phaseId: string;
   selectedProposalIds: string[];
+  transitionHistoryId: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export async function generateReviewAssignments({
   instanceId,
   phaseId,
   selectedProposalIds,
+  transitionHistoryId,
 }: GenerateReviewAssignmentsInput): Promise<void> {
   if (selectedProposalIds.length === 0) {
     return;
@@ -72,61 +75,84 @@ export async function generateReviewAssignments({
   });
 
   if (!decisionsZone) {
-    console.error(
-      'generateReviewAssignments: decisions access zone not found',
-    );
+    console.error('generateReviewAssignments: decisions access zone not found');
     return;
   }
 
-  const [selectedProposals, reviewerProfileIds] = await Promise.all([
-    db
-      .select({
-        id: proposals.id,
-        submittedByProfileId: proposals.submittedByProfileId,
-      })
-      .from(proposals)
-      .where(inArray(proposals.id, selectedProposalIds)),
+  const [selectedProposals, reviewerProfileIds, transitionProposalRows] =
+    await Promise.all([
+      db
+        .select({
+          id: proposals.id,
+          submittedByProfileId: proposals.submittedByProfileId,
+        })
+        .from(proposals)
+        .where(inArray(proposals.id, selectedProposalIds)),
 
-    // profileUsers (decision membership)
-    //   → profileUserToAccessRoles (role assignments)
-    //   → accessRolePermissionsOnAccessZones (zone permissions)
-    //   → users (personal profileId)
-    // Filtered to members with the REVIEW bit on the decisions zone.
-    db
-      .selectDistinct({ profileId: users.profileId })
-      .from(profileUsers)
-      .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
-      .innerJoin(
-        profileUserToAccessRoles,
-        eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
-      )
-      .innerJoin(
-        accessRolePermissionsOnAccessZones,
-        and(
-          eq(
-            profileUserToAccessRoles.accessRoleId,
-            accessRolePermissionsOnAccessZones.accessRoleId,
+      // profileUsers (decision membership)
+      //   → profileUserToAccessRoles (role assignments)
+      //   → accessRolePermissionsOnAccessZones (zone permissions)
+      //   → users (personal profileId)
+      // Filtered to members with the REVIEW bit on the decisions zone.
+      db
+        .selectDistinct({ profileId: users.profileId })
+        .from(profileUsers)
+        .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
+        .innerJoin(
+          profileUserToAccessRoles,
+          eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
+        )
+        .innerJoin(
+          accessRolePermissionsOnAccessZones,
+          and(
+            eq(
+              profileUserToAccessRoles.accessRoleId,
+              accessRolePermissionsOnAccessZones.accessRoleId,
+            ),
+            eq(
+              accessRolePermissionsOnAccessZones.accessZoneId,
+              decisionsZone.id,
+            ),
           ),
-          eq(
-            accessRolePermissionsOnAccessZones.accessZoneId,
-            decisionsZone.id,
+        )
+        .where(
+          and(
+            eq(profileUsers.profileId, decisionProfileId),
+            sql`(${accessRolePermissionsOnAccessZones.permission} & ${decisionPermission.REVIEW}) != 0`,
+          ),
+        )
+        .then((rows) =>
+          rows.map((r) => r.profileId).filter((id): id is string => id != null),
+        ),
+
+      // Look up the proposal history snapshots captured during the phase transition.
+      db
+        .select({
+          proposalId: decisionTransitionProposals.proposalId,
+          proposalHistoryId: decisionTransitionProposals.proposalHistoryId,
+        })
+        .from(decisionTransitionProposals)
+        .where(
+          and(
+            eq(
+              decisionTransitionProposals.transitionHistoryId,
+              transitionHistoryId,
+            ),
+            inArray(
+              decisionTransitionProposals.proposalId,
+              selectedProposalIds,
+            ),
           ),
         ),
-      )
-      .where(
-        and(
-          eq(profileUsers.profileId, decisionProfileId),
-          sql`(${accessRolePermissionsOnAccessZones.permission} & ${decisionPermission.REVIEW}) != 0`,
-        ),
-      )
-      .then((rows) =>
-        rows.map((r) => r.profileId).filter((id): id is string => id != null),
-      ),
-  ]);
+    ]);
 
   if (reviewerProfileIds.length === 0 || selectedProposals.length === 0) {
     return;
   }
+
+  const historyByProposalId = new Map(
+    transitionProposalRows.map((r) => [r.proposalId, r.proposalHistoryId]),
+  );
 
   const assignmentValues = selectedProposals.flatMap((proposal) =>
     reviewerProfileIds
@@ -136,6 +162,7 @@ export async function generateReviewAssignments({
         proposalId: proposal.id,
         reviewerProfileId: profileId,
         phaseId,
+        assignedProposalHistoryId: historyByProposalId.get(proposal.id) ?? null,
       })),
   );
 

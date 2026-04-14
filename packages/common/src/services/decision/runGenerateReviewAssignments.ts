@@ -10,6 +10,7 @@ export async function runGenerateReviewAssignments(
       instanceId: input.instanceId,
       phaseId: input.toPhaseId,
       selectedProposalIds: input.advanceResult.selectedProposalIds,
+      transitionHistoryId: input.advanceResult.transitionHistoryId,
     });
   } catch (error) {
     console.error(

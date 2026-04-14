@@ -1,7 +1,9 @@
 import {
+  type DecisionInstanceData,
+  type DecisionSchemaDefinition,
+  advancePhase,
   createDecisionRole,
   generateReviewAssignments,
-  type DecisionSchemaDefinition,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
@@ -14,7 +16,20 @@ import {
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
+import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import {
+  createIsolatedSession,
+  createTestContextWithSession,
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+
+const createCaller = createCallerFactory(appRouter);
+
+async function createAuthenticatedCaller(email: string) {
+  const { session } = await createIsolatedSession(email);
+  return createCaller(await createTestContextWithSession(session));
+}
 
 /**
  * Schema with a review-capable middle phase.
@@ -27,18 +42,6 @@ const reviewSchema = {
   description: 'Schema with a review phase for testing',
   config: {
     reviewsPolicy: 'full_coverage' as const,
-  },
-  proposalTemplate: {
-    type: 'object',
-    properties: {
-      title: {
-        type: 'string',
-        title: 'Title',
-        'x-format': 'short-text',
-      },
-    },
-    required: ['title'],
-    'x-field-order': ['title'],
   },
   phases: [
     {
@@ -156,11 +159,41 @@ async function assignRole(
   });
 }
 
+/**
+ * Advances the instance from submission → review via advancePhase inside a
+ * transaction and returns the non-conflict result.
+ */
+async function advanceToReviewPhase(instanceId: string) {
+  const dbInstance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+  });
+
+  if (!dbInstance) {
+    throw new Error('Instance not found');
+  }
+
+  const result = await db.transaction(async (tx) =>
+    advancePhase({
+      tx,
+      instance: {
+        id: dbInstance.id,
+        instanceData: dbInstance.instanceData as DecisionInstanceData,
+      },
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+      triggeredByProfileId: null,
+    }),
+  );
+
+  if (result.conflict) {
+    throw new Error('Unexpected conflict during advance');
+  }
+
+  return result;
+}
+
 /** Patches the reviewsPolicy on an existing instance's instanceData. */
-async function setReviewsPolicy(
-  instanceId: string,
-  reviewsPolicy: string,
-) {
+async function setReviewsPolicy(instanceId: string, reviewsPolicy: string) {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
   });
@@ -209,7 +242,7 @@ describe.concurrent('generateReviewAssignments', () => {
       assignRole(reviewerB.authUserId, instance.profileId, reviewerRole.id),
     ]);
 
-    // Create proposals: one by reviewerA, one by memberC
+    // Create and submit proposals so they have history rows
     const [proposalByA, proposalByC] = await Promise.all([
       testData.createProposal({
         userEmail: reviewerA.email,
@@ -223,20 +256,31 @@ describe.concurrent('generateReviewAssignments', () => {
       }),
     ]);
 
+    const [callerA, callerC] = await Promise.all([
+      createAuthenticatedCaller(reviewerA.email),
+      createAuthenticatedCaller(memberC.email),
+    ]);
+
+    await Promise.all([
+      callerA.decision.submitProposal({ proposalId: proposalByA.id }),
+      callerC.decision.submitProposal({ proposalId: proposalByC.id }),
+    ]);
+
+    // Advance submission → review to get transitionHistoryId + transition proposal rows
+    const advanceResult = await advanceToReviewPhase(instance.instance.id);
+
     await generateReviewAssignments({
       instanceId: instance.instance.id,
       phaseId: 'review',
-      selectedProposalIds: [proposalByA.id, proposalByC.id],
+      selectedProposalIds: advanceResult.selectedProposalIds,
+      transitionHistoryId: advanceResult.transitionHistoryId,
     });
 
     const assignments = await db
       .select()
       .from(proposalReviewAssignments)
       .where(
-        eq(
-          proposalReviewAssignments.processInstanceId,
-          instance.instance.id,
-        ),
+        eq(proposalReviewAssignments.processInstanceId, instance.instance.id),
       );
 
     const assignmentsByReviewer = new Map<string, string[]>();
@@ -283,6 +327,11 @@ describe.concurrent('generateReviewAssignments', () => {
     );
 
     expect(assignments).toHaveLength(5);
+
+    // Every assignment should have a pinned proposal history snapshot
+    for (const a of assignments) {
+      expect(a.assignedProposalHistoryId).not.toBeNull();
+    }
   });
 
   it('does nothing when selectedProposalIds is empty', async ({
@@ -296,16 +345,14 @@ describe.concurrent('generateReviewAssignments', () => {
       instanceId: instance.instance.id,
       phaseId: 'review',
       selectedProposalIds: [],
+      transitionHistoryId: 'irrelevant',
     });
 
     const assignments = await db
       .select()
       .from(proposalReviewAssignments)
       .where(
-        eq(
-          proposalReviewAssignments.processInstanceId,
-          instance.instance.id,
-        ),
+        eq(proposalReviewAssignments.processInstanceId, instance.instance.id),
       );
 
     expect(assignments).toHaveLength(0);
@@ -322,6 +369,7 @@ describe.concurrent('generateReviewAssignments', () => {
         instanceId: instance.instance.id,
         phaseId: 'review',
         selectedProposalIds: ['any-id'],
+        transitionHistoryId: 'irrelevant',
       }),
     ).rejects.toThrow('not implemented');
   });
@@ -346,10 +394,16 @@ describe.concurrent('generateReviewAssignments', () => {
       proposalData: { title: 'Idempotency proposal' },
     });
 
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.submitProposal({ proposalId: proposal.id });
+
+    const advanceResult = await advanceToReviewPhase(instance.instance.id);
+
     const input = {
       instanceId: instance.instance.id,
       phaseId: 'review',
-      selectedProposalIds: [proposal.id],
+      selectedProposalIds: advanceResult.selectedProposalIds,
+      transitionHistoryId: advanceResult.transitionHistoryId,
     };
 
     await generateReviewAssignments(input);
@@ -359,10 +413,7 @@ describe.concurrent('generateReviewAssignments', () => {
       .select()
       .from(proposalReviewAssignments)
       .where(
-        eq(
-          proposalReviewAssignments.processInstanceId,
-          instance.instance.id,
-        ),
+        eq(proposalReviewAssignments.processInstanceId, instance.instance.id),
       );
 
     // Each reviewer should appear exactly once per proposal, not duplicated.
@@ -386,6 +437,7 @@ describe.concurrent('generateReviewAssignments', () => {
         instanceId: instance.instance.id,
         phaseId: 'review',
         selectedProposalIds: ['any-id'],
+        transitionHistoryId: 'irrelevant',
       }),
     ).rejects.toThrow('not implemented');
   });
