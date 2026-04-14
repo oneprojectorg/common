@@ -1,9 +1,12 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
+import { notFound } from 'next/navigation';
 
 import { ResultsPage } from './pages/ResultsPage';
+import { ReviewPage } from './pages/ReviewPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
@@ -30,6 +33,7 @@ function DecisionStateRouterNew({
   decisionProfileId?: string | null;
 }) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const reviewFlowEnabled = useFeatureFlag('review_flow');
 
   const { currentStateId } = instance;
 
@@ -48,6 +52,12 @@ function DecisionStateRouterNew({
         decisionSlug={decisionSlug}
       />
     ),
+    review: () => {
+      if (!reviewFlowEnabled || !decisionSlug) {
+        notFound();
+      }
+      return <ReviewPage instance={instance} decisionSlug={decisionSlug} />;
+    },
     _: () => (
       <StandardDecisionPage
         instanceId={instanceId}

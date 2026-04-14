@@ -38,7 +38,7 @@ const submissionPhaseSchema: DecisionSchemaDefinition = {
 
 /**
  * Schema that starts in the review phase (proposals NOT allowed).
- * currentStateId will be 'review', routing to StandardDecisionPage.
+ * currentStateId will be 'review', routing to ReviewPage.
  */
 const reviewPhaseSchema: DecisionSchemaDefinition = {
   id: 'test-review',
@@ -154,10 +154,6 @@ test.describe('Decision Role Capabilities', () => {
     await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'networkidle',
     });
-
-    await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name }),
-    ).toBeVisible({ timeout: 15000 });
 
     // Even though admin has submitProposals permission, phase rules block the button
     await expect(

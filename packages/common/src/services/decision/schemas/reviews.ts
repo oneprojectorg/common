@@ -7,6 +7,8 @@ import { z } from 'zod';
 import type { RubricTemplateSchema } from '../types';
 import { proposalSchema } from './proposal';
 
+export { ProposalReviewAssignmentStatus };
+
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 
 const rubricTemplateSchema = jsonObjectSchema.transform(
