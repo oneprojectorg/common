@@ -13,7 +13,7 @@ import {
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
-import { runResultsProcessing } from './runResultsProcessing';
+import { onPhaseAdvanced } from './onPhaseAdvanced';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface TriggerPhaseAdvancementInput {
@@ -37,9 +37,6 @@ export interface TriggerPhaseAdvancementResult {
  * Manually advance a decision instance from its current phase to the next phase.
  * Validates admin access and instance eligibility, then delegates the actual
  * phase advance to the shared `advancePhase` core function.
- *
- * When transitioning to the final phase: additionally runs processResults to
- * store final selections in the results tables and update proposal statuses.
  */
 export async function triggerPhaseAdvancement({
   instanceId,
@@ -108,10 +105,8 @@ export async function triggerPhaseAdvancement({
   }
 
   const toPhaseId = phases[currentPhaseIndex + 1]!.phaseId;
-  const isTransitioningToFinalPhase =
-    currentPhaseIndex + 1 === phases.length - 1;
 
-  await db.transaction(async (tx) => {
+  const advanceResult = await db.transaction(async (tx) => {
     const result = await advancePhase({
       tx,
       instance: {
@@ -127,14 +122,11 @@ export async function triggerPhaseAdvancement({
     if (result.conflict) {
       throw new ConflictError('Phase transition conflict');
     }
+
+    return result;
   });
 
-  // processResults runs as a separate top-level operation: the join table
-  // writes inside advancePhase are per-transition, while processResults
-  // populates decisionProcessResults + selections + proposal statuses.
-  if (isTransitioningToFinalPhase) {
-    await runResultsProcessing(instanceId);
-  }
+  await onPhaseAdvanced({ instanceId, toPhaseId, phases, advanceResult });
 
   return {
     currentPhaseId: toPhaseId,

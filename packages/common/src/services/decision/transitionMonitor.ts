@@ -8,8 +8,11 @@ import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
-import { runResultsProcessing } from './runResultsProcessing';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { onPhaseAdvanced } from './onPhaseAdvanced';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -98,18 +101,13 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           return;
         }
 
-        const lastPhaseId = phases[phases.length - 1]!.phaseId;
-
-        const lastSuccessfulToStateId = await advanceInstanceTransitions({
+        await advanceInstanceTransitions({
           processInstanceId,
           transitions,
+          phases,
           now,
           result,
         });
-
-        if (lastSuccessfulToStateId === lastPhaseId) {
-          await runResultsProcessing(processInstanceId);
-        }
       },
       { concurrency: 5 },
     );
@@ -148,15 +146,16 @@ function groupTransitionsByInstance(
 async function advanceInstanceTransitions({
   processInstanceId,
   transitions,
+  phases,
   now,
   result,
 }: {
   processInstanceId: string;
   transitions: DueTransition[];
+  phases: PhaseInstanceData[];
   now: string;
   result: ProcessDecisionsTransitionsResult;
-}): Promise<string | null> {
-  let lastSuccessfulToStateId: string | null = null;
+}): Promise<void> {
   let currentInstanceData = transitions[0]!.instance
     .instanceData as DecisionInstanceData;
 
@@ -194,8 +193,14 @@ async function advanceInstanceTransitions({
         break;
       }
 
-      lastSuccessfulToStateId = transition.toStateId;
       result.processed++;
+
+      await onPhaseAdvanced({
+        instanceId: processInstanceId,
+        toPhaseId: transition.toStateId,
+        phases,
+        advanceResult,
+      });
 
       // Re-fetch so the next iteration sees the committed state.
       const refreshed = await db.query.processInstances.findFirst({
@@ -216,5 +221,4 @@ async function advanceInstanceTransitions({
     }
   }
 
-  return lastSuccessfulToStateId;
 }

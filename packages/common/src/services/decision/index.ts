@@ -18,6 +18,9 @@ export * from './getDecisionBySlug';
 // Shared phase advancement core (used by transitionFromPhase and transitionMonitor)
 export * from './advancePhase';
 
+// Post-advance hook
+export * from './onPhaseAdvanced';
+
 // Manual transition
 export * from './triggerPhaseAdvancement';
 
@@ -48,6 +51,7 @@ export * from './updateProposal';
 export * from './getProposal';
 export * from './listProposalVersions';
 export * from './listProposals';
+export * from './generateReviewAssignments';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './submitReview';
