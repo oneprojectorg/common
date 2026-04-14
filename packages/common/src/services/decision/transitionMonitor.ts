@@ -220,5 +220,4 @@ async function advanceInstanceTransitions({
       break;
     }
   }
-
 }

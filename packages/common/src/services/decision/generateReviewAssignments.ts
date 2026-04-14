@@ -78,9 +78,7 @@ export async function generateReviewAssignments({
       .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
       .where(eq(profileUsers.profileId, decisionProfileId))
       .then((rows) =>
-        rows
-          .map((r) => r.profileId)
-          .filter((id): id is string => id != null),
+        rows.map((r) => r.profileId).filter((id): id is string => id != null),
       ),
   ]);
 

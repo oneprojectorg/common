@@ -1,5 +1,5 @@
 import type { AdvancePhaseResult } from './advancePhase';
-import { generateReviewAssignments } from './generateReviewAssignments';
+import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { runResultsProcessing } from './runResultsProcessing';
 import type { PhaseInstanceData } from './schemas/instanceData';
 
@@ -20,30 +20,18 @@ export interface OnPhaseAdvancedInput {
  * Runs outside the advance transaction on purpose: a failure here must not
  * roll back the phase transition itself.
  */
-export async function onPhaseAdvanced({
-  instanceId,
-  toPhaseId,
-  phases,
-  advanceResult,
-}: OnPhaseAdvancedInput): Promise<void> {
-  const targetPhase = phases.find((p) => p.phaseId === toPhaseId);
+export async function onPhaseAdvanced(
+  input: OnPhaseAdvancedInput,
+): Promise<void> {
+  const targetPhase = input.phases.find((p) => p.phaseId === input.toPhaseId);
+
   if (targetPhase?.rules?.proposals?.review) {
-    try {
-      await generateReviewAssignments({
-        instanceId,
-        phaseId: toPhaseId,
-        selectedProposalIds: advanceResult.selectedProposalIds,
-      });
-    } catch (error) {
-      console.error(
-        `Review assignment generation failed for instance ${instanceId}, phase ${toPhaseId}:`,
-        error,
-      );
-    }
+    await runGenerateReviewAssignments(input);
   }
 
-  const isNowOnFinalPhase = phases[phases.length - 1]?.phaseId === toPhaseId;
+  const isNowOnFinalPhase =
+    input.phases[input.phases.length - 1]?.phaseId === input.toPhaseId;
   if (isNowOnFinalPhase) {
-    await runResultsProcessing(instanceId);
+    await runResultsProcessing(input);
   }
 }

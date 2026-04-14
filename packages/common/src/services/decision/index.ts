@@ -52,6 +52,7 @@ export * from './getProposal';
 export * from './listProposalVersions';
 export * from './listProposals';
 export * from './generateReviewAssignments';
+export * from './runGenerateReviewAssignments';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './submitReview';
