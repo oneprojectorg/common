@@ -1,5 +1,3 @@
-'use client';
-
 import type {
   ProposalReviewAssignment,
   ReviewAssignmentExtended,
@@ -13,7 +11,9 @@ import {
   LuTimer,
 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
+
+import { TranslatedText } from '@/components/TranslatedText';
 
 import { Bullet } from '../Bullet';
 import {
@@ -36,7 +36,6 @@ export function ReviewAssignmentCard({
   assignment: { assignment },
   viewHref,
 }: ReviewAssignmentCardProps) {
-  const t = useTranslations();
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
 
@@ -53,7 +52,7 @@ export function ReviewAssignmentCard({
               <div className="flex items-center gap-1">
                 <LuRefreshCw className="size-4 text-primary-orange2" />
                 <span className="text-sm text-neutral-charcoal">
-                  {t('Revised')}
+                  <TranslatedText text="Revised" />
                 </span>
               </div>
             </>
@@ -107,23 +106,23 @@ const statusConfig: Record<
   },
 };
 
+const statusLabels: Record<AssignmentStatus, TranslationKey> = {
+  pending: 'Not Started',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  awaiting_author_revision: 'Revision Requested',
+  ready_for_re_review: 'Needs Review',
+};
+
 function ReviewStatusBadge({ status }: { status: AssignmentStatus }) {
-  const t = useTranslations();
-
-  const labels: Record<AssignmentStatus, string> = {
-    pending: t('Not Started'),
-    in_progress: t('In Progress'),
-    completed: t('Completed'),
-    awaiting_author_revision: t('Revision Requested'),
-    ready_for_re_review: t('Needs Review'),
-  };
-
   const { icon: Icon, bgClass, textClass, iconClass } = statusConfig[status];
 
   return (
     <div className={cn('flex w-fit items-center gap-1 rounded-lg', bgClass)}>
       <Icon className={cn('size-4', iconClass)} />
-      <span className={cn('text-base', textClass)}>{labels[status]}</span>
+      <span className={cn('text-base', textClass)}>
+        <TranslatedText text={statusLabels[status]} />
+      </span>
     </div>
   );
 }
