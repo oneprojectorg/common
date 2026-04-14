@@ -83,6 +83,16 @@ test.describe('Edit Published Process', () => {
       authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
+    // 9b. Toggle Required off (new criteria default to required=true)
+    const requiredToggle = authenticatedPage.getByRole('button', {
+      name: 'Required',
+    });
+    await expect(requiredToggle).toHaveAttribute('aria-pressed', 'true', {
+      timeout: 3_000,
+    });
+    await requiredToggle.click();
+    await expect(requiredToggle).toHaveAttribute('aria-pressed', 'false');
+
     // 10. Navigate away to Overview
     const overviewButton = sidebarNav.getByRole('button', {
       name: 'Overview',
@@ -105,6 +115,15 @@ test.describe('Edit Published Process', () => {
     await expect(
       authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
+
+    // 14. Expand the criterion card and verify Required toggle persisted as off
+    await authenticatedPage
+      .getByText('Untitled field', { exact: true })
+      .first()
+      .click();
+    await expect(
+      authenticatedPage.getByRole('button', { name: 'Required' }),
+    ).toHaveAttribute('aria-pressed', 'false', { timeout: 6_000 });
   });
 
   test('proposal template fields survive section navigation', async ({
