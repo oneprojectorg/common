@@ -57,7 +57,7 @@ interface RubricCriterionCardProps {
  *
  * Uses CollapsibleConfigCard to match the proposal template FieldCard pattern:
  * drag handle + label in header, content with field name, description,
- * criterion type selector, and a footer with required toggle + delete.
+ * and criterion type selector.
  */
 export function RubricCriterionCard({
   criterion,
@@ -76,13 +76,12 @@ export function RubricCriterionCard({
 }: RubricCriterionCardProps) {
   const t = useTranslations();
   const cardRef = useRef<HTMLDivElement>(null);
-  const fieldNameRef = useRef<HTMLInputElement>(null);
 
   const displayLabel = criterion.label || t('Untitled field');
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
-      ? `${criterion.maxPoints}${t('pts')}`
+      ? `${criterion.maxPoints} ${t('pts')}`
       : t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey);
 
   // Only trigger validation when focus leaves the card entirely
@@ -96,7 +95,11 @@ export function RubricCriterionCard({
     <div
       ref={cardRef}
       onBlur={handleBlur}
-      onAnimationEnd={() => onNewComplete?.(criterion.id)}
+      onAnimationEnd={(e) => {
+        if (e.animationName === 'border-highlight') {
+          onNewComplete?.(criterion.id);
+        }
+      }}
       className="scroll-m-6"
     >
       <CollapsibleConfigCard
@@ -117,7 +120,6 @@ export function RubricCriterionCard({
         <div className="space-y-4 px-8">
           {/* Field name */}
           <TextField
-            ref={fieldNameRef}
             label={t('Field name')}
             isRequired
             value={criterion.label}
