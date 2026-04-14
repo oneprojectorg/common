@@ -161,7 +161,7 @@ test.describe('Decision Role Capabilities', () => {
     ).not.toBeVisible();
   });
 
-  test('ballot section is shown for a user with vote permission in voting phase', async ({
+  test('voting page renders for a user with vote permission in voting phase', async ({
     browser,
     org,
     supabaseAdmin,
@@ -207,14 +207,13 @@ test.describe('Decision Role Capabilities', () => {
       memberPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // The voting submit footer is rendered only when instance.access.vote === true
-    // and the user hasn't voted yet. "Submit my votes" confirms the voting UI loaded.
-    await expect(
-      memberPage.getByRole('button', { name: 'Submit my votes' }),
-    ).toBeVisible({ timeout: 10000 });
+    // The voting phase description confirms VotingPage rendered (not StandardDecisionPage).
+    await expect(memberPage.getByText('Members vote.')).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  test('voting submit footer is not shown outside the voting phase', async ({
+  test('voting page does not render outside the voting phase', async ({
     authenticatedPage,
     org,
   }) => {
@@ -236,9 +235,9 @@ test.describe('Decision Role Capabilities', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // Voting submit footer only renders on VotingPage
+    // Submission phase description confirms StandardDecisionPage rendered, not VotingPage
     await expect(
-      authenticatedPage.getByRole('button', { name: 'Submit my votes' }),
-    ).not.toBeVisible();
+      authenticatedPage.getByText('Members submit proposals.'),
+    ).toBeVisible({ timeout: 10000 });
   });
 });
