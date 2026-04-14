@@ -1,9 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
 import type { RubricTemplateSchema } from '@op/common/client';
-import { useDebouncedCallback } from '@op/hooks';
 import { Accordion, AccordionItem } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
@@ -13,12 +11,12 @@ import { Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
-import { useShallow } from 'zustand/react/shallow';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n/routing';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
+import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
@@ -50,27 +48,27 @@ import {
 } from './RubricCriterionCard';
 import { RubricParticipantPreview } from './RubricParticipantPreview';
 
-const AUTOSAVE_DEBOUNCE_MS = 1000;
-
 export function RubricEditorContent({
-  decisionProfileId,
   instanceId,
+  decisionProfileId,
 }: SectionProps) {
   const t = useTranslations();
 
+  const storeRubricTemplate = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId]?.rubricTemplate,
+  );
+
   // Load instance data from the backend
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === ProcessStatus.DRAFT;
-  const utils = trpc.useUtils();
   const instanceData = instance.instanceData;
 
   const initialTemplate = useMemo(() => {
-    const saved = instanceData?.rubricTemplate;
+    const saved = storeRubricTemplate ?? instanceData?.rubricTemplate;
     if (saved && Object.keys(saved.properties ?? {}).length > 0) {
       return saved as RubricTemplateSchema;
     }
     return createEmptyRubricTemplate();
-  }, [instanceData?.rubricTemplate]);
+  }, [storeRubricTemplate, instanceData?.rubricTemplate]);
 
   const [template, setTemplate] =
     useState<RubricTemplateSchema>(initialTemplate);
@@ -94,28 +92,7 @@ export function RubricEditorContent({
     Map<string, { maximum: number; oneOf: { const: number; title: string }[] }>
   >(new Map());
 
-  const { setRubricTemplateSchema, setSaveStatus, markSaved, getSaveState } =
-    useProcessBuilderStore(
-      useShallow((s) => ({
-        setRubricTemplateSchema: s.setRubricTemplateSchema,
-        setSaveStatus: s.setSaveStatus,
-        markSaved: s.markSaved,
-        getSaveState: s.getSaveState,
-      })),
-    );
-  const saveState = getSaveState(decisionProfileId);
-
-  const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: () => setSaveStatus(decisionProfileId, 'error'),
-    onSettled: () => {
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Derive criterion views from the template
   const criteria = useMemo(() => getCriteria(template), [template]);
@@ -124,35 +101,14 @@ export function RubricEditorContent({
     [criteria],
   );
 
-  // TODO: Extract this debounced auto-save pattern into a shared useAutoSave() hook
-  // (same pattern is used in TemplateEditorContent and useProposalDraft)
-  const debouncedSave = useDebouncedCallback(
-    (updatedTemplate: RubricTemplateSchema) => {
-      setRubricTemplateSchema(decisionProfileId, updatedTemplate);
-
-      if (isDraft) {
-        updateInstance.mutate({
-          instanceId,
-          rubricTemplate: updatedTemplate,
-        });
-      } else {
-        markSaved(decisionProfileId);
-      }
-    },
-    AUTOSAVE_DEBOUNCE_MS,
-  );
-  debouncedSaveRef.current = () => debouncedSave.isPending();
-
-  // Trigger debounced save when template changes (skip initial load)
+  // Save rubric changes via the shared autosave context (skip initial load)
   useEffect(() => {
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       return;
     }
-
-    setSaveStatus(decisionProfileId, 'saving');
-    debouncedSave(template);
-  }, [template, decisionProfileId, setSaveStatus, debouncedSave]);
+    saveChanges({ rubricTemplate: template });
+  }, [template]);
 
   // --- Handlers ---
 
@@ -274,8 +230,8 @@ export function RubricEditorContent({
               {t('Review Criteria')}
             </Header2>
             <SaveStatusIndicator
-              status={saveState.status}
-              savedAt={saveState.savedAt}
+              status={autosaveStatus.status}
+              savedAt={autosaveStatus.savedAt}
             />
           </div>
 

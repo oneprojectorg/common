@@ -1,24 +1,24 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
 import type { ProposalCategory } from '@op/common';
-import { useDebouncedCallback } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { ensureLockedFields } from '@/components/decisions/proposalTemplate';
 
-const AUTOSAVE_DEBOUNCE_MS = 1000;
 const CATEGORY_TITLE_MAX_LENGTH = 50;
 
 interface CategoryConfig {
@@ -32,22 +32,15 @@ export function ProposalCategoriesSectionContent({
   instanceId,
 }: SectionProps) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
 
   // Fetch server data for seeding
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const isDraft = instance.status === ProcessStatus.DRAFT;
   const serverConfig = instance.instanceData?.config;
 
   const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
-  const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
-  const setProposalTemplateSchema = useProcessBuilderStore(
-    (s) => s.setProposalTemplateSchema,
-  );
-  const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
-  const markSaved = useProcessBuilderStore((s) => s.markSaved);
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Local state — immediate source of truth for UI
   // Seed from store (localStorage) first, then fall back to server data
@@ -66,65 +59,29 @@ export function ProposalCategoriesSectionContent({
   const { categories, requireCategorySelection, allowMultipleCategories } =
     config;
 
-  // tRPC mutation with cache invalidation (matches phase editor pattern)
-  const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: () => setSaveStatus(decisionProfileId, 'error'),
-    onSettled: () => {
-      // Skip invalidation if another debounced save is pending — that save's
-      // onSettled will reconcile. This prevents a stale refetch from overwriting
-      // optimistic cache updates made between the two saves.
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
-
-  // Debounced auto-save: draft persists to API, non-draft only buffers locally.
+  // Update local state and save via centralized autosave.
   // Also syncs the proposalTemplate so that the category field and required
-  // array stay consistent with the config — even if the template editor is
-  // not currently mounted.
-  const debouncedSave = useDebouncedCallback((data: CategoryConfig) => {
-    setSaveStatus(decisionProfileId, 'saving');
-    setInstanceData(decisionProfileId, { config: data });
+  // array stay consistent with the config.
+  const updateConfig = (update: Partial<CategoryConfig>) => {
+    const updated = { ...config, ...update };
+    setConfig(updated);
 
     const existingTemplate =
       storeData?.proposalTemplate ?? instance.instanceData.proposalTemplate;
 
-    const mutation: Parameters<typeof updateInstance.mutate>[0] = {
-      instanceId,
-      config: data,
-    };
+    const payload: Partial<ProcessBuilderInstanceData> = { config: updated };
 
     if (existingTemplate) {
-      const syncedTemplate = ensureLockedFields(existingTemplate, {
+      payload.proposalTemplate = ensureLockedFields(existingTemplate, {
         titleLabel: t('Proposal title'),
         categoryLabel: t('Category'),
-        categories: data.categories,
-        allowMultipleCategories: data.allowMultipleCategories,
-        requireCategorySelection: data.requireCategorySelection,
+        categories: updated.categories,
+        allowMultipleCategories: updated.allowMultipleCategories,
+        requireCategorySelection: updated.requireCategorySelection,
       });
-      mutation.proposalTemplate = syncedTemplate;
-      setProposalTemplateSchema(decisionProfileId, syncedTemplate);
     }
 
-    if (isDraft) {
-      updateInstance.mutate(mutation);
-    } else {
-      markSaved(decisionProfileId);
-    }
-  }, AUTOSAVE_DEBOUNCE_MS);
-  debouncedSaveRef.current = () => debouncedSave.isPending();
-
-  // Update local state and trigger debounced save
-  const updateConfig = (update: Partial<CategoryConfig>) => {
-    setConfig((prev) => {
-      const updated = { ...prev, ...update };
-      debouncedSave(updated);
-      return updated;
-    });
+    saveChanges(payload);
   };
 
   // Ephemeral form UI state
@@ -200,9 +157,15 @@ export function ProposalCategoriesSectionContent({
   return (
     <div className="mx-auto w-full space-y-6 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="space-y-2">
-        <Header2 className="font-serif text-title-sm">
-          {t('Proposal Categories')}
-        </Header2>
+        <div className="flex items-center justify-between">
+          <Header2 className="font-serif text-title-sm">
+            {t('Proposal Categories')}
+          </Header2>
+          <SaveStatusIndicator
+            status={autosaveStatus.status}
+            savedAt={autosaveStatus.savedAt}
+          />
+        </div>
         <p className="text-neutral-gray4">
           {t(
             'Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.',

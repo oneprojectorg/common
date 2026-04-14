@@ -96,7 +96,8 @@ test.describe('Create Process Instance', () => {
     // Open the first phase detail form
     await phaseConfigureButtons.first().click();
 
-    const nextButton = authenticatedPage.getByRole('button', { name: 'Next' });
+    const footer = authenticatedPage.getByRole('contentinfo');
+    const nextButton = footer.getByRole('button', { name: 'Next' }).first();
 
     for (let i = 0; i < phaseCount; i++) {
       // Wait for the phase detail form to load
@@ -178,6 +179,22 @@ test.describe('Create Process Instance', () => {
     await expect(
       authenticatedPage.getByText('Proposal template').first(),
     ).toBeVisible({ timeout: 12_000 });
+
+    // 10b. Add a custom field so the template passes validation (requires at
+    //       least 1 non-system field). Click "Add field" in the sidebar, then
+    //       pick "Short text" from the menu.
+    const addFieldButton = authenticatedPage.getByRole('button', {
+      name: 'Add field',
+    });
+    await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
+    await addFieldButton.click();
+    await authenticatedPage
+      .getByRole('menuitem', { name: 'Short text' })
+      .click();
+
+    // Wait for the autosave to persist the new field
+    const templateFieldSaved = waitForAutoSave(authenticatedPage);
+    await templateFieldSaved;
 
     // 11. Expand the Budget card — budget is enabled by default in the template
     //     Use a regex to match "Budget Optional" or "Budget Required" while

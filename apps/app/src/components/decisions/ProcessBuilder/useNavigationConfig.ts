@@ -19,6 +19,10 @@ export function useNavigationConfig(
     { enabled: !!instanceId },
   );
 
+  const storePhases = useProcessBuilderStore((s) =>
+    decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
+  );
+
   const reviewFlowEnabled = useFeatureFlag('review_flow');
   const storeOrganizeByCategories = useProcessBuilderStore((s) =>
     decisionProfileId
@@ -30,7 +34,7 @@ export function useNavigationConfig(
     instance?.instanceData?.config?.organizeByCategories ??
     true;
 
-  const phases = instance?.instanceData?.phases ?? [];
+  const phases = storePhases ?? instance?.instanceData?.phases ?? [];
   const hasReviewPhase = phases.some(
     (p) => p.rules?.proposals?.review === true,
   );

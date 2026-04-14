@@ -12,6 +12,7 @@ import { LuLogOut } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
+import { useProcessBuilderAutosave } from './ProcessBuilderAutosaveContext';
 import { ProgressIndicator } from './components/ProgressIndicator';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
@@ -57,14 +58,18 @@ export const ProcessBuilderFooter = ({
   const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
+  const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
   const displayName =
     storeData?.name || decisionProfile?.name || t('New process');
 
+  const { flushPendingChanges } = useProcessBuilderAutosave();
   const utils = trpc.useUtils();
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
       toast.success({ message: t('Changes saved successfully') });
+      // Clear stale store data so the editor reseeds from fresh server data
+      clearInstance(decisionProfileId);
       await utils.decision.getDecisionBySlug.invalidate({ slug });
       if (data.slug !== slug) {
         await utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
@@ -79,7 +84,16 @@ export const ProcessBuilderFooter = ({
     },
   });
 
-  const handleLaunchOrSave = () => {
+  const handleLaunchOrSave = async () => {
+    // Flush any pending autosave so in-flight draft saves complete
+    // before launching or updating. For non-draft, this is a no-op
+    // but ensures a clean state.
+    const flushed = await flushPendingChanges();
+    if (!flushed) {
+      // Error already toasted by the autosave context's onError callback.
+      return;
+    }
+
     if (isDraft) {
       setIsLaunchModalOpen(true);
     } else {
