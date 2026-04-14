@@ -2,7 +2,7 @@
 
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
-import { type InstancePhaseData } from '@op/api/encoders';
+import { type InstancePhaseData, type ProcessInstance } from '@op/api/encoders';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -17,21 +17,21 @@ export function VotingPage({
   instanceId,
   slug,
   decisionSlug,
+  instance,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
+  /** Pre-fetched instance data — passed from the server to avoid redundant client-side fetching */
+  instance: ProcessInstance;
 }) {
   const t = useTranslations();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instanceId,
+    limit: 20,
+  });
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 

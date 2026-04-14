@@ -2,7 +2,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
-import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
+import { ResultsPage } from '@/components/decisions/pages/ResultsPage';
 
 function DecisionHeaderSkeleton() {
   return (
@@ -43,7 +43,11 @@ const DecisionInstancePageContent = ({
     <Suspense fallback={<DecisionHeaderSkeleton />}>
       <DecisionHeader instanceId={instanceId} slug={slug} useLegacy>
         <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionStateRouter instanceId={instanceId} slug={slug} useLegacy />
+          <ResultsPage
+            instanceId={instanceId}
+            profileSlug={slug}
+            useLegacy
+          />
         </Suspense>
       </DecisionHeader>
     </Suspense>

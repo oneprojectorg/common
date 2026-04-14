@@ -1,4 +1,4 @@
-import { type ProcessPhase } from '@op/api/encoders';
+import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 import type { DecisionInstanceData } from '@op/common';
 import { cn } from '@op/ui/utils';
@@ -10,34 +10,52 @@ import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessSt
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 
 interface DecisionHeaderProps {
-  instanceId: string;
   children?: ReactNode;
   /** Decision profile slug for building the edit link */
   decisionSlug?: string;
   /** Whether the current user has admin access to this decision */
   isAdmin?: boolean;
-  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
-  useLegacy?: boolean;
   /** Profile slug for back button — required when useLegacy is true */
   slug?: string;
   /** Title from the decision profile */
   profileName?: string;
+  /**
+   * Pre-fetched instance data. When provided, DecisionHeader skips its own
+   * getInstance call and uses this data directly — eliminating a redundant
+   * server-side fetch.
+   */
+  instance?: ProcessInstance;
+  /**
+   * Instance ID — only required when `instance` is not provided (legacy route).
+   * When `instance` is provided, the ID is read from `instance.id`.
+   */
+  instanceId?: string;
+  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
+  useLegacy?: boolean;
 }
 
 export async function DecisionHeader({
-  instanceId,
   children,
   decisionSlug,
   isAdmin,
   useLegacy = false,
   slug,
   profileName,
+  instance: instanceProp,
+  instanceId: instanceIdProp,
 }: DecisionHeaderProps) {
-  const client = await createClient();
+  // When instance is pre-fetched (new route), use it directly.
+  // Otherwise (legacy route), fetch via tRPC server client.
+  let instance;
 
-  const instance = useLegacy
-    ? await client.decision.getLegacyInstance({ instanceId })
-    : await client.decision.getInstance({ instanceId });
+  if (instanceProp) {
+    instance = instanceProp;
+  } else if (instanceIdProp) {
+    const client = await createClient();
+    instance = useLegacy
+      ? await client.decision.getLegacyInstance({ instanceId: instanceIdProp })
+      : await client.decision.getInstance({ instanceId: instanceIdProp });
+  }
 
   if (!instance) {
     notFound();
