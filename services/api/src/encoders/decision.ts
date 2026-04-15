@@ -236,6 +236,8 @@ const instanceDataWithSchemaEncoder = z.object({
   templateVersion: z.string().optional(),
   templateName: z.string().optional(),
   templateDescription: z.string().optional(),
+  /** IANA timezone of the user who configured phase dates (e.g. "America/New_York"). */
+  timezone: z.string().optional(),
   phases: z.array(instancePhaseDataEncoder).optional(),
   proposalTemplate: jsonSchemaEncoder.optional(),
   rubricTemplate: rubricTemplateEncoder.optional(),
@@ -526,6 +528,8 @@ export const updateDecisionInstanceInputSchema = z.object({
   config: processConfigEncoder.optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
+  /** IANA timezone of the user who configured phase dates (e.g. "America/New_York"). */
+  timezone: z.string().optional(),
   /** Proposal template (JSON Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
   /**

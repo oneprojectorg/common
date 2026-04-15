@@ -35,6 +35,7 @@ export const updateDecisionInstance = async ({
   stewardProfileId,
   config,
   phases,
+  timezone,
   proposalTemplate,
   rubricTemplate,
   user,
@@ -48,6 +49,8 @@ export const updateDecisionInstance = async ({
   config?: ProcessConfig;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
+  /** IANA timezone of the user who configured phase dates (e.g. "America/New_York"). */
+  timezone?: string;
   /** Proposal template (JSON Schema) */
   proposalTemplate?: Record<string, unknown>;
   /** Rubric template (JSON Schema defining evaluation criteria) */
@@ -121,12 +124,14 @@ export const updateDecisionInstance = async ({
   // Apply config, phase overrides, and/or template updates to existing instanceData
   const hasConfigUpdate = config !== undefined;
   const hasPhaseUpdates = phases && phases.length > 0;
+  const hasTimezoneUpdate = timezone !== undefined;
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
   const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
   if (
     hasConfigUpdate ||
     hasPhaseUpdates ||
+    hasTimezoneUpdate ||
     hasProposalTemplateUpdate ||
     hasRubricTemplateUpdate
   ) {
@@ -153,6 +158,11 @@ export const updateDecisionInstance = async ({
         ...config,
         ...(config?.categories ? { categories: normalizedCategories } : {}),
       };
+    }
+
+    // Store the browser timezone so scheduled transitions use the correct offset
+    if (hasTimezoneUpdate) {
+      updatedInstanceData.timezone = timezone;
     }
 
     // Apply phase updates — replaces the full phases array to accommodate

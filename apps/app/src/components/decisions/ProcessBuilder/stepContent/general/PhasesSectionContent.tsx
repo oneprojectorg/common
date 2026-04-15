@@ -96,7 +96,11 @@ export function PhasesSectionContent({
     setInstanceData(decisionProfileId, { phases: phasesPayload });
 
     if (isDraft) {
-      updateInstance.mutate({ instanceId, phases: phasesPayload });
+      updateInstance.mutate({
+        instanceId,
+        phases: phasesPayload,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
     } else {
       markSaved(decisionProfileId);
     }

@@ -143,7 +143,13 @@ function PhaseDetailForm({
       setInstanceData(decisionProfileId, { phases: phasesPayload });
 
       if (isDraft) {
-        updateInstance.mutate({ instanceId, phases: phasesPayload });
+        const browserTimezone =
+          Intl.DateTimeFormat().resolvedOptions().timeZone;
+        updateInstance.mutate({
+          instanceId,
+          phases: phasesPayload,
+          timezone: browserTimezone,
+        });
       } else {
         markSaved(decisionProfileId);
       }
@@ -208,7 +214,11 @@ function PhaseDetailForm({
 
     if (isDraft) {
       updateInstance.mutate(
-        { instanceId, phases: remainingPhases },
+        {
+          instanceId,
+          phases: remainingPhases,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
         {
           onSuccess: () => {
             onDelete();

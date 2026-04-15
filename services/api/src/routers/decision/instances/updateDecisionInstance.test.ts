@@ -862,6 +862,50 @@ describe.concurrent('updateDecisionInstance', () => {
     ).rejects.toThrow();
   });
 
+  it('should persist timezone in instanceData when sent with phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Get current phases
+    const dbInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+    const currentData = dbInstance!.instanceData as DecisionInstanceData;
+
+    const endDate = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: currentData.phases.map((p) => ({
+        phaseId: p.phaseId,
+        endDate,
+      })),
+      timezone: 'America/New_York',
+    });
+
+    const updatedInstance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+    const updatedData = updatedInstance!.instanceData as DecisionInstanceData;
+    expect(updatedData.timezone).toBe('America/New_York');
+  });
+
   it('should allow non-owner admin to update other fields without changing steward', async ({
     task,
     onTestFinished,

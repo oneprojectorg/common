@@ -39,6 +39,8 @@ export interface DecisionInstanceData {
   templateVersion?: string;
   templateName?: string;
   templateDescription?: string;
+  /** IANA timezone of the user who configured phase dates (e.g. "America/New_York"). */
+  timezone?: string;
   phases: PhaseInstanceData[];
   /** Proposal template (JSON Schema) */
   proposalTemplate?: ProposalTemplateSchema;

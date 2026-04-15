@@ -89,6 +89,7 @@ export const ProcessBuilderFooter = ({
         description: storeData?.description || undefined,
         stewardProfileId: storeData?.stewardProfileId || undefined,
         phases: storeData?.phases,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         proposalTemplate: storeData?.proposalTemplate,
         rubricTemplate: storeData?.rubricTemplate,
         config: storeData?.config,
