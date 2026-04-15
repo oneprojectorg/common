@@ -1,5 +1,4 @@
 import { db } from '@op/db/client';
-import { ProposalReviewRequestState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
@@ -8,7 +7,11 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { resolveAssignmentProposal } from './reviewHelpers';
+import {
+  getActiveRevisionRequest,
+  resolveAssignmentProposal,
+  reviewAssignmentWithConfig,
+} from './reviewHelpers';
 import {
   type ReviewAssignmentList,
   reviewAssignmentListSchema,
@@ -45,34 +48,7 @@ export async function listReviewAssignments({
       reviewerProfileId: dbUser.profileId,
       ...(status && { status }),
     },
-    with: {
-      assignedProposalHistory: {
-        with: {
-          submittedBy: {
-            with: {
-              avatarImage: true,
-            },
-          },
-          profile: true,
-        },
-      },
-      proposal: {
-        with: {
-          submittedBy: {
-            with: {
-              avatarImage: true,
-            },
-          },
-          profile: true,
-        },
-      },
-      reviews: true,
-      requests: {
-        orderBy: {
-          createdAt: 'desc',
-        },
-      },
-    },
+    with: reviewAssignmentWithConfig,
     orderBy: {
       assignedAt: dir,
     },
@@ -130,12 +106,7 @@ export async function listReviewAssignments({
       },
       rubricTemplate,
       review: assignment.reviews[0] ?? null,
-      revisionRequest:
-        assignment.requests.find(
-          (r) => r.state === ProposalReviewRequestState.REQUESTED,
-        ) ??
-        assignment.requests[0] ??
-        null,
+      revisionRequest: getActiveRevisionRequest(assignment.requests),
     };
   });
 

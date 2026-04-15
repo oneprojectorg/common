@@ -27,19 +27,18 @@ export async function requestRevision({
     user,
   });
 
-  if (
-    context.assignment.status ===
-    ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION
-  ) {
-    throw new ValidationError(
-      'A revision has already been requested for this assignment',
-    );
-  }
-
-  if (context.assignment.status === ProposalReviewAssignmentStatus.COMPLETED) {
-    throw new ValidationError(
-      'Cannot request a revision for a completed assignment',
-    );
+  switch (context.assignment.status) {
+    case ProposalReviewAssignmentStatus.PENDING:
+    case ProposalReviewAssignmentStatus.IN_PROGRESS:
+      break;
+    case ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION:
+      throw new ValidationError(
+        'A revision has already been requested for this assignment',
+      );
+    case ProposalReviewAssignmentStatus.COMPLETED:
+      throw new ValidationError(
+        'Cannot request a revision for a completed assignment',
+      );
   }
 
   const request = await db.transaction(async (tx) => {
