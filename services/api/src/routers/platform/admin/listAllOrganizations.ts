@@ -1,5 +1,5 @@
 import { decodeCursor, encodeCursor } from '@op/common';
-import { count, db, ilike, inArray } from '@op/db/client';
+import { and, count, db, eq, ilike, inArray, lt, or } from '@op/db/client';
 import { organizations, profiles } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -61,28 +61,29 @@ export const listAllOrganizationsRouter = router({
             ).map((p) => p.id)
           : null;
 
-      // Build V2 relational query filters
-      const cursorFilter = cursorValue
-        ? {
-            OR: [
-              { createdAt: { lt: cursorValue.date } },
-              { createdAt: cursorValue.date, id: { lt: cursorValue.id } },
-            ],
-          }
+      // Build cursor condition for keyset pagination
+      const cursorCondition = cursorValue
+        ? or(
+            lt(organizations.createdAt, cursorValue.date),
+            and(
+              eq(organizations.createdAt, cursorValue.date),
+              lt(organizations.id, cursorValue.id),
+            ),
+          )
         : undefined;
 
-      const searchFilter = matchingProfileIds
-        ? { profileId: { in: matchingProfileIds } }
+      const searchCondition = matchingProfileIds
+        ? inArray(organizations.profileId, matchingProfileIds)
         : undefined;
 
-      const whereFilter =
-        cursorFilter && searchFilter
-          ? { AND: [cursorFilter, searchFilter] }
-          : cursorFilter || searchFilter;
+      const whereCondition =
+        cursorCondition && searchCondition
+          ? and(cursorCondition, searchCondition)
+          : cursorCondition || searchCondition;
 
       const [allOrgs, totalCount] = await Promise.all([
-        db.query.organizations.findMany({
-          where: whereFilter,
+        db._query.organizations.findMany({
+          where: whereCondition,
           with: {
             profile: {
               columns: {
@@ -124,7 +125,10 @@ export const listAllOrganizationsRouter = router({
               },
             },
           },
-          orderBy: { createdAt: dir === 'asc' ? 'asc' : 'desc' },
+          orderBy: (_, { asc, desc }) =>
+            dir === 'asc'
+              ? asc(organizations.createdAt)
+              : desc(organizations.createdAt),
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
         db
