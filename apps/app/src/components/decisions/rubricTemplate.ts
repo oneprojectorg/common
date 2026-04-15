@@ -279,10 +279,6 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
     errors.push('Criterion label is required');
   }
 
-  if (!criterion.description?.trim()) {
-    errors.push('Criterion description is required');
-  }
-
   return errors;
 }
 
