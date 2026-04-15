@@ -52,13 +52,11 @@ export const VoteSubmittedEmail = ({
         </Section>
       )}
 
-      <Section className="pt-4 pb-0 text-center">
+      <Section className="pb-0">
         <Button
           href={decisionUrl}
-          className="w-full rounded-lg bg-primary-teal px-4 py-3 text-center text-white no-underline hover:bg-primary-teal/90"
+          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
           style={{
-            display: 'block',
-            width: '100%',
             fontSize: '0.875rem',
             textAlign: 'center',
             textDecoration: 'none',
