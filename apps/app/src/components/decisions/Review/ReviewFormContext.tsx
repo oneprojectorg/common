@@ -48,14 +48,14 @@ export function useReviewForm(): ReviewFormState {
 export function ReviewFormProvider({
   template,
   review,
-  initialRevisionRequest,
+  revisionRequest,
   assignmentId,
   decisionSlug,
   children,
 }: {
   template: RubricTemplateSchema;
   review: ProposalReview | null;
-  initialRevisionRequest: ProposalReviewRequest | null;
+  revisionRequest: ProposalReviewRequest | null;
   assignmentId: string;
   decisionSlug: string;
   children: ReactNode;
@@ -65,9 +65,6 @@ export function ReviewFormProvider({
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData ?? {},
   );
-  const [revisionRequest, setRevisionRequest] =
-    useState<ProposalReviewRequest | null>(initialRevisionRequest);
-
   const isSubmitted = review?.state === 'submitted';
   const isPausedForRevision = revisionRequest?.state === 'requested';
 
@@ -84,9 +81,10 @@ export function ReviewFormProvider({
   });
 
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
-    onSuccess: (data) => {
-      setRevisionRequest(data);
+    onSuccess: () => {
       toast.success({ message: t('Revision requested') });
+      // TODO: Replace with query invalidation
+      router.refresh();
     },
     onError: (error) => {
       toast.error({
@@ -97,9 +95,10 @@ export function ReviewFormProvider({
 
   const cancelRevisionMutation =
     trpc.decision.cancelRevisionRequest.useMutation({
-      onSuccess: (data) => {
-        setRevisionRequest(data);
+      onSuccess: () => {
         toast.success({ message: t('Revision request cancelled') });
+        // TODO: Replace with query invalidation
+        router.refresh();
       },
       onError: (error) => {
         toast.error({

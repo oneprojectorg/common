@@ -40,7 +40,7 @@ export function ReviewLayoutClient({
     <ReviewFormProvider
       template={rubricTemplate}
       review={review}
-      initialRevisionRequest={revisionRequest}
+      revisionRequest={revisionRequest}
       assignmentId={assignmentId}
       decisionSlug={decisionSlug}
     >
