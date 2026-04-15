@@ -83,7 +83,7 @@ export function ReviewFormProvider({
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Revision requested') });
-      // TODO: Replace with query invalidation
+      // TODO: To be replaced with query invalidation for server-side fetched data
       router.refresh();
     },
     onError: (error) => {
@@ -97,7 +97,7 @@ export function ReviewFormProvider({
     trpc.decision.cancelRevisionRequest.useMutation({
       onSuccess: () => {
         toast.success({ message: t('Revision request cancelled') });
-        // TODO: Replace with query invalidation
+        // TODO: To be replaced with query invalidation for server-side fetched data
         router.refresh();
       },
       onError: (error) => {

@@ -96,7 +96,7 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
         </>
       )}
 
-      <div className={isPausedForRevision ? 'opacity-50' : undefined}>
+      <div className={isPausedForRevision ? 'pointer-events-none opacity-50' : undefined}>
         <div className="flex flex-col gap-6">
           {fields.map((field) => (
             <RubricCriterionSection
