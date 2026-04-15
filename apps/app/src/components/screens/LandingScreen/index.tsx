@@ -37,15 +37,17 @@ export const LandingScreen = () => {
       <Suspense fallback={<WelcomeSkeleton />}>
         <WelcomeSection />
       </Suspense>
-      <Suspense
-        fallback={
-          <Surface>
-            <Skeleton className="h-52 w-full" />
-          </Surface>
-        }
-      >
-        <PlatformHighlights />
-      </Suspense>
+      <ErrorBoundary fallback={null}>
+        <Suspense
+          fallback={
+            <Surface>
+              <Skeleton className="h-52 w-full" />
+            </Surface>
+          }
+        >
+          <PlatformHighlights />
+        </Suspense>
+      </ErrorBoundary>
       <Suspense fallback={<UserContentSkeleton />}>
         <UserContent />
       </Suspense>
