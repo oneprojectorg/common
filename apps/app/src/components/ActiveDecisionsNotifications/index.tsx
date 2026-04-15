@@ -107,6 +107,7 @@ const RevisionRequestRow = ({
   const [dismissed, setDismissed] = useState(false);
   const [navigating, setNavigating] = useState(false);
 
+  // TODO: persist dismiss state and navigate to proposal edit — will be addressed in a coming PR
   if (dismissed) {
     return null;
   }
