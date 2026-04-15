@@ -401,14 +401,14 @@ function ProposalEditorInner({
       <div
         className={
           revisionRequest
-            ? 'flex flex-1 overflow-hidden'
+            ? 'mx-auto flex w-full max-w-[68rem] flex-1 overflow-hidden'
             : 'flex flex-1 flex-col'
         }
       >
         <div
           className={
             revisionRequest
-              ? 'flex flex-1 flex-col overflow-y-auto border-r border-neutral-gray2'
+              ? 'flex flex-1 flex-col overflow-y-auto border-r border-neutral-gray1'
               : 'flex flex-1 flex-col'
           }
         >

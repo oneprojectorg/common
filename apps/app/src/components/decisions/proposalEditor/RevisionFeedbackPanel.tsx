@@ -16,19 +16,21 @@ export function RevisionFeedbackPanel({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <Header3 className="font-serif text-title-sm">
-        {t('Revision feedback')}
-      </Header3>
+    <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
+      <div className="flex flex-col gap-4 border-b border-neutral-gray1 pb-4">
+        <Header3 className="font-serif text-title-base">
+          {t('Revision feedback')}
+        </Header3>
 
-      <p className="text-sm text-neutral-charcoal">
-        {t(
-          'The review committee has requested changes to your proposal. Edit your proposal and resubmit when ready.',
-        )}
-      </p>
+        <p className="text-sm text-neutral-black">
+          {t(
+            'A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.',
+          )}
+        </p>
+      </div>
 
-      <div className="flex flex-col gap-3">
-        <span className="text-sm font-medium text-primary-teal">
+      <div className="flex flex-col gap-4">
+        <span className="font-serif text-title-sm14 text-neutral-charcoal">
           {t('Reviewer feedback')}
         </span>
 
@@ -36,13 +38,13 @@ export function RevisionFeedbackPanel({
           comment={revisionRequest.requestComment}
           requestedAt={revisionRequest.requestedAt}
         />
-      </div>
 
-      <p className="text-sm text-neutral-gray4">
-        {t(
-          'When resubmitting, address each point in the feedback above. Describe what you changed in the resubmission form.',
-        )}
-      </p>
+        <p className="text-xs text-neutral-charcoal">
+          {t(
+            "When resubmitting, address each point in the feedback above. When you click Resubmit, you'll be asked to briefly describe what you changed so the reviewers know where to look.",
+          )}
+        </p>
+      </div>
     </div>
   );
 }
@@ -60,12 +62,12 @@ function FeedbackCard({
   });
 
   return (
-    <div className="rounded-sm border border-neutral-gray2 bg-neutral-gray1/30 p-4">
+    <div className="rounded-xl border border-neutral-gray1 p-6">
       <p className="text-sm whitespace-pre-wrap text-neutral-charcoal italic">
         {comment}
       </p>
       {requestedAt && (
-        <p className="mt-3 text-xs text-neutral-gray4">
+        <p className="mt-2 text-xs text-neutral-gray4">
           {t('Sent {timeAgo}', { timeAgo })}
         </p>
       )}

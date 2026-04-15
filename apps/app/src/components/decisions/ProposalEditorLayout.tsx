@@ -118,12 +118,7 @@ export function ProposalEditorLayout({
                 >
                   {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
                   {isRevisionMode ? (
-                    <>
-                      <span className="inline lg:hidden">{t('Resubmit')}</span>
-                      <span className="hidden lg:inline">
-                        {t('Resubmit proposal')}
-                      </span>
-                    </>
+                    t('Resubmit')
                   ) : isEditMode && !isDraft ? (
                     <>
                       <span className="inline lg:hidden">{t('Update')}</span>
