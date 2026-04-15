@@ -114,6 +114,7 @@ const RevisionRequestRow = ({
 
   const { proposal } = item;
   const title = proposal.profile.name;
+  // TODO: link to revision editor view — will be addressed in a coming PR
   const editHref = `/decisions/${item.decisionProfileSlug}/proposal/${proposal.profileId}/edit`;
 
   return (
