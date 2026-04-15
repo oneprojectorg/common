@@ -109,7 +109,7 @@ export const submitProposal = async ({
   }
 
   const collaborationDocVersionId = await getTipTapClient()
-    .createVersion(parsed.collaborationDocId, 'Submitted')
+    .createVersion(parsed.collaborationDocId, { name: 'Submitted' })
     .then((v) => v?.version ?? null)
     .catch((error: unknown) => {
       console.error(

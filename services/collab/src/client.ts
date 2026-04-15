@@ -21,6 +21,11 @@ export interface TipTapVersion {
   meta?: Record<string, unknown>;
 }
 
+export interface TipTapVersionCreateInput {
+  name?: string;
+  meta?: Record<string, unknown>;
+}
+
 type TipTapClientConfig = {
   appId: string;
   secret: string;
@@ -179,10 +184,12 @@ export function createTipTapClient(config: TipTapClientConfig) {
      */
     createVersion: async (
       docName: string,
-      name?: string,
+      input?: TipTapVersionCreateInput,
     ): Promise<TipTapVersion | null> => {
+      const payload = input?.name || input?.meta ? input : undefined;
+
       await api.post(`documents/${encodeURIComponent(docName)}/versions`, {
-        json: name ? { name } : undefined,
+        json: payload,
       });
 
       const versions = await api

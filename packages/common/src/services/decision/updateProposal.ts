@@ -259,7 +259,7 @@ async function createCheckpointVersion(
   }
 
   const latestVersion = await getTipTapClient()
-    .createVersion(parsed.collaborationDocId, 'Updated')
+    .createVersion(parsed.collaborationDocId, { name: 'Updated' })
     .then((v) => v?.version ?? null)
     .catch((error: unknown) => {
       console.error(

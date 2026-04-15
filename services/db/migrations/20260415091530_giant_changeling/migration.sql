@@ -1,0 +1,1 @@
+ALTER TABLE "decision_proposal_review_requests" ADD COLUMN "response_comment" text;
