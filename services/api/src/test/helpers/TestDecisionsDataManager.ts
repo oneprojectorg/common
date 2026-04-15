@@ -12,6 +12,7 @@ import {
   ProposalStatus,
   decisionProcesses,
   processInstances,
+  profileUserToAccessRoles,
   profiles,
   proposals,
   users,
@@ -43,6 +44,8 @@ interface CreateDecisionSetupOptions {
   status?: ProcessStatus;
   /** JSON Schema to validate proposal data against on submit/update */
   proposalTemplate?: Record<string, unknown>;
+  /** Custom process schema definition. Defaults to testMinimalSchema. */
+  processSchema?: DecisionSchemaDefinition;
 }
 
 type EncodedProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
@@ -163,6 +166,7 @@ export class TestDecisionsDataManager {
       grantAccess = false,
       status,
       proposalTemplate,
+      processSchema,
     } = opts || {};
 
     // 1. Create test user
@@ -226,7 +230,7 @@ export class TestDecisionsDataManager {
 
     // 3. Create decision process via direct DB insert with the new schema format
     const newProcessSchema = {
-      ...testMinimalSchema,
+      ...(processSchema ?? testMinimalSchema),
       name: processName,
       ...(proposalTemplate ? { proposalTemplate } : {}),
     };
@@ -425,6 +429,33 @@ export class TestDecisionsDataManager {
   }
 
   /**
+   * Assigns an access role to a user on a specific decision profile.
+   */
+  async assignRole(
+    authUserId: string,
+    profileId: string,
+    roleId: string,
+  ): Promise<void> {
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: {
+        authUserId,
+        profileId,
+      },
+    });
+
+    if (!profileUser) {
+      throw new Error(
+        `No profileUser found for authUserId=${authUserId} on profile=${profileId}`,
+      );
+    }
+
+    await db.insert(profileUserToAccessRoles).values({
+      profileUserId: profileUser.id,
+      accessRoleId: roleId,
+    });
+  }
+
+  /**
    * Tracks a profile ID for cleanup. Use this when creating profiles
    * outside of the standard TestDecisionsDataManager methods.
    */
@@ -444,9 +475,12 @@ export class TestDecisionsDataManager {
   async createMemberUser({
     organization,
     instanceProfileIds = [],
+    roleIds = {},
   }: {
     organization: { id: string };
     instanceProfileIds?: string[];
+    /** Map of profileId → roleId to assign after granting profile access. */
+    roleIds?: Record<string, string>;
   }): Promise<MemberUserOutput> {
     this.ensureCleanupRegistered();
 
@@ -497,6 +531,11 @@ export class TestDecisionsDataManager {
     // Grant access to instance profiles if provided (member role, not admin)
     for (const profileId of instanceProfileIds) {
       await this.grantProfileAccess(profileId, authUser.id, email, false);
+    }
+
+    // Assign additional roles on specific profiles
+    for (const [profileId, roleId] of Object.entries(roleIds)) {
+      await this.assignRole(authUser.id, profileId, roleId);
     }
 
     const user: User = {
