@@ -1,7 +1,7 @@
 import type { AdvancePhaseResult } from './advancePhase';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { runResultsProcessing } from './runResultsProcessing';
-import type { PhaseInstanceData } from './schemas/instanceData';
+import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 
 export interface OnPhaseAdvancedInput {
   instanceId: string;
@@ -29,9 +29,7 @@ export async function onPhaseAdvanced(
     await runGenerateReviewAssignments(input);
   }
 
-  const isNowOnFinalPhase =
-    input.phases[input.phases.length - 1]?.phaseId === input.toPhaseId;
-  if (isNowOnFinalPhase) {
+  if (isLastPhase(input.toPhaseId, input.phases)) {
     await runResultsProcessing(input);
   }
 }
