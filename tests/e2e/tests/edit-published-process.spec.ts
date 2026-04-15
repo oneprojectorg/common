@@ -85,13 +85,38 @@ test.describe('Edit Published Process', () => {
       authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
-    // 9. Toggle Required off on the first criterion
+    // 9. Navigate away to Overview and back to verify criterion survives
+    const overviewButton = sidebarNav.getByRole('button', {
+      name: 'Overview',
+    });
+    await overviewButton.click();
+    await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({
+      timeout: 12_000,
+    });
+
+    await expect(reviewRubricButton).toBeVisible({ timeout: 6_000 });
+    await reviewRubricButton.click();
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Review Criteria' }),
+    ).toBeVisible({ timeout: 12_000 });
+
+    // Verify the criterion survived navigation
+    await expect(
+      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
+    ).toBeVisible({ timeout: 6_000 });
+
+    // 10. Expand the first criterion and toggle Required off
+    await authenticatedPage
+      .getByText('Untitled field', { exact: true })
+      .first()
+      .click();
     const firstRequiredToggle = authenticatedPage.getByRole('button', {
       name: 'Required',
     });
+    await expect(firstRequiredToggle).toBeVisible({ timeout: 3_000 });
     await firstRequiredToggle.click();
 
-    // 10. Add a second criterion (keep it required)
+    // 11. Add a second criterion (keep it required)
     const addMoreButton = authenticatedPage.getByRole('button', {
       name: 'Add criterion',
     });
@@ -103,7 +128,7 @@ test.describe('Edit Published Process', () => {
     });
     await expect(criterionLabels.nth(1)).toBeVisible({ timeout: 6_000 });
 
-    // 11. Click "Update Process" to persist all changes to the DB
+    // 12. Click "Update Process" to persist all changes to the DB
     const footer = authenticatedPage.getByRole('contentinfo');
     const updateButton = footer.getByRole('button', {
       name: 'Update Process',
@@ -118,7 +143,7 @@ test.describe('Edit Published Process', () => {
     await updateButton.click();
     await saveResponse;
 
-    // 12. Verify the rubric template was persisted correctly
+    // 13. Verify the rubric template was persisted correctly
     await expect
       .poll(
         async () => {
@@ -145,14 +170,14 @@ test.describe('Edit Published Process', () => {
     // Only one is required (the second one — first was toggled off)
     expect(rubric.required ?? []).toHaveLength(1);
 
-    // 13. "Update Process" navigates to the published view — go back to editor
+    // 14. "Update Process" navigates to the published view — go back to editor
     const settingsButton = authenticatedPage.getByRole('link', {
       name: 'Settings',
     });
     await expect(settingsButton).toBeVisible({ timeout: 12_000 });
     await settingsButton.click();
 
-    // 14. Navigate to Review Rubric and verify both criteria survived
+    // 15. Navigate to Review Rubric and verify both criteria survived
     const rubricButton = authenticatedPage
       .getByRole('navigation', { name: 'Section navigation' })
       .getByRole('button', { name: 'Review Rubric' });
