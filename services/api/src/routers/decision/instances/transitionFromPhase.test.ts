@@ -79,7 +79,7 @@ describe.concurrent('transitionFromPhase', () => {
           .processInstanceId === instance.instance.id,
     );
     expect(transitionCalls).toHaveLength(1);
-    expect(transitionCalls[0][0]).toMatchObject({
+    expect(transitionCalls[0]![0]).toMatchObject({
       name: 'decision/phase-transitioned',
       data: {
         processInstanceId: instance.instance.id,
