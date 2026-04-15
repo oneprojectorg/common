@@ -1,4 +1,4 @@
-import { Button, Heading, Section, Text } from '@react-email/components';
+import { Button, Header, Section, Text } from '@react-email/components';
 
 import EmailTemplate from '../components/EmailTemplate';
 
@@ -24,9 +24,9 @@ export const VoteSubmittedEmail = ({
           : 'Your ballot is in!'
       }
     >
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+      <Header className="mx-0 !my-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Your ballot is in!
-      </Heading>
+      </Header>
       <Text className="my-8 text-lg">
         {processTitle ? (
           <>
@@ -39,8 +39,8 @@ export const VoteSubmittedEmail = ({
       </Text>
 
       {nextSteps.length > 0 && (
-        <Section>
-          <Text className="my-8 text-lg">
+        <Section className="mb-8">
+          <Text className="mb-8 text-lg">
             Here&apos;s what will happen next:
           </Text>
           {nextSteps.map((step) => (
