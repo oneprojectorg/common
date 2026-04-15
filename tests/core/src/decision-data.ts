@@ -410,7 +410,9 @@ export async function getSeededTemplate(): Promise<{
  * Fetches a decision instance by ID from the database.
  * Returns the full instance record including instanceData.
  */
-export async function getDecisionInstance(instanceId: string) {
+export async function getDecisionInstance(
+  instanceId: string,
+): Promise<typeof processInstances.$inferSelect> {
   const [instance] = await db
     .select()
     .from(processInstances)
