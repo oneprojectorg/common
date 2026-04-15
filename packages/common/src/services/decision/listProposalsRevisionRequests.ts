@@ -18,15 +18,15 @@ export async function listProposalsRevisionRequests({
   proposalId?: string;
   user: User;
 }) {
-  const dbUser = await assertUserByAuthId(user.id);
+  const commonUser = await assertUserByAuthId(user.id);
 
-  if (!dbUser.profileId) {
+  if (!commonUser.profileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 
   const proposals = await db.query.proposals.findMany({
     where: {
-      submittedByProfileId: dbUser.profileId,
+      submittedByProfileId: commonUser.profileId,
       ...(proposalId && { id: proposalId }),
     },
     with: {
