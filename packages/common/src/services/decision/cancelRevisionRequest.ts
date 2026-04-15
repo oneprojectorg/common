@@ -10,10 +10,6 @@ import { eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
-import {
-  type ProposalReviewRequest,
-  proposalReviewRequestSchema,
-} from './schemas/reviews';
 
 /** Cancels an active revision request and resumes the assignment. */
 export async function cancelRevisionRequest({
@@ -24,7 +20,7 @@ export async function cancelRevisionRequest({
   assignmentId: string;
   revisionRequestId: string;
   user: User;
-}): Promise<ProposalReviewRequest & { processInstanceId: string }> {
+}) {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -64,7 +60,7 @@ export async function cancelRevisionRequest({
   });
 
   return {
-    ...proposalReviewRequestSchema.parse(request),
+    ...request,
     processInstanceId: context.assignment.processInstanceId,
   };
 }

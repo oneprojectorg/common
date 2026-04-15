@@ -10,10 +10,6 @@ import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
-import {
-  type ProposalReviewRequest,
-  proposalReviewRequestSchema,
-} from './schemas/reviews';
 
 /** Creates a revision request and pauses the assignment until the author revises. */
 export async function requestRevision({
@@ -24,7 +20,7 @@ export async function requestRevision({
   assignmentId: string;
   requestComment: string;
   user: User;
-}): Promise<ProposalReviewRequest & { processInstanceId: string }> {
+}) {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -52,6 +48,8 @@ export async function requestRevision({
         assignmentId,
         state: ProposalReviewRequestState.REQUESTED,
         requestComment,
+        requestedProposalHistoryId:
+          context.assignment.assignedProposalHistoryId,
       })
       .returning();
 
@@ -70,7 +68,7 @@ export async function requestRevision({
   });
 
   return {
-    ...proposalReviewRequestSchema.parse(request),
+    ...request,
     processInstanceId: context.assignment.processInstanceId,
   };
 }

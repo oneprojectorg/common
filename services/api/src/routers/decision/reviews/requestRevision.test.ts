@@ -104,6 +104,51 @@ describe.concurrent('requestRevision', () => {
     ).rejects.toThrow('Cannot request a revision for a completed assignment');
   });
 
+  it('allows a new revision request after cancelling a previous one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Cancel Then Re-request',
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const firstRequest = await reviewerCaller.decision.requestRevision({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add budget details.',
+    });
+    expect(firstRequest.state).toBe(ProposalReviewRequestState.REQUESTED);
+
+    await reviewerCaller.decision.cancelRevisionRequest({
+      assignmentId: created.assignment.id,
+      revisionRequestId: firstRequest.id,
+    });
+
+    const secondRequest = await reviewerCaller.decision.requestRevision({
+      assignmentId: created.assignment.id,
+      requestComment: 'Actually, please also add a timeline.',
+    });
+
+    expect(secondRequest).toMatchObject({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewRequestState.REQUESTED,
+      requestComment: 'Actually, please also add a timeline.',
+    });
+    expect(secondRequest.id).not.toBe(firstRequest.id);
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(
+      ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    );
+  });
+
   it('rejects access for a different reviewer', async ({
     task,
     onTestFinished,

@@ -1,4 +1,5 @@
 import { db } from '@op/db/client';
+import { ProposalReviewRequestState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
@@ -41,7 +42,11 @@ export async function assertReviewAssignmentContext({
           },
         },
         reviews: true,
-        requests: true,
+        requests: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
     }),
     assertUserByAuthId(user.id),
@@ -74,9 +79,13 @@ export async function assertReviewAssignmentContext({
   return {
     assignment,
     instance,
-    // NOTE: We currently support only one review/revision cycle per assignment.
     review: assignment.reviews[0] ?? null,
-    revisionRequest: assignment.requests[0] ?? null,
+    revisionRequest:
+      assignment.requests.find(
+        (r) => r.state === ProposalReviewRequestState.REQUESTED,
+      ) ??
+      assignment.requests[0] ??
+      null,
     rubricTemplate: instance.instanceData.rubricTemplate ?? null,
   };
 }
