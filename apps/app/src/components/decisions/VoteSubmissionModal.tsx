@@ -5,34 +5,12 @@ import type { Proposal } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';
-import { VoteSurveyStep } from './VoteSurveyStep';
-
-// Current specific survey data structure
-export interface CurrentSurveyData {
-  role: ('member_org' | 'individual' | 'board' | 'staff')[];
-  region: string;
-  country: string;
-  gender: string;
-  satisfactionPPDecides: string;
-  likedAboutPPDecides: string;
-  improvementsPPDecides: string;
-  satisfactionMembership: string;
-  increasedUnderstanding: string;
-  appliedNewPractices: string;
-  likelyToRecommendCommon: string;
-  easeOfUse: string;
-}
-
-// Generic custom data type for API
-export type CustomData = Record<string, unknown>;
-
-type ModalStep = 'review' | 'survey';
 
 export const VoteSubmissionModal = ({
   selectedProposals,
@@ -47,28 +25,13 @@ export const VoteSubmissionModal = ({
 }) => {
   const t = useTranslations();
   const overlayState = useContext(OverlayTriggerStateContext);
-  const [currentStep, setCurrentStep] = useState<ModalStep>('review');
-  const [surveyData, setSurveyData] = useState<CurrentSurveyData>({
-    role: [],
-    region: '',
-    country: '',
-    gender: '',
-    satisfactionPPDecides: '',
-    likedAboutPPDecides: '',
-    improvementsPPDecides: '',
-    satisfactionMembership: '',
-    increasedUnderstanding: '',
-    appliedNewPractices: '',
-    likelyToRecommendCommon: '',
-    easeOfUse: '',
-  });
 
   const utils = trpc.useUtils();
   const submitVoteMutation = trpc.decision.submitVote.useMutation({
     onSuccess: () => {
       utils.decision.getVotingStatus.invalidate();
-      overlayState?.close(); // Close the submission modal
-      onSuccess(); // Trigger success callback to show success modal
+      overlayState?.close();
+      onSuccess();
     },
     onError: (error) => {
       console.error('Failed to submit vote:', error);
@@ -78,57 +41,32 @@ export const VoteSubmissionModal = ({
     },
   });
 
-  const handleReviewContinue = () => {
-    setCurrentStep('survey');
-  };
-
-  const handleSurveySubmit = (data: CurrentSurveyData) => {
-    setSurveyData(data);
+  const handleSubmit = () => {
     submitVoteMutation.mutate({
       processInstanceId: instanceId,
       selectedProposalIds: selectedProposals.map((p) => p.id),
       schemaVersion: '1.0.0',
-      customData: data as unknown as CustomData,
     });
-  };
-
-  const getModalTitle = () => {
-    switch (currentStep) {
-      case 'review':
-        return t('Review your votes');
-      case 'survey':
-        return t('Complete survey');
-      default:
-        return '';
-    }
   };
 
   return (
     <>
-      <ModalHeader>{getModalTitle()}</ModalHeader>
+      <ModalHeader>{t('Review your votes')}</ModalHeader>
       <ModalBody>
-        {currentStep === 'review' && (
-          <VoteReviewStep proposals={selectedProposals} maxVotes={maxVotes} />
-        )}
-        {currentStep === 'survey' && (
-          <VoteSurveyStep
-            initialData={surveyData}
-            isSubmitting={submitVoteMutation.isPending}
-            onSubmit={handleSurveySubmit}
-          />
-        )}
+        <VoteReviewStep proposals={selectedProposals} maxVotes={maxVotes} />
       </ModalBody>
-      {currentStep === 'review' && (
-        <ModalFooter>
-          <Button
-            className="w-full"
-            color="primary"
-            onPress={handleReviewContinue}
-          >
-            {t('Continue')}
-          </Button>
-        </ModalFooter>
-      )}
+      <ModalFooter>
+        <Button
+          className="w-full"
+          color="primary"
+          onPress={handleSubmit}
+          isDisabled={submitVoteMutation.isPending}
+        >
+          {submitVoteMutation.isPending
+            ? t('Submitting...')
+            : t('Submit my votes')}
+        </Button>
+      </ModalFooter>
     </>
   );
 };
