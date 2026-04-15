@@ -48,7 +48,7 @@ interface RubricCriterionCardProps {
     scoreValue: number,
     label: string,
   ) => void;
-  onUpdateRequired?: (criterionId: string, required: boolean) => void;
+  onUpdateRequired: (criterionId: string, required: boolean) => void;
   isNew?: boolean;
   onNewComplete?: (criterionId: string) => void;
 }
@@ -193,7 +193,7 @@ export function RubricCriterionCard({
                 size="small"
                 isSelected={criterion.required}
                 onChange={(isSelected) =>
-                  onUpdateRequired?.(criterion.id, isSelected)
+                  onUpdateRequired(criterion.id, isSelected)
                 }
                 aria-label={t('Required')}
               />

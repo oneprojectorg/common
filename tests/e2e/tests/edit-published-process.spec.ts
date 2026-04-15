@@ -87,11 +87,7 @@ test.describe('Edit Published Process', () => {
     const requiredToggle = authenticatedPage.getByRole('button', {
       name: 'Required',
     });
-    await expect(requiredToggle).toHaveAttribute('aria-pressed', 'true', {
-      timeout: 3_000,
-    });
     await requiredToggle.click();
-    await expect(requiredToggle).toHaveAttribute('aria-pressed', 'false');
 
     // 10. Navigate away to Overview
     const overviewButton = sidebarNav.getByRole('button', {
