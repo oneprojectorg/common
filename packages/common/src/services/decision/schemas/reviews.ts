@@ -64,6 +64,18 @@ export const reviewAssignmentListSchema = z.object({
   assignments: z.array(reviewAssignmentExtendedSchema),
 });
 
+// ── Proposal-scoped revision request schemas ──────────────────────────
+
+export const proposalRevisionRequestItemSchema = z.object({
+  revisionRequest: proposalReviewRequestSchema,
+  proposal: proposalSchema,
+  decisionProfileSlug: z.string(),
+});
+
+export const proposalRevisionRequestListSchema = z.object({
+  revisionRequests: z.array(proposalRevisionRequestItemSchema),
+});
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type ProposalReviewAssignment = z.infer<
@@ -75,3 +87,9 @@ export type ReviewAssignmentExtended = z.infer<
   typeof reviewAssignmentExtendedSchema
 >;
 export type ReviewAssignmentList = z.infer<typeof reviewAssignmentListSchema>;
+export type ProposalRevisionRequestItem = z.infer<
+  typeof proposalRevisionRequestItemSchema
+>;
+export type ProposalRevisionRequestList = z.infer<
+  typeof proposalRevisionRequestListSchema
+>;
