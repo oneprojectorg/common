@@ -27,10 +27,16 @@ export async function invalidateProfileUserCacheForRole(roleId: string) {
     .where(eq(profileUserToAccessRoles.accessRoleId, roleId));
 
   if (affectedUsers.length > 0) {
-    await invalidateMultiple({
-      type: 'profileUser',
-      paramsList: affectedUsers.map((u) => [u.profileId, u.authUserId]),
-    });
+    await Promise.all([
+      invalidateMultiple({
+        type: 'profileUser',
+        paramsList: affectedUsers.map((u) => [u.profileId, u.authUserId]),
+      }),
+      invalidateMultiple({
+        type: 'user',
+        paramsList: affectedUsers.map((u) => [u.authUserId]),
+      }),
+    ]);
   }
 }
 
