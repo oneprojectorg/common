@@ -14,6 +14,7 @@ export {
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
+  getDecisionInstance,
   getSeededTemplate,
   grantDecisionProfileAccess,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
