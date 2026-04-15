@@ -53,6 +53,11 @@ export const simpleVoting: DecisionSchemaDefinition = {
         voting: { submit: false },
         advancement: { method: 'date', endDate: '2026-01-01' },
       },
+      // Pass-through pipeline: all submitted proposals advance to the next phase
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [],
+      },
       // User-configurable settings, available as variables in selectionPipeline
       settings: {
         type: 'object',
@@ -91,6 +96,11 @@ export const simpleVoting: DecisionSchemaDefinition = {
         proposals: { submit: false },
         voting: { submit: false },
         advancement: { method: 'date', endDate: '2026-01-02' },
+      },
+      // Pass-through pipeline: all reviewed proposals advance to voting
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [],
       },
       settings: {
         type: 'object',

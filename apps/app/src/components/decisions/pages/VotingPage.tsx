@@ -8,6 +8,7 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
+import { AdvancePhaseButton } from '../AdvancePhaseButton';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
@@ -83,6 +84,14 @@ export function VotingPage({
     translation?.description ??
     description;
 
+  const isAdmin = instance.access?.admin === true;
+  const isOnFinalPhase = currentPhaseIndex === phases.length - 1;
+  const canAdvance = isAdmin && !isOnFinalPhase;
+
+  const budget = instance.instanceData?.config?.hideBudget
+    ? undefined
+    : (currentPhase?.settings?.budget as number | undefined);
+
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
@@ -100,6 +109,16 @@ export function VotingPage({
           description={actionBarDescription}
           showSubmitButton={false}
         />
+
+        {canAdvance && (
+          <div className="flex justify-center">
+            <AdvancePhaseButton
+              instanceId={instanceId}
+              proposals={proposals}
+              budget={budget}
+            />
+          </div>
+        )}
       </div>
 
       <div className="mt-8 flex w-full justify-center border-t bg-white">

@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -128,6 +129,23 @@ export async function triggerPhaseAdvancement({
       throw new ConflictError('Phase transition conflict');
     }
   });
+
+  // Notify participants about the phase transition
+  event
+    .send({
+      name: Events.phaseTransitioned.name,
+      data: {
+        processInstanceId: instanceId,
+        fromPhaseId,
+        toPhaseId,
+      },
+    })
+    .catch((err) => {
+      console.error(
+        `Failed to send phase transition notification for instance ${instanceId}:`,
+        err,
+      );
+    });
 
   // processResults runs as a separate top-level operation: the join table
   // writes inside advancePhase are per-transition, while processResults
