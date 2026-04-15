@@ -69,9 +69,9 @@ export async function listProposalsRevisionRequests({
     );
   });
 
-  const assignmentIds = revisionRequests.map(
-    (r) => r.revisionRequest.assignmentId,
+  const processInstanceIds = Array.from(
+    new Set(proposals.map((proposal) => proposal.processInstanceId)),
   );
 
-  return { revisionRequests, assignmentIds };
+  return { revisionRequests, processInstanceIds };
 }

@@ -22,7 +22,7 @@ export const listProposalsRevisionRequestsRouter = router({
       });
 
       ctx.registerQueryChannels(
-        result.assignmentIds.map(Channels.reviewAssignment),
+        result.processInstanceIds.map(Channels.reviewAssignments),
       );
 
       return proposalRevisionRequestListSchema.parse(result);
