@@ -1,4 +1,5 @@
 import {
+  Channels,
   listProposalsRevisionRequests,
   proposalRevisionRequestListSchema,
 } from '@op/common';
@@ -15,9 +16,15 @@ export const listProposalsRevisionRequestsRouter = router({
     )
     .output(proposalRevisionRequestListSchema)
     .query(async ({ ctx, input }) => {
-      return await listProposalsRevisionRequests({
+      const result = await listProposalsRevisionRequests({
         proposalId: input.proposalId,
         user: ctx.user,
       });
+
+      ctx.registerQueryChannels(
+        result.assignmentIds.map(Channels.reviewAssignment),
+      );
+
+      return proposalRevisionRequestListSchema.parse(result);
     }),
 });

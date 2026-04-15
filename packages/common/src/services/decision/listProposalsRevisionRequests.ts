@@ -4,14 +4,12 @@ import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
-import {
-  type ProposalRevisionRequestList,
-  proposalRevisionRequestListSchema,
-} from './schemas/reviews';
 
 /**
  * Lists all pending revision requests across proposals authored by the current user.
  * Optionally filters to a single proposal when `proposalId` is provided.
+ *
+ * Returns raw data — encoding is handled by the API router.
  */
 export async function listProposalsRevisionRequests({
   proposalId,
@@ -19,7 +17,7 @@ export async function listProposalsRevisionRequests({
 }: {
   proposalId?: string;
   user: User;
-}): Promise<ProposalRevisionRequestList> {
+}) {
   const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.profileId) {
@@ -47,7 +45,7 @@ export async function listProposalsRevisionRequests({
         },
       },
       reviewAssignments: {
-        columns: {},
+        columns: { id: true },
         with: {
           requests: {
             where: {
@@ -71,5 +69,9 @@ export async function listProposalsRevisionRequests({
     );
   });
 
-  return proposalRevisionRequestListSchema.parse({ revisionRequests });
+  const assignmentIds = revisionRequests.map(
+    (r) => r.revisionRequest.assignmentId,
+  );
+
+  return { revisionRequests, assignmentIds };
 }
