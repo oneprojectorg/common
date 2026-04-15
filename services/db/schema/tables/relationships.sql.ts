@@ -99,6 +99,14 @@ export const profileRelationships = pgTable(
     index().on(table.sourceProfileId, table.pending).concurrently(),
     index().on(table.targetProfileId, table.pending).concurrently(),
     index().on(table.relationshipType, table.pending).concurrently(),
+    index('profile_rel_source_type_idx').on(
+      table.sourceProfileId,
+      table.relationshipType,
+    ),
+    index('profile_rel_target_type_idx').on(
+      table.targetProfileId,
+      table.relationshipType,
+    ),
     uniqueIndex().on(
       table.sourceProfileId,
       table.targetProfileId,
