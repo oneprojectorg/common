@@ -15,12 +15,14 @@ import {
 } from './ui/accordion';
 
 export interface CollapsibleConfigCardProps {
-  /** Icon component to display in the header */
-  icon: React.ComponentType<{ className?: string }>;
-  /** Label text shown in the header pill */
+  /** Icon component to display in the header. When omitted, label renders as plain text (no pill). */
+  icon?: React.ComponentType<{ className?: string }>;
+  /** Label text shown in the header pill (or plain text when no icon) */
   label: string;
   /** Badge text shown as a chip (e.g. "Required" / "Optional") */
   badgeLabel?: string;
+  /** Additional class name for the badge chip */
+  badgeClassName?: string;
   /** Whether this card is collapsible. Default: false */
   isCollapsible?: boolean;
   /** Controlled expansion state */
@@ -45,6 +47,7 @@ export function CollapsibleConfigCard({
   icon: Icon,
   label,
   badgeLabel,
+  badgeClassName,
   isCollapsible = false,
   isExpanded,
   defaultExpanded,
@@ -76,29 +79,33 @@ export function CollapsibleConfigCard({
   // [Icon + Label pill] ... [Badge chip] [Chevron]
   const headerContent = (
     <>
-      {/* Icon + Label pill (or plain for locked) */}
+      {/* Icon + Label pill (or plain text when no icon) */}
       {locked ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Icon className="size-4 shrink-0 text-neutral-gray4" />
+          {Icon && <Icon className="size-4 shrink-0 text-neutral-gray4" />}
           <span className="truncate text-neutral-charcoal">{label}</span>
+        </div>
+      ) : Icon ? (
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
+            <Icon className="size-4 shrink-0 text-neutral-charcoal" />
+            <span className="truncate text-neutral-black">{label}</span>
+          </div>
         </div>
       ) : (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-            <Icon className="size-4 shrink-0 text-neutral-gray4" />
-            <span className="truncate text-neutral-charcoal">{label}</span>
-          </div>
+          <span className="truncate text-neutral-black">{label}</span>
         </div>
       )}
 
       {/* Badge chip */}
       {badgeLabel && (
-        <Chip className="shrink-0 text-neutral-gray4">{badgeLabel}</Chip>
+        <Chip className={cn('shrink-0', badgeClassName)}>{badgeLabel}</Chip>
       )}
 
       {/* Chevron (only when collapsible) */}
       {isCollapsible && (
-        <LuChevronDown className="size-4 shrink-0 text-neutral-gray4 transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-180" />
+        <LuChevronDown className="size-4 shrink-0 text-neutral-charcoal transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-180" />
       )}
     </>
   );
@@ -140,7 +147,7 @@ export function CollapsibleConfigCard({
     >
       <div className="flex w-full items-center gap-2">
         {leadingElement}
-        <AccordionTrigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+        <AccordionTrigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 pr-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
           {headerContent}
         </AccordionTrigger>
       </div>
@@ -152,8 +159,8 @@ export function CollapsibleConfigCard({
 }
 
 export interface CollapsibleConfigCardDragPreviewProps {
-  /** Icon component to display next to the label */
-  icon: React.ComponentType<{ className?: string }>;
+  /** Icon component to display next to the label. When omitted, label renders as plain text. */
+  icon?: React.ComponentType<{ className?: string }>;
   /** The label text */
   label: string;
   /** Badge text shown as a chip (e.g. "Required" / "Optional") */
@@ -183,16 +190,22 @@ export function CollapsibleConfigCardDragPreview({
 
   return (
     <div className={cn('rounded-lg border bg-white p-4 shadow-lg', className)}>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center text-neutral-gray4">
+      <div className="flex items-center gap-2 pr-1">
+        <div className="mr-1 flex items-center justify-center text-neutral-gray4">
           <LuGripVertical className="size-4" />
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-            <Icon className="size-4 text-neutral-gray4" />
-            <span className="truncate text-neutral-charcoal">{label}</span>
+        {Icon ? (
+          <div className="w-full grow">
+            <div className="flex w-fit shrink items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
+              <Icon className="size-4 text-neutral-gray4" />
+              <span className="truncate text-neutral-charcoal">{label}</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <span className="w-full grow truncate text-neutral-charcoal">
+            {label}
+          </span>
+        )}
         {badgeLabel && (
           <Chip className="shrink-0 text-neutral-gray4">{badgeLabel}</Chip>
         )}

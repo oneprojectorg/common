@@ -80,7 +80,7 @@ test.describe('Edit Published Process', () => {
 
     // 9. Verify the criterion was added
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'New criterion' }),
+      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
     // 10. Navigate away to Overview
@@ -103,7 +103,7 @@ test.describe('Edit Published Process', () => {
 
     // 13. Verify the criterion is still there
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'New criterion' }),
+      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
   });
 
