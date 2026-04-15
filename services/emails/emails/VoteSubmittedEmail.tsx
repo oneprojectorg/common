@@ -1,4 +1,4 @@
-import { Button, Heading, Img, Section, Text } from '@react-email/components';
+import { Button, Heading, Section, Text } from '@react-email/components';
 
 import EmailTemplate from '../components/EmailTemplate';
 
@@ -24,17 +24,7 @@ export const VoteSubmittedEmail = ({
           : 'Your ballot is in!'
       }
     >
-      <Section className="text-center">
-        <Img
-          src="data:image/svg+xml,%3Csvg width='64' height='65' viewBox='0 0 64 65' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M31.9997 59.1668C46.7273 59.1668 58.6663 47.2278 58.6663 32.5002C58.6663 17.7726 46.7273 5.8335 31.9997 5.8335C17.2721 5.8335 5.33301 17.7726 5.33301 32.5002C5.33301 47.2278 17.2721 59.1668 31.9997 59.1668Z' fill='%23D8F3CC'/%3E%3Cpath d='M20 32.5L28 40.5L44 24.5' stroke='%233EC300' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E"
-          width="64"
-          height="65"
-          alt="Checkmark"
-          style={{ margin: '0 auto' }}
-        />
-      </Section>
-
-      <Heading className="mx-0 mt-4 !mb-0 p-0 text-center font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+      <Heading className="mx-0 !my-0 p-0 text-center font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Your ballot is in!
       </Heading>
 

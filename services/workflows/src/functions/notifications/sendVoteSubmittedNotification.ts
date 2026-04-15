@@ -28,19 +28,16 @@ function getNextSteps(
     return [];
   }
 
-  return phases
-    .slice(currentIndex + 1)
-    .filter((phase) => phase.startDate)
-    .map((phase) => ({
-      name: phase.name ?? '',
-      date: phase.startDate
-        ? new Date(phase.startDate).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })
-        : undefined,
-    }));
+  return phases.slice(currentIndex + 1).map((phase) => ({
+    name: phase.name ?? '',
+    date: phase.startDate
+      ? new Date(phase.startDate).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : undefined,
+  }));
 }
 
 export const sendVoteSubmittedNotification = inngest.createFunction(
