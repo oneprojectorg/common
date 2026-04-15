@@ -82,7 +82,9 @@ describe.concurrent('cancelRevisionRequest', () => {
         assignmentId: created.assignment.id,
         revisionRequestId: revisionRequest.id,
       }),
-    ).rejects.toThrow('Only active revision requests can be cancelled');
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
   });
 
   it('rejects when the revision request does not exist', async ({

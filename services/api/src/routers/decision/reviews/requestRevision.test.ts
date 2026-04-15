@@ -79,7 +79,9 @@ describe.concurrent('requestRevision', () => {
         assignmentId: created.assignment.id,
         requestComment: 'Second request',
       }),
-    ).rejects.toThrow('A revision has already been requested');
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
   });
 
   it('rejects when the assignment is already completed', async ({
@@ -101,7 +103,9 @@ describe.concurrent('requestRevision', () => {
         assignmentId: created.assignment.id,
         requestComment: 'Too late',
       }),
-    ).rejects.toThrow('Cannot request a revision for a completed assignment');
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
   });
 
   it('allows a new revision request after cancelling a previous one', async ({

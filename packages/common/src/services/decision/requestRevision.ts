@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
+  type ProposalReviewRequest,
   ProposalReviewRequestState,
   proposalReviewAssignments,
   proposalReviewRequests,
@@ -20,7 +21,7 @@ export async function requestRevision({
   assignmentId: string;
   requestComment: string;
   user: User;
-}) {
+}): Promise<ProposalReviewRequest & { processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
