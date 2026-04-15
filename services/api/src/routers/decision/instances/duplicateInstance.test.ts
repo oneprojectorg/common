@@ -1,10 +1,11 @@
-import { type DecisionInstanceData, simpleVoting } from '@op/common';
+import { type DecisionInstanceData, simpleVoting, toTermUri } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
-import { db, eq } from '@op/db/client';
+import { db, eq, inArray } from '@op/db/client';
 import {
   accessRoles,
   decisionProcesses,
   processInstances,
+  taxonomyTerms,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -506,5 +507,122 @@ describe.concurrent('duplicateInstance', () => {
     expect(instanceData.config).toBeUndefined();
     expect(instanceData.proposalTemplate).toBeUndefined();
     expect(instanceData.rubricTemplate).toBeUndefined();
+  });
+
+  it('should duplicate categories when proposalCategories is included', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    // Add categories to the source instance
+    const testCategories = [
+      {
+        id: crypto.randomUUID(),
+        label: 'Education',
+        description: 'Education programs',
+      },
+      {
+        id: crypto.randomUUID(),
+        label: 'Health',
+        description: 'Health initiatives',
+      },
+    ];
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      config: {
+        categories: testCategories,
+        requireCategorySelection: true,
+        allowMultipleCategories: false,
+        organizeByCategories: true,
+      },
+    });
+
+    // Clean up taxonomy terms created by ensureProposalTaxonomyTerms
+    const termUris = testCategories.map((c) => toTermUri(c.label));
+    onTestFinished(async () => {
+      await db
+        .delete(taxonomyTerms)
+        .where(inArray(taxonomyTerms.termUri, termUris));
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: 'Categories Test',
+      include: ALL_INCLUDED,
+    });
+
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, duplicate.processInstance.id),
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    // Categories should be copied to the duplicate
+    expect(instanceData.config?.categories).toBeDefined();
+    expect(instanceData.config!.categories!.length).toBe(2);
+    expect(instanceData.config!.categories!.map((c) => c.label).sort()).toEqual(
+      ['Education', 'Health'],
+    );
+    expect(instanceData.config!.requireCategorySelection).toBe(true);
+    expect(instanceData.config!.allowMultipleCategories).toBe(false);
+    expect(instanceData.config!.organizeByCategories).toBe(true);
+  });
+
+  it('should not duplicate categories when proposalCategories is excluded', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    // Add categories to the source instance
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      config: {
+        categories: [
+          {
+            id: crypto.randomUUID(),
+            label: 'Test',
+            description: 'Test category',
+          },
+        ],
+        organizeByCategories: true,
+      },
+    });
+
+    // Clean up taxonomy terms created by ensureProposalTaxonomyTerms
+    onTestFinished(async () => {
+      await db
+        .delete(taxonomyTerms)
+        .where(inArray(taxonomyTerms.termUri, [toTermUri('Test')]));
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: 'No Categories Test',
+      include: { ...ALL_INCLUDED, proposalCategories: false },
+    });
+
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, duplicate.processInstance.id),
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    // Categories should be stripped when proposalCategories is false
+    expect(instanceData.config?.categories).toBeUndefined();
+    expect(instanceData.config?.requireCategorySelection).toBeUndefined();
+    expect(instanceData.config?.allowMultipleCategories).toBeUndefined();
+    expect(instanceData.config?.organizeByCategories).toBeUndefined();
   });
 });

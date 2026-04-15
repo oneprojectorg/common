@@ -7,6 +7,7 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
+import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -91,6 +92,13 @@ export const duplicateInstance = async ({
 
   // Build new instance data based on include flags
   const newInstanceData = buildInstanceData(sourceData, include);
+
+  // Ensure taxonomy terms exist for copied categories so getProcessCategories
+  // can resolve them on the new instance
+  const copiedCategories = newInstanceData.config?.categories;
+  if (copiedCategories && copiedCategories.length > 0) {
+    await ensureProposalTaxonomyTerms(copiedCategories.map((c) => c.label));
+  }
 
   // Delegate core creation (profile, instance, default roles, profile user)
   const profile = await createDecisionInstance({

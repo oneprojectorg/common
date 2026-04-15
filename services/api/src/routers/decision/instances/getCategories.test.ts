@@ -1,3 +1,4 @@
+import { toTermUri } from '@op/common';
 import { db, eq, inArray } from '@op/db/client';
 import {
   organizationUsers,
@@ -60,10 +61,7 @@ async function seedProposalTaxonomy(
   const termRecords = termLabels.map((label) => ({
     id: randomUUID(),
     taxonomyId: resolvedTaxonomyId,
-    termUri: label
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, ''),
+    termUri: toTermUri(label),
     label,
   }));
 
@@ -464,13 +462,12 @@ describe.concurrent('getCategories category matching', () => {
       throw new Error('No instance created');
     }
 
-    // The termUri for "Health & Wellness" after conversion:
-    // "health & wellness" -> "health--wellness" (& removed, spaces become -)
+    // slugify converts "Health & Wellness" → "health-and-wellness"
     const { termRecords } = await seedProposalTaxonomy(
       ['Health & Wellness'],
       onTestFinished,
     );
-    const expectedTermUri = 'health--wellness';
+    const expectedTermUri = 'health-and-wellness';
 
     await injectInstanceCategories(instance.instance.id, [
       {
