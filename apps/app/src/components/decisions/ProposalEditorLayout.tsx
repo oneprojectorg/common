@@ -1,5 +1,6 @@
 'use client';
 
+import type { ProposalReviewRequest } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Header4 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -12,6 +13,7 @@ import { useTranslations } from '@/lib/i18n';
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 import { ShareProposalModal } from './ShareProposalModal';
+import { ResubmitProposalModal } from './proposalEditor/ResubmitProposalModal';
 
 interface ProposalEditorLayoutProps {
   children: ReactNode;
@@ -38,6 +40,8 @@ interface ProposalEditorLayoutProps {
     admin: boolean;
     inviteMembers: boolean;
   };
+  /** Active revision request when the editor is in revision mode */
+  revisionRequest?: ProposalReviewRequest | null;
 }
 
 export function ProposalEditorLayout({
@@ -55,12 +59,15 @@ export function ProposalEditorLayout({
   readOnlyMode = false,
   proposalProfileId,
   access,
+  revisionRequest,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isResubmitModalOpen, setIsResubmitModalOpen] = useState(false);
 
   const canShare = access?.admin || access?.inviteMembers;
+  const isRevisionMode = Boolean(revisionRequest);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col bg-white">
@@ -101,12 +108,23 @@ export function ProposalEditorLayout({
                   color="primary"
                   variant="icon"
                   size="small"
-                  onPress={onSubmitProposal}
+                  onPress={
+                    isRevisionMode
+                      ? () => setIsResubmitModalOpen(true)
+                      : onSubmitProposal
+                  }
                   isDisabled={isSubmitting}
                   className="px-4 py-2"
                 >
                   {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-                  {isEditMode && !isDraft ? (
+                  {isRevisionMode ? (
+                    <>
+                      <span className="inline lg:hidden">{t('Resubmit')}</span>
+                      <span className="hidden lg:inline">
+                        {t('Resubmit proposal')}
+                      </span>
+                    </>
+                  ) : isEditMode && !isDraft ? (
                     <>
                       <span className="inline lg:hidden">{t('Update')}</span>
                       <span className="hidden lg:inline">
@@ -138,6 +156,15 @@ export function ProposalEditorLayout({
           proposalTitle={title}
           isOpen={isShareModalOpen}
           onOpenChange={setIsShareModalOpen}
+        />
+      )}
+
+      {revisionRequest && (
+        <ResubmitProposalModal
+          isOpen={isResubmitModalOpen}
+          onOpenChange={setIsResubmitModalOpen}
+          revisionRequestId={revisionRequest.id}
+          backHref={backHref}
         />
       )}
     </div>
