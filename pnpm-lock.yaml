@@ -631,7 +631,7 @@ importers:
         version: 16.2.0(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       next-intl:
         specifier: ^4.8.3
-        version: 4.8.3(next@16.2.0(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
+        version: 4.8.3(next@16.2.0(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
       nuqs:
         specifier: ^2.8.5
         version: 2.8.6(next@16.2.0(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)
@@ -847,6 +847,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@op/styles':
+        specifier: workspace:*
+        version: link:../styles
       he:
         specifier: ^1.2.0
         version: 1.2.0
@@ -892,7 +895,7 @@ importers:
         version: 3.0.5
       next-intl:
         specifier: ^4.8.3
-        version: 4.8.3(next@16.2.0(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
+        version: 4.8.3(next@16.2.0(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
       react:
         specifier: ^19.0.1
         version: 19.2.1
@@ -1351,6 +1354,9 @@ importers:
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@op/styles':
+        specifier: workspace:*
+        version: link:../../packages/styles
       '@op/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -16604,7 +16610,7 @@ snapshots:
 
   next-intl-swc-plugin-extractor@4.8.3: {}
 
-  next-intl@4.8.3(next@16.2.0(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3):
+  next-intl@4.8.3(next@16.2.0(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.8.1
       '@parcel/watcher': 2.5.1

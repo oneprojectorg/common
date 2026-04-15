@@ -1,5 +1,5 @@
+import { opColors } from '@op/styles/constants';
 import ImplPQueue from 'p-queue';
-import colors from 'tailwindcss/colors';
 
 import { PREVIEW_DOMAIN_SUFFIX, isPreviewDomain } from '../previews.mjs';
 
@@ -230,7 +230,7 @@ export const platformAdminEmails = new Set([
   'valentino@oneproject.org',
 ]);
 
-export const commonColors = colors.neutral;
+export const commonColors = opColors.neutral;
 
 export const version = '0.0.0';
 

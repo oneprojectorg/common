@@ -21,7 +21,7 @@ export const ProposalSubmittedEmail = ({
           : `Your proposal "${displayName}" has been submitted`
       }
     >
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-neutral-black">
         Proposal Submitted
       </Heading>
       <Text className="my-8 text-lg">

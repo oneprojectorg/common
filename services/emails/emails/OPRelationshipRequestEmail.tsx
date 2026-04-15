@@ -37,11 +37,11 @@ export const OPRelationshipRequestEmail = ({
       </Text>
 
       {requesterMessage && (
-        <Section className="my-6 rounded-lg bg-gray-50 p-4">
-          <Text className="mb-2 text-sm font-medium text-gray-700">
+        <Section className="my-6 rounded-lg bg-neutral-gray1 p-4">
+          <Text className="mb-2 text-sm font-medium text-neutral-gray4">
             Message from {requesterOrgName}:
           </Text>
-          <Text className="text-sm text-gray-600">{requesterMessage}</Text>
+          <Text className="text-sm text-neutral-gray4">{requesterMessage}</Text>
         </Section>
       )}
 

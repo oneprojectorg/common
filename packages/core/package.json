@@ -17,6 +17,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@op/styles": "workspace:*",
     "he": "^1.2.0",
     "p-queue": "^8.1.0"
   },

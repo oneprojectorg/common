@@ -1,19 +1,13 @@
-import { commonColors } from '@op/core';
+import { opColors } from '@op/styles/constants';
 import type { TailwindConfig } from '@react-email/tailwind';
 
 export default {
   theme: {
     extend: {
       colors: {
-        neutral: {
-          ...commonColors,
-          charcoal: '#3A4649',
-          gray1: '#EDEEEE',
-          gray4: '#606A6C',
-        },
-        primary: {
-          teal: '#0396A6',
-        },
+        neutral: opColors.neutral,
+        primary: opColors.primary,
+        functional: opColors.functional,
       },
     },
     fontFamily: {
