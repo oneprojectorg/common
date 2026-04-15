@@ -7,7 +7,7 @@ import EmailTemplate from '../components/EmailTemplate';
 const OPLoginCodeEmail = () => {
   return (
     <EmailTemplate previewText="Action Required: Your login code for Common">
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-neutral-black">
+      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-title-lg text-neutral-black">
         Login
       </Heading>
       <Section className="pb-0 font-sans">

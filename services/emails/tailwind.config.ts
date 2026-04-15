@@ -60,6 +60,10 @@ export default {
       '7xl': ['72px', { lineHeight: '1' }],
       '8xl': ['96px', { lineHeight: '1' }],
       '9xl': ['144px', { lineHeight: '1' }],
+      'title-lg': [
+        '28px',
+        { lineHeight: '110%', fontWeight: '300', letterSpacing: '-0.02625rem' },
+      ],
     },
   },
 } satisfies TailwindConfig;
