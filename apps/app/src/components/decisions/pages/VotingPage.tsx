@@ -3,14 +3,15 @@
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
+import { useLocale } from 'next-intl';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
-import { MyBallot } from '../MyBallot';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 
 export function VotingPage({
@@ -24,40 +25,70 @@ export function VotingPage({
   decisionSlug?: string;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
+  const translation = useDecisionTranslation();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const [[{ proposals }, instance, voteStatus]] = trpc.useSuspenseQueries(
+    (t) => [
+      t.decision.listProposals({
+        processInstanceId: instanceId,
+        limit: 20,
+      }),
+      t.decision.getInstance({ instanceId }),
+      t.decision.getVotingStatus({ processInstanceId: instanceId }),
+    ],
+  );
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
-  const currentPhase = phases.find(
-    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  const currentPhaseIndex = phases.findIndex(
+    (p) => p.phaseId === currentPhaseId,
   );
+  const currentPhase =
+    currentPhaseIndex >= 0
+      ? (phases[currentPhaseIndex] as InstancePhaseData)
+      : undefined;
+  const nextPhase =
+    currentPhaseIndex >= 0
+      ? (phases[currentPhaseIndex + 1] as InstancePhaseData | undefined)
+      : undefined;
 
-  const description = instance?.description?.match('PPDESCRIPTION')
-    ? t('PPDESCRIPTION')
-    : (instance.description ??
-      instance.instanceData?.templateDescription ??
-      undefined);
-  const aboutIsMarkup = !!instance?.description?.match('PPDESCRIPTION');
+  const hasVoted = voteStatus.hasVoted;
+
+  const description =
+    instance.description ?? instance.instanceData?.templateDescription;
+
+  const heroTitle = hasVoted
+    ? t('YOUR BALLOT IS IN.')
+    : (translation?.headline ?? currentPhase?.headline ?? t('TIME TO VOTE.'));
+
+  const resultsDate = nextPhase?.startDate
+    ? new Date(nextPhase.startDate).toLocaleDateString(locale, {
+        month: 'long',
+        day: 'numeric',
+      })
+    : undefined;
+
+  const heroDescription = hasVoted
+    ? resultsDate
+      ? t('Results will be shared on {date}.', { date: resultsDate })
+      : undefined
+    : (translation?.phaseDescription ?? currentPhase?.description);
+
+  const actionBarDescription =
+    translation?.additionalInfo ??
+    currentPhase?.additionalInfo ??
+    translation?.description ??
+    description;
 
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
-          title={currentPhase?.headline ?? t('SHARE YOUR IDEAS.')}
-          description={
-            currentPhase?.description ? (
-              <p>{currentPhase.description}</p>
-            ) : undefined
-          }
+          title={heroTitle}
+          description={heroDescription ? <p>{heroDescription}</p> : undefined}
           variant="standard"
         />
 
@@ -65,8 +96,8 @@ export function VotingPage({
 
         <DecisionActionBar
           instanceId={instanceId}
-          markup={currentPhase?.additionalInfo ? false : aboutIsMarkup}
-          description={currentPhase?.additionalInfo ?? description}
+          markup={!!translation?.additionalInfo}
+          description={actionBarDescription}
           showSubmitButton={false}
         />
       </div>
@@ -80,19 +111,12 @@ export function VotingPage({
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
                 permissions={instance.access}
+                isVotingPhase
               />
             </Suspense>
           </div>
         </div>
       </div>
-
-      {instance.access?.vote && (
-        <div data-testid="my-ballot">
-          <Suspense fallback={null}>
-            <MyBallot slug={slug} instanceId={instanceId} />
-          </Suspense>
-        </div>
-      )}
     </div>
   );
 }

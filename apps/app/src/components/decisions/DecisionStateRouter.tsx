@@ -2,7 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
-import { match } from '@op/core';
+import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
 import { ResultsPage } from './pages/ResultsPage';
@@ -36,37 +36,48 @@ function DecisionStateRouterNew({
   const reviewFlowEnabled = useFeatureFlag('review_flow');
 
   const { currentStateId } = instance;
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhase = phases.find((p) => p.phaseId === currentStateId);
+  const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
+  const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
 
-  return match(currentStateId, {
-    results: () => (
-      <ResultsPage
-        instanceId={instanceId}
-        profileSlug={slug}
-        decisionSlug={decisionSlug}
-      />
-    ),
-    voting: () => (
+  if (isReviewEnabled && reviewFlowEnabled) {
+    if (!decisionSlug) {
+      notFound();
+    }
+    return <ReviewPage instance={instance} decisionSlug={decisionSlug} />;
+  }
+
+  if (isVotingEnabled) {
+    return (
       <VotingPage
         instanceId={instanceId}
         slug={slug}
         decisionSlug={decisionSlug}
       />
-    ),
-    review: () => {
-      if (!reviewFlowEnabled || !decisionSlug) {
-        notFound();
-      }
-      return <ReviewPage instance={instance} decisionSlug={decisionSlug} />;
-    },
-    _: () => (
-      <StandardDecisionPage
+    );
+  }
+
+  const hasActiveCapabilities = currentPhase?.rules?.proposals?.submit === true;
+
+  if (isLastPhase(currentStateId, phases) && !hasActiveCapabilities) {
+    return (
+      <ResultsPage
         instanceId={instanceId}
-        slug={slug}
+        profileSlug={slug}
         decisionSlug={decisionSlug}
-        decisionProfileId={decisionProfileId}
       />
-    ),
-  });
+    );
+  }
+
+  return (
+    <StandardDecisionPage
+      instanceId={instanceId}
+      slug={slug}
+      decisionSlug={decisionSlug}
+      decisionProfileId={decisionProfileId}
+    />
+  );
 }
 
 export function DecisionStateRouter({

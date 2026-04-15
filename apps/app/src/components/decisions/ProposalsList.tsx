@@ -12,8 +12,8 @@ import {
   type ProposalTranslation,
   SUPPORTED_LOCALES,
   type SupportedLocale,
+  isVotingEligible,
 } from '@op/common/client';
-import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
@@ -151,6 +151,8 @@ interface ProposalsProps {
   permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
+  /** When true, the current phase has voting enabled — always show voting UI */
+  isVotingPhase?: boolean;
 }
 
 const VotingProposalsList = ({
@@ -178,7 +180,7 @@ const VotingProposalsList = ({
 
   // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
-  const isReadOnly = hasVoted;
+  const isReadOnly = hasVoted || !canVote;
   const maxVotesPerMember =
     voteStatus?.votingConfiguration?.maxVotesPerMember || 0;
 
@@ -225,12 +227,47 @@ const VotingProposalsList = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
-          const isApproved = proposal.status === ProposalStatus.APPROVED;
+          const isEligibleForVote = isVotingEligible(proposal.status);
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          // Render VotingProposalCard for approved proposals, regular ProposalCard for others
-          if (isApproved) {
+          const proposalHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+
+          // Ballot view: after voting, show a simpler card with clickable title
+          if (isEligibleForVote && isReadOnly) {
+            return (
+              <VotingProposalCard
+                key={proposal.id}
+                proposalId={proposal.id}
+                isSelected={isVotedFor}
+                isVotedFor={isVotedFor}
+              >
+                <ProposalCardContent>
+                  <ProposalCardHeader
+                    proposal={proposal}
+                    viewHref={proposalHref}
+                    menu={
+                      isVotedFor ? (
+                        <Checkbox
+                          isSelected={true}
+                          shape="circle"
+                          borderColor="light"
+                          className="[&[data-disabled]_svg]:!text-white"
+                          aria-label={t('Selected proposal')}
+                          isDisabled
+                        />
+                      ) : undefined
+                    }
+                  />
+                  <ProposalCardMeta proposal={proposal} />
+                  <ProposalCardPreview proposal={proposal} />
+                </ProposalCardContent>
+              </VotingProposalCard>
+            );
+          }
+
+          // Active voting view: interactive cards with selection
+          if (isEligibleForVote) {
             return (
               <VotingProposalCard
                 key={proposal.id}
@@ -258,21 +295,16 @@ const VotingProposalsList = ({
                           {showCheckbox && (
                             <div onClick={(e) => e.stopPropagation()}>
                               <Checkbox
-                                isSelected={
-                                  isReadOnly ? isVotedFor : isSelected
-                                }
+                                isSelected={isSelected}
                                 onChange={() => {
                                   toggleProposal(proposal.id);
                                 }}
-                                isDisabled={isReadOnly}
                                 shape="circle"
                                 borderColor="light"
-                                // Override disabled icon color to keep checkmark white (using design token)
-                                className="[&[data-disabled]_svg]:!text-white"
                                 aria-label={
                                   isSelected
-                                    ? 'Deselect proposal'
-                                    : 'Select proposal'
+                                    ? t('Deselect proposal')
+                                    : t('Select proposal')
                                 }
                               />
                             </div>
@@ -286,7 +318,7 @@ const VotingProposalsList = ({
                 </ProposalCardContent>
                 <ProposalCardFooter>
                   <ButtonLink
-                    href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                    href={proposalHref}
                     color="secondary"
                     className="w-full"
                   >
@@ -446,29 +478,27 @@ const ViewProposalsList = ({
 };
 
 const Proposals = (props: ProposalsProps) => {
-  const { isLoading, instanceId } = props;
+  const { isLoading, instanceId, isVotingPhase } = props;
 
   // Get voting status for this user and process
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
     processInstanceId: instanceId,
   });
 
-  // Determine voting state
-  const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
+  // Use the phase capability passed from the router, falling back to the
+  // voting status endpoint for backwards compatibility
+  const isVotingEnabled =
+    isVotingPhase || !!voteStatus?.votingConfiguration?.allowDecisions;
 
   if (isLoading) {
     return <ProposalListSkeletonGrid />;
   }
 
-  const isPastPP = new Date() > new Date('2025-11-15T08:00:00.000Z');
-  if (isPastPP && props.slug === 'people-powered') {
-    return <ViewProposalsList {...props} />;
+  if (isVotingEnabled) {
+    return <VotingProposalsList {...props} />;
   }
 
-  return match(isVotingEnabled, {
-    true: () => <VotingProposalsList {...props} />,
-    false: () => <ViewProposalsList {...props} />,
-  });
+  return <ViewProposalsList {...props} />;
 };
 
 export const ProposalsList = ({
@@ -479,6 +509,7 @@ export const ProposalsList = ({
   permissions,
   initialFilter,
   phase,
+  isVotingPhase,
 }: {
   slug: string;
   instanceId: string;
@@ -492,6 +523,8 @@ export const ProposalsList = ({
   initialFilter?: ProposalFilter;
   /** When set to 'results', all proposals are returned as non-editable */
   phase?: 'results';
+  /** When true, the current phase has voting enabled — always show voting UI */
+  isVotingPhase?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -853,6 +886,7 @@ export const ProposalsList = ({
           permissions={permissions}
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
+          isVotingPhase={isVotingPhase}
         />
       </ProposalTranslationProvider>
 

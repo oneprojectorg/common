@@ -14,6 +14,21 @@ import type {
   ProcessConfig,
 } from './types';
 
+/**
+ * Returns true when the current phase is the last (final/results) phase.
+ * In the new schema, phase type is inferred from position: the last phase
+ * in the array is the final phase.
+ */
+export function isLastPhase(
+  currentStateId: string | null | undefined,
+  phases: readonly { phaseId: string }[],
+): boolean {
+  if (!currentStateId || phases.length === 0) {
+    return false;
+  }
+  return currentStateId === phases[phases.length - 1]?.phaseId;
+}
+
 export interface PhaseInstanceData {
   phaseId: string;
   name?: string;

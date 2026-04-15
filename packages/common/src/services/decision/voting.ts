@@ -1,6 +1,5 @@
 import { and, db, eq } from '@op/db/client';
 import {
-  ProposalStatus,
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
@@ -24,6 +23,7 @@ import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { isVotingEligible } from './votingEligibility';
 
 /** Extract proposal/voting permissions from the current phase. */
 function getCurrentPhaseConfig(processInstance: {
@@ -43,10 +43,7 @@ function getCurrentPhaseConfig(processInstance: {
   }
 
   const currentPhase = instanceData.phases.find(
-    (p) =>
-      p.phaseId === currentPhaseId ||
-      // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId
-      p.stateId === currentPhaseId,
+    (p) => p.phaseId === currentPhaseId,
   );
 
   if (!currentPhase) {
@@ -234,20 +231,20 @@ export const submitVote = async ({
       where: eq(proposals.processInstanceId, data.processInstanceId),
     });
 
-    // Filter to only approved proposals for voting
-    const approvedProposals = availableProposals.filter(
-      (p) => p.status === ProposalStatus.APPROVED,
+    // Filter to eligible proposals for voting
+    const eligibleProposals = availableProposals.filter((p) =>
+      isVotingEligible(p.status),
     );
-    const approvedProposalIds = approvedProposals.map((p) => p.id);
+    const eligibleProposalIds = eligibleProposals.map((p) => p.id);
 
-    // Check if all selected proposals are approved
-    const hasNonApprovedSelections = data.selectedProposalIds.some(
-      (id) => !approvedProposalIds.includes(id),
+    // Check if all selected proposals are eligible
+    const hasIneligibleSelections = data.selectedProposalIds.some(
+      (id) => !eligibleProposalIds.includes(id),
     );
 
-    if (hasNonApprovedSelections) {
+    if (hasIneligibleSelections) {
       throw new ValidationError(
-        'You can only vote for approved proposals. Some of your selections are not eligible for voting.',
+        'Some of your selections are not eligible for voting.',
       );
     }
 
@@ -255,7 +252,7 @@ export const submitVote = async ({
     const validation = validateVoteSelection(
       data.selectedProposalIds,
       votingConfig.maxVotesPerMember,
-      approvedProposalIds,
+      eligibleProposalIds,
     );
 
     if (!validation.isValid) {

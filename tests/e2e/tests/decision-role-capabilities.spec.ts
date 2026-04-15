@@ -61,7 +61,7 @@ const reviewPhaseSchema: DecisionSchemaDefinition = {
 
 /**
  * Schema that starts in the voting phase.
- * currentStateId will be 'voting', routing to VotingPage which shows MyBallot.
+ * currentStateId will be 'voting', routing to VotingPage via rules.voting.submit capability.
  */
 const votingPhaseSchema: DecisionSchemaDefinition = {
   id: 'test-voting',
@@ -161,7 +161,7 @@ test.describe('Decision Role Capabilities', () => {
     ).not.toBeVisible();
   });
 
-  test('ballot section is shown for a user with vote permission in voting phase', async ({
+  test('voting page renders for a user with vote permission in voting phase', async ({
     browser,
     org,
     supabaseAdmin,
@@ -207,14 +207,13 @@ test.describe('Decision Role Capabilities', () => {
       memberPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // The ballot section is rendered only when instance.access.vote === true.
-    // "You did not vote in this process." confirms MyBallot fully loaded (no votes cast yet).
-    await expect(
-      memberPage.getByText('You did not vote in this process.'),
-    ).toBeVisible({ timeout: 10000 });
+    // The voting phase description confirms VotingPage rendered (not StandardDecisionPage).
+    await expect(memberPage.getByText('Members vote.')).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  test('ballot section is not shown outside the voting phase', async ({
+  test('voting page does not render outside the voting phase', async ({
     authenticatedPage,
     org,
   }) => {
@@ -236,7 +235,9 @@ test.describe('Decision Role Capabilities', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // MyBallot is only rendered on VotingPage (currentStateId === 'voting')
-    await expect(authenticatedPage.getByTestId('my-ballot')).not.toBeVisible();
+    // Submission phase description confirms StandardDecisionPage rendered, not VotingPage
+    await expect(
+      authenticatedPage.getByText('Members submit proposals.'),
+    ).toBeVisible({ timeout: 10000 });
   });
 });

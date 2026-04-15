@@ -26,7 +26,7 @@ import type {
 } from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 async function updateProposalCategoryLink(
@@ -121,8 +121,10 @@ export const updateProposal = async ({
 
   const processInstance = existingProposal.processInstance;
 
-  // Reject updates when the instance is in the results phase
-  if (processInstance.currentStateId === 'results') {
+  // Reject updates when the instance is in the final (results) phase
+  const instancePhases =
+    (processInstance.instanceData as DecisionInstanceData | null)?.phases ?? [];
+  if (isLastPhase(processInstance.currentStateId, instancePhases)) {
     throw new ValidationError(
       'Proposals cannot be edited during the results phase',
     );
