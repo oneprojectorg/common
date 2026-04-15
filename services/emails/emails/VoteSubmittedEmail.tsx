@@ -1,6 +1,7 @@
-import { Button, Header, Section, Text } from '@react-email/components';
+import { Button, Section, Text } from '@react-email/components';
 
 import EmailTemplate from '../components/EmailTemplate';
+import { Header } from '../components/Header';
 
 interface NextStep {
   name: string;
