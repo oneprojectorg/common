@@ -24,11 +24,10 @@ export const VoteSubmittedEmail = ({
           : 'Your ballot is in!'
       }
     >
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-bold tracking-[-0.02625rem] text-[#222D38]">
+      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Your ballot is in!
       </Heading>
-
-      <Text className="mt-4 mb-6 text-left text-base">
+      <Text className="my-8 text-lg">
         {processTitle ? (
           <>
             Thank you for participating in the <strong>{processTitle}</strong>.
@@ -40,12 +39,12 @@ export const VoteSubmittedEmail = ({
       </Text>
 
       {nextSteps.length > 0 && (
-        <Section className="mt-2 mb-4 text-left">
-          <Text className="mb-2 text-base">
+        <Section>
+          <Text className="my-8 text-lg">
             Here&apos;s what will happen next:
           </Text>
           {nextSteps.map((step) => (
-            <Text key={step.name} className="my-1 pl-2 text-base">
+            <Text key={step.name} className="my-1 pl-2 text-lg">
               &bull; {step.date ? `${step.name} on ${step.date}` : step.name}
             </Text>
           ))}
