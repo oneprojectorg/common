@@ -118,12 +118,6 @@ export const getRelationships = async ({
     };
   }>
 > => {
-  const currentProfileId = await getCurrentProfileId(authUserId);
-
-  if (!currentProfileId) {
-    throw new ValidationError('You must be logged in to view relationships');
-  }
-
   // Use aliases to distinguish between source and target profiles
   const sourceProfiles = alias(profiles, 'sourceProfiles');
   const targetProfiles = alias(profiles, 'targetProfiles');
@@ -181,7 +175,11 @@ export const getRelationships = async ({
   if (sourceProfileId) {
     conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
   } else if (!targetProfileId) {
-    // If no targetProfileId is provided, default to current user's relationships
+    // Only resolve currentProfileId when needed as fallback (avoids extra DB query)
+    const currentProfileId = await getCurrentProfileId(authUserId);
+    if (!currentProfileId) {
+      throw new ValidationError('You must be logged in to view relationships');
+    }
     conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
   }
 
