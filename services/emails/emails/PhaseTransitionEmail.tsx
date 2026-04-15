@@ -16,7 +16,9 @@ export const PhaseTransitionEmail = ({
   processUrl: string;
 }) => {
   return (
-    <EmailTemplate previewText={`${processTitle} — now in ${toPhaseName}`}>
+    <EmailTemplate
+      previewText={`${processTitle} has moved to phase ${phaseNumber} of ${totalPhases}: ${toPhaseName}.`}
+    >
       <Text className="my-8 text-lg">
         <strong>{processTitle}</strong> has moved to phase {phaseNumber} of{' '}
         {totalPhases}: <strong>{toPhaseName}</strong>.
