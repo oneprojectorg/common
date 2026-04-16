@@ -1,7 +1,12 @@
 'use client';
 
 import type { XFormatPropertySchema } from '@op/common/client';
-import { isRationaleField } from '@op/common/client';
+import {
+  isOverallRecommendationField,
+  isRationaleField,
+  parseSchemaOptions,
+} from '@op/common/client';
+import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
 
@@ -63,6 +68,27 @@ function RubricField({ field }: { field: FieldDescriptor }) {
 
   if (isRationaleField(field.key)) {
     return <RationaleField field={field} />;
+  }
+
+  // Horizontal radio group for the overall recommendation field.
+  if (isOverallRecommendationField(field.key)) {
+    const recOptions = parseSchemaOptions(schema);
+    return (
+      <div className="flex flex-col gap-3">
+        <FieldHeader title={schema.title} />
+        <RadioGroup
+          className="gap-0"
+          aria-label={schema.title}
+          orientation="horizontal"
+        >
+          {recOptions.map((option) => (
+            <Radio key={String(option.value)} value={String(option.value)}>
+              {option.title || String(option.value)}
+            </Radio>
+          ))}
+        </RadioGroup>
+      </div>
+    );
   }
 
   switch (format) {

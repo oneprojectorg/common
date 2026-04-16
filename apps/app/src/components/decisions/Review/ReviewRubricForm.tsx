@@ -3,11 +3,13 @@
 import {
   type RubricTemplateSchema,
   type XFormatPropertySchema,
+  isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
+import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
@@ -236,6 +238,25 @@ function RubricFieldInput({
               onChange(isSelected ? 'yes' : 'no');
             }}
           />
+        );
+      }
+
+      if (isOverallRecommendationField(field.key)) {
+        const recOptions = parseSchemaOptions(field.schema);
+        return (
+          <RadioGroup
+            aria-label={field.schema.title}
+            value={typeof value === 'string' ? value : undefined}
+            onChange={onChange}
+            orientation="horizontal"
+            className="gap-0"
+          >
+            {recOptions.map((option) => (
+              <Radio key={String(option.value)} value={String(option.value)}>
+                {option.title || String(option.value)}
+              </Radio>
+            ))}
+          </RadioGroup>
         );
       }
 

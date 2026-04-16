@@ -22,11 +22,11 @@ export function FieldHeader({
       {title &&
         (badge ? (
           <div className="flex items-baseline justify-between gap-2">
-            <Header4>{title}</Header4>
+            <Header4 className="font-light">{title}</Header4>
             <span className="shrink-0 text-xs text-neutral-gray4">{badge}</span>
           </div>
         ) : (
-          <Header4>{title}</Header4>
+          <Header4 className="font-light">{title}</Header4>
         ))}
       {description && (
         <p className="text-sm text-neutral-charcoal">{description}</p>
