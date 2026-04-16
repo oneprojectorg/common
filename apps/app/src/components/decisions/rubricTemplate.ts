@@ -13,6 +13,10 @@ import type {
   RubricTemplateSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
+import {
+  OVERALL_RECOMMENDATION_KEY,
+  isOverallRecommendationField,
+} from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
 
 import type { TranslationKey } from '@/lib/i18n/routing';
@@ -256,6 +260,7 @@ export function getCriteria(template: RubricTemplateSchema): CriterionView[] {
   const order = getCriterionOrder(template);
   const criteria: CriterionView[] = [];
   for (const id of order) {
+    if (isOverallRecommendationField(id)) continue;
     const criterion = getCriterion(template, id);
     if (criterion) {
       criteria.push(criterion);
@@ -421,6 +426,60 @@ export function updateScoreLabel(
   });
 
   return updateProperty(template, criterionId, (s) => ({ ...s, oneOf }));
+}
+
+// ---------------------------------------------------------------------------
+// Overall Recommendation
+// ---------------------------------------------------------------------------
+
+export { OVERALL_RECOMMENDATION_KEY };
+
+export function hasOverallRecommendation(
+  template: RubricTemplateSchema,
+): boolean {
+  return OVERALL_RECOMMENDATION_KEY in (template.properties ?? {});
+}
+
+export function addOverallRecommendation(
+  template: RubricTemplateSchema,
+): RubricTemplateSchema {
+  const schema: XFormatPropertySchema = {
+    type: 'string',
+    title: 'Overall Recommendation',
+    'x-format': 'dropdown',
+    oneOf: [
+      { const: 'yes', title: 'Yes' },
+      { const: 'maybe', title: 'Maybe' },
+      { const: 'no', title: 'No' },
+    ],
+  };
+  let updated = addProperty(template, OVERALL_RECOMMENDATION_KEY, schema);
+  updated = setPropertyRequired(updated, OVERALL_RECOMMENDATION_KEY, true);
+  return updated;
+}
+
+export function removeOverallRecommendation(
+  template: RubricTemplateSchema,
+): RubricTemplateSchema {
+  return removeProperty(template, OVERALL_RECOMMENDATION_KEY);
+}
+
+/**
+ * If the overall recommendation criterion exists, move it to the end of
+ * `x-field-order`. No-op when absent.
+ */
+export function ensureOverallRecommendationLast(
+  template: RubricTemplateSchema,
+): RubricTemplateSchema {
+  const order = getPropertyOrder(template);
+  if (!order.includes(OVERALL_RECOMMENDATION_KEY)) {
+    return template;
+  }
+  const withoutRec = order.filter((id) => id !== OVERALL_RECOMMENDATION_KEY);
+  return reorderProperties(template, [
+    ...withoutRec,
+    OVERALL_RECOMMENDATION_KEY,
+  ]);
 }
 
 // ---------------------------------------------------------------------------
