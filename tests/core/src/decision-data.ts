@@ -406,6 +406,25 @@ export async function getSeededTemplate(): Promise<{
   };
 }
 
+/**
+ * Fetches a decision instance by ID from the database.
+ * Returns the full instance record including instanceData.
+ */
+export async function getDecisionInstance(
+  instanceId: string,
+): Promise<typeof processInstances.$inferSelect> {
+  const [instance] = await db
+    .select()
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId));
+
+  if (!instance) {
+    throw new Error(`Decision instance "${instanceId}" not found`);
+  }
+
+  return instance;
+}
+
 export interface CreateProposalOptions {
   /** Process instance ID this proposal belongs to */
   processInstanceId: string;

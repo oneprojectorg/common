@@ -1,4 +1,8 @@
-import { createDecisionInstance, getSeededTemplate } from '@op/test';
+import {
+  createDecisionInstance,
+  getDecisionInstance,
+  getSeededTemplate,
+} from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
 
@@ -71,19 +75,17 @@ test.describe('Edit Published Process', () => {
       authenticatedPage.getByRole('heading', { name: 'Review Criteria' }),
     ).toBeVisible({ timeout: 12_000 });
 
-    // 8. Add a rubric criterion
-    const addButton = authenticatedPage.getByRole('button', {
+    // 8. Add the first rubric criterion (defaults to required=true)
+    const addFirstButton = authenticatedPage.getByRole('button', {
       name: 'Add your first criterion',
     });
-    await expect(addButton).toBeVisible({ timeout: 6_000 });
-    await addButton.click();
-
-    // 9. Verify the criterion was added
+    await expect(addFirstButton).toBeVisible({ timeout: 6_000 });
+    await addFirstButton.click();
     await expect(
       authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
-    // 10. Navigate away to Overview
+    // 9. Navigate away to Overview and back to verify criterion survives
     const overviewButton = sidebarNav.getByRole('button', {
       name: 'Overview',
     });
@@ -92,16 +94,100 @@ test.describe('Edit Published Process', () => {
       timeout: 12_000,
     });
 
-    // 11. Verify Review Rubric is still in the sidebar
     await expect(reviewRubricButton).toBeVisible({ timeout: 6_000 });
-
-    // 12. Navigate back to Review Rubric
     await reviewRubricButton.click();
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Review Criteria' }),
+    ).toBeVisible({ timeout: 12_000 });
+
+    // Verify the criterion survived navigation
+    await expect(
+      authenticatedPage.getByText('Untitled field', { exact: true }).first(),
+    ).toBeVisible({ timeout: 6_000 });
+
+    // 10. Expand the first criterion and toggle Required off
+    await authenticatedPage
+      .getByText('Untitled field', { exact: true })
+      .first()
+      .click();
+    const firstRequiredToggle = authenticatedPage.getByRole('button', {
+      name: 'Required',
+    });
+    await expect(firstRequiredToggle).toBeVisible({ timeout: 3_000 });
+    await firstRequiredToggle.click();
+
+    // 11. Add a second criterion (keep it required)
+    const addMoreButton = authenticatedPage.getByRole('button', {
+      name: 'Add criterion',
+    });
+    await addMoreButton.click();
+
+    // Wait for the second criterion to appear in the UI
+    const criterionLabels = authenticatedPage.getByText('Untitled field', {
+      exact: true,
+    });
+    await expect(criterionLabels.nth(1)).toBeVisible({ timeout: 6_000 });
+
+    // 12. Click "Update Process" to persist all changes to the DB
+    const footer = authenticatedPage.getByRole('contentinfo');
+    const updateButton = footer.getByRole('button', {
+      name: 'Update Process',
+    });
+
+    // Set up response listener before clicking to avoid race condition
+    const saveResponse = authenticatedPage.waitForResponse(
+      (resp) =>
+        resp.url().includes('decision.updateDecisionInstance') && resp.ok(),
+      { timeout: 12_000 },
+    );
+    await updateButton.click();
+    await saveResponse;
+
+    // 13. Verify the rubric template was persisted correctly
+    await expect
+      .poll(
+        async () => {
+          const saved = await getDecisionInstance(instance.instance.id);
+          const data = saved.instanceData as Record<string, unknown>;
+          return data.rubricTemplate as Record<string, unknown> | undefined;
+        },
+        { timeout: 6_000 },
+      )
+      .toBeDefined();
+
+    const saved = await getDecisionInstance(instance.instance.id);
+    const rubric = (saved.instanceData as Record<string, unknown>)
+      .rubricTemplate as {
+      properties: Record<string, unknown>;
+      'x-field-order': string[];
+      required?: string[];
+    };
+
+    // Two criteria in the template
+    expect(Object.keys(rubric.properties)).toHaveLength(2);
+    expect(rubric['x-field-order']).toHaveLength(2);
+
+    // Only one is required (the second one — first was toggled off)
+    expect(rubric.required ?? []).toHaveLength(1);
+
+    // 14. "Update Process" navigates to the published view — go back to editor
+    const settingsButton = authenticatedPage.getByRole('link', {
+      name: 'Settings',
+    });
+    await expect(settingsButton).toBeVisible({ timeout: 12_000 });
+    await settingsButton.click();
+
+    // 15. Navigate to Review Rubric and verify both criteria survived
+    const rubricButton = authenticatedPage
+      .getByRole('navigation', { name: 'Section navigation' })
+      .getByRole('button', { name: 'Review Rubric' });
+    await expect(rubricButton).toBeVisible({ timeout: 6_000 });
+    await rubricButton.click();
     await expect(authenticatedPage.getByText('Review Criteria')).toBeVisible({
       timeout: 12_000,
     });
 
-    // 13. Verify the criterion is still there
+    // Verify at least one criterion card is visible (DB already verified count=2)
     await expect(
       authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });

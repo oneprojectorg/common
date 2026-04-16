@@ -9,6 +9,7 @@ import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { TextField } from '@op/ui/TextField';
+import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -47,6 +48,7 @@ interface RubricCriterionCardProps {
     scoreValue: number,
     label: string,
   ) => void;
+  onUpdateRequired: (criterionId: string, required: boolean) => void;
   isNew?: boolean;
   onNewComplete?: (criterionId: string) => void;
 }
@@ -75,6 +77,7 @@ export function RubricCriterionCard({
   onChangeType,
   onUpdateMaxPoints,
   onUpdateScoreLabel,
+  onUpdateRequired,
   isNew,
   onNewComplete,
 }: RubricCriterionCardProps) {
@@ -182,9 +185,20 @@ export function RubricCriterionCard({
             </div>
           )}
 
-          {/* Footer */}
-          {onRemove && (
-            <div className="flex items-center justify-end border-t pt-4">
+          {/* Footer: Required toggle + Delete button */}
+          <div className="flex items-center justify-between border-t pt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-neutral-charcoal">{t('Required?')}</span>
+              <ToggleButton
+                size="small"
+                isSelected={criterion.required}
+                onChange={(isSelected) =>
+                  onUpdateRequired(criterion.id, isSelected)
+                }
+                aria-label={t('Required')}
+              />
+            </div>
+            {onRemove && (
               <Button
                 color="ghost"
                 size="small"
@@ -195,8 +209,8 @@ export function RubricCriterionCard({
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CollapsibleConfigCard>
     </div>

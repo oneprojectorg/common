@@ -31,6 +31,7 @@ import {
   getCriterionType,
   removeCriterion,
   reorderCriteria,
+  setCriterionRequired,
   updateCriterionDescription,
   updateCriterionJsonSchema,
   updateCriterionLabel,
@@ -115,7 +116,10 @@ export function RubricEditorContent({
   const handleAddCriterion = useCallback(() => {
     const criterionId = crypto.randomUUID().slice(0, 8);
     const label = t('Untitled field');
-    setTemplate((prev) => addCriterion(prev, criterionId, 'scored', label));
+    setTemplate((prev) => {
+      const updated = addCriterion(prev, criterionId, 'scored', label);
+      return setCriterionRequired(updated, criterionId, true);
+    });
     setExpandedCriterionIds((prev) => new Set(prev).add(criterionId));
     setNewCriterionIds((prev) => new Set(prev).add(criterionId));
   }, [t]);
@@ -228,6 +232,13 @@ export function RubricEditorContent({
       setTemplate((prev) =>
         updateScoreLabel(prev, criterionId, scoreValue, label),
       );
+    },
+    [],
+  );
+
+  const handleUpdateRequired = useCallback(
+    (criterionId: string, required: boolean) => {
+      setTemplate((prev) => setCriterionRequired(prev, criterionId, required));
     },
     [],
   );
@@ -345,6 +356,7 @@ export function RubricEditorContent({
                       onBlur={handleCriterionBlur}
                       onUpdateLabel={handleUpdateLabel}
                       onUpdateDescription={handleUpdateDescription}
+                      onUpdateRequired={handleUpdateRequired}
                       onChangeType={handleChangeType}
                       onUpdateMaxPoints={handleUpdateMaxPoints}
                       onUpdateScoreLabel={handleUpdateScoreLabel}
