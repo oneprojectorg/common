@@ -5,6 +5,7 @@ import {
   type XFormatPropertySchema,
   parseSchemaOptions,
 } from '@op/common/client';
+import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -13,7 +14,7 @@ import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';
-import { LuPlus } from 'react-icons/lu';
+import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -26,6 +27,7 @@ import {
   inferCriterionType,
 } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
+import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 interface ReviewRubricFormProps {
   template: RubricTemplateSchema;
@@ -38,9 +40,10 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   const t = useTranslations();
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
-  const { values, handleValueChange } = useReviewForm();
+  const { values, handleValueChange, isPausedForRevision } = useReviewForm();
   const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const handleFeedbackChange = (value: string) => {
     // TODO: wire feedback to author into review submission
@@ -65,57 +68,93 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
         </Header3>
       </div>
 
-      {fields.map((field) => (
-        <RubricCriterionSection
-          key={field.key}
-          field={field}
-          maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
-          value={values[field.key]}
-          onChange={(value) => handleValueChange(field.key, value)}
-        />
-      ))}
+      {isPausedForRevision && (
+        <>
+          <AlertBanner
+            intent="warning"
+            variant="banner"
+            icon={<LuCircleAlert className="size-4" />}
+          >
+            <span>
+              <strong>{t('Proposal Revision Requested')}</strong>
+              <br />
+              {t('Reviewing is paused until author submits a revision.')}{' '}
+              <button
+                type="button"
+                className="underline"
+                onClick={() => setIsViewModalOpen(true)}
+              >
+                {t('View feedback')}
+              </button>
+            </span>
+          </AlertBanner>
 
-      {isFeedbackOpen ? (
-        <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
-          <FieldHeader
-            title={t('Feedback to Author')}
-            description={t(
-              'Feedback will be shared with the author after the review phase ends',
-            )}
-            className="gap-1"
+          <ViewRevisionRequestModal
+            isOpen={isViewModalOpen}
+            onOpenChange={setIsViewModalOpen}
           />
-
-          <TextField
-            aria-label={t('Feedback to Author')}
-            value={feedbackToAuthor}
-            onChange={handleFeedbackChange}
-            useTextArea
-            textareaProps={{ rows: 3 }}
-          />
-        </section>
-      ) : (
-        <Button
-          color="secondary"
-          size="medium"
-          className="w-full"
-          onPress={() => setIsFeedbackOpen(true)}
-        >
-          <LuPlus className="size-4" />
-          {t('Feedback to Author')}
-        </Button>
+        </>
       )}
 
-      <Surface
-        variant="filled"
-        className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
+      <div
+        className={
+          isPausedForRevision ? 'pointer-events-none opacity-50' : undefined
+        }
       >
-        <span className="text-base text-neutral-charcoal">
-          {t('Total Score')}
-        </span>
-        <span className="text-base text-neutral-black">
-          {totalScore === null ? '–' : totalScore}
-        </span>
-      </Surface>
+        <div className="flex flex-col gap-6">
+          {fields.map((field) => (
+            <RubricCriterionSection
+              key={field.key}
+              field={field}
+              maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
+              value={values[field.key]}
+              onChange={(value) => handleValueChange(field.key, value)}
+            />
+          ))}
+
+          {isFeedbackOpen ? (
+            <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+              <FieldHeader
+                title={t('Feedback to Author')}
+                description={t(
+                  'Feedback will be shared with the author after the review phase ends',
+                )}
+                className="gap-1"
+              />
+
+              <TextField
+                aria-label={t('Feedback to Author')}
+                value={feedbackToAuthor}
+                onChange={handleFeedbackChange}
+                useTextArea
+                textareaProps={{ rows: 3 }}
+              />
+            </section>
+          ) : (
+            <Button
+              color="secondary"
+              size="medium"
+              className="w-full"
+              onPress={() => setIsFeedbackOpen(true)}
+            >
+              <LuPlus className="size-4" />
+              {t('Feedback to Author')}
+            </Button>
+          )}
+
+          <Surface
+            variant="filled"
+            className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
+          >
+            <span className="text-base text-neutral-charcoal">
+              {t('Total Score')}
+            </span>
+            <span className="text-base text-neutral-black">
+              {totalScore === null ? '–' : totalScore}
+            </span>
+          </Surface>
+        </div>
+      </div>
     </div>
   );
 }

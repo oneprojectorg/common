@@ -33,12 +33,14 @@ export function ReviewLayoutClient({
     notFound();
   }
 
-  const { assignment, rubricTemplate, review } = reviewAssignment;
+  const { assignment, rubricTemplate, review, revisionRequest } =
+    reviewAssignment;
 
   return (
     <ReviewFormProvider
       template={rubricTemplate}
       review={review}
+      revisionRequest={revisionRequest}
       assignmentId={assignmentId}
       decisionSlug={decisionSlug}
     >
