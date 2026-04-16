@@ -440,9 +440,12 @@ export function hasOverallRecommendation(
   return OVERALL_RECOMMENDATION_KEY in (template.properties ?? {});
 }
 
-export function addOverallRecommendation(
+export function enableOverallRecommendation(
   template: RubricTemplateSchema,
 ): RubricTemplateSchema {
+  if (hasOverallRecommendation(template)) {
+    return template;
+  }
   const schema: XFormatPropertySchema = {
     type: 'string',
     title: 'Overall Recommendation',
@@ -458,7 +461,7 @@ export function addOverallRecommendation(
   return updated;
 }
 
-export function removeOverallRecommendation(
+export function disableOverallRecommendation(
   template: RubricTemplateSchema,
 ): RubricTemplateSchema {
   return removeProperty(template, OVERALL_RECOMMENDATION_KEY);

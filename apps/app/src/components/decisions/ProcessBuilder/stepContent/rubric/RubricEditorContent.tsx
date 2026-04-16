@@ -24,11 +24,11 @@ import type {
   RubricCriterionType,
 } from '@/components/decisions/rubricTemplate';
 import {
-  OVERALL_RECOMMENDATION_KEY,
   addCriterion,
-  addOverallRecommendation,
   changeCriterionType,
   createEmptyRubricTemplate,
+  disableOverallRecommendation,
+  enableOverallRecommendation,
   ensureOverallRecommendationLast,
   getCriteria,
   getCriterionErrors,
@@ -36,7 +36,6 @@ import {
   getCriterionType,
   hasOverallRecommendation,
   removeCriterion,
-  removeOverallRecommendation,
   reorderCriteria,
   setCriterionRequired,
   updateCriterionDescription,
@@ -162,11 +161,11 @@ export function RubricEditorContent({
 
   const handleReorderCriteria = useCallback((newItems: CriterionView[]) => {
     setTemplate((prev) => {
-      const newOrder = newItems.map((item) => item.id);
-      if (hasOverallRecommendation(prev)) {
-        newOrder.push(OVERALL_RECOMMENDATION_KEY);
-      }
-      return reorderCriteria(prev, newOrder);
+      const reordered = reorderCriteria(
+        prev,
+        newItems.map((item) => item.id),
+      );
+      return ensureOverallRecommendationLast(reordered);
     });
   }, []);
 
@@ -287,16 +286,13 @@ export function RubricEditorContent({
     });
   }, []);
 
-  const overallRecommendationEnabled = useMemo(
-    () => hasOverallRecommendation(template),
-    [template],
-  );
+  const overallRecommendationEnabled = hasOverallRecommendation(template);
 
   const handleOverallRecommendationToggle = useCallback((enabled: boolean) => {
     setTemplate((prev) =>
       enabled
-        ? addOverallRecommendation(prev)
-        : removeOverallRecommendation(prev),
+        ? enableOverallRecommendation(prev)
+        : disableOverallRecommendation(prev),
     );
   }, []);
 
