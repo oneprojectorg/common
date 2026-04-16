@@ -32,7 +32,6 @@ export {
 
 export {
   configureProcessReviews,
-  createProposalHistorySnapshot,
   createProposalReview,
   createReviewAssignment,
   createRevisionRequest,

@@ -3,12 +3,11 @@ import {
   ProposalReviewRequestState,
   ProposalReviewState,
   decisionProcesses,
-  proposalHistory,
   proposalReviewAssignments,
   proposalReviewRequests,
   proposalReviews,
 } from '@op/db/schema';
-import { db, eq, sql } from '@op/db/test';
+import { db, eq } from '@op/db/test';
 
 export interface ReviewSettings {
   reviewsPolicy: 'full_coverage';
@@ -77,47 +76,6 @@ export async function getLatestProposalHistoryId(opts: {
   }
 
   return latestHistory.historyId;
-}
-
-/** Creates a synthetic proposal history snapshot for test fixtures. */
-export async function createProposalHistorySnapshot(opts: {
-  proposalId: string;
-}): Promise<typeof proposalHistory.$inferSelect> {
-  const proposalRecord = await db.query.proposals.findFirst({
-    where: {
-      id: opts.proposalId,
-    },
-  });
-
-  if (!proposalRecord) {
-    throw new Error(`Proposal not found: ${opts.proposalId}`);
-  }
-
-  const [historyRecord] = await db
-    .insert(proposalHistory)
-    .values({
-      id: proposalRecord.id,
-      processInstanceId: proposalRecord.processInstanceId,
-      proposalData: proposalRecord.proposalData,
-      status: proposalRecord.status,
-      visibility: proposalRecord.visibility,
-      submittedByProfileId: proposalRecord.submittedByProfileId,
-      profileId: proposalRecord.profileId,
-      lastEditedByProfileId: proposalRecord.lastEditedByProfileId,
-      createdAt: proposalRecord.createdAt,
-      updatedAt: proposalRecord.updatedAt,
-      deletedAt: proposalRecord.deletedAt,
-      validDuring: sql`tstzrange(now(), NULL)`,
-    })
-    .returning();
-
-  if (!historyRecord) {
-    throw new Error(
-      `Failed to create proposal history snapshot for proposal: ${opts.proposalId}`,
-    );
-  }
-
-  return historyRecord;
 }
 
 export interface CreateReviewAssignmentOptions {

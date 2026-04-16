@@ -7,13 +7,14 @@ import {
   objectsInStorage,
   processInstances,
   proposalAttachments,
+  proposals,
 } from '@op/db/schema';
 import {
   configureProcessReviews,
   createProposal,
-  createProposalHistorySnapshot,
   createReviewAssignment as createReviewAssignmentRecord,
   defaultReviewSettings,
+  getLatestProposalHistoryId,
 } from '@op/test';
 import { eq } from 'drizzle-orm';
 
@@ -44,8 +45,6 @@ interface CreateReviewAssignmentOptions {
   title?: string;
   description?: string;
   status?: ProposalReviewAssignmentStatus;
-  /** When false, skips creating a proposal history snapshot. Defaults to true. */
-  withHistory?: boolean;
 }
 
 /** Creates review-focused test fixtures on top of the decision test setup. */
@@ -177,21 +176,25 @@ export class TestReviewsDataManager {
         title: opts.title ?? 'Community Garden Expansion',
         ...(opts.description ? { description: opts.description } : {}),
       },
-      status: ProposalStatus.SUBMITTED,
     });
+
+    // UPDATE to SUBMITTED so the AFTER UPDATE trigger creates a history snapshot.
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     this.decisions.trackProfileForCleanup(proposal.profileId);
 
-    const withHistory = opts.withHistory ?? true;
-    const proposalHistory = withHistory
-      ? await createProposalHistorySnapshot({ proposalId: proposal.id })
-      : null;
+    const assignedProposalHistoryId = await getLatestProposalHistoryId({
+      proposalId: proposal.id,
+    });
 
     const assignment = await createReviewAssignmentRecord({
       processInstanceId: context.instance.instance.id,
       proposalId: proposal.id,
       reviewerProfileId: reviewer.profileId,
-      assignedProposalHistoryId: proposalHistory?.historyId ?? null,
+      assignedProposalHistoryId,
       status: opts.status ?? ProposalReviewAssignmentStatus.PENDING,
     });
 
