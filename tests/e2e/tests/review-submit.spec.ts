@@ -70,18 +70,32 @@ const REVIEW_SCHEMA = {
 } satisfies DecisionSchemaDefinition;
 
 /**
- * Rubric template with three criterion types:
- *  - innovation: scored integer dropdown (1–5)
- *  - compliance: yes/no toggle
- *  - feedback:   long-text textarea
+ * Rubric template with five criteria — three required and two optional.
  *
- * All three are required so the submit button stays disabled until every
- * criterion has a value.
+ * Required:
+ *  - innovation:  scored integer dropdown (1–5)
+ *  - compliance:  yes/no toggle
+ *  - feasibility: scored integer dropdown (1–3)
+ *
+ * Optional:
+ *  - feedback:    long-text textarea
+ *  - methodology: string dropdown (multiple choice)
+ *
+ * This lets us verify that:
+ *  - Submit is disabled until all *required* criteria are filled
+ *  - Submit is enabled even when optional criteria are left empty
+ *  - Total score sums only scored criteria that have values
  */
 const RUBRIC_TEMPLATE = {
   type: 'object',
-  required: ['innovation', 'compliance', 'feedback'],
-  'x-field-order': ['innovation', 'compliance', 'feedback'],
+  required: ['innovation', 'compliance', 'feasibility'],
+  'x-field-order': [
+    'innovation',
+    'feasibility',
+    'compliance',
+    'methodology',
+    'feedback',
+  ],
   properties: {
     innovation: {
       type: 'integer',
@@ -98,6 +112,19 @@ const RUBRIC_TEMPLATE = {
         { const: 5, title: '5 — Excellent' },
       ],
     },
+    feasibility: {
+      type: 'integer',
+      title: 'Feasibility',
+      description: 'How feasible is the proposed plan?',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 3,
+      oneOf: [
+        { const: 1, title: '1 — Unlikely' },
+        { const: 2, title: '2 — Possible' },
+        { const: 3, title: '3 — Very Likely' },
+      ],
+    },
     compliance: {
       type: 'string',
       title: 'Compliance',
@@ -108,12 +135,22 @@ const RUBRIC_TEMPLATE = {
         { const: 'no', title: 'No' },
       ],
     },
+    methodology: {
+      type: 'string',
+      title: 'Methodology',
+      description: 'What methodology does the proposal follow?',
+      'x-format': 'dropdown',
+      oneOf: [
+        { const: 'quantitative', title: 'Quantitative' },
+        { const: 'qualitative', title: 'Qualitative' },
+        { const: 'mixed', title: 'Mixed Methods' },
+      ],
+    },
     feedback: {
       type: 'string',
       title: 'Qualitative Feedback',
       description: 'Provide written feedback on the proposal.',
       'x-format': 'long-text',
-      minLength: 1,
     },
   },
 } as const satisfies RubricTemplateSchema;
@@ -289,33 +326,43 @@ test.describe('Review Submit', () => {
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // Scored criterion (Innovation)
+    const submitButton = page.getByRole('button', { name: 'Submit review' });
+    await expect(submitButton).toBeDisabled();
+
+    // Fill first required criterion: Innovation (scored, 4 pts)
     await page.getByRole('button', { name: 'Innovation' }).click();
     await page.getByRole('option', { name: '4 — Very Good' }).click();
 
-    // Yes/no criterion (Compliance)
+    // Still disabled — two more required criteria (Feasibility, Compliance)
+    await expect(submitButton).toBeDisabled();
+
+    // Fill second required criterion: Feasibility (scored, 2 pts)
+    await page.getByRole('button', { name: 'Feasibility' }).click();
+    await page.getByRole('option', { name: '2 — Possible' }).click();
+
+    // Still disabled — Compliance is still missing
+    await expect(submitButton).toBeDisabled();
+
+    // Fill third required criterion: Compliance (yes/no toggle)
     await page
       .locator('section')
       .filter({ hasText: 'Compliance' })
       .getByRole('button')
       .click();
 
-    // Long-text criterion (Qualitative Feedback)
-    await page
-      .getByRole('textbox', { name: 'Qualitative Feedback' })
-      .fill('The proposal is well-structured and feasible.');
+    // All required criteria are filled — submit should be enabled even though
+    // the optional criteria (Methodology, Qualitative Feedback) are empty.
+    await expect(submitButton).toBeEnabled();
 
-    // Total score
+    // Total score = Innovation (4) + Feasibility (2) = 6
     const totalScoreContainer = page
       .getByText('Total Score')
       .first()
       .locator('..');
     await expect(
-      totalScoreContainer.locator('span').filter({ hasText: /^4$/ }),
+      totalScoreContainer.locator('span').filter({ hasText: /^6$/ }),
     ).toBeVisible();
 
-    const submitButton = page.getByRole('button', { name: 'Submit review' });
-    await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
     await expect(
@@ -328,7 +375,10 @@ test.describe('Review Submit', () => {
     // Step 7: Redirected to list — status is "Completed"
     // ========================================================================
 
-    await expect(page).toHaveURL(new RegExp(decisionUrl), { timeout: 10_000 });
+    // router.push may drop the locale prefix, so match just the slug
+    await expect(page).toHaveURL(new RegExp(`/decisions/${instance.slug}`), {
+      timeout: 10_000,
+    });
 
     await expect(page.getByText('Proposals to review')).toBeVisible({
       timeout: 10_000,
