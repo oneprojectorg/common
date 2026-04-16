@@ -36,7 +36,7 @@ export function AuthorRevisionNote({ comment }: { comment: string }) {
           <Link
             variant="secondary"
             onPress={() => setIsModalOpen(true)}
-            className="self-start text-sm"
+            className="cursor-pointer self-start text-sm"
           >
             {t('View revision request')}
           </Link>
