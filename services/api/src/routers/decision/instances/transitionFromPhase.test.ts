@@ -43,7 +43,7 @@ async function createPublishedInstance(testData: TestDecisionsDataManager) {
   return { setup, instance };
 }
 
-describe.concurrent('transitionFromPhase', () => {
+describe('transitionFromPhase', () => {
   it('should advance from initial to final phase', async ({
     task,
     onTestFinished,
