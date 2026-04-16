@@ -249,6 +249,7 @@ function RubricFieldInput({
             value={typeof value === 'string' ? value : undefined}
             onChange={(val) => onChange(val)}
             orientation="horizontal"
+            className="gap-0"
           >
             {recOptions.map((option) => (
               <Radio key={String(option.value)} value={String(option.value)}>

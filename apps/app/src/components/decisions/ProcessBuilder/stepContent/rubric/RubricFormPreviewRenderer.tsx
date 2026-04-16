@@ -74,8 +74,12 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     const recOptions = parseSchemaOptions(schema);
     return (
       <div className="flex flex-col gap-3">
-        <FieldHeader title={schema.title} className="gap-1" />
-        <RadioGroup aria-label={schema.title} orientation="horizontal">
+        <FieldHeader title={schema.title} />
+        <RadioGroup
+          className="gap-0"
+          aria-label={schema.title}
+          orientation="horizontal"
+        >
           {recOptions.map((option) => (
             <Radio key={String(option.value)} value={String(option.value)}>
               {option.title || String(option.value)}
