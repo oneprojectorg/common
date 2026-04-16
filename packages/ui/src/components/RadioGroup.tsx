@@ -93,7 +93,7 @@ export const Radio = ({
         return (
           <>
             <div className={styles(renderProps)} />
-            <span className={isBottomLabel ? 'text-center text-sm' : ''}>
+            <span className={isBottomLabel ? 'text-center text-sm' : '-mt-0.5'}>
               {children}
             </span>
           </>
