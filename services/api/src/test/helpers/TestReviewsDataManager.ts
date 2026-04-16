@@ -183,6 +183,7 @@ export class TestReviewsDataManager {
       .update(proposals)
       .set({ status: ProposalStatus.SUBMITTED })
       .where(eq(proposals.id, proposal.id));
+    proposal.status = ProposalStatus.SUBMITTED;
 
     this.decisions.trackProfileForCleanup(proposal.profileId);
 
