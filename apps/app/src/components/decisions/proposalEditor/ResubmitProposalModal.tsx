@@ -6,6 +6,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -24,6 +25,7 @@ export function ResubmitProposalModal({
   backHref,
 }: ResubmitProposalModalProps) {
   const t = useTranslations();
+  const router = useRouter();
   const [comment, setComment] = useState('');
 
   const submitRevisionResponse =
@@ -32,7 +34,7 @@ export function ResubmitProposalModal({
         toast.success({ title: t('Proposal resubmitted') });
         onOpenChange(false);
         setComment('');
-        window.location.href = backHref;
+        router.push(backHref);
       },
       onError: () => {
         toast.error({ title: t('Failed to resubmit proposal') });

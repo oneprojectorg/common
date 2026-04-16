@@ -369,6 +369,39 @@ function ProposalEditorInner({
     onEditorBlur,
   } = useFocusedEditor();
 
+  const editorBody = (
+    <>
+      <ProposalFormRenderer
+        fields={proposalFields}
+        draft={draft}
+        onFieldChange={handleFieldChange}
+        onEditorFocus={onEditorFocus}
+        onEditorBlur={onEditorBlur}
+        mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
+        previewVersionFragmentContents={versionPreview?.fragmentContents}
+      />
+
+      <div className="border-t border-neutral-gray1 pt-8">
+        <ProposalAttachments
+          proposalId={proposal.id}
+          attachments={
+            proposal.attachments?.map((pa) => ({
+              id: pa.attachmentId,
+              fileName: pa.attachment?.fileName ?? t('Unknown'),
+              fileSize: pa.attachment?.fileSize ?? null,
+              url: pa.attachment?.url,
+            })) ?? []
+          }
+          onMutate={() =>
+            utils.decision.getProposal.invalidate({
+              profileId: proposal.profileId,
+            })
+          }
+        />
+      </div>
+    </>
+  );
+
   return (
     <ProposalEditorLayout
       backHref={backHref}
@@ -401,83 +434,17 @@ function ProposalEditorInner({
         </div>
         {revisionRequest ? (
           <div className="mx-auto flex w-full max-w-[68rem] flex-1 overflow-hidden">
-            <div className="flex min-w-0 basis-1/2 flex-col overflow-y-auto border-r border-neutral-gray1 py-12 pr-12">
-              <div className="flex flex-col gap-4">
-                <ProposalFormRenderer
-                  fields={proposalFields}
-                  draft={draft}
-                  onFieldChange={handleFieldChange}
-                  onEditorFocus={onEditorFocus}
-                  onEditorBlur={onEditorBlur}
-                  mode={
-                    isPreviewMode ? 'preview-version' : 'edit-collaborative'
-                  }
-                  previewVersionFragmentContents={
-                    versionPreview?.fragmentContents
-                  }
-                />
-
-                <div className="border-t border-neutral-gray1 pt-8">
-                  <ProposalAttachments
-                    proposalId={proposal.id}
-                    attachments={
-                      proposal.attachments?.map((pa) => ({
-                        id: pa.attachmentId,
-                        fileName: pa.attachment?.fileName ?? t('Unknown'),
-                        fileSize: pa.attachment?.fileSize ?? null,
-                        url: pa.attachment?.url,
-                      })) ?? []
-                    }
-                    onMutate={() =>
-                      utils.decision.getProposal.invalidate({
-                        profileId: proposal.profileId,
-                      })
-                    }
-                  />
-                </div>
-              </div>
+            <div className="flex min-w-0 basis-1/2 flex-col gap-4 overflow-y-auto border-r border-neutral-gray1 py-12 pr-12">
+              {editorBody}
             </div>
             <div className="min-w-0 basis-1/2 overflow-y-auto bg-white">
               <RevisionFeedbackPanel revisionRequest={revisionRequest} />
             </div>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col">
-            <div className="flex flex-1 flex-col gap-12 py-12">
-              <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
-                <ProposalFormRenderer
-                  fields={proposalFields}
-                  draft={draft}
-                  onFieldChange={handleFieldChange}
-                  onEditorFocus={onEditorFocus}
-                  onEditorBlur={onEditorBlur}
-                  mode={
-                    isPreviewMode ? 'preview-version' : 'edit-collaborative'
-                  }
-                  previewVersionFragmentContents={
-                    versionPreview?.fragmentContents
-                  }
-                />
-
-                <div className="border-t border-neutral-gray1 pt-8">
-                  <ProposalAttachments
-                    proposalId={proposal.id}
-                    attachments={
-                      proposal.attachments?.map((pa) => ({
-                        id: pa.attachmentId,
-                        fileName: pa.attachment?.fileName ?? t('Unknown'),
-                        fileSize: pa.attachment?.fileSize ?? null,
-                        url: pa.attachment?.url,
-                      })) ?? []
-                    }
-                    onMutate={() =>
-                      utils.decision.getProposal.invalidate({
-                        profileId: proposal.profileId,
-                      })
-                    }
-                  />
-                </div>
-              </div>
+          <div className="flex flex-1 flex-col gap-12 py-12">
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
+              {editorBody}
             </div>
           </div>
         )}
