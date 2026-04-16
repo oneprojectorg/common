@@ -42,7 +42,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
           <Button
             color="secondary"
             size="small"
-            isDisabled={isSubmitted || isPausedForRevision}
+            isDisabled={isSubmitted}
             onPress={() => {
               if (isPausedForRevision) {
                 setIsViewModalOpen(true);
