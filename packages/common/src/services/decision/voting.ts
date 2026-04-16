@@ -43,7 +43,10 @@ function getCurrentPhaseConfig(processInstance: {
   }
 
   const currentPhase = instanceData.phases.find(
-    (p) => p.phaseId === currentPhaseId,
+    (p) =>
+      p.phaseId === currentPhaseId ||
+      // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId
+      p.stateId === currentPhaseId,
   );
 
   if (!currentPhase) {
