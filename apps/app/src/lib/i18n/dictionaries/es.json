@@ -1114,5 +1114,8 @@
   "Briefly describe your revisions so reviewers know what to look for.": "Describe brevemente tus cambios para que los revisores sepan qué buscar.",
   "A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.": "Un revisor ha solicitado cambios en tu propuesta. Edita tu propuesta y reenvíala cuando esté lista.",
   "When resubmitting, address each point in the feedback above. When you click Resubmit, you'll be asked to briefly describe what you changed so the reviewers know where to look.": "Al reenviar, aborda cada punto de los comentarios anteriores. Cuando hagas clic en Reenviar, se te pedirá que describas brevemente lo que cambiaste para que los revisores sepan dónde mirar.",
-  "Describe what you changed…": "Describe lo que cambiaste…"
+  "Describe what you changed…": "Describe lo que cambiaste…",
+  "Revised on": "Revisado el",
+  "Author's revision note": "Nota de revisión del autor",
+  "View revision request": "Ver solicitud de revisión"
 }

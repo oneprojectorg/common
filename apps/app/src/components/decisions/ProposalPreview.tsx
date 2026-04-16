@@ -12,6 +12,7 @@ import { AlertBanner } from '@op/ui/AlertBanner';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
+import type { ReactNode } from 'react';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -34,11 +35,17 @@ export type ProposalPreviewProps = {
   proposal: Proposal;
   /** When set, overrides proposal content with translated HTML and shows attribution */
   translation?: ProposalTranslation;
+  /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
+  submissionMetaSuffix?: ReactNode;
+  /** Rendered between the header section and the proposal body. */
+  headerBanner?: ReactNode;
 };
 
 export function ProposalPreview({
   proposal,
   translation,
+  submissionMetaSuffix,
+  headerBanner,
 }: ProposalPreviewProps) {
   const t = useTranslations();
 
@@ -145,9 +152,17 @@ export function ProposalPreview({
                     {proposal.submittedBy.name || proposal.submittedBy.slug}
                   </NavLink>
                   {!isDraft && (
-                    <span className="text-sm text-neutral-charcoal">
-                      {t('Submitted on')} {formatDate(proposal.createdAt)}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
+                      <span>
+                        {t('Submitted on')} {formatDate(proposal.createdAt)}
+                      </span>
+                      {submissionMetaSuffix && (
+                        <>
+                          <span className="text-neutral-gray4">•</span>
+                          {submissionMetaSuffix}
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               </>
@@ -183,6 +198,8 @@ export function ProposalPreview({
           </div>
         </div>
       </div>
+
+      {headerBanner}
 
       {/* Proposal Content */}
       {legacyHtml ? (
