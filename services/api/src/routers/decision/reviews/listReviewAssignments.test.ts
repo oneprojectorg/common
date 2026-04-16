@@ -67,7 +67,6 @@ describe.concurrent('listReviewAssignments', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
       title: 'Live Proposal Review',
-      withHistory: false,
     });
 
     const { collaborationDocId } = created.proposal.proposalData as {
