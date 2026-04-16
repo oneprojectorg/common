@@ -22,6 +22,7 @@ import type {
   TipTapDocument,
   TipTapFragmentResponse,
   TipTapVersion,
+  TipTapVersionCreateInput,
 } from '../src/client.js';
 
 // Re-export types so `import { type X } from '@op/collab'` resolves when aliased here.
@@ -29,6 +30,7 @@ export type {
   TipTapDocument,
   TipTapFragmentResponse,
   TipTapClient,
+  TipTapVersionCreateInput,
   TipTapVersion,
 } from '../src/client.js';
 
@@ -402,8 +404,9 @@ export function createTipTapClient(_config?: unknown) {
 
     createVersion: async (
       docName: string,
-      name?: string,
+      input?: TipTapVersionCreateInput,
     ): Promise<TipTapVersion | null> => {
+      const payload = input?.name || input?.meta ? input : undefined;
       const existing = docVersions.get(docName) ?? [];
       const nextVersion =
         existing.length > 0
@@ -412,7 +415,8 @@ export function createTipTapClient(_config?: unknown) {
       const newVersion: TipTapVersion = {
         version: nextVersion,
         createdAt: new Date().toISOString(),
-        ...(name ? { name } : {}),
+        ...(payload?.name ? { name: payload.name } : {}),
+        ...(payload?.meta ? { meta: payload.meta } : {}),
       };
       docVersions.set(docName, [...existing, newVersion]);
       return newVersion;

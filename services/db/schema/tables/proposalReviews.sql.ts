@@ -155,6 +155,8 @@ export const proposalReviewRequests = pgTable(
 
     requestComment: text('request_comment').notNull(),
 
+    responseComment: text('response_comment'),
+
     requestedProposalHistoryId: uuid('requested_proposal_history_id'),
 
     respondedProposalHistoryId: uuid('responded_proposal_history_id'),

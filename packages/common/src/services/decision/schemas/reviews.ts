@@ -33,6 +33,7 @@ export const proposalReviewRequestSchema = z.object({
   assignmentId: z.uuid(),
   state: z.enum(ProposalReviewRequestState),
   requestComment: z.string(),
+  responseComment: z.string().nullable(),
   requestedAt: z.string().nullable(),
   respondedAt: z.string().nullable(),
   resolvedAt: z.string().nullable(),
