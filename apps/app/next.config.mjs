@@ -45,6 +45,7 @@ const config = {
     NEXT_PUBLIC_DEPLOY_ENV: DEPLOY_ENV,
     NEXT_PUBLIC_PREVIEW_BRANCH_URL:
       DEPLOY_ENV === 'preview' ? PREVIEW_BRANCH_URL : undefined,
+    NEXT_PUBLIC_E2E: process.env.E2E,
   },
   images: {
     minimumCacheTTL: 31536000, // 1 year — assets are content-addressed
@@ -130,8 +131,7 @@ const getGitInfo = () => ({
   branch:
     process.env.VERCEL_GIT_COMMIT_REF ??
     tryGit('git rev-parse --abbrev-ref HEAD'),
-  sha:
-    process.env.VERCEL_GIT_COMMIT_SHA ?? tryGit('git rev-parse HEAD'),
+  sha: process.env.VERCEL_GIT_COMMIT_SHA ?? tryGit('git rev-parse HEAD'),
 });
 
 const { branch: currentBranch, sha: commitSha } = getGitInfo();
