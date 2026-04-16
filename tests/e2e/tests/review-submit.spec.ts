@@ -286,8 +286,9 @@ test.describe('Review Submit', () => {
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // Button still says "Request revision" but now opens the view modal
-    await page.getByRole('button', { name: 'Request revision' }).click();
+    // While a request is active, the navbar "Request revision" button is
+    // hidden and the rubric pane's alert banner exposes "View feedback".
+    await page.getByRole('button', { name: 'View feedback' }).click();
 
     const viewModal = page.getByRole('dialog');
     await expect(viewModal).toBeVisible();
