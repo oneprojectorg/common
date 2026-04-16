@@ -1,4 +1,7 @@
-import type { RubricTemplateSchema } from '@op/common';
+import type {
+  DecisionSchemaDefinition,
+  RubricTemplateSchema,
+} from '@op/common';
 import { ProposalStatus, processInstances } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
@@ -10,6 +13,61 @@ import {
 } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
+
+/**
+ * Schema with a review phase that has `proposals.review: true` so the
+ * DecisionStateRouter renders the ReviewPage with the assignments list.
+ */
+const REVIEW_SCHEMA = {
+  id: 'review-e2e',
+  version: '1.0.0',
+  name: 'Review E2E',
+  description: 'Schema for review e2e tests.',
+  proposalTemplate: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        title: 'Proposal title',
+        'x-format': 'short-text',
+      },
+    },
+    'x-field-order': ['title'],
+    required: ['title'],
+  },
+  phases: [
+    {
+      id: 'submission',
+      name: 'Proposal Submission',
+      description: 'Members submit proposals.',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      description: 'Reviewers evaluate proposals.',
+      rules: {
+        proposals: { submit: false, review: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      description: 'Final results.',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
 
 /**
  * Rubric template with three criterion types:
@@ -60,12 +118,19 @@ const RUBRIC_TEMPLATE = {
   },
 } as const satisfies RubricTemplateSchema;
 
+/**
+ * The proposal title displayed on cards is resolved from the collab doc
+ * fragment, not `proposalData.title`. The `test-proposal-view-doc` mock
+ * returns 'Community Solar Initiative' for the title fragment.
+ */
+const PROPOSAL_TITLE = 'Community Solar Initiative';
+
 test.describe('Review Submit', () => {
-  test('reviewer can fill rubric form and submit review', async ({
-    authenticatedPage,
+  test('full review journey: request revision → cancel → submit review', async ({
+    authenticatedPage: page,
     org,
   }) => {
-    // -- Setup ---------------------------------------------------------------
+    // -- Setup: decision in review phase with one assignment ------------------
 
     const template = await getSeededTemplate();
 
@@ -74,10 +139,10 @@ test.describe('Review Submit', () => {
       ownerProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
-      schema: template.processSchema,
+      schema: REVIEW_SCHEMA,
     });
 
-    // Inject rubricTemplate into instanceData and set current phase to "review"
+    // Inject rubricTemplate and set current phase to "review"
     await db
       .update(processInstances)
       .set({
@@ -89,117 +154,159 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    // Create a submitted proposal for the reviewer to evaluate
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       proposalData: {
-        title: 'Proposal Under Review',
-        collaborationDocId: 'test-proposal-doc',
+        title: PROPOSAL_TITLE,
+        collaborationDocId: 'test-proposal-view-doc',
       },
       status: ProposalStatus.SUBMITTED,
     });
 
-    // History snapshot is needed by the review assignment lookup
     await createProposalHistorySnapshot({ proposalId: proposal.id });
 
-    // Assign the authenticated user as the reviewer
-    const assignment = await createReviewAssignment({
+    await createReviewAssignment({
       processInstanceId: instance.instance.id,
       proposalId: proposal.id,
       reviewerProfileId: org.adminUser.profileId,
     });
 
-    // Small delay for DB propagation
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    // -- Navigate to review page ---------------------------------------------
+    const decisionUrl = `/en/decisions/${instance.slug}`;
 
-    await authenticatedPage.goto(
-      `/en/decisions/${instance.slug}/reviews/${assignment.id}`,
-      { waitUntil: 'domcontentloaded' },
-    );
+    /** Locate the status badge <span> on the assignments list. */
+    const statusBadge = page.locator('span').filter({
+      hasText:
+        /^(Not Started|In Progress|Completed|Revision Requested|Needs Review)$/,
+    });
 
-    // Verify the rubric form rendered (heading appears in both desktop and
-    // mobile layouts — pick the first visible one).
+    // ========================================================================
+    // Step 1: Decision page — assignments list shows "Not Started"
+    // ========================================================================
+
+    await page.goto(decisionUrl, { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('Proposals to review')).toBeVisible({
+      timeout: 36_000,
+    });
+    await expect(page.getByText(PROPOSAL_TITLE).first()).toBeVisible();
+    await expect(statusBadge).toHaveText('Not Started');
+
+    // ========================================================================
+    // Step 2: Click into review and request a revision
+    // ========================================================================
+
+    await page.getByText(PROPOSAL_TITLE).first().click();
+    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
     await expect(
-      authenticatedPage.getByText('Review Proposal', { exact: true }).first(),
+      page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    const submitButton = authenticatedPage.getByRole('button', {
-      name: 'Submit review',
-    });
-    await expect(submitButton).toBeVisible();
+    await page.getByRole('button', { name: 'Request revision' }).click();
 
-    // Submit should be disabled — no criteria filled yet
-    await expect(submitButton).toBeDisabled();
+    const requestModal = page.getByRole('dialog');
+    await expect(requestModal).toBeVisible();
 
-    // -- Open "Request revision" modal then cancel ----------------------------
+    await requestModal
+      .getByRole('textbox', { name: 'Feedback for proposal author' })
+      .fill('Please add more detail to the budget section.');
 
-    const requestRevisionButton = authenticatedPage.getByRole('button', {
-      name: 'Request revision',
-    });
-    await requestRevisionButton.click();
-
-    // Modal should be visible with its header and form
-    const revisionModal = authenticatedPage.getByRole('dialog');
-    await expect(revisionModal).toBeVisible();
-    await expect(
-      revisionModal.getByRole('heading', { name: 'Request revision' }),
-    ).toBeVisible();
-    await expect(
-      revisionModal.getByText('Feedback for proposal author'),
-    ).toBeVisible();
-
-    // The submit button inside the modal should be disabled (empty comment)
-    const modalSubmitButton = revisionModal.getByRole('button', {
-      name: 'Request revision',
-    });
-    await expect(modalSubmitButton).toBeDisabled();
-
-    // Type a comment — button should become enabled
-    const commentTextarea = revisionModal.getByRole('textbox', {
-      name: 'Feedback for proposal author',
-    });
-    await commentTextarea.fill('Please add more detail to the budget section.');
-    await expect(modalSubmitButton).toBeEnabled();
-
-    // Cancel instead of submitting
-    await revisionModal.getByRole('button', { name: 'Cancel' }).click();
-    await expect(revisionModal).toBeHidden();
-
-    // -- Fill in scored criterion (Innovation) --------------------------------
-
-    const innovationSelect = authenticatedPage.getByRole('button', {
-      name: 'Innovation',
-    });
-    await innovationSelect.click();
-    await authenticatedPage
-      .getByRole('option', { name: '4 — Very Good' })
+    await requestModal
+      .getByRole('button', { name: 'Request revision' })
       .click();
 
-    // -- Fill in yes/no criterion (Compliance) --------------------------------
+    await expect(
+      page
+        .locator('[data-sonner-toast]')
+        .filter({ hasText: 'Revision requested' }),
+    ).toBeVisible({ timeout: 10_000 });
 
-    // The yes/no toggle has no accessible name — locate via its parent section.
-    const complianceSection = authenticatedPage
-      .locator('section')
-      .filter({ hasText: 'Compliance' });
-    await complianceSection.getByRole('button').click();
+    // ========================================================================
+    // Step 3: Back to list — status is "Revision Requested"
+    // ========================================================================
 
-    // -- Fill in long-text criterion (Qualitative Feedback) -------------------
+    await page.getByText('Back to proposals').click();
+    await expect(page).toHaveURL(new RegExp(decisionUrl), { timeout: 10_000 });
 
-    const feedbackTextarea = authenticatedPage.getByRole('textbox', {
-      name: 'Qualitative Feedback',
+    await expect(page.getByText('Proposals to review')).toBeVisible({
+      timeout: 10_000,
     });
-    await feedbackTextarea.fill('The proposal is well-structured and feasible.');
+    await expect(statusBadge).toHaveText('Revision Requested');
 
-    // -- Verify total score updated -------------------------------------------
+    // ========================================================================
+    // Step 4: Click back into review and cancel the revision
+    // ========================================================================
 
-    // Only "Innovation" contributes to the score (integer criterion = 4 pts).
-    // The component renders in both desktop and mobile layouts — use .first().
-    const totalScoreContainer = authenticatedPage
+    await page.getByText(PROPOSAL_TITLE).first().click();
+    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await expect(
+      page.getByText('Review Proposal', { exact: true }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+
+    // Button still says "Request revision" but now opens the view modal
+    await page.getByRole('button', { name: 'Request revision' }).click();
+
+    const viewModal = page.getByRole('dialog');
+    await expect(viewModal).toBeVisible();
+    await expect(
+      viewModal.getByRole('heading', { name: 'Revision request' }),
+    ).toBeVisible();
+    await expect(
+      viewModal.getByText('Please add more detail to the budget section.'),
+    ).toBeVisible();
+
+    await viewModal.getByRole('button', { name: 'Cancel request' }).click();
+
+    await expect(
+      page
+        .locator('[data-sonner-toast]')
+        .filter({ hasText: 'Revision request cancelled' }),
+    ).toBeVisible({ timeout: 10_000 });
+
+    // ========================================================================
+    // Step 5: Back to list — status is "In Progress"
+    // ========================================================================
+
+    await page.getByText('Back to proposals').click();
+    await expect(page).toHaveURL(new RegExp(decisionUrl), { timeout: 10_000 });
+
+    await expect(page.getByText('Proposals to review')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(statusBadge).toHaveText('In Progress');
+
+    // ========================================================================
+    // Step 6: Click back into review, fill rubric, and submit
+    // ========================================================================
+
+    await page.getByText(PROPOSAL_TITLE).first().click();
+    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await expect(
+      page.getByText('Review Proposal', { exact: true }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+
+    // Scored criterion (Innovation)
+    await page.getByRole('button', { name: 'Innovation' }).click();
+    await page.getByRole('option', { name: '4 — Very Good' }).click();
+
+    // Yes/no criterion (Compliance)
+    await page
+      .locator('section')
+      .filter({ hasText: 'Compliance' })
+      .getByRole('button')
+      .click();
+
+    // Long-text criterion (Qualitative Feedback)
+    await page
+      .getByRole('textbox', { name: 'Qualitative Feedback' })
+      .fill('The proposal is well-structured and feasible.');
+
+    // Total score
+    const totalScoreContainer = page
       .getByText('Total Score')
       .first()
       .locator('..');
@@ -207,23 +314,26 @@ test.describe('Review Submit', () => {
       totalScoreContainer.locator('span').filter({ hasText: /^4$/ }),
     ).toBeVisible();
 
-    // -- Submit the review ----------------------------------------------------
-
+    const submitButton = page.getByRole('button', { name: 'Submit review' });
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    // -- Assert success -------------------------------------------------------
+    await expect(
+      page
+        .locator('[data-sonner-toast]')
+        .filter({ hasText: 'Review submitted successfully' }),
+    ).toBeVisible({ timeout: 10_000 });
 
-    // Success toast
-    const successToast = authenticatedPage
-      .locator('[data-sonner-toast]')
-      .filter({ hasText: 'Review submitted successfully' });
-    await expect(successToast).toBeVisible({ timeout: 10_000 });
+    // ========================================================================
+    // Step 7: Redirected to list — status is "Completed"
+    // ========================================================================
 
-    // Redirected back to the decision page
-    await expect(authenticatedPage).toHaveURL(
-      new RegExp(`/decisions/${instance.slug}`),
-      { timeout: 10_000 },
-    );
+    await expect(page).toHaveURL(new RegExp(decisionUrl), { timeout: 10_000 });
+
+    await expect(page.getByText('Proposals to review')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText(PROPOSAL_TITLE)).toBeVisible();
+    await expect(statusBadge).toHaveText('Completed');
   });
 });
