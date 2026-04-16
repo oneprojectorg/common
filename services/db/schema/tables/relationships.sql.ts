@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
   boolean,
@@ -58,6 +59,9 @@ export const organizationRelationships = pgTable(
       table.targetOrganizationId,
       table.relationshipType,
     ),
+    index('org_rel_not_pending_idx')
+      .on(table.id)
+      .where(sql`NOT pending`),
   ],
 );
 

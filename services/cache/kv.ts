@@ -50,6 +50,7 @@ const TypeMap = {
   profileUser: 'profileUser',
   profile: 'profile',
   decision: 'decision',
+  platform: 'platform',
 };
 
 /** Allowed types for cache params - will be stringified for key generation */

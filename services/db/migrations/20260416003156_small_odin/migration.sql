@@ -1,0 +1,1 @@
+CREATE INDEX "org_rel_not_pending_idx" ON "organization_relationships" ("id") WHERE NOT pending;
