@@ -34,6 +34,8 @@ export { serverExtensions } from './services/decision/tiptapExtensions';
 export {
   getRubricScoringInfo,
   isRationaleField,
+  OVERALL_RECOMMENDATION_KEY,
+  isOverallRecommendationField,
 } from './services/decision/getRubricScoringInfo';
 export { REVIEWS_POLICIES } from './services/decision/schemas/types';
 export { isLastPhase } from './services/decision/schemas/instanceData';

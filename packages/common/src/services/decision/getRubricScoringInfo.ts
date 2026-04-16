@@ -10,6 +10,17 @@ export function isRationaleField(key: string): boolean {
   return key.endsWith('__rationale');
 }
 
+/**
+ * Well-known key for the optional "Overall Recommendation" criterion.
+ * When enabled, reviewers pick Yes / Maybe / No per proposal.
+ * Excluded from scoring and criteria counts.
+ */
+export const OVERALL_RECOMMENDATION_KEY = '__overall_recommendation';
+
+export function isOverallRecommendationField(key: string): boolean {
+  return key === OVERALL_RECOMMENDATION_KEY;
+}
+
 /** Scoring info for a single rubric criterion. */
 export interface RubricCriterion {
   key: string;
@@ -47,7 +58,7 @@ export function getRubricScoringInfo(
   let totalPoints = 0;
 
   for (const [key, prop] of Object.entries(properties)) {
-    if (isRationaleField(key)) continue;
+    if (isRationaleField(key) || isOverallRecommendationField(key)) continue;
 
     const scored = prop.type === 'integer';
     const maxPoints = scored

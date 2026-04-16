@@ -10,10 +10,10 @@ export function ToggleRow({
 }) {
   return (
     <div className="flex items-center gap-4 rounded-xl py-2">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <div className="flex min-w-0 flex-1 flex-col">
         <p className="text-base leading-[1.5] text-neutral-black">{label}</p>
         {description && (
-          <p className="text-sm leading-[1.5] text-neutral-charcoal">
+          <p className="text-sm leading-[1.5] text-neutral-gray4">
             {description}
           </p>
         )}

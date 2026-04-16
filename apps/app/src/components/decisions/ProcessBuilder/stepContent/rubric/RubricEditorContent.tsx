@@ -6,6 +6,7 @@ import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { Sortable } from '@op/ui/Sortable';
+import { ToggleButton } from '@op/ui/ToggleButton';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
@@ -15,6 +16,7 @@ import type { TranslationKey } from '@/lib/i18n/routing';
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
+import { ToggleRow } from '@/components/decisions/ProcessBuilder/components/ToggleRow';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import type {
@@ -25,10 +27,14 @@ import {
   addCriterion,
   changeCriterionType,
   createEmptyRubricTemplate,
+  disableOverallRecommendation,
+  enableOverallRecommendation,
+  ensureOverallRecommendationLast,
   getCriteria,
   getCriterionErrors,
   getCriterionSchema,
   getCriterionType,
+  hasOverallRecommendation,
   removeCriterion,
   reorderCriteria,
   setCriterionRequired,
@@ -117,8 +123,9 @@ export function RubricEditorContent({
     const criterionId = crypto.randomUUID().slice(0, 8);
     const label = t('Untitled field');
     setTemplate((prev) => {
-      const updated = addCriterion(prev, criterionId, 'scored', label);
-      return setCriterionRequired(updated, criterionId, true);
+      let updated = addCriterion(prev, criterionId, 'scored', label);
+      updated = setCriterionRequired(updated, criterionId, true);
+      return ensureOverallRecommendationLast(updated);
     });
     setExpandedCriterionIds((prev) => new Set(prev).add(criterionId));
     setNewCriterionIds((prev) => new Set(prev).add(criterionId));
@@ -153,12 +160,13 @@ export function RubricEditorContent({
   }, [criterionToDelete]);
 
   const handleReorderCriteria = useCallback((newItems: CriterionView[]) => {
-    setTemplate((prev) =>
-      reorderCriteria(
+    setTemplate((prev) => {
+      const reordered = reorderCriteria(
         prev,
         newItems.map((item) => item.id),
-      ),
-    );
+      );
+      return ensureOverallRecommendationLast(reordered);
+    });
   }, []);
 
   const handleUpdateLabel = useCallback(
@@ -278,6 +286,16 @@ export function RubricEditorContent({
     });
   }, []);
 
+  const overallRecommendationEnabled = hasOverallRecommendation(template);
+
+  const handleOverallRecommendationToggle = useCallback((enabled: boolean) => {
+    setTemplate((prev) =>
+      enabled
+        ? enableOverallRecommendation(prev)
+        : disableOverallRecommendation(prev),
+    );
+  }, []);
+
   return (
     <div className="flex h-full flex-col md:flex-row">
       <main className="flex-1 basis-1/2 overflow-y-auto p-4 pb-24 [scrollbar-gutter:stable] md:p-8 md:pb-8">
@@ -375,6 +393,21 @@ export function RubricEditorContent({
               </Button>
             </>
           )}
+
+          <hr className="border-neutral-gray1" />
+
+          <ToggleRow
+            label={t('Overall Recommendation')}
+            description={t(
+              'Reviewers recommend Yes, Maybe, or No per proposal',
+            )}
+          >
+            <ToggleButton
+              isSelected={overallRecommendationEnabled}
+              onChange={handleOverallRecommendationToggle}
+              size="small"
+            />
+          </ToggleRow>
         </div>
       </main>
 

@@ -161,6 +161,45 @@ describe('getRubricScoringInfo', () => {
     expect(info.totalPoints).toBe(0);
   });
 
+  it('excludes __overall_recommendation field from criteria and summary', () => {
+    const schema: RubricTemplateSchema = {
+      type: 'object',
+      properties: {
+        innovation: {
+          type: 'integer',
+          title: 'Innovation',
+          'x-format': 'dropdown',
+          minimum: 1,
+          maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Average' },
+            { const: 3, title: 'Good' },
+            { const: 4, title: 'Great' },
+            { const: 5, title: 'Excellent' },
+          ],
+        },
+        __overall_recommendation: {
+          type: 'string',
+          title: 'Overall Recommendation',
+          'x-format': 'dropdown',
+          oneOf: [
+            { const: 'yes', title: 'Yes' },
+            { const: 'maybe', title: 'Maybe' },
+            { const: 'no', title: 'No' },
+          ],
+        },
+      },
+    };
+
+    const info = getRubricScoringInfo(schema);
+
+    expect(info.criteria).toHaveLength(1);
+    expect(info.criteria[0]!.key).toBe('innovation');
+    expect(info.totalPoints).toBe(5);
+    expect(info.summary).toEqual({ dropdown: 1 });
+  });
+
   it('treats non-integer types as qualitative (0 points)', () => {
     const schema: RubricTemplateSchema = {
       type: 'object',
