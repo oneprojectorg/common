@@ -62,12 +62,12 @@ function FeedbackCard({
   });
 
   return (
-    <div className="rounded-xl border border-neutral-gray1 p-6">
-      <p className="whitespace-pre-wrap text-neutral-charcoal italic">
+    <div className="flex flex-col gap-2 rounded-xl border border-neutral-gray1 p-6">
+      <p className="text-base whitespace-pre-wrap text-neutral-charcoal italic">
         {comment}
       </p>
       {requestedAt && (
-        <p className="mt-2 text-sm text-neutral-gray4">
+        <p className="text-sm text-neutral-gray4">
           {t('Sent {timeAgo}', { timeAgo })}
         </p>
       )}

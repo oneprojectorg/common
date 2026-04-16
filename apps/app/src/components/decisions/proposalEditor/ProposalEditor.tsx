@@ -392,65 +392,93 @@ function ProposalEditorInner({
       access={proposal.access}
       revisionRequest={revisionRequest}
     >
-      <div
-        className="sticky top-0 z-10 bg-white"
-        onMouseDown={(e) => e.preventDefault()}
-      >
-        <RichTextEditorToolbar editor={focusedEditor} />
-      </div>
-      <div
-        className={
-          revisionRequest
-            ? 'mx-auto flex w-full max-w-[68rem] flex-1 overflow-hidden'
-            : 'flex flex-1 flex-col'
-        }
-      >
+      <div className="flex h-full min-h-0 flex-col">
         <div
-          className={
-            revisionRequest
-              ? 'flex flex-1 flex-col overflow-y-auto border-r border-neutral-gray1'
-              : 'flex flex-1 flex-col'
-          }
+          className="sticky top-0 z-10 border-b border-neutral-gray1 bg-white"
+          onMouseDown={(e) => e.preventDefault()}
         >
-          <div className="flex flex-1 flex-col gap-12 py-12">
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
-              <ProposalFormRenderer
-                fields={proposalFields}
-                draft={draft}
-                onFieldChange={handleFieldChange}
-                onEditorFocus={onEditorFocus}
-                onEditorBlur={onEditorBlur}
-                mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
-                previewVersionFragmentContents={
-                  versionPreview?.fragmentContents
-                }
-              />
-
-              <div className="border-t border-neutral-gray1 pt-8">
-                <ProposalAttachments
-                  proposalId={proposal.id}
-                  attachments={
-                    proposal.attachments?.map((pa) => ({
-                      id: pa.attachmentId,
-                      fileName: pa.attachment?.fileName ?? t('Unknown'),
-                      fileSize: pa.attachment?.fileSize ?? null,
-                      url: pa.attachment?.url,
-                    })) ?? []
+          <RichTextEditorToolbar editor={focusedEditor} />
+        </div>
+        {revisionRequest ? (
+          <div className="mx-auto flex w-full max-w-[68rem] flex-1 overflow-hidden">
+            <div className="flex min-w-0 basis-1/2 flex-col overflow-y-auto border-r border-neutral-gray1 py-12 pr-12">
+              <div className="flex flex-col gap-4">
+                <ProposalFormRenderer
+                  fields={proposalFields}
+                  draft={draft}
+                  onFieldChange={handleFieldChange}
+                  onEditorFocus={onEditorFocus}
+                  onEditorBlur={onEditorBlur}
+                  mode={
+                    isPreviewMode ? 'preview-version' : 'edit-collaborative'
                   }
-                  onMutate={() =>
-                    utils.decision.getProposal.invalidate({
-                      profileId: proposal.profileId,
-                    })
+                  previewVersionFragmentContents={
+                    versionPreview?.fragmentContents
                   }
                 />
+
+                <div className="border-t border-neutral-gray1 pt-8">
+                  <ProposalAttachments
+                    proposalId={proposal.id}
+                    attachments={
+                      proposal.attachments?.map((pa) => ({
+                        id: pa.attachmentId,
+                        fileName: pa.attachment?.fileName ?? t('Unknown'),
+                        fileSize: pa.attachment?.fileSize ?? null,
+                        url: pa.attachment?.url,
+                      })) ?? []
+                    }
+                    onMutate={() =>
+                      utils.decision.getProposal.invalidate({
+                        profileId: proposal.profileId,
+                      })
+                    }
+                  />
+                </div>
               </div>
             </div>
+            <div className="min-w-0 basis-1/2 overflow-y-auto bg-white">
+              <RevisionFeedbackPanel revisionRequest={revisionRequest} />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col gap-12 py-12">
+              <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
+                <ProposalFormRenderer
+                  fields={proposalFields}
+                  draft={draft}
+                  onFieldChange={handleFieldChange}
+                  onEditorFocus={onEditorFocus}
+                  onEditorBlur={onEditorBlur}
+                  mode={
+                    isPreviewMode ? 'preview-version' : 'edit-collaborative'
+                  }
+                  previewVersionFragmentContents={
+                    versionPreview?.fragmentContents
+                  }
+                />
 
-        {revisionRequest && (
-          <div className="flex-1 overflow-y-auto bg-white">
-            <RevisionFeedbackPanel revisionRequest={revisionRequest} />
+                <div className="border-t border-neutral-gray1 pt-8">
+                  <ProposalAttachments
+                    proposalId={proposal.id}
+                    attachments={
+                      proposal.attachments?.map((pa) => ({
+                        id: pa.attachmentId,
+                        fileName: pa.attachment?.fileName ?? t('Unknown'),
+                        fileSize: pa.attachment?.fileSize ?? null,
+                        url: pa.attachment?.url,
+                      })) ?? []
+                    }
+                    onMutate={() =>
+                      utils.decision.getProposal.invalidate({
+                        profileId: proposal.profileId,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
