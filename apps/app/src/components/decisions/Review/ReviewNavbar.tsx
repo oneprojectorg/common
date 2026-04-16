@@ -1,5 +1,6 @@
 'use client';
 
+import { ProposalReviewRequestState } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useState } from 'react';
@@ -22,11 +23,15 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
     isSubmitting,
     isSubmitted,
     isPausedForRevision,
+    revisionRequest,
     handleSubmit,
   } = useReviewForm();
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const hasBeenResubmitted =
+    revisionRequest?.state === ProposalReviewRequestState.RESUBMITTED;
 
   return (
     <>
@@ -39,20 +44,22 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
           {t('Back to proposals')}
         </Link>
         <div className="flex items-center gap-4">
-          <Button
-            color="secondary"
-            size="small"
-            isDisabled={isSubmitted}
-            onPress={() => {
-              if (isPausedForRevision) {
-                setIsViewModalOpen(true);
-              } else {
-                setIsRequestModalOpen(true);
-              }
-            }}
-          >
-            {t('Request revision')}
-          </Button>
+          {!hasBeenResubmitted && (
+            <Button
+              color="secondary"
+              size="small"
+              isDisabled={isSubmitted}
+              onPress={() => {
+                if (isPausedForRevision) {
+                  setIsViewModalOpen(true);
+                } else {
+                  setIsRequestModalOpen(true);
+                }
+              }}
+            >
+              {t('Request revision')}
+            </Button>
+          )}
           <Button
             color="primary"
             size="small"
