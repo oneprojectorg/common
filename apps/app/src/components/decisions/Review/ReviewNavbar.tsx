@@ -1,5 +1,6 @@
 'use client';
 
+import { ProposalReviewRequestState } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useState } from 'react';
@@ -9,7 +10,6 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { RequestRevisionModal } from './RequestRevisionModal';
 import { useReviewForm } from './ReviewFormContext';
-import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 interface ReviewNavbarProps {
   decisionSlug: string;
@@ -21,12 +21,18 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
     canSubmit,
     isSubmitting,
     isSubmitted,
-    isPausedForRevision,
+    revisionRequest,
     handleSubmit,
   } = useReviewForm();
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  // Only show when pressing the button would start a new request: no request
+  // yet, or the last one was cancelled. While REQUESTED, the rubric pane
+  // already surfaces the pending request via its alert banner.
+  const canRequestRevision =
+    !revisionRequest ||
+    revisionRequest.state === ProposalReviewRequestState.CANCELLED;
 
   return (
     <>
@@ -39,20 +45,16 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
           {t('Back to proposals')}
         </Link>
         <div className="flex items-center gap-4">
-          <Button
-            color="secondary"
-            size="small"
-            isDisabled={isSubmitted}
-            onPress={() => {
-              if (isPausedForRevision) {
-                setIsViewModalOpen(true);
-              } else {
-                setIsRequestModalOpen(true);
-              }
-            }}
-          >
-            {t('Request revision')}
-          </Button>
+          {canRequestRevision && (
+            <Button
+              color="secondary"
+              size="small"
+              isDisabled={isSubmitted}
+              onPress={() => setIsRequestModalOpen(true)}
+            >
+              {t('Request revision')}
+            </Button>
+          )}
           <Button
             color="primary"
             size="small"
@@ -72,10 +74,6 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
       <RequestRevisionModal
         isOpen={isRequestModalOpen}
         onOpenChange={setIsRequestModalOpen}
-      />
-      <ViewRevisionRequestModal
-        isOpen={isViewModalOpen}
-        onOpenChange={setIsViewModalOpen}
       />
     </>
   );

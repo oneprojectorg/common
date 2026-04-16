@@ -1115,5 +1115,8 @@
   "Briefly describe your revisions so reviewers know what to look for.": "আপনার সংশোধনগুলো সংক্ষেপে বর্ণনা করুন যাতে পর্যালোচকরা জানেন কী খুঁজতে হবে।",
   "A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.": "একজন পর্যালোচক আপনার প্রস্তাবে পরিবর্তনের অনুরোধ করেছেন। আপনার প্রস্তাব সম্পাদনা করুন এবং প্রস্তুত হলে পুনরায় জমা দিন।",
   "When resubmitting, address each point in the feedback above. When you click Resubmit, you'll be asked to briefly describe what you changed so the reviewers know where to look.": "পুনরায় জমা দেওয়ার সময়, উপরের প্রতিক্রিয়ার প্রতিটি বিষয় সম্বোধন করুন। আপনি যখন পুনরায় জমা দিন ক্লিক করবেন, তখন আপনাকে সংক্ষেপে বর্ণনা করতে বলা হবে যে আপনি কী পরিবর্তন করেছেন যাতে পর্যালোচকরা জানতে পারেন কোথায় দেখতে হবে।",
-  "Describe what you changed…": "আপনি কী পরিবর্তন করেছেন তা বর্ণনা করুন…"
+  "Describe what you changed…": "আপনি কী পরিবর্তন করেছেন তা বর্ণনা করুন…",
+  "Revised on": "সংশোধিত",
+  "Author's revision note": "লেখকের সংশোধন নোট",
+  "View revision request": "সংশোধনের অনুরোধ দেখুন"
 }

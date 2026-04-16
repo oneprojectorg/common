@@ -1,7 +1,10 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import type { ReviewAssignmentExtended } from '@op/common/client';
+import {
+  ProposalReviewRequestState,
+  type ReviewAssignmentExtended,
+} from '@op/common/client';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
@@ -9,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalPreview } from '../ProposalPreview';
+import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
 import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
@@ -50,6 +54,7 @@ export function ReviewLayoutClient({
         <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
           <ReviewProposalPane
             proposal={assignment.proposal}
+            revisionRequest={revisionRequest}
             className="border-r p-12"
           />
           <div className="min-w-0 flex-1 overflow-y-auto px-12 pt-12 pb-4">
@@ -70,7 +75,10 @@ export function ReviewLayoutClient({
             id="proposal"
             className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
           >
-            <ReviewProposalPane proposal={assignment.proposal} />
+            <ReviewProposalPane
+              proposal={assignment.proposal}
+              revisionRequest={revisionRequest}
+            />
           </TabPanel>
 
           <TabPanel
@@ -87,14 +95,32 @@ export function ReviewLayoutClient({
 
 function ReviewProposalPane({
   proposal,
+  revisionRequest,
   className,
 }: {
   proposal: Parameters<typeof ProposalPreview>[0]['proposal'];
+  revisionRequest: ReviewAssignmentExtended['revisionRequest'];
   className?: string;
 }) {
+  const respondedAt =
+    revisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
+      ? revisionRequest.respondedAt
+      : null;
+  const responseComment = respondedAt ? revisionRequest?.responseComment : null;
+
   return (
     <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
-      <ProposalPreview proposal={proposal} />
+      <ProposalPreview
+        proposal={proposal}
+        submissionMetaSuffix={
+          respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
+        }
+        headerBanner={
+          responseComment ? (
+            <AuthorRevisionNote comment={responseComment} />
+          ) : undefined
+        }
+      />
     </div>
   );
 }
