@@ -25,8 +25,8 @@ export const getPlatformStats = async ({ user }: { user: User }) => {
         new_organizations: number;
       }>(sql`
         SELECT
-          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'organizations') AS total_organizations,
-          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'users') AS total_users,
+          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'organizations' AND relnamespace = 'public'::regnamespace) AS total_organizations,
+          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'users' AND relnamespace = 'public'::regnamespace) AS total_users,
           (SELECT count(*)::int FROM organization_relationships WHERE NOT pending) AS total_relationships,
           (SELECT count(*)::int FROM organizations WHERE created_at >= ${newOrgThreshold.toISOString()}) AS new_organizations
       `);
