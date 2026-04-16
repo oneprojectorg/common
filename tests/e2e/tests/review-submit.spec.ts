@@ -2,12 +2,11 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { ProposalStatus, processInstances } from '@op/db/schema';
+import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
   createProposal,
-  createProposalHistorySnapshot,
   createReviewAssignment,
   getSeededTemplate,
 } from '@op/test';
@@ -200,10 +199,13 @@ test.describe('Review Submit', () => {
         title: PROPOSAL_TITLE,
         collaborationDocId: 'test-proposal-view-doc',
       },
-      status: ProposalStatus.SUBMITTED,
     });
 
-    await createProposalHistorySnapshot({ proposalId: proposal.id });
+    // UPDATE to SUBMITTED so the AFTER UPDATE trigger creates a history snapshot.
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
 
     await createReviewAssignment({
       processInstanceId: instance.instance.id,
