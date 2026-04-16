@@ -65,26 +65,26 @@ export function ResubmitProposalModal({
       <ModalHeader>{t('Resubmit proposal')}</ModalHeader>
       <ModalBody>
         <div className="flex flex-col gap-2">
+          <span className="text-base text-neutral-black">
+            {t('What did you change?')}
+          </span>
           <div className="flex flex-col gap-1">
-            <span className="text-base text-neutral-black">
-              {t('What did you change?')}
-            </span>
-            <span className="text-sm text-neutral-gray4">
+            <span className="text-sm text-neutral-black">
               {t(
                 'Briefly describe your revisions so reviewers know what to look for.',
               )}
             </span>
+            <TextField
+              aria-label={t('What did you change?')}
+              value={comment}
+              onChange={setComment}
+              useTextArea
+              textareaProps={{
+                rows: 4,
+                placeholder: t('Describe what you changed…'),
+              }}
+            />
           </div>
-
-          <TextField
-            aria-label={t('What did you change?')}
-            value={comment}
-            onChange={setComment}
-            useTextArea
-            textareaProps={{
-              rows: 4,
-            }}
-          />
         </div>
       </ModalBody>
       <ModalFooter>
