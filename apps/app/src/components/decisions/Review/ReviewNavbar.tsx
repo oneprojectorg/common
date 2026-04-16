@@ -30,8 +30,13 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const hasBeenResubmitted =
-    revisionRequest?.state === ProposalReviewRequestState.RESUBMITTED;
+  // Show the button when no request exists, the current one is still active,
+  // or the last one was cancelled (reviewer can start a fresh request). Hide
+  // for terminal post-author states (resubmitted, resolved).
+  const canRequestRevision =
+    !revisionRequest ||
+    revisionRequest.state === ProposalReviewRequestState.REQUESTED ||
+    revisionRequest.state === ProposalReviewRequestState.CANCELLED;
 
   return (
     <>
@@ -44,7 +49,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
           {t('Back to proposals')}
         </Link>
         <div className="flex items-center gap-4">
-          {!hasBeenResubmitted && (
+          {canRequestRevision && (
             <Button
               color="secondary"
               size="small"
