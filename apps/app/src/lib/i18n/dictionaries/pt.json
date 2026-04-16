@@ -1102,5 +1102,17 @@
   "Revision Request": "Solicitação de revisão",
   "A reviewer has requested changes to {proposalName}": "Um revisor solicitou alterações em {proposalName}",
   "Revise proposal": "Revisar proposta",
-  "Ignore": "Ignorar"
+  "Ignore": "Ignorar",
+  "Resubmit": "Reenviar",
+  "Resubmit proposal": "Reenviar proposta",
+  "Revision feedback": "Comentários de revisão",
+  "Reviewer feedback": "Comentários do revisor",
+  "Sent {timeAgo}": "Enviado {timeAgo}",
+  "Proposal resubmitted": "Proposta reenviada",
+  "Failed to resubmit proposal": "Falha ao reenviar a proposta",
+  "What did you change?": "O que você alterou?",
+  "Briefly describe your revisions so reviewers know what to look for.": "Descreva brevemente suas alterações para que os revisores saibam o que procurar.",
+  "A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.": "Um revisor solicitou alterações na sua proposta. Edite sua proposta e reenvie quando estiver pronta.",
+  "When resubmitting, address each point in the feedback above. When you click Resubmit, you'll be asked to briefly describe what you changed so the reviewers know where to look.": "Ao reenviar, aborde cada ponto dos comentários acima. Quando você clicar em Reenviar, será solicitado que descreva brevemente o que alterou para que os revisores saibam onde procurar.",
+  "Describe what you changed…": "Descreva o que você alterou…"
 }

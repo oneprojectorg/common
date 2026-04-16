@@ -1102,5 +1102,17 @@
   "Revision Request": "Demande de révision",
   "A reviewer has requested changes to {proposalName}": "Un examinateur a demandé des modifications à {proposalName}",
   "Revise proposal": "Réviser la proposition",
-  "Ignore": "Ignorer"
+  "Ignore": "Ignorer",
+  "Resubmit": "Soumettre à nouveau",
+  "Resubmit proposal": "Soumettre la proposition à nouveau",
+  "Revision feedback": "Commentaires de révision",
+  "Reviewer feedback": "Commentaires de l'examinateur",
+  "Sent {timeAgo}": "Envoyé {timeAgo}",
+  "Proposal resubmitted": "Proposition soumise à nouveau",
+  "Failed to resubmit proposal": "Échec de la soumission de la proposition",
+  "What did you change?": "Qu'avez-vous modifié ?",
+  "Briefly describe your revisions so reviewers know what to look for.": "Décrivez brièvement vos révisions pour que les examinateurs sachent quoi rechercher.",
+  "A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.": "Un examinateur a demandé des modifications à votre proposition. Modifiez-la et soumettez-la à nouveau lorsque vous êtes prêt.",
+  "When resubmitting, address each point in the feedback above. When you click Resubmit, you'll be asked to briefly describe what you changed so the reviewers know where to look.": "Lors de la soumission, répondez à chaque point des commentaires ci-dessus. Lorsque vous cliquerez sur Soumettre à nouveau, il vous sera demandé de décrire brièvement ce que vous avez modifié afin que les examinateurs sachent où regarder.",
+  "Describe what you changed…": "Décrivez ce que vous avez modifié…"
 }

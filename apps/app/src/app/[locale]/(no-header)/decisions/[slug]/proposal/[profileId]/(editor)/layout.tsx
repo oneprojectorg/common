@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
+  type ProposalReviewRequest,
   getProposalFragmentNames,
   parseProposalData,
 } from '@op/common/client';
@@ -15,7 +16,7 @@ import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
-import { LuHistory } from 'react-icons/lu';
+import { LuHistory, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -34,6 +35,7 @@ import {
   normalizeProposalEditorAsideQueryState,
   proposalEditorAsideParser,
   proposalEditorAsideValues,
+  proposalEditorReviewRevisionParser,
   proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
@@ -54,9 +56,10 @@ export default function ProposalEditorLayout({
     profileId: string;
     slug: string;
   }>();
-  const [{ aside, versionId }, setQueryState] = useQueryStates({
+  const [{ aside, versionId, reviewRevision }, setQueryState] = useQueryStates({
     aside: proposalEditorAsideParser,
     versionId: proposalEditorVersionIdParser,
+    reviewRevision: proposalEditorReviewRevisionParser,
   });
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
@@ -75,6 +78,16 @@ export default function ProposalEditorLayout({
   const instance = decisionProfile.processInstance;
 
   const { user } = useUser();
+
+  const [{ revisionRequests }] =
+    trpc.decision.listProposalsRevisionRequests.useSuspenseQuery({
+      proposalId: proposal.id,
+    });
+
+  const revisionRequest: ProposalReviewRequest | null = reviewRevision
+    ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
+        ?.revisionRequest ?? null)
+    : null;
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 
@@ -108,6 +121,50 @@ export default function ProposalEditorLayout({
     onToggleAside: toggleAside,
     versionHistoryLabel,
   });
+
+  const firstRevisionRequestId =
+    revisionRequests[0]?.revisionRequest.id ?? null;
+
+  const toggleRevisionRequest = () => {
+    if (!firstRevisionRequestId) {
+      return;
+    }
+
+    void setQueryState(
+      {
+        reviewRevision:
+          reviewRevision === firstRevisionRequestId
+            ? null
+            : firstRevisionRequestId,
+      },
+      { history: 'push', scroll: false },
+    );
+  };
+
+  const revisionRequestLabel = t('Revision request');
+  const headerIcons = firstRevisionRequestId
+    ? [
+        <TooltipTrigger key="revision-request">
+          <Button
+            color="secondary"
+            variant="icon"
+            size="small"
+            onPress={toggleRevisionRequest}
+            aria-label={revisionRequestLabel}
+            aria-pressed={Boolean(reviewRevision)}
+            className="relative size-8 min-w-8 rounded-sm p-0"
+          >
+            <LuStickyNote className="size-4" />
+            <span
+              aria-hidden
+              className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-orange2"
+            />
+          </Button>
+          <Tooltip>{revisionRequestLabel}</Tooltip>
+        </TooltipTrigger>,
+        ...asideHeaderIcons,
+      ]
+    : asideHeaderIcons;
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -144,8 +201,9 @@ export default function ProposalEditorLayout({
           fragmentNames={fragmentNames}
           asideState={asideState}
           setAsideState={setAsideState}
-          asideHeaderIcons={asideHeaderIcons}
+          asideHeaderIcons={headerIcons}
           isMobile={isMobile}
+          revisionRequest={revisionRequest}
         />
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
@@ -168,6 +226,7 @@ function ProposalEditorContent({
   setAsideState,
   asideHeaderIcons,
   isMobile,
+  revisionRequest,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -177,6 +236,7 @@ function ProposalEditorContent({
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
   isMobile: boolean;
+  revisionRequest: ProposalReviewRequest | null;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -218,6 +278,7 @@ function ProposalEditorContent({
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
         showHeaderActions={isMobile || !asideSlot}
+        revisionRequest={revisionRequest}
       />
       {asideSlot}
     </div>

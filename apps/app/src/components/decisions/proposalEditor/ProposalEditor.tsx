@@ -7,6 +7,7 @@ import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalDataInput,
+  type ProposalReviewRequest,
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
@@ -39,6 +40,7 @@ import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
+import { RevisionFeedbackPanel } from './RevisionFeedbackPanel';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
@@ -92,6 +94,7 @@ export function ProposalEditor({
   isEditMode = false,
   asideHeaderIcons,
   showHeaderActions = true,
+  revisionRequest = null,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -99,6 +102,7 @@ export function ProposalEditor({
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
   showHeaderActions?: boolean;
+  revisionRequest?: ProposalReviewRequest | null;
 }) {
   const { user } = useUser();
   const t = useTranslations();
@@ -141,6 +145,7 @@ export function ProposalEditor({
       showHeaderActions={showHeaderActions}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
+      revisionRequest={revisionRequest}
     />
   );
 
@@ -172,6 +177,7 @@ function ProposalEditorInner({
   showHeaderActions,
   collaborationDocId,
   proposalTemplate,
+  revisionRequest,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -181,6 +187,7 @@ function ProposalEditorInner({
   showHeaderActions: boolean;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
+  revisionRequest: ProposalReviewRequest | null;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -362,6 +369,39 @@ function ProposalEditorInner({
     onEditorBlur,
   } = useFocusedEditor();
 
+  const editorBody = (
+    <>
+      <ProposalFormRenderer
+        fields={proposalFields}
+        draft={draft}
+        onFieldChange={handleFieldChange}
+        onEditorFocus={onEditorFocus}
+        onEditorBlur={onEditorBlur}
+        mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
+        previewVersionFragmentContents={versionPreview?.fragmentContents}
+      />
+
+      <div className="border-t border-neutral-gray1 pt-8">
+        <ProposalAttachments
+          proposalId={proposal.id}
+          attachments={
+            proposal.attachments?.map((pa) => ({
+              id: pa.attachmentId,
+              fileName: pa.attachment?.fileName ?? t('Unknown'),
+              fileSize: pa.attachment?.fileSize ?? null,
+              url: pa.attachment?.url,
+            })) ?? []
+          }
+          onMutate={() =>
+            utils.decision.getProposal.invalidate({
+              profileId: proposal.profileId,
+            })
+          }
+        />
+      </div>
+    </>
+  );
+
   return (
     <ProposalEditorLayout
       backHref={backHref}
@@ -383,44 +423,31 @@ function ProposalEditorInner({
       showHeaderActions={showHeaderActions}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
+      revisionRequest={revisionRequest}
     >
-      <div
-        className="sticky top-0 z-10 bg-white"
-        onMouseDown={(e) => e.preventDefault()}
-      >
-        <RichTextEditorToolbar editor={focusedEditor} />
-      </div>
-      <div className="flex flex-1 flex-col gap-12 py-12">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
-          <ProposalFormRenderer
-            fields={proposalFields}
-            draft={draft}
-            onFieldChange={handleFieldChange}
-            onEditorFocus={onEditorFocus}
-            onEditorBlur={onEditorBlur}
-            mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
-            previewVersionFragmentContents={versionPreview?.fragmentContents}
-          />
-
-          <div className="border-t border-neutral-gray1 pt-8">
-            <ProposalAttachments
-              proposalId={proposal.id}
-              attachments={
-                proposal.attachments?.map((pa) => ({
-                  id: pa.attachmentId,
-                  fileName: pa.attachment?.fileName ?? t('Unknown'),
-                  fileSize: pa.attachment?.fileSize ?? null,
-                  url: pa.attachment?.url,
-                })) ?? []
-              }
-              onMutate={() =>
-                utils.decision.getProposal.invalidate({
-                  profileId: proposal.profileId,
-                })
-              }
-            />
-          </div>
+      <div className="flex h-full min-h-0 flex-col">
+        <div
+          className="sticky top-0 z-10 border-b border-neutral-gray1 bg-white"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <RichTextEditorToolbar editor={focusedEditor} />
         </div>
+        {revisionRequest ? (
+          <div className="mx-auto flex w-full max-w-[68rem] flex-1 overflow-hidden">
+            <div className="flex min-w-0 basis-1/2 flex-col gap-4 overflow-y-auto border-r border-neutral-gray1 py-12 pr-12">
+              {editorBody}
+            </div>
+            <div className="min-w-0 basis-1/2 overflow-y-auto bg-white">
+              <RevisionFeedbackPanel revisionRequest={revisionRequest} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col gap-12 py-12">
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
+              {editorBody}
+            </div>
+          </div>
+        )}
       </div>
 
       {proposalInfoTitle && proposalInfoContent && (
