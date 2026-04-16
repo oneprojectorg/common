@@ -10,7 +10,7 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import {
   CommonError,
@@ -122,29 +122,21 @@ export async function submitRevisionResponse({
       throw new CommonError('Failed to update proposal for revision response');
     }
 
-    // Capture an explicit workflow snapshot for this resubmission.
-    // Trigger-created rows archive prior edits, while this row anchors the
-    // exact proposal state being handed back for re-review.
+    // The AFTER UPDATE trigger on decision_proposals automatically creates a
+    // history snapshot with the post-update state. Find that row.
     const [historyRecord] = await tx
-      .insert(proposalHistory)
-      .values({
-        id: updatedProposal.id,
-        processInstanceId: updatedProposal.processInstanceId,
-        proposalData: updatedProposal.proposalData,
-        status: updatedProposal.status,
-        visibility: updatedProposal.visibility,
-        submittedByProfileId: updatedProposal.submittedByProfileId,
-        profileId: updatedProposal.profileId,
-        lastEditedByProfileId: updatedProposal.lastEditedByProfileId,
-        createdAt: updatedProposal.createdAt,
-        updatedAt: updatedProposal.updatedAt,
-        deletedAt: updatedProposal.deletedAt,
-        validDuring: sql`tstzrange(now(), NULL)`,
-      })
-      .returning();
+      .select({ historyId: proposalHistory.historyId })
+      .from(proposalHistory)
+      .where(
+        and(
+          eq(proposalHistory.id, proposal.id),
+          sql`upper(${proposalHistory.validDuring}) IS NULL`,
+        ),
+      )
+      .limit(1);
 
     if (!historyRecord) {
-      throw new CommonError('Failed to create proposal history snapshot');
+      throw new CommonError('Failed to find proposal history snapshot');
     }
 
     // 2. Update revision request: state → RESUBMITTED, set respondedAt, responseComment, respondedProposalHistoryId
