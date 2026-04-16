@@ -15,9 +15,10 @@ SECURITY DEFINER
 SET search_path = 'public'
 AS $function$
 BEGIN
-  -- Only create history if actual data changed (not just updatedAt)
   IF (OLD.proposal_data IS DISTINCT FROM NEW.proposal_data) OR
-     (OLD.status IS DISTINCT FROM NEW.status) THEN
+     (OLD.status IS DISTINCT FROM NEW.status) OR
+     (OLD.visibility IS DISTINCT FROM NEW.visibility) OR
+     (OLD.deleted_at IS DISTINCT FROM NEW.deleted_at) THEN
 
     -- Close the previous open-ended history record
     UPDATE public.decision_proposal_history
