@@ -25,15 +25,17 @@ const ActiveDecisionsNotificationsSuspense = () => {
   const t = useTranslations();
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
-  const [[{ items: decisions }, { revisionRequests }]] =
-    trpc.useSuspenseQueries((t) => [
+  const [[{ items: decisions }, revisionData]] = trpc.useSuspenseQueries(
+    (t) => [
       t.decision.listDecisionProfiles({
         status: [ProcessStatus.PUBLISHED],
         limit: 10,
       }),
       t.decision.listProposalsRevisionRequests({}),
-    ]);
+    ],
+  );
 
+  const revisionRequests = revisionData?.revisionRequests ?? [];
   const count = decisions.length + revisionRequests.length;
 
   if (count === 0) {
@@ -98,6 +100,7 @@ const RevisionRequestIcon = () => (
   </div>
 );
 
+// TODO: persist dismiss state and navigate to proposal edit — will be addressed in a coming PR
 const RevisionRequestRow = ({
   item,
 }: {
