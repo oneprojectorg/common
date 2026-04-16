@@ -22,7 +22,7 @@ export function RevisionFeedbackPanel({
           {t('Revision feedback')}
         </Header3>
 
-        <p className="text-sm text-neutral-black">
+        <p className="text-neutral-black">
           {t(
             'A reviewer has requested changes to your proposal. Edit your proposal and resubmit when ready.',
           )}
@@ -39,7 +39,7 @@ export function RevisionFeedbackPanel({
           requestedAt={revisionRequest.requestedAt}
         />
 
-        <p className="text-xs text-neutral-charcoal">
+        <p className="text-sm text-neutral-charcoal">
           {t(
             "When resubmitting, address each point in the feedback above. When you click Resubmit, you'll be asked to briefly describe what you changed so the reviewers know where to look.",
           )}
@@ -63,11 +63,11 @@ function FeedbackCard({
 
   return (
     <div className="rounded-xl border border-neutral-gray1 p-6">
-      <p className="text-sm whitespace-pre-wrap text-neutral-charcoal italic">
+      <p className="whitespace-pre-wrap text-neutral-charcoal italic">
         {comment}
       </p>
       {requestedAt && (
-        <p className="mt-2 text-xs text-neutral-gray4">
+        <p className="mt-2 text-sm text-neutral-gray4">
           {t('Sent {timeAgo}', { timeAgo })}
         </p>
       )}
