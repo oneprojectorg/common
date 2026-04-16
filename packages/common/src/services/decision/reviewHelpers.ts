@@ -1,10 +1,55 @@
 import { db } from '@op/db/client';
+import {
+  type ProposalReviewRequest,
+  ProposalReviewRequestState,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+
+/** Shared `with` config for review assignment queries. */
+export const reviewAssignmentWithConfig = {
+  assignedProposalHistory: {
+    with: {
+      submittedBy: {
+        with: {
+          avatarImage: true,
+        },
+      },
+      profile: true,
+    },
+  },
+  proposal: {
+    with: {
+      submittedBy: {
+        with: {
+          avatarImage: true,
+        },
+      },
+      profile: true,
+    },
+  },
+  reviews: true,
+  requests: {
+    orderBy: {
+      createdAt: 'desc' as const,
+    },
+  },
+} as const;
+
+/** Returns the active (REQUESTED) revision request, falling back to the most recent one. */
+export function getActiveRevisionRequest(
+  requests: ProposalReviewRequest[],
+): ProposalReviewRequest | null {
+  return (
+    requests.find((r) => r.state === ProposalReviewRequestState.REQUESTED) ??
+    requests[0] ??
+    null
+  );
+}
 
 /** Loads and authorizes access to a single review assignment for the current reviewer. */
 export async function assertReviewAssignmentContext({
@@ -19,30 +64,7 @@ export async function assertReviewAssignmentContext({
       where: {
         id: assignmentId,
       },
-      with: {
-        assignedProposalHistory: {
-          with: {
-            submittedBy: {
-              with: {
-                avatarImage: true,
-              },
-            },
-            profile: true,
-          },
-        },
-        proposal: {
-          with: {
-            submittedBy: {
-              with: {
-                avatarImage: true,
-              },
-            },
-            profile: true,
-          },
-        },
-        reviews: true,
-        requests: true,
-      },
+      with: reviewAssignmentWithConfig,
     }),
     assertUserByAuthId(user.id),
   ]);
@@ -74,9 +96,8 @@ export async function assertReviewAssignmentContext({
   return {
     assignment,
     instance,
-    // NOTE: We currently support only one review/revision cycle per assignment.
     review: assignment.reviews[0] ?? null,
-    revisionRequest: assignment.requests[0] ?? null,
+    revisionRequest: getActiveRevisionRequest(assignment.requests),
     rubricTemplate: instance.instanceData.rubricTemplate ?? null,
   };
 }

@@ -7,7 +7,11 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { resolveAssignmentProposal } from './reviewHelpers';
+import {
+  getActiveRevisionRequest,
+  resolveAssignmentProposal,
+  reviewAssignmentWithConfig,
+} from './reviewHelpers';
 import {
   type ReviewAssignmentList,
   reviewAssignmentListSchema,
@@ -44,30 +48,7 @@ export async function listReviewAssignments({
       reviewerProfileId: dbUser.profileId,
       ...(status && { status }),
     },
-    with: {
-      assignedProposalHistory: {
-        with: {
-          submittedBy: {
-            with: {
-              avatarImage: true,
-            },
-          },
-          profile: true,
-        },
-      },
-      proposal: {
-        with: {
-          submittedBy: {
-            with: {
-              avatarImage: true,
-            },
-          },
-          profile: true,
-        },
-      },
-      reviews: true,
-      requests: true,
-    },
+    with: reviewAssignmentWithConfig,
     orderBy: {
       assignedAt: dir,
     },
@@ -124,9 +105,8 @@ export async function listReviewAssignments({
         },
       },
       rubricTemplate,
-      // NOTE: We currently support only one review/revision cycle per assignment.
       review: assignment.reviews[0] ?? null,
-      revisionRequest: assignment.requests[0] ?? null,
+      revisionRequest: getActiveRevisionRequest(assignment.requests),
     };
   });
 
