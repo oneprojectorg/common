@@ -58,6 +58,7 @@ export * from './listReviewAssignments';
 export * from './submitReview';
 export * from './requestRevision';
 export * from './cancelRevisionRequest';
+export * from './listProposalsRevisionRequests';
 export * from './deleteProposal';
 export * from './deleteDecision';
 export * from './getProcessCategories';

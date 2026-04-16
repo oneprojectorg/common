@@ -1126,5 +1126,9 @@
   "Filter by status": "Filter by status",
   "Sort order": "Sort order",
   "{count} Reviewed": "{count} Reviewed",
-  "{count} of {total} completed": "{count} of {total} completed"
+  "{count} of {total} completed": "{count} of {total} completed",
+  "Revision Request": "Revision Request",
+  "A reviewer has requested changes to {proposalName}": "A reviewer has requested changes to {proposalName}",
+  "Revise proposal": "Revise proposal",
+  "Ignore": "Ignore"
 }

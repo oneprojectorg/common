@@ -1096,5 +1096,9 @@
   "Filter by status": "Filtrer par statut",
   "Sort order": "Ordre de tri",
   "{count} Reviewed": "{count} Examinés",
-  "{count} of {total} completed": "{count} sur {total} terminés"
+  "{count} of {total} completed": "{count} sur {total} terminés",
+  "Revision Request": "Demande de révision",
+  "A reviewer has requested changes to {proposalName}": "Un examinateur a demandé des modifications à {proposalName}",
+  "Revise proposal": "Réviser la proposition",
+  "Ignore": "Ignorer"
 }
