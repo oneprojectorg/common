@@ -70,6 +70,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     return <RationaleField field={field} />;
   }
 
+  // Horizontal radio group for the overall recommendation field.
   if (isOverallRecommendationField(field.key)) {
     const recOptions = parseSchemaOptions(schema);
     return (

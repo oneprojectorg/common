@@ -247,7 +247,7 @@ function RubricFieldInput({
           <RadioGroup
             aria-label={field.schema.title}
             value={typeof value === 'string' ? value : undefined}
-            onChange={(val) => onChange(val)}
+            onChange={onChange}
             orientation="horizontal"
             className="gap-0"
           >
