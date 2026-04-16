@@ -1,49 +1,27 @@
-import { db, eq, gte, sql } from '@op/db/client';
-import { organizationRelationships, organizations, users } from '@op/db/schema';
+import { db, sql } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 
 export const getPlatformStats = async ({ user }: { user: User }) => {
   const lastLogin = new Date(user.last_sign_in_at ?? 0);
   const newOrgThreshold = new Date(lastLogin.setDate(lastLogin.getDate() - 7));
 
-  const [orgCount, usersCount, relationshipCount, newOrganizationsCount] =
-    await Promise.all([
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(organizations),
-
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(users),
-
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(organizationRelationships)
-        .where(() => eq(organizationRelationships.pending, false)),
-
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(organizations)
-        .where(gte(organizations.createdAt, newOrgThreshold.toISOString())),
-    ]);
-
-  const totalOrganizations = orgCount[0]?.count ?? 0;
-  const totalUsers = usersCount[0]?.count ?? 0;
-  const totalRelationships = relationshipCount[0]?.count ?? 0;
-  const newOrganizations = newOrganizationsCount[0]?.count ?? 0;
+  const [result] = await db.execute<{
+    total_organizations: number;
+    total_users: number;
+    total_relationships: number;
+    new_organizations: number;
+  }>(sql`
+    SELECT
+      (SELECT count(*)::int FROM organizations) AS total_organizations,
+      (SELECT count(*)::int FROM users) AS total_users,
+      (SELECT count(*)::int FROM organization_relationships WHERE NOT pending) AS total_relationships,
+      (SELECT count(*)::int FROM organizations WHERE created_at >= ${newOrgThreshold.toISOString()}) AS new_organizations
+  `);
 
   return {
-    totalOrganizations,
-    totalUsers,
-    totalRelationships,
-    newOrganizations,
+    totalOrganizations: result?.total_organizations ?? 0,
+    totalUsers: result?.total_users ?? 0,
+    totalRelationships: result?.total_relationships ?? 0,
+    newOrganizations: result?.new_organizations ?? 0,
   };
 };
