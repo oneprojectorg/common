@@ -94,7 +94,7 @@ export function ProposalCardReviseAction({
 }) {
   const t = useTranslations();
   const href = revisionRequestId
-    ? `${proposalEditHref}?reviewRevision=${revisionRequestId}`
+    ? appendQueryParam(proposalEditHref, 'reviewRevision', revisionRequestId)
     : proposalEditHref;
 
   return (
@@ -104,9 +104,11 @@ export function ProposalCardReviseAction({
   );
 }
 
-/**
- * Badge shown on a proposal card when the author has a pending revision request.
- */
+function appendQueryParam(href: string, key: string, value: string) {
+  const separator = href.includes('?') ? '&' : '?';
+  return `${href}${separator}${key}=${encodeURIComponent(value)}`;
+}
+
 export function RevisionRequestedBadge() {
   const t = useTranslations();
   return (
