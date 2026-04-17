@@ -2,7 +2,7 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { OVERALL_RECOMMENDATION_KEY } from '@op/common';
+import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
