@@ -12,7 +12,7 @@ import {
 } from '@op/db/schema';
 import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils/error';
+import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
 import { assertGlobalRole } from '../assert/assertGlobalRole';
 import { generateUniqueProfileSlug } from '../profile/utils';
@@ -493,7 +493,7 @@ export const switchUserOrganization = async (
   });
 
   if (!organization) {
-    throw new Error('Organization not found');
+    throw new NotFoundError('Organization', organizationId);
   }
 
   const orgUser = await getOrgAccessUser({
@@ -515,7 +515,7 @@ export const switchUserOrganization = async (
     .returning();
 
   if (!result.length || !result[0]) {
-    throw new Error('User not found');
+    throw new NotFoundError('User');
   }
 
   return result[0];

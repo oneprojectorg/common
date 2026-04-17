@@ -47,7 +47,7 @@ describe.concurrent('account.switchOrganization', () => {
     expect(userRecord?.lastOrgId).toBe(organization.id);
   });
 
-  it('should throw UNAUTHORIZED when caller is not a member of target org', async ({
+  it('should throw UnauthorizedError when caller is not a member of target org', async ({
     task,
     onTestFinished,
   }) => {
@@ -80,7 +80,9 @@ describe.concurrent('account.switchOrganization', () => {
         organizationId: targetOrg.id,
       }),
     ).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      cause: {
+        name: 'UnauthorizedError',
+      },
     });
 
     // Verify the attacker's currentProfileId was NOT changed to the victim org's profile
@@ -97,7 +99,7 @@ describe.concurrent('account.switchOrganization', () => {
     expect(after?.lastOrgId).not.toBe(targetOrg.id);
   });
 
-  it('should throw NOT_FOUND when organization does not exist', async ({
+  it('should throw NotFoundError when organization does not exist', async ({
     task,
     onTestFinished,
   }) => {
@@ -114,7 +116,9 @@ describe.concurrent('account.switchOrganization', () => {
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      code: 'NOT_FOUND',
+      cause: {
+        name: 'NotFoundError',
+      },
     });
   });
 });
