@@ -12,6 +12,10 @@ import {
 
 import { expect, test } from '../fixtures/index.js';
 
+// Mirrors OVERALL_RECOMMENDATION_KEY from @op/common/client. Inlined to
+// sidestep CJS/ESM interop when loading @op/common from the e2e runner.
+const OVERALL_RECOMMENDATION_KEY = '__overall_recommendation';
+
 /**
  * Schema with a review phase that has `proposals.review: true` so the
  * DecisionStateRouter renders the ReviewPage with the assignments list.
@@ -68,12 +72,13 @@ const REVIEW_SCHEMA = {
 } satisfies DecisionSchemaDefinition;
 
 /**
- * Rubric template with five criteria — three required and two optional.
+ * Rubric template with six criteria — four required and two optional.
  *
  * Required:
- *  - innovation:  scored integer dropdown (1–5)
- *  - compliance:  yes/no toggle
- *  - feasibility: scored integer dropdown (1–3)
+ *  - innovation:               scored integer dropdown (1–5)
+ *  - compliance:               yes/no toggle
+ *  - feasibility:              scored integer dropdown (1–3)
+ *  - __overall_recommendation: horizontal radio group (Yes/Maybe/No)
  *
  * Optional:
  *  - feedback:    long-text textarea
@@ -83,16 +88,24 @@ const REVIEW_SCHEMA = {
  *  - Submit is disabled until all *required* criteria are filled
  *  - Submit is enabled even when optional criteria are left empty
  *  - Total score sums only scored criteria that have values
+ *  - Overall Recommendation renders as a radio group and is excluded
+ *    from the total score
  */
 const RUBRIC_TEMPLATE = {
   type: 'object',
-  required: ['innovation', 'compliance', 'feasibility'],
+  required: [
+    'innovation',
+    'compliance',
+    'feasibility',
+    OVERALL_RECOMMENDATION_KEY,
+  ],
   'x-field-order': [
     'innovation',
     'feasibility',
     'compliance',
     'methodology',
     'feedback',
+    OVERALL_RECOMMENDATION_KEY,
   ],
   properties: {
     innovation: {
@@ -149,6 +162,16 @@ const RUBRIC_TEMPLATE = {
       title: 'Qualitative Feedback',
       description: 'Provide written feedback on the proposal.',
       'x-format': 'long-text',
+    },
+    [OVERALL_RECOMMENDATION_KEY]: {
+      type: 'string',
+      title: 'Overall Recommendation',
+      'x-format': 'dropdown',
+      oneOf: [
+        { const: 'yes', title: 'Yes' },
+        { const: 'maybe', title: 'Maybe' },
+        { const: 'no', title: 'No' },
+      ],
     },
   },
 } as const satisfies RubricTemplateSchema;
@@ -343,11 +366,24 @@ test.describe('Review Submit', () => {
       .getByRole('button')
       .click();
 
+    // Still disabled — Overall Recommendation is still missing
+    await expect(submitButton).toBeDisabled();
+
+    // Fill fourth required criterion: Overall Recommendation (horizontal
+    // radio group with Yes/Maybe/No). React Aria renders the underlying
+    // <input type="radio"> as sr-only, so click the visible label text.
+    const overallRecGroup = page.getByRole('radiogroup', {
+      name: 'Overall Recommendation',
+    });
+    await expect(overallRecGroup).toBeVisible();
+    await overallRecGroup.getByText('Yes', { exact: true }).click();
+
     // All required criteria are filled — submit should be enabled even though
     // the optional criteria (Methodology, Qualitative Feedback) are empty.
     await expect(submitButton).toBeEnabled();
 
-    // Total score = Innovation (4) + Feasibility (2) = 6
+    // Total score = Innovation (4) + Feasibility (2) = 6. Overall
+    // Recommendation is excluded from scoring.
     const totalScoreContainer = page
       .getByText('Total Score')
       .first()
